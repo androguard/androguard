@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>if-&lt;test&gt;z</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>if-&lt;test&gt;z</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Branch to the given destination if the given register's value compares with 0
+as specified.
+</p>
+<p>
+  Note: The branch offset may not be 0. (A spin loop may be legally constructed
+  either by branching around a backward goto or by including a nop as a target
+  before the branch.) 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>38..3d 21t</td>
+  <td>if-<i>test</i>z vAA, +BBBB<br/>
+    38: if-eqz<br/>
+    39: if-nez<br/>
+    3a: if-ltz<br/>
+    3b: if-gez<br/>
+    3c: if-gtz<br/>
+    3d: if-lez<br/>
+  </td>
+  <td><code>A:</code> register to test (8 bits)<br/>
+    <code>B:</code> signed branch offset (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index for the current stackframe.
+  </li>
+  <li>
+    Register vA must not contain a reference value.
+  </li>
+  <li>
+    Register vA must not be part of a register pair.
+  </li>
+  <li>
+    Register vA must not contain a floating point value (???).
+  </li>
+  <li>
+    B must not be 0.
+  </li> 
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The value of register vA is compared to zero according to the &lt;test&gt;
+    condition. Two results are possible:
+    <ul>
+      <li>
+        The condition holds. The value of B is used as a signed offset to the
+        address of the if-&lt;test&gt;z instruction. Execution continues at the
+        resulting address.
+      </li>
+      <li>
+        The condition does not hold. Execution continues at the instruction
+        following the if-&lt;test&gt;z instruction.
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

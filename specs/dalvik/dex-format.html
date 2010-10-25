@@ -1,0 +1,3043 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>.dex &mdash; Dalvik Executable Format</title>
+<link rel=stylesheet href="dex-format.css">
+</head>
+
+<body>
+
+<h1 class="title"><code>.dex</code> &mdash; Dalvik Executable Format</h1>
+<p>Copyright &copy; 2007 The Android Open Source Project
+
+<p>This document describes the layout and contents of <code>.dex</code>
+files, which are used to hold a set of class definitions and their associated
+adjunct data.</p>
+
+<h1>Guide To Types</h1>
+
+<table class="guide">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>byte</td>
+  <td>8-bit signed int</td>
+</tr>
+<tr>
+  <td>ubyte</td>
+  <td>8-bit unsigned int</td>
+</tr>
+<tr>
+  <td>short</td>
+  <td>16-bit signed int, little-endian</td>
+</tr>
+<tr>
+  <td>ushort</td>
+  <td>16-bit unsigned int, little-endian</td>
+</tr>
+<tr>
+  <td>int</td>
+  <td>32-bit signed int, little-endian</td>
+</tr>
+<tr>
+  <td>uint</td>
+  <td>32-bit unsigned int, little-endian</td>
+</tr>
+<tr>
+  <td>long</td>
+  <td>64-bit signed int, little-endian</td>
+</tr>
+<tr>
+  <td>ulong</td>
+  <td>64-bit unsigned int, little-endian</td>
+</tr>
+<tr>
+  <td>sleb128</td>
+  <td>signed LEB128, variable-length (see below)</td>
+</tr>
+<tr>
+  <td>uleb128</td>
+  <td>unsigned LEB128, variable-length (see below)</td>
+</tr>
+<tr>
+  <td>uleb128p1</td>
+  <td>unsigned LEB128 plus <code>1</code>, variable-length (see below)</td>
+</tr>
+</tbody>
+</table>
+
+<h3>LEB128</h3>
+
+<p>LEB128 ("<b>L</b>ittle-<b>E</b>ndian <b>B</b>ase <b>128</b>") is a
+variable-length encoding for
+arbitrary signed or unsigned integer quantities. The format was
+borrowed from the <a href="http://dwarfstd.org/Dwarf3Std.php">DWARF3</a>
+specification. In a <code>.dex</code> file, LEB128 is only ever used to
+encode 32-bit quantities.</p>
+
+<p>Each LEB128 encoded value consists of one to five
+bytes, which together represent a single 32-bit value. Each
+byte has its most significant bit set except for the final byte in the
+sequence, which has its most significant bit clear. The remaining
+seven bits of each byte are payload, with the least significant seven
+bits of the quantity in the first byte, the next seven in the second
+byte and so on. In the case of a signed LEB128 (<code>sleb128</code>),
+the most significant payload bit of the final byte in the sequence is
+sign-extended to produce the final value. In the unsigned case
+(<code>uleb128</code>), any bits not explicitly represented are
+interpreted as <code>0</code>.
+
+<table class="leb128Bits">
+<thead>
+<tr><th colspan="16">Bitwise diagram of a two-byte LEB128 value</th></tr>
+<tr>
+  <th colspan="8">First byte</td>
+  <th colspan="8">Second byte</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td class="start1"><code>1</code></td>
+  <td>bit<sub>6</sub></td>
+  <td>bit<sub>5</sub></td>
+  <td>bit<sub>4</sub></td>
+  <td>bit<sub>3</sub></td>
+  <td>bit<sub>2</sub></td>
+  <td>bit<sub>1</sub></td>
+  <td>bit<sub>0</sub></td>
+  <td class="start2"><code>0</code></td>
+  <td>bit<sub>13</sub></td>
+  <td>bit<sub>12</sub></td>
+  <td>bit<sub>11</sub></td>
+  <td>bit<sub>10</sub></td>
+  <td>bit<sub>9</sub></td>
+  <td>bit<sub>8</sub></td>
+  <td class="end2">bit<sub>7</sub></td>
+</tr>
+</tbody>
+</table>
+
+<p>The variant <code>uleb128p1</code> is used to represent a signed
+value, where the representation is of the value <i>plus one</i> encoded
+as a <code>uleb128</code>. This makes the encoding of <code>-1</code>
+(alternatively thought of as the unsigned value <code>0xffffffff</code>)
+&mdash; but no other negative number &mdash; a single byte, and is
+useful in exactly those cases where the represented number must either
+be non-negative or <code>-1</code> (or <code>0xffffffff</code>),
+and where no other negative values are allowed (or where large unsigned
+values are unlikely to be needed).</p>
+
+<p>Here are some examples of the formats:</p>
+
+<table class="leb128">
+<thead>
+<tr>
+  <th>Encoded Sequence</th>
+  <th>As <code>sleb128</code></th>
+  <th>As <code>uleb128</code></th>
+  <th>As <code>uleb128p1</code></th>
+</tr>
+</thead>
+<tbody>
+  <tr><td>00</td><td>0</td><td>0</td><td>-1</td></tr>
+  <tr><td>01</td><td>1</td><td>1</td><td>0</td></tr>
+  <tr><td>7f</td><td>-1</td><td>127</td><td>126</td></tr>
+  <tr><td>80 7f</td><td>-128</td><td>16256</td><td>16255</td></tr>
+</tbody>
+</table>
+
+<h1>Overall File Layout</h1>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>header</td>
+  <td>header_item</td>
+  <td>the header</td>
+</tr>
+<tr>
+  <td>string_ids</td>
+  <td>string_id_item[]</td>
+  <td>string identifiers list. These are identifiers for all the strings
+    used by this file, either for internal naming (e.g., type descriptors)
+    or as constant objects referred to by code. This list must be sorted
+    by string contents, using UTF-16 code point values (not in a
+    locale-sensitive manner).
+  </td>
+</tr>
+<tr>
+  <td>type_ids</td>
+  <td>type_id_item[]</td>
+  <td>type identifiers list. These are identifiers for all types (classes,
+    arrays, or primitive types) referred to by this file, whether defined
+    in the file or not. This list must be sorted by <code>string_id</code>
+    index.
+  </td>
+</tr>
+<tr>
+  <td>proto_ids</td>
+  <td>proto_id_item[]</td>
+  <td>method prototype identifiers list. These are identifiers for all
+    prototypes referred to by this file. This list must be sorted in
+    return-type (by <code>type_id</code> index) major order, and then
+    by arguments (also by <code>type_id</code> index).
+  </td>
+</tr>
+<tr>
+  <td>field_ids</td>
+  <td>field_id_item[]</td>
+  <td>field identifiers list. These are identifiers for all fields
+    referred to by this file, whether defined in the file or not. This
+    list must be sorted, where the defining type (by <code>type_id</code>
+    index) is the major order, field name (by <code>string_id</code> index)
+    is the intermediate order, and type (by <code>type_id</code> index)
+    is the minor order.
+  </td>
+</tr>
+<tr>
+  <td>method_ids</td>
+  <td>method_id_item[]</td>
+  <td>method identifiers list. These are identifiers for all methods
+    referred to by this file, whether defined in the file or not. This
+    list must be sorted, where the defining type (by <code>type_id</code>
+    index) is the major order, method name (by <code>string_id</code>
+    index) is the intermediate order, and method
+    prototype (by <code>proto_id</code> index) is the minor order.
+  </td>
+</tr>
+<tr>
+  <td>class_defs</td>
+  <td>class_def_item[]</td>
+  <td>class definitions list. The classes must be ordered such that a given
+    class's superclass and implemented interfaces appear in the
+    list earlier than the referring class.
+  </td>
+</tr>
+<tr>
+  <td>data</td>
+  <td>ubyte[]</td>
+  <td>data area, containing all the support data for the tables listed above.
+    Different items have different alignment requirements, and
+    padding bytes are inserted before each item if necessary to achieve
+    proper alignment.
+  </td>
+</tr>
+<tr>
+  <td>link_data</td>
+  <td>ubyte[]</td>
+  <td>data used in statically linked files. The format of the data in
+    this section is left unspecified by this document;
+    this section is empty in unlinked files, and runtime implementations
+    may use it as they see fit.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h1>Bitfield, String, and Constant Definitions</h1>
+
+<h2><code>DEX_FILE_MAGIC</code></h2>
+<h4>embedded in <code>header_item</code></h4>
+
+<p>The constant array/string <code>DEX_FILE_MAGIC</code> is the list of
+bytes that must appear at the beginning of a <code>.dex</code> file
+in order for it to be recognized as such. The value intentionally
+contains a newline (<code>"\n"</code> or <code>0x0a</code>) and a
+null byte (<code>"\0"</code> or <code>0x00</code>) in order to help
+in the detection of certain forms of corruption. The value also
+encodes a format version number as three decimal digits, which is
+expected to increase monotonically over time as the format evolves.</p>
+
+<pre>
+ubyte[8] DEX_FILE_MAGIC = { 0x64 0x65 0x78 0x0a 0x30 0x33 0x35 0x00 }
+                        = "dex\n035\0"
+</pre>
+
+<p><b>Note:</b> At least a couple earlier versions of the format have
+been used in widely-available public software releases. For example,
+version <code>009</code> was used for the M3 releases of the
+Android platform (November-December 2007),
+and version <code>013</code> was used for the M5 releases of the Android
+platform (February-March 2008). In several respects, these earlier versions
+of the format differ significantly from the version described in this
+document.</p>
+
+<h2><code>ENDIAN_CONSTANT</code> and <code>REVERSE_ENDIAN_CONSTANT</code></h2>
+<h4>embedded in <code>header_item</code></h4>
+
+<p>The constant <code>ENDIAN_CONSTANT</code> is used to indicate the
+endianness of the file in which it is found. Although the standard
+<code>.dex</code> format is little-endian, implementations may choose
+to perform byte-swapping. Should an implementation come across a
+header whose <code>endian_tag</code> is <code>REVERSE_ENDIAN_CONSTANT</code>
+instead of <code>ENDIAN_CONSTANT</code>, it would know that the file
+has been byte-swapped from the expected form.</p>
+
+<pre>
+uint ENDIAN_CONSTANT = 0x12345678;
+uint REVERSE_ENDIAN_CONSTANT = 0x78563412;
+</pre>
+
+<h2><code>NO_INDEX</code></h2>
+<h4>embedded in <code>class_def_item</code> and
+<code>debug_info_item</code></h4>
+
+<p>The constant <code>NO_INDEX</code> is used to indicate that
+an index value is absent.</p>
+
+<p><b>Note:</b> This value isn't defined to be
+<code>0</code>, because that is in fact typically a valid index.</p>
+
+<p><b>Also Note:</b> The chosen value for <code>NO_INDEX</code> is
+representable as a single byte in the <code>uleb128p1</code> encoding.</p>
+
+<pre>
+uint NO_INDEX = 0xffffffff;    // == -1 if treated as a signed int
+</pre>
+
+<h2><code>access_flags</code> Definitions</h2>
+<h4>embedded in <code>class_def_item</code>,
+<code>field_item</code>, <code>method_item</code>, and
+<code>InnerClass</code></h4>
+
+<p>Bitfields of these flags are used to indicate the accessibility and
+overall properties of classes and class members.</p>
+
+<table class="accessFlags">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value</th>
+  <th>For Classes (and <code>InnerClass</code> annotations)</th>
+  <th>For Fields</th>
+  <th>For Methods</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ACC_PUBLIC</td>
+  <td>0x1</td>
+  <td><code>public</code>: visible everywhere</td>
+  <td><code>public</code>: visible everywhere</td>
+  <td><code>public</code>: visible everywhere</td>
+</tr>
+<tr>
+  <td>ACC_PRIVATE</td>
+  <td>0x2</td>
+  <td><super>*</super>
+    <code>private</code>: only visible to defining class
+  </td>
+  <td><code>private</code>: only visible to defining class</td>
+  <td><code>private</code>: only visible to defining class</td>
+</tr>
+<tr>
+  <td>ACC_PROTECTED</td>
+  <td>0x4</td>
+  <td><super>*</super>
+    <code>protected</code>: visible to package and subclasses
+  </td>
+  <td><code>protected</code>: visible to package and subclasses</td>
+  <td><code>protected</code>: visible to package and subclasses</td>
+</tr>
+<tr>
+  <td>ACC_STATIC</td>
+  <td>0x8</td>
+  <td><super>*</super>
+    <code>static</code>: is not constructed with an outer
+    <code>this</code> reference</td>
+  <td><code>static</code>: global to defining class</td>
+  <td><code>static</code>: does not take a <code>this</code> argument</td>
+</tr>
+<tr>
+  <td>ACC_FINAL</td>
+  <td>0x10</td>
+  <td><code>final</code>: not subclassable</td>
+  <td><code>final</code>: immutable after construction</td>
+  <td><code>final</code>: not overridable</td>
+</tr>
+<tr>
+  <td>ACC_SYNCHRONIZED</td>
+  <td>0x20</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td><code>synchronized</code>: associated lock automatically acquired
+    around call to this method. <b>Note:</b> This is only valid to set when
+    <code>ACC_NATIVE</code> is also set.</td>
+</tr>
+<tr>
+  <td>ACC_VOLATILE</td>
+  <td>0x40</td>
+  <td>&nbsp;</td>
+  <td><code>volatile</code>: special access rules to help with thread
+    safety</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>ACC_BRIDGE</td>
+  <td>0x40</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>bridge method, added automatically by compiler as a type-safe
+    bridge</td>
+</tr>
+<tr>
+  <td>ACC_TRANSIENT</td>
+  <td>0x80</td>
+  <td>&nbsp;</td>
+  <td><code>transient</code>: not to be saved by default serialization</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>ACC_VARARGS</td>
+  <td>0x80</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>last argument should be treated as a "rest" argument by compiler</td>
+</tr>
+<tr>
+  <td>ACC_NATIVE</td>
+  <td>0x100</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td><code>native</code>: implemented in native code</td>
+</tr>
+<tr>
+  <td>ACC_INTERFACE</td>
+  <td>0x200</td>
+  <td><code>interface</code>: multiply-implementable abstract class</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>ACC_ABSTRACT</td>
+  <td>0x400</td>
+  <td><code>abstract</code>: not directly instantiable</td>
+  <td>&nbsp;</td>
+  <td><code>abstract</code>: unimplemented by this class</td>
+</tr>
+<tr>
+  <td>ACC_STRICT</td>
+  <td>0x800</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td><code>strictfp</code>: strict rules for floating-point arithmetic</td>
+</tr>
+<tr>
+  <td>ACC_SYNTHETIC</td>
+  <td>0x1000</td>
+  <td>not directly defined in source code</td>
+  <td>not directly defined in source code</td>
+  <td>not directly defined in source code</td>
+</tr>
+<tr>
+  <td>ACC_ANNOTATION</td>
+  <td>0x2000</td>
+  <td>declared as an annotation class</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>ACC_ENUM</td>
+  <td>0x4000</td>
+  <td>declared as an enumerated type</td>
+  <td>declared as an enumerated value</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td><i>(unused)</i></td>
+  <td>0x8000</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>ACC_CONSTRUCTOR</td>
+  <td>0x10000</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>constructor method (class or instance initializer)</td>
+</tr>
+<tr>
+  <td>ACC_DECLARED_<br/>SYNCHRONIZED</td>
+  <td>0x20000</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>declared <code>synchronized</code>. <b>Note:</b> This has no effect on
+    execution (other than in reflection of this flag, per se).
+  </td>
+</tr>
+</tbody>
+</table>
+
+<p><super>*</super> Only allowed on for <code>InnerClass</code> annotations,
+and must not ever be on in a <code>class_def_item</code>.</p>
+
+<h2>MUTF-8 (Modified UTF-8) Encoding</h2>
+
+<p>As a concession to easier legacy support, the <code>.dex</code> format
+encodes its string data in a de facto standard modified UTF-8 form, hereafter
+referred to as MUTF-8. This form is identical to standard UTF-8, except:</p>
+
+<ul>
+  <li>Only the one-, two-, and three-byte encodings are used.</li>
+  <li>Code points in the range <code>U+10000</code> &hellip;
+    <code>U+10ffff</code> are encoded as a surrogate pair, each of
+    which is represented as a three-byte encoded value.</li>
+  <li>The code point <code>U+0000</code> is encoded in two-byte form.</li>
+  <li>A plain null byte (value <code>0</code>) indicates the end of
+    a string, as is the standard C language interpretation.</li>
+</ul>
+
+<p>The first two items above can be summarized as: MUTF-8
+is an encoding format for UTF-16, instead of being a more direct
+encoding format for Unicode characters.</p>
+
+<p>The final two items above make it simultaneously possible to include
+the code point <code>U+0000</code> in a string <i>and</i> still manipulate
+it as a C-style null-terminated string.</p>
+
+<p>However, the special encoding of <code>U+0000</code> means that, unlike
+normal UTF-8, the result of calling the standard C function
+<code>strcmp()</code> on a pair of MUTF-8 strings does not always
+indicate the properly signed result of comparison of <i>unequal</i> strings.
+When ordering (not just equality) is a concern, the most straightforward
+way to compare MUTF-8 strings is to decode them character by character,
+and compare the decoded values. (However, more clever implementations are
+also possible.)</p>
+
+<p>Please refer to <a href="http://unicode.org">The Unicode
+Standard</a> for further information about character encoding.
+MUTF-8 is actually closer to the (relatively less well-known) encoding
+<a href="http://www.unicode.org/reports/tr26/">CESU-8</a> than to UTF-8
+per se.</p>
+
+<h2><code>encoded_value</code> Encoding</h2>
+<h4>embedded in <code>annotation_element</code> and
+<code>encoded_array_item</code></h4>
+
+<p>An <code>encoded_value</code> is an encoded piece of (nearly)
+arbitrary hierarchically structured data. The encoding is meant to
+be both compact and straightforward to parse.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>(value_arg &lt;&lt; 5) | value_type</td>
+  <td>ubyte</td>
+  <td>byte indicating the type of the immediately subsequent
+    <code>value</code> along
+    with an optional clarifying argument in the high-order three bits.
+    See below for the various <code>value</code> definitions.
+    In most cases, <code>value_arg</code> encodes the length of
+    the immediately-subsequent <code>value</code> in bytes, as
+    <code>(size - 1)</code>, e.g., <code>0</code> means that
+    the value requires one byte, and <code>7</code> means it requires
+    eight bytes; however, there are exceptions as noted below.
+  </td>
+</tr>
+<tr>
+  <td>value</td>
+  <td>ubyte[]</td>
+  <td>bytes representing the value, variable in length and interpreted
+    differently for different <code>value_type</code> bytes, though
+    always little-endian. See the various value definitions below for
+    details.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3>Value Formats</h3>
+
+<table class="encodedValue">
+<thead>
+<tr>
+  <th>Type Name</th>
+  <th><code>value_type</code></th>
+  <th><code>value_arg</code> Format</th>
+  <th><code>value</code> Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>VALUE_BYTE</td>
+  <td>0x00</td>
+  <td><i>(none; must be <code>0</code>)</i></td>
+  <td>ubyte[1]</td>
+  <td>signed one-byte integer value</td>
+</tr>
+<tr>
+  <td>VALUE_SHORT</td>
+  <td>0x02</td>
+  <td>size - 1 (0&hellip;1)</td>
+  <td>ubyte[size]</td>
+  <td>signed two-byte integer value, sign-extended</td>
+</tr>
+<tr>
+  <td>VALUE_CHAR</td>
+  <td>0x03</td>
+  <td>size - 1 (0&hellip;1)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned two-byte integer value, zero-extended</td>
+</tr>
+<tr>
+  <td>VALUE_INT</td>
+  <td>0x04</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>signed four-byte integer value, sign-extended</td>
+</tr>
+<tr>
+  <td>VALUE_LONG</td>
+  <td>0x06</td>
+  <td>size - 1 (0&hellip;7)</td>
+  <td>ubyte[size]</td>
+  <td>signed eight-byte integer value, sign-extended</td>
+</tr>
+<tr>
+  <td>VALUE_FLOAT</td>
+  <td>0x10</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>four-byte bit pattern, zero-extended <i>to the right</i>, and
+    interpreted as an IEEE754 32-bit floating point value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_DOUBLE</td>
+  <td>0x11</td>
+  <td>size - 1 (0&hellip;7)</td>
+  <td>ubyte[size]</td>
+  <td>eight-byte bit pattern, zero-extended <i>to the right</i>, and
+    interpreted as an IEEE754 64-bit floating point value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_STRING</td>
+  <td>0x17</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned (zero-extended) four-byte integer value,
+    interpreted as an index into
+    the <code>string_ids</code> section and representing a string value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_TYPE</td>
+  <td>0x18</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned (zero-extended) four-byte integer value,
+    interpreted as an index into
+    the <code>type_ids</code> section and representing a reflective
+    type/class value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_FIELD</td>
+  <td>0x19</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned (zero-extended) four-byte integer value,
+    interpreted as an index into
+    the <code>field_ids</code> section and representing a reflective
+    field value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_METHOD</td>
+  <td>0x1a</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned (zero-extended) four-byte integer value,
+    interpreted as an index into
+    the <code>method_ids</code> section and representing a reflective
+    method value
+  </td>
+</tr>
+<tr>
+  <td>VALUE_ENUM</td>
+  <td>0x1b</td>
+  <td>size - 1 (0&hellip;3)</td>
+  <td>ubyte[size]</td>
+  <td>unsigned (zero-extended) four-byte integer value,
+    interpreted as an index into
+    the <code>field_ids</code> section and representing the value of
+    an enumerated type constant
+  </td>
+</tr>
+<tr>
+  <td>VALUE_ARRAY</td>
+  <td>0x1c</td>
+  <td><i>(none; must be <code>0</code>)</i></td>
+  <td>encoded_array</td>
+  <td>an array of values, in the format specified by
+    "<code>encoded_array</code> Format" below. The size
+    of the <code>value</code> is implicit in the encoding.
+  </td>
+</tr>
+<tr>
+  <td>VALUE_ANNOTATION</td>
+  <td>0x1d</td>
+  <td><i>(none; must be <code>0</code>)</i></td>
+  <td>encoded_annotation</td>
+  <td>a sub-annotation, in the format specified by
+    "<code>encoded_annotation</code> Format" below. The size
+    of the <code>value</code> is implicit in the encoding.
+  </td>
+</tr>
+<tr>
+  <td>VALUE_NULL</td>
+  <td>0x1e</td>
+  <td><i>(none; must be <code>0</code>)</i></td>
+  <td><i>(none)</i></td>
+  <td><code>null</code> reference value</td>
+</tr>
+<tr>
+  <td>VALUE_BOOLEAN</td>
+  <td>0x1f</td>
+  <td>boolean (0&hellip;1)</td>
+  <td><i>(none)</i></td>
+  <td>one-bit value; <code>0</code> for <code>false</code> and
+    <code>1</code> for <code>true</code>. The bit is represented in the
+    <code>value_arg</code>.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_array</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uleb128</td>
+  <td>number of elements in the array</td>
+</tr>
+<tr>
+  <td>values</td>
+  <td>encoded_value[size]</td>
+  <td>a series of <code>size</code> <code>encoded_value</code> byte
+    sequences in the format specified by this section, concatenated
+    sequentially.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_annotation</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>type_idx</td>
+  <td>uleb128</td>
+  <td>type of the annotation. This must be a class (not array or primitive)
+    type.
+  </td>
+</tr>
+<tr>
+  <td>size</td>
+  <td>uleb128</td>
+  <td>number of name-value mappings in this annotation</td>
+</tr>
+<tr>
+  <td>elements</td>
+  <td>annotation_element[size]</td>
+  <td>elements of the annotataion, represented directly in-line (not as
+    offsets). Elements must be sorted in increasing order by
+    <code>string_id</code> index.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>annotation_element</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>name_idx</td>
+  <td>uleb128</td>
+  <td>element name, represented as an index into the
+    <code>string_ids</code> section. The string must conform to the
+    syntax for <i>MemberName</i>, defined above.
+  </td>
+</tr>
+<tr>
+  <td>value</td>
+  <td>encoded_value</td>
+  <td>element value</td>
+</tr>
+</tbody>
+</table>
+
+<h2>String Syntax</h2>
+
+<p>There are several kinds of item in a <code>.dex</code> file which
+ultimately refer to a string. The following BNF-style definitions
+indicate the acceptable syntax for these strings.</p>
+
+<h3><i>SimpleName</i></h3>
+
+<p>A <i>SimpleName</i> is the basis for the syntax of the names of other
+things. The <code>.dex</code> format allows a fair amount of latitude
+here (much more than most common source languages). In brief, a simple
+name may consist of any low-ASCII alphabetic character or digit, a few
+specific low-ASCII symbols, and most non-ASCII code points that are not
+control, space, or special characters. Note that surrogate code points
+(in the range <code>U+d800</code> &hellip; <code>U+dfff</code>) are not
+considered valid name characters, per se, but Unicode supplemental
+characters <i>are</i> valid (which are represented by the final
+alternative of the rule for <i>SimpleNameChar</i>), and they should be
+represented in a file as pairs of surrogate code points in the MUTF-8
+encoding.</p>
+
+<table class="bnf">
+  <tr><td colspan="2" class="def"><i>SimpleName</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><i>SimpleNameChar</i> (<i>SimpleNameChar</i>)*</td>
+  </tr>
+
+  <tr><td colspan="2" class="def"><i>SimpleNameChar</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><code>'A'</code> &hellip; <code>'Z'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'a'</code> &hellip; <code>'z'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'0'</code> &hellip; <code>'9'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'$'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'-'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'_'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>U+00a1</code> &hellip; <code>U+1fff</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>U+2010</code> &hellip; <code>U+2027</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>U+2030</code> &hellip; <code>U+d7ff</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>U+e000</code> &hellip; <code>U+ffef</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>U+10000</code> &hellip; <code>U+10ffff</code></td>
+  </tr>
+</table>
+
+<h3><i>MemberName</i></h3>
+<h4>used by <code>field_id_item</code> and <code>method_id_item</code></h4>
+
+<p>A <i>MemberName</i> is the name of a member of a class, members being
+fields, methods, and inner classes.</p>
+
+<table class="bnf">
+  <tr><td colspan="2" class="def"><i>MemberName</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><i>SimpleName</i></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'&lt;'</code> <i>SimpleName</i> <code>'&gt;'</code></td>
+  </tr>
+</table>
+
+<h3><i>FullClassName</i></h3>
+
+<p>A <i>FullClassName</i> is a fully-qualified class name, including an
+optional package specifier followed by a required name.</p>
+
+<table class="bnf">
+  <tr><td colspan="2" class="def"><i>FullClassName</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><i>OptionalPackagePrefix</i> <i>SimpleName</i></td>
+  </tr>
+
+  <tr><td colspan="2" class="def"><i>OptionalPackagePrefix</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td>(<i>SimpleName</i> <code>'/'</code>)*</td>
+  </tr>
+</table>
+
+<h3><i>TypeDescriptor</i></h3>
+<h4>used by <code>type_id_item</code></h4>
+
+<p>A <i>TypeDescriptor</i> is the representation of any type, including
+primitives, classes, arrays, and <code>void</code>. See below for
+the meaning of the various versions.</p>
+
+<table class="bnf">
+  <tr><td colspan="2" class="def"><i>TypeDescriptor</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><code>'V'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><i>FieldTypeDescriptor</i></td>
+  </tr>
+
+  <tr><td colspan="2" class="def"><i>FieldTypeDescriptor</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><i>NonArrayFieldTypeDescriptor</i></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td>(<code>'['</code> * 1&hellip;255)
+      <i>NonArrayFieldTypeDescriptor</i></td>
+  </tr>
+
+  <tr>
+    <td colspan="2" class="def"><i>NonArrayFieldTypeDescriptor</i>&rarr;</td>
+  </tr>
+  <tr>
+    <td/>
+    <td><code>'Z'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'B'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'S'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'C'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'I'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'J'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'F'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'D'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'L'</code> <i>FullClassName</i> <code>';'</code></td>
+  </tr>
+</table>
+
+<h3><i>ShortyDescriptor</i></h3>
+<h4>used by <code>proto_id_item</code></h4>
+
+<p>A <i>ShortyDescriptor</i> is the short form representation of a method
+prototype, including return and parameter types, except that there is
+no distinction between various reference (class or array) types. Instead,
+all reference types are represented by a single <code>'L'</code> character.</p>
+
+<table class="bnf">
+  <tr><td colspan="2" class="def"><i>ShortyDescriptor</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><i>ShortyReturnType</i> (<i>ShortyFieldType</i>)*</td>
+  </tr>
+
+  <tr><td colspan="2" class="def"><i>ShortyReturnType</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><code>'V'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><i>ShortyFieldType</i></td>
+  </tr>
+
+  <tr><td colspan="2" class="def"><i>ShortyFieldType</i> &rarr;</td></tr>
+  <tr>
+    <td/>
+    <td><code>'Z'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'B'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'S'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'C'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'I'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'J'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'F'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'D'</code></td>
+  </tr>
+  <tr>
+    <td class="bar">|</td>
+    <td><code>'L'</code></td>
+  </tr>
+</table>
+
+<h2><i>TypeDescriptor</i> Semantics</h2>
+
+<p>This is the meaning of each of the variants of <i>TypeDescriptor</i>.</p>
+
+<table class="descriptor">
+<thead>
+<tr>
+  <th>Syntax</th>
+  <th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>V</td>
+  <td><code>void</code>; only valid for return types</td>
+</tr>
+<tr>
+  <td>Z</td>
+  <td><code>boolean</code></td>
+</tr>
+<tr>
+  <td>B</td>
+  <td><code>byte</code></td>
+</tr>
+<tr>
+  <td>S</td>
+  <td><code>short</code></td>
+</tr>
+<tr>
+  <td>C</td>
+  <td><code>char</code></td>
+</tr>
+<tr>
+  <td>I</td>
+  <td><code>int</code></td>
+</tr>
+<tr>
+  <td>J</td>
+  <td><code>long</code></td>
+</tr>
+<tr>
+  <td>F</td>
+  <td><code>float</code></td>
+</tr>
+<tr>
+  <td>D</td>
+  <td><code>double</code></td>
+</tr>
+<tr>
+  <td>L<i>fully/qualified/Name</i>;</td>
+  <td>the class <code><i>fully.qualified.Name</i></code></td>
+</tr>
+<tr>
+  <td>[<i>descriptor</i></td>
+  <td>array of <code><i>descriptor</i></code>, usable recursively for
+    arrays-of-arrays, though it is invalid to have more than 255
+    dimensions.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h1>Items and Related Structures</h1>
+
+<p>This section includes definitions for each of the top-level items that
+may appear in a <code>.dex</code> file.
+
+<h2><code>header_item</code></h2>
+<h4>appears in the <code>header</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>magic</td>
+  <td>ubyte[8] = DEX_FILE_MAGIC</td>
+  <td>magic value. See discussion above under "<code>DEX_FILE_MAGIC</code>"
+    for more details.
+  </td>
+</tr>
+<tr>
+  <td>checksum</td>
+  <td>uint</td>
+  <td>adler32 checksum of the rest of the file (everything but
+    <code>magic</code> and this field); used to detect file corruption
+  </td>
+</tr>
+<tr>
+  <td>signature</td>
+  <td>ubyte[20]</td>
+  <td>SHA-1 signature (hash) of the rest of the file (everything but
+    <code>magic</code>, <code>checksum</code>, and this field); used
+    to uniquely identify files
+  </td>
+</tr>
+<tr>
+  <td>file_size</td>
+  <td>uint</td>
+  <td>size of the entire file (including the header), in bytes
+</tr>
+<tr>
+  <td>header_size</td>
+  <td>uint = 0x70</td>
+  <td>size of the header (this entire section), in bytes. This allows for at
+    least a limited amount of backwards/forwards compatibility without
+    invalidating the format.
+  </td>
+</tr>
+<tr>
+  <td>endian_tag</td>
+  <td>uint = ENDIAN_CONSTANT</td>
+  <td>endianness tag. See discussion above under "<code>ENDIAN_CONSTANT</code>
+    and <code>REVERSE_ENDIAN_CONSTANT</code>" for more details.
+  </td>
+</tr>
+<tr>
+  <td>link_size</td>
+  <td>uint</td>
+  <td>size of the link section, or <code>0</code> if this file isn't
+    statically linked</td>
+</tr>
+<tr>
+  <td>link_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the link section, or
+    <code>0</code> if <code>link_size == 0</code>. The offset, if non-zero,
+    should be to an offset into the <code>link_data</code> section. The
+    format of the data pointed at is left unspecified by this document;
+    this header field (and the previous) are left as hooks for use by
+    runtime implementations.
+  </td>
+</tr>
+<tr>
+  <td>map_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the map item, or
+    <code>0</code> if this file has no map. The offset, if non-zero,
+    should be to an offset into the <code>data</code> section,
+    and the data should be in the format specified by "<code>map_list</code>"
+    below.
+  </td>
+</tr>
+<tr>
+  <td>string_ids_size</td>
+  <td>uint</td>
+  <td>count of strings in the string identifiers list</td>
+</tr>
+<tr>
+  <td>string_ids_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the string identifiers list, or
+    <code>0</code> if <code>string_ids_size == 0</code> (admittedly a
+    strange edge case). The offset, if non-zero,
+    should be to the start of the <code>string_ids</code> section.
+  </td>
+</tr>
+<tr>
+  <td>type_ids_size</td>
+  <td>uint</td>
+  <td>count of elements in the type identifiers list</td>
+</tr>
+<tr>
+  <td>type_ids_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the type identifiers list, or
+    <code>0</code> if <code>type_ids_size == 0</code> (admittedly a
+    strange edge case). The offset, if non-zero,
+    should be to the start of the <code>type_ids</code>
+    section.
+  </td>
+</tr>
+<tr>
+  <td>proto_ids_size</td>
+  <td>uint</td>
+  <td>count of elements in the prototype identifiers list</td>
+</tr>
+<tr>
+  <td>proto_ids_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the prototype identifiers list, or
+    <code>0</code> if <code>proto_ids_size == 0</code> (admittedly a
+    strange edge case). The offset, if non-zero,
+    should be to the start of the <code>proto_ids</code>
+    section.
+  </td>
+</tr>
+<tr>
+  <td>field_ids_size</td>
+  <td>uint</td>
+  <td>count of elements in the field identifiers list</td>
+</tr>
+<tr>
+  <td>field_ids_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the field identifiers list, or
+    <code>0</code> if <code>field_ids_size == 0</code>. The offset, if
+    non-zero, should be to the start of the <code>field_ids</code>
+    section.</td>
+</td>
+</tr>
+<tr>
+  <td>method_ids_size</td>
+  <td>uint</td>
+  <td>count of elements in the method identifiers list</td>
+</tr>
+<tr>
+  <td>method_ids_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the method identifiers list, or
+    <code>0</code> if <code>method_ids_size == 0</code>. The offset, if
+    non-zero, should be to the start of the <code>method_ids</code>
+    section.</td>
+</tr>
+<tr>
+  <td>class_defs_size</td>
+  <td>uint</td>
+  <td>count of elements in the class definitions list</td>
+</tr>
+<tr>
+  <td>class_defs_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the class definitions list, or
+    <code>0</code> if <code>class_defs_size == 0</code> (admittedly a
+    strange edge case). The offset, if non-zero,
+    should be to the start of the <code>class_defs</code> section.
+  </td>
+</tr>
+<tr>
+  <td>data_size</td>
+  <td>uint</td>
+  <td>Size of <code>data</code> section in bytes. Must be an even
+    multiple of sizeof(uint).</td>
+</tr>
+<tr>
+  <td>data_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the start of the 
+   <code>data</code> section.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>map_list</code></h2>
+<h4>appears in the <code>data</code> section</h4>
+<h4>referenced from <code>header_item</code></h4>
+<h4>alignment: 4 bytes</h4>
+
+<p>This is a list of the entire contents of a file, in order. It
+contains some redundancy with respect to the <code>header_item</code>
+but is intended to be an easy form to use to iterate over an entire
+file. A given type may appear at most once in a map, but there is no
+restriction on what order types may appear in, other than the
+restrictions implied by the rest of the format (e.g., a
+<code>header</code> section must appear first, followed by a
+<code>string_ids</code> section, etc.). Additionally, the map entries must
+be ordered by initial offset and must not overlap.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uint</td>
+  <td>size of the list, in entries</td>
+</tr>
+<tr>
+  <td>list</td>
+  <td>map_item[size]</td>
+  <td>elements of the list</td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>map_item</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>type</td>
+  <td>ushort</td>
+  <td>type of the items; see table below</td>
+</tr>
+<tr>
+  <td>unused</td>
+  <td>ushort</td>
+  <td><i>(unused)</i></td>
+</tr>
+<tr>
+  <td>size</td>
+  <td>uint</td>
+  <td>count of the number of items to be found at the indicated offset</td>
+</tr>
+<tr>
+  <td>offset</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the items in question</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>Type Codes</h3>
+
+<table class="typeCodes">
+<thead>
+<tr>
+  <th>Item Type</th>
+  <th>Constant</th>
+  <th>Value</th>
+  <th>Item Size In Bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>header_item</td>
+  <td>TYPE_HEADER_ITEM</td>
+  <td>0x0000</td>
+  <td>0x70</td>
+</tr>
+<tr>
+  <td>string_id_item</td>
+  <td>TYPE_STRING_ID_ITEM</td>
+  <td>0x0001</td>
+  <td>0x04</td>
+</tr>
+<tr>
+  <td>type_id_item</td>
+  <td>TYPE_TYPE_ID_ITEM</td>
+  <td>0x0002</td>
+  <td>0x04</td>
+</tr>
+<tr>
+  <td>proto_id_item</td>
+  <td>TYPE_PROTO_ID_ITEM</td>
+  <td>0x0003</td>
+  <td>0x0c</td>
+</tr>
+<tr>
+  <td>field_id_item</td>
+  <td>TYPE_FIELD_ID_ITEM</td>
+  <td>0x0004</td>
+  <td>0x08</td>
+</tr>
+<tr>
+  <td>method_id_item</td>
+  <td>TYPE_METHOD_ID_ITEM</td>
+  <td>0x0005</td>
+  <td>0x08</td>
+</tr>
+<tr>
+  <td>class_def_item</td>
+  <td>TYPE_CLASS_DEF_ITEM</td>
+  <td>0x0006</td>
+  <td>0x20</td>
+</tr>
+<tr>
+  <td>map_list</td>
+  <td>TYPE_MAP_LIST</td>
+  <td>0x1000</td>
+  <td>4 + (item.size * 12)</td>
+</tr>
+<tr>
+  <td>type_list</td>
+  <td>TYPE_TYPE_LIST</td>
+  <td>0x1001</td>
+  <td>4 + (item.size * 2)</td>
+</tr>
+<tr>
+  <td>annotation_set_ref_list</td>
+  <td>TYPE_ANNOTATION_SET_REF_LIST</td>
+  <td>0x1002</td>
+  <td>4 + (item.size * 4)</td>
+</tr>
+<tr>
+  <td>annotation_set_item</td>
+  <td>TYPE_ANNOTATION_SET_ITEM</td>
+  <td>0x1003</td>
+  <td>4 + (item.size * 4)</td>
+</tr>
+<tr>
+  <td>class_data_item</td>
+  <td>TYPE_CLASS_DATA_ITEM</td>
+  <td>0x2000</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>code_item</td>
+  <td>TYPE_CODE_ITEM</td>
+  <td>0x2001</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>string_data_item</td>
+  <td>TYPE_STRING_DATA_ITEM</td>
+  <td>0x2002</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>debug_info_item</td>
+  <td>TYPE_DEBUG_INFO_ITEM</td>
+  <td>0x2003</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>annotation_item</td>
+  <td>TYPE_ANNOTATION_ITEM</td>
+  <td>0x2004</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>encoded_array_item</td>
+  <td>TYPE_ENCODED_ARRAY_ITEM</td>
+  <td>0x2005</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+<tr>
+  <td>annotations_directory_item</td>
+  <td>TYPE_ANNOTATIONS_DIRECTORY_ITEM</td>
+  <td>0x2006</td>
+  <td><i>implicit; must parse</i></td>
+</tr>
+</tbody>
+</table>
+
+
+<h2><code>string_id_item</code></h2>
+<h4>appears in the <code>string_ids</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>string_data_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the string data for this
+    item. The offset should be to a location
+    in the <code>data</code> section, and the data should be in the
+    format specified by "<code>string_data_item</code>" below.
+    There is no alignment requirement for the offset.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>string_data_item</code></h2>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: none (byte-aligned)</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>utf16_size</td>
+  <td>uleb128</td>
+  <td>size of this string, in UTF-16 code units (which is the "string
+    length" in many systems). That is, this is the decoded length of
+    the string. (The encoded length is implied by the position of
+    the <code>0</code> byte.)</td>
+</tr>
+<tr>
+  <td>data</td>
+  <td>ubyte[]</td>
+  <td>a series of MUTF-8 code units (a.k.a. octets, a.k.a. bytes)
+    followed by a byte of value <code>0</code>. See 
+    "MUTF-8 (Modified UTF-8) Encoding" above for details and
+    discussion about the data format.
+    <p><b>Note:</b> It is acceptable to have a string which includes
+    (the encoded form of) UTF-16 surrogate code units (that is,
+    <code>U+d800</code> &hellip; <code>U+dfff</code>)
+    either in isolation or out-of-order with respect to the usual
+    encoding of Unicode into UTF-16. It is up to higher-level uses of
+    strings to reject such invalid encodings, if appropriate.</p>
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>type_id_item</code></h2>
+<h4>appears in the <code>type_ids</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>descriptor_idx</td>
+  <td>uint</td>
+  <td>index into the <code>string_ids</code> list for the descriptor
+    string of this type. The string must conform to the syntax for
+    <i>TypeDescriptor</i>, defined above.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>proto_id_item</code></h2>
+<h4>appears in the <code>proto_ids</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>shorty_idx</td>
+  <td>uint</td>
+  <td>index into the <code>string_ids</code> list for the short-form
+    descriptor string of this prototype. The string must conform to the
+    syntax for <i>ShortyDescriptor</i>, defined above, and must correspond
+    to the return type and parameters of this item.
+  </td>
+</tr>
+<tr>
+  <td>return_type_idx</td>
+  <td>uint</td>
+  <td>index into the <code>type_ids</code> list for the return type
+    of this prototype
+  </td>
+</tr>
+<tr>
+  <td>parameters_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of parameter types
+    for this prototype, or <code>0</code> if this prototype has no
+    parameters. This offset, if non-zero, should be in the
+    <code>data</code> section, and the data there should be in the
+    format specified by <code>"type_list"</code> below. Additionally, there
+    should be no reference to the type <code>void</code> in the list.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>field_id_item</code></h2>
+<h4>appears in the <code>field_ids</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>class_idx</td>
+  <td>ushort</td>
+  <td>index into the <code>type_ids</code> list for the definer of this
+    field. This must be a class type, and not an array or primitive type.
+  </td>
+</tr>
+<tr>
+  <td>type_idx</td>
+  <td>ushort</td>
+  <td>index into the <code>type_ids</code> list for the type of
+    this field
+  </td>
+</tr>
+<tr>
+  <td>name_idx</td>
+  <td>uint</td>
+  <td>index into the <code>string_ids</code> list for the name of this
+    field. The string must conform to the syntax for <i>MemberName</i>,
+    defined above.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>method_id_item</code></h2>
+<h4>appears in the <code>method_ids</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>class_idx</td>
+  <td>ushort</td>
+  <td>index into the <code>type_ids</code> list for the definer of this
+    method. This must be a class or array type, and not a primitive type.
+  </td>
+</tr>
+<tr>
+  <td>proto_idx</td>
+  <td>ushort</td>
+  <td>index into the <code>proto_ids</code> list for the prototype of
+    this method
+  </td>
+</tr>
+<tr>
+  <td>name_idx</td>
+  <td>uint</td>
+  <td>index into the <code>string_ids</code> list for the name of this
+    method. The string must conform to the syntax for <i>MemberName</i>,
+    defined above.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>class_def_item</code></h2>
+<h4>appears in the <code>class_defs</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>class_idx</td>
+  <td>uint</td>
+  <td>index into the <code>type_ids</code> list for this class.
+    This must be a class type, and not an array or primitive type.
+  </td>
+</tr>
+<tr>
+  <td>access_flags</td>
+  <td>uint</td>
+  <td>access flags for the class (<code>public</code>, <code>final</code>,
+    etc.). See "<code>access_flags</code> Definitions" for details.
+  </td>
+</tr>
+<tr>
+  <td>superclass_idx</td>
+  <td>uint</td>
+  <td>index into the <code>type_ids</code> list for the superclass, or
+    the constant value <code>NO_INDEX</code> if this class has no
+    superclass (i.e., it is a root class such as <code>Object</code>).
+    If present, this must be a class type, and not an array or primitive type.
+  </td>
+</tr>
+<tr>
+  <td>interfaces_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of interfaces, or
+    <code>0</code> if there are none. This offset
+    should be in the <code>data</code> section, and the data
+    there should be in the format specified by
+    "<code>type_list</code>" below. Each of the elements of the list
+    must be a class type (not an array or primitive type), and there
+    must not be any duplicates.
+  </td>
+</tr>
+<tr>
+  <td>source_file_idx</td>
+  <td>uint</td>
+  <td>index into the <code>string_ids</code> list for the name of the
+    file containing the original source for (at least most of) this class,
+    or the special value <code>NO_INDEX</code> to represent a lack of
+    this information. The <code>debug_info_item</code> of any given method
+    may override this source file, but the expectation is that most classes
+    will only come from one source file.
+  </td>
+</tr>
+<tr>
+  <td>annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the annotations structure
+    for this class, or <code>0</code> if there are no annotations on
+    this class. This offset, if non-zero, should be in the
+    <code>data</code> section, and the data there should be in
+    the format specified by "<code>annotations_directory_item</code>" below,
+    with all items referring to this class as the definer.
+  </td>
+</tr>
+<tr>
+  <td>class_data_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the associated
+    class data for this item, or <code>0</code> if there is no class
+    data for this class. (This may be the case, for example, if this class
+    is a marker interface.) The offset, if non-zero, should be in the
+    <code>data</code> section, and the data there should be in the
+    format specified by "<code>class_data_item</code>" below, with all
+    items referring to this class as the definer.
+  </td>
+</tr>
+<tr>
+  <td>static_values_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of initial
+    values for <code>static</code> fields, or <code>0</code> if there
+    are none (and all <code>static</code> fields are to be initialized with
+    <code>0</code> or <code>null</code>). This offset should be in the
+    <code>data</code> section, and the data there should be in the
+    format specified by "<code>encoded_array_item</code>" below. The size
+    of the array must be no larger than the number of <code>static</code>
+    fields declared by this class, and the elements correspond to the
+    <code>static</code> fields in the same order as declared in the
+    corresponding <code>field_list</code>. The type of each array
+    element must match the declared type of its corresponding field.
+    If there are fewer elements in the array than there are
+    <code>static</code> fields, then the leftover fields are initialized
+    with a type-appropriate <code>0</code> or <code>null</code>.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>class_data_item</code></h2>
+<h4>referenced from <code>class_def_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: none (byte-aligned)</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>static_fields_size</td>
+  <td>uleb128</td>
+  <td>the number of static fields defined in this item</td>
+</tr>
+<tr>
+  <td>instance_fields_size</td>
+  <td>uleb128</td>
+  <td>the number of instance fields defined in this item</td>
+</tr>
+<tr>
+  <td>direct_methods_size</td>
+  <td>uleb128</td>
+  <td>the number of direct methods defined in this item</td>
+</tr>
+<tr>
+  <td>virtual_methods_size</td>
+  <td>uleb128</td>
+  <td>the number of virtual methods defined in this item</td>
+</tr>
+<tr>
+  <td>static_fields</td>
+  <td>encoded_field[static_fields_size]</td>
+  <td>the defined static fields, represented as a sequence of
+    encoded elements. The fields must be sorted by
+    <code>field_idx</code> in increasing order.
+  </td>
+</tr>
+<tr>
+  <td>instance_fields</td>
+  <td>encoded_field[instance_fields_size]</td>
+  <td>the defined instance fields, represented as a sequence of
+    encoded elements. The fields must be sorted by
+    <code>field_idx</code> in increasing order.
+  </td>
+</tr>
+<tr>
+  <td>direct_methods</td>
+  <td>encoded_method[direct_methods_size]</td>
+  <td>the defined direct (any of <code>static</code>, <code>private</code>,
+    or constructor) methods, represented as a sequence of
+    encoded elements. The methods must be sorted by
+    <code>method_idx</code> in increasing order.
+  </td>
+</tr>
+<tr>
+  <td>virtual_methods</td>
+  <td>encoded_method[virtual_methods_size]</td>
+  <td>the defined virtual (none of <code>static</code>, <code>private</code>,
+    or constructor) methods, represented as a sequence of
+    encoded elements. This list should <i>not</i> include inherited
+    methods unless overridden by the class that this item represents. The
+    methods must be sorted by <code>method_idx</code> in increasing order.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<p><b>Note:</b> All elements' <code>field_id</code>s and 
+<code>method_id</code>s must refer to the same defining class.</p>
+
+<h3><code>encoded_field</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>field_idx_diff</td>
+  <td>uleb128</td>
+  <td>index into the <code>field_ids</code> list for the identity of this
+    field (includes the name and descriptor), represented as a difference
+    from the index of previous element in the list. The index of the
+    first element in a list is represented directly.
+  </td>
+</tr>
+<tr>
+  <td>access_flags</td>
+  <td>uleb128</td>
+  <td>access flags for the field (<code>public</code>, <code>final</code>,
+    etc.). See "<code>access_flags</code> Definitions" for details.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_method</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>method_idx_diff</td>
+  <td>uleb128</td>
+  <td>index into the <code>method_ids</code> list for the identity of this
+    method (includes the name and descriptor), represented as a difference
+    from the index of previous element in the list. The index of the
+    first element in a list is represented directly.
+  </td>
+</tr>
+<tr>
+  <td>access_flags</td>
+  <td>uleb128</td>
+  <td>access flags for the method (<code>public</code>, <code>final</code>,
+    etc.). See "<code>access_flags</code> Definitions" for details.
+  </td>
+</tr>
+<tr>
+  <td>code_off</td>
+  <td>uleb128</td>
+  <td>offset from the start of the file to the code structure for this
+    method, or <code>0</code> if this method is either <code>abstract</code>
+    or <code>native</code>. The offset should be to a location in the
+    <code>data</code> section. The format of the data is specified by
+    "<code>code_item</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>type_list</code></h2>
+<h4>referenced from <code>class_def_item</code> and
+<code>proto_id_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uint</td>
+  <td>size of the list, in entries</td>
+</tr>
+<tr>
+  <td>list</td>
+  <td>type_item[size]</td>
+  <td>elements of the list</td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>type_item</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>type_idx</td>
+  <td>ushort</td>
+  <td>index into the <code>type_ids</code> list</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>code_item</code></h2>
+<h4>referenced from <code>method_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>registers_size</td>
+  <td>ushort</td>
+  <td>the number of registers used by this code</td>
+</tr>
+<tr>
+  <td>ins_size</td>
+  <td>ushort</td>
+  <td>the number of words of incoming arguments to the method that this
+    code is for</td>
+</tr>
+<tr>
+  <td>outs_size</td>
+  <td>ushort</td>
+  <td>the number of words of outgoing argument space required by this
+    code for method invocation
+  </td>
+</tr>
+<tr>
+  <td>tries_size</td>
+  <td>ushort</td>
+  <td>the number of <code>try_item</code>s for this instance. If non-zero,
+    then these appear as the <code>tries</code> array just after the
+    <code>insns</code> in this instance.
+  </td>
+</tr>
+<tr>
+  <td>debug_info_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the debug info (line numbers + 
+    local variable info) sequence for this code, or <code>0</code> if 
+    there simply is no information. The offset, if non-zero, should be 
+    to a location in the <code>data</code> section. The format of 
+    the data is specified by "<code>debug_info_item</code>" below.
+  </td>
+</tr>
+<tr>
+  <td>insns_size</td>
+  <td>uint</td>
+  <td>size of the instructions list, in 16-bit code units</td>
+</tr>
+<tr>
+  <td>insns</td>
+  <td>ushort[insns_size]</td>
+  <td>actual array of bytecode. The format of code in an <code>insns</code>
+    array is specified by the companion document
+    <a href="dalvik-bytecode.html">"Bytecode for the Dalvik VM"</a>. Note
+    that though this is defined as an array of <code>ushort</code>, there
+    are some internal structures that prefer four-byte alignment. Also,
+    if this happens to be in an endian-swapped file, then the swapping is
+    <i>only</i> done on individual <code>ushort</code>s and not on the
+    larger internal structures.
+  </td>
+</tr>
+<tr>
+  <td>padding</td>
+  <td>ushort <i>(optional)</i> = 0</td>
+  <td>two bytes of padding to make <code>tries</code> four-byte aligned.
+    This element is only present if <code>tries_size</code> is non-zero
+    and <code>insns_size</code> is odd.
+  </td>
+</tr>
+<tr>
+  <td>tries</td>
+  <td>try_item[tries_size] <i>(optional)</i></td>
+  <td>array indicating where in the code exceptions may be caught and
+    how to handle them. Elements of the array must be non-overlapping in
+    range and in order from low to high address. This element is only
+    present if <code>tries_size</code> is non-zero.
+  </td>
+</tr>
+<tr>
+  <td>handlers</td>
+  <td>encoded_catch_handler_list <i>(optional)</i></td>
+  <td>bytes representing a list of lists of catch types and associated
+    handler addresses. Each <code>try_item</code> has a byte-wise offset
+    into this structure. This element is only present if
+    <code>tries_size</code> is non-zero.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>try_item</code> Format </h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>start_addr</td>
+  <td>uint</td>
+  <td>start address of the block of code covered by this entry. The address
+    is a count of 16-bit code units to the start of the first covered
+    instruction.
+  </td>
+</tr>
+<tr>
+  <td>insn_count</td>
+  <td>ushort</td>
+  <td>number of 16-bit code units covered by this entry. The last code
+    unit covered (inclusive) is <code>start_addr + insn_count - 1</code>.
+  </td>
+</tr>
+<tr>
+  <td>handler_off</td>
+  <td>ushort</td>
+  <td>offset in bytes from the start of the associated encoded handler data
+    to the <code>catch_handler_item</code> for this entry
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_catch_handler_list</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uleb128</td>
+  <td>size of this list, in entries</td>
+</tr>
+<tr>
+  <td>list</td>
+  <td>encoded_catch_handler[handlers_size]</td>
+  <td>actual list of handler lists, represented directly (not as offsets),
+    and concatenated sequentially</td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_catch_handler</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>sleb128</td>
+  <td>number of catch types in this list. If non-positive, then this is
+    the negative of the number of catch types, and the catches are followed
+    by a catch-all handler. For example: A <code>size</code> of <code>0</code>
+    means that there is a catch-all but no explicitly typed catches.
+    A <code>size</code> of <code>2</code> means that there are two explicitly
+    typed catches and no catch-all. And a <code>size</code> of <code>-1</code>
+    means that there is one typed catch along with a catch-all.
+  </td>
+</tr>
+<tr>
+  <td>handlers</td>
+  <td>encoded_type_addr_pair[abs(size)]</td>
+  <td>stream of <code>abs(size)</code> encoded items, one for each caught
+    type, in the order that the types should be tested.
+  </td>
+</tr>
+<tr>
+  <td>catch_all_addr</td>
+  <td>uleb128 <i>(optional)</i></td>
+  <td>bytecode address of the catch-all handler. This element is only
+    present if <code>size</code> is non-positive.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>encoded_type_addr_pair</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>type_idx</td>
+  <td>uleb128</td>
+  <td>index into the <code>type_ids</code> list for the type of the
+    exception to catch
+  </td>
+</tr>
+<tr>
+  <td>addr</td>
+  <td>uleb128</td>
+  <td>bytecode address of the associated exception handler</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>debug_info_item</code></h2>
+<h4>referenced from <code>code_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: none (byte-aligned)</h4>
+
+<p>Each <code>debug_info_item</code> defines a DWARF3-inspired byte-coded
+state machine that, when interpreted, emits the positions
+table and (potentially) the local variable information for a
+<code>code_item</code>. The sequence begins with a variable-length
+header (the length of which depends on the number of method
+parameters), is followed by the state machine bytecodes, and ends
+with an <code>DBG_END_SEQUENCE</code> byte.</p>
+
+<p>The state machine consists of five registers. The
+<code>address</code> register represents the instruction offset in the
+associated <code>insns_item</code> in 16-bit code units. The
+<code>address</code> register starts at <code>0</code> at the beginning of each
+<code>debug_info</code> sequence and may only monotonically increase.
+The <code>line</code> register represents what source line number
+should be associated with the next positions table entry emitted by
+the state machine. It is initialized in the sequence header, and may
+change in positive or negative directions but must never be less than
+<code>1</code>. The <code>source_file</code> register represents the 
+source file that the line number entries refer to. It is initialized to
+the value of <code>source_file_idx</code> in <code>class_def_item</code>.
+The other two variables, <code>prologue_end</code> and
+<code>epilogue_begin</code>, are boolean flags (initialized to
+<code>false</code>) that indicate whether the next position emitted
+should be considered a method prologue or epilogue. The state machine
+must also track the name and type of the last local variable live in
+each register for the <code>DBG_RESTART_LOCAL</code> code.</p>
+
+<p>The header is as follows:</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+ <td>line_start</td>
+ <td>uleb128</td>
+ <td>the initial value for the state machine's <code>line</code> register. 
+    Does not represent an actual positions entry.
+ </td>
+</tr>
+<tr>
+ <td>parameters_size</td>
+ <td>uleb128</td>
+ <td>the number of parameter names that are encoded. There should be
+   one per method parameter, excluding an instance method's <code>this</code>,
+   if any.
+ </td>
+</tr>
+<tr>
+ <td>parameter_names</td>
+ <td>uleb128p1[parameters_size]</td>
+ <td>string index of the method parameter name. An encoded value of
+   <code>NO_INDEX</code> indicates that no name
+   is available for the associated parameter. The type descriptor
+   and signature are implied from the method descriptor and signature.
+ </td>
+</tr>
+</tbody>
+</table>
+
+<p>The byte code values are as follows:</p>
+
+<table class="debugByteCode">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value</th>
+  <th>Format</th>
+  <th>Arguments</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>DBG_END_SEQUENCE</td>
+  <td>0x00</td>
+  <td></td>
+  <td><i>(none)</i></td>
+  <td>terminates a debug info sequence for a <code>code_item</code></td>
+</tr>
+<tr>
+  <td>DBG_ADVANCE_PC</td>
+  <td>0x01</td>
+  <td>uleb128&nbsp;addr_diff</td>
+  <td><code>addr_diff</code>: amount to add to address register</td>
+  <td>advances the address register without emitting a positions entry</td>
+</tr>
+<tr>
+  <td>DBG_ADVANCE_LINE</td>
+  <td>0x02</td>
+  <td>sleb128&nbsp;line_diff</td>
+  <td><code>line_diff</code>: amount to change line register by</td>
+  <td>advances the line register without emitting a positions entry</td>
+</tr>
+<tr>
+  <td>DBG_START_LOCAL</td>
+  <td>0x03</td>
+  <td>uleb128&nbsp;register_num<br/>
+    uleb128p1&nbsp;name_idx<br/>
+    uleb128p1&nbsp;type_idx
+  </td>
+  <td><code>register_num</code>: register that will contain local<br/>
+    <code>name_idx</code>: string index of the name<br/>
+    <code>type_idx</code>: type index of the type
+  </td>
+  <td>introduces a local variable at the current address. Either 
+    <code>name_idx</code> or <code>type_idx</code> may be
+    <code>NO_INDEX</code> to indicate that that value is unknown.
+  </td>
+</tr>
+<tr>
+  <td>DBG_START_LOCAL_EXTENDED</td>
+  <td>0x04</td>
+  <td>uleb128&nbsp;register_num<br/>
+    uleb128p1&nbsp;name_idx<br/>
+    uleb128p1&nbsp;type_idx<br/>
+    uleb128p1&nbsp;sig_idx
+  </td> 
+  <td><code>register_num</code>: register that will contain local<br/>
+    <code>name_idx</code>: string index of the name<br/>
+    <code>type_idx</code>: type index of the type<br/>
+    <code>sig_idx</code>: string index of the type signature
+  </td>
+  <td>introduces a local with a type signature at the current address.
+    Any of <code>name_idx</code>, <code>type_idx</code>, or
+    <code>sig_idx</code> may be <code>NO_INDEX</code>
+    to indicate that that value is unknown. (If <code>sig_idx</code> is
+    <code>-1</code>, though, the same data could be represented more
+    efficiently using the opcode <code>DBG_START_LOCAL</code>.)
+    <p><b>Note:</b> See the discussion under
+    "<code>dalvik.annotation.Signature</code>" below for caveats about
+    handling signatures.</p>
+  </td>
+</tr>
+<tr>
+  <td>DBG_END_LOCAL</td>
+  <td>0x05</td>
+  <td>uleb128&nbsp;register_num</td>
+  <td><code>register_num</code>: register that contained local</td>
+  <td>marks a currently-live local variable as out of scope at the current 
+    address
+  </td>
+</tr>
+<tr>
+  <td>DBG_RESTART_LOCAL</td>
+  <td>0x06</td>
+  <td>uleb128&nbsp;register_num</td>
+  <td><code>register_num</code>: register to restart</td>
+  <td>re-introduces a local variable at the current address. The name
+    and type are the same as the last local that was live in the specified
+    register.
+  </td>
+</tr>
+<tr>
+  <td>DBG_SET_PROLOGUE_END</td>
+  <td>0x07</td>
+  <td></td>
+  <td><i>(none)</i></td>
+  <td>sets the <code>prologue_end</code> state machine register, 
+    indicating that the next position entry that is added should be 
+    considered the end of a method prologue (an appropriate place for 
+    a method breakpoint). The <code>prologue_end</code> register is
+    cleared by any special (<code>&gt;= 0x0a</code>) opcode.
+  </td>
+</tr>
+<tr>
+  <td>DBG_SET_EPILOGUE_BEGIN</td>
+  <td>0x08</td>
+  <td></td>
+  <td><i>(none)</i></td>
+  <td>sets the <code>epilogue_begin</code> state machine register, 
+    indicating that the next position entry that is added should be 
+    considered the beginning of a method epilogue (an appropriate place 
+    to suspend execution before method exit).
+    The <code>epilogue_begin</code> register is cleared by any special
+    (<code>&gt;= 0x0a</code>) opcode.
+  </td>
+</tr>
+<tr>
+  <td>DBG_SET_FILE</td>
+  <td>0x09</td>
+  <td>uleb128p1&nbsp;name_idx</td> 
+  <td><code>name_idx</code>: string index of source file name;
+    <code>NO_INDEX</code> if unknown
+  </td>
+  <td>indicates that all subsequent line number entries make reference to this
+    source file name, instead of the default name specified in
+    <code>code_item</code>
+  </td>
+</tr>
+<tr>
+  <td><i>Special Opcodes</i></td>
+  <!-- When updating the range below, make sure to search for other 
+  instances of 0x0a in this section. -->
+  <td>0x0a&hellip;0xff</td>
+  <td></td>
+  <td><i>(none)</i></td>
+  <td>advances the <code>line</code> and <code>address</code> registers,
+    emits a position entry, and clears <code>prologue_end</code> and
+    <code>epilogue_begin</code>. See below for description.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3>Special Opcodes</h3>
+
+<p>Opcodes with values between <code>0x0a</code> and <code>0xff</code>
+(inclusive) move both the <code>line</code> and <code>address</code>
+registers by a small amount and then emit a new position table entry.
+The formula for the increments are as follows:</p>
+
+<pre>
+DBG_FIRST_SPECIAL = 0x0a  // the smallest special opcode
+DBG_LINE_BASE   = -4      // the smallest line number increment
+DBG_LINE_RANGE  = 15      // the number of line increments represented
+
+adjusted_opcode = opcode - DBG_FIRST_SPECIAL
+
+line += DBG_LINE_BASE + (adjusted_opcode % DBG_LINE_RANGE)
+address += (adjusted_opcode / DBG_LINE_RANGE)
+</pre>
+
+<h2><code>annotations_directory_item</code></h2>
+<h4>referenced from <code>class_def_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>class_annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the annotations made directly
+    on the class, or <code>0</code> if the class has no direct annotations.
+    The offset, if non-zero, should be to a location in the
+    <code>data</code> section. The format of the data is specified
+    by "<code>annotation_set_item</code>" below.
+  </td>
+</tr>
+<tr>
+  <td>fields_size</td>
+  <td>uint</td>
+  <td>count of fields annotated by this item</td>
+</tr>
+<tr>
+  <td>annotated_methods_size</td>
+  <td>uint</td>
+  <td>count of methods annotated by this item</td>
+</tr>
+<tr>
+  <td>annotated_parameters_size</td>
+  <td>uint</td>
+  <td>count of method parameter lists annotated by this item</td>
+</tr>
+<tr>
+  <td>field_annotations</td>
+  <td>field_annotation[fields_size] <i>(optional)</i></td>
+  <td>list of associated field annotations. The elements of the list must
+    be sorted in increasing order, by <code>field_idx</code>.
+  </td>
+</tr>
+<tr>
+  <td>method_annotations</td>
+  <td>method_annotation[methods_size] <i>(optional)</i></td>
+  <td>list of associated method annotations. The elements of the list must
+    be sorted in increasing order, by <code>method_idx</code>.
+  </td>
+</tr>
+<tr>
+  <td>parameter_annotations</td>
+  <td>parameter_annotation[parameters_size] <i>(optional)</i></td>
+  <td>list of associated method parameter annotations. The elements of the
+    list must be sorted in increasing order, by <code>method_idx</code>.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<p><b>Note:</b> All elements' <code>field_id</code>s and 
+<code>method_id</code>s must refer to the same defining class.</p>
+
+<h3><code>field_annotation</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>field_idx</td>
+  <td>uint</td>
+  <td>index into the <code>field_ids</code> list for the identity of the
+    field being annotated
+  </td>
+</tr>
+<tr>
+  <td>annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of annotations for
+    the field. The offset should be to a location in the <code>data</code>
+    section. The format of the data is specified by
+    "<code>annotation_set_item</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>method_annotation</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>method_idx</td>
+  <td>uint</td>
+  <td>index into the <code>method_ids</code> list for the identity of the
+    method being annotated
+  </td>
+</tr>
+<tr>
+  <td>annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of annotations for
+    the method. The offset should be to a location in the
+    <code>data</code> section. The format of the data is specified by
+    "<code>annotation_set_item</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>parameter_annotation</code> Format</h2>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>method_idx</td>
+  <td>uint</td>
+  <td>index into the <code>method_ids</code> list for the identity of the
+    method whose parameters are being annotated
+  </td>
+</tr>
+<tr>
+  <td>annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the list of annotations for
+    the method parameters. The offset should be to a location in the
+    <code>data</code> section. The format of the data is specified by
+    "<code>annotation_set_ref_list</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>annotation_set_ref_list</code></h2>
+<h4>referenced from <code>parameter_annotations_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uint</td>
+  <td>size of the list, in entries</td>
+</tr>
+<tr>
+  <td>list</td>
+  <td>annotation_set_ref_item[size]</td>
+  <td>elements of the list</td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>annotation_set_ref_item</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>annotations_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to the referenced annotation set
+    or <code>0</code> if there are no annotations for this element.
+    The offset, if non-zero, should be to a location in the <code>data</code>
+    section. The format of the data is specified by
+    "<code>annotation_set_item</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>annotation_set_item</code></h2>
+<h4>referenced from <code>annotations_directory_item</code>,
+<code>field_annotations_item</code>,
+<code>method_annotations_item</code>, and
+<code>annotation_set_ref_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: 4 bytes</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>size</td>
+  <td>uint</td>
+  <td>size of the set, in entries</td>
+</tr>
+<tr>
+  <td>entries</td>
+  <td>annotation_off_item[size]</td>
+  <td>elements of the set. The elements must be sorted in increasing order,
+    by <code>type_idx</code>.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>annotation_off_item</code> Format</h3>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>annotation_off</td>
+  <td>uint</td>
+  <td>offset from the start of the file to an annotation.
+    The offset should be to a location in the <code>data</code> section,
+    and the format of the data at that location is specified by
+    "<code>annotation_item</code>" below.
+  </td>
+</tr>
+</tbody>
+</table>
+
+
+<h2><code>annotation_item</code></h2>
+<h4>referenced from <code>annotation_set_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: none (byte-aligned)</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>visibility</td>
+  <td>ubyte</td>
+  <td>intended visibility of this annotation (see below)</td>
+</tr>
+<tr>
+  <td>annotation</td>
+  <td>encoded_annotation</td>
+  <td>encoded annotation contents, in the format described by
+    "<code>encoded_annotation</code> Format" under
+    "<code>encoded_value</code> Encoding" above.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h3>Visibility values</h3>
+
+<p>These are the options for the <code>visibility</code> field in an
+<code>annotation_item</code>:</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>VISIBILITY_BUILD</td>
+  <td>0x00</td>
+  <td>intended only to be visible at build time (e.g., during compilation
+    of other code)
+  </td>
+</tr>
+<tr>
+  <td>VISIBILITY_RUNTIME</td>
+  <td>0x01</td>
+  <td>intended to visible at runtime</td>
+</tr>
+<tr>
+  <td>VISIBILITY_SYSTEM</td>
+  <td>0x02</td>
+  <td>intended to visible at runtime, but only to the underlying system
+    (and not to regular user code)
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>encoded_array_item</code></h2>
+<h4>referenced from <code>class_def_item</code></h4>
+<h4>appears in the <code>data</code> section</h4>
+<h4>alignment: none (byte-aligned)</h4>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>encoded_array</td>
+  <td>bytes representing the encoded array value, in the format specified
+    by "<code>encoded_array</code> Format" under "<code>encoded_value</code>
+    Encoding" above.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h1>System Annotations</h1>
+
+<p>System annotations are used to represent various pieces of reflective
+information about classes (and methods and fields). This information is
+generally only accessed indirectly by client (non-system) code.</p>
+
+<p>System annotations are represented in <code>.dex</code> files as
+annotations with visibility set to <code>VISIBILITY_SYSTEM</code>.
+
+<h2><code>dalvik.annotation.AnnotationDefault</code></h2>
+<h4>appears on methods in annotation interfaces</h4>
+
+<p>An <code>AnnotationDefault</code> annotation is attached to each
+annotation interface which wishes to indicate default bindings.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>Annotation</td>
+  <td>the default bindings for this annotation, represented as an annotation
+    of this type. The annotation need not include all names defined by the
+    annotation; missing names simply do not have defaults.
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.EnclosingClass</code></h2>
+<h4>appears on classes</h4>
+
+<p>An <code>EnclosingClass</code> annotation is attached to each class
+which is either defined as a member of another class, per se, or is
+anonymous but not defined within a method body (e.g., a synthetic
+inner class). Every class that has this annotation must also have an
+<code>InnerClass</code> annotation. Additionally, a class may not have
+both an <code>EnclosingClass</code> and an
+<code>EnclosingMethod</code> annotation.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>Class</td>
+  <td>the class which most closely lexically scopes this class</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.EnclosingMethod</code></h2>
+<h4>appears on classes</h4>
+
+<p>An <code>EnclosingMethod</code> annotation is attached to each class
+which is defined inside a method body. Every class that has this
+annotation must also have an <code>InnerClass</code> annotation.
+Additionally, a class may not have both an <code>EnclosingClass</code>
+and an <code>EnclosingMethod</code> annotation.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>Method</td>
+  <td>the method which most closely lexically scopes this class</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.InnerClass</code></h2>
+<h4>appears on classes</h4>
+
+<p>An <code>InnerClass</code> annotation is attached to each class
+which is defined in the lexical scope of another class's definition.
+Any class which has this annotation must also have <i>either</i> an
+<code>EnclosingClass</code> annotation <i>or</i> an
+<code>EnclosingMethod</code> annotation.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>name</td>
+  <td>String</td>
+  <td>the originally declared simple name of this class (not including any
+    package prefix). If this class is anonymous, then the name is
+    <code>null</code>.
+  </td>
+</tr>
+<tr>
+  <td>accessFlags</td>
+  <td>int</td>
+  <td>the originally declared access flags of the class (which may differ
+    from the effective flags because of a mismatch between the execution
+    models of the source language and target virtual machine)
+  </td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.MemberClasses</code></h2>
+<h4>appears on classes</h4>
+
+<p>A <code>MemberClasses</code> annotation is attached to each class
+which declares member classes. (A member class is a direct inner class
+that has a name.)</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>Class[]</td>
+  <td>array of the member classes</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.Signature</code></h2>
+<h4>appears on classes, fields, and methods</h4>
+
+<p>A <code>Signature</code> annotation is attached to each class,
+field, or method which is defined in terms of a more complicated type
+than is representable by a <code>type_id_item</code>. The
+<code>.dex</code> format does not define the format for signatures; it
+is merely meant to be able to represent whatever signatures a source
+language requires for successful implementation of that language's
+semantics. As such, signatures are not generally parsed (or verified)
+by virtual machine implementations. The signatures simply get handed
+off to higher-level APIs and tools (such as debuggers). Any use of a
+signature, therefore, should be written so as not to make any
+assumptions about only receiving valid signatures, explicitly guarding
+itself against the possibility of coming across a syntactically
+invalid signature.</p>
+
+<p>Because signature strings tend to have a lot of duplicated content,
+a <code>Signature</code> annotation is defined as an <i>array</i> of
+strings, where duplicated elements naturally refer to the same
+underlying data, and the signature is taken to be the concatenation of
+all the strings in the array. There are no rules about how to pull
+apart a signature into separate strings; that is entirely up to the
+tools that generate <code>.dex</code> files.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>String[]</td>
+  <td>the signature of this class or member, as an array of strings that
+    is to be concatenated together</td>
+</tr>
+</tbody>
+</table>
+
+<h2><code>dalvik.annotation.Throws</code></h2>
+<h4>appears on methods</h4>
+
+<p>A <code>Throws</code> annotation is attached to each method which is
+declared to throw one or more exception types.</p>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Format</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>value</td>
+  <td>Class[]</td>
+  <td>the array of exception types thrown</td>
+</tr>
+</tbody>
+</table>
+
+</body>
+</html>

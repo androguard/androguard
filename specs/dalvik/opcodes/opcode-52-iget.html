@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>iget&lt;kind&gt;</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>iget&lt;kind&gt;</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Perform the identified object instance field operation with the identified
+field, loading or storing into the value register.
+</p>
+<p>
+Note: These opcodes are reasonable candidates for static linking, altering the
+field argument to be a more direct offset.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>52..58 22c</td>
+  <td>i<i>instanceop</i> vA, vB, field@CCCC<br/>
+    52: iget<br/>
+    53: iget-wide<br/>
+    54: iget-object<br/>
+    55: iget-boolean<br/>
+    56: iget-byte<br/>
+    57: iget-char<br/>
+    58: iget-short<br/>
+  </td>
+  <td><code>A:</code> dest value register or pair; (4 bits)<br/>
+    <code>B:</code> object register (4 bits)<br/>
+    <code>C:</code> instance field reference index (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A and B must be valid register indices in the current stackframe.
+  </li>
+  <li>
+    For the -wide variant, also A+1 must be a valid register index in the
+    current stackframe.
+  </li>
+  <li>
+    Register vB must contain an object reference.
+  </li>
+  <li>
+    C must be a valid index into the field reference pool.
+  </li>
+  <li>
+    The field must be an instance field. The type of the field denoted by C must
+    match the variant of the instruction.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The value of the given instance field is read from the given object and
+    moved into the given register vA, that is, vA'=&lt;object&gt;.&lt;field&gt;.
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+    <li>For all but the -wide variant, if v(A+1) is the upper half of a register
+    pair, v(A+1)' becomes undefined.
+  </li>
+  <li>
+    For the -wide variant, if v(A+2) is the upper half of a register pair,
+    v(A+2)' becomes undefined.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NullPointerException if object is null.
+  </li>
+  <li>
+    IllegalAccessException if &lt;object&gt;.&lt;field&gt; is not visible from
+    the current context according to the usual visibility and access rules of
+    the Java programming language.
+  </li>
+</ul>
+
+</body>
+</html>

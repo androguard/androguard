@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>move-wide</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>move-wide</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move the contents of one register-pair to another.
+</p>
+<p>
+Note: It is legal to move from vN to either vN-1 or vN+1, so implementations
+must arrange for both halves of a register pair to be read before anything is
+written. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>04 12x</td>
+  <td>move-wide vA, vB</td>
+  <td><code>A:</code> destination register pair (4 bits)<br/>
+    <code>B:</code> source register pair (4 bits)</td>
+</tr>
+<tr>
+  <td>05 22x</td>
+  <td>move-wide/from16 vAA, vBBBB</td>
+  <td><code>A:</code> destination register pair (8 bits)<br/>
+    <code>B:</code> source register pair (16 bits)</td>
+</tr>
+<tr>
+  <td>06 32x</td>
+  <td>move-wide/16 vAAAA, vBBBB</td>
+  <td><code>A:</code> destination register pair (16 bits)<br/>
+    <code>B:</code> source register pair (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    Both A+1 and B+1 must be valid register indices in the current stackframe
+    (which includes A and B being valid).
+  </li>
+  <li>
+    Register vB must be the lower half of a register pair (which excludes the
+    case of it containing a reference).
+  </li>
+  <li>
+    Both register vB and v(B+1) must be defined.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The value of register vB is moved to register vA, that is, vA' = vB.
+  </li>
+  <li>
+    The value of register v(B+1) is moved to register v(A+1), that is, v(A+1)'
+    = v(B+1).
+  </li>
+  <li>
+    If register v(A-1) is the lower half of a register pair, then v(A-1)'
+    becomes undefined.
+  </li>
+  <li>
+    If register v(A+2) is the upper half of a register pair, then v(A+2)'
+    becomes undefined.
+  </li>
+  <li>
+    If A = B-1, then v(B+1)' becomes undefined.
+  </li>
+  <li>
+    If A = B+1, then v(B)' becomes undefined.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

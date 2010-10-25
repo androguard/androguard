@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>sput&lt;kind&gt;</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>sput&lt;kind&gt;</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Perform the identified object static field operation with the identified static
+field, loading or storing into the value register.
+</p>
+<p>
+Note: These opcodes are reasonable candidates for static linking, altering the
+field argument to be a more direct offset.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>67..6d 21c</td>
+  <td>s<i>staticop</i> vAA, field@BBBB<br/>
+    67: sput<br/>
+    68: sput-wide<br/>
+    69: sput-object<br/>
+    6a: sput-boolean<br/>
+    6b: sput-byte<br/>
+    6c: sput-char<br/>
+    6d: sput-short
+  </td>
+  <td><code>A:</code> source value register or pair; (8 bits)<br/>
+    <code>B:</code> static field reference index (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stackframe.
+  </li>
+  <li>
+    For the -wide variant, also A+1 must be a valid register index in the
+    current stackframe.
+  </li>
+  <li>
+    B must be a valid index into the field reference pool.
+  </li>
+  <li>
+    The field must be static. The type of the field denoted by C must match the
+    variant of the instruction.
+  </li>
+  <li>
+    For the -object variant, the instance referenced by register vA must be
+    assignment-compatible to the type of the field.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    For all but the -wide variant, the value of register vA is move into the
+    field, that is, &lt;class&gt;.&lt;field&gt;'=vA.
+  </li>
+  <li>
+    For the -wide variant, the registers vA and v(A+1) are moved into the field
+    as follows:
+    <ul>
+      <li>
+        &lt;class&gt;.&lt;field&gt;' = vA &lt;&lt; 0x20 | v(A+1)
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NullPointerException if vB=null.
+  </li>
+  <li>
+    IllegalAccessException if &lt;object&gt;.&lt;field&gt; is not visible from
+    the current context according to the usual visibility and access rules of
+    the Java programming language, or final.
+  </li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>fill-array-data</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>fill-array-data</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Fill the given array with the indicated data. The reference must be to an array
+of primitives, and the data table must match it in type and size.
+</p>
+<p>
+Note: The address of the table is guaranteed to be even (that is, 4-byte
+aligned). If the code size of the method is otherwise odd, then an extra code
+unit is inserted between the main code and the table whose value is the same as
+a nop. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+  <td>26 31t</td>
+  <td>fill-array-data vAA, +BBBBBBBB <i>(with supplemental data as specified
+    below in "<code>fill-array-data</code> Format")</i></td>
+  <td><code>A:</code> array reference (8 bits)<br/>
+    <code>B:</code> signed "branch" offset to table data (32 bits)</td>
+  </td>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    vA must be a reference-bearing register (according to data flow) and contain
+    an array-reference.
+  </li>
+  <li>
+    B must be branch offset in the same method.
+  </li>
+  <li>
+    The target address (PC+B) must be 4-byte aligned.
+  </li>
+  <li>
+    The target address must hold the pseudo-opcode 0x300.
+  </li>
+  <li>
+    The table entry size must match the size of the data type of the array.
+  </li>
+  <li>
+    The table size must be equal or smaller than the array length.
+  </li>
+</ul>  
+     
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The contents of the array referenced by vA are filled with the table data,
+    starting from array index 0 and in the given order.
+  </li>
+  <li>
+    If there are less elements in the table than the array provides space for,
+    the remaining array elements stay untouched.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NullPointerException if vA is null.   
+  </li>
+</ul>
+
+</body>
+</html>
