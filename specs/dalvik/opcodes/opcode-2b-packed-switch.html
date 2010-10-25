@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>packed-switch</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>packed-switch</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Jump to a new instruction based on the value in the given register, using a
+table of offsets corresponding to each value in a particular integral range, or
+fall through to the next instruction if there is no match.
+</p>
+<p>
+Note: The address of the table is guaranteed to be even (that is, 4-byte
+aligned). If the code size of the method is otherwise odd, then an extra code
+unit is inserted between the main code and the table whose value is the same as
+a nop. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>2b 31t</td>
+  <td>packed-switch vAA, +BBBBBBBB <i>(with supplemental data as
+    specified below in "<code>packed-switch</code> Format")</i></td>
+  <td><code>A:</code> register to test<br/>
+    <code>B:</code> signed "branch" offset to table data (32 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    Let PC be the address of the packed-switch instruction in the code array of
+    the current method. Then T = PC + B with the following properties:
+    <ul>
+      <li>
+        T must be 4-byte-aligned.
+      </li
+      <li>
+        T must be in the same method.
+      </li>
+      <li>
+        T must point to a packed-switch data table.
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The value of vA is used as an index into the given table data.
+  </li>
+  <li>
+    If vA is in the range of the table, that is, if vA >= table.first_key and
+    vA < first_key + size, then the jump target is determined as follows:
+    <ul>
+      <li>
+        PC' = PC + table.targets[vA - table.firstKey].
+      </li>
+      <li>
+        Execution resumes at this address.
+      </li>
+    </ul>
+  </li>
+  <li>
+    Otherwise execution continues at the instruction following the packed-switch
+    statement.
+  </li>
+</ul>
+ 
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

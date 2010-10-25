@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>return-void</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>return-void</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Return from a void method. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>0e 10x</td>
+  <td>return-void</td>
+  <td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    The return type of the current method must be void.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    If the method is synchronized, the object's monitor is released in a way
+    similar to the monitor-exit instruction.
+  </li>
+  <li>
+    The stack frame of the current method invocation is removed from the stack.
+    This includes all its registers becoming invalid.
+  </li>
+  <li>
+    If the stack is now empty, the current thread terminates.
+  </li>
+  <li>
+    Otherwise, the following happens:
+    <ul>
+      <li>
+        The stack frame that caused this method invocation becomes valid. This
+        includes all its registers and their old values.
+      </li>
+      <li>
+        Execution continues at the bytecode instruction immediately following
+        the invoke-kind or invoke-kind/range instruction that caused this method
+        invocation.
+      </li>
+    </ul>
+  </li>
+</ul> 
+          
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

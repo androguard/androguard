@@ -1,0 +1,356 @@
+<html>
+<head>
+    <title>Dalvik Porting Guide</title>
+</head>
+
+<body>
+<h1>Dalvik Porting Guide</h1>
+
+<p>
+The Dalvik virtual machine is intended to run on a variety of platforms.
+The baseline system is expected to be a variant of UNIX (Linux, BSD, Mac
+OS X) running the GNU C compiler.  Little-endian CPUs have been exercised
+the most heavily, but big-endian systems are explicitly supported.
+</p><p>
+There are two general categories of work: porting to a Linux system
+with a previously unseen CPU architecture, and porting to a different
+operating system.  This document covers the former.
+</p><p>
+Basic familiarity with the Android platform, source code structure, and
+build system is assumed.
+</p>
+
+
+<h2>Core Libraries</h2>
+
+<p>
+The native code in the core libraries (chiefly <code>libcore</code>,
+but also <code>dalvik/vm/native</code>) is written in C/C++ and is expected
+to work without modification in a Linux environment.  Much of the code
+comes directly from the Apache Harmony project.
+</p><p>
+The core libraries pull in code from many other projects, including
+OpenSSL, zlib, and ICU.  These will also need to be ported before the VM
+can be used.
+</p>
+
+
+<h2>JNI Call Bridge</h2>
+
+<p>
+Most of the Dalvik VM runtime is written in portable C.  The one
+non-portable component of the runtime is the JNI call bridge.  Simply put,
+this converts an array of integers into function arguments of various
+types, and calls a function.  This must be done according to the C calling
+conventions for the platform.  The task could be as simple as pushing all
+of the arguments onto the stack, or involve complex rules for register
+assignment and stack alignment.
+</p><p>
+To ease porting to new platforms, the <a href="http://sourceware.org/libffi/">
+open-source FFI library</a> (Foreign Function Interface) is used when a
+custom bridge is unavailable.  FFI is not as fast as a native implementation,
+and the optional performance improvements it does offer are not used, so
+writing a replacement is a good first step.
+</p><p>
+The code lives in <code>dalvik/vm/arch/*</code>, with the FFI-based version
+in the "generic" directory.  There are two source files for each architecture.
+One defines the call bridge itself:
+</p><p><blockquote>
+<code>void dvmPlatformInvoke(void* pEnv, ClassObject* clazz, int argInfo,
+int argc, const u4* argv, const char* signature, void* func,
+JValue* pReturn)</code>
+</blockquote></p><p>
+This will invoke a C/C++ function declared:
+</p><p><blockquote>
+    <code>return_type func(JNIEnv* pEnv, Object* this [, <i>args</i>])<br></code>
+</blockquote>or (for a "static" method):<blockquote>
+    <code>return_type func(JNIEnv* pEnv, ClassObject* clazz [, <i>args</i>])</code>
+</blockquote></p><p>
+The role of <code>dvmPlatformInvoke</code> is to convert the values in
+<code>argv</code> into C-style calling conventions, call the method, and
+then place the return type into <code>pReturn</code> (a union that holds
+all of the basic JNI types).  The code may use the method signature
+(a DEX "shorty" signature, with one character for the return type and one
+per argument) to determine how to handle the values.
+</p><p>
+The other source file involved here defines a 32-bit "hint".  The hint
+is computed when the method's class is loaded, and passed in as the
+"argInfo" argument.  The hint can be used to avoid scanning the ASCII
+method signature for things like the return value, total argument size,
+or inter-argument 64-bit alignment restrictions.
+
+
+<h2>Interpreter</h2>
+
+<p>
+The Dalvik runtime includes two interpreters, labeled "portable" and "fast".
+The portable interpreter is largely contained within a single C function,
+and should compile on any system that supports gcc.  (If you don't have gcc,
+you may need to disable the "threaded" execution model, which relies on
+gcc's "goto table" implementation; look for the THREADED_INTERP define.)
+</p><p>
+The fast interpreter uses hand-coded assembly fragments.  If none are
+available for the current architecture, the build system will create an
+interpreter out of C "stubs".  The resulting "all stubs" interpreter is
+quite a bit slower than the portable interpreter, making "fast" something
+of a misnomer.
+</p><p>
+The fast interpreter is enabled by default.  On platforms without native
+support, you may want to switch to the portable interpreter.  This can
+be controlled with the <code>dalvik.vm.execution-mode</code> system
+property.  For example, if you:
+</p><p><blockquote>
+<code>adb shell "echo dalvik.vm.execution-mode = int:portable >> /data/local.prop"</code>
+</blockquote></p><p>
+and reboot, the Android app framework will start the VM with the portable
+interpreter enabled.
+</p>
+
+
+<h3>Mterp Interpreter Structure</h3>
+
+<p>
+There may be significant performance advantages to rewriting the
+interpreter core in assembly language, using architecture-specific
+optimizations.  In Dalvik this can be done one instruction at a time.
+</p><p>
+The simplest way to implement an interpreter is to have a large "switch"
+statement.  After each instruction is handled, the interpreter returns to
+the top of the loop, fetches the next instruction, and jumps to the
+appropriate label.
+</p><p>
+An improvement on this is called "threaded" execution.  The instruction
+fetch and dispatch are included at the end of every instruction handler.
+This makes the interpreter a little larger overall, but you get to avoid
+the (potentially expensive) branch back to the top of the switch statement.
+</p><p>
+Dalvik mterp goes one step further, using a computed goto instead of a goto
+table.  Instead of looking up the address in a table, which requires an
+extra memory fetch on every instruction, mterp multiplies the opcode number
+by a fixed value.  By default, each handler is allowed 64 bytes of space.
+</p><p>
+Not all handlers fit in 64 bytes.  Those that don't can have subroutines
+or simply continue on to additional code outside the basic space.  Some of
+this is handled automatically by Dalvik, but there's no portable way to detect
+overflow of a 64-byte handler until the VM starts executing.
+</p><p>
+The choice of 64 bytes is somewhat arbitrary, but has worked out well for
+ARM and x86.
+</p><p>
+In the course of development it's useful to have C and assembly
+implementations of each handler, and be able to flip back and forth
+between them when hunting problems down.  In mterp this is relatively
+straightforward.  You can always see the files being fed to the compiler
+and assembler for your platform by looking in the
+<code>dalvik/vm/mterp/out</code> directory.
+</p><p>
+The interpreter sources live in <code>dalvik/vm/mterp</code>.  If you
+haven't yet, you should read <code>dalvik/vm/mterp/README.txt</code> now.
+</p>
+
+
+<h3>Getting Started With Mterp</h3>
+
+</p><p>
+Getting started:
+<ol>
+<li>Decide on the name of your architecture.  For the sake of discussion,
+let's call it <code>myarch</code>.
+<li>Make a copy of <code>dalvik/vm/mterp/config-allstubs</code> to
+<code>dalvik/vm/mterp/config-myarch</code>.
+<li>Create a <code>dalvik/vm/mterp/myarch</code> directory to hold your
+source files.
+<li>Add <code>myarch</code> to the list in
+<code>dalvik/vm/mterp/rebuild.sh</code>.
+<li>Make sure <code>dalvik/vm/Android.mk</code> will find the files for
+your architecture.  If <code>$(TARGET_ARCH)</code> is configured this
+will happen automatically.
+</ol>
+</p><p>
+You now have the basic framework in place.  Whenever you make a change, you
+need to perform two steps: regenerate the mterp output, and build the
+core VM library.  (It's two steps because we didn't want the build system
+to require Python 2.5.  Which, incidentally, you need to have.)
+<ol>
+<li>In the <code>dalvik/vm/mterp</code> directory, regenerate the contents
+of the files in <code>dalvik/vm/mterp/out</code> by executing
+<code>./rebuild.sh</code>.  Note there are two files, one in C and one
+in assembly.
+<li>In the <code>dalvik</code> directory, regenerate the
+<code>libdvm.so</code> library with <code>mm</code>.  You can also use
+<code>make libdvm</code> from the top of the tree.
+</ol>
+</p><p>
+This will leave you with an updated libdvm.so, which can be pushed out to
+a device with <code>adb sync</code> or <code>adb push</code>.  If you're
+using the emulator, you need to add <code>make snod</code> (System image,
+NO Dependency check) to rebuild the system image file.  You should not
+need to do a top-level "make" and rebuild the dependent binaries.
+</p><p>
+At this point you have an "all stubs" interpreter.  You can see how it
+works by examining <code>dalvik/vm/mterp/cstubs/entry.c</code>.  The
+code runs in a loop, pulling out the next opcode, and invoking the
+handler through a function pointer.  Each handler takes a "glue" argument
+that contains all of the useful state.
+</p><p>
+Your goal is to replace the entry method, exit method, and each individual
+instruction with custom implementations.  The first thing you need to do
+is create an entry function that calls the handler for the first instruction.
+After that, the instructions chain together, so you don't need a loop.
+(Look at the ARM or x86 implementation to see how they work.)
+</p><p>
+Once you have that, you need something to jump to.  You can't branch
+directly to the C stub because it's expecting to be called with a "glue"
+argument and then return.  We need a C stub "wrapper" that does the
+setup and jumps directly to the next handler.  We write this in assembly
+and then add it to the config file definition.
+</p><p>
+To see how this works, create a file called
+<code>dalvik/vm/mterp/myarch/stub.S</code> that contains one line:
+<pre>
+/* stub for ${opcode} */
+</pre>
+Then, in <code>dalvik/vm/mterp/config-myarch</code>, add this below the
+<code>handler-size</code> directive:
+<pre>
+# source for the instruction table stub
+asm-stub myarch/stub.S
+</pre>
+</p><p>
+Regenerate the sources with <code>./rebuild.sh</code>, and take a look
+inside <code>dalvik/vm/mterp/out/InterpAsm-myarch.S</code>.  You should
+see 256 copies of the stub function in a single large block after the
+<code>dvmAsmInstructionStart</code> label.  The <code>stub.S</code>
+code will be used anywhere you don't provide an assembly implementation.
+</p><p>
+Note that each block begins with a <code>.balign 64</code> directive.
+This is what pads each handler out to 64 bytes.  Note also that the
+<code>${opcode}</code> text changed into an opcode name, which should
+be used to call the C implementation (<code>dvmMterp_${opcode}</code>).
+</p><p>
+The actual contents of <code>stub.S</code> are up to you to define.
+See <code>entry.S</code> and <code>stub.S</code> in the <code>armv5te</code>
+or <code>x86</code> directories for working examples.
+</p><p>
+If you're working on a variation of an existing architecture, you may be
+able to use most of the existing code and just provide replacements for
+a few instructions.  Look at the <code>armv4t</code> implementation as
+an example.
+</p>
+
+
+<h3>Replacing Stubs</h3>
+
+<p>
+There are roughly 230 Dalvik opcodes, including some that are inserted by
+<a href="dexopt.html">dexopt</a> and aren't described in the
+<a href="dalvik-bytecode.html">Dalvik bytecode</a> documentation.  Each
+one must perform the appropriate actions, fetch the next opcode, and
+branch to the next handler.  The actions performed by the assembly version
+must exactly match those performed by the C version (in
+<code>dalvik/vm/mterp/c/OP_*</code>).
+</p><p>
+It is possible to customize the set of "optimized" instructions for your
+platform.  This is possible because optimized DEX files are not expected
+to work on multiple devices.  Adding, removing, or redefining instructions
+is beyond the scope of this document, and for simplicity it's best to stick
+with the basic set defined by the portable interpreter.
+</p><p>
+Once you have written a handler that looks like it should work, add
+it to the config file.  For example, suppose we have a working version
+of <code>OP_NOP</code>.  For demonstration purposes, fake it for now by
+putting this into <code>dalvik/vm/mterp/myarch/OP_NOP.S</code>:
+<pre>
+/* This is my NOP handler */
+</pre>
+</p><p>
+Then, in the <code>op-start</code> section of <code>config-myarch</code>, add:
+<pre>
+    op OP_NOP myarch
+</pre>
+</p><p>
+This tells the generation script to use the assembly version from the
+<code>myarch</code> directory instead of the C version from the <code>c</code>
+directory.
+</p><p>
+Execute <code>./rebuild.sh</code>.  Look at <code>InterpAsm-myarch.S</code>
+and <code>InterpC-myarch.c</code> in the <code>out</code> directory.  You
+will see that the <code>OP_NOP</code> stub wrapper has been replaced with our
+new code in the assembly file, and the C stub implementation is no longer
+included.
+</p><p>
+As you implement instructions, the C version and corresponding stub wrapper
+will disappear from the output files.  Eventually you will have a 100%
+assembly interpreter.  You may find it saves a little time to examine
+the output of your compiler for some of the operations.  The
+<a href="porting-proto.c.txt">porting-proto.c</a> sample code can be
+helpful here.
+</p>
+
+
+<h3>Interpreter Switching</h3>
+
+<p>
+The Dalvik VM actually includes a third interpreter implementation: the debug
+interpreter.  This is a variation of the portable interpreter that includes
+support for debugging and profiling.
+</p><p>
+When a debugger attaches, or a profiling feature is enabled, the VM
+will switch interpreters at a convenient point.  This is done at the
+same time as the GC safe point check: on a backward branch, a method
+return, or an exception throw.  Similarly, when the debugger detaches
+or profiling is discontinued, execution transfers back to the "fast" or
+"portable" interpreter.
+</p><p>
+Your entry function needs to test the "entryPoint" value in the "glue"
+pointer to determine where execution should begin.  Your exit function
+will need to return a boolean that indicates whether the interpreter is
+exiting (because we reached the "bottom" of a thread stack) or wants to
+switch to the other implementation.
+</p><p>
+See the <code>entry.S</code> file in <code>x86</code> or <code>armv5te</code>
+for examples.
+</p>
+
+
+<h3>Testing</h3>
+
+<p>
+A number of VM tests can be found in <code>dalvik/tests</code>.  The most
+useful during interpreter development is <code>003-omnibus-opcodes</code>,
+which tests many different instructions.
+</p><p>
+The basic invocation is:
+<pre>
+$ cd dalvik/tests
+$ ./run-test 003
+</pre>
+</p><p>
+This will run test 003 on an attached device or emulator.  You can run
+the test against your desktop VM by specifying <code>--reference</code>
+if you suspect the test may be faulty.  You can also use
+<code>--portable</code> and <code>--fast</code> to explictly specify
+one Dalvik interpreter or the other.
+</p><p>
+Some instructions are replaced by <code>dexopt</code>, notably when
+"quickening" field accesses and method invocations.  To ensure
+that you are testing the basic form of the instruction, add the
+<code>--no-optimize</code> option.
+</p><p>
+There is no in-built instruction tracing mechanism.  If you want
+to know for sure that your implementation of an opcode handler
+is being used, the easiest approach is to insert a "printf"
+call.  For an example, look at <code>common_squeak</code> in
+<code>dalvik/vm/mterp/armv5te/footer.S</code>.
+</p><p>
+At some point you need to ensure that debuggers and profiling work with
+your interpreter.  The easiest way to do this is to simply connect a
+debugger or toggle profiling.  (A future test suite may include some
+tests for this.)
+</p>
+
+<p>
+<address>Copyright &copy; 2009 The Android Open Source Project</address>
+
+</body>
+</html>

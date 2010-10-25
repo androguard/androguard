@@ -1,0 +1,387 @@
+h1 {
+    font-family: serif;
+    border-top-style: solid;
+    border-top-width: 5px;
+    padding-top: 9pt;
+    margin-top: 40pt;
+    color: #222266;
+}
+
+h1.title {
+    border: none;
+}
+
+h2 {
+    font-family: serif;
+    border-top-style: solid;
+    border-top-width: 2px;
+    border-color: #ccccdd;
+    padding-top: 9pt;
+    margin-top: 40pt;
+    margin-bottom: 2pt;
+    color: #222266;
+}
+
+h3 {
+    font-family: serif;
+    font-style: bold;
+    margin-top: 20pt;
+    margin-bottom: 2pt;
+    color: #222266;
+}
+
+h4 {
+    font-family: serif;
+    font-style: italic;
+    margin-top: 2pt;
+    margin-bottom: 2pt;
+    color: #666688;
+}
+
+@media print {
+    table {
+        font-size: 8pt;
+    }
+}
+
+@media screen {
+    table {
+        font-size: 10pt;
+    }
+}
+
+pre {
+    background: #eeeeff;
+    border-color: #aaaaff;
+    border-style: solid;
+    border-width: 1px;
+    margin-left: 40pt;
+    margin-right: 40pt;
+    padding: 6pt;
+}
+
+table {
+    border-collapse: collapse;
+    margin-top: 10pt;
+    margin-left: 40pt;
+    margin-right: 40pt;
+}
+
+table th {
+    font-family: sans-serif;
+    background: #aabbff;
+}
+
+table td {
+    font-family: sans-serif;
+    border-top-style: solid;
+    border-bottom-style: solid;
+    border-width: 1px;
+    border-color: #aaaaff;
+    padding-top: 3pt;
+    padding-bottom: 3pt;
+    padding-left: 3pt;
+    padding-right: 4pt;
+    background: #eeeeff;
+}
+
+table p { 
+    margin-bottom: 0pt;
+}
+
+/* for the bnf syntax sections */
+
+table.bnf { 
+    background: #eeeeff;
+    border-color: #aaaaff;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 3pt;
+    margin-bottom: 3pt;
+    padding-top: 2pt;
+    padding-bottom: 6pt;
+    padding-left: 6pt;
+    padding-right: 6pt;
+}
+
+table.bnf td { 
+    border: none;
+    padding-left: 6pt;
+    padding-right: 6pt;
+    padding-top: 1pt;
+    padding-bottom: 1pt;
+}
+
+table.bnf td:first-child { 
+    padding-right: 0pt;
+    width: 8pt;
+}
+
+table.bnf td:first-child td { 
+    padding-left: 0pt;
+}
+
+table.bnf td.def {
+    padding-top: 6pt;
+}
+
+table.bnf td.bar {
+    padding-left: 15pt;
+}
+
+table.bnf code {
+    font-weight: bold;
+}
+
+
+/* for the type name guide */
+
+table.guide {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.guide td:first-child {
+    font-family: monospace;
+    width: 15%;
+}
+
+table.guide td:first-child + td {
+    font-family: sans-serif;
+    width: 85%;
+}
+
+
+/* for the LEB128 example tables */
+
+table.leb128Bits {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.leb128Bits td {
+    border-left: solid #aaaaff 1px;
+    border-right: solid #aaaaff 1px;
+}
+
+table.leb128Bits td.start1 {
+    border-left: none;
+}
+
+table.leb128Bits td.start2 {
+    border-left: solid #000 2px;
+}
+
+table.leb128Bits td.end2 {
+    border-right: none;
+}
+
+table.leb128 {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.leb128 td:first-child {
+    font-family: monospace;
+    text-align: center;
+    width: 31%;
+}
+
+table.leb128 td:first-child + td {
+    font-family: monospace;
+    text-align: center;
+    width: 23%;
+}
+
+table.leb128 td:first-child + td + td {
+    font-family: monospace;
+    text-align: center;
+    width: 23%;
+}
+
+table.leb128 td:first-child + td + td + td {
+    font-family: monospace;
+    text-align: center;
+    width: 23%;
+}
+
+
+/* for the general format tables */
+
+table.format {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.format td:first-child {
+    font-family: monospace;
+    width: 20%;
+}
+
+table.format td:first-child + td {
+    font-family: monospace;
+    width: 20%;
+}
+
+table.format td:first-child + td + td {
+    width: 60%;
+}
+
+table.format td i {
+    font-family: sans-serif;
+}
+
+
+/* for the type code table */
+
+table.typeCodes {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.typeCodes td:first-child {
+    font-family: monospace;
+    width: 30%;
+}
+
+table.typeCodes td:first-child + td {
+    font-family: monospace;
+    width: 30%;
+}
+
+table.typeCodes td:first-child + td + td {
+    font-family: monospace;
+    width: 10%;
+}
+
+table.typeCodes td:first-child + td + td + td {
+    font-family: monospace;
+    width: 30%;
+}
+
+table.typeCodes td i {
+    font-family: sans-serif;
+}
+
+
+/* for the access flags table */
+
+table.accessFlags {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.accessFlags td:first-child {
+    font-family: monospace;
+    width: 10%;
+}
+
+table.accessFlags td:first-child + td {
+    font-family: monospace;
+    width: 6%;
+}
+
+table.accessFlags td:first-child + td + td {
+    width: 28%;
+}
+
+table.accessFlags td:first-child + td + td + td {
+    width: 28%;
+}
+
+table.accessFlags td:first-child + td + td + td + td {
+    width: 28%;
+}
+
+table.accessFlags i {
+    font-family: sans-serif;
+}
+
+
+/* for the descriptor table */
+
+table.descriptor {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.descriptor td:first-child {
+    font-family: monospace;
+    width: 25%;
+}
+
+table.descriptor td:first-child + td {
+    font-family: sans-serif;
+    width: 75%;
+}
+
+
+/* for the debug bytecode table */
+
+table.debugByteCode {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.debugByteCode td:first-child {
+    font-family: monospace;
+    width: 20%;
+}
+
+table.debugByteCode td:first-child + td {
+    font-family: monospace;
+    width: 5%;
+}
+
+table.debugByteCode td:first-child + td + td{
+    font-family: monospace;
+    width: 15%;
+}
+
+table.debugByteCode td:first-child + td + td + td {
+    width: 25%;
+}
+
+table.debugByteCode td:first-child + td + td + td + td {
+    width: 35%;
+}
+
+table.debugByteCode i {
+    font-family: sans-serif;
+}
+
+
+/* for the encoded value table */
+
+table.encodedValue {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+}
+
+table.encodedValue td:first-child {
+    font-family: monospace;
+    width: 12%;
+}
+
+table.encodedValue td:first-child + td {
+    font-family: monospace;
+    width: 10%;
+}
+
+table.encodedValue td:first-child + td + td {
+    font-family: monospace;
+    width: 15%;
+}
+
+table.encodedValue td:first-child + td + td + td {
+    font-family: monospace;
+    width: 15%;
+}
+
+table.encodedValue td:first-child + td + td + td + td {
+    width: 48%;
+}
+
+table.encodedValue td i {
+    font-family: sans-serif;
+}

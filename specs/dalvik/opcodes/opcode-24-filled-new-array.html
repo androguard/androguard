@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>filled-new-array</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>filled-new-array</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Construct an array of the given type and size, filling it with the supplied
+contents. The type must be an array type. The array's contents must be
+single-word (that is, no arrays of long or double). The constructed instance is
+stored as a "result" in the same way that the method invocation instructions
+store their results, so the constructed instance must be moved to a register
+with a subsequent move-result-object instruction (if it is to be used).
+</p>
+ 
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>24 35c</td>
+  <td>filled-new-array {vD, vE, vF, vG, vA}, type@CCCC</td>
+  <td><code>B:</code> array size and argument word count (4 bits)<br/>
+    <code>C:</code> type index (16 bits)<br/>
+    <code>D..G, A:</code> argument registers (4 bits each)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    The value B must not be greater than 5.
+  </li>
+  <li>
+    If B > 0, then D must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    If B > 1, then E must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    If B > 2, then F must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    If B > 3, then G must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    If B > 4, then A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    C must be a valid index into the type pool.
+  </li>
+  <li>
+    The type denoted by C must be a valid array type descriptor.
+  </li>
+  <li>
+    The element size of the type denoted by C must be no larger than 32 bits.
+  </li>
+  <li>
+    If the element type is a primitive type, then all actual arguments
+    (vD .. vA, depending on B) must be primitive, too.
+  </li>
+  <li>
+    If the element type is a reference type, then all actual arguments
+    (vD .. vA, depending on B) must be references, too.
+  </li> 
+</ul>
+    
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    An attempt is made to get a reference to the type T the name of which is
+    contained in type pool entry C.
+  </li>
+  <li>
+    If T is a reference type and it has not been loaded and resolved before, it
+    is being loaded and resolved. All exceptions that are possible during class
+    loading can occur at this point.
+  </li>
+  <li>
+    An attempt is made to create a new array R of type T and length B. All
+    exceptions that are possible during instantiation can occur at this point.
+  </li>
+  <li>
+    The elements of R are filled according to the following rules:
+    <ul>
+      <li>
+        If B > 0 then R[0] = vD
+      </li>
+      <li>
+        If B > 1 then R[1] = vE
+      </li>
+      <li>
+        If B > 2 then R[2] = vF
+      </li>
+      <li>
+        If B > 3 then R[3] = vG
+      </li>
+      <li>
+        If B > 4 then R[4] = vA 
+      </li>
+    </ul>
+  </li>
+  <li>
+    No reference to R is stored in any register. Instead, R can be accessed by a
+    move-result-object instruction immediately following this filled-new-array
+    instruction.
+  </li> 
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NegativeArraySizeException if vB < 0
+  </li>
+  <li>
+    All exceptions that are possible during class loading can occur.
+  </li>
+  <li>
+    All exceptions that are possible during instantiation can occur.
+  </li> 
+</ul>
+
+</body>
+</html>

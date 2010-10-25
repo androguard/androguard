@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>Dalvik VM Instruction Formats</title>
+<link rel=stylesheet href="instruction-formats.css">
+</head>
+
+<body>
+
+<h1>Dalvik VM Instruction Formats</h1>
+<p>Copyright &copy; 2007 The Android Open Source Project
+
+<h2>Introduction and Overview</h2>
+
+<p>This document lists the instruction formats used by Dalvik bytecode
+and is meant to be used in conjunction with the
+<a href="dalvik-bytecode.html">bytecode reference document</a>.</p>
+
+<h3>Bitwise descriptions</h3>
+
+<p>The first column in the format table lists the bitwise layout of
+the format. It consists of one or more space-separated "words" each of
+which describes a 16-bit code unit. Each character in a word
+represents four bits, read from high bits to low, with vertical bars
+("<code>|</code>") interspersed to aid in reading. Uppercase letters
+in sequence from "<code>A</code>" are used to indicate fields within
+the format (which then get defined further by the syntax column). The term
+"<code>op</code>" is used to indicate the position of the eight-bit
+opcode within the format. A slashed zero ("<code>&Oslash;</code>") is
+used to indicate that all bits should be zero in the indicated
+position.</p>
+
+<p>For example, the format "<code>B|A|<i>op</i> CCCC</code>" indicates
+that the format consists of two 16-bit code units. The first word
+consists of the opcode in the low eight bits and a pair of four-bit
+values in the high eight bits; and the second word consists of a single
+16-bit value.</p>
+
+<h3>Format IDs</h3>
+
+<p>The second column in the format table indicates the short identifier
+for the format, which is used in other documents and in code to identify
+the format.</p>
+
+<p>Format IDs consist of three characters, two digits followed by a
+letter. The first digit indicates the number of 16-bit code units in the
+format. The second digit indicates the maximum number of registers that the
+format contains (maximum, since some formats can accomodate a variable
+number of registers), with the special designation "<code>r</code>" indicating
+that a range of registers is encoded. The final letter semi-mnemonically
+indicates the type of any extra data encoded by the format. For example,
+format "<code>21t</code>" is of length two, contains one register reference,
+and additionally contains a branch target.</p>
+
+<p>Suggested static linking formats have an additional "<code>s</code>" suffix,
+making them four characters total.</p>
+
+<p>The full list of typecode letters are as follows. Note that some
+forms have different sizes, depending on the format:</p>
+
+<table class="letters">
+<thead>
+<tr>
+  <th>Mnemonic</th>
+  <th>Bit Sizes</th>
+  <th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>b</td>
+  <td>8</td>
+  <td>immediate signed <b>b</b>yte</td>
+</tr>
+<tr>
+  <td>c</td>
+  <td>16, 32</td>
+  <td><b>c</b>onstant pool index</td>
+</tr>
+<tr>
+  <td>f</td>
+  <td>16</td>
+  <td>inter<b>f</b>ace constants (only used in statically linked formats)
+  </td>
+</tr>
+<tr>
+  <td>h</td>
+  <td>16</td>
+  <td>immediate signed <b>h</b>at (high-order bits of a 32- or 64-bit
+    value; low-order bits are all <code>0</code>)
+  </td>
+</tr>
+<tr>
+  <td>i</td>
+  <td>32</td>
+  <td>immediate signed <b>i</b>nt, or 32-bit float</td>
+</tr>
+<tr>
+  <td>l</td>
+  <td>64</td>
+  <td>immediate signed <b>l</b>ong, or 64-bit double</td>
+</tr>
+<tr>
+  <td>m</td>
+  <td>16</td>
+  <td><b>m</b>ethod constants (only used in statically linked formats)</td>
+</tr>
+<tr>
+  <td>n</td>
+  <td>4</td>
+  <td>immediate signed <b>n</b>ibble</td>
+</tr>
+<tr>
+  <td>s</td>
+  <td>16</td>
+  <td>immediate signed <b>s</b>hort</td>
+</tr>
+<tr>
+  <td>t</td>
+  <td>8, 16, 32</td>
+  <td>branch <b>t</b>arget</td>
+</tr>
+<tr>
+  <td>x</td>
+  <td>0</td>
+  <td>no additional data</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Syntax</h3>
+
+<p>The third column of the format table indicates the human-oriented
+syntax for instructions which use the indicated format. Each instruction
+starts with the named opcode and is optionally followed by one or
+more arguments, themselves separated with commas.</p>
+
+<p>Wherever an argument refers to a field from the first column, the
+letter for that field is indicated in the syntax, repeated once for
+each four bits of the field. For example, an eight-bit field labeled
+"<code>BB</code>" in the first column would also be labeled
+"<code>BB</code>" in the syntax column.</p>
+
+<p>Arguments which name a register have the form "<code>v<i>X</i></code>".
+The prefix "<code>v</code>" was chosen instead of the more common
+"<code>r</code>" exactly to avoid conflicting with (non-virtual) architectures
+on which a Dalvik virtual machine might be implemented which themselves
+use the prefix "<code>r</code>" for their registers. (That is, this
+decision makes it possible to talk about both virtual and real registers
+together without the need for circumlocution.)</p>
+
+<p>Arguments which indicate a literal value have the form
+"<code>#+<i>X</i></code>". Some formats indicate literals that only
+have non-zero bits in their high-order bits; for these, the zeroes
+are represented explicitly in the syntax, even though they do not
+appear in the bitwise representation.</p>
+
+<p>Arguments which indicate a relative instruction address offset have the
+form "<code>+<i>X</i></code>".</p>
+
+<p>Arguments which indicate a literal constant pool index have the form
+"<code><i>kind</i>@<i>X</i></code>", where "<code><i>kind</i></code>"
+indicates which constant pool is being referred to. Each opcode that
+uses such a format explicitly allows only one kind of constant; see
+the opcode reference to figure out the correspondence. The four
+kinds of constant pool are "<code>string</code>" (string pool index),
+"<code>type</code>" (type pool index), "<code>field</code>" (field
+pool index), and "<code>meth</code>" (method pool index).</p>
+
+<p>Similar to the representation of constant pool indices, there are
+also suggested (optional) forms that indicate prelinked offsets or
+indices. These prelinked values include "<code>vtaboff</code>"
+(vtable offset), "<code>fieldoff</code>" (field offset), and
+"<code>iface</code>" (interface pool index).</p>
+
+<p>In the cases where a format value isn't explictly part of the syntax
+but instead picks a variant, each variant is listed with the prefix
+"<code>[<i>X</i>=<i>N</i>]</code>" (e.g., "<code>[B=2]</code>") to indicate
+the correspondence.</p>
+
+<h2>The Formats</h2>
+
+<table class="format">
+<thead>
+<tr>
+  <th>Format</th>
+  <th>ID</th>
+  <th>Syntax</th>
+  <th>Notable Opcodes Covered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>&Oslash;&Oslash;|<i>op</i></td>
+  <td>10x</td>
+  <td><i><code>op</code></i></td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td rowspan="2">B|A|<i>op</i></td>
+  <td>12x</td>
+  <td><i><code>op</code></i> vA, vB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>11n</td>
+  <td><i><code>op</code></i> vA, #+B</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td rowspan="2">AA|<i>op</i></td>
+  <td>11x</td>
+  <td><i><code>op</code></i> vAA</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>10t</td>
+  <td><i><code>op</code></i> +AA</td>
+  <td>goto</td>
+</tr>
+<tr>
+  <td>&Oslash;&Oslash;|<i>op</i> AAAA</td></td>
+  <td>20t</td>
+  <td><i><code>op</code></i> +AAAA</td>
+  <td>goto/16</td>
+</tr>
+<tr>
+  <td rowspan="5">AA|<i>op</i> BBBB</td>
+  <td>22x</td>
+  <td><i><code>op</code></i> vAA, vBBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>21t</td>
+  <td><i><code>op</code></i> vAA, +BBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>21s</td>
+  <td><i><code>op</code></i> vAA, #+BBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>21h</td>
+  <td><i><code>op</code></i> vAA, #+BBBB0000<br/>
+    <i><code>op</code></i> vAA, #+BBBB000000000000
+  </td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>21c</td>
+  <td><i><code>op</code></i> vAA, type@BBBB<br/>
+    <i><code>op</code></i> vAA, field@BBBB<br/>
+    <i><code>op</code></i> vAA, string@BBBB
+  </td>
+  <td>check-cast<br/>
+    const-class<br/>
+    const-string
+  </td>
+</tr>
+<tr>
+  <td rowspan="2">AA|<i>op</i> CC|BB</td>
+  <td>23x</td>
+  <td><i><code>op</code></i> vAA, vBB, vCC</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>22b</td>
+  <td><i><code>op</code></i> vAA, vBB, #+CC</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td rowspan="4">B|A|<i>op</i> CCCC</td>
+  <td>22t</td>
+  <td><i><code>op</code></i> vA, vB, +CCCC</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>22s</td>
+  <td><i><code>op</code></i> vA, vB, #+CCCC</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>22c</td>
+  <td><i><code>op</code></i> vA, vB, type@CCCC<br/>
+    <i><code>op</code></i> vA, vB, field@CCCC
+  </td>
+  <td>instance-of</td>
+</tr>
+<tr>
+  <td>22cs</td>
+  <td><i><code>op</code></i> vA, vB, fieldoff@CCCC</td>
+  <td><i>(suggested format for statically linked field access instructions of
+    format 22c)</i>
+  </td>
+</tr>
+<tr>
+  <td>&Oslash;&Oslash;|<i>op</i> AAAA<sub>lo</sub> AAAA<sub>hi</sub></td></td>
+  <td>30t</td>
+  <td><i><code>op</code></i> +AAAAAAAA</td>
+  <td>goto/32</td>
+</tr>
+<tr>
+  <td>&Oslash;&Oslash;|<i>op</i> AAAA BBBB</td>
+  <td>32x</td>
+  <td><i><code>op</code></i> vAAAA, vBBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td rowspan="3">AA|<i>op</i> BBBB<sub>lo</sub> BBBB<sub>hi</sub></td>
+  <td>31i</td>
+  <td><i><code>op</code></i> vAA, #+BBBBBBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>31t</td>
+  <td><i><code>op</code></i> vAA, +BBBBBBBB</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>31c</td>
+  <td><i><code>op</code></i> vAA, string@BBBBBBBB</td>
+  <td>const-string/jumbo</td>
+</tr>
+<tr>
+  <td>B|A|<i>op</i> CCCC G|F|E|D</td>
+  <td>35c</td>
+  <td><i>[<code>B=5</code>] <code>op</code></i> {vD, vE, vF, vG, vA},
+    meth@CCCC<br/>
+    <i>[<code>B=5</code>] <code>op</code></i> {vD, vE, vF, vG, vA},
+    type@CCCC<br/>
+    <i>[<code>B=4</code>] <code>op</code></i> {vD, vE, vF, vG},
+    <i><code>kind</code></i>@CCCC<br/>
+    <i>[<code>B=3</code>] <code>op</code></i> {vD, vE, vF},
+    <i><code>kind</code></i>@CCCC<br/>
+    <i>[<code>B=2</code>] <code>op</code></i> {vD, vE},
+    <i><code>kind</code></i>@CCCC<br/>
+    <i>[<code>B=1</code>] <code>op</code></i> {vD},
+    <i><code>kind</code></i>@CCCC<br/>
+    <i>[<code>B=0</code>] <code>op</code></i> {},
+    <i><code>kind</code></i>@CCCC
+  </td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>B|A|<i>op</i> CCCC G|F|E|D</td>
+  <td>35ms</td>
+
+  <td><i>[<code>B=5</code>] <code>op</code></i> {vD, vE, vF, vG, vA},
+    vtaboff@CCCC<br/>
+    <i>[<code>B=4</code>] <code>op</code></i> {vD, vE, vF, vG},
+    vtaboff@CCCC<br/>
+    <i>[<code>B=3</code>] <code>op</code></i> {vD, vE, vF},
+    vtaboff@CCCC<br/>
+    <i>[<code>B=2</code>] <code>op</code></i> {vD, vE},
+    vtaboff@CCCC<br/>
+    <i>[<code>B=1</code>] <code>op</code></i> {vD},
+    vtaboff@CCCC<br/>
+  </td>
+  <td><i>(suggested format for statically linked <code>invoke-virtual</code>
+    and <code>invoke-super</code> instructions of format 35c)</i>
+  </td>
+</tr>
+<tr>
+  <td>B|A|<i>op</i> DDCC H|G|F|E</td>
+  <td>35fs</td>
+  <td><i>[<code>B=5</code>] <code>op</code></i> {vE, vF, vG, vH, vA},
+    vtaboff@CC, iface@DD<br/>
+    <i>[<code>B=4</code>] <code>op</code></i> {vE, vF, vG, vH},
+    vtaboff@CC, iface@DD<br/>
+    <i>[<code>B=3</code>] <code>op</code></i> {vE, vF, vG},
+    vtaboff@CC, iface@DD<br/>
+    <i>[<code>B=2</code>] <code>op</code></i> {vE, vF},
+    vtaboff@CC, iface@DD<br/>
+    <i>[<code>B=1</code>] <code>op</code></i> {vE},
+    vtaboff@CC, iface@DD<br/>
+  </td>
+  <td><i>(suggested format for statically linked <code>invoke-interface</code>
+    instructions of format 35c)</i>
+  </td>
+</tr>
+<tr>
+  <td>AA|<i>op</i> BBBB CCCC</td>
+  <td>3rc</td>
+  <td><i><code>op</code></i> {vCCCC .. vNNNN}, meth@BBBB<br/>
+    <i><code>op</code></i> {vCCCC .. vNNNN}, type@BBBB<br/>
+    <p><i>(where <code>NNNN = CCCC+AA-1</code>, that is <code>A</code>
+    determines the count <code>0..255</code>, and <code>C</code>
+    determines the first register)</i></p>
+  </td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>AA|<i>op</i> BBBB CCCC</td>
+  <td>3rms</td>
+  <td><i><code>op</code></i> {vCCCC .. vNNNN}, vtaboff@BBBB<br/>
+    <p><i>(where <code>NNNN = CCCC+AA-1</code>, that is <code>A</code>
+    determines the count <code>0..255</code>, and <code>C</code>
+    determines the first register)</i></p>
+  </td>
+  <td><i>(suggested format for statically linked <code>invoke-virtual</code>
+    and <code>invoke-super</code> instructions of format <code>3rc</code>)</i>
+  </td>
+</tr>
+<tr>
+  <td>AA|<i>op</i> CCBB DDDD</td>
+  <td>3rfs</td>
+  <td><i><code>op</code></i> {vDDDD .. vNNNN}, vtaboff@BB,
+    iface@CC<br/>
+    <p><i>(where <code>NNNN = DDDD+AA-1</code>, that is <code>A</code>
+    determines the count <code>0..255</code>, and <code>D</code>
+    determines the first register)</i></p>
+  </td>
+  <td><i>(suggested format for statically linked <code>invoke-interface</code>
+    instructions of format <code>3rc</code>)</i>
+  </td>
+</tr>
+<tr>
+  <td>AA|<i>op</i> BBBB<sub>lo</sub> BBBB BBBB BBBB<sub>hi</sub></td>
+  <td>51l</td>
+  <td><i><code>op</code></i> vAA, #+BBBBBBBBBBBBBBBB</td>
+  <td>const-wide</td>
+</tr>
+</tbody>
+</table>
+
+</body>
+</html>

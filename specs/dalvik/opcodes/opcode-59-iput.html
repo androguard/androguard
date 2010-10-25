@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>iget&lt;kind&gt;</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>iget&lt;kind&gt;</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Perform the identified object instance field operation with the identified
+field, loading or storing into the value register.
+</p>
+<p>
+Note: These opcodes are reasonable candidates for static linking, altering the
+field argument to be a more direct offset.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>59..5f 22c</td>
+  <td>i<i>instanceop</i> vA, vB, field@CCCC<br/>
+    59: iput<br/>
+    5a: iput-wide<br/>
+    5b: iput-object<br/>
+    5c: iput-boolean<br/>
+    5d: iput-byte<br/>
+    5e: iput-char<br/>
+    5f: iput-short
+  </td>
+  <td><code>A:</code> source value register or pair; (4 bits)<br/>
+    <code>B:</code> object register (4 bits)<br/>
+    <code>C:</code> instance field reference index (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A and B must be valid register indices in the current stack frame.
+  </li>
+  <li>
+    For the -wide variant, also A+1 must be a valid register index in the
+    current stack frame.
+  </li>
+  <li>
+    Register vB must contain an object reference.
+  </li>
+  <li>
+    C must be a valid index into the field reference pool.
+  </li>
+  <li>
+    The field must be an instance field. The type of the field denoted by C must
+    match the variant of the instruction.
+  </li>
+  <li>
+    For the -object variant, the instance referenced by register vA must be
+    assignment-compatible to the type of the field.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    For all but the -wide variant, the value of register vA is move into the
+    field, that is, &lt;object&gt;.&lt;field&gt;'=vA.
+  </li>
+  <li>
+    For the -wide variant, the registers vA and v(A+1) are moved into the
+    field as follows:
+    <ul>
+      <li>
+        &lt;object&gt;.&lt;field&gt;' = vA &lt;&lt; 0x20 | v(A+1)
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NullPointerException if vB=null.
+  </li>
+  <li>
+    IllegalAccessException if &lt;object&gt;.&lt;field&gt; is not visible from
+    the current context according to the usual visibility and access rules of
+    the Java programming language, or final.
+  </li>
+</ul>
+
+</body>
+</html>

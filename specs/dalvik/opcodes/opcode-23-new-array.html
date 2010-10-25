@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>new-array</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>new-array</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Construct a new array of the indicated type and size. The type must be an array
+type. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>23 22c</td>
+  <td>new-array vA, vB, type@CCCC</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> size register<br/>
+    <code>C:</code> type index</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A and B must be valid register indices for the current stack frame.
+  </li>
+  <li>
+    Register vB must not contain a reference value.
+  </li>
+  <li>
+    Register vB must not be part of a register pair.
+  </li>
+  <li>
+    C must be a valid index into the type pool.
+  </li>
+  <li>
+    Type constant pool entry C must contain a valid array type descriptor.
+  </li>   
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    An attempt is made to get a reference to the class K the name of which is
+    contained in type pool entry C.
+  </li>
+  <li>
+    If K has not been loaded and resolved before, it is being loaded and
+    resolved. All exceptions that are possible during class loading can occur at
+    this point.
+  </li>
+  <li>
+    An attempt is made to create a new instance I of K and length B. All
+    exceptions that are possible during instantiation can occur at this point.
+  </li>
+  <li>
+    All elements of the new array are initialized to null (for object arrays) or
+    0 (for numeric arrays) or false (for boolean arrays).
+  </li>
+  <li>
+    A reference to the new array is moved to register vA, that is, vA' = I.
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+  <li>
+    If v(A+1) is the upper half of a register pair, v(A+1)' becomes undefined.
+  </li> 
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NegativeArraySizeException if vB < 0
+  </li>
+  <li>
+    All exceptions that are possible during class loading can occur.
+  </li>
+  <li>
+    All exceptions that are possible during instantiation can occur.
+  </li> 
+</ul>
+
+</body>
+</html>

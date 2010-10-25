@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>unop</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>unop</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Perform the identified unary operation on the source register, storing the
+result in the destination register.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>7b..8f 12x</td>
+  <td><i>unop</i> vA, vB<br/>
+    7b: neg-int<br/>
+    7c: not-int<br/>
+    7d: neg-long<br/>
+    7e: not-long<br/>
+    7f: neg-float<br/>
+    80: neg-double<br/>
+    81: int-to-long<br/>
+    82: int-to-float<br/>
+    83: int-to-double<br/>
+    84: long-to-int<br/>
+    85: long-to-float<br/>
+    86: long-to-double<br/>
+    87: float-to-int<br/>
+    88: float-to-long<br/>
+    89: float-to-double<br/>
+    8a: double-to-int<br/>
+    8b: double-to-long<br/>
+    8c: double-to-float<br/>
+    8d: int-to-byte<br/>
+    8e: int-to-char<br/>
+    8f: int-to-short
+  </td>
+  <td><code>A:</code> destination register or pair (4 bits)<br/>
+    <code>B:</code> source register or pair (4 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    Both A and B must be valid register indices for the current stackframe.
+  </li>
+  <li>
+    If the input type of &lt;unop&gt; is double or long, also B+1 must be a
+    valid register index in the current stackframe.
+  </li>
+  <li>
+    If the output type of &lt;unop&gt; is double or long, also A+1 must be a
+    valid register index in the current stackframe.
+  </li>
+  <li>
+    The type of register vB must match the source type of the instruction (this
+    probably needs more detail).
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The given operation &lt;unop&gt; is performed according to the semantics 
+    specified in table XXX.
+  </li>
+  <li>
+    The result is stored in register vA, that is, vA'=&lt;unop&gt; vB.
+  </li>
+  <li>
+    It gets a bit messy if we want to describe all the combinations of input and
+    output with and without pairs here. Probably it's better to split it up.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    ArithmeticException if an arithmetic error occurs during the instruction.
+  </li>
+</ul>
+
+</body>
+</html>
