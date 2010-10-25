@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>vm</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://code.google.com/p/androguard/">Androguard</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        Module&nbsp;vm
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="vm-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="vm-module.html">Module vm</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-comment"># This file is part of Androguard.</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-comment"># Copyright (C) 2010, Anthony Desnos &lt;desnos at t0t0.org&gt;</tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-comment"># All rights reserved.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-comment"># Androguard is free software: you can redistribute it and/or modify</tt> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-comment"># it under the terms of the GNU Lesser General Public License as published by</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-comment"># the Free Software Foundation, either version 3 of the License, or</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-comment"># (at your option) any later version.</tt> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-comment"># Androguard is distributed in the hope that it will be useful,</tt> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-comment"># but WITHOUT ANY WARRANTY; without even the implied warranty of  </tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-comment"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</tt> </tt>
+<a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-comment"># GNU Lesser General Public License for more details.</tt> </tt>
+<a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line"><tt class="py-comment">#</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line"><tt class="py-comment"># You should have received a copy of the GNU Lesser General Public License</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line"><tt class="py-comment"># along with Androguard.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line"> </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">random</tt><tt class="py-op">,</tt> <tt class="py-name">string</tt> </tt>
+<a name="L20"></a><tt class="py-lineno"> 20</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">subprocess</tt> <tt class="py-keyword">import</tt> <tt class="py-name">Popen</tt><tt class="py-op">,</tt> <tt class="py-name">PIPE</tt><tt class="py-op">,</tt> <tt class="py-name">STDOUT</tt>                                       </tt>
+<a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line"> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt id="link-0" class="py-name" targets="Module opaque=opaque-module.html"><a title="opaque" class="py-name" href="#" onclick="return doclink('link-0', 'opaque', 'link-0');">opaque</a></tt><tt class="py-op">,</tt> <tt id="link-1" class="py-name" targets="Module jvm=jvm-module.html"><a title="jvm" class="py-name" href="#" onclick="return doclink('link-1', 'jvm', 'link-1');">jvm</a></tt>  </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line"> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-2" class="py-name" targets="Module il_reil=il_reil-module.html"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-2', 'il_reil', 'link-2');">il_reil</a></tt> <tt class="py-keyword">import</tt> <tt id="link-3" class="py-name" targets="Class il_reil.MTR=il_reil.MTR-class.html"><a title="il_reil.MTR" class="py-name" href="#" onclick="return doclink('link-3', 'MTR', 'link-3');">MTR</a></tt><tt class="py-op">,</tt> <tt id="link-4" class="py-name" targets="Class il_reil.BPTR=il_reil.BPTR-class.html"><a title="il_reil.BPTR" class="py-name" href="#" onclick="return doclink('link-4', 'BPTR', 'link-4');">BPTR</a></tt><tt class="py-op">,</tt> <tt id="link-5" class="py-name" targets="Class il_reil.MetaREIL=il_reil.MetaREIL-class.html"><a title="il_reil.MetaREIL" class="py-name" href="#" onclick="return doclink('link-5', 'MetaREIL', 'link-5');">MetaREIL</a></tt><tt class="py-op">,</tt> <tt id="link-6" class="py-name" targets="Class il_reil.REIL_TO_JAVA=il_reil.REIL_TO_JAVA-class.html"><a title="il_reil.REIL_TO_JAVA" class="py-name" href="#" onclick="return doclink('link-6', 'REIL_TO_JAVA', 'link-6');">REIL_TO_JAVA</a></tt><tt class="py-op">,</tt> <tt id="link-7" class="py-name" targets="Variable il_reil.REIL_TYPE_REGISTER=il_reil-module.html#REIL_TYPE_REGISTER"><a title="il_reil.REIL_TYPE_REGISTER" class="py-name" href="#" onclick="return doclink('link-7', 'REIL_TYPE_REGISTER', 'link-7');">REIL_TYPE_REGISTER</a></tt><tt class="py-op">,</tt> <tt id="link-8" class="py-name" targets="Variable il_reil.REIL_TYPE_LITERAL=il_reil-module.html#REIL_TYPE_LITERAL"><a title="il_reil.REIL_TYPE_LITERAL" class="py-name" href="#" onclick="return doclink('link-8', 'REIL_TYPE_LITERAL', 'link-8');">REIL_TYPE_LITERAL</a></tt> </tt>
+<a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA"></a><div id="IL_REIL_TO_JAVA-def"><a name="L26"></a><tt class="py-lineno"> 26</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA-toggle" onclick="return toggle('IL_REIL_TO_JAVA');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html">IL_REIL_TO_JAVA</a> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="IL_REIL_TO_JAVA-expanded"><a name="IL_REIL_TO_JAVA.__init__"></a><div id="IL_REIL_TO_JAVA.__init__-def"><a name="L27"></a><tt class="py-lineno"> 27</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.__init__-toggle" onclick="return toggle('IL_REIL_TO_JAVA.__init__');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-param">il_reil</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.__init__-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.__init__-expanded"><a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__bytecodes</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L29"></a><tt class="py-lineno"> 29</tt>  <tt class="py-line"> </tt>
+<a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__orig_class_name</tt> <tt class="py-op">=</tt> <tt class="py-name">orig_class_name</tt> </tt>
+<a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_name</tt> <tt class="py-op">=</tt> <tt class="py-name">random</tt><tt class="py-op">.</tt><tt class="py-name">choice</tt><tt class="py-op">(</tt> <tt class="py-name">string</tt><tt class="py-op">.</tt><tt class="py-name">letters</tt> <tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-string">''</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt> <tt class="py-name">random</tt><tt class="py-op">.</tt><tt class="py-name">choice</tt><tt class="py-op">(</tt><tt class="py-name">string</tt><tt class="py-op">.</tt><tt class="py-name">letters</tt> <tt class="py-op">+</tt> <tt class="py-name">string</tt><tt class="py-op">.</tt><tt class="py-name">digits</tt><tt class="py-op">)</tt> <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">range</tt><tt class="py-op">(</tt><tt class="py-number">10</tt> <tt class="py-op">-</tt> <tt class="py-number">1</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">)</tt> </tt>
+<a name="L32"></a><tt class="py-lineno"> 32</tt>  <tt class="py-line"> </tt>
+<a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_format</tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"> </tt>
+<a name="L35"></a><tt class="py-lineno"> 35</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt><tt class="py-op">}</tt> </tt>
+<a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt><tt class="py-op">}</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt><tt class="py-op">}</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt> <tt class="py-op">=</tt> <tt class="py-op">{</tt><tt class="py-op">}</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line"> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__call_code</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-op">]</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line"> </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__debug</tt> <tt class="py-op">=</tt> <tt class="py-name">True</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line"> </tt>
+<a name="L44"></a><tt class="py-lineno"> 44</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-9" class="py-name" targets="Method androguard.Androguard._analyze()=androguard.Androguard-class.html#_analyze,Method vm.IL_REIL_TO_JAVA._analyze()=vm.IL_REIL_TO_JAVA-class.html#_analyze"><a title="androguard.Androguard._analyze
+vm.IL_REIL_TO_JAVA._analyze" class="py-name" href="#" onclick="return doclink('link-9', '_analyze', 'link-9');">_analyze</a></tt><tt class="py-op">(</tt> <tt id="link-10" class="py-name"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-10', 'il_reil', 'link-2');">il_reil</a></tt> <tt class="py-op">)</tt> </tt>
+<a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line"> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt> </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt> </tt>
+<a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line"> </tt>
+<a name="L51"></a><tt class="py-lineno"> 51</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__bytecodes</tt> </tt>
+<a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line"> </tt>
+<a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-11" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._create_methods()=vm.IL_REIL_TO_JAVA-class.html#_create_methods"><a title="vm.IL_REIL_TO_JAVA._create_methods" class="py-name" href="#" onclick="return doclink('link-11', '_create_methods', 'link-11');">_create_methods</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L54"></a><tt class="py-lineno"> 54</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-12" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._create_call_code()=vm.IL_REIL_TO_JAVA-class.html#_create_call_code"><a title="vm.IL_REIL_TO_JAVA._create_call_code" class="py-name" href="#" onclick="return doclink('link-12', '_create_call_code', 'link-12');">_create_call_code</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._create_methods"></a><div id="IL_REIL_TO_JAVA._create_methods-def"><a name="L56"></a><tt class="py-lineno"> 56</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._create_methods-toggle" onclick="return toggle('IL_REIL_TO_JAVA._create_methods');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_create_methods">_create_methods</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._create_methods-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._create_methods-expanded"><a name="L57"></a><tt class="py-lineno"> 57</tt>  <tt class="py-line">      <tt class="py-name">fd</tt> <tt class="py-op">=</tt> <tt class="py-name">open</tt><tt class="py-op">(</tt><tt class="py-string">"./VM.java"</tt><tt class="py-op">,</tt> <tt class="py-string">"w"</tt><tt class="py-op">)</tt> </tt>
+<a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line"> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"class VM {\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line"> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"public "</tt><tt class="py-op">)</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line"> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__type_return</tt> <tt class="py-op">==</tt> <tt class="py-string">""</tt> <tt class="py-op">:</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"void "</tt><tt class="py-op">)</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line">      <tt class="py-keyword">else</tt> <tt class="py-op">:</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"%s "</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__type_return</tt><tt class="py-op">)</tt> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"%s() {\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_name</tt><tt class="py-op">)</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line">      </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_REG</tt> <tt class="py-op">=</tt> <tt class="py-string">"REG"</tt> </tt>
+<a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt> <tt class="py-op">=</tt> <tt class="py-string">"IREG"</tt> </tt>
+<a name="L72"></a><tt class="py-lineno"> 72</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IDX</tt> <tt class="py-op">=</tt> <tt class="py-string">"idx"</tt> </tt>
+<a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt> <tt class="py-op">=</tt> <tt class="py-string">"c_idx"</tt> </tt>
+<a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_BC</tt> <tt class="py-op">=</tt> <tt class="py-string">"BC"</tt> </tt>
+<a name="L75"></a><tt class="py-lineno"> 75</tt>  <tt class="py-line"> </tt>
+<a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int[] %s = new int[%d];\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_REG</tt><tt class="py-op">,</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">)</tt> <tt class="py-op">)</tt> <tt class="py-op">)</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line"> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int[] %s = {"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt><tt class="py-op">)</tt> </tt>
+<a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">=</tt> <tt class="py-string">""</tt> </tt>
+<a name="L80"></a><tt class="py-lineno"> 80</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt> <tt class="py-op">:</tt> </tt>
+<a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line">         <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"%d,%s,"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt><tt class="py-op">[</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt> <tt class="py-op">]</tt><tt class="py-op">)</tt>  </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-name">buff</tt><tt class="py-op">[</tt><tt class="py-op">:</tt><tt class="py-op">-</tt><tt class="py-number">1</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"};\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line"> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">=</tt> <tt class="py-string">""</tt> </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int[][] %s = {"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_BC</tt><tt class="py-op">)</tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__bytecodes</tt> <tt class="py-op">:</tt> </tt>
+<a name="L88"></a><tt class="py-lineno"> 88</tt>  <tt class="py-line">         <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"{%s},"</tt> <tt class="py-op">%</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">i</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">-</tt><tt class="py-number">1</tt><tt class="py-op">]</tt> </tt>
+<a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-name">buff</tt><tt class="py-op">[</tt><tt class="py-op">:</tt><tt class="py-op">-</tt><tt class="py-number">1</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"};\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"> </tt>
+<a name="L92"></a><tt class="py-lineno"> 92</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int %s = 0;\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IDX</tt><tt class="py-op">)</tt><tt class="py-op">;</tt> </tt>
+<a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int %s = -1;\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt><tt class="py-op">)</tt><tt class="py-op">;</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line"> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__debug</tt> <tt class="py-op">:</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println(\"================START VM===============\");\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line">       </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"while(idx &lt; BC.length) {\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line"> </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_T</tt> <tt class="py-op">=</tt> <tt class="py-string">"T"</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_S</tt> <tt class="py-op">=</tt> <tt class="py-string">"S"</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line"> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int[] %s = new int[3];\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_T</tt><tt class="py-op">)</tt><tt class="py-op">;</tt> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"int[] %s = new int[3];\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_S</tt><tt class="py-op">)</tt><tt class="py-op">;</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line"> </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"T[0] = (BC[idx][0] &amp; 0x00FF0000) &gt;&gt; 16;\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"T[1] = (BC[idx][0] &amp; 0x0000FF00) &gt;&gt; 8;\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"T[2] = (BC[idx][0] &amp; 0x000000FF);\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line"> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"S[0] = (BC[idx][1] &amp; 0x00FF0000) &gt;&gt; 16;\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"S[1] = (BC[idx][1] &amp; 0x0000FF00) &gt;&gt; 8;\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"S[2] = (BC[idx][1] &amp; 0x000000FF);\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line">       </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__debug</tt> <tt class="py-op">:</tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println( \"IDX \" + idx );\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println( \"TYPE \" + T[0] + \" \" + T[1] + \" \" + T[2] );\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println( \"SIZE \" + S[0] + \" \" + S[1] + \" \" + S[2] );\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println( \"BC \" + BC[idx][3] + \" \" + BC[idx][4] + \" \" + BC[idx][5] );\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line">      <tt class="py-comment">#FIXME</tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt> <tt class="py-op">:</tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"if (BC[idx][2] == %d) {\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt><tt class="py-op">[</tt><tt class="py-name">i</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt> <tt id="link-13" class="py-name"><a title="il_reil.REIL_TO_JAVA" class="py-name" href="#" onclick="return doclink('link-13', 'REIL_TO_JAVA', 'link-6');">REIL_TO_JAVA</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt> <tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-14" class="py-name" targets="Method androguard.Androguard.get_raw()=androguard.Androguard-class.html#get_raw,Method dvm.AnnotationElement.get_raw()=dvm.AnnotationElement-class.html#get_raw,Method dvm.AnnotationItem.get_raw()=dvm.AnnotationItem-class.html#get_raw,Method dvm.AnnotationOffItem.get_raw()=dvm.AnnotationOffItem-class.html#get_raw,Method dvm.AnnotationSetItem.get_raw()=dvm.AnnotationSetItem-class.html#get_raw,Method dvm.AnnotationsDirectoryItem.get_raw()=dvm.AnnotationsDirectoryItem-class.html#get_raw,Method dvm.ClassDataItem.get_raw()=dvm.ClassDataItem-class.html#get_raw,Method dvm.ClassDefItem.get_raw()=dvm.ClassDefItem-class.html#get_raw,Method dvm.ClassItem.get_raw()=dvm.ClassItem-class.html#get_raw,Method dvm.CodeItem.get_raw()=dvm.CodeItem-class.html#get_raw,Method dvm.DBGBytecode.get_raw()=dvm.DBGBytecode-class.html#get_raw,Method dvm.DalvikCode.get_raw()=dvm.DalvikCode-class.html#get_raw,Method dvm.DebugInfoItem.get_raw()=dvm.DebugInfoItem-class.html#get_raw,Method dvm.DebugInfoItem2.get_raw()=dvm.DebugInfoItem2-class.html#get_raw,Method dvm.EncodedAnnotation.get_raw()=dvm.EncodedAnnotation-class.html#get_raw,Method dvm.EncodedArray.get_raw()=dvm.EncodedArray-class.html#get_raw,Method dvm.EncodedArrayItem.get_raw()=dvm.EncodedArrayItem-class.html#get_raw,Method dvm.EncodedCatchHandler.get_raw()=dvm.EncodedCatchHandler-class.html#get_raw,Method dvm.EncodedCatchHandlerList.get_raw()=dvm.EncodedCatchHandlerList-class.html#get_raw,Method dvm.EncodedField.get_raw()=dvm.EncodedField-class.html#get_raw,Method dvm.EncodedMethod.get_raw()=dvm.EncodedMethod-class.html#get_raw,Method dvm.EncodedTypeAddrPair.get_raw()=dvm.EncodedTypeAddrPair-class.html#get_raw,Method dvm.EncodedValue.get_raw()=dvm.EncodedValue-class.html#get_raw,Method dvm.FieldAnnotation.get_raw()=dvm.FieldAnnotation-class.html#get_raw,Method dvm.FieldItem.get_raw()=dvm.FieldItem-class.html#get_raw,Method dvm.HeaderItem.get_raw()=dvm.HeaderItem-class.html#get_raw,Method dvm.IdItem.get_raw()=dvm.IdItem-class.html#get_raw,Method dvm.MapItem.get_raw()=dvm.MapItem-class.html#get_raw,Method dvm.MapList.get_raw()=dvm.MapList-class.html#get_raw,Method dvm.MethodAnnotation.get_raw()=dvm.MethodAnnotation-class.html#get_raw,Method dvm.MethodIdItem.get_raw()=dvm.MethodIdItem-class.html#get_raw,Method dvm.MethodItem.get_raw()=dvm.MethodItem-class.html#get_raw,Method dvm.ParameterAnnotation.get_raw()=dvm.ParameterAnnotation-class.html#get_raw,Method dvm.ProtoIdItem.get_raw()=dvm.ProtoIdItem-class.html#get_raw,Method dvm.ProtoItem.get_raw()=dvm.ProtoItem-class.html#get_raw,Method dvm.StringDataItem.get_raw()=dvm.StringDataItem-class.html#get_raw,Method dvm.StringIdItem.get_raw()=dvm.StringIdItem-class.html#get_raw,Method dvm.TypeIdItem.get_raw()=dvm.TypeIdItem-class.html#get_raw,Method dvm.TypeItem.get_raw()=dvm.TypeItem-class.html#get_raw,Method dvm.TypeLItem.get_raw()=dvm.TypeLItem-class.html#get_raw,Method dvm.TypeList.get_raw()=dvm.TypeList-class.html#get_raw,Method il_reil.ADD_TO_JAVA.get_raw()=il_reil.ADD_TO_JAVA-class.html#get_raw,Method il_reil.BISZ_TO_JAVA.get_raw()=il_reil.BISZ_TO_JAVA-class.html#get_raw,Method il_reil.JCC_TO_JAVA.get_raw()=il_reil.JCC_TO_JAVA-class.html#get_raw,Method il_reil.MOD_TO_JAVA.get_raw()=il_reil.MOD_TO_JAVA-class.html#get_raw,Method il_reil.MUL_TO_JAVA.get_raw()=il_reil.MUL_TO_JAVA-class.html#get_raw,Method il_reil.REIL_TO_JAVA.get_raw()=il_reil.REIL_TO_JAVA-class.html#get_raw,Method il_reil.STR_TO_JAVA.get_raw()=il_reil.STR_TO_JAVA-class.html#get_raw,Method il_reil.SUB_TO_JAVA.get_raw()=il_reil.SUB_TO_JAVA-class.html#get_raw,Method jvm.AppendFrame.get_raw()=jvm.AppendFrame-class.html#get_raw,Method jvm.AttributeInfo.get_raw()=jvm.AttributeInfo-class.html#get_raw,Method jvm.ChopFrame.get_raw()=jvm.ChopFrame-class.html#get_raw,Method jvm.CodeAttribute.get_raw()=jvm.CodeAttribute-class.html#get_raw,Method jvm.CpInfo.get_raw()=jvm.CpInfo-class.html#get_raw,Method jvm.CreateClass.get_raw()=jvm.CreateClass-class.html#get_raw,Method jvm.CreateCodeAttributeInfo.get_raw()=jvm.CreateCodeAttributeInfo-class.html#get_raw,Method jvm.CreateFieldRef.get_raw()=jvm.CreateFieldRef-class.html#get_raw,Method jvm.CreateInteger.get_raw()=jvm.CreateInteger-class.html#get_raw,Method jvm.CreateMethodInfo.get_raw()=jvm.CreateMethodInfo-class.html#get_raw,Method jvm.CreateMethodRef.get_raw()=jvm.CreateMethodRef-class.html#get_raw,Method jvm.CreateNameAndType.get_raw()=jvm.CreateNameAndType-class.html#get_raw,Method jvm.CreateString.get_raw()=jvm.CreateString-class.html#get_raw,Method jvm.ExceptionsAttribute.get_raw()=jvm.ExceptionsAttribute-class.html#get_raw,Method jvm.FieldInfo.get_raw()=jvm.FieldInfo-class.html#get_raw,Method jvm.FullFrame.get_raw()=jvm.FullFrame-class.html#get_raw,Method jvm.InnerClassesAttribute.get_raw()=jvm.InnerClassesAttribute-class.html#get_raw,Method jvm.InnerClassesDesc.get_raw()=jvm.InnerClassesDesc-class.html#get_raw,Method jvm.JBC.get_raw()=jvm.JBC-class.html#get_raw,Method jvm.JavaCode.get_raw()=jvm.JavaCode-class.html#get_raw,Method jvm.LineNumberTableAttribute.get_raw()=jvm.LineNumberTableAttribute-class.html#get_raw,Method jvm.LocalVariableTableAttribute.get_raw()=jvm.LocalVariableTableAttribute-class.html#get_raw,Method jvm.MethodInfo.get_raw()=jvm.MethodInfo-class.html#get_raw,Method jvm.SameFrame.get_raw()=jvm.SameFrame-class.html#get_raw,Method jvm.SameFrameExtended.get_raw()=jvm.SameFrameExtended-class.html#get_raw,Method jvm.SameLocals1StackItemFrame.get_raw()=jvm.SameLocals1StackItemFrame-class.html#get_raw,Method jvm.SameLocals1StackItemFrameExtended.get_raw()=jvm.SameLocals1StackItemFrameExtended-class.html#get_raw,Method jvm.SourceFileAttribute.get_raw()=jvm.SourceFileAttribute-class.html#get_raw,Method jvm.StackMapTableAttribute.get_raw()=jvm.StackMapTableAttribute-class.html#get_raw,Method jvm.VerificationTypeInfo.get_raw()=jvm.VerificationTypeInfo-class.html#get_raw"><a title="androguard.Androguard.get_raw
+dvm.AnnotationElement.get_raw
+dvm.AnnotationItem.get_raw
+dvm.AnnotationOffItem.get_raw
+dvm.AnnotationSetItem.get_raw
+dvm.AnnotationsDirectoryItem.get_raw
+dvm.ClassDataItem.get_raw
+dvm.ClassDefItem.get_raw
+dvm.ClassItem.get_raw
+dvm.CodeItem.get_raw
+dvm.DBGBytecode.get_raw
+dvm.DalvikCode.get_raw
+dvm.DebugInfoItem.get_raw
+dvm.DebugInfoItem2.get_raw
+dvm.EncodedAnnotation.get_raw
+dvm.EncodedArray.get_raw
+dvm.EncodedArrayItem.get_raw
+dvm.EncodedCatchHandler.get_raw
+dvm.EncodedCatchHandlerList.get_raw
+dvm.EncodedField.get_raw
+dvm.EncodedMethod.get_raw
+dvm.EncodedTypeAddrPair.get_raw
+dvm.EncodedValue.get_raw
+dvm.FieldAnnotation.get_raw
+dvm.FieldItem.get_raw
+dvm.HeaderItem.get_raw
+dvm.IdItem.get_raw
+dvm.MapItem.get_raw
+dvm.MapList.get_raw
+dvm.MethodAnnotation.get_raw
+dvm.MethodIdItem.get_raw
+dvm.MethodItem.get_raw
+dvm.ParameterAnnotation.get_raw
+dvm.ProtoIdItem.get_raw
+dvm.ProtoItem.get_raw
+dvm.StringDataItem.get_raw
+dvm.StringIdItem.get_raw
+dvm.TypeIdItem.get_raw
+dvm.TypeItem.get_raw
+dvm.TypeLItem.get_raw
+dvm.TypeList.get_raw
+il_reil.ADD_TO_JAVA.get_raw
+il_reil.BISZ_TO_JAVA.get_raw
+il_reil.JCC_TO_JAVA.get_raw
+il_reil.MOD_TO_JAVA.get_raw
+il_reil.MUL_TO_JAVA.get_raw
+il_reil.REIL_TO_JAVA.get_raw
+il_reil.STR_TO_JAVA.get_raw
+il_reil.SUB_TO_JAVA.get_raw
+jvm.AppendFrame.get_raw
+jvm.AttributeInfo.get_raw
+jvm.ChopFrame.get_raw
+jvm.CodeAttribute.get_raw
+jvm.CpInfo.get_raw
+jvm.CreateClass.get_raw
+jvm.CreateCodeAttributeInfo.get_raw
+jvm.CreateFieldRef.get_raw
+jvm.CreateInteger.get_raw
+jvm.CreateMethodInfo.get_raw
+jvm.CreateMethodRef.get_raw
+jvm.CreateNameAndType.get_raw
+jvm.CreateString.get_raw
+jvm.ExceptionsAttribute.get_raw
+jvm.FieldInfo.get_raw
+jvm.FullFrame.get_raw
+jvm.InnerClassesAttribute.get_raw
+jvm.InnerClassesDesc.get_raw
+jvm.JBC.get_raw
+jvm.JavaCode.get_raw
+jvm.LineNumberTableAttribute.get_raw
+jvm.LocalVariableTableAttribute.get_raw
+jvm.MethodInfo.get_raw
+jvm.SameFrame.get_raw
+jvm.SameFrameExtended.get_raw
+jvm.SameLocals1StackItemFrame.get_raw
+jvm.SameLocals1StackItemFrameExtended.get_raw
+jvm.SourceFileAttribute.get_raw
+jvm.StackMapTableAttribute.get_raw
+jvm.VerificationTypeInfo.get_raw" class="py-name" href="#" onclick="return doclink('link-14', 'get_raw', 'link-14');">get_raw</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">)</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line"> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__debug</tt> <tt class="py-op">:</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.printf(\"REG = \");\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"for(int j=0; j &lt; REG.length; j++) {\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.printf(\"%d \", REG[j]);\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println(\"\");\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line"> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"if (%s != -1) {\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt><tt class="py-op">)</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"%s = %s;\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IDX</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"%s = -1;\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line"> </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"else {\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"idx = idx + 1;\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line"> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line"> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__debug</tt> <tt class="py-op">:</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line">         <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"System.out.println(\"================STOP VM================\\n\");\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line"> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"return REG[%s];\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt><tt class="py-op">[</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__register_return</tt><tt class="py-op">.</tt><tt id="link-15" class="py-name" targets="Method dvm.ClassItem.get_name()=dvm.ClassItem-class.html#get_name,Method dvm.EncodedField.get_name()=dvm.EncodedField-class.html#get_name,Method dvm.EncodedMethod.get_name()=dvm.EncodedMethod-class.html#get_name,Method dvm.FieldItem.get_name()=dvm.FieldItem-class.html#get_name,Method dvm.MethodItem.get_name()=dvm.MethodItem-class.html#get_name,Method il_reil.REIL_BASE.get_name()=il_reil.REIL_BASE-class.html#get_name,Method il_reil.REIL_REGISTER.get_name()=il_reil.REIL_REGISTER-class.html#get_name,Method jvm.AttributeInfo.get_name()=jvm.AttributeInfo-class.html#get_name,Method jvm.CpInfo.get_name()=jvm.CpInfo-class.html#get_name,Method jvm.FieldInfo.get_name()=jvm.FieldInfo-class.html#get_name,Method jvm.JBC.get_name()=jvm.JBC-class.html#get_name,Method jvm.MethodInfo.get_name()=jvm.MethodInfo-class.html#get_name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-15', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">]</tt> <tt class="py-op">)</tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line"> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line"> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">write</tt><tt class="py-op">(</tt><tt class="py-string">"}\n"</tt><tt class="py-op">)</tt>  </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line">      <tt class="py-name">fd</tt><tt class="py-op">.</tt><tt class="py-name">close</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line"> </tt>
+<a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line">      <tt class="py-name">compile</tt> <tt class="py-op">=</tt> <tt class="py-name">Popen</tt><tt class="py-op">(</tt><tt class="py-op">[</tt> <tt class="py-string">"/usr/bin/javac"</tt><tt class="py-op">,</tt> <tt class="py-string">"VM.java"</tt> <tt class="py-op">]</tt><tt class="py-op">,</tt> <tt class="py-name">stdout</tt><tt class="py-op">=</tt><tt class="py-name">PIPE</tt><tt class="py-op">,</tt> <tt class="py-name">stderr</tt><tt class="py-op">=</tt><tt class="py-name">STDOUT</tt><tt class="py-op">)</tt> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">      <tt class="py-name">stdout</tt><tt class="py-op">,</tt> <tt class="py-name">stderr</tt> <tt class="py-op">=</tt> <tt class="py-name">compile</tt><tt class="py-op">.</tt><tt class="py-name">communicate</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-string">"COMPILATION RESULTS"</tt><tt class="py-op">,</tt> <tt class="py-name">stdout</tt><tt class="py-op">,</tt> <tt class="py-name">stderr</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">stdout</tt> <tt class="py-op">!=</tt> <tt class="py-string">""</tt><tt class="py-op">:</tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line">         <tt class="py-keyword">raise</tt><tt class="py-op">(</tt><tt class="py-string">"oops"</tt><tt class="py-op">)</tt> </tt>
+<a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line"> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line"><tt class="py-comment">#      print "COMPILATION RESULTS", "SWAP ...."</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line"> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_format</tt> <tt class="py-op">=</tt> <tt id="link-16" class="py-name"><a title="jvm" class="py-name" href="#" onclick="return doclink('link-16', 'jvm', 'link-1');">jvm</a></tt><tt class="py-op">.</tt><tt id="link-17" class="py-name" targets="Class jvm.JVMFormat=jvm.JVMFormat-class.html"><a title="jvm.JVMFormat" class="py-name" href="#" onclick="return doclink('link-17', 'JVMFormat', 'link-17');">JVMFormat</a></tt><tt class="py-op">(</tt> <tt class="py-name">open</tt><tt class="py-op">(</tt> <tt class="py-string">"VM.class"</tt> <tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-18" class="py-name" targets="Method bytecode.BuffHandle.read()=bytecode.BuffHandle-class.html#read,Method bytecode._Bytecode.read()=bytecode._Bytecode-class.html#read"><a title="bytecode.BuffHandle.read
+bytecode._Bytecode.read" class="py-name" href="#" onclick="return doclink('link-18', 'read', 'link-18');">read</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">)</tt> </tt>
+</div><a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._create_call_code"></a><div id="IL_REIL_TO_JAVA._create_call_code-def"><a name="L164"></a><tt class="py-lineno">164</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._create_call_code-toggle" onclick="return toggle('IL_REIL_TO_JAVA._create_call_code');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_create_call_code">_create_call_code</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._create_call_code-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._create_call_code-expanded"><a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__call_code</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt> <tt class="py-op">[</tt> <tt class="py-string">"aload_0"</tt> <tt class="py-op">]</tt> <tt class="py-op">)</tt> </tt>
+<a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line"> </tt>
+<a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line">      <tt class="py-name">method_vm</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_format</tt><tt class="py-op">.</tt><tt id="link-19" class="py-name" targets="Method dvm.CM.get_method()=dvm.CM-class.html#get_method,Method dvm.ClassDefItem.get_method()=dvm.ClassDefItem-class.html#get_method,Method dvm.DalvikVMFormat.get_method()=dvm.DalvikVMFormat-class.html#get_method,Method jvm.ClassManager.get_method()=jvm.ClassManager-class.html#get_method,Method jvm.JVMFormat.get_method()=jvm.JVMFormat-class.html#get_method"><a title="dvm.CM.get_method
+dvm.ClassDefItem.get_method
+dvm.DalvikVMFormat.get_method
+jvm.ClassManager.get_method
+jvm.JVMFormat.get_method" class="py-name" href="#" onclick="return doclink('link-19', 'get_method', 'link-19');">get_method</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_name</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__call_code</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt> <tt class="py-op">[</tt> <tt class="py-string">"invokevirtual"</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_name</tt><tt class="py-op">,</tt> <tt class="py-name">method_vm</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name" targets="Method dvm.EncodedField.get_descriptor()=dvm.EncodedField-class.html#get_descriptor,Method dvm.EncodedMethod.get_descriptor()=dvm.EncodedMethod-class.html#get_descriptor,Method jvm.FieldInfo.get_descriptor()=jvm.FieldInfo-class.html#get_descriptor,Method jvm.MethodInfo.get_descriptor()=jvm.MethodInfo-class.html#get_descriptor"><a title="dvm.EncodedField.get_descriptor
+dvm.EncodedMethod.get_descriptor
+jvm.FieldInfo.get_descriptor
+jvm.MethodInfo.get_descriptor" class="py-name" href="#" onclick="return doclink('link-20', 'get_descriptor', 'link-20');">get_descriptor</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">)</tt> </tt>
+</div><a name="L169"></a><tt class="py-lineno">169</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._analyze"></a><div id="IL_REIL_TO_JAVA._analyze-def"><a name="L170"></a><tt class="py-lineno">170</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._analyze-toggle" onclick="return toggle('IL_REIL_TO_JAVA._analyze');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_analyze">_analyze</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">il_reil</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._analyze-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._analyze-expanded"><a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__type_return</tt> <tt class="py-op">=</tt> <tt id="link-21" class="py-name"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-21', 'il_reil', 'link-2');">il_reil</a></tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__type_param</tt> <tt class="py-op">=</tt> <tt id="link-22" class="py-name"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-22', 'il_reil', 'link-2');">il_reil</a></tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">]</tt> </tt>
+<a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__register_return</tt> <tt class="py-op">=</tt> <tt id="link-23" class="py-name"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-23', 'il_reil', 'link-2');">il_reil</a></tt><tt class="py-op">[</tt><tt class="py-number">3</tt><tt class="py-op">]</tt> </tt>
+<a name="L174"></a><tt class="py-lineno">174</tt>  <tt class="py-line"> </tt>
+<a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line">      <tt class="py-name">nb</tt> <tt class="py-op">=</tt> <tt class="py-number">0</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt class="py-name">i</tt> <tt class="py-keyword">in</tt> <tt id="link-24" class="py-name"><a title="il_reil" class="py-name" href="#" onclick="return doclink('link-24', 'il_reil', 'link-2');">il_reil</a></tt><tt class="py-op">[</tt><tt class="py-number">2</tt><tt class="py-op">]</tt> <tt class="py-op">:</tt> </tt>
+<a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line">         <tt class="py-keyword">print</tt> <tt class="py-name">nb</tt><tt class="py-op">,</tt> </tt>
+<a name="L178"></a><tt class="py-lineno">178</tt>  <tt class="py-line">         <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-25" class="py-name" targets="Method il_reil.REIL_BASE.view()=il_reil.REIL_BASE-class.html#view"><a title="il_reil.REIL_BASE.view" class="py-name" href="#" onclick="return doclink('link-25', 'view', 'link-25');">view</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line">         <tt class="py-name">nb</tt> <tt class="py-op">+=</tt> <tt class="py-number">1</tt> </tt>
+<a name="L180"></a><tt class="py-lineno">180</tt>  <tt class="py-line"> </tt>
+<a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line">         <tt class="py-name">information_type</tt> <tt class="py-op">=</tt> <tt class="py-number">0</tt> </tt>
+<a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line">         <tt class="py-name">information_size</tt> <tt class="py-op">=</tt> <tt class="py-number">0</tt> </tt>
+<a name="L183"></a><tt class="py-lineno">183</tt>  <tt class="py-line"> </tt>
+<a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line">         <tt class="py-keyword">if</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-26', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-keyword">not</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt> <tt class="py-op">:</tt> </tt>
+<a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt><tt class="py-op">[</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-27" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-27', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-28" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._unique_value()=vm.IL_REIL_TO_JAVA-class.html#_unique_value"><a title="vm.IL_REIL_TO_JAVA._unique_value" class="py-name" href="#" onclick="return doclink('link-28', '_unique_value', 'link-28');">_unique_value</a></tt><tt class="py-op">(</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt> <tt class="py-op">)</tt> </tt>
+<a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line"> </tt>
+<a name="L187"></a><tt class="py-lineno">187</tt>  <tt class="py-line">         <tt class="py-keyword">for</tt> <tt class="py-name">r</tt> <tt class="py-keyword">in</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name" targets="Method il_reil.REIL_BASE.get_registers()=il_reil.REIL_BASE-class.html#get_registers"><a title="il_reil.REIL_BASE.get_registers" class="py-name" href="#" onclick="return doclink('link-29', 'get_registers', 'link-29');">get_registers</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+<a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-30" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-30', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-keyword">not</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt> <tt class="py-op">:</tt> </tt>
+<a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line">               <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-31" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-31', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-32" class="py-name"><a title="vm.IL_REIL_TO_JAVA._unique_value" class="py-name" href="#" onclick="return doclink('link-32', '_unique_value', 'link-28');">_unique_value</a></tt><tt class="py-op">(</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt> <tt class="py-op">)</tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line">               <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt><tt class="py-op">[</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-33" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-33', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt> <tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__ORR</tt> <tt class="py-op">)</tt> </tt>
+<a name="L191"></a><tt class="py-lineno">191</tt>  <tt class="py-line"> </tt>
+<a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line">         <tt class="py-name">v0</tt><tt class="py-op">,</tt> <tt class="py-name">v0_size</tt><tt class="py-op">,</tt> <tt class="py-name">v0_type</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-34" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._get_val()=vm.IL_REIL_TO_JAVA-class.html#_get_val"><a title="vm.IL_REIL_TO_JAVA._get_val" class="py-name" href="#" onclick="return doclink('link-34', '_get_val', 'link-34');">_get_val</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt class="py-name">rcv0</tt> <tt class="py-op">)</tt> </tt>
+<a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line">         <tt class="py-name">v1</tt><tt class="py-op">,</tt> <tt class="py-name">v1_size</tt><tt class="py-op">,</tt> <tt class="py-name">v1_type</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-35" class="py-name"><a title="vm.IL_REIL_TO_JAVA._get_val" class="py-name" href="#" onclick="return doclink('link-35', '_get_val', 'link-34');">_get_val</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt class="py-name">rcv1</tt> <tt class="py-op">)</tt> </tt>
+<a name="L194"></a><tt class="py-lineno">194</tt>  <tt class="py-line">         <tt class="py-name">v2</tt><tt class="py-op">,</tt> <tt class="py-name">v2_size</tt><tt class="py-op">,</tt> <tt class="py-name">v2_type</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-36" class="py-name"><a title="vm.IL_REIL_TO_JAVA._get_val" class="py-name" href="#" onclick="return doclink('link-36', '_get_val', 'link-34');">_get_val</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt class="py-name">rcvout</tt> <tt class="py-op">)</tt> </tt>
+<a name="L195"></a><tt class="py-lineno">195</tt>  <tt class="py-line"> </tt>
+<a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line">         <tt class="py-name">information_type</tt> <tt class="py-op">=</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-37" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._get_type()=vm.IL_REIL_TO_JAVA-class.html#_get_type"><a title="vm.IL_REIL_TO_JAVA._get_type" class="py-name" href="#" onclick="return doclink('link-37', '_get_type', 'link-37');">_get_type</a></tt><tt class="py-op">(</tt> <tt class="py-name">v0_type</tt> <tt class="py-op">)</tt> <tt class="py-op">&lt;&lt;</tt> <tt class="py-number">16</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-38" class="py-name"><a title="vm.IL_REIL_TO_JAVA._get_type" class="py-name" href="#" onclick="return doclink('link-38', '_get_type', 'link-37');">_get_type</a></tt><tt class="py-op">(</tt> <tt class="py-name">v1_type</tt> <tt class="py-op">)</tt> <tt class="py-op">&lt;&lt;</tt> <tt class="py-number">8</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-39" class="py-name"><a title="vm.IL_REIL_TO_JAVA._get_type" class="py-name" href="#" onclick="return doclink('link-39', '_get_type', 'link-37');">_get_type</a></tt><tt class="py-op">(</tt> <tt class="py-name">v2_type</tt> <tt class="py-op">)</tt> </tt>
+<a name="L197"></a><tt class="py-lineno">197</tt>  <tt class="py-line">         <tt class="py-name">information_size</tt> <tt class="py-op">=</tt> <tt class="py-op">(</tt><tt class="py-name">v0_size</tt> <tt class="py-op">&lt;&lt;</tt> <tt class="py-number">16</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-op">(</tt><tt class="py-name">v1_size</tt> <tt class="py-op">&lt;&lt;</tt> <tt class="py-number">8</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-name">v2_size</tt> </tt>
+<a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line">          </tt>
+<a name="L199"></a><tt class="py-lineno">199</tt>  <tt class="py-line">         <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__bytecodes</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt> <tt class="py-op">[</tt> <tt class="py-name">information_type</tt><tt class="py-op">,</tt> <tt class="py-name">information_size</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__OP</tt><tt class="py-op">[</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-40" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-40', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt><tt class="py-op">,</tt> <tt class="py-name">v0</tt><tt class="py-op">,</tt> <tt class="py-name">v1</tt><tt class="py-op">,</tt> <tt class="py-name">v2</tt> <tt class="py-op">]</tt> <tt class="py-op">)</tt> </tt>
+</div><a name="L200"></a><tt class="py-lineno">200</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._get_type"></a><div id="IL_REIL_TO_JAVA._get_type-def"><a name="L201"></a><tt class="py-lineno">201</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._get_type-toggle" onclick="return toggle('IL_REIL_TO_JAVA._get_type');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_get_type">_get_type</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">v</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._get_type-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._get_type-expanded"><a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">v</tt> <tt class="py-keyword">not</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt> <tt class="py-op">:</tt> </tt>
+<a name="L203"></a><tt class="py-lineno">203</tt>  <tt class="py-line">         <tt class="py-name">n_v</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-41" class="py-name"><a title="vm.IL_REIL_TO_JAVA._unique_value" class="py-name" href="#" onclick="return doclink('link-41', '_unique_value', 'link-28');">_unique_value</a></tt><tt class="py-op">(</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt> <tt class="py-op">)</tt> </tt>
+<a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line">         <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt><tt class="py-op">[</tt> <tt class="py-name">v</tt> <tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">n_v</tt> </tt>
+<a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line"> </tt>
+<a name="L206"></a><tt class="py-lineno">206</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt><tt class="py-op">[</tt> <tt class="py-name">v</tt> <tt class="py-op">]</tt> </tt>
+</div><a name="L207"></a><tt class="py-lineno">207</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._get_val"></a><div id="IL_REIL_TO_JAVA._get_val-def"><a name="L208"></a><tt class="py-lineno">208</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._get_val-toggle" onclick="return toggle('IL_REIL_TO_JAVA._get_val');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_get_val">_get_val</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">r</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._get_val-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._get_val-expanded"><a name="L209"></a><tt class="py-lineno">209</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">r</tt> <tt class="py-op">==</tt> <tt class="py-name">None</tt> <tt class="py-op">:</tt> </tt>
+<a name="L210"></a><tt class="py-lineno">210</tt>  <tt class="py-line">         <tt class="py-keyword">return</tt> <tt class="py-number">0x0</tt><tt class="py-op">,</tt> <tt class="py-number">0x0</tt><tt class="py-op">,</tt> <tt class="py-number">0x0</tt> </tt>
+<a name="L211"></a><tt class="py-lineno">211</tt>  <tt class="py-line"> </tt>
+<a name="L212"></a><tt class="py-lineno">212</tt>  <tt class="py-line">      <tt class="py-keyword">if</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-42" class="py-name" targets="Method dvm.CM.get_type()=dvm.CM-class.html#get_type,Method dvm.FieldItem.get_type()=dvm.FieldItem-class.html#get_type,Method dvm.MapItem.get_type()=dvm.MapItem-class.html#get_type,Method il_reil.REIL_LITERAL.get_type()=il_reil.REIL_LITERAL-class.html#get_type,Method il_reil.REIL_OFFSET.get_type()=il_reil.REIL_OFFSET-class.html#get_type,Method il_reil.REIL_REGISTER.get_type()=il_reil.REIL_REGISTER-class.html#get_type"><a title="dvm.CM.get_type
+dvm.FieldItem.get_type
+dvm.MapItem.get_type
+il_reil.REIL_LITERAL.get_type
+il_reil.REIL_OFFSET.get_type
+il_reil.REIL_REGISTER.get_type" class="py-name" href="#" onclick="return doclink('link-42', 'get_type', 'link-42');">get_type</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt id="link-43" class="py-name"><a title="il_reil.REIL_TYPE_REGISTER" class="py-name" href="#" onclick="return doclink('link-43', 'REIL_TYPE_REGISTER', 'link-7');">REIL_TYPE_REGISTER</a></tt> <tt class="py-op">:</tt> </tt>
+<a name="L213"></a><tt class="py-lineno">213</tt>  <tt class="py-line">         <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__RR</tt><tt class="py-op">[</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-44" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-44', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">]</tt><tt class="py-op">,</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-45" class="py-name" targets="Method dvm.FillArrayData.get_size()=dvm.FillArrayData-class.html#get_size,Method dvm.PackedSwitch.get_size()=dvm.PackedSwitch-class.html#get_size,Method dvm.SparseSwitch.get_size()=dvm.SparseSwitch-class.html#get_size,Method il_reil.REIL_BASE.get_size()=il_reil.REIL_BASE-class.html#get_size,Method il_reil.REIL_LITERAL.get_size()=il_reil.REIL_LITERAL-class.html#get_size,Method il_reil.REIL_OFFSET.get_size()=il_reil.REIL_OFFSET-class.html#get_size,Method il_reil.REIL_REGISTER.get_size()=il_reil.REIL_REGISTER-class.html#get_size"><a title="dvm.FillArrayData.get_size
+dvm.PackedSwitch.get_size
+dvm.SparseSwitch.get_size
+il_reil.REIL_BASE.get_size
+il_reil.REIL_LITERAL.get_size
+il_reil.REIL_OFFSET.get_size
+il_reil.REIL_REGISTER.get_size" class="py-name" href="#" onclick="return doclink('link-45', 'get_size', 'link-45');">get_size</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-46" class="py-name"><a title="dvm.CM.get_type
+dvm.FieldItem.get_type
+dvm.MapItem.get_type
+il_reil.REIL_LITERAL.get_type
+il_reil.REIL_OFFSET.get_type
+il_reil.REIL_REGISTER.get_type" class="py-name" href="#" onclick="return doclink('link-46', 'get_type', 'link-42');">get_type</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line"> </tt>
+<a name="L215"></a><tt class="py-lineno">215</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-47" class="py-name" targets="Method bytecode.SV.get_value()=bytecode.SV-class.html#get_value,Method bytecode.SVs.get_value()=bytecode.SVs-class.html#get_value,Method dvm.HeaderItem.get_value()=dvm.HeaderItem-class.html#get_value,Method dvm.TypeItem.get_value()=dvm.TypeItem-class.html#get_value,Method il_reil.REIL_LITERAL.get_value()=il_reil.REIL_LITERAL-class.html#get_value,Method il_reil.REIL_OFFSET.get_value()=il_reil.REIL_OFFSET-class.html#get_value,Method il_reil.REIL_REGISTER.get_value()=il_reil.REIL_REGISTER-class.html#get_value,Method jvm.ClassManager.get_value()=jvm.ClassManager-class.html#get_value,Method vm.IL_REIL_TO_JAVA.get_value()=vm.IL_REIL_TO_JAVA-class.html#get_value"><a title="bytecode.SV.get_value
+bytecode.SVs.get_value
+dvm.HeaderItem.get_value
+dvm.TypeItem.get_value
+il_reil.REIL_LITERAL.get_value
+il_reil.REIL_OFFSET.get_value
+il_reil.REIL_REGISTER.get_value
+jvm.ClassManager.get_value
+vm.IL_REIL_TO_JAVA.get_value" class="py-name" href="#" onclick="return doclink('link-47', 'get_value', 'link-47');">get_value</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-48" class="py-name"><a title="dvm.FillArrayData.get_size
+dvm.PackedSwitch.get_size
+dvm.SparseSwitch.get_size
+il_reil.REIL_BASE.get_size
+il_reil.REIL_LITERAL.get_size
+il_reil.REIL_OFFSET.get_size
+il_reil.REIL_REGISTER.get_size" class="py-name" href="#" onclick="return doclink('link-48', 'get_size', 'link-45');">get_size</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">r</tt><tt class="py-op">.</tt><tt id="link-49" class="py-name"><a title="dvm.CM.get_type
+dvm.FieldItem.get_type
+dvm.MapItem.get_type
+il_reil.REIL_LITERAL.get_type
+il_reil.REIL_OFFSET.get_type
+il_reil.REIL_REGISTER.get_type" class="py-name" href="#" onclick="return doclink('link-49', 'get_type', 'link-42');">get_type</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._random_int"></a><div id="IL_REIL_TO_JAVA._random_int-def"><a name="L217"></a><tt class="py-lineno">217</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._random_int-toggle" onclick="return toggle('IL_REIL_TO_JAVA._random_int');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_random_int">_random_int</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._random_int-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._random_int-expanded"><a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">random</tt><tt class="py-op">.</tt><tt class="py-name">randint</tt><tt class="py-op">(</tt> <tt class="py-number">0</tt><tt class="py-op">,</tt> <tt class="py-number">0xFF</tt> <tt class="py-op">)</tt> </tt>
+</div><a name="L219"></a><tt class="py-lineno">219</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA._unique_value"></a><div id="IL_REIL_TO_JAVA._unique_value-def"><a name="L220"></a><tt class="py-lineno">220</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA._unique_value-toggle" onclick="return toggle('IL_REIL_TO_JAVA._unique_value');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#_unique_value">_unique_value</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">h</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA._unique_value-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA._unique_value-expanded"><a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line">      <tt class="py-name">v</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-50" class="py-name" targets="Method vm.IL_REIL_TO_JAVA._random_int()=vm.IL_REIL_TO_JAVA-class.html#_random_int"><a title="vm.IL_REIL_TO_JAVA._random_int" class="py-name" href="#" onclick="return doclink('link-50', '_random_int', 'link-50');">_random_int</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L222"></a><tt class="py-lineno">222</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt id="link-51" class="py-name" targets="Variable jvm.k=jvm-module.html#k"><a title="jvm.k" class="py-name" href="#" onclick="return doclink('link-51', 'k', 'link-51');">k</a></tt> <tt class="py-keyword">in</tt> <tt class="py-name">h</tt> <tt class="py-op">:</tt> </tt>
+<a name="L223"></a><tt class="py-lineno">223</tt>  <tt class="py-line">         <tt class="py-keyword">if</tt> <tt id="link-52" class="py-name"><a title="jvm.k" class="py-name" href="#" onclick="return doclink('link-52', 'k', 'link-51');">k</a></tt> <tt class="py-op">==</tt> <tt class="py-name">v</tt> <tt class="py-op">:</tt> </tt>
+<a name="L224"></a><tt class="py-lineno">224</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-53" class="py-name"><a title="vm.IL_REIL_TO_JAVA._unique_value" class="py-name" href="#" onclick="return doclink('link-53', '_unique_value', 'link-28');">_unique_value</a></tt><tt class="py-op">(</tt> <tt class="py-name">h</tt> <tt class="py-op">)</tt> </tt>
+<a name="L225"></a><tt class="py-lineno">225</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">v</tt> </tt>
+</div><a name="L226"></a><tt class="py-lineno">226</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.call_code"></a><div id="IL_REIL_TO_JAVA.call_code-def"><a name="L227"></a><tt class="py-lineno">227</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.call_code-toggle" onclick="return toggle('IL_REIL_TO_JAVA.call_code');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#call_code">call_code</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.call_code-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.call_code-expanded"><a name="L228"></a><tt class="py-lineno">228</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__call_code</tt> </tt>
+</div><a name="L229"></a><tt class="py-lineno">229</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.get_methods"></a><div id="IL_REIL_TO_JAVA.get_methods-def"><a name="L230"></a><tt class="py-lineno">230</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.get_methods-toggle" onclick="return toggle('IL_REIL_TO_JAVA.get_methods');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#get_methods">get_methods</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.get_methods-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.get_methods-expanded"><a name="L231"></a><tt class="py-lineno">231</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_format</tt><tt class="py-op">.</tt><tt id="link-54" class="py-name"><a title="dvm.CM.get_method
+dvm.ClassDefItem.get_method
+dvm.DalvikVMFormat.get_method
+jvm.ClassManager.get_method
+jvm.JVMFormat.get_method" class="py-name" href="#" onclick="return doclink('link-54', 'get_method', 'link-19');">get_method</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__vm_name</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L232"></a><tt class="py-lineno">232</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.get_operand"></a><div id="IL_REIL_TO_JAVA.get_operand-def"><a name="L233"></a><tt class="py-lineno">233</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.get_operand-toggle" onclick="return toggle('IL_REIL_TO_JAVA.get_operand');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#get_operand">get_operand</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.get_operand-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.get_operand-expanded"><a name="L234"></a><tt class="py-lineno">234</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_BC</tt> <tt class="py-op">+</tt> <tt class="py-string">"["</tt> <tt class="py-op">+</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IDX</tt> <tt class="py-op">+</tt> <tt class="py-string">"]"</tt> <tt class="py-op">+</tt> <tt class="py-string">"["</tt> <tt class="py-op">+</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-number">3</tt> <tt class="py-op">+</tt> <tt class="py-name">pos</tt> <tt class="py-op">-</tt> <tt class="py-number">1</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-string">"]"</tt> </tt>
+</div><a name="L235"></a><tt class="py-lineno">235</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.get_pos_reg"></a><div id="IL_REIL_TO_JAVA.get_pos_reg-def"><a name="L236"></a><tt class="py-lineno">236</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.get_pos_reg-toggle" onclick="return toggle('IL_REIL_TO_JAVA.get_pos_reg');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#get_pos_reg">get_pos_reg</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">operand</tt><tt class="py-op">,</tt> <tt class="py-param">variable</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.get_pos_reg-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.get_pos_reg-expanded"><a name="L237"></a><tt class="py-lineno">237</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">=</tt> <tt class="py-string">"for(int j=0; j &lt; %s.length; j+=2) {\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt> </tt>
+<a name="L238"></a><tt class="py-lineno">238</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>   <tt class="py-string">"if (%s[j] == %s){\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-55" class="py-name" targets="Method vm.IL_REIL_TO_JAVA.get_operand()=vm.IL_REIL_TO_JAVA-class.html#get_operand"><a title="vm.IL_REIL_TO_JAVA.get_operand" class="py-name" href="#" onclick="return doclink('link-55', 'get_operand', 'link-55');">get_operand</a></tt><tt class="py-op">(</tt><tt class="py-name">operand</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L239"></a><tt class="py-lineno">239</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>           <tt class="py-string">"%s = %s[j + 1];\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">variable</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt><tt class="py-op">)</tt> </tt>
+<a name="L240"></a><tt class="py-lineno">240</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>           <tt class="py-string">"break;\n"</tt> </tt>
+<a name="L241"></a><tt class="py-lineno">241</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>   <tt class="py-string">"}\n"</tt> </tt>
+<a name="L242"></a><tt class="py-lineno">242</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"}\n"</tt> </tt>
+<a name="L243"></a><tt class="py-lineno">243</tt>  <tt class="py-line"> </tt>
+<a name="L244"></a><tt class="py-lineno">244</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">buff</tt> </tt>
+</div><a name="L245"></a><tt class="py-lineno">245</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.get_value"></a><div id="IL_REIL_TO_JAVA.get_value-def"><a name="L246"></a><tt class="py-lineno">246</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.get_value-toggle" onclick="return toggle('IL_REIL_TO_JAVA.get_value');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#get_value">get_value</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">operand</tt><tt class="py-op">,</tt> <tt class="py-param">variable</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.get_value-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.get_value-expanded"><a name="L247"></a><tt class="py-lineno">247</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">=</tt> <tt class="py-string">"if (%s[%s] == %d) {\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_T</tt><tt class="py-op">,</tt> <tt class="py-name">operand</tt> <tt class="py-op">-</tt> <tt class="py-number">1</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__BT</tt><tt class="py-op">[</tt><tt id="link-56" class="py-name"><a title="il_reil.REIL_TYPE_REGISTER" class="py-name" href="#" onclick="return doclink('link-56', 'REIL_TYPE_REGISTER', 'link-7');">REIL_TYPE_REGISTER</a></tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L248"></a><tt class="py-lineno">248</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>   <tt class="py-string">"for(int j=0; j &lt; %s.length; j+=2) {\n"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt> </tt>
+<a name="L249"></a><tt class="py-lineno">249</tt>  <tt class="py-line"> </tt>
+<a name="L250"></a><tt class="py-lineno">250</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>           <tt class="py-string">"if (%s[j] == %s){\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-57" class="py-name"><a title="vm.IL_REIL_TO_JAVA.get_operand" class="py-name" href="#" onclick="return doclink('link-57', 'get_operand', 'link-55');">get_operand</a></tt><tt class="py-op">(</tt><tt class="py-name">operand</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L251"></a><tt class="py-lineno">251</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>                   <tt class="py-string">"%s = %s[ %s[j + 1] ];\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">variable</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_REG</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_IREG</tt><tt class="py-op">)</tt> </tt>
+<a name="L252"></a><tt class="py-lineno">252</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>                           <tt class="py-string">"break;\n"</tt> </tt>
+<a name="L253"></a><tt class="py-lineno">253</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>           <tt class="py-string">"}\n"</tt> </tt>
+<a name="L254"></a><tt class="py-lineno">254</tt>  <tt class="py-line"> </tt>
+<a name="L255"></a><tt class="py-lineno">255</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt>   <tt class="py-string">"}\n"</tt> </tt>
+<a name="L256"></a><tt class="py-lineno">256</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"}\n"</tt> </tt>
+<a name="L257"></a><tt class="py-lineno">257</tt>  <tt class="py-line"> </tt>
+<a name="L258"></a><tt class="py-lineno">258</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"else {\n"</tt> </tt>
+<a name="L259"></a><tt class="py-lineno">259</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"%s = %s;\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">variable</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-58" class="py-name"><a title="vm.IL_REIL_TO_JAVA.get_operand" class="py-name" href="#" onclick="return doclink('link-58', 'get_operand', 'link-55');">get_operand</a></tt><tt class="py-op">(</tt><tt class="py-name">operand</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L260"></a><tt class="py-lineno">260</tt>  <tt class="py-line">      <tt class="py-name">buff</tt> <tt class="py-op">+=</tt> <tt class="py-string">"}\n"</tt> </tt>
+<a name="L261"></a><tt class="py-lineno">261</tt>  <tt class="py-line"> </tt>
+<a name="L262"></a><tt class="py-lineno">262</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-name">buff</tt> </tt>
+</div><a name="L263"></a><tt class="py-lineno">263</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.set_reg"></a><div id="IL_REIL_TO_JAVA.set_reg-def"><a name="L264"></a><tt class="py-lineno">264</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.set_reg-toggle" onclick="return toggle('IL_REIL_TO_JAVA.set_reg');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#set_reg">set_reg</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">pos</tt><tt class="py-op">,</tt> <tt class="py-param">variable</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.set_reg-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.set_reg-expanded"><a name="L265"></a><tt class="py-lineno">265</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-string">"%s[%s] = %s;\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_REG</tt><tt class="py-op">,</tt> <tt class="py-name">pos</tt><tt class="py-op">,</tt> <tt class="py-name">variable</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L266"></a><tt class="py-lineno">266</tt>  <tt class="py-line"> </tt>
+<a name="IL_REIL_TO_JAVA.set_idx"></a><div id="IL_REIL_TO_JAVA.set_idx-def"><a name="L267"></a><tt class="py-lineno">267</tt> <a class="py-toggle" href="#" id="IL_REIL_TO_JAVA.set_idx-toggle" onclick="return toggle('IL_REIL_TO_JAVA.set_idx');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.IL_REIL_TO_JAVA-class.html#set_idx">set_idx</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">operand</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="IL_REIL_TO_JAVA.set_idx-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="IL_REIL_TO_JAVA.set_idx-expanded"><a name="L268"></a><tt class="py-lineno">268</tt>  <tt class="py-line">      <tt class="py-keyword">return</tt> <tt class="py-string">"%s = %s;\n"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">__VAR_C_IDX</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-59" class="py-name"><a title="vm.IL_REIL_TO_JAVA.get_operand" class="py-name" href="#" onclick="return doclink('link-59', 'get_operand', 'link-55');">get_operand</a></tt><tt class="py-op">(</tt><tt class="py-name">operand</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L269"></a><tt class="py-lineno">269</tt>  <tt class="py-line"> </tt>
+<a name="VM_int"></a><div id="VM_int-def"><a name="L270"></a><tt class="py-lineno">270</tt> <a class="py-toggle" href="#" id="VM_int-toggle" onclick="return toggle('VM_int');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="vm.VM_int-class.html">VM_int</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="VM_int-expanded"><a name="VM_int.patch_code"></a><div id="VM_int.patch_code-def"><a name="L271"></a><tt class="py-lineno">271</tt> <a class="py-toggle" href="#" id="VM_int.patch_code-toggle" onclick="return toggle('VM_int.patch_code');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.VM_int-class.html#patch_code">patch_code</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int.patch_code-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="VM_int.patch_code-expanded"><a name="L272"></a><tt class="py-lineno">272</tt>  <tt class="py-line">      <tt class="py-name">code</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_code</tt> </tt>
+<a name="L273"></a><tt class="py-lineno">273</tt>  <tt class="py-line">      <tt class="py-name">idx</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_idx</tt>  </tt>
+<a name="L274"></a><tt class="py-lineno">274</tt>  <tt class="py-line"> </tt>
+<a name="L275"></a><tt class="py-lineno">275</tt>  <tt class="py-line">      <tt class="py-name">code</tt><tt class="py-op">.</tt><tt id="link-60" class="py-name" targets="Method jvm.CodeAttribute.remove_at()=jvm.CodeAttribute-class.html#remove_at,Method jvm.JavaCode.remove_at()=jvm.JavaCode-class.html#remove_at"><a title="jvm.CodeAttribute.remove_at
+jvm.JavaCode.remove_at" class="py-name" href="#" onclick="return doclink('link-60', 'remove_at', 'link-60');">remove_at</a></tt><tt class="py-op">(</tt> <tt class="py-name">idx</tt> <tt class="py-op">)</tt> </tt>
+<a name="L276"></a><tt class="py-lineno">276</tt>  <tt class="py-line">       </tt>
+<a name="L277"></a><tt class="py-lineno">277</tt>  <tt class="py-line">      <tt class="py-keyword">for</tt> <tt class="py-name">new_code</tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_irtj</tt><tt class="py-op">.</tt><tt id="link-61" class="py-name" targets="Method vm.IL_REIL_TO_JAVA.call_code()=vm.IL_REIL_TO_JAVA-class.html#call_code"><a title="vm.IL_REIL_TO_JAVA.call_code" class="py-name" href="#" onclick="return doclink('link-61', 'call_code', 'link-61');">call_code</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+<a name="L278"></a><tt class="py-lineno">278</tt>  <tt class="py-line">         <tt class="py-name">code</tt><tt class="py-op">.</tt><tt id="link-62" class="py-name" targets="Method jvm.CodeAttribute.insert_at()=jvm.CodeAttribute-class.html#insert_at,Method jvm.JavaCode.insert_at()=jvm.JavaCode-class.html#insert_at"><a title="jvm.CodeAttribute.insert_at
+jvm.JavaCode.insert_at" class="py-name" href="#" onclick="return doclink('link-62', 'insert_at', 'link-62');">insert_at</a></tt><tt class="py-op">(</tt> <tt class="py-name">idx</tt><tt class="py-op">,</tt> <tt class="py-name">new_code</tt> <tt class="py-op">)</tt> </tt>
+<a name="L279"></a><tt class="py-lineno">279</tt>  <tt class="py-line">         <tt class="py-name">idx</tt> <tt class="py-op">+=</tt> <tt class="py-number">1</tt> </tt>
+</div><a name="L280"></a><tt class="py-lineno">280</tt>  <tt class="py-line"> </tt>
+<a name="VM_int.get_methods"></a><div id="VM_int.get_methods-def"><a name="L281"></a><tt class="py-lineno">281</tt> <a class="py-toggle" href="#" id="VM_int.get_methods-toggle" onclick="return toggle('VM_int.get_methods');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.VM_int-class.html#get_methods">get_methods</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int.get_methods-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="VM_int.get_methods-expanded"><a name="L282"></a><tt class="py-lineno">282</tt>  <tt class="py-line">     <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_irtj</tt><tt class="py-op">.</tt><tt id="link-63" class="py-name" targets="Method dvm.ClassDataItem.get_methods()=dvm.ClassDataItem-class.html#get_methods,Method dvm.ClassItem.get_methods()=dvm.ClassItem-class.html#get_methods,Method dvm.DalvikVMFormat.get_methods()=dvm.DalvikVMFormat-class.html#get_methods,Method jvm.JVMFormat.get_methods()=jvm.JVMFormat-class.html#get_methods,Method vm.IL_REIL_TO_JAVA.get_methods()=vm.IL_REIL_TO_JAVA-class.html#get_methods,Method vm.VM_int.get_methods()=vm.VM_int-class.html#get_methods"><a title="dvm.ClassDataItem.get_methods
+dvm.ClassItem.get_methods
+dvm.DalvikVMFormat.get_methods
+jvm.JVMFormat.get_methods
+vm.IL_REIL_TO_JAVA.get_methods
+vm.VM_int.get_methods" class="py-name" href="#" onclick="return doclink('link-63', 'get_methods', 'link-63');">get_methods</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L283"></a><tt class="py-lineno">283</tt>  <tt class="py-line"> </tt>
+<a name="VM_int_basic_math_formula"></a><div id="VM_int_basic_math_formula-def"><a name="L284"></a><tt class="py-lineno">284</tt> <a class="py-toggle" href="#" id="VM_int_basic_math_formula-toggle" onclick="return toggle('VM_int_basic_math_formula');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="vm.VM_int_basic_math_formula-class.html">VM_int_basic_math_formula</a><tt class="py-op">(</tt><tt class="py-base-class">VM_int</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int_basic_math_formula-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="VM_int_basic_math_formula-expanded"><a name="VM_int_basic_math_formula.__init__"></a><div id="VM_int_basic_math_formula.__init__-def"><a name="L285"></a><tt class="py-lineno">285</tt> <a class="py-toggle" href="#" id="VM_int_basic_math_formula.__init__-toggle" onclick="return toggle('VM_int_basic_math_formula.__init__');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.VM_int_basic_math_formula-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-param">code</tt><tt class="py-op">,</tt> <tt class="py-param">idx</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int_basic_math_formula.__init__-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="VM_int_basic_math_formula.__init__-expanded"><a name="L286"></a><tt class="py-lineno">286</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_code</tt> <tt class="py-op">=</tt> <tt class="py-name">code</tt> </tt>
+<a name="L287"></a><tt class="py-lineno">287</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_idx</tt> <tt class="py-op">=</tt> <tt class="py-name">idx</tt> </tt>
+<a name="L288"></a><tt class="py-lineno">288</tt>  <tt class="py-line"> </tt>
+<a name="L289"></a><tt class="py-lineno">289</tt>  <tt class="py-line">      <tt class="py-name">i</tt> <tt class="py-op">=</tt> <tt class="py-name">code</tt><tt class="py-op">.</tt><tt id="link-64" class="py-name" targets="Method jvm.CodeAttribute.get_at()=jvm.CodeAttribute-class.html#get_at,Method jvm.JavaCode.get_at()=jvm.JavaCode-class.html#get_at"><a title="jvm.CodeAttribute.get_at
+jvm.JavaCode.get_at" class="py-name" href="#" onclick="return doclink('link-64', 'get_at', 'link-64');">get_at</a></tt><tt class="py-op">(</tt> <tt class="py-name">idx</tt> <tt class="py-op">)</tt> </tt>
+<a name="L290"></a><tt class="py-lineno">290</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">i</tt><tt class="py-op">,</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-65" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-65', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-66" class="py-name" targets="Method jvm.JBC.get_operands()=jvm.JBC-class.html#get_operands"><a title="jvm.JBC.get_operands" class="py-name" href="#" onclick="return doclink('link-66', 'get_operands', 'link-66');">get_operands</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L291"></a><tt class="py-lineno">291</tt>  <tt class="py-line">          </tt>
+<a name="L292"></a><tt class="py-lineno">292</tt>  <tt class="py-line">      <tt class="py-name">oint</tt> <tt class="py-op">=</tt> <tt id="link-67" class="py-name"><a title="opaque" class="py-name" href="#" onclick="return doclink('link-67', 'opaque', 'link-0');">opaque</a></tt><tt class="py-op">.</tt><tt id="link-68" class="py-name" targets="Class opaque.INT=opaque.INT-class.html"><a title="opaque.INT" class="py-name" href="#" onclick="return doclink('link-68', 'INT', 'link-68');">INT</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-69" class="py-name"><a title="jvm.JBC.get_operands" class="py-name" href="#" onclick="return doclink('link-69', 'get_operands', 'link-66');">get_operands</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-70" class="py-name" targets="Method il_reil.MTR.run()=il_reil.MTR-class.html#run,Method opaque.INT.run()=opaque.INT-class.html#run,Method opaque.PRNG.run()=opaque.PRNG-class.html#run"><a title="il_reil.MTR.run
+opaque.INT.run
+opaque.PRNG.run" class="py-name" href="#" onclick="return doclink('link-70', 'run', 'link-70');">run</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L293"></a><tt class="py-lineno">293</tt>  <tt class="py-line"> </tt>
+<a name="L294"></a><tt class="py-lineno">294</tt>  <tt class="py-line">      <tt class="py-name">mtir</tt> <tt class="py-op">=</tt> <tt id="link-71" class="py-name"><a title="il_reil.MTR" class="py-name" href="#" onclick="return doclink('link-71', 'MTR', 'link-3');">MTR</a></tt><tt class="py-op">(</tt> <tt class="py-name">oint</tt> <tt class="py-op">)</tt> </tt>
+<a name="L295"></a><tt class="py-lineno">295</tt>  <tt class="py-line">      <tt class="py-comment">#mtir = MetaREIL( mtir.get() )</tt> </tt>
+<a name="L296"></a><tt class="py-lineno">296</tt>  <tt class="py-line">          </tt>
+<a name="L297"></a><tt class="py-lineno">297</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_irtj</tt> <tt class="py-op">=</tt> <tt id="link-72" class="py-name" targets="Class vm.IL_REIL_TO_JAVA=vm.IL_REIL_TO_JAVA-class.html"><a title="vm.IL_REIL_TO_JAVA" class="py-name" href="#" onclick="return doclink('link-72', 'IL_REIL_TO_JAVA', 'link-72');">IL_REIL_TO_JAVA</a></tt><tt class="py-op">(</tt> <tt class="py-name">orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-name">mtir</tt><tt class="py-op">.</tt><tt id="link-73" class="py-name" targets="Method androguard.Androguard.get()=androguard.Androguard-class.html#get,Method androguard.BC.get()=androguard.BC-class.html#get,Method dvm.IdItem.get()=dvm.IdItem-class.html#get,Method dvm.MethodIdItem.get()=dvm.MethodIdItem-class.html#get,Method dvm.ProtoIdItem.get()=dvm.ProtoIdItem-class.html#get,Method dvm.StringDataItem.get()=dvm.StringDataItem-class.html#get,Method dvm.TypeIdItem.get()=dvm.TypeIdItem-class.html#get,Method il_reil.BPTR.get()=il_reil.BPTR-class.html#get,Method il_reil.MTR.get()=il_reil.MTR-class.html#get,Method il_reil.MetaREIL.get()=il_reil.MetaREIL-class.html#get,Method jvm.JavaCode.get()=jvm.JavaCode-class.html#get"><a title="androguard.Androguard.get
+androguard.BC.get
+dvm.IdItem.get
+dvm.MethodIdItem.get
+dvm.ProtoIdItem.get
+dvm.StringDataItem.get
+dvm.TypeIdItem.get
+il_reil.BPTR.get
+il_reil.MTR.get
+il_reil.MetaREIL.get
+jvm.JavaCode.get" class="py-name" href="#" onclick="return doclink('link-73', 'get', 'link-73');">get</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">)</tt> </tt>
+</div></div><a name="L298"></a><tt class="py-lineno">298</tt>  <tt class="py-line"> </tt>
+<a name="VM_int_basic_prng"></a><div id="VM_int_basic_prng-def"><a name="L299"></a><tt class="py-lineno">299</tt> <a class="py-toggle" href="#" id="VM_int_basic_prng-toggle" onclick="return toggle('VM_int_basic_prng');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="vm.VM_int_basic_prng-class.html">VM_int_basic_prng</a><tt class="py-op">(</tt><tt class="py-base-class">VM_int</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int_basic_prng-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="VM_int_basic_prng-expanded"><a name="VM_int_basic_prng.__init__"></a><div id="VM_int_basic_prng.__init__-def"><a name="L300"></a><tt class="py-lineno">300</tt> <a class="py-toggle" href="#" id="VM_int_basic_prng.__init__-toggle" onclick="return toggle('VM_int_basic_prng.__init__');">-</a><tt class="py-line">   <tt class="py-keyword">def</tt> <a class="py-def-name" href="vm.VM_int_basic_prng-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-param">code</tt><tt class="py-op">,</tt> <tt class="py-param">idx</tt><tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="VM_int_basic_prng.__init__-collapsed" style="display:none;" pad="+++" indent="+++++++"></div><div id="VM_int_basic_prng.__init__-expanded"><a name="L301"></a><tt class="py-lineno">301</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_code</tt> <tt class="py-op">=</tt> <tt class="py-name">code</tt> </tt>
+<a name="L302"></a><tt class="py-lineno">302</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_idx</tt> <tt class="py-op">=</tt> <tt class="py-name">idx</tt> </tt>
+<a name="L303"></a><tt class="py-lineno">303</tt>  <tt class="py-line"> </tt>
+<a name="L304"></a><tt class="py-lineno">304</tt>  <tt class="py-line">      <tt class="py-name">i</tt> <tt class="py-op">=</tt> <tt class="py-name">code</tt><tt class="py-op">.</tt><tt id="link-74" class="py-name"><a title="jvm.CodeAttribute.get_at
+jvm.JavaCode.get_at" class="py-name" href="#" onclick="return doclink('link-74', 'get_at', 'link-64');">get_at</a></tt><tt class="py-op">(</tt> <tt class="py-name">idx</tt> <tt class="py-op">)</tt> </tt>
+<a name="L305"></a><tt class="py-lineno">305</tt>  <tt class="py-line">      <tt class="py-keyword">print</tt> <tt class="py-name">i</tt><tt class="py-op">,</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-75" class="py-name"><a title="dvm.ClassItem.get_name
+dvm.EncodedField.get_name
+dvm.EncodedMethod.get_name
+dvm.FieldItem.get_name
+dvm.MethodItem.get_name
+il_reil.REIL_BASE.get_name
+il_reil.REIL_REGISTER.get_name
+jvm.AttributeInfo.get_name
+jvm.CpInfo.get_name
+jvm.FieldInfo.get_name
+jvm.JBC.get_name
+jvm.MethodInfo.get_name" class="py-name" href="#" onclick="return doclink('link-75', 'get_name', 'link-15');">get_name</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-76" class="py-name"><a title="jvm.JBC.get_operands" class="py-name" href="#" onclick="return doclink('link-76', 'get_operands', 'link-66');">get_operands</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L306"></a><tt class="py-lineno">306</tt>  <tt class="py-line"> </tt>
+<a name="L307"></a><tt class="py-lineno">307</tt>  <tt class="py-line">      <tt class="py-name">oint</tt> <tt class="py-op">=</tt> <tt id="link-77" class="py-name"><a title="opaque" class="py-name" href="#" onclick="return doclink('link-77', 'opaque', 'link-0');">opaque</a></tt><tt class="py-op">.</tt><tt id="link-78" class="py-name" targets="Class opaque.PRNG=opaque.PRNG-class.html"><a title="opaque.PRNG" class="py-name" href="#" onclick="return doclink('link-78', 'PRNG', 'link-78');">PRNG</a></tt><tt class="py-op">(</tt> <tt class="py-name">i</tt><tt class="py-op">.</tt><tt id="link-79" class="py-name"><a title="jvm.JBC.get_operands" class="py-name" href="#" onclick="return doclink('link-79', 'get_operands', 'link-66');">get_operands</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt> <tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-80" class="py-name"><a title="il_reil.MTR.run
+opaque.INT.run
+opaque.PRNG.run" class="py-name" href="#" onclick="return doclink('link-80', 'run', 'link-70');">run</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L308"></a><tt class="py-lineno">308</tt>  <tt class="py-line">      <tt class="py-name">atoil</tt> <tt class="py-op">=</tt> <tt id="link-81" class="py-name"><a title="il_reil.BPTR" class="py-name" href="#" onclick="return doclink('link-81', 'BPTR', 'link-4');">BPTR</a></tt><tt class="py-op">(</tt> <tt class="py-name">oint</tt> <tt class="py-op">)</tt> </tt>
+<a name="L309"></a><tt class="py-lineno">309</tt>  <tt class="py-line"> </tt>
+<a name="L310"></a><tt class="py-lineno">310</tt>  <tt class="py-line">      <tt class="py-comment"># atoil = Metamorphism_REIL( mtir.get() )</tt> </tt>
+<a name="L311"></a><tt class="py-lineno">311</tt>  <tt class="py-line"> </tt>
+<a name="L312"></a><tt class="py-lineno">312</tt>  <tt class="py-line">      <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_irtj</tt> <tt class="py-op">=</tt> <tt id="link-82" class="py-name"><a title="vm.IL_REIL_TO_JAVA" class="py-name" href="#" onclick="return doclink('link-82', 'IL_REIL_TO_JAVA', 'link-72');">IL_REIL_TO_JAVA</a></tt><tt class="py-op">(</tt> <tt class="py-name">orig_class_name</tt><tt class="py-op">,</tt> <tt class="py-name">atoil</tt><tt class="py-op">.</tt><tt id="link-83" class="py-name"><a title="androguard.Androguard.get
+androguard.BC.get
+dvm.IdItem.get
+dvm.MethodIdItem.get
+dvm.ProtoIdItem.get
+dvm.StringDataItem.get
+dvm.TypeIdItem.get
+il_reil.BPTR.get
+il_reil.MTR.get
+il_reil.MetaREIL.get
+jvm.JavaCode.get" class="py-name" href="#" onclick="return doclink('link-83', 'get', 'link-73');">get</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">)</tt> </tt>
+</div></div><a name="L313"></a><tt class="py-lineno">313</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://code.google.com/p/androguard/">Androguard</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Mon Oct 25 16:26:38 2010
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
