@@ -76,6 +76,11 @@ def interact() :
       "DalvikVMFormat" : dvm.DalvikVMFormat,
       "AndroguardS" : androguard.AndroguardS,
       "Androguard" : androguard.Androguard,
+
+      "VM_int" : androguard.VM_int,
+      "VM_INT_AUTO" : androguard.VM_INT_AUTO,
+      "VM_INT_BASIC_MATH_FORMULA" : androguard.VM_INT_BASIC_MATH_FORMULA,
+      "VM_INT_BASIC_PRNG" : androguard.VM_INT_BASIC_PRNG,
    }
 
    import __builtin__
