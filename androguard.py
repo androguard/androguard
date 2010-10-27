@@ -91,12 +91,6 @@ class Androguard :
 
          self.__bc.append( (i, BC( bc )) )
 
-   def analysis(self, name) :
-      for file_name, bc in self.__bc :
-         r = getattr(bc, "get_method")(name)
-         for i in r :
-            analysis.JBCA( bc, i )
-
    def get_raw(self) :
       """Return raw format of all file"""
       l = []
@@ -136,9 +130,13 @@ class AndroguardS :
       @param filename : the filename to use (filename must be terminated by .class or .dex)   
    """
    def __init__(self, filename) :
+      self.__filename = filename
       a = Androguard( [ filename ] )
       self.__a = a.get( "file", filename )
    
+   def get_bc(self) :
+      return self.__a.get_bc()
+
    def __getattr__(self, value) :
       return getattr(self.__a, value)
 

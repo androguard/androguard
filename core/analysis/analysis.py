@@ -173,7 +173,7 @@ class JBCA(Analysis) :
       self.__method = _method
 
       code = self.__method.get_code()
-      code.show_info()
+    #  code.show_info()
 
       current_bb = BreakBlock()
       self.__bb = [ current_bb ]

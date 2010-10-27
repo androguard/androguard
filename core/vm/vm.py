@@ -292,7 +292,7 @@ class VM_int_basic_math_formula(VM_int) :
       oint = opaque.INT( i.get_operands()[0] ).run()
 
       mtir = MTR( oint )
-      #mtir = MetaREIL( mtir.get() )
+      mtir = MetaREIL( mtir.get() )
          
       self._irtj = IL_REIL_TO_JAVA( orig_class_name, mtir.get() )
 
