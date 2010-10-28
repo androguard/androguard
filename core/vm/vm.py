@@ -21,7 +21,7 @@ from subprocess import Popen, PIPE, STDOUT
 
 import opaque, jvm 
 
-from il_reil import MTR, BPTR, MetaREIL, REIL_TO_JAVA, REIL_TYPE_REGISTER, REIL_TYPE_LITERAL
+from il_reil import MTR, BPTR, MetaPolyREIL, REIL_TO_JAVA, REIL_TYPE_REGISTER, REIL_TYPE_LITERAL
 
 class IL_REIL_TO_JAVA :
    def __init__(self, orig_class_name, il_reil) :
@@ -39,7 +39,7 @@ class IL_REIL_TO_JAVA :
 
       self.__call_code = []
 
-      self.__debug = True
+      self.__debug = False 
 
       self._analyze( il_reil )
 
@@ -120,7 +120,7 @@ class IL_REIL_TO_JAVA :
       #FIXME
       for i in self.__OP :
          fd.write("if (BC[idx][2] == %d) {\n" % self.__OP[i])
-         fd.write( REIL_TO_JAVA( i, self ).get_raw() )
+         fd.write( REIL_TO_JAVA( i, self, self.__debug ).get_raw() )
          fd.write("}\n")
 
       if self.__debug :
@@ -288,12 +288,12 @@ class VM_int_basic_math_formula(VM_int) :
 
       i = code.get_at( idx )
       print i, i.get_name(), i.get_operands()
-         
-      oint = opaque.INT( i.get_operands()[0] ).run()
-
+     
+      oint = opaque.INT( i.get_operands() ).run()
       mtir = MTR( oint )
-      mtir = MetaREIL( mtir.get() )
-         
+     
+      mtir = MetaPolyREIL( mtir.get() )
+
       self._irtj = IL_REIL_TO_JAVA( orig_class_name, mtir.get() )
 
 class VM_int_basic_prng(VM_int) :
@@ -302,13 +302,12 @@ class VM_int_basic_prng(VM_int) :
       self._idx = idx
 
       i = code.get_at( idx )
-      print i, i.get_name(), i.get_operands()
-
-      oint = opaque.PRNG( i.get_operands()[0] ).run()
+#      print i, i.get_name(), i.get_operands()
+      oint = opaque.PRNG( i.get_operands() ).run()
       atoil = BPTR( oint )
 
-      # atoil = Metamorphism_REIL( mtir.get() )
-
+      atoil = MetaPolyREIL( atoil.get() )
+      
       self._irtj = IL_REIL_TO_JAVA( orig_class_name, atoil.get() )
       
 

@@ -2,13 +2,16 @@
 
 import sys, os
 
-PATH_INSTALL = "./"
+PATH_ANDROGUARD_INSTALL = "/home/pouik/androguard/"
 
-import androguard
+sys.path.append( PATH_ANDROGUARD_INSTALL )
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/bytecodes")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/predicates")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/analysis")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/vm")
 
-TEST_RC4 = ['./examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/R.class', './examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/RC4.class', './examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/RC4Activity.class', './examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/R$attr.class', './examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/R$layout.class', './examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/R$string.class']
-
-TEST_RC4 = ['./examples/android/test_rc4_app/bin/classes/org/t0t0/testrc4/RC4.class']
+import androguard, bytecode
 
 def get_classes(path) :
    g_files = []
@@ -21,10 +24,11 @@ def get_classes(path) :
    return g_files
 
 def __main__() :
-#   if len( sys.argv ) > 1 :
-#      files = get_classes( sys.argv[1] )
-#      a = Androguard( files )
+   print sys.argv
+   if len( sys.argv ) > 1 :
+      files = get_classes( sys.argv[1] )
 
-   a = androguard.Androguard( TEST_RC4 )
+      a = androguard.Androguard( files )
+      a.protect( sys.argv[2] )
 
 __main__()

@@ -366,6 +366,18 @@ class MetaREIL :
    def get(self) :
       return [ self.__ORI[0], self.__ORI[1], self.__RI, self.__ORI[3] ] 
 
+class MetaPolyREIL :
+   def __init__(self, ori) :
+      self.__ORI = ori
+      self.__RI = []
+      self.__NEW_RI = []
+
+
+      self.__RI = self.__NEW_RI + self.__ORI[2]
+
+   def get(self) :
+      return [ self.__ORI[0], self.__ORI[1], self.__RI, self.__ORI[3] ] 
+
 class STR_TO_JAVA :
    def __init__(self, VM) :
       self.__buff = "int x = 0;\n"
@@ -376,7 +388,7 @@ class STR_TO_JAVA :
       self.__buff += VM.set_reg( "x", "value" )
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- STR\\n\");\n"
+      return self.__buff + "\n"
 
 class ADD_TO_JAVA :
    def __init__(self, VM) :
@@ -392,7 +404,7 @@ class ADD_TO_JAVA :
       self.__buff += VM.set_reg( "x", "value1" )
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- ADD\\n\");\n"
+      return self.__buff + "\n" 
 
 class SUB_TO_JAVA :
    def __init__(self, VM) :
@@ -408,7 +420,7 @@ class SUB_TO_JAVA :
       self.__buff += VM.set_reg( "x", "value1" )
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- SUB\\n\");\n"
+      return self.__buff + "\n"
 
 class BISZ_TO_JAVA :
    def __init__(self, VM) :
@@ -423,8 +435,8 @@ class BISZ_TO_JAVA :
       self.__buff += "else {" + VM.set_reg( "x", "1" ) + "}"
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- BISZ\\n\");\n"
-
+      return self.__buff + "\n"
+   
 class JCC_TO_JAVA :
    def __init__(self, VM) :
       self.__buff = "int x = 0;\n"
@@ -436,8 +448,8 @@ class JCC_TO_JAVA :
       self.__buff += "if (value != 0) {" + VM.set_idx( 3 ) + "}"
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- JCC\\n\");\n"
-
+      return self.__buff + "\n" 
+   
 class MUL_TO_JAVA :
    def __init__(self, VM) :
       self.__buff = "int x = 0;\n"
@@ -452,7 +464,7 @@ class MUL_TO_JAVA :
       self.__buff += VM.set_reg( "x", "value1" ) 
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- MUL\\n\");\n" 
+      return self.__buff + "\n" 
 
 class MOD_TO_JAVA :
    def __init__(self, VM) :
@@ -468,10 +480,11 @@ class MOD_TO_JAVA :
       self.__buff += VM.set_reg( "x", "value1" )
 
    def get_raw(self) :
-      return self.__buff + "\n" + "System.out.println(\"---- MOD\\n\");\n"
-
+      return self.__buff + "\n" 
+   
 class REIL_TO_JAVA :
-   def __init__(self, op, VM) : 
+   def __init__(self, op, VM, debug=False) : 
+      self.__debug = debug
       self.__OP = { "STR" : STR_TO_JAVA,
                     "ADD" : ADD_TO_JAVA,
                     "SUB" : SUB_TO_JAVA,
@@ -483,6 +496,8 @@ class REIL_TO_JAVA :
 
       if op in self.__OP :
          self.__buff = self.__OP[op]( VM ).get_raw()
+         if self.__debug == True :
+            self.__buff += "System.out.println(\"----- %s\\n\");\n" % op
       else :
          print op
          raise("oops")
