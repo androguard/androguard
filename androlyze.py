@@ -72,11 +72,15 @@ def interact() :
 
    import bytecode, jvm, dvm
    mydict = {
+      # *VM Format
       "JVMFormat" : jvm.JVMFormat,
       "DalvikVMFormat" : dvm.DalvikVMFormat,
+
+      # Androguard
       "AndroguardS" : androguard.AndroguardS,
       "Androguard" : androguard.Androguard,
 
+      # Androguard VM*
       "VM_int" : androguard.VM_int,
       "VM_INT_AUTO" : androguard.VM_INT_AUTO,
       "VM_INT_BASIC_MATH_FORMULA" : androguard.VM_INT_BASIC_MATH_FORMULA,

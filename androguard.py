@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, xml.dom.minidom 
 
-PATH_INSTALL = "./" 
+PATH_INSTALL = "./"
 
 sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
@@ -28,11 +28,62 @@ sys.path.append(PATH_INSTALL + "/core/vm")
 
 import bytecode, jvm, dvm, misc, analysis, opaque, vm
 
+VM_INT_AUTO = 0
+VM_INT_BASIC_MATH_FORMULA = 1
+VM_INT_BASIC_PRNG = 2
+INVERT_VM_INT_TYPE = { "VM_INT_AUTO" : VM_INT_AUTO,
+                       "VM_INT_BASIC_MATH_FORMULA" : VM_INT_BASIC_MATH_FORMULA,
+                       "VM_INT_BASIC_PRNG" : VM_INT_BASIC_PRNG
+                     }
+
+INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
+
+class VM_int :
+   """VM_int is the main high level Virtual Machine object to protect a method by remplacing all integer contants
+
+      @param andro : an L{Androguard} / L{AndroguardS} object to have full access to the desired information
+      @param method_name : the name of the method to protect
+      @param vm_int_type : the type of the Virtual Machine
+   """
+   def __init__(self, andro, class_name, method_name, descriptor, vm_int_type) :
+      method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
+      code = method.get_code()
+
+      class_manager = _vm.get_class_manager()
+
+      # LOOP until integers constant !
+      iip = True
+      while iip == True : 
+         idx = 0
+         end_iip = True
+         for bc in code.get_bc().get() :
+            if bc.get_name() in INTEGER_INSTRUCTIONS :
+               if vm_int_type == VM_INT_BASIC_MATH_FORMULA :
+                  vi = vm.VM_int_basic_math_formula( class_manager.get_this_class_name(), code, idx )
+               elif vm_int_type == VM_INT_BASIC_PRNG :
+                  vi = vm.VM_int_basic_prng( class_manager.get_this_class_name(), code, idx )
+               else :
+                  raise("oops")
+
+               for new_method in vi.get_methods() : 
+                  _vm.insert_direct_method( new_method.get_name(), new_method )
+               method.show()
+               vi.patch_code()
+
+               end_iip = False
+               
+               break
+            idx += 1
+         
+         # We have patch zero integers, it's the end my friend !
+         if end_iip == True :
+            iip = False
+
 class BC :
    def __init__(self, bc) :
       self.__bc = bc
 
-   def get_bc(self) :
+   def get_vm(self) :
       return self.__bc
 
    def _get(self, val, name) :
@@ -70,6 +121,10 @@ class BC :
    def __getattr__(self, value) :          
       return getattr(self.__bc, value)
 
+PROTECT_VM_AUTO = "protect_vm_auto"
+PROTECT_VM_INTEGER = "protect_vm_integer"
+PROTECT_VM_INTEGER_TYPE = "protect_vm_integer_type"
+
 class Androguard :
    """Androguard is the main object to abstract and manage differents formats
    
@@ -98,6 +153,12 @@ class Androguard :
          l.append( bc._get_raw() )
       return l
 
+   def get_method_descriptor(self, class_name, method_name, descriptor) :
+      for file_name, bc in self.__bc :
+         x = bc.get_method_descriptor( class_name, method_name, descriptor )
+         if x != None :
+            return x, bc
+      return None
 
    def get(self, name, val) :
       if name == "file" :
@@ -124,6 +185,19 @@ class Androguard :
       for _, bc in self.__bc :
          bc.show()
 
+   def protect(self, fileconf) :
+      fd = open(fileconf, "r")
+      buffxml = fd.read()
+      fd.close()
+
+      document = xml.dom.minidom.parseString(buffxml)
+      for item in document.getElementsByTagName('method') :
+         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
+            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
+               vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
+
+               VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
+
 class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
 
@@ -131,56 +205,15 @@ class AndroguardS :
    """
    def __init__(self, filename) :
       self.__filename = filename
-      a = Androguard( [ filename ] )
-      self.__a = a.get( "file", filename )
-   
-   def get_bc(self) :
-      return self.__a.get_bc()
+      self.__orig_a = Androguard( [ filename ] )
+      self.__a = self.__orig_a.get( "file", filename )
+      
+   def get_vm(self) :
+      return self.__a.get_vm()
+
+   def save(self) :
+      return self.__a.save()
 
    def __getattr__(self, value) :
-      return getattr(self.__a, value)
+      return getattr(self.__orig_a, value)
 
-VM_INT_AUTO = 0
-VM_INT_BASIC_MATH_FORMULA = 1
-VM_INT_BASIC_PRNG = 2
-class VM_int :
-   """VM_int is the main high level Virtual Machine object to protect a method by remplacing all integer contants
-
-      @param andro : an L{Androguard} / L{AndroguardS} object to have full access to the desired information
-      @param method_name : the name of the method to protect
-      @param vm_int_type : the type of the Virtual Machine
-   """
-   def __init__(self, andro, method_name, vm_int_type) :
-      method = andro.get("method", method_name)[0]  
-      code = method.get_code()
-
-      class_manager = andro.get_class_manager()
-
-      # LOOP until integers constant !
-      iip = True
-      while iip == True : 
-         idx = 0
-         end_iip = True
-         for bc in code.get_bc().get() :
-            if bc.get_name() == "bipush" :
-
-               if vm_int_type == VM_INT_BASIC_MATH_FORMULA :
-                  vi = vm.VM_int_basic_math_formula( class_manager.get_this_class_name(), code, idx )
-               elif vm_int_type == VM_INT_BASIC_PRNG :
-                  vi = vm.VM_int_basic_prng( class_manager.get_this_class_name(), code, idx )
-               else :
-                  raise("oops")
-
-               for new_method in vi.get_methods() : 
-                  andro.insert_direct_method( new_method.get_name(), new_method )
-               method.show()
-               vi.patch_code()
-
-               end_iip = False
-               
-               break
-            idx += 1
-         
-         # We have patch zero integers, it's the end my friend !
-         if end_iip == True :
-            iip = False

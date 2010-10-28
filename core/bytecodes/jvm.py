@@ -856,6 +856,9 @@ class JBC :
 
    def get_operands(self) :
       """Return the operands of the bytecode"""
+      if isinstance( self.__special_value, list ):
+         if len(self.__special_value) == 1 :
+            return self.__special_value[0]
       return self.__special_value
 
    def adjust_r(self, pos, pos_modif, len_modif) :
@@ -1794,6 +1797,27 @@ class InnerClassesAttribute(BasicAttribute) :
       return self.number_of_classes.get_value_buff + \
              ''.join(x.get_raw() for x in self.__classes)
 
+class ConstantValueAttribute(BasicAttribute) :
+   def __init__(self, class_manager, buff) :
+      self.__CM = class_manager
+
+      super(ConstantValueAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # u2 constantvalue_index;
+      self.constantvalue_index = SV( '>H', buff.read(2) )
+
+   def show(self) :
+      print self.constantvalue_index
+
+   def set_cm(self, cm) :
+      self.__CM = cm
+
+   def get_raw(self) :
+      return self.constantvalue_index
+
+      
 class AttributeInfo :
    """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
    def __init__(self, class_manager, buff) :
@@ -1817,6 +1841,8 @@ class AttributeInfo :
          self.__info = StackMapTableAttribute( self.__CM, buff )
       elif self.__name == "InnerClasses" :
          self.__info = InnerClassesAttribute( self.__CM, buff )
+      elif self.__name == "ConstantValue" :
+         self.__info = ConstantValueAttribute( self.__CM, buff )
       else :
          bytecode.Exit( "AttributeInfo %s doesn't exit" % self.__name )
 
@@ -2212,6 +2238,18 @@ class JVMFormat(bytecode._Bytecode) :
          if prog.match( i.get_name() ) :
             fields.append( i )
       return fields
+
+   def get_method_descriptor(self, class_name, method_name, descriptor) :
+      # FIXME : handle multiple class name ?
+      if class_name != None :
+         if class_name != self.__CM.get_this_class_name() :
+            return None
+
+      prog_method_name = re.compile( method_name )
+      for i in self.__methods :
+         if prog_method_name.match( i.get_name() ) and descriptor == i.get_descriptor() :
+            return i
+      return None
 
    def get_method(self, name) :
       """Return into a list all methods which corresponds to the regexp
