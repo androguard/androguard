@@ -2388,19 +2388,15 @@ class JVMFormat(bytecode._Bytecode) :
      
    def _fix_attributes_external(self, ref_method) :
       for i in ref_method.get_attributes() :
-         attribute_name_index = self.__CM.get_string_index( i.get_name() )
-         if attribute_name_index == -1 :
-            bytecode.Exit( "attribute_name_index %s not present into the new constant pool" % i.get_name() )
-
+         attribute_name_index = self.__CM.add_string( i.get_name() )
+         
          i.set_attribute_name_index( attribute_name_index )
          
          self._fix_attributes_external( i.get_item() )
 
    def _fix_attributes_internal(self, ref_method) :
       for i in ref_method.get_attributes() :
-         attribute_name_index = self.__CM.get_string_index( i.get_name() )
-         if attribute_name_index == -1 :
-            bytecode.Exit( "attribute_name_index %s not present into the new constant pool" % i.get_name() )
+         attribute_name_index = self.__CM.add_string( i.get_name() )
 
          i._fix_attributes( self.__CM )
 

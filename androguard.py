@@ -195,7 +195,6 @@ class Androguard :
          if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
             if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
                vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
-
                VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
 
 class AndroguardS :
