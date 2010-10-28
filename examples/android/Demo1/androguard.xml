@@ -4,7 +4,7 @@
    <protect_names>1</protect_names>
    <except_protect_names></except_protect_names> 
    
-   <method class="org/t0t0/androguard/watermarks/Demo1Math" name="rc4" descriptor="([B)[B">
+   <method class="org/t0t0/androguard/android/Demo1Math" name="rc4" descriptor="([B)[B">
       <protect_vm_integer>1</protect_vm_integer>
       <protect_vm_integer_type>VM_INT_BASIC_MATH_FORMULA</protect_vm_integer_type>
    </method>

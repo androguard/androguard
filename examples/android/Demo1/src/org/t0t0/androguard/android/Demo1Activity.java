@@ -1,4 +1,4 @@
-package org.t0t0.androguard.watermarks;
+package org.t0t0.androguard.android;
 
 import android.app.Activity;
 import android.os.Bundle;
