@@ -25,8 +25,9 @@ sys.path.append(PATH_INSTALL + "/core/bytecodes")
 sys.path.append(PATH_INSTALL + "/core/predicates")
 sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/vm")
+sys.path.append(PATH_INSTALL + "/core/wm")
 
-import bytecode, jvm, dvm, misc, analysis, opaque, vm
+import bytecode, jvm, dvm, misc, analysis, opaque, vm, wm
 
 VM_INT_AUTO = 0
 VM_INT_BASIC_MATH_FORMULA = 1
@@ -79,6 +80,20 @@ class VM_int :
          # We have patch zero integers, it's the end my friend !
          if end_iip == True :
             iip = False
+
+WM_CREATE_R = 0
+WM_CREATE_W = 1
+
+class WM :
+   def __init__(self, andro, class_name, method_name, descriptor, wm_type, output_file) :
+      method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
+
+      if wm_type == WM_CREATE_R :
+         _wm = wm.WM( _vm, method )
+
+class WMCheck :
+   def __init__(self, andro, intput_file) :
+      pass
 
 class BC :
    def __init__(self, bc) :
@@ -194,12 +209,13 @@ class Androguard :
       for _, bc in self.__bc :
          bc.show()
 
-   def protect(self, fileconf) :
+   def do(self, fileconf) :
       fd = open(fileconf, "r")
       buffxml = fd.read()
       fd.close()
 
       document = xml.dom.minidom.parseString(buffxml)
+      
       for item in document.getElementsByTagName('method') :
          if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
             if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :

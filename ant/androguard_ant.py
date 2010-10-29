@@ -30,6 +30,6 @@ def __main__() :
       files = get_classes( sys.argv[1] )
 
       a = androguard.Androguard( files )
-      a.protect( sys.argv[2] )
+      a.do( sys.argv[2] )
 
 __main__()
