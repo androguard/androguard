@@ -18,19 +18,15 @@ def hexdump(src, length=8, off=0):
       result.append( b"%04X   %-*s   %s" % (i+off, length*(digits + 1), hexa, text) )      
    return b'\n'.join(result)
 
-TEST = [ './examples/java/rc4/orig/RC4.class' ]
+TEST = [ './examples/java/test/orig/Test1.class' ]
 
 a = androguard.Androguard( TEST )
-
-_a = a.get("file", TEST[0])
-#_a.show()
-
-BUFF = _a.save()
 
 i = 0
 while i < len(TEST) :
    b1 = open(TEST[i]).read()
-   b2 = BUFF
+   _a = a.get("file", TEST[i])
+   b2 = _a.save()
 
    if hashlib.md5( b1 ).hexdigest() != hashlib.md5( b2 ).hexdigest() :
       print "HASH %s NO GO" % TEST[i]

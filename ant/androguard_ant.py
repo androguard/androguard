@@ -2,6 +2,7 @@
 
 import sys, os
 
+# CHANGE THE PATH BY THE DIRECTORY WHERE YOU HAVE INSTALL Androguard
 PATH_ANDROGUARD_INSTALL = "/home/pouik/androguard/"
 
 sys.path.append( PATH_ANDROGUARD_INSTALL )
