@@ -43,7 +43,7 @@ _b = androguard.AndroguardS( TEST2 )
 #      code.remove_at( 19 )
 #      code.insert_at( 19, [ "sipush", 254 ] )
 
-#_a.insert_string( "BLAAAA" )
+_a.insert_string( "BLAAAA" )
 #_a.insert_craft_method( "toto", [ "ACC_PUBLIC", "[B", "[B" ], [ [ "aconst_null" ], [ "areturn" ] ] ) #( "sipush", 254 ) ] )
 
 #_a.insert_direct_method( "toto2", _b.get("method", "test3")[0] )

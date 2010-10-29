@@ -36,13 +36,14 @@ INVERT_VM_INT_TYPE = { "VM_INT_AUTO" : VM_INT_AUTO,
                        "VM_INT_BASIC_PRNG" : VM_INT_BASIC_PRNG
                      }
 
-INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
 
 class VM_int :
    """VM_int is the main high level Virtual Machine object to protect a method by remplacing all integer contants
 
       @param andro : an L{Androguard} / L{AndroguardS} object to have full access to the desired information
+      @param class_name : the class of the method
       @param method_name : the name of the method to protect
+      @param descriptor : the descriptor of the method
       @param vm_int_type : the type of the Virtual Machine
    """
    def __init__(self, andro, class_name, method_name, descriptor, vm_int_type) :
@@ -57,7 +58,7 @@ class VM_int :
          idx = 0
          end_iip = True
          for bc in code.get_bc().get() :
-            if bc.get_name() in INTEGER_INSTRUCTIONS :
+            if bc.get_name() in _vm.get_INTEGER_INSTRUCTIONS() :
                if vm_int_type == VM_INT_BASIC_MATH_FORMULA :
                   vi = vm.VM_int_basic_math_formula( class_manager.get_this_class_name(), code, idx )
                elif vm_int_type == VM_INT_BASIC_PRNG :
@@ -135,6 +136,14 @@ class Androguard :
       self.__bc = []
       self._analyze()
 
+   def _iterFlatten(self, root):
+      if isinstance(root, (list, tuple)):      
+         for element in root :
+            for e in self._iterFlatten(element) :      
+               yield e                         
+      else:                      
+         yield root
+
    def _analyze(self) :
       for i in self.__files :
          if ".class" in i :
@@ -172,7 +181,7 @@ class Androguard :
          for file_name, bc in self.__bc :
             l.append( bc.get( name, val ) )
 
-         return l
+         return list( self._iterFlatten(l) )
 
    def gets(self, name) :
       l = []
@@ -214,5 +223,7 @@ class AndroguardS :
       return self.__a.save()
 
    def __getattr__(self, value) :
-      return getattr(self.__orig_a, value)
-
+      try :
+         return getattr(self.__orig_a, value)
+      except AttributeError :
+         return getattr(self.__a, value)
