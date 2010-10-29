@@ -269,6 +269,11 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JAVA_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
+MATH_JAVA_OPCODES = [ "iand", "iadd", "ixor" ]
+
+BREAK_JAVA_OPCODES = [ "areturn", "astore", "bastore", "iinc", "istore", "pop", "putfield" ] + BRANCH_JAVA_OPCODES
+
+
 INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
 
 def EXTRACT_INFORMATION(op_value) :
@@ -2491,3 +2496,5 @@ class JVMFormat(bytecode._Bytecode) :
    def get_INTEGER_INSTRUCTIONS(self) :
       return INTEGER_INSTRUCTIONS
 
+   def get_type(self) :
+      return "JVM"

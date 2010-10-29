@@ -1957,3 +1957,6 @@ class DalvikVMFormat(bytecode._Bytecode) :
    def save(self) :
       """Return the class (with the modifications) into raw format"""
       return self._get_raw()
+   
+   def get_type(self) :
+      return "DVM"

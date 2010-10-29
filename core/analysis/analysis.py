@@ -16,14 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-class Analysis(object) :
-   def __init__(self) :
-      pass
-
-class DBCA(Analysis) :
-   def __init__(self) :
-      pass
-
 EMPTY = 0
 STACK = 1
 
@@ -45,156 +37,78 @@ JAVA_OPCODES_ACTIONS = {
             "invokevirtual" :           [ STACK, PUSH, UNKNOWN ] ,
       }
 
-class Elem(object) :
-   def __init__(self) :
-      pass
 
-class NullElem(Elem) :
-   def __init__(self) :
-      super(NullElem, self).__init__()
+from jvm import JVMFormat, BREAK_JAVA_OPCODES, BRANCH_JAVA_OPCODES, MATH_JAVA_OPCODES, INVERT_JAVA_OPCODES
 
-class UnknownElem(Elem) :
-   def __init__(self) :
-      super(UnknownElem, self).__init__()
-
-class Memory :
-   def __init__(self, nb) :
-      self.__elem = []
-      for i in range(0, nb) :
-         self.__elem.append( Elem() )
-
-   def get(self, idx) :
-      return self.__elem[ idx ]
-
-   def put(self, elem, idx) :
-      self.__elem[idx] = elem
-
-   def show(self) :
-      print self.__elem
-
-class JStack :
-   def __init__(self, code) :
-      self.__elems = []
-
-      self.__max_stack = code.get_max_stack()
-      self.__max_locals = code.get_max_locals()
-
-      self.__locals = Memory( self.__max_locals )
-
-   def get(self, elem_type, idx=-1) :
-      if elem_type == LOCAL_VARIABLE :
-         return self.__locals.get( idx )
-      elif elem_type == NULL : 
-         return NullElem() 
-      elif elem_type == UNKNOWN :
-         return UnknownElem()
-      else :
-         raise("error")
-
-   def put(self, elem, elem_type, idx) :
-      if elem_type == LOCAL_VARIABLE :
-         self.__locals.put(elem, idx)
-      else :
-         raise("error")
-
-   def push(self, elem) :
-      self.__elems.insert(0, elem)
-
-   def pop(self) :
-      return self.__elems.pop(0)
-
-   def show(self) :
-      print "CURRENT_STACK", self.__elems
-      print "CURRENT_LOCALS",
-      self.__locals.show()
-
-class JBCA2(Analysis) :
-   def __init__(self, _class, _method) :
-      super(JBCA2, self).__init__()
-
-      self.__class = _class
-      self.__method = _method
-
-#   self.__method.show_info()
-
-
-      code = self.__method.get_code()
-      code.show_info()
-
-      self.__stack = JStack(code)
-
-      bc = code.get_bc()
-      for i in bc.get() :
-         name, operands = i.get_name(), i.get_operands()
-         print name, operands
-
-         if name not in JAVA_OPCODES_ACTIONS :
-            raise("ooops")
-
-         if JAVA_OPCODES_ACTIONS[name][0] == STACK :
-            self._stack_handle( JAVA_OPCODES_ACTIONS[name][1:] )     
-         
-         self._show_stack()
-         print ""
-
-   def _show_stack(self) :
-      self.__stack.show()
-
-   def _stack_handle(self, action) :
-      print "ACTION", action
-      if action[0] == PUSH :
-         self.__stack.push( self.__stack.get( *action[1:] ) ) #, action[2]) )
-      elif action[0] == POP :
-         elem = self.__stack.pop()
-         if len(action) > 1 :
-            self.__stack.put( elem,  action[1], action[2] )
-      else :
-         raise("error")
-
-
-JAVA_BYTECODES_BREAK = [ "areturn", "astore", "bastore", "goto", "if", "iinc", "istore", "pop", "putfield" ]
-
-class BreakBlock : 
+class JavaBreakBlock : 
    def __init__(self) :
       self.__ins = []
 
    def push(self, ins) :
       self.__ins.append(ins)
 
+   def freq(self) :
+      #l = []
+      branch = [ 0, 0 ]
+      for i in self.__ins :
+         if i.get_name() in MATH_JAVA_OPCODES :
+            branch[0] = branch[0] + ( INVERT_JAVA_OPCODES[ i.get_name() ] << branch[1] )
+            branch[1] += 8
+
+      #l.append( branch )
+
+      return branch[0]
+
    def show(self) :
       for i in self.__ins : 
          print "\t", i.get_name(), i.get_operands()
 
-class JBCA(Analysis) :
-   def __init__(self, _class, _method) :
-      super(JBCA, self).__init__()
-
-      self.__class = _class
+class JBCA :
+   def __init__(self, _vm, _method) :
       self.__method = _method
 
       code = self.__method.get_code()
     #  code.show_info()
 
-      current_bb = BreakBlock()
+      current_bb = JavaBreakBlock()
       self.__bb = [ current_bb ]
 
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
-
-         n_name = name
-         if "_" in name :
-            n_name = name.split("_")[0]
+         m_name = name.split("_")[0]
 
          current_bb.push( i )
-         if n_name in JAVA_BYTECODES_BREAK :
-            current_bb = BreakBlock()
+         if name in BREAK_JAVA_OPCODES :
+            current_bb = JavaBreakBlock()
             self.__bb.append( current_bb ) 
      
+         elif m_name in BREAK_JAVA_OPCODES :
+            current_bb = JavaBreakBlock()
+            self.__bb.append( current_bb )
+
       if len( self.__bb ) > 1 :
          self.__bb.pop(-1)
 
+   def get_freq(self) :
+      l = []
       for i in self.__bb :
-         print i 
-         i.show()
-         print ""
+         x = i.freq()
+         if x != 0 :
+            l.append( x )
+      return l
+
+   def get_bb(self) :
+      return self.__bb
+
+class DBCA :
+   def __init__(self) :
+      pass
+
+class VMBCA :
+   def __init__(self,  _vm, _method) :
+      if _vm.get_type() == "JVM" :
+         self.__a = JBCA( _vm, _method )
+
+   def __getattr__(self, value) :
+      return getattr( self.__a, value )
