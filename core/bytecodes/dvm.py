@@ -1417,7 +1417,9 @@ class EncodedCatchHandlerList :
       return writeuleb128( self.__size ) + ''.join(i.get_raw() for i in self.__list)
 
 class DalvikCode : 
-   def __init__(self, buff) :
+   def __init__(self, buff, cm) :
+      self.__CM = cm
+
       off = buff.get_idx()
       while off % 4 != 0 :
          off += 1
@@ -1440,7 +1442,6 @@ class DalvikCode :
 
       self.__h_special_bytecodes = {}
       self.__bytecodes = []
-#print repr( self.__insn )
 
       ushort = calcsize( '<H' )
 
@@ -1448,11 +1449,10 @@ class DalvikCode :
       j = 0 
       while j < (self.__insns_size.get_value() * ushort) :
 
+         # handle special instructions
          if real_j in self.__h_special_bytecodes :
             special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
             self.__bytecodes.append( special_e )
-
-#print "EXIT special bytecodes", special_e
 
             del self.__h_special_bytecodes[ real_j ]
             j += special_e.get_size()
@@ -1460,8 +1460,6 @@ class DalvikCode :
             op_value = unpack( '<B', self.__insn[j] )[0]
             
             if op_value in DALVIK_OPCODES :
-#print real_j, "ENTER into", DALVIK_OPCODES[ op_value ][1], repr( self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] )
-
                operands = []
                special = None
 
@@ -1474,11 +1472,6 @@ class DalvikCode :
                   if special != None :
                      self.__h_special_bytecodes[ special[0] + real_j ] = special[1] 
 
-#               if DALVIK_OPCODES[ op_value ][1] == "packed-switch" :
-#                  print DALVIK_OPCODES[ op_value ][1], repr( self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ), operands, special
-#   bytecode.Exit( "test" )
-
-#print "EXIT classic bytecodes", operands, special
                self.__bytecodes.append( [ DALVIK_OPCODES[ op_value ][1], repr( self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ), operands ] )
 
                j += ( int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort)
@@ -1487,9 +1480,6 @@ class DalvikCode :
 
          real_j = j / 2
 
-#print "PAD", self.__tries_size.value, self.__insns_size.value, "0x%x" % buff.get_idx()
-#if (self.__tries_size.value > 0) :
-#         self.__padding = SV( '<H', buff.read( 2 ) )
       if (self.__insns_size.get_value() % 2 == 1) :
          self.__padding = SV( '<H', buff.read( 2 ) )
 
@@ -1499,32 +1489,26 @@ class DalvikCode :
          for i in range(0, self.__tries_size.get_value()) :
             try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
             self.__tries.append( try_item )
-#print try_item
          
          self.__handlers.append( EncodedCatchHandlerList( buff ) )
 
    def _analyze_mnemonic(self, buff_operands, mnemonic) :
       operands = []
-      
       t_ops = mnemonic[3].split(' ')
-#      print t_ops, mnemonic[2]
 
       l = []
       for i in buff_operands :
          l.append( (ord(i) & 0b11110000) >> 4 )
          l.append( (ord(i) & 0b00001111) )
               
-#      print l 
       for i in t_ops :
          sub_ops = i.split('|')         
-#         print "SOP", sub_ops,
                   
          if len(sub_ops[-1]) == 2 :
             sub_ops = [ sub_ops[-1] ] + sub_ops[0:-1]
          else :
             sub_ops = sub_ops[2:] + sub_ops[0:2]
 
-#         print sub_ops
 
          for sub_op in sub_ops :
             zero_count = string.count(sub_op, '0')
@@ -1539,17 +1523,19 @@ class DalvikCode :
             if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' : 
                   signed = 1
 
+
             ttype = "op@"
             if pos_op != -1 :            
-#               print pos_op
-               t_pos_op = pos_op
+               t_pos_op = pos_op + 1
+
                while pos_op > 0 and mnemonic[2][pos_op] != ' ' :
                   pos_op = pos_op - 1
 
                ttype = mnemonic[2][pos_op : t_pos_op].replace(' ', '')
+               if "{" in ttype :
+                  ttype = ttype[ string.find(ttype, "{") + 1 : ]
 
             val = self._extract( signed, l, size ) << (zero_count * 4)
-#            print sub_op, val, l
 
             operands.append( [ttype, val] )
 
@@ -1558,7 +1544,7 @@ class DalvikCode :
 
       if len(mnemonic) == 5 :
          return operands, (operands[2][1], mnemonic[4])
-
+      
       return operands, None
 
    def _extract(self, signed, l, size) :
@@ -1602,13 +1588,24 @@ class DalvikCode :
       nb = 0
       for i in self.__bytecodes :
          if type(i).__name__ == 'list' :
-            print "\t", nb, i[0], ' '.join("%s%x" % (n[0], n[1]) for n in i[-1])
+            print "\t", nb, i[0], ' '.join(self._more_info(n[0], n[1]) for n in i[-1])
          else :
             print "\t", nb, i.show()
          nb += 1
 
 
       print "*" * 80
+
+   def _more_info(self, c, v) :
+      if "string" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_string(v))
+      elif "meth" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_method(v))
+      elif "field" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_field(v))
+      elif "type" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
+      return "%s{%x}" % (c, v)
 
    def get_raw(self) :
       buff =  self.__registers_size.get_value_buff() + \
@@ -1630,12 +1627,12 @@ class DalvikCode :
                             buff )
 
 class CodeItem :
-   def __init__(self, size, buff) :
+   def __init__(self, size, buff, cm) :
       self.__offset = buff.get_idx()
       self.__code = []
 
       for i in range(0, size) :
-         self.__code.append( DalvikCode( buff ) )
+         self.__code.append( DalvikCode( buff, cm ) )
 
    def get_code(self, off) :
       for i in self.__code :
@@ -1672,7 +1669,7 @@ class MapItem :
          self.__item = [ StringIdItem( buff ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_CODE_ITEM" :
-         self.__item = CodeItem( general_format.size, buff )
+         self.__item = CodeItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_TYPE_ID_ITEM" :
          self.__item = TypeIdItem( general_format.size, buff, cm )

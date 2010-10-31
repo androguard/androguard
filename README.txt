@@ -67,21 +67,25 @@ know correctly. But most of the time there will be no problem, but if you
 don't know what you are doing, it's better to use the providing API to
 change a field.
 
+You must go to the website to see more example :
+   http://code.google.com/p/androguard/wiki/Usage
+
 2.1 --] API
 
 see the directory 'doc'
 
 2.2 --] Demos
 
-see the directory 'demos'
+see the source codes in the directory 'demos'
 
-2.3 --] Androlyze
+2.3 --] Androlyze 
+http://code.google.com/p/androguard/wiki/Usage#Androlyze
 
 You can used the command line to display and filter information. But it's
 better to use the shell :
 
-!./androlyze.py -s
-Welcome to Androlyze ALPHA 0
+./androlyze.py -s
+Welcome to Androlyze ALPHA 0-update1
 >>> j = JVMFormat( open("./VM.class").read() )
 >>> j.show()
 
@@ -97,12 +101,14 @@ Welcome to Androlyze ALPHA 0
 >>> fd.write(j.save())
 >>> fd.close()
 
+2.4 --] Andromarks
+http://code.google.com/p/androguard/wiki/Usage#Andromarks
+
 3 -] References
 
-4 -] Performances
+4 -] Benchmark 
 
 5 -] Roadmap 
-
 http://code.google.com/p/androguard/wiki/RoadMap
 
 6 -] License

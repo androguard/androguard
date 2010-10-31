@@ -4,7 +4,7 @@
    <protect_names type="field">
       <except>
          <class>org/t0t0/androguard/android/Demo1Math</class>
-         <name>.</name>
+         <name>x</name>
          <descriptor>.</descriptor>
       </except>
    </protect_names>
