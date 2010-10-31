@@ -68,7 +68,6 @@ class JBCA :
       self.__method = _method
 
       code = self.__method.get_code()
-    #  code.show_info()
 
       current_bb = JavaBreakBlock()
       self.__bb = [ current_bb ]
