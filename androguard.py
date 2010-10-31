@@ -202,13 +202,40 @@ class Androguard :
       return l
 
    def get_method_descriptor(self, class_name, method_name, descriptor) :
+      """
+         Return the specific method 
+         
+         @param class_name : the class name of the method
+         @param method_name : the name of the method
+         @param descriptor : the descriptor of the method
+      """
       for file_name, bc in self.__bc :
          x = bc.get_method_descriptor( class_name, method_name, descriptor )
          if x != None :
             return x, bc
       return None, None
 
+   def get_field_descriptor(self, class_name, field_name, descriptor) :
+      """
+         Return the specific field
+
+         @param class_name : the class name of the field
+         @param field_name : the name of the field
+         @param descriptor : the descriptor of the field
+      """
+      for file_name, bc in self.__bc :
+         x = bc.get_field_descriptor( class_name, field_name, descriptor )
+         if x != None :
+            return x, bc
+      return None, None
+
    def get(self, name, val) :
+      """
+         Return the specific value for all files
+
+         @param name :
+         @param val : 
+      """
       if name == "file" :
          for file_name, bc in self.__bc :
             if file_name == val :
@@ -223,13 +250,21 @@ class Androguard :
          return list( self._iterFlatten(l) )
 
    def gets(self, name) :
+      """
+         Return the specific value for all files
+
+         @param name :
+      """
       l = []
       for file_name, bc in self.__bc :
          l.append( bc.gets( name ) )
 
-      return l
+      return list( self._iterFlatten(l) )
 
    def show(self) :
+      """
+         Display all files
+      """
       for _, bc in self.__bc :
          bc.show()
 
