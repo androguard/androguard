@@ -1,5 +1,8 @@
 class Hello
-{  
+{
+   private int x;
+   private float y;
+
    public static void main(String args[])
    {
       System.out.println("Hello World!");    
@@ -24,8 +27,6 @@ class Hello
 
    public int test5() {
       Byte x = 10;
-
-      int REG[5];
 
       return (int)x;
    }

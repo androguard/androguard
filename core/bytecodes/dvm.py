@@ -1954,6 +1954,38 @@ class DalvikVMFormat(bytecode._Bytecode) :
             l.append( j )
       return l
 
+   def get_method_descriptor(self, class_name, method_name, descriptor) :
+      """
+         Return the specific method
+
+         @param class_name : the class name of the method
+         @param method_name : the name of the method
+         @param descriptor : the descriptor of the method
+
+      """
+      for i in self.classes.class_def :
+         if class_name == i.get_name() : 
+            for j in i.get_methods() :
+               if method_name == j.get_name() and descriptor == j.get_descriptor() :
+                  return i
+      return None
+
+   def get_field_descriptor(self, class_name, field_name, descriptor) :
+      """
+         Return the specific field
+
+         @param class_name : the class name of the field
+         @param field_name : the name of the field
+         @param descriptor : the descriptor of the field
+
+      """
+      for i in self.classes.class_def :
+         if class_name == i.get_name() : 
+            for j in i.get_fields() :
+               if field_name == j.get_name() and descriptor == j.get_descriptor() :
+                  return i
+      return None
+
    def save(self) :
       """Return the class (with the modifications) into raw format"""
       return self._get_raw()

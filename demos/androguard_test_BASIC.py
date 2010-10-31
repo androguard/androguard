@@ -7,18 +7,19 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard
 
 TEST = [ './examples/java/Hello.class' ]
-#TEST = [ './examples/java/test/orig/Test1.class' ]
-#TEST = [ './examples/java/test/Test.class' ]
-#TEST = [ './VM.class' ]
 
 _a = androguard.AndroguardS( TEST[0] )
 _a.show()
 
-#nb = 0
-#for i in _a.gets("constant_pool") :
-#   print nb, 
-#   i.show()
-#   nb += 1
 
-#for method in _a.get("method", "rc4") :
-#   method.show()
+for field in _a.gets("fields") :
+   print field.get_name(), field.get_descriptor()
+
+for method in _a.get("method", "test") :
+   print method.get_name(), method.get_descriptor()
+
+method, _ =_a.get_method_descriptor("Hello", "test", "([B)[B")
+print method.get_name()
+
+for method in _a.gets("methods") :
+   print method.get_name()

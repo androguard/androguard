@@ -386,6 +386,13 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
+        <a href="jvm.ConstantValueAttribute-class.html" class="summary-name">ConstantValueAttribute</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
         <a href="jvm.AttributeInfo-class.html" class="summary-name">AttributeInfo</a><br />
       AttributeInfo manages each attribute info (Code, SourceFile ....)
     </td>
@@ -630,6 +637,35 @@
  'if_icmpge',
  'if_icmpgt',
 ..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto_w</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">if_acmpeq</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">if_icmp</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="MATH_JAVA_OPCODES"></a><span class="summary-name">MATH_JAVA_OPCODES</span> = <code title="['iand', 'iadd', 'ixor']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">iand</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">iadd</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">ixor</code><code class="variable-quote">'</code><code class="variable-group">]</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="jvm-module.html#BREAK_JAVA_OPCODES" class="summary-name">BREAK_JAVA_OPCODES</a> = <code title="['areturn',
+ 'astore',
+ 'bastore',
+ 'iinc',
+ 'istore',
+ 'pop',
+ 'putfield',
+ 'goto',
+..."><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">areturn</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">astore</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">bastore</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">iinc</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="INTEGER_INSTRUCTIONS"></a><span class="summary-name">INTEGER_INSTRUCTIONS</span> = <code title="['bipush', 'sipush']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">bipush</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">sipush</code><code class="variable-quote">'</code><code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
@@ -1005,6 +1041,32 @@ ecial instruction.'],
   </dl>
 </td></tr></table>
 </div>
+<a name="BREAK_JAVA_OPCODES"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">BREAK_JAVA_OPCODES</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">areturn</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">astore</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">bastore</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">iinc</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">istore</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">pop</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">putfield</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="LOCAL_VARIABLE_TABLE"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1305,7 +1367,7 @@ ecial instruction.'],
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Oct 25 16:26:25 2010
+    Generated by Epydoc 3.0.1 on Sun Oct 31 10:05:36 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

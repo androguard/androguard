@@ -18,7 +18,7 @@
 
 import sys, time, types
 
-VERSION = "ALPHA 0"
+VERSION = "ALPHA 0-update1"
 
 class Color:
     normal = "\033[0m"

@@ -51,7 +51,7 @@ def main(options, arguments) :
             field.show()
 
    elif options.version != None :
-      print "Androlyze version %s" % misc.VERSION
+      print "Andromarks version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()

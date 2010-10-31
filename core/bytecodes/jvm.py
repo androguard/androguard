@@ -2247,14 +2247,42 @@ class JVMFormat(bytecode._Bytecode) :
       return fields
 
    def get_method_descriptor(self, class_name, method_name, descriptor) :
+      """
+         Return the specific method
+
+         @param class_name : the class name of the method
+         @param method_name : the name of the method
+         @param descriptor : the descriptor of the method
+
+         @rtype: L{MethodInfo}
+      """
       # FIXME : handle multiple class name ?
       if class_name != None :
          if class_name != self.__CM.get_this_class_name() :
             return None
 
-      prog_method_name = re.compile( method_name )
       for i in self.__methods :
-         if prog_method_name.match( i.get_name() ) and descriptor == i.get_descriptor() :
+         if method_name == i.get_name() and descriptor == i.get_descriptor() :
+            return i
+      return None
+
+   def get_field_descriptor(self, class_name, field_name, descriptor) :
+      """
+         Return the specific field
+
+         @param class_name : the class name of the field
+         @param field_name : the name of the field
+         @param descriptor : the descriptor of the field
+
+         @rtype: L{FieldInfo}
+      """
+      # FIXME : handle multiple class name ?
+      if class_name != None :
+         if class_name != self.__CM.get_this_class_name() :
+            return None
+
+      for i in self.__fields :
+         if field_name == i.get_name() and descriptor == i.get_descriptor() :
             return i
       return None
 
