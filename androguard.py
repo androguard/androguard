@@ -36,8 +36,6 @@ INVERT_VM_INT_TYPE = { "VM_INT_AUTO" : VM_INT_AUTO,
                        "VM_INT_BASIC_MATH_FORMULA" : VM_INT_BASIC_MATH_FORMULA,
                        "VM_INT_BASIC_PRNG" : VM_INT_BASIC_PRNG
                      }
-
-
 class VM_int :
    """VM_int is the main high level Virtual Machine object to protect a method by remplacing all integer contants
 
@@ -51,8 +49,6 @@ class VM_int :
       method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
       code = method.get_code()
 
-      class_manager = _vm.get_class_manager()
-
       # LOOP until integers constant !
       iip = True
       while iip == True : 
@@ -61,9 +57,9 @@ class VM_int :
          for bc in code.get_bc().get() :
             if bc.get_name() in _vm.get_INTEGER_INSTRUCTIONS() :
                if vm_int_type == VM_INT_BASIC_MATH_FORMULA :
-                  vi = vm.VM_int_basic_math_formula( class_manager.get_this_class_name(), code, idx )
+                  vi = vm.VM_int_basic_math_formula( class_name, code, idx )
                elif vm_int_type == VM_INT_BASIC_PRNG :
-                  vi = vm.VM_int_basic_prng( class_manager.get_this_class_name(), code, idx )
+                  vi = vm.VM_int_basic_prng( class_name, code, idx )
                else :
                   raise("oops")
 
@@ -83,17 +79,45 @@ class VM_int :
 
 WM_CREATE_R = 0
 WM_CREATE_W = 1
-
 class WM :
    def __init__(self, andro, class_name, method_name, descriptor, wm_type, output_file) :
       method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
 
+      if method == None :
+         raise("ooops")
+
       if wm_type == WM_CREATE_R :
-         _wm = wm.WM( _vm, method )
+         _wm = wm.WM_R( _vm, method )
+      elif vm_type == WM_CREATE_W :
+         _wm = wm.WM_W( _vm, method )
+      else :
+         raise("ooosp")
+
+      fd = open(output_file, "w")
+
+
+      fd.close()
+      
 
 class WMCheck :
    def __init__(self, andro, intput_file) :
       pass
+
+OBFU_NAMES_FIELDS = 0
+OBFU_NAMES_METHODS = 1
+class OBFU_Names :
+   """
+      OBFU_Names is the object that change the name of a field or a method by a random string, and resolving
+      dependencies into other files
+
+      @param andro : an L{Androguard} / L{AndroguardS} object to have full access to the desired information
+      @param class_name : the class of the method/field
+      @param name : the name of the method/field
+      @param descriptor : the descriptor of the method/field
+      @param obfu_type : the type of the obfuscated (field/method)
+   """
+   def __init__(self, andro, class_name, name, descriptor, obfu_type) :
+      raise("ooops")
 
 class BC :
    def __init__(self, bc) :
@@ -182,7 +206,7 @@ class Androguard :
          x = bc.get_method_descriptor( class_name, method_name, descriptor )
          if x != None :
             return x, bc
-      return None
+      return None, None
 
    def get(self, name, val) :
       if name == "file" :
@@ -233,9 +257,19 @@ class AndroguardS :
       self.__a = self.__orig_a.get( "file", filename )
       
    def get_vm(self) :
+      """
+         This method returns the VMFormat which correspond to the file
+         
+         @rtype: L{jvm.JVMFormat} or L{dvm.DalvikVMFormat}
+      """
       return self.__a.get_vm()
 
    def save(self) :
+      """
+         Return the original format (with the modifications) into raw format
+
+         @rtype: string
+      """
       return self.__a.save()
 
    def __getattr__(self, value) :

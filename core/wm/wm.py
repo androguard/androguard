@@ -1,8 +1,8 @@
-import os, sys, hashlib, random, types, itertools
+import os, sys, hashlib, random, types, itertools, hashlib
 
 import analysis, misc
 
-class WM :
+class WM_R :
    def __init__(self, vm, method) :
       self.__a = analysis.VMBCA( vm, method )
       #for i in self.__a.get_bb() :
@@ -13,15 +13,24 @@ class WM :
 #      ob = DWBO( "55f3f36e2c93ea69e1871102d3f8653f38ab7b36", [ 12345668, 90877676, 878978, 87987673 ] )
 #      ob.show()
 
-      print self.__a.get_freq()
-      ob = DWBO( "toto", self.__a.get_freq())
-      ob.show()
+#      print self.__a.get_freq()
+      self.__ob = DWBO( hashlib.sha512( method.get_raw() ).hexdigest(), self.__a.get_freq() )
+#      self.__ob.show()
 
-      print ob.verify_with_X( self.__a.get_freq() )
+#      print self.__ob.verify_with_X( self.__a.get_freq() )
 #      print ob.verify_with_X( [ 12345668, 90877676, 878978, 87987673, 788789 ] )
 #   print ob.verify_with_X( [ 12345668, 90877676, 878978, 4, 87987673 ] )
 #      print ob.verify_with_X( [ 1, 2, 3, 4, 5, 6 ] )
-      
+     
+   def get_hash(self) :
+      return self.__ob.get_hash()
+
+   def get_values(self) :
+      l = []
+      for k, v in self.__ob.get_points() :
+         l.append( v )
+      return l
+
 class Polynomial :
     def __init__(self, degree, secret_long, length) :
         self.degree = degree
@@ -36,11 +45,10 @@ class Polynomial :
             #print "COEFF[%d] = %d" % (i, self.coeff[i])
 	    #hashlib.sha256(str(self.coeff[i])).hexdigest()
            
-        print "f(x) = %d " % self.coeff[0],
-	for i in range(1, self.degree+1) :
-		 print "+ %d x^%d" % (self.coeff[i], i),
-
-	print ""
+#        print "f(x) = %d " % self.coeff[0],
+#	for i in range(1, self.degree+1) :
+#		 print "+ %d x^%d" % (self.coeff[i], i),
+#	print ""
 
     def get_n_point(self, x) :
         res = 0
@@ -78,9 +86,9 @@ class ShamirSecretScheme :
       self.__pieces = pieces
       self.__threshold = threshold 
 
-      print "SECRET %s => TO LONG %d" % (self.__secret, self.__secret_long)
-      print "HASH SECRET %s" % self.__hash
-      print "THRESHOLD %d" % self.__threshold
+#      print "SECRET %s => TO LONG %d" % (self.__secret, self.__secret_long)
+#      print "HASH SECRET %s" % self.__hash
+#      print "THRESHOLD %d" % self.__threshold
 
       self.poly = Polynomial(self.__threshold, self.__secret_long, len(self.__secret))
         
@@ -192,6 +200,9 @@ class DWBO :
 
    def get_points(self) :
       return self.__points
+
+   def get_hash(self) :
+      return self.__hash
 
    def show(self) :
       print self.__hash
