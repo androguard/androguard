@@ -472,6 +472,23 @@ class NameAndType(CpInfo) :
    def get_descriptor_index(self) :
       return self.format.get_value().descriptor_index
 
+class EmptyConstant :
+   def __init__(self) :
+      pass
+
+   def get_name(self) :
+      return ""
+
+   def get_raw(self) :
+      return ""
+
+   def get_length(self) :
+      return 0
+
+   def show(self) :
+      pass
+
+
 CONSTANT_INFO = {
          7 :    [ "CONSTANT_Class",             '>BH',  namedtuple( "CONSTANT_Class_info", "tag name_index" ), Class ],
          9 :    [ "CONSTANT_Fieldref",          '>BHH', namedtuple( "CONSTANT_Fieldref_info", "tag class_index name_and_type_index" ), FieldRef ],
@@ -552,7 +569,7 @@ class FieldInfo :
       return self.__attributes
 
    def show(self) :
-      print self.format.get_value(), self.__CM.get_string( self.format.get_value().name_index )
+      print self.format.get_value(), self.get_name(), self.get_descriptor()
       for i in self.__attributes :
          i.show()
 
@@ -1749,7 +1766,7 @@ class StackMapTableAttribute(BasicAttribute) :
 
 class InnerClassesDesc :
    def __init__(self, class_manager, buff) :
-      INNER_CLASSES_FORMAT = [ ">BBBB", "inner_class_info_index outer_class_info_index inner_name_index inner_class_access_flags" ]
+      INNER_CLASSES_FORMAT = [ ">HHHH", "inner_class_info_index outer_class_info_index inner_name_index inner_class_access_flags" ]
       
       self.__CM = class_manager
 
@@ -1826,7 +1843,7 @@ class ConstantValueAttribute(BasicAttribute) :
 
 class EnclosingMethodAttribute(BasicAttribute) :
    def __init__(self, class_manager, buff) :
-      ENCLOSING_METHOD_FORMAT = [ '>BB', "class_index method_index" ]
+      ENCLOSING_METHOD_FORMAT = [ '>HH', "class_index method_index" ]
 
       self.__CM = class_manager
       
@@ -2203,16 +2220,26 @@ class JVMFormat(bytecode._Bytecode) :
       #  cp_info constant_pool[constant_pool_count-1];
       self.__constant_pool = []
       self.__CM = ClassManager( self.__constant_pool, self.constant_pool_count )
-      for i in range(1, self.constant_pool_count.get_value()) :
+      
+      i = 1
+      while(i < self.constant_pool_count.get_value()) :
          tag = SV( '>B', self.read_b( 1 ) )
 
-         if tag.get_value() not in CONSTANT_INFO : 
-            bytecode.Exit( "tag not in CONSTANT_INFO" )
+         if tag.get_value() not in CONSTANT_INFO :
+            bytecode.Exit( "tag %d not in CONSTANT_INFO" % tag.get_value() )
 
          ci = CONSTANT_INFO[ tag.get_value() ][-1]( self.__CM, self )
-         
          self.__constant_pool.append( ci )
 
+         i = i + 1
+         # CONSTANT_Long or CONSTANT_Double
+         #      If a CONSTANT_Long_info or CONSTANT_Double_info structure is the item
+         #      in the constant_pool table at index n, then the next usable item in the pool is
+         #      located at index n + 2. The constant_pool index n + 1 must be valid but is
+         #      considered unusable.
+         if tag.get_value() == 5 or tag.get_value() == 6 : 
+            self.__constant_pool.append( EmptyConstant() )
+            i = i + 1
 
       # u2 access_flags;
       # u2 this_class;
@@ -2221,13 +2248,11 @@ class JVMFormat(bytecode._Bytecode) :
       self.this_class         = SV( '>H', self.read( 2 ) )
       self.super_class        = SV( '>H', self.read( 2 ) )
 
-
       self.__CM.set_this_class( self.this_class )
 
       # u2 interfaces_count;
       self.interfaces_count   = SV( '>H', self.read( 2 ) )
 
-      #FIXME
       # u2 interfaces[interfaces_count];
       self.__interfaces = []
       for i in range(0, self.interfaces_count.get_value()) :
@@ -2242,7 +2267,6 @@ class JVMFormat(bytecode._Bytecode) :
       self.__fields = []
       for i in range(0, self.fields_count.get_value()) :
          fi = FieldInfo( self.__CM, self ) 
-
          self.__fields.append( fi )
 
       # u2 methods_count;
