@@ -13,11 +13,11 @@ BASE_MAIN_TEST = "./examples/java/Demo1/orig_main/"
 BASE_MAIN_TEST_OUTPUT = "./examples/java/Demo1/new_main"
 
 FILES = [ 
-         # ("BaseCipher.class", 0),
-         # ("DES.class", 0), 
-         # ("DES$Context.class", 0), 
-         # ("IBlockCipher.class", 0), 
-         # ("IBlockCipherSpi.class", 0), 
+          ("BaseCipher.class", 0),
+          ("DES.class", 0), 
+          ("DES$Context.class", 0), 
+          ("IBlockCipher.class", 0), 
+          ("IBlockCipherSpi.class", 0), 
           ("Properties$1.class", 0), 
           ("Properties.class", 0), 
           ("Registry.class", 0), 
