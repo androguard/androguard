@@ -11,6 +11,7 @@ sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/bytecodes")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/predicates")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/analysis")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/vm")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/wm")
 
 import androguard, bytecode
 
