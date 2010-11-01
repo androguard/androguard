@@ -1824,7 +1824,31 @@ class ConstantValueAttribute(BasicAttribute) :
    def get_raw(self) :
       return self.constantvalue_index
 
+class EnclosingMethodAttribute(BasicAttribute) :
+   def __init__(self, class_manager, buff) :
+      ENCLOSING_METHOD_FORMAT = [ '>BB', "class_index method_index" ]
+
+      self.__CM = class_manager
       
+      super(EnclosingMethodAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # u2 class_index
+      # u2 method_index;
+
+      self.__raw_buff = buff.read( calcsize( ENCLOSING_METHOD_FORMAT[0] ) )
+      self.format = SVs( ENCLOSING_METHOD_FORMAT[0], namedtuple( "EnclosingMethodFormat", ENCLOSING_METHOD_FORMAT[1] ), self.__raw_buff )
+
+   def show(self) :
+      print self.format
+
+   def set_cm(self, cm) :
+      self.__CM = cm
+
+   def get_raw(self) :
+      return self.format.get_value_buff()
+
 class AttributeInfo :
    """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
    def __init__(self, class_manager, buff) :
@@ -1850,6 +1874,8 @@ class AttributeInfo :
          self.__info = InnerClassesAttribute( self.__CM, buff )
       elif self.__name == "ConstantValue" :
          self.__info = ConstantValueAttribute( self.__CM, buff )
+      elif self.__name == "EnclosingMethod" :
+         self.__info = EnclosingMethodAttribute( self.__CM, buff )
       else :
          bytecode.Exit( "AttributeInfo %s doesn't exit" % self.__name )
 
@@ -1907,6 +1933,10 @@ class ClassManager :
          return [ name, self.get_item(idx[0]).get_format().get_value().bytes ]
       elif name == "CONSTANT_String" :
          return [ name, self.get_string( self.get_item(idx[0]).get_format().get_value().string_index ) ]
+      elif name == "CONSTANT_Class" :
+         return [ name, self.get_class( idx[0] ) ]
+      elif name == "CONSTANT_Fieldref" :
+         return [ name, self.get_field( idx[0] ) ]
 
       bytecode.Exit( "get_value not yet implemented for %s" % name )
 
