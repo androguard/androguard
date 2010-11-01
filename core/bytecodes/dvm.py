@@ -1129,17 +1129,22 @@ class EncodedField :
       self.__field_idx = 0
 
       self.__name = None
+      self.__proto = None
+      self.__class_name = None
 
       self.__cm = cm
 
    def get_access(self) :
       return self.__access_flags
 
+   def get_class_name(self) :
+      return self.__class_name
+
    def get_descriptor(self) :
-      return self.__name[1]
+      return self.__proto
 
    def get_name(self) :
-      return self.__name[2]
+      return self.__name
 
    def adjust_idx(self, val) :
       self.__field_idx = self.__field_idx_diff + val
@@ -1148,13 +1153,16 @@ class EncodedField :
       return self.__field_idx
 
    def reload(self) :
-      self.__name = self.__cm.get_field( self.__field_idx )
+      name = self.__cm.get_field( self.__field_idx )
+      self.__class_name = name[0]
+      self.__name = name[1]
+      self.__proto = name[1]
 
    def get_raw(self) :
       return writeuleb128( self.__field_idx_diff ) + writeuleb128( self.__access_flags )
 
    def show(self) :
-      print "\tfield_idx_diff=%d %s access_flags=%d" % (self.__field_idx_diff, self.__name, self.__access_flags)
+      print "\tfield_idx_diff=%d (%s,%s,%s) access_flags=%d" % (self.__field_idx_diff, self.__class_name, self.__name, self.__proto, self.__access_flags)
 
 class EncodedMethod :
    def __init__(self, buff, cm) :
@@ -1165,6 +1173,9 @@ class EncodedMethod :
       self.__method_idx = 0
 
       self.__name = None
+      self.__proto = None
+      self.__class_name = None
+
       self.__code = None
 
       self.__cm = cm
@@ -1176,7 +1187,10 @@ class EncodedMethod :
       return self.__code
 
    def get_descriptor(self) :
-      return self.proto
+      return self.__proto
+
+   def get_class_name(self) :
+      return self.__class_name
 
    def get_name(self) :
       return self.__name
@@ -1190,7 +1204,7 @@ class EncodedMethod :
    def reload(self) :
       v = self.__cm.get_method( self.__method_idx )
       self.__class_name = v[0]
-      self.proto = v[1]
+      self.__proto = v[1]
       self.__name = v[2]
 
       self.__code = self.__cm.get_code( self.code_off )
@@ -1199,7 +1213,7 @@ class EncodedMethod :
       return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
 
    def show(self) :
-      print "\tmethod_idx_diff=%d %s access_flags=%d code_off=%d" % (self.method_idx_diff, self.__name, self.access_flags, self.code_off)
+      print "\tmethod_idx_diff=%d (%s,%s,%s) access_flags=%d code_off=%d" % (self.method_idx_diff, self.__class_name, self.__name, self.__proto, self.access_flags, self.code_off)
       self.__code.show()
 
 class ClassDataItem :
@@ -1521,12 +1535,14 @@ class DalvikCode :
 
             pos_op = string.find(mnemonic[2], sub_op)
             if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' : 
-                  signed = 1
+               signed = 1
 
 
             ttype = "op@"
-            if pos_op != -1 :            
-               t_pos_op = pos_op + 1
+
+            truc = False
+            if pos_op != -1 :
+               t_pos_op = pos_op 
 
                while pos_op > 0 and mnemonic[2][pos_op] != ' ' :
                   pos_op = pos_op - 1
@@ -1534,9 +1550,12 @@ class DalvikCode :
                ttype = mnemonic[2][pos_op : t_pos_op].replace(' ', '')
                if "{" in ttype :
                   ttype = ttype[ string.find(ttype, "{") + 1 : ]
+            else :
+               if sub_op != "op" :
+                  ttype = "v"
 
             val = self._extract( signed, l, size ) << (zero_count * 4)
-
+   
             operands.append( [ttype, val] )
 
             if len(l) == 0 :
@@ -1605,7 +1624,7 @@ class DalvikCode :
          return "%s%x{%s}" % (c, v, self.__CM.get_field(v))
       elif "type" in c :
          return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
-      return "%s{%x}" % (c, v)
+      return "%s%x" % (c, v)
 
    def get_raw(self) :
       buff =  self.__registers_size.get_value_buff() + \
