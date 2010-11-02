@@ -11,9 +11,15 @@ TEST_OUTPUT = [ './examples/java/test/new/Test1.class', './examples/java/test/ne
 
 a = androguard.Androguard( TEST )
 
-androguard.OBFU_Names( )
+androguard.OBFU_Names( a, "Test1", "value", ".", androguard.OBFU_NAMES_FIELDS )
+androguard.OBFU_Names( a, "Test1", "g", ".", androguard.OBFU_NAMES_METHODS )
 
+i = 0
+while i < len(TEST) :
+   _a = a.get("file", TEST[i])
+   
+   fd = open( TEST_OUTPUT[i], "w" )
+   fd.write( _a.save() )
+   fd.close()
 
-fd = open( TEST_OUTPUT, "w" )
-fd.write( a.save() )
-fd.close()
+   i = i + 1

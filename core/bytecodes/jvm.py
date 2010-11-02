@@ -553,6 +553,9 @@ class FieldInfo :
    def set_access(self, value) :
       self.format.set_value( { "access_flags" : value } )
 
+   def get_class_name(self) :
+      return self.__CM.get_this_class_name()
+      
    def get_name(self) :
       return self.__CM.get_string( self.format.get_value().name_index )
 
@@ -638,6 +641,9 @@ class MethodInfo :
    def set_descriptor_index(self, descriptor_index) :
       self.format.set_value( { "descriptor_index" : descriptor_index } )
 
+   def get_class_name(self) :
+      return self.__CM.get_this_class_name()
+      
    def set_cm(self, cm) :
       self.__CM = cm
       for i in self.__attributes :
@@ -1606,7 +1612,7 @@ class SameLocals1StackItemFrame :
       print "#" * 60
 
    def get_raw(self) :
-      return self.frame_type.get_value_buff() + self.stack.get_value_buff()
+      return self.frame_type.get_value_buff() + self.stack.get_raw()
 
    def _fix_attributes(self, new_cm) :
       pass
@@ -1818,7 +1824,7 @@ class InnerClassesAttribute(BasicAttribute) :
          i.set_cm( cm )
 
    def get_raw(self) :
-      return self.number_of_classes.get_value_buff + \
+      return self.number_of_classes.get_value_buff() + \
              ''.join(x.get_raw() for x in self.__classes)
 
 class ConstantValueAttribute(BasicAttribute) :
@@ -1839,7 +1845,7 @@ class ConstantValueAttribute(BasicAttribute) :
       self.__CM = cm
 
    def get_raw(self) :
-      return self.constantvalue_index
+      return self.constantvalue_index.get_value_buff()
 
 class EnclosingMethodAttribute(BasicAttribute) :
    def __init__(self, class_manager, buff) :
@@ -2089,6 +2095,20 @@ class ClassManager :
                return i.get_class_index()
          idx += 1
       return -1
+
+   def get_used_fields(self) :
+      l = []
+      for i in self.__constant_pool :
+         if i.get_name() == "CONSTANT_Fieldref" :
+            l.append( i )
+      return l
+
+   def get_used_methods(self) :
+      l = []
+      for i in self.__constant_pool :
+         if i.get_name() == "CONSTANT_Methodref" :
+            l.append( i )
+      return l
 
    def get_string(self, idx) :
       if self.__constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
@@ -2375,6 +2395,39 @@ class JVMFormat(bytecode._Bytecode) :
    def get_class_manager(self) :
       """Return directly the class manager"""
       return self.__CM
+
+   def set_used_field(self, old, new) :
+      used_fields = self.__CM.get_used_fields()
+      for i in used_fields :
+         class_idx = i.format.get_value().class_index
+         name_and_type_idx = i.format.get_value().name_and_type_index
+         class_name = self.__CM.get_string( self.__CM.get_item(class_idx).get_name_index() )
+         field_name = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_name_index() )
+         descriptor = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index() )
+
+         if old[0] == class_name and old[1] == field_name and old[2] == descriptor :
+#           print "SET USED FIELD", class_name, method_name, descriptor
+
+            self.__CM.set_string( self.__CM.get_item(class_idx).get_name_index(), new[0] )
+            self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_name_index(), new[1] )
+            self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index(), new[2] )
+
+   def set_used_method(self, old, new) :
+      used_methods = self.__CM.get_used_methods()
+      for i in used_methods :
+         class_idx = i.format.get_value().class_index
+         name_and_type_idx = i.format.get_value().name_and_type_index
+         class_name = self.__CM.get_string( self.__CM.get_item(class_idx).get_name_index() )
+         method_name = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_name_index() )
+         descriptor = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index() )
+
+         if old[0] == class_name and old[1] == method_name and old[2] == descriptor :
+#            print "SET USED METHOD", class_name, method_name, descriptor
+
+            self.__CM.set_string( self.__CM.get_item(class_idx).get_name_index(), new[0] )
+            self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_name_index(), new[1] )
+            self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index(), new[2] )
+
 
    def show(self) :
       """Show the .class format into a human readable format"""
