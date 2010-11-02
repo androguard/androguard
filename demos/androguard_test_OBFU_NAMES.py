@@ -12,7 +12,7 @@ TEST_OUTPUT = [ './examples/java/test/new/Test1.class', './examples/java/test/ne
 a = androguard.Androguard( TEST )
 
 androguard.OBFU_Names( a, "Test1", "value", ".", androguard.OBFU_NAMES_FIELDS )
-androguard.OBFU_Names( a, "Test1", "g", ".", androguard.OBFU_NAMES_METHODS )
+androguard.OBFU_Names( a, "Test1", ".", ".", androguard.OBFU_NAMES_METHODS )
 
 i = 0
 while i < len(TEST) :
