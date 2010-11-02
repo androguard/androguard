@@ -18,7 +18,34 @@ def hexdump(src, length=8, off=0):
       result.append( b"%04X   %-*s   %s" % (i+off, length*(digits + 1), hexa, text) )      
    return b'\n'.join(result)
 
+### JAVA TEST ###
+BASE_TEST = "./examples/java/Demo1/orig/"
+BASE_MAIN_TEST = "./examples/java/Demo1/orig_main/"
 TEST = [ './examples/java/test/orig/Test1.class' ]
+FILES = [ 
+          ("BaseCipher.class", 0),
+          ("DES.class", 0), 
+          ("DES$Context.class", 0), 
+          ("IBlockCipher.class", 0), 
+          ("IBlockCipherSpi.class", 0), 
+          ("Properties$1.class", 0), 
+          ("Properties.class", 0), 
+          ("Registry.class", 0), 
+          ("Util.class", 0), 
+          ("WeakKeyException.class", 0), 
+          ("Demo1Main.class", 1)
+        ]
+
+for i in FILES :
+   if i[1] == 0 :
+      TEST.append( BASE_TEST + i[0] )
+   else :
+      TEST.append( BASE_MAIN_TEST + i[0] )
+
+### DALVIK TEST ###
+
+
+### ALL ###
 
 a = androguard.Androguard( TEST )
 
@@ -48,7 +75,6 @@ while i < len(TEST) :
             print hexdump(b1[j - 2: j + 10], off=j-2) + "\n"
             print "NEW : "
             print hexdump(b2[j - 2: j + 10], off=j-2) + "\n"
-#            break
 
          j += 1
 
