@@ -104,6 +104,9 @@ class WMCheck :
    def __init__(self, andro, intput_file) :
       pass
 
+def OBFU_NAMES_GEN(prefix="") :
+   return prefix + random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
+
 OBFU_NAMES_FIELDS = 0
 OBFU_NAMES_METHODS = 1
 class OBFU_Names :
@@ -111,13 +114,14 @@ class OBFU_Names :
       OBFU_Names is the object that change the name of a field or a method by a random string, and resolving
       dependencies into other files
 
-      @param andro : an L{Androguard} object to have full access to the desired information
-      @param class_name : the class of the method/field
-      @param name : the name of the method/field
-      @param descriptor : the descriptor of the method/field
-      @param obfu_type : the type of the obfuscated (field/method)
+      @param andro : an L{Androguard} object to have full access to the desired information, and represented a pool of files with the same format
+      @param class_name : the class of the method/field (a python regexp)
+      @param name : the name of the method/field (a python regexp)
+      @param descriptor : the descriptor of the method/field (a python regexp)
+      @param obfu_type : the type of the obfuscated (field/method) (OBFU_NAMES_FIELDS, OBFU_NAMES_METHODS)
+      @param gen_method : a method which generate random string
    """
-   def __init__(self, andro, class_name, name, descriptor, obfu_type) :
+   def __init__(self, andro, class_name, name, descriptor, obfu_type, gen_method=OBFU_NAMES_GEN) :
       if obfu_type != OBFU_NAMES_FIELDS and obfu_type != OBFU_NAMES_METHODS :
          raise("ooops")
 
@@ -132,22 +136,32 @@ class OBFU_Names :
 
       depends = []
 
+      # Change the name of all fields/methods
       for fm in search_in :
          if re_class_name.match( fm.get_class_name() ) :
             if re_name.match( fm.get_name() ):
                if re_descriptor.match( fm.get_descriptor() ) :
+                  _, _vm = andro.get_method_descriptor( fm.get_class_name(), fm.get_name(), fm.get_descriptor() )
                   old_name = fm.get_name()
+                  new_name = gen_method()
+                  
+                  # don't change the constructor for a .class file
+                  if obfu_type == OBFU_NAMES_METHODS :
+                     _, _vm = andro.get_method_descriptor( fm.get_class_name(), fm.get_name(), fm.get_descriptor() )
+                     if _vm.get_type() == "JVM" and old_name != "<init>" :
+                        fm.set_name( new_name )
+                        depends.append( (fm, old_name) )
+                  elif obfu_type == OBFU_NAMES_FIELDS :
+                     fm.set_name( new_name )
+                     depends.append( (fm, old_name) )
 
-                  new_name = random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
-                  fm.set_name( new_name )
-                  depends.append( (fm, old_name) )
-     
+      # Change the name in others files
       for i in depends :
-         for vm in andro.get_vms() :
+         for _vm in andro.get_vms() :
             if obfu_type == OBFU_NAMES_FIELDS :
-               vm.set_used_field( [ i[0].get_class_name(), i[1], i[0].get_descriptor() ], [ i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor() ] )
+               _vm.set_used_field( [ i[0].get_class_name(), i[1], i[0].get_descriptor() ], [ i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor() ] )
             elif obfu_type == OBFU_NAMES_METHODS :
-               vm.set_used_method( [ i[0].get_class_name(), i[1], i[0].get_descriptor() ], [ i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor() ] )
+               _vm.set_used_method( [ i[0].get_class_name(), i[1], i[0].get_descriptor() ], [ i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor() ] )
 
 class BC :
    def __init__(self, bc) :

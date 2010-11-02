@@ -1353,7 +1353,7 @@ class CodeAttribute(BasicAttribute) :
          i._fix_attributes( new_cm )
 
 class SourceFileAttribute(BasicAttribute) :
-   def __init__(self, buff) :
+   def __init__(self, cm, buff) :
       super(SourceFileAttribute, self).__init__()
       # u2 attribute_name_index;
       # u4 attribute_length;
@@ -1368,7 +1368,7 @@ class SourceFileAttribute(BasicAttribute) :
       print self.sourcefile_index
 
 class LineNumberTableAttribute(BasicAttribute) :
-   def __init__(self, buff) :
+   def __init__(self, cm, buff) :
       super(LineNumberTableAttribute, self).__init__()
       # u2 attribute_name_index;        
       # u4 attribute_length;
@@ -1401,7 +1401,7 @@ class LineNumberTableAttribute(BasicAttribute) :
       pass
 
 class LocalVariableTableAttribute(BasicAttribute) :
-   def __init__(self, buff) :
+   def __init__(self, cm, buff) :
       super(LocalVariableTableAttribute, self).__init__()
       # u2 attribute_name_index;
       # u4 attribute_length;
@@ -1431,7 +1431,7 @@ class LocalVariableTableAttribute(BasicAttribute) :
          print x.get_value()
 
 class ExceptionsAttribute(BasicAttribute) :
-   def __init__(self, buff) :
+   def __init__(self, cm, buff) :
       super(ExceptionsAttribute, self).__init__()
       # u2 attribute_name_index;      
       # u4 attribute_length;
@@ -1872,6 +1872,18 @@ class EnclosingMethodAttribute(BasicAttribute) :
    def get_raw(self) :
       return self.format.get_value_buff()
 
+ATTRIBUTE_INFO_DESCR = { 
+      "Code" : CodeAttribute,   
+      "SourceFile" : SourceFileAttribute,   
+      "Exceptions" : ExceptionsAttribute,   
+      "LineNumberTable" : LineNumberTableAttribute,   
+      "LocalVariableTable" : LocalVariableTableAttribute,
+      "StackMapTable" : StackMapTableAttribute,
+      "InnerClasses" : InnerClassesAttribute,
+      "ConstantValue" : ConstantValueAttribute,
+      "EnclosingMethod" : EnclosingMethodAttribute,
+   }
+
 class AttributeInfo :
    """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
    def __init__(self, class_manager, buff) :
@@ -1881,25 +1893,9 @@ class AttributeInfo :
       self.format = SVs( ATTRIBUTE_INFO[0], ATTRIBUTE_INFO[1], self.__raw_buff )
       self.__name = self.__CM.get_string( self.format.get_value().attribute_name_index )
 
-      if self.__name == "Code" :
-         self.__info = CodeAttribute( self.__CM, buff ) 
-      elif self.__name == "SourceFile" :
-         self.__info = SourceFileAttribute( buff )
-      elif self.__name == "Exceptions" :
-         self.__info = ExceptionsAttribute( buff )
-      elif self.__name == "LineNumberTable" :
-         self.__info = LineNumberTableAttribute( buff )
-      elif self.__name == "LocalVariableTable" :
-         self.__info = LocalVariableTableAttribute( buff )
-      elif self.__name == "StackMapTable" :
-         self.__info = StackMapTableAttribute( self.__CM, buff )
-      elif self.__name == "InnerClasses" :
-         self.__info = InnerClassesAttribute( self.__CM, buff )
-      elif self.__name == "ConstantValue" :
-         self.__info = ConstantValueAttribute( self.__CM, buff )
-      elif self.__name == "EnclosingMethod" :
-         self.__info = EnclosingMethodAttribute( self.__CM, buff )
-      else :
+      try :
+         self.__info = ATTRIBUTE_INFO_DESCR[ self.__name ](self.__CM, buff)
+      except KeyError, ke :
          bytecode.Exit( "AttributeInfo %s doesn't exit" % self.__name )
 
    def get_item(self) :
@@ -2397,6 +2393,12 @@ class JVMFormat(bytecode._Bytecode) :
       return self.__CM
 
    def set_used_field(self, old, new) :
+      """
+         Change the description of a field
+
+         @param old : a list of string which contained the original class name, the original field name and the original descriptor
+         @param new : a list of string which contained the new class name, the new field name and the new descriptor
+      """
       used_fields = self.__CM.get_used_fields()
       for i in used_fields :
          class_idx = i.format.get_value().class_index
@@ -2413,6 +2415,11 @@ class JVMFormat(bytecode._Bytecode) :
             self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index(), new[2] )
 
    def set_used_method(self, old, new) :
+      """
+         Change the description of a method
+         @param old : a list of string which contained the original class name, the original method name and the original descriptor
+         @param new : a list of string which contained the new class name, the new method name and the new descriptor
+      """
       used_methods = self.__CM.get_used_methods()
       for i in used_methods :
          class_idx = i.format.get_value().class_index
