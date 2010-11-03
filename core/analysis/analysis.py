@@ -100,6 +100,11 @@ class JBCA :
    def get_bb(self) :
       return self.__bb
 
+   def show(self) :
+      for i in self.__bb :
+         print i
+         i.show()
+
 class DBCA :
    def __init__(self) :
       pass

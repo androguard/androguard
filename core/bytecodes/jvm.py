@@ -1006,6 +1006,7 @@ class JavaCode :
             raw_buff += pack(r_format, *v_function( value ) )
 
             i.reload( raw_buff )
+
          elif "anewarray" in i.get_name() :
             operands = i.get_operands()
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]            
@@ -1013,7 +1014,7 @@ class JavaCode :
 
             r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
 
-            new_class_index = self.__CM.create_class( operands[0] )
+            new_class_index = self.__CM.create_class( operands )
             
             raw_buff += pack(r_format, *v_function( new_class_index ) )
 
@@ -1068,7 +1069,7 @@ class JavaCode :
 
             r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
 
-            new_class_index = self.__CM.create_class( operands[0] )
+            new_class_index = self.__CM.create_class( operands )
             
             raw_buff += pack(r_format, *v_function( new_class_index ) )
 

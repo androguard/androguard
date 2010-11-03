@@ -66,7 +66,6 @@ class VM_int :
 
                for new_method in vi.get_methods() : 
                   _vm.insert_direct_method( new_method.get_name(), new_method )
-               method.show()
                vi.patch_code()
 
                end_iip = False
@@ -74,9 +73,11 @@ class VM_int :
                break
             idx += 1
          
-         # We have patch zero integers, it's the end my friend !
+         # We have patched zero integers, it's the end my friend !
          if end_iip == True :
             iip = False
+
+      method.show()
 
 WM_CREATE_R = 0
 WM_CREATE_W = 1
