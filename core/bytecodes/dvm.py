@@ -1155,7 +1155,7 @@ class EncodedField :
    def reload(self) :
       name = self.__cm.get_field( self.__field_idx )
       self.__class_name = name[0]
-      self.__name = name[1]
+      self.__name = name[2]
       self.__proto = name[1]
 
    def get_raw(self) :
