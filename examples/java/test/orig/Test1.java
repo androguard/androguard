@@ -12,7 +12,12 @@ public class Test1 {
     public int test_base(int value) {
       int y = 0;
       for(int i = 0; i < value; i++) {
-         y = y + (y & this.test1(50)) + this.value;
+         y = y + ((y & this.test1(50))) + this.value;
+         y = y - 0 + ((y & this.test1(50)) + 0) + this.value;
+      }
+
+      if (((y-value) > 0) && (((y-0) & 1) == 1) && y == 0) {
+         return y - 1;
       }
 
       return y;
