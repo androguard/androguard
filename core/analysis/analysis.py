@@ -40,6 +40,14 @@ JAVA_OPCODES_ACTIONS = {
 
 from jvm import JVMFormat, BREAK_JAVA_OPCODES, BRANCH_JAVA_OPCODES, MATH_JAVA_OPCODES, INVERT_JAVA_OPCODES
 
+class JMC :
+   def __init__(self, op) :
+      self.op = op
+
+class JMO :
+   def __init__(self, op) :
+      self.op = op
+
 class JavaBreakBlock : 
    def __init__(self) :
       self.__ins = []
@@ -58,6 +66,85 @@ class JavaBreakBlock :
       #l.append( branch )
 
       return branch[0]
+
+   def tree(self) :
+      ft = []
+      ctt = []
+      
+      n = 0
+      for i in self.__ins :
+         v = self.trans( i )
+         if v != None :
+            ctt.append( v )
+
+         if (i.get_name() in MATH_JAVA_OPCODES or i.get_name()[0:2] == "if" or i.get_name()[0:2] == "ir") :
+            if i.get_name() in MATH_JAVA_OPCODES :
+               r = JMO( [ ctt.pop(-1), ctt.pop(-1), ctt.pop(-1) ] )
+               name = str(r.__class__)[9:] + "@" + "%x" % id(r) 
+               ft.append( (name, r) )
+               ctt.append( name )
+               n += 1
+            else :
+               r = JMC( [ ctt.pop(-1), ctt.pop(-1) ] )
+               name = str(r.__class__)[9:] + "@" + "%x" % id(r) 
+               ft.append( (n, r) )
+               ctt.append( name )
+               n += 1
+
+      if ft != [] :
+         n = 0
+         for i in ft :
+            print "(%s,%s) " % (i[0], i[1].op),
+            n += 1
+         print
+
+         self.calc(ft) 
+
+   def calc(self, ft) :
+      res = 0
+
+      if len(ft) == 1 :
+         if self.nomath( ft[0][1] ) == False :
+            for i in ft[0][1].op :
+               res += (res << 8) + self.CONV(i)
+      print "RES", res
+
+   def CONV(self, v) :
+      C = { "I" : 50000, "IF" : 60000, "-" : 70000 }
+      return C[v]
+
+   def nomath(self, c):
+      op = [ "&", "+", "-" ]
+      for i in c.op :
+         if i in op :
+            return False
+      return True
+
+   def trans(self, i) :
+      v = i.get_name()[0:2]
+      if v == "il" or v == "ic" :
+         return "I"
+      
+      if v == "if" :
+         return "IF"
+      
+      if v == "ir" :
+         return "RET"
+
+      if "and" in i.get_name() :
+         return "&"
+      
+      if "add" in i.get_name() :
+         return "+"
+
+      if "sub" in i.get_name() :
+         return "-"
+
+      if "invokevirtual" in i.get_name() :
+         return "M" + i.get_operands()[2]
+
+      if "getfield" in i.get_name() :
+         return "F" + i.get_operands()[2]
 
    def show(self) :
       for i in self.__ins : 
@@ -104,6 +191,8 @@ class JBCA :
       for i in self.__bb :
          print i
          i.show()
+         print 
+         i.tree()
 
 class DBCA :
    def __init__(self) :

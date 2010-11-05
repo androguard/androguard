@@ -143,7 +143,7 @@ DALVIK_OPCODES = {
                   0x13 : [ "21s", "const/16",                   "vAA, #+BBBB", "AA|op BBBB" ],
                   0x14 : [ "31i", "const",                      "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
                   0x15 : [ "21h", "const/high16",               "vAA, #+BBBB0000", "AA|op BBBB0000" ],
-                  0x16 : [ "21s", "const-wide/16",              "vAA, #+BBBB", "AA|op BBBB", "AA|op BBBB" ], 
+                  0x16 : [ "21s", "const-wide/16",              "vAA, #+BBBB", "AA|op BBBB" ], 
                   0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
                   0x18 : [ "51l", "const-wide",                 "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
                   0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
@@ -1440,7 +1440,7 @@ class DalvikCode :
 
       self.__offset = off 
       buff.set_idx( off )
-#print "OFF = 0x%x %x ################################################" % (buff.get_idx(), buff.get_idx() % 4) 
+#      print "OFF = 0x%x %x ################################################" % (buff.get_idx(), buff.get_idx() % 4) 
 
       self.__off = buff.get_idx()
 
