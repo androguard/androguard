@@ -539,17 +539,17 @@ class AnnotationsDirectoryItem :
       self.__CM.add_offset( buff.get_idx(), self )
       self.format = SVs( ANNOTATIONS_DIRECTORY_ITEM[0], ANNOTATIONS_DIRECTORY_ITEM[1], buff.read( calcsize(ANNOTATIONS_DIRECTORY_ITEM[0]) ) )
 
-      self.__field_annotations = []
+      self.field_annotations = []
       for i in range(0, self.format.get_value().fields_size) :
-         self.__field_annotations.append( FieldAnnotation( buff, cm ) )
+         self.field_annotations.append( FieldAnnotation( buff, cm ) )
 
-      self.__method_annotations = []
+      self.method_annotations = []
       for i in range(0, self.format.get_value().annotated_methods_size) :
-         self.__method_annotations.append( MethodAnnotation( buff, cm ) )
+         self.method_annotations.append( MethodAnnotation( buff, cm ) )
 
-      self.__parameter_annotations = []
+      self.parameter_annotations = []
       for i in range(0, self.format.get_value().annotated_parameters_size) :
-         self.__parameter_annotations.append( ParameterAnnotation( buff, cm ) )
+         self.parameter_annotations.append( ParameterAnnotation( buff, cm ) )
 
    def reload(self) :
       pass
@@ -558,15 +558,15 @@ class AnnotationsDirectoryItem :
       print self.format.get_value()
 
    def get_obj(self) :
-      return [ i.get_obj() for i in self.__field_annotations ] + \
-             [ i.get_obj() for i in self.__method_annotations ] + \
-             [ i.get_obj() for i in self.__parameter_annotations ]
+      return [ i for i in self.field_annotations ] + \
+             [ i for i in self.method_annotations ] + \
+             [ i for i in self.parameter_annotations ]
 
    def get_raw(self) :
       return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + \
-             [ i.get_raw() for i in self.__field_annotations ] + \
-             [ i.get_raw() for i in self.__method_annotations ] + \
-             [ i.get_raw() for i in self.__parameter_annotations ]
+             [ i.get_raw() for i in self.field_annotations ] + \
+             [ i.get_raw() for i in self.method_annotations ] + \
+             [ i.get_raw() for i in self.parameter_annotations ]
 
    def get_off(self) :
       return self.__CM.get_offset( self )
@@ -613,7 +613,7 @@ class TypeList :
          nb = nb + 1
 
    def get_obj(self) :
-      return [ i.get_obj() for i in self.__list ]
+      return [ i for i in self.__list ]
 
    def get_raw(self) :
       return [ bytecode.Buff( self.__CM.get_offset(self), self.pad + self.size.get_value_buff() ) ] + [ i.get_raw() for i in self.__list ]
@@ -839,9 +839,9 @@ class EncodedValue :
       print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, self.value
 
    def get_obj(self) :
-      if isinstance(self.__value, str) == False :
+      if isinstance(self.value, str) == False :
          return [ self.value ]
-      return [ ]
+      return []
 
    def get_raw(self) :
       if isinstance(self.value, str) :
@@ -1065,7 +1065,7 @@ class TypeIdItem :
          i.show()
          nb = nb + 1
 
-   def get_ob(self) :
+   def get_obj(self) :
       return [ i for i in self.type ]
 
    def get_raw(self) :
@@ -1129,7 +1129,7 @@ class ProtoIdItem :
          i.show()
          nb = nb + 1
 
-   def get_ob(self) :
+   def get_obj(self) :
       return [ i for i in self.proto ]
 
    def get_raw(self) :
@@ -1538,50 +1538,61 @@ class ClassDefItem :
 
 class EncodedTypeAddrPair :
    def __init__(self, buff) :
-      self.__type_idx = readuleb128( buff )
-      self.__addr = readuleb128( buff )
+      self.type_idx = readuleb128( buff )
+      self.addr = readuleb128( buff )
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return writeuleb128( self.__type_idx ) + writeuleb128( self.__addr )
+      return writeuleb128( self.type_idx ) + writeuleb128( self.addr )
 
 class EncodedCatchHandler :
    def __init__(self, buff) :
-      self.__size = readsleb128( buff )
+      self.size = readsleb128( buff )
 
-      self.__handlers = []
+      self.handlers = []
       
-      for i in range(0, abs(self.__size)) :
-         self.__handlers.append( EncodedTypeAddrPair(buff) )
+      for i in range(0, abs(self.size)) :
+         self.handlers.append( EncodedTypeAddrPair(buff) )
 
-      if self.__size <= 0 :
-         self.__catch_all_addr = readuleb128( buff )
+      if self.size <= 0 :
+         self.catch_all_addr = readuleb128( buff )
 
    def show(self) :
-      bytecode._Print("ENCODED_CATCH_HANDLER SIZE", self.__size)
+      bytecode._Print("ENCODED_CATCH_HANDLER", self.size)
+      for i in self.handlers :
+         i.show()
+
+   def get_obj(self) :
+      return [ i for i in self.handlers ]
 
    def get_raw(self) :
-      buff = writesleb128( self.__size ) + ''.join(i.get_raw() for i in self.__handlers)
+      buff = writesleb128( self.size ) + ''.join(i.get_raw() for i in self.handlers)
       
-      if self.__size <= 0 :
-         buff += writeuleb128( self.__catch_all_addr )
+      if self.size <= 0 :
+         buff += writeuleb128( self.catch_all_addr )
 
       return buff
 
 class EncodedCatchHandlerList :
    def __init__(self, buff) :
-      self.__size = readuleb128( buff )
-      self.__list = []
+      self.size = readuleb128( buff )
+      self.list = []
 
-      for i in range(0, self.__size) :
-         self.__list.append( EncodedCatchHandler(buff) )
+      for i in range(0, self.size) :
+         self.list.append( EncodedCatchHandler(buff) )
 
    def show(self) :
-      bytecode._Print("ENCODED_CATCH_HANDLER_LIST SIZE", self.__size)
-      for i in self.__list :
+      bytecode._Print("ENCODED_CATCH_HANDLER_LIST SIZE", self.size)
+      for i in self.list :
          i.show()
-      
+   
+   def get_obj(self) :
+      return [ i for i in self.list ]
+
    def get_raw(self) :
-      return writeuleb128( self.__size ) + ''.join(i.get_raw() for i in self.__list)
+      return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.list)
 
 class DalvikCode : 
    def __init__(self, buff, cm) :
@@ -1778,6 +1789,9 @@ class DalvikCode :
          return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
       return "%s%x" % (c, v)
 
+   def get_obj(self) :
+      return [ i for i in self.__handlers ]
+
    def get_raw(self) :
       buff =  self.registers_size.get_value_buff() + \
               self.ins_size.get_value_buff() + \
@@ -1917,6 +1931,15 @@ class MapItem :
                i.show()
          else :   
             self.item.show()
+
+   def get_obj(self) :
+      if self.item == None :
+         return []
+
+      if isinstance( self.item, list ) :
+         return [ i for i in self.item ]
+
+      return [ self.item ]
 
    def get_raw(self) :
       if self.item == None :
@@ -2068,8 +2091,16 @@ class DalvikVMFormat(bytecode._Bytecode) :
                yield e               
       else:                      
          yield root
+   
+   def _Exp(self, x) :
+      l = []
+      for i in x :
+         l.append(i)
+         l.append( self._Exp( i.get_obj() ) )
+      return l
 
    def _get_raw(self) :
+#      print len( list(self._iterFlatten( self._Exp( self.map_list.get_obj() ) ) ) )
       # Due to the specific format of dalvik virtual machine,
       # we will get a list of raw object described by a buffer, a size and an offset
       # where to insert the specific buffer into the file 
