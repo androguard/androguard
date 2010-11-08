@@ -3,7 +3,7 @@
 
 
 #include "ofMain.h"
-#include "./app/include/appController.h"
+#include "appController.h"
 
 class testApp : public ofBaseApp{
 

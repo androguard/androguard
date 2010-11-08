@@ -424,15 +424,19 @@ def writesleb128(value) :
    return buff
 
 class HeaderItem :
-   def __init__(self, size, buff) :
-      self.__offset = buff.get_idx()
+   def __init__(self, size, buff, cm) :
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.format = SVs( HEADER[0], HEADER[1], buff.read( calcsize(HEADER[0]) ) ) 
 
    def reload(self) :
       pass
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, self.format.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
 
    def get_value(self) :
       return self.format.get_value()
@@ -441,33 +445,38 @@ class HeaderItem :
       bytecode._Print("HEADER", self.format)
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset( self )
 
 class AnnotationOffItem :
    def __init__(self,  buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.annotation_off = SV( '<L', buff.read( 4 ) )
 
    def show(self) :
      print self.annotation_off.get_value()
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-     return bytecode.Buff( self.__offset, self.annotation_off.get_value_buff() )
+     return bytecode.Buff( self.__CM.get_offset(self), self.annotation_off.get_value_buff() )
 
 class AnnotationSetItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.__annotation_off_item = []
 
       self.__size = SV( '<L', buff.read( 4 ) )
       for i in range(0, self.__size) :
          self.__annotation_off_item.append( AnnotationOffItem(buff, cm) )
 
-   def get_annotation_off_item(self) :
-      return self.__annotation_off_item
-
    def reload(self) :
       pass
+
+   def get_annotation_off_item(self) :
+      return self.__annotation_off_item
 
    def show(self) :
       nb = 0
@@ -476,42 +485,58 @@ class AnnotationSetItem :
          i.show()
          nb = nb + 1
 
+   def get_obj(self) :
+      return [ i for i in self.__annotation_off_item ]
+
    def get_raw(self) :
-      return [ bytecode.Buff(self.__offset, self.__size.get_value_buff()) ] + [ i.get_raw() for i in self.__annotation_off_item ]
+      return [ bytecode.Buff(self.__CM.get_offset(self), self.__size.get_value_buff()) ] + [ i.get_raw() for i in self.__annotation_off_item ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class FieldAnnotation :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.field_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-      return bytecode.Buff(self.__offset, self.field_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__CM.get_offset(self), self.field_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class MethodAnnotation :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.method_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-      return bytecode.Buff(self.__offset, self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__CM.get_offset(self), self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class ParameterAnnotation :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.method_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-      return bytecode.Buff(self.__offset, self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__CM.get_offset(self), self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class AnnotationsDirectoryItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.format = SVs( ANNOTATIONS_DIRECTORY_ITEM[0], ANNOTATIONS_DIRECTORY_ITEM[1], buff.read( calcsize(ANNOTATIONS_DIRECTORY_ITEM[0]) ) )
 
       self.__field_annotations = []
@@ -532,33 +557,44 @@ class AnnotationsDirectoryItem :
    def show(self) :
       print self.format.get_value()
 
+   def get_obj(self) :
+      return [ i.get_obj() for i in self.__field_annotations ] + \
+             [ i.get_obj() for i in self.__method_annotations ] + \
+             [ i.get_obj() for i in self.__parameter_annotations ]
+
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, self.format.get_value_buff() ) ] + \
+      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + \
              [ i.get_raw() for i in self.__field_annotations ] + \
              [ i.get_raw() for i in self.__method_annotations ] + \
              [ i.get_raw() for i in self.__parameter_annotations ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset( self )
 
 class TypeLItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       self.type_idx = SV( '<H', buff.read( 2 ) )
 
    def show(self) :
       print self.type_idx.get_value_buff()
 
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
-      return bytecode.Buff(self.__offset, self.type_idx.get_value_buff())
+      return bytecode.Buff(self.__CM.get_offset(self), self.type_idx.get_value_buff())
 
 class TypeList :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      offset = buff.get_idx()
 
       self.pad = ""
-      if self.__offset % 4 != 0 :
-         self.pad = buff.read( self.__offset % 4 )
+      if offset % 4 != 0 :
+         self.pad = buff.read( offset % 4 )
 
       self.size = SV( '<L', buff.read( 4 ) )
 
@@ -576,11 +612,14 @@ class TypeList :
          i.show()
          nb = nb + 1
 
+   def get_obj(self) :
+      return [ i.get_obj() for i in self.__list ]
+
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, self.pad + self.size.get_value_buff() ) ] + [ i.get_raw() for i in self.__list ]
+      return [ bytecode.Buff( self.__CM.get_offset(self), self.pad + self.size.get_value_buff() ) ] + [ i.get_raw() for i in self.__list ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset( self )
 
 DBG_END_SEQUENCE                = 0x00 #    (none)  terminates a debug info sequence for a code_item
 DBG_ADVANCE_PC                  = 0x01 #    uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
@@ -625,6 +664,12 @@ class DBGBytecode :
    def add(self, value, ttype) :
       self.__format.append( (value, ttype) )
    
+   def show(self) :
+      return [ i[0] for i in self.__format ]
+
+   def get_obj(self) :
+      return []
+
    def get_raw(self) :
       buff = self.__op_value.get_value_buff()
       for i in self.__format :
@@ -634,32 +679,35 @@ class DBGBytecode :
             buff += writesleb128( i[0] )
       return buff
 
-   def show(self) :
-      return [ i[0] for i in self.__format ]
-
 class DebugInfoItem2 :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm 
+      self.__CM.add_offset( buff.get_idx(), self )
+
       self.__buff = buff
-      self.__CM = cm
       self.__raw = ""
 
    def reload(self) :
-      n = self.__CM.get_next_offset_item( self.__offset )
+      offset = self.__CM.get_offset(self)
+
+      n = self.__CM.get_next_offset_item( offset )
 
       s_idx = self.__buff.get_idx()
-      self.__buff.set_idx( self.__offset )
-      self.__raw = self.__buff.read( n - self.__offset )
+      self.__buff.set_idx( offset )
+      self.__raw = self.__buff.read( n - offset )
       self.__buff.set_idx( s_idx )
-
-   def get_raw(self) :
-      return [ bytecode.Buff(self.__offset, self.__raw) ]
-
-   def get_off(self) :
-      return self.__offset
 
    def show(self) :
       pass
+
+   def get_obj(self) :
+      return []
+
+   def get_raw(self) :
+      return [ bytecode.Buff(self.__CM.get_offset(self), self.__raw) ]
+
+   def get_off(self) :
+      return self.__CM.get_offset(self)
 
 class DebugInfoItem :
    def __init__(self, buff, cm) :
@@ -741,35 +789,45 @@ VALUE_BOOLEAN  = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 
 
 class EncodedArray :
    def __init__(self, buff, cm) :
+      self.__CM = cm
       self.size = readuleb128( buff )
 
-      self.__values = []
+      self.values = []
       for i in range(0, self.size) :
-         self.__values.append( EncodedValue(buff, cm) )
+         self.values.append( EncodedValue(buff, cm) )
 
-   def get_raw(self) :
-      return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.__values)
+   def show(self) :
+      print "ENCODED_ARRAY"
+      for i in self.values :
+         i.show()
 
    def get_values(self) :
-      return self.__values
+      return self.values
+
+   def get_obj(self) :
+      return [ i for i in self.values ]
+
+   def get_raw(self) :
+      return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.values)
 
 class EncodedValue :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
 
       self.val = SV('<B', buff.read( 1 ) )
       self.__value_arg = self.val.get_value() >> 5
       self.__value_type = self.val.get_value() & 0x1f
 
      
-      self.__value = ""
+      self.value = ""
 
       if self.__value_type >= VALUE_SHORT and self.__value_type < VALUE_ARRAY :
-         self.__value = buff.read( self.__value_arg + 1 )
+         self.value = buff.read( self.__value_arg + 1 )
       elif self.__value_type == VALUE_ARRAY :
-         self.__value = EncodedArray( buff, cm )
+         self.value = EncodedArray( buff, cm )
       elif self.__value_type == VALUE_BYTE :
-         self.__value = buff.read( 1 )
+         self.value = buff.read( 1 )
       elif self.__value_type == VALUE_NULL :
          pass
       elif self.__value_type == VALUE_BOOLEAN :
@@ -777,52 +835,68 @@ class EncodedValue :
       else :
          raise( "oops" )
 
-   def get_raw(self) :
-      if isinstance(self.__value, str) :
-         return self.val.get_value_buff() + self.__value
-      else :
-         return self.val.get_value_buff() + self.__value.get_raw()
-
    def show(self) :
-      print self.val, self.__value_arg, self.__value_type, self.__value
+      print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, self.value
+
+   def get_obj(self) :
+      if isinstance(self.__value, str) == False :
+         return [ self.value ]
+      return [ ]
+
+   def get_raw(self) :
+      if isinstance(self.value, str) :
+         return self.val.get_value_buff() + self.value
+      else :
+         return self.val.get_value_buff() + self.value.get_raw()
 
 class AnnotationElement :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.name_idx = readuleb128( buff )
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
       
+      self.name_idx = readuleb128( buff )
       self.value = EncodedValue( buff, cm )
 
-   def get_raw(self) :
-      return [ bytecode.Buff(self.__offset, writeuleb128(self.name_idx) + self.value.get_raw()) ]
-
    def show(self) :
-      print self.name_idx
+      print "ANNOTATION_ELEMENT", self.name_idx
       self.value.show()
+   
+   def get_obj(self) :
+      return [ self.value ]
+
+   def get_raw(self) :
+      return [ bytecode.Buff(self.__CM.get_offset(self), writeuleb128(self.name_idx) + self.value.get_raw()) ]
+
 
 class EncodedAnnotation :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
 
       self.type_idx = readuleb128( buff )
       self.size = readuleb128( buff )
       
-      self.__elements = []
+      self.elements = []
       for i in range(0, self.size) :
-         self.__elements.append( AnnotationElement( buff, cm ) )
-
-   def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, writeuleb128(self.type_idx) + writeuleb128(self.size) ) ] + \
-             [ i.get_raw() for i in self.__elements ]
+         self.elements.append( AnnotationElement( buff, cm ) )
 
    def show(self) :
-      print self.type_idx, self.size
-      for i in self.__elements :
+      print "ENCODED_ANNOTATION", self.type_idx, self.size
+      for i in self.elements :
          i.show()
+   
+   def get_obj(self) :
+      return [ i for i in self.elements ]
+
+   def get_raw(self) :
+      return [ bytecode.Buff( self.__CM.get_offset(self), writeuleb128(self.type_idx) + writeuleb128(self.size) ) ] + \
+             [ i.get_raw() for i in self.elements ]
 
 class AnnotationItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+
       self.visibility = SV( '<B', buff.read( 1 ) )  
       self.annotation = EncodedAnnotation(buff, cm)
 
@@ -830,273 +904,326 @@ class AnnotationItem :
       pass
    
    def show(self) :
-      print self.visibility.get_value()
+      print "ANNOATATION_ITEM", self.visibility.get_value()
       self.annotation.show()
 
+   def get_obj(self) :
+      return [ self.annotation ]
+
    def get_raw(self) :
-      return [ bytecode.Buff(self.__offset, self.visibility.get_value_buff()) ] + self.annotation.get_raw()
+      return [ bytecode.Buff(self.__CM.get_offset(self), self.visibility.get_value_buff()) ] + self.annotation.get_raw()
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class EncodedArrayItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__value = EncodedArray( buff, cm )
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+
+      self.value = EncodedArray( buff, cm )
   
    def reload(self) :
      pass
 
    def show(self) :
-      pass
+      print "ENCODED_ARRAY_ITEM"
+      self.value.show()
+
+   def get_obj(self) :
+      return [ self.value ]
 
    def get_raw(self) :
-      return bytecode.Buff( self.__offset, self.__value.get_raw() )
+      return bytecode.Buff( self.__CM.get_offset(self), self.value.get_raw() )
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class StringDataItem :
-   def __init__(self, buff) :
-      self.__offset = buff.get_idx()
-      self.__utf16_size = readuleb128( buff ) 
-      self.__data = buff.read( self.__utf16_size + 1 )
+   def __init__(self, buff, cm) :
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+
+      self.utf16_size = readuleb128( buff ) 
+      self.data = buff.read( self.utf16_size + 1 )
 
    def reload(self) :
       pass
 
    def get(self) :
-      return self.__data[:-1]
+      return self.data[:-1]
 
    def show(self) :
-      print "%d %s" % ( self.__utf16_size, repr( self.__data ) )
+      print "STRING_DATA_ITEM", "%d %s" % ( self.utf16_size, repr( self.data ) )
 
-   def get_off(self) :
-      return self.__offset
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, writeuleb128( self.__utf16_size ) + self.__data ) ]
+      return [ bytecode.Buff( self.__CM.get_offset(self), writeuleb128( self.utf16_size ) + self.data ) ]
+   
+   def get_off(self) :
+      return self.__CM.get_offset(self)
+
 
 class StringIdItem :
-   def __init__(self, buff) :
-      self.__offset = buff.get_idx()      
-      self.__string_data_off = SV( '<L', buff.read( 4 ) )
+   def __init__(self, buff, cm) :
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.string_data_off = SV( '<L', buff.read( 4 ) )
 
    def reload(self) :
       pass
 
    def get_data_off(self) :
-      return self.__string_data_off.get_value()
+      return self.string_data_off.get_value()
+
+   def get_obj(self) :
+      return [] 
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, self.__string_data_off.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__CM.get_offset(self), self.string_data_off.get_value_buff() ) ]
 
    def show(self) :
-      print self.__string_data_off.get_value()
+      print "STRING_ID_ITEM", self.string_data_off.get_value()
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class IdItem(object) :
    def __init__(self, size, buff, cm, TClass) :
-      self.__elem = []
+      self.elem = []
       for i in range(0, size) :
-         self.__elem.append( TClass(buff, cm) )
+         self.elem.append( TClass(buff, cm) )
 
    def get(self, idx) :
-      return self.__elem[ idx ]
+      return self.elem[ idx ]
 
    def reload(self) :
-      for i in self.__elem :
+      for i in self.elem :
          i.reload()
 
    def show(self) :
       nb = 0
-      for i in self.__elem :
+      for i in self.elem :
          print nb, i,
          i.show()
          nb = nb + 1
 
+   def get_obj(self) :
+      return [ i for i in self.elem ]
+
    def get_raw(self) :
-      return [ i.get_raw() for i in self.__elem ]
+      return [ i.get_raw() for i in self.elem ]
 
 class TypeItem :
    def __init__(self, buff, cm) :
-      self.__cm = cm
-      self.__offset = buff.get_idx()
-      self.__general_format = SV( '<L', buff.read( 4 ) )
-      self.__name = None
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.format = SV( '<L', buff.read( 4 ) )
+      self._name = None
 
    def reload(self) :
-      self.__name = self.__cm.get_string( self.__general_format.get_value() )
+      self._name = self.__CM.get_string( self.format.get_value() )
 
    def show(self) :
-      print self.__general_format.get_value(), self.__name
+      print "TYPE_ITEM", self.format.get_value(), self._name
 
    def get_value(self) :
-      return self.__general_format.get_value()
+      return self.format.get_value()
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__offset, self.__general_format.get_value_buff() )
+      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
 
 class TypeIdItem :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__type = []
-      self.__cm = cm
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.type = []
 
       for i in range(0, size) :
-         self.__type.append( TypeItem( buff, cm ) )
+         self.type.append( TypeItem( buff, cm ) )
 
    def reload(self) :
-      for i in self.__type :
+      for i in self.type :
          i.reload()
 
    def get(self, idx) :
-      return self.__type[ idx ].get_value()
-
-   def get_raw(self) :
-      return [ i.get_raw() for i in self.__type ]
+      return self.type[ idx ].get_value()
 
    def show(self) :
+      print "TYPE_ID_ITEM"
       nb = 0
-      for i in self.__type :
+      for i in self.type :
          print nb, 
          i.show()
          nb = nb + 1
 
+   def get_ob(self) :
+      return [ i for i in self.type ]
+
+   def get_raw(self) :
+      return [ i.get_raw() for i in self.type ]
+
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class ProtoItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__general_format = SVs( PROTO_ID_ITEM[0], PROTO_ID_ITEM[1], buff.read( calcsize(PROTO_ID_ITEM[0]) ) )
-      self.__shorty = None
-      self.__return = None
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.format = SVs( PROTO_ID_ITEM[0], PROTO_ID_ITEM[1], buff.read( calcsize(PROTO_ID_ITEM[0]) ) )
+      self._shorty = None
+      self._return = None
       
       self.__cm = cm
 
    def reload(self) :
-      self.__shorty = self.__cm.get_string( self.__general_format.get_value().shorty_idx )
-      self.__return = self.__cm.get_type( self.__general_format.get_value().return_type_idx )
+      self._shorty = self.__CM.get_string( self.format.get_value().shorty_idx )
+      self._return = self.__CM.get_type( self.format.get_value().return_type_idx )
 
    def get_shorty(self) :
-      return self.__shorty
+      return self._shorty
 
    def get_return_type(self) :
-      return self.__return
+      return self._return
 
    def show(self) :
-      print self.__shorty, self.__return, self.__general_format.get_value()
+      print "PROTO_ITEM", self._shorty, self._return, self.format.get_value()
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__offset, self.__general_format.get_value_buff() )
+      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
 
 class ProtoIdItem :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__proto = []
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.proto = []
 
       for i in range(0, size) :
-         self.__proto.append( ProtoItem(buff, cm) )
+         self.proto.append( ProtoItem(buff, cm) )
 
    def get(self, idx) :
-      return self.__proto[ idx ]
+      return self.proto[ idx ]
 
    def reload(self) :
-      for i in self.__proto :
+      for i in self.proto :
          i.reload()
 
    def show(self) :
+      print "PROTO_ID_ITEM"
       nb = 0
-      for i in self.__proto :
+      for i in self.proto :
          print nb, i,
          i.show()
          nb = nb + 1
 
+   def get_ob(self) :
+      return [ i for i in self.proto ]
+
    def get_raw(self) :
-      return [ i.get_raw() for i in self.__proto ]
+      return [ i.get_raw() for i in self.proto ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class FieldItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__general_format = SVs( FIELD_ID_ITEM[0], FIELD_ID_ITEM[1], buff.read( calcsize(FIELD_ID_ITEM[0]) ) )
-      self.__class = None
-      self.__type = None
-      self.__name = None
-
-      self.__cm = cm
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.format = SVs( FIELD_ID_ITEM[0], FIELD_ID_ITEM[1], buff.read( calcsize(FIELD_ID_ITEM[0]) ) )
+      self._class = None
+      self._type = None
+      self._name = None
 
    def reload(self) :
-      general_format = self.__general_format.get_value()
-      self.__class = self.__cm.get_type( general_format.class_idx )
-      self.__type = self.__cm.get_type( general_format.type_idx )
-      self.__name = self.__cm.get_string( general_format.name_idx )
+      general_format = self.format.get_value()
+      self._class = self.__CM.get_type( general_format.class_idx )
+      self._type = self.__CM.get_type( general_format.type_idx )
+      self._name = self.__CM.get_string( general_format.name_idx )
 
    def get_class(self) :
-      return self.__class
+      return self._class
 
    def get_type(self) :
-      return self.__type
+      return self._type
 
    def get_name(self) :
-      return self.__name
+      return self._name
 
    def show(self) :
-      print self.__class, self.__type, self.__name, self.__general_format.get_value()
+      print "FIELD_ITEM", self._class, self._type, self._name, self.format.get_value()
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__offset, self.__general_format.get_value_buff() )
+      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class FieldIdItem(IdItem) :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       super(FieldIdItem, self).__init__(size, buff, cm, FieldItem)
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class MethodItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__general_format = SVs( METHOD_ID_ITEM[0], METHOD_ID_ITEM[1], buff.read( calcsize(METHOD_ID_ITEM[0]) ) )
-      self.__class = None
-      self.__proto = None
-      self.__name = None
-
-      self.__cm = cm
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.format = SVs( METHOD_ID_ITEM[0], METHOD_ID_ITEM[1], buff.read( calcsize(METHOD_ID_ITEM[0]) ) )
+      self._class = None
+      self._proto = None
+      self._name = None
 
    def reload(self) :
-      general_format = self.__general_format.get_value()
-      self.__class = self.__cm.get_type( general_format.class_idx )
-      self.__proto = self.__cm.get_proto( general_format.proto_idx )
-      self.__name = self.__cm.get_string( general_format.name_idx )
-
-   def get_class(self) :
-      return self.__class
-
-   def get_proto(self) :
-      return self.__proto
-
-   def get_name(self) :
-      return self.__name
+      general_format = self.format.get_value()
+      self._class = self.__CM.get_type( general_format.class_idx )
+      self._proto = self.__CM.get_proto( general_format.proto_idx )
+      self._name = self.__CM.get_string( general_format.name_idx )
 
    def show(self) :
-      print self.__name, self.__proto, self.__class, self.__general_format.get_value()
+      print "METHOD_ITEM", self._name, self._proto, self._class, self.format.get_value()
+   
+   def get_class(self) :
+      return self._class
+
+   def get_proto(self) :
+      return self._proto
+
+   def get_name(self) :
+      return self._name
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__offset, self.__general_format.get_value_buff() )
+      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
 
 class MethodIdItem :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       self.methods = []
       for i in range(0, size) :
          self.methods.append( MethodItem(buff, cm) )
@@ -1109,91 +1236,112 @@ class MethodIdItem :
          i.reload()
 
    def show(self) :
+      print "METHOD_ID_ITEM"
       nb = 0
       for i in self.methods :
          print nb, i,
          i.show()
          nb = nb + 1
 
+   def get_obj(self) :
+      return [ i for i in self.methods ]
+
    def get_raw(self) :
       return [ i.get_raw() for i in self.methods ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class EncodedField :
    def __init__(self, buff, cm) :
-      self.__field_idx_diff = readuleb128( buff )
-      self.__access_flags = readuleb128( buff )
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.field_idx_diff = readuleb128( buff )
+      self.access_flags = readuleb128( buff )
       
       self.__field_idx = 0
 
-      self.__name = None
-      self.__proto = None
-      self.__class_name = None
+      self._name = None
+      self._proto = None
+      self._class_name = None
 
-      self.__cm = cm
+   def reload(self) :
+      name = self.__CM.get_field( self.__field_idx )
+      self._class_name = name[0]
+      self._name = name[2]
+      self._proto = name[1]
 
    def get_access(self) :
-      return self.__access_flags
+      return self.access_flags
 
    def get_class_name(self) :
-      return self.__class_name
+      return self._class_name
 
    def get_descriptor(self) :
-      return self.__proto
+      return self._proto
 
    def get_name(self) :
-      return self.__name
+      return self._name
 
    def adjust_idx(self, val) :
-      self.__field_idx = self.__field_idx_diff + val
+      self.__field_idx = self.field_idx_diff + val
 
    def get_idx(self) :
       return self.__field_idx
 
-   def reload(self) :
-      name = self.__cm.get_field( self.__field_idx )
-      self.__class_name = name[0]
-      self.__name = name[2]
-      self.__proto = name[1]
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return writeuleb128( self.__field_idx_diff ) + writeuleb128( self.__access_flags )
+      return writeuleb128( self.field_idx_diff ) + writeuleb128( self.access_flags )
 
    def show(self) :
-      print "\tfield_idx_diff=%d (%s,%s,%s) access_flags=%d" % (self.__field_idx_diff, self.__class_name, self.__name, self.__proto, self.__access_flags)
+      print "\tENCODED_FIELD field_idx_diff=%d (%s,%s,%s) access_flags=%d" % (self.field_idx_diff, self._class_name, self._name, self._proto, self.access_flags)
 
 class EncodedMethod :
    def __init__(self, buff, cm) :
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       self.method_idx_diff = readuleb128( buff )
       self.access_flags = readuleb128( buff )
       self.code_off = readuleb128( buff )
 
       self.__method_idx = 0
 
-      self.__name = None
-      self.__proto = None
-      self.__class_name = None
+      self._name = None
+      self._proto = None
+      self._class_name = None
 
-      self.__code = None
+      self._code = None
 
-      self.__cm = cm
+   def reload(self) :
+      v = self.__CM.get_method( self.__method_idx )
+      self._class_name = v[0]
+      self._proto = v[1]
+      self._name = v[2]
 
+      self._code = self.__CM.get_code( self.code_off )
+
+   def show(self) :
+      print "\tENCODED_METHOD method_idx_diff=%d (%s,%s,%s) access_flags=%d code_off=%d" % (self.method_idx_diff, self._class_name, self._name, self._proto, self.access_flags, self.code_off)
+      self._code.show()
+   
    def get_access(self) :
       return self.access_flags
 
    def get_code(self) :
-      return self.__code
+      return self._code
 
    def get_descriptor(self) :
-      return self.__proto
+      return self._proto
 
    def get_class_name(self) :
-      return self.__class_name
+      return self._class_name
 
    def get_name(self) :
-      return self.__name
+      return self._name
 
    def adjust_idx(self, val) :
       self.__method_idx = self.method_idx_diff + val
@@ -1201,40 +1349,32 @@ class EncodedMethod :
    def get_idx(self) :
       return self.__method_idx
 
-   def reload(self) :
-      v = self.__cm.get_method( self.__method_idx )
-      self.__class_name = v[0]
-      self.__proto = v[1]
-      self.__name = v[2]
-
-      self.__code = self.__cm.get_code( self.code_off )
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
       return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
 
-   def show(self) :
-      print "\tmethod_idx_diff=%d (%s,%s,%s) access_flags=%d code_off=%d" % (self.method_idx_diff, self.__class_name, self.__name, self.__proto, self.access_flags, self.code_off)
-      self.__code.show()
 
 class ClassDataItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.static_fields_size = readuleb128( buff )
+      self.instance_fields_size = readuleb128( buff )
+      self.direct_methods_size = readuleb128( buff )
+      self.virtual_methods_size = readuleb128( buff ) 
 
-      self.__static_fields_size = readuleb128( buff )
-      self.__instance_fields_size = readuleb128( buff )
-      self.__direct_methods_size = readuleb128( buff )
-      self.__virtual_methods_size = readuleb128( buff ) 
+      self.static_fields = []
+      self.instance_fields = []
+      self.direct_methods = []
+      self.virtual_methods = []
 
-      self.__static_fields = []
-      self.__instance_fields = []
-      self.__direct_methods = []
-      self.__virtual_methods = []
-
-
-      self.load_field( self.__static_fields_size, self.__static_fields, EncodedField, buff, cm )
-      self.load_field( self.__instance_fields_size, self.__instance_fields, EncodedField, buff, cm )
-      self.load_field( self.__direct_methods_size, self.__direct_methods, EncodedMethod, buff, cm )
-      self.load_field( self.__virtual_methods_size, self.__virtual_methods, EncodedMethod, buff, cm )
+      self.load_field( self.static_fields_size, self.static_fields, EncodedField, buff, cm )
+      self.load_field( self.instance_fields_size, self.instance_fields, EncodedField, buff, cm )
+      self.load_field( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
+      self.load_field( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
 
    def load_field(self, size, l, Type, buff, cm) :
       prev = 0
@@ -1246,99 +1386,112 @@ class ClassDataItem :
          l.append( el )
 
    def reload(self) :
-      for i in self.__static_fields :
+      for i in self.static_fields :
          i.reload()
 
-      for i in self.__instance_fields :
+      for i in self.instance_fields :
          i.reload()
 
-      for i in self.__direct_methods :
+      for i in self.direct_methods :
          i.reload()
 
-      for i in self.__virtual_methods :
+      for i in self.virtual_methods :
          i.reload()
-
-   def get_off(self) :
-      return self.__offset
-
-   def get_methods(self) :
-      return [ x for x in self.__direct_methods ] + [ x for x in self.__virtual_methods ]
-
-   def get_fields(self) :
-      return [ x for x in self.__static_fields ] + [ x for x in self.__instance_fields ]
 
    def show(self) :
-      print "static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % (self.__static_fields_size, self.__instance_fields_size, self.__direct_methods_size, self.__virtual_methods_size)
+      print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
+            (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
 
       print "SF"
-      for i in self.__static_fields :
+      for i in self.static_fields :
          i.show()
 
       print "IF"
-      for i in self.__instance_fields :
+      for i in self.instance_fields :
          i.show()
 
       print "DM"
-      for i in self.__direct_methods :
+      for i in self.direct_methods :
          i.show()
 
       print "VM"
-      for i in self.__virtual_methods :
+      for i in self.virtual_methods :
          i.show()
 
+   def get_methods(self) :
+      return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
+
+   def get_fields(self) :
+      return [ x for x in self.static_fields ] + [ x for x in self.instance_fields ]
+
+
+   def get_off(self) :
+      return self.__CM.get_offset(self)
+
+   def get_obj(self) :
+      return [ i for i in self.static_fields ] + \
+             [ i for i in self.instance_fields ] + \
+             [ i for i in self.direct_methods ] + \
+             [ i for i in self.virtual_methods ]
+
    def get_raw(self) :
+      buff = writeuleb128( self.static_fields_size ) + \
+             writeuleb128( self.instance_fields_size ) + \
+             writeuleb128( self.direct_methods_size ) + \
+             writeuleb128( self.virtual_methods_size ) + \
+             ''.join(i.get_raw() for i in self.static_fields) + \
+             ''.join(i.get_raw() for i in self.instance_fields) + \
+             ''.join(i.get_raw() for i in self.direct_methods) + \
+             ''.join(i.get_raw() for i in self.virtual_methods)
 
-      buff = writeuleb128( self.__static_fields_size ) + \
-             writeuleb128( self.__instance_fields_size ) + \
-             writeuleb128( self.__direct_methods_size ) + \
-             writeuleb128( self.__virtual_methods_size ) + \
-             ''.join(i.get_raw() for i in self.__static_fields) + \
-             ''.join(i.get_raw() for i in self.__instance_fields) + \
-             ''.join(i.get_raw() for i in self.__direct_methods) + \
-             ''.join(i.get_raw() for i in self.__virtual_methods)
-
-      return [ bytecode.Buff(self.__offset, buff) ]
+      return [ bytecode.Buff(self.__CM.get_offset(self), buff) ]
 
 class ClassItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__general_format = SVs( CLASS_DEF_ITEM[0], CLASS_DEF_ITEM[1], buff.read( calcsize(CLASS_DEF_ITEM[0]) ) )
-      self.__name = None
-      self.__sname = None
-
       self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.format = SVs( CLASS_DEF_ITEM[0], CLASS_DEF_ITEM[1], buff.read( calcsize(CLASS_DEF_ITEM[0]) ) )
+      self._class_data_item = None
+
+      self._name = None
+      self._sname = None
 
    def reload(self) :
-      general_format = self.__general_format.get_value()
-      self.__name = self.__CM.get_type( general_format.class_idx )
-      self.__sname = self.__CM.get_type( general_format.superclass_idx )
+      general_format = self.format.get_value()
+      self._name = self.__CM.get_type( general_format.class_idx )
+      self._sname = self.__CM.get_type( general_format.superclass_idx )
 
-      self.__class_data_item = self.__CM.get_class_data_item( self.__general_format.get_value().class_data_off )
-
-      self.__class_data_item.reload()
-
-   def get_name(self) :
-      return self.__name
-
-   def get_info(self) :
-      return "%s:%s" % (self.__name, self.__sname)
-
-   def get_methods(self) :
-      return self.__class_data_item.get_methods()
-
-   def get_fields(self) :
-      return self.__class_data_item.get_fields()
+      self._class_data_item = self.__CM.get_class_data_item( general_format.class_data_off )
+      self._class_data_item.reload()
 
    def show(self) :
-      print self.__name, self.__sname, self.__general_format.get_value()
-      self.__class_data_item.show()
+      print "CLASS_ITEM", self._name, self._sname, self.format.get_value()
+      self._class_data_item.show()
+   
+   def get_name(self) :
+      return self._name
+
+   def get_info(self) :
+      return "%s:%s" % (self._name, self._sname)
+
+   def get_methods(self) :
+      return self._class_data_item.get_methods()
+
+   def get_fields(self) :
+      return self._class_data_item.get_fields()
+
+   def get_obj(self) :
+      return []
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__offset, self.__general_format.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
 
 class ClassDefItem :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       self.class_def = []
 
       for i in range(0, size) :
@@ -1348,9 +1501,6 @@ class ClassDefItem :
          self.class_def.append( class_def )
          
          buff.set_idx( idx + calcsize(CLASS_DEF_ITEM[0]) )
-
-   def export(self) :
-      pass
 
    def get_method(self, name_class, name_method) :
       l = []
@@ -1377,11 +1527,14 @@ class ClassDefItem :
          i.show()
          nb = nb + 1
 
+   def get_obj(self) :
+      return [ i for i in self.class_def ]
+
    def get_raw(self) :
       return [ i.get_raw() for i in self.class_def ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
 
 class EncodedTypeAddrPair :
    def __init__(self, buff) :
@@ -1433,26 +1586,25 @@ class EncodedCatchHandlerList :
 class DalvikCode : 
    def __init__(self, buff, cm) :
       self.__CM = cm
-
+      
       off = buff.get_idx()
       while off % 4 != 0 :
          off += 1
 
-      self.__offset = off 
       buff.set_idx( off )
-#      print "OFF = 0x%x %x ################################################" % (buff.get_idx(), buff.get_idx() % 4) 
 
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       self.__off = buff.get_idx()
 
-      self.__registers_size = SV( '<H', buff.read( 2 ) )   
-      self.__ins_size = SV( '<H', buff.read( 2 ) )
-      self.__outs_size = SV( '<H', buff.read( 2 ) )
-      self.__tries_size = SV( '<H', buff.read( 2 ) )
-      self.__debug_info_off = SV( '<L', buff.read( 4 ) )
-      self.__insns_size = SV( '<L', buff.read( 4 ) )
+      self.registers_size = SV( '<H', buff.read( 2 ) )   
+      self.ins_size = SV( '<H', buff.read( 2 ) )
+      self.outs_size = SV( '<H', buff.read( 2 ) )
+      self.tries_size = SV( '<H', buff.read( 2 ) )
+      self.debug_info_off = SV( '<L', buff.read( 4 ) )
+      self.insns_size = SV( '<L', buff.read( 4 ) )
 
-
-      self.__insn = buff.read( self.__insns_size.get_value() * 2 )
+      self.__insn = buff.read( self.insns_size.get_value() * 2 )
 
       self.__h_special_bytecodes = {}
       self.__bytecodes = []
@@ -1461,7 +1613,7 @@ class DalvikCode :
 
       real_j = 0
       j = 0 
-      while j < (self.__insns_size.get_value() * ushort) :
+      while j < (self.insns_size.get_value() * ushort) :
 
          # handle special instructions
          if real_j in self.__h_special_bytecodes :
@@ -1494,13 +1646,13 @@ class DalvikCode :
 
          real_j = j / 2
 
-      if (self.__insns_size.get_value() % 2 == 1) :
+      if (self.insns_size.get_value() % 2 == 1) :
          self.__padding = SV( '<H', buff.read( 2 ) )
 
       self.__tries = []
       self.__handlers = []
-      if self.__tries_size.get_value() > 0 :
-         for i in range(0, self.__tries_size.get_value()) :
+      if self.tries_size.get_value() > 0 :
+         for i in range(0, self.tries_size.get_value()) :
             try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
             self.__tries.append( try_item )
          
@@ -1592,12 +1744,12 @@ class DalvikCode :
    def show(self) :
       print "*" * 80 
       print "DALVIK_CODE :"
-      bytecode._Print("\tREGISTERS_SIZE", self.__registers_size)
-      bytecode._Print("\tINS_SIZE", self.__ins_size)
-      bytecode._Print("\tOUTS_SIZE", self.__outs_size)
-      bytecode._Print("\tTRIES_SIZE", self.__tries_size)
-      bytecode._Print("\tDEBUG_INFO_OFF", self.__debug_info_off)
-      bytecode._Print("\tINSNS_SIZE", self.__insns_size)
+      bytecode._Print("\tREGISTERS_SIZE", self.registers_size)
+      bytecode._Print("\tINS_SIZE", self.ins_size)
+      bytecode._Print("\tOUTS_SIZE", self.outs_size)
+      bytecode._Print("\tTRIES_SIZE", self.tries_size)
+      bytecode._Print("\tDEBUG_INFO_OFF", self.debug_info_off)
+      bytecode._Print("\tINSNS_SIZE", self.insns_size)
 
       for i in self.__handlers :
          i.show()
@@ -1627,34 +1779,37 @@ class DalvikCode :
       return "%s%x" % (c, v)
 
    def get_raw(self) :
-      buff =  self.__registers_size.get_value_buff() + \
-              self.__ins_size.get_value_buff() + \
-              self.__outs_size.get_value_buff() + \
-              self.__tries_size.get_value_buff() + \
-              self.__debug_info_off.get_value_buff() + \
-              self.__insns_size.get_value_buff() + \
+      buff =  self.registers_size.get_value_buff() + \
+              self.ins_size.get_value_buff() + \
+              self.outs_size.get_value_buff() + \
+              self.tries_size.get_value_buff() + \
+              self.debug_info_off.get_value_buff() + \
+              self.insns_size.get_value_buff() + \
               self.__insn
 
-      if (self.__insns_size.get_value() % 2 == 1) :
+      if (self.insns_size.get_value() % 2 == 1) :
          buff += self.__padding.get_value_buff()
 
-      if self.__tries_size.get_value() > 0 :
+      if self.tries_size.get_value() > 0 :
          buff += ''.join(i.get_value_buff() for i in self.__tries)
-         buff += self.__handlers.get_raw()
+         for i in self.__handlers :
+            buff += i.get_raw()
 
-      return bytecode.Buff( self.__offset,
+      return bytecode.Buff( self.__CM.get_offset(self),
                             buff )
 
 class CodeItem :
    def __init__(self, size, buff, cm) :
-      self.__offset = buff.get_idx()
-      self.__code = []
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.code = []
 
       for i in range(0, size) :
-         self.__code.append( DalvikCode( buff, cm ) )
+         self.code.append( DalvikCode( buff, cm ) )
 
    def get_code(self, off) :
-      for i in self.__code :
+      for i in self.code :
          if i.get_off() == off :
             return i
 
@@ -1662,22 +1817,26 @@ class CodeItem :
       pass
 
    def show(self) :
-      for i in self.__code :
+      for i in self.code :
          i.show()
 
+   def get_obj(self) :
+      return [ i for i in self.code ]
+
    def get_raw(self) :
-      return [ i.get_raw() for i in self.__code ]
+      return [ i.get_raw() for i in self.code ]
 
    def get_off(self) :
-      return self.__offset
+      return self.__CM.get_offset(self)
       
 class MapItem :
    def __init__(self, buff, cm) :
-      self.__offset = buff.get_idx()
-
+      self.__CM = cm
+      self.__CM.add_offset( buff.get_idx(), self )
+      
       self.format = SVs( MAP_ITEM[0], MAP_ITEM[1], buff.read( calcsize( MAP_ITEM[0] ) ) )
 
-      self.__item = None
+      self.item = None
 
       general_format = self.format.get_value()
       buff.set_idx( general_format.offset )
@@ -1685,54 +1844,54 @@ class MapItem :
 #      print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d" % (buff.get_idx(), buff.get_idx(), general_format.size)
 
       if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
-         self.__item = [ StringIdItem( buff ) for i in range(0, general_format.size) ]
+         self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_CODE_ITEM" :
-         self.__item = CodeItem( general_format.size, buff, cm )
+         self.item = CodeItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_TYPE_ID_ITEM" :
-         self.__item = TypeIdItem( general_format.size, buff, cm )
+         self.item = TypeIdItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_PROTO_ID_ITEM" :
-         self.__item = ProtoIdItem( general_format.size, buff, cm )
+         self.item = ProtoIdItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_FIELD_ID_ITEM" :
-         self.__item = FieldIdItem( general_format.size, buff, cm )
+         self.item = FieldIdItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_METHOD_ID_ITEM" :
-         self.__item = MethodIdItem( general_format.size, buff, cm )
+         self.item = MethodIdItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_CLASS_DEF_ITEM" :
-         self.__item = ClassDefItem( general_format.size, buff, cm )
+         self.item = ClassDefItem( general_format.size, buff, cm )
       
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_HEADER_ITEM" :
-         self.__item = HeaderItem( general_format.size, buff )
+         self.item = HeaderItem( general_format.size, buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ANNOTATION_ITEM" :
-         self.__item = [ AnnotationItem( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = [ AnnotationItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ANNOTATION_SET_ITEM" :
-         self.__item = [ AnnotationSetItem( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = [ AnnotationSetItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ANNOTATIONS_DIRECTORY_ITEM" :
-         self.__item = [ AnnotationsDirectoryItem( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = [ AnnotationsDirectoryItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_TYPE_LIST" :
-         self.__item = [ TypeList( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = [ TypeList( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_DATA_ITEM" :
-         self.__item = [ StringDataItem( buff ) for i in range(0, general_format.size) ]
+         self.item = [ StringDataItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_DEBUG_INFO_ITEM" :
       # FIXME : strange bug with sleb128 ....
-#       self.__item = [ DebugInfoItem( buff, cm ) for i in range(0, general_format.size) ]
-         self.__item = DebugInfoItem2( buff, cm )
+#       self.item = [ DebugInfoItem( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = DebugInfoItem2( buff, cm )
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ENCODED_ARRAY_ITEM" :
-         self.__item = [ EncodedArrayItem( buff, cm ) for i in range(0, general_format.size) ]
+         self.item = [ EncodedArrayItem( buff, cm ) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_CLASS_DATA_ITEM" :
-         self.__item = [ ClassDataItem(buff, cm) for i in range(0, general_format.size) ]
+         self.item = [ ClassDataItem(buff, cm) for i in range(0, general_format.size) ]
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_MAP_LIST" :
          pass # It's me I think !!!
@@ -1740,14 +1899,33 @@ class MapItem :
       else :
          bytecode.Exit( "Map item @ 0x%x(%d) is unknown" % (buff.get_idx(), buff.get_idx()) )
 
-   def get_raw(self) :
-      if self.__item == None :
-         return [ bytecode.Buff( self.__offset, self.format.get_value_buff() ) ]
-      else :
-         if isinstance( self.__item, list ) :
-            return [ bytecode.Buff( self.__offset, self.format.get_value_buff() ) ] + [ i.get_raw() for i in self.__item ]
+   def reload(self) :
+      if self.item != None :
+         if isinstance( self.item, list ):
+            for i in self.item :
+               i.reload()
          else :
-            return [ bytecode.Buff( self.__offset, self.format.get_value_buff() ) ] + self.__item.get_raw()
+            self.item.reload()
+
+   def show(self) :
+      bytecode._Print( "MAP_ITEM", self.format )
+      bytecode._Print( "\tTYPE_ITEM", TYPE_MAP_ITEM[ self.format.get_value().type ])
+
+      if self.item != None :
+         if isinstance( self.item, list ):
+            for i in self.item :
+               i.show()
+         else :   
+            self.item.show()
+
+   def get_raw(self) :
+      if self.item == None :
+         return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
+      else :
+         if isinstance( self.item, list ) :
+            return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + [ i.get_raw() for i in self.item ]
+         else :
+            return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + self.item.get_raw()
 
    def get_length(self) :
       return calcsize( MAP_ITEM[0] )
@@ -1756,31 +1934,19 @@ class MapItem :
       return self.format.get_value().type
 
    def get_item(self) :
-      return self.__item
+      return self.item
 
-   def reload(self) :
-      if self.__item != None :
-         if isinstance( self.__item, list ):
-            for i in self.__item :
-               i.reload()
-         else :
-            self.__item.reload()
-
-   def show(self) :
-      bytecode._Print( "MAP_ITEM", self.format )
-      bytecode._Print( "\tTYPE_ITEM", TYPE_MAP_ITEM[ self.format.get_value().type ])
-
-      if self.__item != None :
-         if isinstance( self.__item, list ):
-            for i in self.__item :
-               i.show()
-         else :   
-            self.__item.show()
-
-class CM :
+class ClassManager :
    def __init__(self) :
       self.__manage_item = {}
       self.__manage_item_off = []
+      self.__offsets = {}
+
+   def add_offset(self, off, obj) :
+      self.__offsets[ obj ] = off
+   
+   def get_offset(self, obj) :
+      return self.__offsets[ obj ]
 
    def add_type_item(self, type_item, item) :
       self.__manage_item[ type_item ] = item
@@ -1833,41 +1999,43 @@ class CM :
 
 class MapList :
    def __init__(self, off, buff) :
-      self.__CM = CM()
-
+      self.__CM = ClassManager()
       buff.set_idx( off )
 
-      self.__offset = buff.get_idx()
+      self.__CM.add_offset( buff.get_idx(), self )
       
-      self.__size = SV( '<L', buff.read( 4 ) )
+      self.size = SV( '<L', buff.read( 4 ) )
 
-      self.__map_item = []
-      for i in range(0, self.__size) :
+      self.map_item = []
+      for i in range(0, self.size) :
          idx = buff.get_idx()
 
          mi = MapItem( buff, self.__CM )
-         self.__map_item.append( mi )
+         self.map_item.append( mi )
       
          buff.set_idx( idx + mi.get_length() )
 
          self.__CM.add_type_item( TYPE_MAP_ITEM[ mi.get_type() ], mi.get_item() )
 
-      for i in self.__map_item :
+      for i in self.map_item :
          i.reload()
 
    def get_item_type(self, ttype) :
-      for i in self.__map_item :
+      for i in self.map_item :
          if TYPE_MAP_ITEM[ i.get_type() ] == ttype :
             return i.get_item()
 
    def show(self) :
-      bytecode._Print("MAP_LIST SIZE", self.__size.get_value())
-      for i in self.__map_item :
+      bytecode._Print("MAP_LIST SIZE", self.size.get_value())
+      for i in self.map_item :
          i.show()
 
+   def get_obj(self) :
+      return [ x for x in self.map_item ]
+
    def get_raw(self) :
-      return [ bytecode.Buff(self.__offset, self.__size.get_value_buff()) ] + \
-             [ x.get_raw() for x in self.__map_item ] 
+      return [ bytecode.Buff( self.__CM.get_offset( self ), self.size.get_value_buff()) ] + \
+             [ x.get_raw() for x in self.map_item ]
 
 class Data :
    def __init__(self, buff) :
@@ -1881,17 +2049,17 @@ class DalvikVMFormat(bytecode._Bytecode) :
       self.load_class()
 
    def load_class(self) :
-      self.__header = HeaderItem( 0, self )
+      self.__header = HeaderItem( 0, self, ClassManager() )
 
-      self.__map_list = MapList( self.__header.get_value().map_off, self )
+      self.map_list = MapList( self.__header.get_value().map_off, self )
 
-      self.classes = self.__map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
-      self.methods = self.__map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
-      self.codes = self.__map_list.get_item_type( "TYPE_CODE_ITEM" )
+      self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
+      self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
+      self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
 
    def show(self) :
       """Show the .class format into a human readable format"""
-      self.__map_list.show()
+      self.map_list.show()
 
    def _iterFlatten(self, root):
       if isinstance(root, (list, tuple)):      
@@ -1905,7 +2073,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
       # Due to the specific format of dalvik virtual machine,
       # we will get a list of raw object described by a buffer, a size and an offset
       # where to insert the specific buffer into the file 
-      l = self.__map_list.get_raw()
+      l = self.map_list.get_raw()
 
       result = list(self._iterFlatten( l ))
       result = sorted(result, key=lambda x: x.offset)
