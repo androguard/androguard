@@ -8,6 +8,7 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard
 
+
 def hexdump(src, length=8, off=0):
    result = []   
    digits = 4 if isinstance(src, unicode) else 2
@@ -18,10 +19,24 @@ def hexdump(src, length=8, off=0):
       result.append( b"%04X   %-*s   %s" % (i+off, length*(digits + 1), hexa, text) )      
    return b'\n'.join(result)
 
+TEST_TYPE = 0
+TYPE_JVM = 1
+TYPE_DVM = 2
+
+if len(sys.argv) == 1 :
+   TEST_TYPE = TYPE_JVM + TYPE_DVM
+elif len(sys.argv) == 2 :
+   if sys.argv[1] == "JVM" :
+      TEST_TYPE = TYPE_JVM
+   elif sys.argv[1] == "DVM" :
+      TEST_TYPE = TYPE_DVM
+
+TEST = []
+
 ### JAVA TEST ###
 BASE_TEST = "./examples/java/Demo1/orig/"
 BASE_MAIN_TEST = "./examples/java/Demo1/orig_main/"
-TEST = [ './examples/java/test/orig/Test1.class' ]
+
 FILES = [ 
           ("BaseCipher.class", 0),
           ("DES.class", 0), 
@@ -36,20 +51,22 @@ FILES = [
           ("Demo1Main.class", 1)
         ]
 
-for i in FILES :
-   if i[1] == 0 :
-      TEST.append( BASE_TEST + i[0] )
+if TEST_TYPE & TYPE_JVM : 
+   for i in FILES :
+      if i[1] == 0 :
+         TEST.append( BASE_TEST + i[0] )
    else :
-      TEST.append( BASE_MAIN_TEST + i[0] )
+         TEST.append( BASE_MAIN_TEST + i[0] )
 
 ### DALVIK TEST ###
 FILES = [ 
-        #    "examples/android/Demo1/bin/classes.dex",
+            "examples/android/Demo1/bin/classes.dex",
             "examples/dalvik/test/bin/classes.dex"
         ]
 
-for i in FILES :
-   TEST.append( i )
+if TEST_TYPE & TYPE_DVM :
+   for i in FILES :
+      TEST.append( i )
 
 ### ALL ###
 
