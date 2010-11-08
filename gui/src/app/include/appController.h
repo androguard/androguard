@@ -1,9 +1,8 @@
 #ifndef APPCONTROLLER_H
 #define APPCONTROLLER_H
 
-//#include "baseGui.h"
+#include "appAndroGuard.h"
 #include "ofxSimpleGuiToo.h"
-#include "ofxBox2d.h"
 
 class appController : public ofSimpleApp{
     public:
@@ -14,10 +13,7 @@ class appController : public ofSimpleApp{
         void draw();
         void keyPressed(int);
 
-        vector          <ofxBox2dCircle>        circles;
-        ofxBox2d box2d;
-        ofxBox2dLine                                    lineStrip;                //    a linestrip for drawing
-
+        appAndroGuard   aAA;
         ofxSimpleGuiToo gui;
     protected:
     private:

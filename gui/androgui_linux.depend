@@ -1179,21 +1179,21 @@
 	"ofGstUtils.h"
 	"ofQtUtils.h"
 
-1288961443 /home/pouik/androguard/gui/src/testApp.h
+1289054964 /home/pouik/androguard/gui/src/testApp.h
 	"ofMain.h"
-	"./app/include/appController.h"
+	"appController.h"
 
 1289034284 source:/home/pouik/androguard/gui/src/testApp.cpp
 	"testApp.h"
 
-1289035533 source:/home/pouik/androguard/gui/src/app/appController.cpp
-	"./include/appController.h"
+1289054925 source:/home/pouik/androguard/gui/src/app/appController.cpp
+	"appController.h"
 
 1288961093 /home/pouik/androguard/gui/include/appController.h
 
-1289035364 /home/pouik/androguard/gui/src/app/include/appController.h
+1289139486 /home/pouik/androguard/gui/src/app/include/appController.h
+	"appAndroGuard.h"
 	"ofxSimpleGuiToo.h"
-	"ofxBox2d.h"
 
 1288961891 /home/pouik/androguard/gui/src/app/include/baseGui.h
 	"ofMain.h"
@@ -1842,4 +1842,225 @@
 1272561166 /home/pouik/androguard/gui/addons/ofxBox2d/src/ofxBox2dContactListener.h
 	"ofMain.h"
 	"Box2D.h"
+
+1289139358 source:/home/pouik/androguard/gui/src/app/appAndroGuard.cpp
+	"appAndroGuard.h"
+
+1289139499 /home/pouik/androguard/gui/src/app/include/appAndroGuard.h
+	<Python.h>
+
+1260214234 /usr/include/python2.6//Python.h
+	"patchlevel.h"
+	"pyconfig.h"
+	"pymacconfig.h"
+	<limits.h>
+	<stdio.h>
+	<string.h>
+	<errno.h>
+	<stdlib.h>
+	<unistd.h>
+	<stddef.h>
+	<assert.h>
+	"pyport.h"
+	"pymath.h"
+	"pymem.h"
+	"object.h"
+	"objimpl.h"
+	"pydebug.h"
+	"unicodeobject.h"
+	"intobject.h"
+	"boolobject.h"
+	"longobject.h"
+	"floatobject.h"
+	"complexobject.h"
+	"rangeobject.h"
+	"stringobject.h"
+	"bufferobject.h"
+	"bytesobject.h"
+	"bytearrayobject.h"
+	"tupleobject.h"
+	"listobject.h"
+	"dictobject.h"
+	"enumobject.h"
+	"setobject.h"
+	"methodobject.h"
+	"moduleobject.h"
+	"funcobject.h"
+	"classobject.h"
+	"fileobject.h"
+	"cobject.h"
+	"traceback.h"
+	"sliceobject.h"
+	"cellobject.h"
+	"iterobject.h"
+	"genobject.h"
+	"descrobject.h"
+	"warnings.h"
+	"weakrefobject.h"
+	"codecs.h"
+	"pyerrors.h"
+	"pystate.h"
+	"pyarena.h"
+	"modsupport.h"
+	"pythonrun.h"
+	"ceval.h"
+	"sysmodule.h"
+	"intrcheck.h"
+	"import.h"
+	"abstract.h"
+	"compile.h"
+	"eval.h"
+	"pystrtod.h"
+	"pystrcmp.h"
+	"pyfpe.h"
+	<pth.h>
+
+1260214234 /usr/include/python2.6//patchlevel.h
+
+1260214234 /usr/include/python2.6//pyconfig.h
+
+1260214234 /usr/include/python2.6//pymacconfig.h
+
+1260214234 /usr/include/python2.6//pyport.h
+	"pyconfig.h"
+	<stdint.h>
+	<stdlib.h>
+	<math.h>
+	<sys/time.h>
+	<time.h>
+	<sys/time.h>
+	<time.h>
+	<sys/select.h>
+	<sys/types.h>
+	"unixstuff.h"
+	<sys/types.h>
+	<sys/stat.h>
+	<stat.h>
+	<sys/types.h>
+	<sys/termio.h>
+	<termios.h>
+	<osreldate.h>
+	<ctype.h>
+	<wctype.h>
+
+1260214234 /usr/include/python2.6//pymath.h
+	"pyconfig.h"
+	<stdint.h>
+
+1260214234 /usr/include/python2.6//pymem.h
+	"pyport.h"
+
+1260214234 /usr/include/python2.6//object.h
+
+1260214234 /usr/include/python2.6//objimpl.h
+	"pymem.h"
+
+1260214234 /usr/include/python2.6//pydebug.h
+
+1260214234 /usr/include/python2.6//unicodeobject.h
+	<stdarg.h>
+	<ctype.h>
+	<time.h>
+	<wchar.h>
+	<wctype.h>
+
+1260214234 /usr/include/python2.6//intobject.h
+
+1260214234 /usr/include/python2.6//boolobject.h
+
+1260214234 /usr/include/python2.6//longobject.h
+
+1260214234 /usr/include/python2.6//floatobject.h
+
+1260214234 /usr/include/python2.6//complexobject.h
+
+1260214234 /usr/include/python2.6//rangeobject.h
+
+1260214234 /usr/include/python2.6//stringobject.h
+	<stdarg.h>
+
+1260214234 /usr/include/python2.6//bufferobject.h
+
+1260214234 /usr/include/python2.6//bytesobject.h
+
+1260214234 /usr/include/python2.6//bytearrayobject.h
+	<stdarg.h>
+
+1260214234 /usr/include/python2.6//tupleobject.h
+
+1260214234 /usr/include/python2.6//listobject.h
+
+1260214234 /usr/include/python2.6//dictobject.h
+
+1260214234 /usr/include/python2.6//enumobject.h
+
+1260214234 /usr/include/python2.6//setobject.h
+
+1260214234 /usr/include/python2.6//methodobject.h
+
+1260214234 /usr/include/python2.6//moduleobject.h
+
+1260214234 /usr/include/python2.6//funcobject.h
+
+1260214234 /usr/include/python2.6//classobject.h
+
+1260214234 /usr/include/python2.6//fileobject.h
+
+1260214234 /usr/include/python2.6//cobject.h
+
+1260214234 /usr/include/python2.6//traceback.h
+
+1260214234 /usr/include/python2.6//sliceobject.h
+
+1260214234 /usr/include/python2.6//cellobject.h
+
+1260214234 /usr/include/python2.6//iterobject.h
+
+1260214234 /usr/include/python2.6//genobject.h
+
+1260214234 /usr/include/python2.6//descrobject.h
+
+1260214234 /usr/include/python2.6//warnings.h
+
+1260214234 /usr/include/python2.6//weakrefobject.h
+
+1260214234 /usr/include/python2.6//codecs.h
+
+1260214234 /usr/include/python2.6//pyerrors.h
+	<stdarg.h>
+
+1260214234 /usr/include/python2.6//pystate.h
+
+1260214234 /usr/include/python2.6//pyarena.h
+
+1260214234 /usr/include/python2.6//modsupport.h
+	<stdarg.h>
+
+1260214234 /usr/include/python2.6//pythonrun.h
+
+1260214234 /usr/include/python2.6//ceval.h
+
+1260214234 /usr/include/python2.6//sysmodule.h
+
+1260214234 /usr/include/python2.6//intrcheck.h
+
+1260214234 /usr/include/python2.6//import.h
+
+1260214234 /usr/include/python2.6//abstract.h
+
+1260214234 /usr/include/python2.6//compile.h
+	"code.h"
+
+1260214234 /usr/include/python2.6//code.h
+
+1260214234 /usr/include/python2.6//eval.h
+
+1260214234 /usr/include/python2.6//pystrtod.h
+
+1260214234 /usr/include/python2.6//pystrcmp.h
+
+1260214234 /usr/include/python2.6//pyfpe.h
+	<signal.h>
+	<setjmp.h>
+	<math.h>
 

@@ -43,7 +43,13 @@ for i in FILES :
       TEST.append( BASE_MAIN_TEST + i[0] )
 
 ### DALVIK TEST ###
+FILES = [ 
+        #    "examples/android/Demo1/bin/classes.dex",
+            "examples/dalvik/test/bin/classes.dex"
+        ]
 
+for i in FILES :
+   TEST.append( i )
 
 ### ALL ###
 
