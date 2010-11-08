@@ -426,7 +426,7 @@ def writesleb128(value) :
 class HeaderItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.format = SVs( HEADER[0], HEADER[1], buff.read( calcsize(HEADER[0]) ) ) 
 
    def reload(self) :
@@ -436,7 +436,7 @@ class HeaderItem :
       return []
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ]
 
    def get_value(self) :
       return self.format.get_value()
@@ -445,98 +445,108 @@ class HeaderItem :
       bytecode._Print("HEADER", self.format)
 
    def get_off(self) :
-      return self.__CM.get_offset( self )
+      return self.__offset.off
 
 class AnnotationOffItem :
    def __init__(self,  buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.annotation_off = SV( '<L', buff.read( 4 ) )
 
    def show(self) :
-     print self.annotation_off.get_value()
+     print "ANNOTATION_OFF_ITEM annotation_off=0x%x" % self.annotation_off.get_value()
 
    def get_obj(self) :
       return []
 
    def get_raw(self) :
-     return bytecode.Buff( self.__CM.get_offset(self), self.annotation_off.get_value_buff() )
+     return bytecode.Buff( self.__offset.off, self.annotation_off.get_value_buff() )
 
 class AnnotationSetItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
-      self.__annotation_off_item = []
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+      self.annotation_off_item = []
 
-      self.__size = SV( '<L', buff.read( 4 ) )
-      for i in range(0, self.__size) :
-         self.__annotation_off_item.append( AnnotationOffItem(buff, cm) )
+      self.size = SV( '<L', buff.read( 4 ) )
+      for i in range(0, self.size) :
+         self.annotation_off_item.append( AnnotationOffItem(buff, cm) )
 
    def reload(self) :
       pass
 
    def get_annotation_off_item(self) :
-      return self.__annotation_off_item
+      return self.annotation_off_item
 
    def show(self) :
+      print "ANNOTATION_SET_ITEM"
       nb = 0
-      for i in self.__annotation_off_item :
-         print nb, i,
+      for i in self.annotation_off_item :
+         print nb, 
          i.show()
          nb = nb + 1
 
    def get_obj(self) :
-      return [ i for i in self.__annotation_off_item ]
+      return [ i for i in self.annotation_off_item ]
 
    def get_raw(self) :
-      return [ bytecode.Buff(self.__CM.get_offset(self), self.__size.get_value_buff()) ] + [ i.get_raw() for i in self.__annotation_off_item ]
+      return [ bytecode.Buff(self.__offset.off, self.size.get_value_buff()) ] + [ i.get_raw() for i in self.annotation_off_item ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class FieldAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.field_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
+
+   def show(self) :
+      print "FIELD_ANNOTATION field_idx=0x%x annotations_off=0x%x" % (self.field_idx.get_value(), self.annotations_off.get_value())
 
    def get_obj(self) :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff(self.__CM.get_offset(self), self.field_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__offset.off, self.field_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class MethodAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.method_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
+
+   def show(self) :
+      print "METHOD_ANNOTATION method_idx=0x%x annotations_off=0x%x" % ( self.method_idx.get_value(), self.annotations_off.get_value())
 
    def get_obj(self) :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff(self.__CM.get_offset(self), self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__offset.off, self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class ParameterAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.method_idx = SV('<L', buff.read( 4 ) )
       self.annotations_off = SV('<L', buff.read( 4 ) )
+
+   def show(self) :
+      print "PARAMETER_ANNOTATION method_idx=0x%x annotations_off=0x%x" % (self.method_idx.get_value(), self.annotations_off.get_value())
 
    def get_obj(self) :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff(self.__CM.get_offset(self), self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
+      return bytecode.Buff(self.__offset.off, self.method_idx.get_value_buff() + self.annotations_off.get_value_buff())
 
 class AnnotationsDirectoryItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.format = SVs( ANNOTATIONS_DIRECTORY_ITEM[0], ANNOTATIONS_DIRECTORY_ITEM[1], buff.read( calcsize(ANNOTATIONS_DIRECTORY_ITEM[0]) ) )
 
       self.field_annotations = []
@@ -555,7 +565,15 @@ class AnnotationsDirectoryItem :
       pass
 
    def show(self) :
-      print self.format.get_value()
+      print "ANNOTATIONS_DIRECTORY_ITEM", self.format.get_value()
+      for i in self.field_annotations :
+         i.show()
+
+      for i in self.method_annotations :
+         i.show()
+
+      for i in self.parameter_annotations :
+         i.show()
 
    def get_obj(self) :
       return [ i for i in self.field_annotations ] + \
@@ -563,33 +581,33 @@ class AnnotationsDirectoryItem :
              [ i for i in self.parameter_annotations ]
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + \
+      return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ] + \
              [ i.get_raw() for i in self.field_annotations ] + \
              [ i.get_raw() for i in self.method_annotations ] + \
              [ i.get_raw() for i in self.parameter_annotations ]
 
    def get_off(self) :
-      return self.__CM.get_offset( self )
+      return self.__offset.off
 
 class TypeLItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.type_idx = SV( '<H', buff.read( 2 ) )
 
    def show(self) :
-      print self.type_idx.get_value_buff()
+      print "TYPE_LITEM", self.type_idx.get_value()
 
    def get_obj(self) :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff(self.__CM.get_offset(self), self.type_idx.get_value_buff())
+      return bytecode.Buff(self.__offset.off, self.type_idx.get_value_buff())
 
 class TypeList :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       offset = buff.get_idx()
 
       self.pad = ""
@@ -598,28 +616,29 @@ class TypeList :
 
       self.size = SV( '<L', buff.read( 4 ) )
 
-      self.__list = []
+      self.list = []
       for i in range(0, self.size) :
-         self.__list.append( TypeLItem( buff, cm ) )
+         self.list.append( TypeLItem( buff, cm ) )
 
    def reload(self) :
       pass
 
    def show(self) :
+      print "TYPE_LIST"
       nb = 0
-      for i in self.__list :
-         print nb, i,
+      for i in self.list :
+         print nb,
          i.show()
          nb = nb + 1
 
    def get_obj(self) :
-      return [ i for i in self.__list ]
+      return [ i for i in self.list ]
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), self.pad + self.size.get_value_buff() ) ] + [ i.get_raw() for i in self.__list ]
+      return [ bytecode.Buff( self.__offset.off, self.pad + self.size.get_value_buff() ) ] + [ i.get_raw() for i in self.list ]
 
    def get_off(self) :
-      return self.__CM.get_offset( self )
+      return self.__offset.off
 
 DBG_END_SEQUENCE                = 0x00 #    (none)  terminates a debug info sequence for a code_item
 DBG_ADVANCE_PC                  = 0x01 #    uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
@@ -682,13 +701,13 @@ class DBGBytecode :
 class DebugInfoItem2 :
    def __init__(self, buff, cm) :
       self.__CM = cm 
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.__buff = buff
       self.__raw = ""
 
    def reload(self) :
-      offset = self.__CM.get_offset(self)
+      offset = self.__offset.off
 
       n = self.__CM.get_next_offset_item( offset )
 
@@ -704,10 +723,10 @@ class DebugInfoItem2 :
       return []
 
    def get_raw(self) :
-      return [ bytecode.Buff(self.__CM.get_offset(self), self.__raw) ]
+      return [ bytecode.Buff(self.__offset.off, self.__raw) ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class DebugInfoItem :
    def __init__(self, buff, cm) :
@@ -813,7 +832,7 @@ class EncodedArray :
 class EncodedValue :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.val = SV('<B', buff.read( 1 ) )
       self.__value_arg = self.val.get_value() >> 5
@@ -836,7 +855,7 @@ class EncodedValue :
          raise( "oops" )
 
    def show(self) :
-      print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, self.value
+      print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, repr(self.value)
 
    def get_obj(self) :
       if isinstance(self.value, str) == False :
@@ -852,7 +871,7 @@ class EncodedValue :
 class AnnotationElement :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.name_idx = readuleb128( buff )
       self.value = EncodedValue( buff, cm )
@@ -865,13 +884,13 @@ class AnnotationElement :
       return [ self.value ]
 
    def get_raw(self) :
-      return [ bytecode.Buff(self.__CM.get_offset(self), writeuleb128(self.name_idx) + self.value.get_raw()) ]
+      return [ bytecode.Buff(self.__offset.off, writeuleb128(self.name_idx) + self.value.get_raw()) ]
 
 
 class EncodedAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.type_idx = readuleb128( buff )
       self.size = readuleb128( buff )
@@ -889,13 +908,13 @@ class EncodedAnnotation :
       return [ i for i in self.elements ]
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), writeuleb128(self.type_idx) + writeuleb128(self.size) ) ] + \
+      return [ bytecode.Buff( self.__offset.off, writeuleb128(self.type_idx) + writeuleb128(self.size) ) ] + \
              [ i.get_raw() for i in self.elements ]
 
 class AnnotationItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.visibility = SV( '<B', buff.read( 1 ) )  
       self.annotation = EncodedAnnotation(buff, cm)
@@ -911,15 +930,15 @@ class AnnotationItem :
       return [ self.annotation ]
 
    def get_raw(self) :
-      return [ bytecode.Buff(self.__CM.get_offset(self), self.visibility.get_value_buff()) ] + self.annotation.get_raw()
+      return [ bytecode.Buff(self.__offset.off, self.visibility.get_value_buff()) ] + self.annotation.get_raw()
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class EncodedArrayItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.value = EncodedArray( buff, cm )
   
@@ -934,15 +953,15 @@ class EncodedArrayItem :
       return [ self.value ]
 
    def get_raw(self) :
-      return bytecode.Buff( self.__CM.get_offset(self), self.value.get_raw() )
+      return bytecode.Buff( self.__offset.off, self.value.get_raw() )
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class StringDataItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
       self.utf16_size = readuleb128( buff ) 
       self.data = buff.read( self.utf16_size + 1 )
@@ -960,16 +979,15 @@ class StringDataItem :
       return []
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), writeuleb128( self.utf16_size ) + self.data ) ]
+      return [ bytecode.Buff( self.__offset.off, writeuleb128( self.utf16_size ) + self.data ) ]
    
    def get_off(self) :
-      return self.__CM.get_offset(self)
-
+      return self.__offset.off
 
 class StringIdItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.string_data_off = SV( '<L', buff.read( 4 ) )
 
@@ -983,13 +1001,13 @@ class StringIdItem :
       return [] 
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), self.string_data_off.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__offset.off, self.string_data_off.get_value_buff() ) ]
 
    def show(self) :
       print "STRING_ID_ITEM", self.string_data_off.get_value()
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class IdItem(object) :
    def __init__(self, size, buff, cm, TClass) :
@@ -1007,7 +1025,7 @@ class IdItem(object) :
    def show(self) :
       nb = 0
       for i in self.elem :
-         print nb, i,
+         print nb,
          i.show()
          nb = nb + 1
 
@@ -1020,7 +1038,7 @@ class IdItem(object) :
 class TypeItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SV( '<L', buff.read( 4 ) )
       self._name = None
@@ -1038,12 +1056,12 @@ class TypeItem :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
+      return bytecode.Buff( self.__offset.off, self.format.get_value_buff() )
 
 class TypeIdItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.type = []
 
@@ -1072,12 +1090,12 @@ class TypeIdItem :
       return [ i.get_raw() for i in self.type ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class ProtoItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SVs( PROTO_ID_ITEM[0], PROTO_ID_ITEM[1], buff.read( calcsize(PROTO_ID_ITEM[0]) ) )
       self._shorty = None
@@ -1102,12 +1120,12 @@ class ProtoItem :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
+      return bytecode.Buff( self.__offset.off, self.format.get_value_buff() )
 
 class ProtoIdItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.proto = []
 
@@ -1125,7 +1143,7 @@ class ProtoIdItem :
       print "PROTO_ID_ITEM"
       nb = 0
       for i in self.proto :
-         print nb, i,
+         print nb,
          i.show()
          nb = nb + 1
 
@@ -1136,12 +1154,12 @@ class ProtoIdItem :
       return [ i.get_raw() for i in self.proto ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class FieldItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SVs( FIELD_ID_ITEM[0], FIELD_ID_ITEM[1], buff.read( calcsize(FIELD_ID_ITEM[0]) ) )
       self._class = None
@@ -1170,25 +1188,25 @@ class FieldItem :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
+      return bytecode.Buff( self.__offset.off, self.format.get_value_buff() )
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class FieldIdItem(IdItem) :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       super(FieldIdItem, self).__init__(size, buff, cm, FieldItem)
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class MethodItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SVs( METHOD_ID_ITEM[0], METHOD_ID_ITEM[1], buff.read( calcsize(METHOD_ID_ITEM[0]) ) )
       self._class = None
@@ -1217,12 +1235,12 @@ class MethodItem :
       return []
 
    def get_raw(self) :
-      return bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() )
+      return bytecode.Buff( self.__offset.off, self.format.get_value_buff() )
 
 class MethodIdItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.methods = []
       for i in range(0, size) :
@@ -1239,7 +1257,7 @@ class MethodIdItem :
       print "METHOD_ID_ITEM"
       nb = 0
       for i in self.methods :
-         print nb, i,
+         print nb,
          i.show()
          nb = nb + 1
 
@@ -1250,12 +1268,12 @@ class MethodIdItem :
       return [ i.get_raw() for i in self.methods ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class EncodedField :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.field_idx_diff = readuleb128( buff )
       self.access_flags = readuleb128( buff )
@@ -1302,7 +1320,7 @@ class EncodedField :
 class EncodedMethod :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.method_idx_diff = readuleb128( buff )
       self.access_flags = readuleb128( buff )
@@ -1359,7 +1377,7 @@ class EncodedMethod :
 class ClassDataItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.static_fields_size = readuleb128( buff )
       self.instance_fields_size = readuleb128( buff )
@@ -1426,7 +1444,7 @@ class ClassDataItem :
 
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
    def get_obj(self) :
       return [ i for i in self.static_fields ] + \
@@ -1444,12 +1462,12 @@ class ClassDataItem :
              ''.join(i.get_raw() for i in self.direct_methods) + \
              ''.join(i.get_raw() for i in self.virtual_methods)
 
-      return [ bytecode.Buff(self.__CM.get_offset(self), buff) ]
+      return [ bytecode.Buff(self.__offset.off, buff) ]
 
 class ClassItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SVs( CLASS_DEF_ITEM[0], CLASS_DEF_ITEM[1], buff.read( calcsize(CLASS_DEF_ITEM[0]) ) )
       self._class_data_item = None
@@ -1485,12 +1503,12 @@ class ClassItem :
       return []
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
+      return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ]
 
 class ClassDefItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.class_def = []
 
@@ -1521,6 +1539,7 @@ class ClassDefItem :
          i.reload()
 
    def show(self) :
+      print "CLASS_DEF_ITEM"
       nb = 0
       for i in self.class_def :
          print nb,
@@ -1534,7 +1553,7 @@ class ClassDefItem :
       return [ i.get_raw() for i in self.class_def ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
 
 class EncodedTypeAddrPair :
    def __init__(self, buff) :
@@ -1560,7 +1579,7 @@ class EncodedCatchHandler :
          self.catch_all_addr = readuleb128( buff )
 
    def show(self) :
-      bytecode._Print("ENCODED_CATCH_HANDLER", self.size)
+      print "ENCODED_CATCH_HANDLER size=0x%x" % self.size
       for i in self.handlers :
          i.show()
 
@@ -1584,7 +1603,7 @@ class EncodedCatchHandlerList :
          self.list.append( EncodedCatchHandler(buff) )
 
    def show(self) :
-      bytecode._Print("ENCODED_CATCH_HANDLER_LIST SIZE", self.size)
+      print "ENCODED_CATCH_HANDLER_LIST size=0x%x" % self.size
       for i in self.list :
          i.show()
    
@@ -1604,7 +1623,7 @@ class DalvikCode :
 
       buff.set_idx( off )
 
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.__off = buff.get_idx()
 
@@ -1774,8 +1793,6 @@ class DalvikCode :
          else :
             print "\t", nb, i.show()
          nb += 1
-
-
       print "*" * 80
 
    def _more_info(self, c, v) :
@@ -1809,28 +1826,34 @@ class DalvikCode :
          for i in self.__handlers :
             buff += i.get_raw()
 
-      return bytecode.Buff( self.__CM.get_offset(self),
+      return bytecode.Buff( self.__offset.off,
                             buff )
 
 class CodeItem :
    def __init__(self, size, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.code = []
+      self.__code_off = {}
 
       for i in range(0, size) :
-         self.code.append( DalvikCode( buff, cm ) )
+         x = DalvikCode( buff, cm )
+         self.code.append( x )
+         self.__code_off[ x.get_off() ] = x
 
    def get_code(self, off) :
-      for i in self.code :
-         if i.get_off() == off :
-            return i
+      # FIXME
+      try : 
+         return self.__code_off[off]
+      except KeyError :
+         pass
 
    def reload(self) :
       pass
 
    def show(self) :
+      print "CODE_ITEM"
       for i in self.code :
          i.show()
 
@@ -1841,12 +1864,12 @@ class CodeItem :
       return [ i.get_raw() for i in self.code ]
 
    def get_off(self) :
-      return self.__CM.get_offset(self)
+      return self.__offset.off
       
 class MapItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.format = SVs( MAP_ITEM[0], MAP_ITEM[1], buff.read( calcsize( MAP_ITEM[0] ) ) )
 
@@ -1943,12 +1966,12 @@ class MapItem :
 
    def get_raw(self) :
       if self.item == None :
-         return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ]
+         return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ]
       else :
          if isinstance( self.item, list ) :
-            return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + [ i.get_raw() for i in self.item ]
+            return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ] + [ i.get_raw() for i in self.item ]
          else :
-            return [ bytecode.Buff( self.__CM.get_offset(self), self.format.get_value_buff() ) ] + self.item.get_raw()
+            return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ] + self.item.get_raw()
 
    def get_length(self) :
       return calcsize( MAP_ITEM[0] )
@@ -1959,25 +1982,37 @@ class MapItem :
    def get_item(self) :
       return self.item
 
+class OffObj :
+   def __init__(self, o) :
+      self.off = o
+
 class ClassManager :
    def __init__(self) :
       self.__manage_item = {}
       self.__manage_item_off = []
       self.__offsets = {}
 
+      self.__strings_off = {}
+
    def add_offset(self, off, obj) :
-      self.__offsets[ obj ] = off
-   
-   def get_offset(self, obj) :
-      return self.__offsets[ obj ]
+      x = OffObj( off )
+      self.__offsets[ obj ] = x
+      return x
 
    def add_type_item(self, type_item, item) :
       self.__manage_item[ type_item ] = item
     
+      sdi = False
+      if type_item == "TYPE_STRING_DATA_ITEM" :
+         sdi = True
+
       if item != None : 
          if isinstance(item, list) :
             for i in item :
-               self.__manage_item_off.append( i.get_off() )
+               goff = i.get_off()
+               self.__manage_item_off.append( goff )
+               if sdi == True :
+                  self.__strings_off[ goff ] = i
          else :
             self.__manage_item_off.append( item.get_off() )
 
@@ -1993,11 +2028,10 @@ class ClassManager :
 
    def get_string(self, idx) :
       off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off() 
-      for i in self.__manage_item[ "TYPE_STRING_DATA_ITEM" ] :
-         if i.get_off() == off :
-            return i.get()
-
-      bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
+      try :
+         return self.__strings_off[off].get()
+      except KeyError :
+         bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
 
    def get_type(self, idx) :
       type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
@@ -2025,7 +2059,7 @@ class MapList :
       self.__CM = ClassManager()
       buff.set_idx( off )
 
-      self.__CM.add_offset( buff.get_idx(), self )
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
       self.size = SV( '<L', buff.read( 4 ) )
 
@@ -2057,7 +2091,7 @@ class MapList :
       return [ x for x in self.map_item ]
 
    def get_raw(self) :
-      return [ bytecode.Buff( self.__CM.get_offset( self ), self.size.get_value_buff()) ] + \
+      return [ bytecode.Buff( self.__offset.off, self.size.get_value_buff()) ] + \
              [ x.get_raw() for x in self.map_item ]
 
 class Data :
