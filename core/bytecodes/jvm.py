@@ -252,7 +252,7 @@ JAVA_OPCODES = {
                   0x57 : [ "pop" ],
                   0x58 : [ "pop2" ],
                   0xb5 : [ "putfield", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field" ],
-                  0xb3 : [ "putstatic", "indexbyte1:B indexbyte2:B" ],
+                  0xb3 : [ "putstatic", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field", "get_field_index" ],
                   0xa9 : [ "ret", "index:B", special_F0, special_F0, None ],
                   0xb1 : [ "return" ],
                   0x35 : [ "saload" ],
@@ -267,11 +267,11 @@ JAVA_OPCODES = {
 INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES]) 
 
 # List of java bytecodes which can modify the control flow
-BRANCH_JAVA_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
+BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
-MATH_JAVA_OPCODES = [ "iand", "iadd", "isub", "ixor" ]
+MATH_JVM_OPCODES = [ "iand", "iadd", "isub", "ixor" ]
 
-BREAK_JAVA_OPCODES = [ "areturn", "astore", "bastore", "iinc", "istore", "ireturn", "pop", "putfield" ] + BRANCH_JAVA_OPCODES
+BREAK_JVM_OPCODES = [ "invokevirtual", "invokespecial", "invokestatic" ] + [ "areturn", "astore", "aastore", "bastore", "iinc", "istore", "iastore", "ireturn", "pop", "putfield", "putstatic" ] + [ "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull" ] #BRANCH_JVM_OPCODES
 
 
 INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
@@ -935,7 +935,7 @@ class JBC :
       if self.__special_value == None :
          print self.__op_name
       else :
-         if self.__op_name in BRANCH_JAVA_OPCODES :
+         if self.__op_name in BRANCH_JVM_OPCODES :
             print self.__op_name, self.__special_value, self.__special_value + pos
          else : 
             print self.__op_name, self.__special_value
@@ -977,7 +977,7 @@ class JavaCode :
       for i in self.__bytecodes :
          self.__maps.append( idx )
          
-         if i.get_name() in BRANCH_JAVA_OPCODES :
+         if i.get_name() in BRANCH_JVM_OPCODES :
             self.__branches.append( nb )
 
          idx += i.get_length()
@@ -1191,7 +1191,7 @@ class JavaCode :
       self._adjust_branches( idx, 1 )
      
       # Add it to the branches if it's a correct op_value 
-      if new_jbc.get_name() in BRANCH_JAVA_OPCODES :
+      if new_jbc.get_name() in BRANCH_JVM_OPCODES :
          self.__branches.append( idx )
 
       # return the length of the raw_buff
@@ -1234,7 +1234,7 @@ class CodeAttribute(BasicAttribute) :
       self.low_struct = SVs( CODE_LOW_STRUCT[0], CODE_LOW_STRUCT[1], buff.read( calcsize(CODE_LOW_STRUCT[0]) ) ) 
 
       self.__code = JavaCode( class_manager, buff.read( self.low_struct.get_value().code_length ) )
-      
+
       # u2 exception_table_length;
       self.exception_table_length = SV( '>H', buff.read(2) )
   
@@ -2293,7 +2293,6 @@ class JVMFormat(bytecode._Bytecode) :
       self.__methods = []
       for i in range(0, self.methods_count.get_value()) :
          mi = MethodInfo( self.__CM, self ) 
-         
          self.__methods.append( mi )
          
       # u2 attributes_count;
