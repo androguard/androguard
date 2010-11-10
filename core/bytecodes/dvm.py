@@ -1315,7 +1315,7 @@ class EncodedField :
       return writeuleb128( self.field_idx_diff ) + writeuleb128( self.access_flags )
 
    def show(self) :
-      print "\tENCODED_FIELD field_idx_diff=%d (%s,%s,%s) access_flags=%d" % (self.field_idx_diff, self._class_name, self._name, self._proto, self.access_flags)
+      print "\tENCODED_FIELD field_idx_diff=%d access_flags=%d (%s,%s,%s)" % (self.field_idx_diff, self.access_flags, self._class_name, self._proto, self._name)
 
 class EncodedMethod :
    def __init__(self, buff, cm) :
@@ -1343,7 +1343,7 @@ class EncodedMethod :
       self._code = self.__CM.get_code( self.code_off )
 
    def show(self) :
-      print "\tENCODED_METHOD method_idx_diff=%d (%s,%s,%s) access_flags=%d code_off=%d" % (self.method_idx_diff, self._class_name, self._name, self._proto, self.access_flags, self.code_off)
+      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
       self._code.show()
    
    def get_access(self) :
