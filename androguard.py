@@ -79,27 +79,24 @@ class VM_int :
 
       method.show()
 
-WM_CREATE_R = 0
-WM_CREATE_W = 1
+WM_L3 = wm.WM_L3
+WM_L4 = wm.WM_L4
+
 class WM :
-   def __init__(self, andro, class_name, method_name, descriptor, wm_type, output_file) :
-      method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
-
-      if method == None :
-         raise("ooops")
-
-      if wm_type == WM_CREATE_R :
-         _wm = wm.WM_R( _vm, method )
-      elif vm_type == WM_CREATE_W :
-         _wm = wm.WM_W( _vm, method )
-      else :
-         raise("ooosp")
+   def __init__(self, andro, class_name, wm_type, output_file) :
+      
+      if wm_type == [] :
+         wm_type = [ WM_L3 ]
 
       fd = open(output_file, "w")
 
+      for method in andro.get_methods() :
+         # FIXME
+         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
+         wm.WM( _vm, _method, wm_type )
+
 
       fd.close()
-      
 
 class WMCheck :
    def __init__(self, andro, intput_file) :

@@ -269,7 +269,11 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
-MATH_JVM_OPCODES = [ "iand", "iadd", "isub", "ixor" ]
+MATH_JVM_OPCODES = { "iand" : '&',
+                     "iadd" : '+',
+                     "isub" : '-',
+                     "ixor" : '^',
+                   }
 
 BREAK_JVM_OPCODES = [ "invokevirtual", "invokespecial", "invokestatic" ] + [ "areturn", "astore", "aastore", "bastore", "iinc", "istore", "iastore", "ireturn", "pop", "putfield", "putstatic" ] + [ "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull" ] #BRANCH_JVM_OPCODES
 

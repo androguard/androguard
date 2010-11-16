@@ -77,7 +77,6 @@ class SVs :
       l = []
       for i in self.__value._fields :
          l.append( getattr( self.__value, i ) )
-
       return pack( self.__size, *l)
 
    def _export(self) :

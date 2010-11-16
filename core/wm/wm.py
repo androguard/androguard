@@ -2,9 +2,31 @@ import os, sys, hashlib, random, types, itertools, hashlib
 
 import analysis, misc
 
-class WM_R :
-   def __init__(self, vm, method) :
-      self.__a = analysis.VMBCA( vm, method )
+import wm_l3, wm_l4
+
+WM_L3 = 0
+WM_L4 = 1
+
+WM_BIND = {
+            WM_L3 : wm_l3.INIT(),
+            WM_L4 : wm_l4.INIT(),
+         }
+
+class WM :
+   def __init__(self, vm, method, wm_type) :
+      list_x = []
+      self.__a = analysis.VMBCA( vm )
+
+      for i in wm_type :
+         l_x = WM_BIND[ i ]( vm, method, self.__a ).get()
+         for z in l_x :
+            list_x.append( z )
+
+      if list_x == [] :
+         raise("list is empty")
+
+      self.__ob = DWBO( hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
+
       #for i in self.__a.get_bb() :
       #   print i
       #   i.show()
@@ -14,7 +36,6 @@ class WM_R :
 #      ob.show()
 
 #      print self.__a.get_freq()
-      self.__ob = DWBO( hashlib.sha512( method.get_raw() ).hexdigest(), self.__a.get_freq() )
 #      self.__ob.show()
 
 #      print self.__ob.verify_with_X( self.__a.get_freq() )

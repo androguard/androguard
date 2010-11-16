@@ -65,6 +65,8 @@ class JVMBreakBlock :
       self.__ins = []
       self.__vm = _vm
 
+      self.__ops = []
+
       self.__fields = {}
       self.__methods = {}
 
@@ -72,6 +74,9 @@ class JVMBreakBlock :
                         "F" : [ "get_field_descriptor", self.__fields, ContextField ],
                         "M" : [ "get_method_descriptor", self.__methods, ContextMethod ],
                     }
+
+   def get_ops(self) :
+      return self.__ops
 
    def get_fields(self) :
       return self.__fields
@@ -91,6 +96,10 @@ class JVMBreakBlock :
             ctt.append( v )
 
          t = ""
+
+         if i.get_name() in jvm.MATH_JVM_OPCODES :
+            self.__ops.append( jvm.MATH_JVM_OPCODES[ i.get_name() ] )
+
          # Woot it's a field !
          if i.get_name() in FIELDS :
             t = "F" 
@@ -99,7 +108,7 @@ class JVMBreakBlock :
 
          if t != "" :
             o = i.get_operands()
-            desc, _ = getattr(self.__vm, self.__info[t][0])( o[0], o[1], o[2] )
+            desc = getattr(self.__vm, self.__info[t][0])( o[0], o[1], o[2] )
 
             # It's an external 
             if desc == None :
@@ -188,6 +197,19 @@ class GVM_BCA :
       if len( self.__bb ) > 1 :
          self.__bb.pop(-1)
 
+   def get_method(self) :
+      return self.__method
+
+   def get_op(self, op) :
+      return []
+
+   def get_ops(self) :
+      l = []
+      for i in self.__bb :
+         for j in i.get_ops() :
+            l.append( j )
+      return l
+
    def show(self) :
       print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
       #self.__method.show()
@@ -224,10 +246,22 @@ class GVM_BCA :
 
 class VMBCA :
    def __init__(self, _vm) :
-      self.l = []
+      self.__methods = []
+      self.__hmethods = {}
       for i in _vm.get_methods() :
-         self.l.append( GVM_BCA( _vm, i ) )
+         x = GVM_BCA( _vm, i )
+         self.__methods.append( x )
+         self.__hmethods[ i ] = x
 
    def show(self) :
       for i in self.l :
          i.show()
+
+   def get(self, method) :
+      return self.__hmethods[ method ]
+
+   def get_op(self, op) :
+      return [ (i.get_method(), i.get_op(op)) for i in self.l ]
+
+   def get_ops(self, method) :
+      return [ (i.get_method(), i.get_ops()) for i in self.l ]
