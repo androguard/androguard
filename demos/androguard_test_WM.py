@@ -6,13 +6,13 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard
 
-TEST = './examples/java/Demo1/orig/DES.class'
+TEST = './examples/android/Test/bin/classes/org/t0t0/android/Test1.class'
 TEST_STEAL = ''
-TEST_ANDRO = './examples/android/Demo1/bin/classes.dex'
+TEST_ANDRO = './examples/android/Test/bin/classes.dex'
 
 _a = androguard.AndroguardS( TEST )
+
+wm = androguard.WM( _a, "org.t0t0.android.Test1", [ androguard.WM_L4 ], "./wm.xml" )
+
 _b = androguard.AndroguardS( TEST_ANDRO )
-
-wm = androguard.WM( _a, "DES", "desFunc" )
-
-androguard.WMCheck( _b, wm.get_output() )
+androguard.WMCheck( _b, "./wm.xml" )
