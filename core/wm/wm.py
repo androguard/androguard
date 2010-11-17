@@ -2,12 +2,14 @@ import os, sys, hashlib, random, types, itertools, hashlib
 
 import analysis, misc
 
-import wm_l3, wm_l4
+import wm_l1, wm_l3, wm_l4
 
-WM_L3 = 0
-WM_L4 = 1
+WM_L1 = 0
+WM_L3 = 1
+WM_L4 = 2
 
 WM_BIND = {
+            WM_L1 : wm_l1.INIT(),
             WM_L3 : wm_l3.INIT(),
             WM_L4 : wm_l4.INIT(),
          }
