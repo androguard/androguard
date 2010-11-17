@@ -79,9 +79,9 @@ class VM_int :
 
       method.show()
 
+WM_L1 = wm.WM_L1
 WM_L3 = wm.WM_L3
 WM_L4 = wm.WM_L4
-
 class WM :
    def __init__(self, andro, class_name, wm_type, output_file) :
       

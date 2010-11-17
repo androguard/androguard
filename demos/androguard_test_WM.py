@@ -12,7 +12,7 @@ TEST_ANDRO = './examples/android/Test/bin/classes.dex'
 
 _a = androguard.AndroguardS( TEST )
 
-wm = androguard.WM( _a, "org.t0t0.android.Test1", [ androguard.WM_L4 ], "./wm.xml" )
+wm = androguard.WM( _a, "org.t0t0.android.Test1", [ androguard.WM_L1 ], "./wm.xml" )
 
 _b = androguard.AndroguardS( TEST_ANDRO )
 androguard.WMCheck( _b, "./wm.xml" )

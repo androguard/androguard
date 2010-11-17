@@ -111,8 +111,8 @@ class JVMBreakBlock :
             desc = getattr(self.__vm, self.__info[t][0])( o[0], o[1], o[2] )
 
             # It's an external 
-            if desc == None :
-               desc = ExternalFM( o[0], o[1], o[2] )
+            if desc[0] == None :
+               desc = ( ExternalFM( o[0], o[1], o[2] ), self.__vm )
 
             if desc not in self.__info[t][1] :
                self.__info[t][1][desc] = []
@@ -166,7 +166,9 @@ class JVMBreakBlock :
          return "F" + i.get_operands()[2]
 
    def show(self) :
-      print self.__fields
+      for i in self.__ins :
+         print "\t\t",
+         i.show(0)
 
 class GVM_BCA :
    def __init__(self, _vm, _method) :
@@ -212,7 +214,12 @@ class GVM_BCA :
 
    def show(self) :
       print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
-      #self.__method.show()
+#      self.__method.show()
+      
+      for i in self.__bb :
+         print "\t", i
+         i.show()
+
       self.show_fields()
       self.show_methods()
 
@@ -230,7 +237,7 @@ class GVM_BCA :
       for i in self.__bb :
          fields = i.get_fields()
          for field in fields :
-            print "\t\t-->", field.get_class_name(), field.get_name(), field.get_descriptor()
+            print "\t\t-->", field[0].get_class_name(), field[0].get_name(), field[0].get_descriptor()
             for context in fields[field] :
                print "\t\t\t |---|",  context.mode, context.details
 
@@ -240,7 +247,7 @@ class GVM_BCA :
       for i in self.__bb :
          methods = i.get_methods()
          for method in methods :
-            print "\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor()
+            print "\t\t-->", method[0].get_class_name(), method[0].get_name(), method[0].get_descriptor()
             for context in methods[method] :
                print "\t\t\t |---|", context.details
 
@@ -254,7 +261,7 @@ class VMBCA :
          self.__hmethods[ i ] = x
 
    def show(self) :
-      for i in self.l :
+      for i in self.__methods :
          i.show()
 
    def get(self, method) :
