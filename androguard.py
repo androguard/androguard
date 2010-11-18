@@ -86,21 +86,43 @@ class WM :
    def __init__(self, andro, class_name, wm_type, output_file) :
       
       if wm_type == [] :
-         wm_type = [ WM_L3 ]
+         raise("....")
 
       fd = open(output_file, "w")
 
-      for method in andro.get_methods() :
-         # FIXME
-         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
-         wm.WM( _vm, _method, wm_type )
+      fd.write("<?xml version=\"1.0\"?>\n") 
+      fd.write("<andro id=\"androguard wm for %s\">\n" % class_name)
 
+      a = analysis.VMBCA( andro.get_vm() )
+         
+      for method in andro.get_methods() :
+         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
+         w = wm.WM( _vm, _method, wm_type, a )
+
+         fd.write( w.save( ) )
+
+      fd.write("</andro>\n")
 
       fd.close()
 
 class WMCheck :
-   def __init__(self, andro, intput_file) :
-      pass
+   def __init__(self, andro, class_name, input_file) :
+      a = analysis.VMBCA( andro.get_vm() )
+      
+      fd = open(input_file, "r")
+      buffxml = fd.read()
+      fd.close()
+
+      document = xml.dom.minidom.parseString(buffxml)
+
+      w_orig = wm.WMLoad( document )
+
+      for method in andro.get_methods() :
+         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
+
+         w_cmp = wm.WMCheck( w_orig, _vm, _method, a )
+         #w_cmp.show()
+
 
 def OBFU_NAMES_GEN(prefix="") :
    return prefix + random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )

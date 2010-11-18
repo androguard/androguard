@@ -1,6 +1,8 @@
-import os, sys, hashlib, random, types, itertools, hashlib
+import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64
 
-import analysis, misc
+from xml.sax.saxutils import escape, unescape
+
+import misc
 
 import wm_l1, wm_l3, wm_l4
 
@@ -15,15 +17,26 @@ WM_BIND = {
          }
 
 class WM :
-   def __init__(self, vm, method, wm_type) :
+   def __init__(self, vm, method, wm_type, analysis) :
+      self.__method = method
+      self.__wms = []
+   
+      self.__a = analysis
+   
       list_x = []
-      self.__a = analysis.VMBCA( vm )
-
+      
       for i in wm_type :
-         l_x = WM_BIND[ i ]( vm, method, self.__a ).get()
+         wb = WM_BIND[ i ]( vm, method, self.__a )
+         wb.run()
+
+         l_x = wb.get()
+         
          for z in l_x :
             list_x.append( z )
 
+         self.__wms.append( (i, wb) )
+
+      print list_x
       if list_x == [] :
          raise("list is empty")
 
@@ -44,15 +57,80 @@ class WM :
 #      print ob.verify_with_X( [ 12345668, 90877676, 878978, 87987673, 788789 ] )
 #   print ob.verify_with_X( [ 12345668, 90877676, 878978, 4, 87987673 ] )
 #      print ob.verify_with_X( [ 1, 2, 3, 4, 5, 6 ] )
-     
-   def get_hash(self) :
-      return self.__ob.get_hash()
 
-   def get_values(self) :
-      l = []
-      for k, v in self.__ob.get_points() :
-         l.append( v )
-      return l
+   def save(self) :
+      buffer = "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( self.__method.get_class_name(), escape( self.__method.get_name() ), self.__method.get_descriptor() )
+      buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( self.__ob.get_y() ) ) )
+
+
+      for i in self.__wms :
+         buffer += "<wm type=\"%d\">%s</wm>\n" % ( i[0], base64.b64encode( cPickle.dumps( i[1].get_export_context() ) ) )
+
+      buffer += "</method>\n"
+
+      return buffer
+
+class WMMLoad :
+   def __init__(self, item) :
+      self.__class_name = item.getAttribute('class')
+      self.__name = unescape( item.getAttribute('name') )
+      self.__descriptor = item.getAttribute('descriptor')
+      
+      self.__wms = []
+
+      x = base64.b64decode( item.getElementsByTagName( 'sss' )[0].firstChild.data )
+#      print cPickle.loads( x )
+
+
+      for s_item in item.getElementsByTagName( 'wm' ) :
+         _type = int( s_item.getAttribute('type') )
+
+         wb = WM_BIND[ _type ]( None, None, None )
+        
+         x = cPickle.loads( base64.b64decode( s_item.firstChild.data ) )
+         wb.set_context( x )
+
+
+         self.__wms.append( (_type, wb) )
+
+   def get_wms(self) :
+      return self.__wms
+
+   def get_name(self) :
+      return self.__name
+
+class WMLoad :
+   def __init__(self, document) :
+      self.__methods = []
+
+      for item in document.getElementsByTagName('method') :
+         self.__methods.append( WMMLoad( item ) )
+
+   def get_methods(self) :
+      return self.__methods
+
+class WMCheck :
+   def __init__(self, wm_orig, vm, method, analysis) :
+
+      print method.get_name()
+
+      for _method in wm_orig.get_methods() :
+         list_x = []
+         print "\t --->", _method.get_name()
+         for _type, _wm in _method.get_wms() :
+            wb = WM_BIND[ _type ]( vm, method, analysis )
+
+            wb.set_context( _wm.get_import_context() )
+            wb.run()
+
+            l_x = _wm.challenge( wb )
+
+            for i in l_x :
+               list_x.append( i )
+
+         print "\t\t X :", list_x
+         #print wm_orig.get_dwbo().verify_with_X( list_x )
+      print ""
 
 class Polynomial :
     def __init__(self, degree, secret_long, length) :
@@ -220,6 +298,9 @@ class DWBO :
    def verify_with_X(self, coord_x) :
       result, success = self.__sss.join( coord_x, self.__points.values() )
       return result, success
+
+   def get_y(self) :
+      return [ self.__points[k] for k in self.__points ]
 
    def get_points(self) :
       return self.__points
