@@ -275,6 +275,10 @@ MATH_JVM_OPCODES = { "iand" : '&',
                      "ixor" : '^',
                    }
 
+INVOKE_JVM_OPCODES = [ "invokestatic", "invokevirtual", "invokespecial" ]
+FIELD_READ_JVM_OPCODES = [ "getfield", "getstatic" ]
+FIELD_WRITE_JVM_OPCODES = [ "putfield", "putstatic" ]
+
 BREAK_JVM_OPCODES = [ "invokevirtual", "invokespecial", "invokestatic" ] + [ "areturn", "astore", "aastore", "bastore", "iinc", "istore", "iastore", "ireturn", "pop", "putfield", "putstatic" ] + [ "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull" ] #BRANCH_JVM_OPCODES
 
 

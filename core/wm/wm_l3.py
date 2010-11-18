@@ -4,7 +4,6 @@ lua_code_init = '''
       %s = {}
       function %s:new() 
          o = {}
-         print "coucou"
          setmetatable(o, self)
          self.__index = self
          return o

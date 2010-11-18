@@ -50,6 +50,22 @@ class ExternalFM :
    def get_descriptor(self) :
       return self.descriptor
 
+class ToString :
+   def __init__(self, tab) :
+      self.__tab = tab
+      self.__string = ""
+
+   def push(self, name) :
+      for i in self.__tab :
+         if name in self.__tab[i] :
+            if len(self.__string) > 0 :
+               if i == 'O' and self.__string[-1] == 'O' :
+                  continue
+            self.__string += i
+
+   def get_string(self) :
+      return self.__string
+
 ##### JVM ######
 FIELDS = {
             "getfield" : "R",
@@ -59,6 +75,12 @@ FIELDS = {
          }
 
 METHODS = [ "invokestatic", "invokevirtual", "invokespecial" ]
+
+JVM_TOSTRING = { "O" : jvm.MATH_JVM_OPCODES.keys(),
+                 "I" : jvm.INVOKE_JVM_OPCODES,
+                 "G" : jvm.FIELD_READ_JVM_OPCODES,
+                 "P" : jvm.FIELD_WRITE_JVM_OPCODES
+               }
 
 class JVMBreakBlock : 
    def __init__(self, _vm) :
@@ -111,8 +133,8 @@ class JVMBreakBlock :
             desc = getattr(self.__vm, self.__info[t][0])( o[0], o[1], o[2] )
 
             # It's an external 
-            if desc[0] == None :
-               desc = ( ExternalFM( o[0], o[1], o[2] ), self.__vm )
+            if desc == None :
+               desc = ExternalFM( o[0], o[1], o[2] )
 
             if desc not in self.__info[t][1] :
                self.__info[t][1][desc] = []
@@ -175,29 +197,42 @@ class GVM_BCA :
       self.__vm = _vm
       self.__method = _method
 
-      BO = [ jvm.BREAK_JVM_OPCODES, JVMBreakBlock ]
+      
+      BO = { "B_O" : jvm.BREAK_JVM_OPCODES, "B_O_C" : JVMBreakBlock, "TS" : JVM_TOSTRING }
       if self.__vm.get_type() == "DVM" :
-         BO = [ jvm.BREAK_DVM_OPCODES, DVMBreakBlock ]
+         BO = { "B_O" : dvm.BREAK_DVM_OPCODES, "B_O_C" : DVMBreakBlock, "TS" : DVM_TOSTRING }
+
+      self.__TS = ToString( BO[ "TS" ] )
 
       code = self.__method.get_code()
 
-      current_bb = BO[1]( self.__vm )
+      current_bb = BO["B_O_C"]( self.__vm )
       self.__bb = [ current_bb ]
 
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
+         
+         # String construction
+         self.__TS.push( name )
+         
          m_name = name.split("_")[0]
 
          current_bb.push( i )
-         if name in BO[0] or m_name in BO[0] :
+         if name in BO["B_O"] or m_name in BO["B_O"] :
             current_bb.analyze()
    
-            current_bb = BO[1]( self.__vm )
+            current_bb = BO["B_O_C"]( self.__vm )
             self.__bb.append( current_bb ) 
      
       if len( self.__bb ) > 1 :
          self.__bb.pop(-1)
+
+   def get_bb(self) :
+      return self.__bb
+
+   def get_ts(self) :
+      return self.__TS.get_string()
 
    def get_method(self) :
       return self.__method
@@ -214,6 +249,7 @@ class GVM_BCA :
 
    def show(self) :
       print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
+      print "\t TOSTRING = ", self.__TS.get_string()
 #      self.__method.show()
       
       for i in self.__bb :
@@ -237,7 +273,7 @@ class GVM_BCA :
       for i in self.__bb :
          fields = i.get_fields()
          for field in fields :
-            print "\t\t-->", field[0].get_class_name(), field[0].get_name(), field[0].get_descriptor()
+            print "\t\t-->", field.get_class_name(), field.get_name(), field.get_descriptor()
             for context in fields[field] :
                print "\t\t\t |---|",  context.mode, context.details
 
@@ -247,7 +283,7 @@ class GVM_BCA :
       for i in self.__bb :
          methods = i.get_methods()
          for method in methods :
-            print "\t\t-->", method[0].get_class_name(), method[0].get_name(), method[0].get_descriptor()
+            print "\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor()
             for context in methods[method] :
                print "\t\t\t |---|", context.details
 
