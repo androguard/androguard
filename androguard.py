@@ -94,7 +94,9 @@ class WM :
       fd.write("<andro id=\"androguard wm for %s\">\n" % class_name)
 
       a = analysis.VMBCA( andro.get_vm() )
-         
+      a.show()
+
+
       for method in andro.get_methods() :
          _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
          w = wm.WM( _vm, _method, wm_type, a )

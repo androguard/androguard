@@ -341,6 +341,21 @@ DALVIK_OPCODES = {
                   0xe2 : [ "22s", "ushr-int/lit8",              "vAA, vBB, #+CC", "AA|op CC|BB" ],
                  }
 
+MATH_DVM_OPCODES = { "add." : '+',
+                     "div." : '/',
+                     "mul." : '*',
+                     "or." : '|',
+                     "sub." : '-',
+                   }
+
+INVOKE_DVM_OPCODES = [ "invoke." ]
+
+FIELD_READ_DVM_OPCODES = [ ".get." ]
+FIELD_WRITE_DVM_OPCODES = [ ".put." ]
+                              
+BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put.", "if." ]
+
+
 def readuleb128(buff) :
    result = ord( buff.read(1) )
    if result > 0x7f :

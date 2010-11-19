@@ -92,7 +92,7 @@ class WMMLoad :
 
 
          self.__wms.append( (_type, wb) )
-
+   
    def get_wms(self) :
       return self.__wms
 
