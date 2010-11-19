@@ -1,4 +1,4 @@
-import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, string
+import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, string, threading
 
 from xml.sax.saxutils import escape, unescape
 
@@ -150,10 +150,6 @@ class WMCheck :
          print "\t\t X :", list_x
          sols =  _method.get_dwbo().verify_with_X( list_x )
          print "\t\t SOL :", len(sols)
-         
-         for i in sols :
-            if i > 0 :
-               print misc.long2str(i)
 
       print ""
 
@@ -216,20 +212,22 @@ class ShamirSecretScheme :
 
         return points
 
-class NevilleAlgorithm :
-   def __init__(self, th) :
-      self.__threshold = th
 
+class NevilleAlgorithm(threading.Thread) :
    def interpolate(self, x0, y0, x1, y1, x) :
       return (y0*(x-x1) - y1*(x-x0)) / (x0 - x1);
 
-   def neville_algorithm(self, xs, ys):
+   def run(self, xs, ys):
 	for i in range(1, len(xs)) :
             for k in range(0, len(xs) - i) :
                 ys[k] = self.interpolate(xs[k], ys[k], xs[k+i], ys[k+1], 0)
 
         return ys[0]
 
+class AlgoWM :
+   def __init__(self, th) :
+      self.__threshold = th
+   
    def run(self, coord_x, coord_y) :
       sols = []
       print self.__threshold, len(coord_x)
@@ -274,7 +272,7 @@ class NevilleAlgorithm :
                   final_x.append(v[0])
                   final_y.append(v[1])
 #               print final_x, final_y
-               sol = self.neville_algorithm(final_x, final_y)
+               sol = NevilleAlgorithm( ).run( final_x, final_y )
                sols.append( sol )
 
       return sols
@@ -311,7 +309,7 @@ class DWBO :
 class DWBOCheck :
    def __init__(self, l_y, th) :
       self.__l_y = l_y
-      self.__algo = NevilleAlgorithm( th )
+      self.__algo = AlgoWM( th )
 
    def verify_with_X(self, l_x) :
       return self.__algo.run( l_x, self.__l_y )
