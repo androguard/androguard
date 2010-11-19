@@ -213,21 +213,19 @@ class ShamirSecretScheme :
         return points
 
 
-class NevilleAlgorithm(threading.Thread) :
-   def interpolate(self, x0, y0, x1, y1, x) :
-      return (y0*(x-x1) - y1*(x-x0)) / (x0 - x1);
-
-   def run(self, xs, ys):
-	for i in range(1, len(xs)) :
-            for k in range(0, len(xs) - i) :
-                ys[k] = self.interpolate(xs[k], ys[k], xs[k+i], ys[k+1], 0)
-
-        return ys[0]
-
 class AlgoWM :
    def __init__(self, th) :
       self.__threshold = th
    
+   def interpolate(self, x0, y0, x1, y1, x) :
+      return (y0*(x-x1) - y1*(x-x0)) / (x0 - x1);
+
+   def NevilleAlgorithm(self, xs, ys):
+      for i in range(1, len(xs)) :
+         for k in range(0, len(xs) - i) :
+            ys[k] = self.interpolate(xs[k], ys[k], xs[k+i], ys[k+1], 0)
+      return ys[0]
+
    def run(self, coord_x, coord_y) :
       sols = []
       print self.__threshold, len(coord_x)
@@ -272,7 +270,7 @@ class AlgoWM :
                   final_x.append(v[0])
                   final_y.append(v[1])
 #               print final_x, final_y
-               sol = NevilleAlgorithm( ).run( final_x, final_y )
+               sol = self.NevilleAlgorithm( final_x, final_y )
                sols.append( sol )
 
       return sols
