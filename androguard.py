@@ -121,7 +121,7 @@ class WMCheck :
 
       for method in andro.get_methods() :
          _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
-
+         
          w_cmp = wm.WMCheck( w_orig, _vm, _method, a )
          #w_cmp.show()
 

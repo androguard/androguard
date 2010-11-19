@@ -37,11 +37,11 @@ class WM :
          self.__wms.append( (i, wb) )
 
       print list_x
-      if list_x == [] :
-         raise("list is empty")
 
-      self.__ob = DWBO( hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
-
+      self.__ob = None
+      if len(list_x) > 4 :
+         self.__ob = DWBO( "TOTO", list_x )#hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
+      
       #for i in self.__a.get_bb() :
       #   print i
       #   i.show()
@@ -59,14 +59,17 @@ class WM :
 #      print ob.verify_with_X( [ 1, 2, 3, 4, 5, 6 ] )
 
    def save(self) :
-      buffer = "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( self.__method.get_class_name(), escape( self.__method.get_name() ), self.__method.get_descriptor() )
-      buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( self.__ob.get_y() ) ) )
+      buffer = ""
+      if self.__ob != None :
+         buffer += "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( self.__method.get_class_name(), escape( self.__method.get_name() ), self.__method.get_descriptor() )
+         buffer += "<threshold>%d</threshold>\n" %  ( self.__ob.get_threshold() )
+         buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( self.__ob.get_y() ) ) )
 
 
-      for i in self.__wms :
-         buffer += "<wm type=\"%d\">%s</wm>\n" % ( i[0], base64.b64encode( cPickle.dumps( i[1].get_export_context() ) ) )
+         for i in self.__wms :
+            buffer += "<wm type=\"%d\">%s</wm>\n" % ( i[0], base64.b64encode( cPickle.dumps( i[1].get_export_context() ) ) )
 
-      buffer += "</method>\n"
+         buffer += "</method>\n"
 
       return buffer
 
@@ -78,8 +81,10 @@ class WMMLoad :
       
       self.__wms = []
 
+      th = int( item.getElementsByTagName( 'threshold' )[0].firstChild.data )
+
       x = base64.b64decode( item.getElementsByTagName( 'sss' )[0].firstChild.data )
-#      print cPickle.loads( x )
+      self.__dwbo = DWBOCheck( cPickle.loads( x ), th )
 
 
       for s_item in item.getElementsByTagName( 'wm' ) :
@@ -99,6 +104,9 @@ class WMMLoad :
    def get_name(self) :
       return self.__name
 
+   def get_dwbo(self) :
+      return self.__dwbo
+
 class WMLoad :
    def __init__(self, document) :
       self.__methods = []
@@ -111,7 +119,6 @@ class WMLoad :
 
 class WMCheck :
    def __init__(self, wm_orig, vm, method, analysis) :
-
       print method.get_name()
 
       for _method in wm_orig.get_methods() :
@@ -129,7 +136,13 @@ class WMCheck :
                list_x.append( i )
 
          print "\t\t X :", list_x
-         #print wm_orig.get_dwbo().verify_with_X( list_x )
+         sols =  _method.get_dwbo().verify_with_X( list_x )
+         print "\t\t SOL :", len(sols)
+         
+         for i in sols :
+            if i > 0 :
+               print misc.long2str(i)
+
       print ""
 
 class Polynomial :
@@ -192,7 +205,10 @@ class ShamirSecretScheme :
 #      print "THRESHOLD %d" % self.__threshold
 
       self.poly = Polynomial(self.__threshold, self.__secret_long, len(self.__secret))
-        
+      
+    def get_threshold(self) :
+       return self.__threshold
+
     def split(self) :
         points = {} 
         for i in self.__pieces :
@@ -286,6 +302,71 @@ class ShamirSecretScheme :
     def get_secret_long(self) :
       return self.__secret_long
 
+class NevilleAlgorithm :
+   def __init__(self, th) :
+      self.__threshold = th
+
+   def interpolate(self, x0, y0, x1, y1, x) :
+      return (y0*(x-x1) - y1*(x-x0)) / (x0 - x1);
+
+   def neville_algorithm(self, xs, ys):
+	for i in range(1, len(xs)) :
+            for k in range(0, len(xs) - i) :
+                ys[k] = self.interpolate(xs[k], ys[k], xs[k+i], ys[k+1], 0)
+
+        return ys[0]
+
+   def run(self, coord_x, coord_y) :
+      sols = []
+      print self.__threshold, len(coord_x)
+      res = itertools.combinations( coord_x, self.__threshold + 1)     
+      nb = 0
+      for i in res :
+         print nb, "/", len(coord_x) * (self.__threshold + 1)
+         nb += 1
+#         print "I", i
+         
+         res2 = itertools.product( i, coord_y )
+         l = []
+         for j in res2 :
+#            print "\t res2 j", j
+            l.append( j )
+         print ""
+
+         res3 = itertools.combinations( l, self.__threshold + 1 )
+         for j in res3 :
+#            print "\t res3 j", j
+            d = []
+            oops = False 
+            for v in j :
+               if v[0] not in d :
+                  d.append(v[0])
+               else :
+                  oops = True
+                  break
+
+               if v[1] not in d :
+                  d.append(v[1])
+               else :
+                  oops = True
+                  break
+
+            if oops == False :
+#               print oops, j
+
+               final_x = []
+               final_y = []
+               for v in j : 
+                  final_x.append(v[0])
+                  final_y.append(v[1])
+#               print final_x, final_y
+               sol = self.neville_algorithm(final_x, final_y)
+               if sol > 0 and misc.long2str(sol) == "TOTO" :
+                  print "laa"
+
+               sols.append( sol )
+      return sols
+
 class DWBO : 
    def __init__(self, hash, val) :
       self.__hash = hash
@@ -293,7 +374,6 @@ class DWBO :
 
       self.__sss = ShamirSecretScheme(self.__hash, self.__val, (len(self.__val) / 2) + 1)
       self.__points = self.__sss.split()
-
 
    def verify_with_X(self, coord_x) :
       result, success = self.__sss.join( coord_x, self.__points.values() )
@@ -308,7 +388,19 @@ class DWBO :
    def get_hash(self) :
       return self.__hash
 
+   def get_threshold(self) :
+      return self.__sss.get_threshold()
+
    def show(self) :
       print self.__hash
       for i in self.__points :
          print i, self.__points[i]
+
+class DWBOCheck :
+   def __init__(self, l_y, th) :
+      self.__l_y = l_y
+      self.__algo = NevilleAlgorithm( th )
+
+   def verify_with_X(self, l_x) :
+#      print "X :", l_x, "Y :", self.__l_y
+      return self.__algo.run( l_x, self.__l_y )
