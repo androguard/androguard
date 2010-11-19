@@ -67,7 +67,7 @@ class ToString :
    def push(self, name) :
       for i in self.__tab :
          for j in self.__re_tab[i] :
-            if j.match(name) :
+            if j.match(name) != None :
                if len(self.__string) > 0 :
                   if i == 'O' and self.__string[-1] == 'O' :
                      continue
@@ -76,17 +76,56 @@ class ToString :
    def get_string(self) :
       return self.__string
 
+class BreakBlock(object) :
+   def __init__(self, _vm) :
+      self._ins = []
+      self._vm = _vm
+
+      self._ops = []
+
+      self._fields = {}
+      self._methods = {}
+
+   def get_ops(self) :
+      return self._ops
+
+   def get_fields(self) :
+      return self._fields
+   
+   def get_methods(self) :
+      return self._methods
+
+   def push(self, ins) :
+      self._ins.append(ins)
+
+   def show(self) :
+      for i in self._ins :
+         print "\t\t",
+         i.show(0)
+
 ##### DVM ######
-DVM_TOSTRING = { "O" : dvm.MATH_DVM_OPCODES,
+
+MATH_DVM_RE = []
+for i in dvm.MATH_DVM_OPCODES :
+   MATH_DVM_RE.append( (re.compile( i ), dvm.MATH_DVM_OPCODES[i]) )
+
+DVM_TOSTRING = { "O" : dvm.MATH_DVM_OPCODES.keys(),
                  "I" : dvm.INVOKE_DVM_OPCODES,
                  "G" : dvm.FIELD_READ_DVM_OPCODES,
                  "P" : dvm.FIELD_WRITE_DVM_OPCODES,
                }
 
-class DVMBreakBlock : 
+class DVMBreakBlock(BreakBlock) : 
    def __init__(self, _vm) :
-      self.__ins = []
-      self.__vm = _vm
+      super(DVMBreakBlock, self).__init__(_vm)
+
+   def analyze(self) :
+
+      for i in self._ins :
+         for mre in MATH_DVM_RE :
+            if mre[0].match( i.get_name() ) :
+               self._ops.append( mre[1] )
+               break
 
 ##### JVM ######
 FIELDS = {
@@ -98,56 +137,38 @@ FIELDS = {
 
 METHODS = [ "invokestatic", "invokevirtual", "invokespecial" ]
 
+MATH_JVM_RE = []
+for i in jvm.MATH_JVM_OPCODES :
+   MATH_JVM_RE.append( (re.compile( i ), jvm.MATH_JVM_OPCODES[i]) )
+
 JVM_TOSTRING = { "O" : jvm.MATH_JVM_OPCODES.keys(),
                  "I" : jvm.INVOKE_JVM_OPCODES,
                  "G" : jvm.FIELD_READ_JVM_OPCODES,
                  "P" : jvm.FIELD_WRITE_JVM_OPCODES,
                }
 
-class JVMBreakBlock : 
+class JVMBreakBlock(BreakBlock) : 
    def __init__(self, _vm) :
-      self.__ins = []
-      self.__vm = _vm
-
-      self.__ops = []
-
-      self.__fields = {}
-      self.__methods = {}
+      super(JVMBreakBlock, self).__init__(_vm)
 
       self.__info = { 
-                        "F" : [ "get_field_descriptor", self.__fields, ContextField ],
-                        "M" : [ "get_method_descriptor", self.__methods, ContextMethod ],
+                        "F" : [ "get_field_descriptor", self._fields, ContextField ],
+                        "M" : [ "get_method_descriptor", self._methods, ContextMethod ],
                     }
 
-   def get_ops(self) :
-      return self.__ops
-
-   def get_fields(self) :
-      return self.__fields
-   
-   def get_methods(self) :
-      return self.__methods
-
-   def push(self, ins) :
-      self.__ins.append(ins)
-   
    def analyze(self) :
       ctt = []
 
-      MATH_RE = []
-      for i in jvm.MATH_JVM_OPCODES :
-         MATH_RE.append( (re.compile( i ), jvm.MATH_JVM_OPCODES[i]) )
-
-      for i in self.__ins :
+      for i in self._ins :
          v = self.trans(i)
          if v != None :
             ctt.append( v )
 
          t = ""
 
-         for mre in MATH_RE :
+         for mre in MATH_JVM_RE :
             if mre[0].match( i.get_name() ) :
-               self.__ops.append( mre[1] )
+               self._ops.append( mre[1] )
                break
 
          # Woot it's a field !
@@ -158,7 +179,7 @@ class JVMBreakBlock :
 
          if t != "" :
             o = i.get_operands()
-            desc = getattr(self.__vm, self.__info[t][0])( o[0], o[1], o[2] )
+            desc = getattr(self._vm, self.__info[t][0])( o[0], o[1], o[2] )
 
             # It's an external 
             if desc == None :
@@ -172,12 +193,12 @@ class JVMBreakBlock :
             elif t == "M" :
                self.__info[t][1][desc].append( self.__info[t][2]() )
 
-      for i in self.__fields :
-         for k in self.__fields[i] :
+      for i in self._fields :
+         for k in self._fields[i] :
             k.set_details( ctt )
 
-      for i in self.__methods : 
-         for k in self.__methods[i] :
+      for i in self._methods : 
+         for k in self._methods[i] :
             k.set_details( ctt )
 
    def trans(self, i) :
@@ -214,11 +235,6 @@ class JVMBreakBlock :
 
       if "getfield" in i.get_name() :
          return "F" + i.get_operands()[2]
-
-   def show(self) :
-      for i in self.__ins :
-         print "\t\t",
-         i.show(0)
 
 class GVM_BCA :
    def __init__(self, _vm, _method) :

@@ -346,14 +346,18 @@ MATH_DVM_OPCODES = { "add." : '+',
                      "mul." : '*',
                      "or." : '|',
                      "sub." : '-',
+                     "and." : '&',
+                     "xor." : '^',
+                     "shl." : "<<",
+                     "shr." : ">>",
                    }
 
 INVOKE_DVM_OPCODES = [ "invoke." ]
 
-FIELD_READ_DVM_OPCODES = [ ".get." ]
-FIELD_WRITE_DVM_OPCODES = [ ".put." ]
+FIELD_READ_DVM_OPCODES = [ ".get" ]
+FIELD_WRITE_DVM_OPCODES = [ ".put" ]
                               
-BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put.", "if." ]
+BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
 
 def readuleb128(buff) :
@@ -1628,42 +1632,57 @@ class EncodedCatchHandlerList :
    def get_raw(self) :
       return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.list)
 
-class DalvikCode : 
-   def __init__(self, buff, cm) :
-      self.__CM = cm
-      
-      off = buff.get_idx()
-      while off % 4 != 0 :
-         off += 1
+class DBCSpe :
+   def __init__(self, x) :
+      pass
 
-      buff.set_idx( off )
+   def show(self) :
+      raise("oop")
 
-      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      
-      self.__off = buff.get_idx()
+class DBC :
+   def __init__(self, class_manager, op_name, operands, raw_buff) :
+      self.__CM = class_manager
 
-      self.registers_size = SV( '<H', buff.read( 2 ) )   
-      self.ins_size = SV( '<H', buff.read( 2 ) )
-      self.outs_size = SV( '<H', buff.read( 2 ) )
-      self.tries_size = SV( '<H', buff.read( 2 ) )
-      self.debug_info_off = SV( '<L', buff.read( 4 ) )
-      self.insns_size = SV( '<L', buff.read( 4 ) )
+      self.__op_name = op_name
+      self.__operands = operands
+      self.__raw_buff = raw_buff
 
-      self.__insn = buff.read( self.insns_size.get_value() * 2 )
+   def get_name(self) :
+      """Return the name of the bytecode"""
+      return self.__op_name
+
+   def show(self, pos) :
+      print pos, self.__op_name, ' '.join(self._more_info(n[0], n[1]) for n in self.__operands)
+
+   def _more_info(self, c, v) :
+      if "string" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_string(v))
+      elif "meth" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_method(v))
+      elif "field" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_field(v))
+      elif "type" in c :
+         return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
+      return "%s%x" % (c, v)
+
+class DCode :
+   def __init__(self, class_manager, size, buff) :
+      self.__CM = class_manager
+      self.__insn = buff
 
       self.__h_special_bytecodes = {}
       self.__bytecodes = []
 
       ushort = calcsize( '<H' )
-
+      
       real_j = 0
       j = 0 
-      while j < (self.insns_size.get_value() * ushort) :
-
+      while j < (size * ushort) :
          # handle special instructions
          if real_j in self.__h_special_bytecodes :
             special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
-            self.__bytecodes.append( special_e )
+
+            self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
 
             del self.__h_special_bytecodes[ real_j ]
             j += special_e.get_size()
@@ -1683,25 +1702,13 @@ class DalvikCode :
                   if special != None :
                      self.__h_special_bytecodes[ special[0] + real_j ] = special[1] 
 
-               self.__bytecodes.append( [ DALVIK_OPCODES[ op_value ][1], repr( self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ), operands ] )
+               self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], operands, self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ) )
 
                j += ( int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort)
             else :
                bytecode.Exit( "invalid opcode [ 0x%x ]" % op_value )
 
          real_j = j / 2
-
-      if (self.insns_size.get_value() % 2 == 1) :
-         self.__padding = SV( '<H', buff.read( 2 ) )
-
-      self.__tries = []
-      self.__handlers = []
-      if self.tries_size.get_value() > 0 :
-         for i in range(0, self.tries_size.get_value()) :
-            try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
-            self.__tries.append( try_item )
-         
-         self.__handlers.append( EncodedCatchHandlerList( buff ) )
 
    def _analyze_mnemonic(self, buff_operands, mnemonic) :
       operands = []
@@ -1780,8 +1787,58 @@ class DalvikCode :
       else :      
          bytecode.Exit( "invalid size [ 0x%x ]" % size )                                                                                                                                                                 
 
-   def get_bc(self) :
+   def get(self) :
       return self.__bytecodes
+
+   def get_raw(self) :
+      return self.__insn
+
+   def show(self) :
+      nb = 0
+      for i in self.__bytecodes :
+         print nb,
+         i.show(nb)
+         nb += 1
+   
+class DalvikCode : 
+   def __init__(self, buff, cm) :
+      self.__CM = cm
+      
+      off = buff.get_idx()
+      while off % 4 != 0 :
+         off += 1
+
+      buff.set_idx( off )
+
+      self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+      
+      self.__off = buff.get_idx()
+
+      self.registers_size = SV( '<H', buff.read( 2 ) )   
+      self.ins_size = SV( '<H', buff.read( 2 ) )
+      self.outs_size = SV( '<H', buff.read( 2 ) )
+      self.tries_size = SV( '<H', buff.read( 2 ) )
+      self.debug_info_off = SV( '<L', buff.read( 4 ) )
+      self.insns_size = SV( '<L', buff.read( 4 ) )
+
+      ushort = calcsize( '<H' )
+
+      self.__code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+
+      if (self.insns_size.get_value() % 2 == 1) :
+         self.__padding = SV( '<H', buff.read( 2 ) )
+
+      self.__tries = []
+      self.__handlers = []
+      if self.tries_size.get_value() > 0 :
+         for i in range(0, self.tries_size.get_value()) :
+            try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
+            self.__tries.append( try_item )
+         
+         self.__handlers.append( EncodedCatchHandlerList( buff ) )
+
+   def get_bc(self) :
+      return self.__code
 
    def get_off(self) :
       return self.__off
@@ -1801,25 +1858,10 @@ class DalvikCode :
 
       print ""
 
-      nb = 0
-      for i in self.__bytecodes :
-         if type(i).__name__ == 'list' :
-            print "\t", nb, i[0], ' '.join(self._more_info(n[0], n[1]) for n in i[-1])
-         else :
-            print "\t", nb, i.show()
-         nb += 1
+      self.__code.show()
+
       print "*" * 80
 
-   def _more_info(self, c, v) :
-      if "string" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_string(v))
-      elif "meth" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_method(v))
-      elif "field" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_field(v))
-      elif "type" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
-      return "%s%x" % (c, v)
 
    def get_obj(self) :
       return [ i for i in self.__handlers ]
@@ -1831,7 +1873,7 @@ class DalvikCode :
               self.tries_size.get_value_buff() + \
               self.debug_info_off.get_value_buff() + \
               self.insns_size.get_value_buff() + \
-              self.__insn
+              self.__code.get_raw()
 
       if (self.insns_size.get_value() % 2 == 1) :
          buff += self.__padding.get_value_buff()
@@ -2231,7 +2273,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
          if class_name == i.get_name() : 
             for j in i.get_methods() :
                if method_name == j.get_name() and descriptor == j.get_descriptor() :
-                  return i
+                  return j
       return None
 
    def get_field_descriptor(self, class_name, field_name, descriptor) :
