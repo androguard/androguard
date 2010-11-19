@@ -1,4 +1,4 @@
-import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64
+import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, string
 
 from xml.sax.saxutils import escape, unescape
 
@@ -41,11 +41,21 @@ class WM :
       self.__ob = None
       if len(list_x) > 4 :
          self.__ob = DWBO( "TOTO", list_x )#hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
-      
+
       #for i in self.__a.get_bb() :
       #   print i
       #   i.show()
       #   print ""
+
+
+      # X : [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
+      # [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
+
+
+#      X = [ 45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872] # [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
+#      ob = DWBO( "TOTO", [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872] )
+#      print ob.verify_with_X( X )
+#      raise("ooops")
 
 #      ob = DWBO( "55f3f36e2c93ea69e1871102d3f8653f38ab7b36", [ 12345668, 90877676, 878978, 87987673 ] )
 #      ob.show()
@@ -55,8 +65,10 @@ class WM :
 
 #      print self.__ob.verify_with_X( self.__a.get_freq() )
 #      print ob.verify_with_X( [ 12345668, 90877676, 878978, 87987673, 788789 ] )
-#   print ob.verify_with_X( [ 12345668, 90877676, 878978, 4, 87987673 ] )
+#      print ob.verify_with_X( [ 12345668, 90877676, 878978, 4, 87987673 ] )
 #      print ob.verify_with_X( [ 1, 2, 3, 4, 5, 6 ] )
+
+#      raise("ooops")
 
    def save(self) :
       buffer = ""
@@ -255,9 +267,12 @@ class ShamirSecretScheme :
 
     def join(self, coord_x, coord_y) :
 # print self.__threshold, len(coord_x)
+      nb = 0
 
       res = itertools.combinations( coord_x, self.__threshold + 1 )     
       for i in res :
+         print nb, "/", len(coord_x) * (self.__threshold + 1 )
+         nb += 1
 #         print "I", i
          
          res2 = itertools.product( i, coord_y )
@@ -269,7 +284,7 @@ class ShamirSecretScheme :
 
          res3 = itertools.combinations( l, self.__threshold + 1 )
          for j in res3 :
-            print "\t", j
+#            print "\t", j
             d = []
             oops = False 
             for v in j :
@@ -317,6 +332,8 @@ class NevilleAlgorithm :
         return ys[0]
 
    def run(self, coord_x, coord_y) :
+      T = misc.str2long("TOTO")
+
       sols = []
       print self.__threshold, len(coord_x)
       res = itertools.combinations( coord_x, self.__threshold + 1)     
@@ -361,10 +378,12 @@ class NevilleAlgorithm :
                   final_y.append(v[1])
 #               print final_x, final_y
                sol = self.neville_algorithm(final_x, final_y)
-               if sol > 0 and misc.long2str(sol) == "TOTO" :
-                  print "laa"
+               
+               if sol > 0 :
+                  z = misc.long2str(sol)
+                  if z[0] in string.ascii_letters :
+                     sols.append( sol )
 
-               sols.append( sol )
       return sols
 
 class DWBO : 
