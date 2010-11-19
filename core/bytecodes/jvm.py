@@ -269,18 +269,17 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
-MATH_JVM_OPCODES = { "iand" : '&',
-                     "iadd" : '+',
-                     "isub" : '-',
-                     "ixor" : '^',
+MATH_JVM_OPCODES = { ".and" : '&',
+                     ".add" : '+',
+                     ".sub" : '-',
+                     ".xor" : '^',
                    }
 
-INVOKE_JVM_OPCODES = [ "invokestatic", "invokevirtual", "invokespecial" ]
-FIELD_READ_JVM_OPCODES = [ "getfield", "getstatic" ]
-FIELD_WRITE_JVM_OPCODES = [ "putfield", "putstatic" ]
+INVOKE_JVM_OPCODES = [ "invoke." ]
+FIELD_READ_JVM_OPCODES = [ "get." ]
+FIELD_WRITE_JVM_OPCODES = [ "put." ]
 
-BREAK_JVM_OPCODES = [ "invokevirtual", "invokespecial", "invokestatic" ] + [ "areturn", "astore", "aastore", "bastore", "iinc", "istore", "iastore", "ireturn", "pop", "putfield", "putstatic" ] + [ "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull" ] #BRANCH_JVM_OPCODES
-
+BREAK_JVM_OPCODES = [ "invoke.", "put.", ".store", "iinc", "pop", ".return", "if." ]
 
 INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
 

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 import jvm, dvm
 
 class ContextField :
@@ -53,18 +55,38 @@ class ExternalFM :
 class ToString :
    def __init__(self, tab) :
       self.__tab = tab
+      self.__re_tab = {}
+
+      for i in self.__tab :
+         self.__re_tab[i] = []
+         for j in self.__tab[i] :
+            self.__re_tab[i].append( re.compile( j ) )
+
       self.__string = ""
 
    def push(self, name) :
       for i in self.__tab :
-         if name in self.__tab[i] :
-            if len(self.__string) > 0 :
-               if i == 'O' and self.__string[-1] == 'O' :
-                  continue
-            self.__string += i
+         for j in self.__re_tab[i] :
+            if j.match(name) :
+               if len(self.__string) > 0 :
+                  if i == 'O' and self.__string[-1] == 'O' :
+                     continue
+               self.__string += i
 
    def get_string(self) :
       return self.__string
+
+##### DVM ######
+DVM_TOSTRING = { "O" : dvm.MATH_DVM_OPCODES,
+                 "I" : dvm.INVOKE_DVM_OPCODES,
+                 "G" : dvm.FIELD_READ_DVM_OPCODES,
+                 "P" : dvm.FIELD_WRITE_DVM_OPCODES,
+               }
+
+class DVMBreakBlock : 
+   def __init__(self, _vm) :
+      self.__ins = []
+      self.__vm = _vm
 
 ##### JVM ######
 FIELDS = {
@@ -79,7 +101,7 @@ METHODS = [ "invokestatic", "invokevirtual", "invokespecial" ]
 JVM_TOSTRING = { "O" : jvm.MATH_JVM_OPCODES.keys(),
                  "I" : jvm.INVOKE_JVM_OPCODES,
                  "G" : jvm.FIELD_READ_JVM_OPCODES,
-                 "P" : jvm.FIELD_WRITE_JVM_OPCODES
+                 "P" : jvm.FIELD_WRITE_JVM_OPCODES,
                }
 
 class JVMBreakBlock : 
@@ -112,6 +134,10 @@ class JVMBreakBlock :
    def analyze(self) :
       ctt = []
 
+      MATH_RE = []
+      for i in jvm.MATH_JVM_OPCODES :
+         MATH_RE.append( (re.compile( i ), jvm.MATH_JVM_OPCODES[i]) )
+
       for i in self.__ins :
          v = self.trans(i)
          if v != None :
@@ -119,8 +145,10 @@ class JVMBreakBlock :
 
          t = ""
 
-         if i.get_name() in jvm.MATH_JVM_OPCODES :
-            self.__ops.append( jvm.MATH_JVM_OPCODES[ i.get_name() ] )
+         for mre in MATH_RE :
+            if mre[0].match( i.get_name() ) :
+               self.__ops.append( mre[1] )
+               break
 
          # Woot it's a field !
          if i.get_name() in FIELDS :
@@ -209,17 +237,25 @@ class GVM_BCA :
       current_bb = BO["B_O_C"]( self.__vm )
       self.__bb = [ current_bb ]
 
+      BO_RE = []
+      for i in BO["B_O"] :
+         BO_RE.append( re.compile( i ) )
+
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
-         
+
+         match = False
+         for j in BO_RE :
+            if j.match(name) != None :
+               match = True
+               break
+
          # String construction
          self.__TS.push( name )
          
-         m_name = name.split("_")[0]
-
          current_bb.push( i )
-         if name in BO["B_O"] or m_name in BO["B_O"] :
+         if match == True :
             current_bb.analyze()
    
             current_bb = BO["B_O_C"]( self.__vm )
@@ -227,6 +263,8 @@ class GVM_BCA :
      
       if len( self.__bb ) > 1 :
          self.__bb.pop(-1)
+
+      self.show()
 
    def get_bb(self) :
       return self.__bb
@@ -249,13 +287,12 @@ class GVM_BCA :
 
    def show(self) :
       print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
-      print "\t TOSTRING = ", self.__TS.get_string()
-#      self.__method.show()
+      print "\tTOSTRING = ", self.__TS.get_string()
       
       for i in self.__bb :
-         print "\t", i
+         print "\t", i, i.get_ops()
          i.show()
-
+      
       self.show_fields()
       self.show_methods()
 
