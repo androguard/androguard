@@ -168,9 +168,7 @@ class Polynomial :
 
         for i in range(1, self.degree+1) :
             self.coeff[i] = self.get_random_number(length)
-            #print "COEFF[%d] = %d" % (i, self.coeff[i])
-	    #hashlib.sha256(str(self.coeff[i])).hexdigest()
-           
+
 #        print "f(x) = %d " % self.coeff[0],
 #	for i in range(1, self.degree+1) :
 #		 print "+ %d x^%d" % (self.coeff[i], i),
@@ -183,16 +181,6 @@ class Polynomial :
 
         res += self.coeff[0]
         return res
-
-    def interpolate(self, x0, y0, x1, y1, x) :
-        return (y0*(x-x1) - y1*(x-x0)) / (x0 - x1);
-
-    def neville_algorithm(self, xs, ys):
-	for i in range(1, len(xs)) :
-            for k in range(0, len(xs) - i) :
-                ys[k] = self.interpolate(xs[k], ys[k], xs[k+i], ys[k+1], 0)
-
-        return ys[0]
 
     def get_random_number(self, randomBytes=128):
         """Return a random long integer."""
@@ -228,95 +216,6 @@ class ShamirSecretScheme :
 
         return points
 
-    def combi(self, k, l, s, f) :
-      if k == 0 :
-         f.append( s )
-         return 
-
-      if len(l) == 0 :
-         return
-         
-      if len(s) == 0 :
-         self.combi( k - 1, l[1:], [ l[0] ], f )
-      else :
-         self.combi( k - 1, l[1:], s + [ l[0] ], f )
-
-      self.combi(k, l[1:], s, f)
-
-    def join_direct(self) :
-      xs = []
-      ys = []
-     
-      points = self.split()
-
-      for i in points :
-         xs.append(i) 
-         ys.append(points[i])
-
-      print xs, ys
-
-      sol = self.poly.solveSystem2(xs, ys)
-
-      if sol == self.get_secret_long() :
-         print True
-#
-#      try :
-#         return [sol, hashlib.sha256(misc.long2str(sol)).hexdigest()]
-#      except ValueError :
-#         return ["", 0]
-
-    def join(self, coord_x, coord_y) :
-# print self.__threshold, len(coord_x)
-      nb = 0
-
-      res = itertools.combinations( coord_x, self.__threshold + 1 )     
-      for i in res :
-         print nb, "/", len(coord_x) * (self.__threshold + 1 )
-         nb += 1
-#         print "I", i
-         
-         res2 = itertools.product( i, coord_y )
-         l = []
-         for j in res2 :
-#            print "\t", j
-            l.append( j )
-#         print ""
-
-         res3 = itertools.combinations( l, self.__threshold + 1 )
-         for j in res3 :
-#            print "\t", j
-            d = []
-            oops = False 
-            for v in j :
-               if v[0] not in d :
-                  d.append(v[0])
-               else :
-                  oops = True
-                  break
-
-               if v[1] not in d :
-                  d.append(v[1])
-               else :
-                  oops = True
-                  break
-
-            if oops == False :
-#               print oops, j
-
-               final_x = []
-               final_y = []
-               for v in j : 
-                  final_x.append(v[0])
-                  final_y.append(v[1])
-               sol = self.poly.neville_algorithm(final_x, final_y)
-               if sol == self.get_secret_long() :
-                  return True, j
-
-      return False, None
-
-    def get_secret_long(self) :
-      return self.__secret_long
-
 class NevilleAlgorithm :
    def __init__(self, th) :
       self.__threshold = th
@@ -332,8 +231,6 @@ class NevilleAlgorithm :
         return ys[0]
 
    def run(self, coord_x, coord_y) :
-      T = misc.str2long("TOTO")
-
       sols = []
       print self.__threshold, len(coord_x)
       res = itertools.combinations( coord_x, self.__threshold + 1)     
@@ -378,11 +275,7 @@ class NevilleAlgorithm :
                   final_y.append(v[1])
 #               print final_x, final_y
                sol = self.neville_algorithm(final_x, final_y)
-               
-               if sol > 0 :
-                  z = misc.long2str(sol)
-                  if z[0] in string.ascii_letters :
-                     sols.append( sol )
+               sols.append( sol )
 
       return sols
 
@@ -421,5 +314,4 @@ class DWBOCheck :
       self.__algo = NevilleAlgorithm( th )
 
    def verify_with_X(self, l_x) :
-#      print "X :", l_x, "Y :", self.__l_y
       return self.__algo.run( l_x, self.__l_y )
