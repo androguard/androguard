@@ -269,6 +269,8 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
+BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if.", "invoke." ]
+
 MATH_JVM_OPCODES = { ".and" : '&',
                      ".add" : '+',
                      ".sub" : '-',
@@ -2310,7 +2312,14 @@ class JVMFormat(bytecode._Bytecode) :
       for i in range(0, self.attributes_count.get_value()) :
          ai = AttributeInfo( self.__CM, self ) 
          self.__attributes.append( ai )
-      
+     
+   def get_class(self, class_name) :
+      x = self.__CM.get_this_class_name() == class_name
+      if x == True :
+         return x
+
+      return self.__CM.get_this_class_name() == class_name.replace(".", "/")
+
    def get_field(self, name) :
       """Return into a list all fields which corresponds to the regexp 
          
@@ -2341,6 +2350,7 @@ class JVMFormat(bytecode._Bytecode) :
       for i in self.__methods :
          if method_name == i.get_name() and descriptor == i.get_descriptor() :
             return i
+
       return None
 
    def get_field_descriptor(self, class_name, field_name, descriptor) :

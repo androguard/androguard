@@ -19,37 +19,73 @@
 import misc
 import hashlib
 
-def INIT() :
-   return WM_L1
+from networkx import DiGraph, draw_graphviz, write_dot
 
-class WM_L1 :
-   def __init__(self, vm, method, analysis) :
+import random
+
+def INIT() :
+   return WM_L2
+
+class DepF :
+   def __init__(self, field) :
+      G = DiGraph()
+     
+      ############ field -> profondeur, largeur, cycle ############
+
+      self.__depth = 3
+      self.__width = 3 
+      self.__cycle = 2
+
+      G.add_node( self._new_node(G) )
+
+      self.__random( G, 0, self.__width, self.__cycle )
+
+      print G.node
+      print G.edge
+
+      draw_graphviz(G)
+      write_dot(G,'file.dot')
+
+   def _new_node(self, G) :
+      return "X%d" % (len(G.node))
+
+   def _current_node(self, G) :
+      return len(G.node) - 1
+   
+   def __random(self, G, depth, width, cycle) :
+      if depth >= self.__depth : 
+         return
+
+      for i in range( random.randint(1, width) ) :
+         nd = self._new_node(G)
+         G.add_edge( "X%d" % depth, nd )
+         self.__random( G, self._current_node(G), width, cycle )
+
+
+class WM_L2 :
+   def __init__(self, vm, analysis) :
       self.__vm = vm
-      self.__method = method
       self.__analysis = analysis
+
+      self.__dependencies = []
 
       self.__context = {
                            "L_X" : [],
-                           "STRING" : "",
                        }
 
    def run(self) :
-      x = self.__analysis.get(self.__method)
+      for field in self.__vm.get_fields() :
+      #   if random.randint(0, 1) == 1 :
+         self.__dependencies.append( DepF( field ) )
+         break
 
-      self.__context[ "STRING" ] = x.get_ts()
+      raise("ooop")
 
       self.__context[ "L_X" ].append( 
                                        misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() ) 
                                     )
 
    def challenge(self, external_wm) :
-      distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
-
-#      print distance
-
-      if distance <= 2 :
-         return self.__context[ "L_X" ]
-
       return []
 
    def get(self) :

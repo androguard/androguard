@@ -20,13 +20,25 @@ public class Test1 {
          return y - 1;
       }
 
+      if (this.value > 0) {
+         this.value2 = y;
+      }
+
+      this.value2 = this.pouet();
+
       return y;
+    }
+
+    public int pouet() {
+      int v  = this.value;
+
+      return v;
     }
 
     public int test1(int val) {
       int a = 0x10;
 
-      return val + a - 60;
+      return val + a - 60 * this.value;
     }
 
     public int go() {

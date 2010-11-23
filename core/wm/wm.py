@@ -4,43 +4,76 @@ from xml.sax.saxutils import escape, unescape
 
 import misc
 
-import wm_l1, wm_l3, wm_l4
+import wm_l1, wm_l2, wm_l3, wm_l4
+
+WM_CLASS = 0
+WM_METHOD = 1
 
 WM_L1 = 0
-WM_L3 = 1
-WM_L4 = 2
+WM_L2 = 1
+WM_L3 = 2
+WM_L4 = 3
 
 WM_BIND = {
-            WM_L1 : wm_l1.INIT(),
-            WM_L3 : wm_l3.INIT(),
-            WM_L4 : wm_l4.INIT(),
+            WM_L1 : (wm_l1.INIT(), WM_METHOD),
+            WM_L2 : (wm_l2.INIT(), WM_CLASS),
+            WM_L3 : (wm_l3.INIT(), WM_METHOD),
+            WM_L4 : (wm_l4.INIT(), WM_METHOD),
          }
 
 class WM :
-   def __init__(self, vm, method, wm_type, analysis) :
-      self.__method = method
-      self.__wms = []
+   def __init__(self, vm, class_name, wm_type, analysis) :
+      self.__class_name = class_name
+
+      self.__wms = { "CLASS" : [],
+                     "METHODS" : {},
+
+                     "SSS_CLASS" : None,
+                     "SSS_METHODS" : {},
+                   }
    
       self.__a = analysis
    
+      ######### WM in class ############
       list_x = []
-      
       for i in wm_type :
-         wb = WM_BIND[ i ]( vm, method, self.__a )
-         wb.run()
+         if WM_BIND[ i ][1] == WM_CLASS :
+            wb = WM_BIND[ i ][0](vm, self.__a)
+            wb.run()
 
-         l_x = wb.get()
+            l_x = wb.get()
+
+            for z in l_x :
+               list_x.append( z )
+
+            self.__wms[ "CLASS" ].append( (i, wb) )
+      
+      if list_x != [] :
+         self.__wms[ "SSS_CLASS" ] = DWBO( "TOTO", list_x )
+
+      ######### WM in methods ##########
+      for method in vm.get_methods() :
+         list_x = []
+      
+         for i in wm_type :
+            if WM_BIND[ i ][1] == WM_METHOD :
+               wb = WM_BIND[ i ][0]( vm, method, self.__a )
+               wb.run()
+
+               l_x = wb.get()
          
-         for z in l_x :
-            list_x.append( z )
+               for z in l_x :
+                  list_x.append( z )
 
-         self.__wms.append( (i, wb) )
+               if method not in self.__wms[ "METHODS" ] :
+                  self.__wms[ "METHODS" ][ method ] = []
 
-      print list_x
+               self.__wms[ "METHODS" ][ method ].append( (i, wb) )
 
-      self.__ob = None
-      if len(list_x) > 4 :
-         self.__ob = DWBO( "TOTO", list_x )#hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
+         if len(list_x) > 4 :
+            self.__wms[ "SSS_METHODS" ][ method ] = DWBO( "TOTO", list_x )
+
+               #self.__ob = DWBO( "TOTO", list_x )#hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
 
       #for i in self.__a.get_bb() :
       #   print i
@@ -72,14 +105,27 @@ class WM :
 
    def save(self) :
       buffer = ""
-      if self.__ob != None :
-         buffer += "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( self.__method.get_class_name(), escape( self.__method.get_name() ), self.__method.get_descriptor() )
-         buffer += "<threshold>%d</threshold>\n" %  ( self.__ob.get_threshold() )
-         buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( self.__ob.get_y() ) ) )
 
+      if self.__wms[ "SSS_CLASS" ] != None :
+         sss = self.__wms[ "SSS_CLASS" ]
 
-         for i in self.__wms :
-            buffer += "<wm type=\"%d\">%s</wm>\n" % ( i[0], base64.b64encode( cPickle.dumps( i[1].get_export_context() ) ) )
+         buffer += "<class name=\"%s\">\n" % self.__class_name
+         buffer += "<threshold>%d</threshold>\n" %  ( sss.get_threshold() )
+         buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( sss.get_y() ) ) )
+
+         for j in self.__wms[ "CLASS" ] :
+            buffer += "<wm type=\"%d\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
+
+         buffer += "</class>\n"
+
+      for i in self.__wms[ "SSS_METHODS" ] :
+         sss = self.__wms[ "SSS_METHODS" ][ i ]
+         buffer += "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( i.get_class_name(), escape( i.get_name() ), i.get_descriptor() )
+         buffer += "<threshold>%d</threshold>\n" %  ( sss.get_threshold() )
+         buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( sss.get_y() ) ) )
+
+         for j in self.__wms[ "METHODS" ][i] :
+            buffer += "<wm type=\"%d\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
 
          buffer += "</method>\n"
 
@@ -228,7 +274,7 @@ class AlgoWM :
 
    def run(self, coord_x, coord_y) :
       sols = []
-      print self.__threshold, len(coord_x)
+      
       res = itertools.combinations( coord_x, self.__threshold + 1)     
       nb = 0
       for i in res :
@@ -292,9 +338,6 @@ class DWBO :
 
    def get_points(self) :
       return self.__points
-
-   def get_hash(self) :
-      return self.__hash
 
    def get_threshold(self) :
       return self.__sss.get_threshold()
