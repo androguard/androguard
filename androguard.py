@@ -80,6 +80,7 @@ class VM_int :
       method.show()
 
 WM_L1 = wm.WM_L1
+WM_L2 = wm.WM_L2
 WM_L3 = wm.WM_L3
 WM_L4 = wm.WM_L4
 class WM :
@@ -96,12 +97,9 @@ class WM :
       a = analysis.VMBCA( andro.get_vm() )
       a.show()
 
-
-      for method in andro.get_methods() :
-         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
-         w = wm.WM( _vm, _method, wm_type, a )
-
-         fd.write( w.save( ) )
+      _vm = andro.get_class( class_name )
+      w = wm.WM( _vm, class_name, wm_type, a )
+      fd.write( w.save() )
 
       fd.write("</andro>\n")
 
@@ -259,6 +257,12 @@ class Androguard :
             raise( "Unknown bytecode" )
 
          self.__bc.append( (i, BC( bc )) )
+
+   def get_class(self, class_name) :
+      for _, bc in self.__bc :
+         if bc.get_class(class_name) == True :
+            return bc
+      return None
 
    def get_raw(self) :
       """Return raw format of all file"""

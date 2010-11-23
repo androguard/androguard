@@ -12,6 +12,6 @@ TEST  = 'examples/java/test/orig/Test1.class'
 
 a = androguard.AndroguardS( TEST )
 
-x = analysis.VMBCA( a )
+x = analysis.VMBCA( a.get_vm() )
 x.show()
 

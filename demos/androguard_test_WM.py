@@ -12,7 +12,7 @@ TEST_ANDRO_STEAL = './examples/android/Test/bin/classes.dex'
 
 _a = androguard.AndroguardS( TEST_ORIG )
 
-wm = androguard.WM( _a, "org.t0t0.android.Test1", [ androguard.WM_L1, androguard.WM_L4 ], "./wm.xml" )
+wm = androguard.WM( _a, "org.t0t0.android.Test1", [ androguard.WM_L2, androguard.WM_L1, androguard.WM_L4 ], "./wm.xml" )
 
-_b = androguard.AndroguardS( TEST_JAVA_STEAL )
-androguard.WMCheck( _b, "org.t0t0.android.Test1", "./wm.xml" )
+#_b = androguard.AndroguardS( TEST_JAVA_STEAL )
+#androguard.WMCheck( _b, "org.t0t0.android.Test1", "./wm.xml" )
