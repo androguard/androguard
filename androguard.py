@@ -84,8 +84,9 @@ WM_L2 = wm.WM_L2
 WM_L3 = wm.WM_L3
 WM_L4 = wm.WM_L4
 class WM :
-   def __init__(self, andro, class_name, wm_type, output_file) :
-      
+   def __init__(self, andro, class_name, output_dir, wm_type, output_file) :
+      self.__output_dir = output_dir
+
       if wm_type == [] :
          raise("....")
 
@@ -103,6 +104,12 @@ class WM :
 
       fd.write("</andro>\n")
 
+      fd.close()
+
+
+
+      fd = open(output_dir + class_name + ".class", "w" )
+      fd.write( _vm.save() )
       fd.close()
 
 class WMCheck :

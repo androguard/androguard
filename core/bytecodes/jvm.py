@@ -816,6 +816,31 @@ class CreateCodeAttributeInfo :
              pack( '>H', self.__attributes_count ) + \
              ''.join( i.get_raw() for i in self.__attributes )
 
+# FIELD_INFO              =       [ '>HHHH',      namedtuple("FieldInfo", "access_flags name_index descriptor_index attributes_count") ]
+class CreateFieldInfo :
+   """Create a specific FieldInfo by given the name, the prototype of the "new" field"""
+   def __init__(self, class_manager, name, proto) :
+      self.__CM = class_manager
+
+      access_flags_value = proto[0]
+      type_value = proto[1]
+
+      self.__access_flags = INVERT_ACC_FIELD_FLAGS[ access_flags_value ]
+      self.__name_index = self.__CM.add_string( name )
+      if self.__name_index == -1 :
+         bytecode.Exit("field %s is already present ...." % name)
+
+      self.__descriptor_index = self.__CM.get_string_index( type_value )
+
+      self.__attributes = []
+
+   def get_raw(self) :
+      buff = pack( FIELD_INFO[0], self.__access_flags, self.__name_index, self.__descriptor_index, len(self.__attributes) )
+      
+      for i in self.__attributes :
+         buff += i.get_raw()
+
+      return buff
 
 # METHOD_INFO     =               [ '>HHHH', namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]                                                                                              
 class CreateMethodInfo :
@@ -2506,6 +2531,14 @@ class JVMFormat(bytecode._Bytecode) :
          @param value : the new string
       """
       self.__CM.add_string( value )
+
+   def insert_field(self, class_name, name, descriptor) :
+      new_field = CreateFieldInfo( self.__CM, name, descriptor )
+   
+      new_field = FieldInfo( self.__CM, bytecode.BuffHandle( new_field.get_raw() ) )
+
+      self.__fields.append( new_field )
+      self.fields_count.set_value( self.fields_count.get_value() + 1 )
 
    def insert_craft_method(self, name, proto, codes) :
       """Insert a craft method into the class
