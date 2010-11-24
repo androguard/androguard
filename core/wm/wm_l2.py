@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc
-import hashlib
+import misc, hashlib, string
 
-from networkx import DiGraph, draw_graphviz, write_dot
+from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
+from networkx import draw_graphviz, write_dot
 
 import random
 
@@ -28,23 +28,60 @@ def INIT() :
 
 class DepF :
    def __init__(self, field) :
-      G = DiGraph()
-     
-      ############ field -> profondeur, largeur, cycle ############
+      self.__field = field
 
-      self.__depth = 3
+      ############ create depency graph #########
+      self.__depth = 3 
       self.__width = 3 
       self.__cycle = 2
+      
+      self.__G = DiGraph()
+      
+      G = self.__G
 
       G.add_node( self._new_node(G) )
+      self.__random( G, 0 )
 
-      self.__random( G, 0, self.__width, self.__cycle )
+      d = all_pairs_dijkstra_path_length( G )
+      l = list( reversed( sorted( d, key=lambda key: len(d[key]) ) ) )
+      for i in l :
+         if self.__cycle == 0 :
+            break
+
+         d_tmp = sorted( d[i], key=lambda key: d[i][key] )
+         G.add_edge( d_tmp[-1], i)
+         self.__cycle = self.__cycle - 1
+
+      print simple_cycles( G )
 
       print G.node
       print G.edge
+      print G.degree()
 
-      draw_graphviz(G)
-      write_dot(G,'file.dot')
+      ############ Add field <-> higher #############
+      # field F depends of the higher degree
+      # F <---> sorted( G.degree(), key=lambda key : G.degree()[key] )[-1]
+      ##########################
+      
+      degree = G.degree()
+      high_degree = sorted( degree, key=lambda key : degree[key] )[-1]
+
+      G.add_edge( field.get_name(), high_degree )
+      G.add_edge( high_degree, field.get_name() )
+
+      #draw_graphviz(G)
+      #write_dot(G,'file.dot')
+     
+   def run(self, _vm) : 
+      ############ Create fields ############
+      fields = { self.__field.get_name() : self.__field.get_name() }
+      for i in self.__G.node :
+         print i, self.__G.predecessors( i )
+
+         if i not in fields :
+            fields[ i ] = random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ])
+
+            _vm.insert_field( self.__field.get_class_name(), fields[ i ], [ "ACC_PUBLIC", "I" ] )
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
@@ -52,14 +89,14 @@ class DepF :
    def _current_node(self, G) :
       return len(G.node) - 1
    
-   def __random(self, G, depth, width, cycle) :
+   def __random(self, G, depth) :
       if depth >= self.__depth : 
          return
 
-      for i in range( random.randint(1, width) ) :
+      for i in range( random.randint(1, self.__width) ) :
          nd = self._new_node(G)
          G.add_edge( "X%d" % depth, nd )
-         self.__random( G, self._current_node(G), width, cycle )
+         self.__random( G, self._current_node(G) )
 
 
 class WM_L2 :
@@ -77,13 +114,13 @@ class WM_L2 :
       for field in self.__vm.get_fields() :
       #   if random.randint(0, 1) == 1 :
          self.__dependencies.append( DepF( field ) )
-         break
 
-      raise("ooop")
+      for i in self.__dependencies : 
+         i.run( self.__vm )
 
-      self.__context[ "L_X" ].append( 
-                                       misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() ) 
-                                    )
+      self.__context[ "L_X" ].append( 20000 )
+      self.__context[ "L_X" ].append( 20001 )
+      self.__context[ "L_X" ].append( 20002 )
 
    def challenge(self, external_wm) :
       return []
