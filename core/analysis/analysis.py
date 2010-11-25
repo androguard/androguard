@@ -146,6 +146,10 @@ JVM_TOSTRING = { "O" : jvm.MATH_JVM_OPCODES.keys(),
                  "P" : jvm.FIELD_WRITE_JVM_OPCODES,
                }
 
+BREAK_JVM_OPCODES_RE = []
+for i in jvm.BREAK_JVM_OPCODES :
+   BREAK_JVM_OPCODES_RE.append( re.compile( i ) )
+     
 class Stack :
    def __init__(self) :
       self.__elems = []
@@ -205,8 +209,9 @@ class ExternalMethod :
       pass
 
 class JVMBasicBlock :
-   def __init__(self, start, _vm, _context) :
+   def __init__(self, start, _vm, _method, _context) :
       self.__vm = _vm
+      self.__method = _method
       self.__context = _context
 
       self.__stack = Stack()
@@ -220,7 +225,18 @@ class JVMBasicBlock :
       self.__start = start
       self.__end = self.__start
 
-      self.__name = "BB@0x%x" % self.__start
+
+      self.__break_blocks = []
+      
+      self.__local_variables = {}
+
+      self.__name = "%s-BB@0x%x" % (self.__method.get_name(), self.__start)
+
+   def get_method(self) :
+      return self.__method
+
+   def get_local_variables(self) :
+      return self.__local_variables
 
    def get_name(self) :
       return self.__name
@@ -261,8 +277,43 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
-   def analyze(self) :
+   def analyze_break_blocks(self) :
+      current_break = JVMBreakBlock( self.__vm )
+      self.__break_blocks.append(current_break)
+     
       for i in self.__ins :
+         name = i.get_name()
+
+         ##################### Break Block ########################
+         match = False
+         for j in BREAK_JVM_OPCODES_RE :
+            if j.match(name) != None :
+               match = True
+               break
+
+         current_break.push( i )
+         if match == True :
+            current_break.analyze()
+            current_break = JVMBreakBlock( self.__vm )
+
+            self.__break_blocks.append( current_break )
+         #########################################################
+
+   def analyze(self) :
+      idx = 0
+      for i in self.__ins :
+         if "load" in i.get_name() :
+            if "_" in i.get_name() :
+               name = i.get_name().split("load")
+               value = name[1][-1]
+            else :
+               value = i.get_operands()
+
+            if value not in self.__local_variables :
+               self.__local_variables[ value ] = []
+            
+            self.__local_variables[ value ].append( (idx, i.get_name()[0]) )
+
          if i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -272,7 +323,9 @@ class JVMBasicBlock :
                desc = ExternalFM( o[0], o[1], o[2] )
 
 #               print "RES", res, "-->", desc.get_name()
-            self.__context.get_tainted_fields().push_info( desc, (FIELDS[ i.get_name() ][0], self.get_name()) )
+            self.__context.get_tainted_fields().push_info( desc, (FIELDS[ i.get_name() ][0], self, idx) )
+         
+         idx += i.get_length()
 
    def analyze2(self) :
       for i in self.__ins :
@@ -438,6 +491,12 @@ class TaintedFields :
       self.__vm = _vm
       self.__fields = {}
 
+   def get(self, class_name, name, descriptor) :
+      for i in self.__fields :
+         if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
+            return self.__fields[i]
+      return None
+
    def add(self, field) :
       self.__fields[ field ] = TaintedField( field )
 
@@ -456,13 +515,11 @@ class TaintedFields :
             print "\t\t =>", path
 
 class BasicBlocks :
-   def __init__(self, _vm) :
+   def __init__(self, _vm, _tf) :
       self.__vm = _vm
-      self.__bb = []
+      self.__tainted_fields = _tf
 
-      self.__tainted_fields = TaintedFields( self.__vm ) 
-      for i in self.__vm.get_fields() :
-         self.__tainted_fields.add( i )
+      self.__bb = []
 
    def push(self, bb):
       self.__bb.append( bb )
@@ -481,37 +538,30 @@ class BasicBlocks :
          yield i
 
 class GVM_BCA :
-   def __init__(self, _vm, _method) :
+   def __init__(self, _vm, _method, tf) :
       self.__vm = _vm
       self.__method = _method
 
+      self.__tainted_fields = tf
 
-      BO = { "BreakOPCODES" : jvm.BREAK_JVM_OPCODES, "BreakClass" : JVMBreakBlock, 
-             "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
+
+      BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
              "TS" : JVM_TOSTRING }
       if self.__vm.get_type() == "DVM" :
-         BO = { "BreakOPCODES" : dvm.BREAK_DVM_OPCODES, "BreakClass" : DVMBreakBlock, "TS" : DVM_TOSTRING }
+         BO = { "TS" : DVM_TOSTRING }
 
       self.__TS = ToString( BO[ "TS" ] )
       
-      BO["BreakOPCODES_H"] = []
-      for i in BO["BreakOPCODES"] :
-         BO["BreakOPCODES_H"].append( re.compile( i ) )
-     
       BO["BasicOPCODES_H"] = []
       for i in BO["BasicOPCODES"] :
          BO["BasicOPCODES_H"].append( re.compile( i ) )
 
       code = self.__method.get_code()
 
-      self.__basic_blocks = BasicBlocks( self.__vm )
-      current_basic = BO["BasicClass"]( 0, self.__vm, self.__basic_blocks )
+      self.__basic_blocks = BasicBlocks( self.__vm, self.__tainted_fields )
+      current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.__basic_blocks )
       self.__basic_blocks.push( current_basic )
       
-      self.__break_blocks = []
-      current_break = BO["BreakClass"]( self.__vm )
-      self.__break_blocks.append(current_break)
-
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
@@ -528,23 +578,9 @@ class GVM_BCA :
          
          current_basic.push( i )
          if match == True :
-            current_basic = BO["BasicClass"]( current_basic.get_end() + 1, self.__vm, self.__basic_blocks )
+            current_basic.analyze_break_blocks()
+            current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.__basic_blocks )
             self.__basic_blocks.push( current_basic )
-
-         ##################### Break Block ########################
-         match = False
-         for j in BO["BreakOPCODES_H"] :
-            if j.match(name) != None :
-               match = True
-               break
-
-         current_break.push( i )
-         if match == True :
-            current_break.analyze()
-            current_break = BO["BreakClass"]( self.__vm )
-
-            self.__break_blocks.append( current_break )
-         #########################################################
 
       for i in self.__basic_blocks.get() :
          i.set_childs()
@@ -563,6 +599,19 @@ class GVM_BCA :
 
    def get_op(self, op) :
       return []
+
+   def get_local_variables(self) :
+      l = {} 
+      for i in self.__basic_blocks.get() :
+         l[ i ] = {}
+
+         x = i.get_local_variables()
+         for j in x :
+            if j not in l[ i ] :
+               l[ i ][ j ] = []
+
+            l[ i ][ j ].append( x[j] )
+      return l
 
    def get_ops(self) :
       l = []
@@ -622,12 +671,21 @@ class GVM_BCA :
 
 class VMBCA :
    def __init__(self, _vm) :
+      self.__vm = _vm
+
+      self.__tainted_fields = TaintedFields( self.__vm ) 
+      for i in self.__vm.get_fields() :
+         self.__tainted_fields.add( i )
+      
       self.__methods = []
       self.__hmethods = {}
-      for i in _vm.get_methods() :
-         x = GVM_BCA( _vm, i )
+      for i in self.__vm.get_methods() :
+         x = GVM_BCA( self.__vm, i, self.__tainted_fields )
          self.__methods.append( x )
          self.__hmethods[ i ] = x
+
+   def get_tainted_field(self, class_name, name, descriptor) :
+      return self.__tainted_fields.get( class_name, name, descriptor )
 
    def show(self) :
       for i in self.__methods :

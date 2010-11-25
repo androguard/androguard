@@ -30,7 +30,7 @@ class DepF :
    def __init__(self, field) :
       self.__field = field
 
-      ############ create depency graph #########
+      ############ create depency field graph #########
       self.__depth = 3 
       self.__width = 3 
       self.__cycle = 2
@@ -58,10 +58,10 @@ class DepF :
       print G.edge
       print G.degree()
 
-      ############ Add field <-> higher #############
+      ############ Add field <-> higher #####################################
       # field F depends of the higher degree
       # F <---> sorted( G.degree(), key=lambda key : G.degree()[key] )[-1]
-      ##########################
+      #######################################################################
       
       degree = G.degree()
       high_degree = sorted( degree, key=lambda key : degree[key] )[-1]
@@ -72,16 +72,39 @@ class DepF :
       #draw_graphviz(G)
       #write_dot(G,'file.dot')
      
-   def run(self, _vm) : 
-      ############ Create fields ############
+   def run(self, _vm, _analysis) : 
+      ############ Create dependencies fields ############
       fields = { self.__field.get_name() : self.__field.get_name() }
+
       for i in self.__G.node :
          print i, self.__G.predecessors( i )
 
          if i not in fields :
             fields[ i ] = random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ])
-
             _vm.insert_field( self.__field.get_class_name(), fields[ i ], [ "ACC_PUBLIC", "I" ] )
+
+      ############################################################################
+      # Integer variables :
+      # X -> Y 
+      #         - a depth into the calcul
+      #         Y = { LV + LLV + NLV } x { &, -, +, |, *, /, ^ } x { &&, || }
+      #         if (Y != ?) {
+      #                 X = ..... ;
+      #         }
+      #############################################################################
+      # get a local variable
+      #         - used into a loop
+      #         - a parameter
+      #         - a new one
+      ############################################################################
+
+      print "F -->", self.__G.successors( self.__field.get_name() )
+      taint_field = _analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
+      for path in taint_field.get_paths() :
+         print "\t", path[0], path[1].get_name(), path[1].get_start() + path[2],
+         x = _analysis.get( path[1].get_method() )
+
+         print x.get_local_variables()[ path[1] ]   #path[1].get_local_variables()
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
@@ -116,7 +139,7 @@ class WM_L2 :
          self.__dependencies.append( DepF( field ) )
 
       for i in self.__dependencies : 
-         i.run( self.__vm )
+         i.run( self.__vm, self.__analysis )
 
       self.__context[ "L_X" ].append( 20000 )
       self.__context[ "L_X" ].append( 20001 )

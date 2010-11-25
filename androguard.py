@@ -107,7 +107,6 @@ class WM :
       fd.close()
 
 
-
       fd = open(output_dir + class_name + ".class", "w" )
       fd.write( _vm.save() )
       fd.close()
