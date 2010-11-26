@@ -98,15 +98,29 @@ class DepF :
       #         - a new one
       ############################################################################
 
+      find = False
+
       print "F -->", self.__G.successors( self.__field.get_name() )
       taint_field = _analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
       for path in taint_field.get_paths() :
-         print "\t", path[0], path[1].get_name(), path[1].get_start() + path[2]
+         print "\t", path[0], "%s (%d-%d)" % (path[1].get_name(), path[1].get_start(), path[1].get_end()) , path[1].get_start() + path[2], 
          x = _analysis.get( path[1].get_method() )
 
-         print x.get_local_variables()
-         #print x.get_local_variables()[ path[1] ]
-         #print x.get_local_variables()[ path[1] ]   #path[1].get_local_variables()
+         bb = x.get_break_block( path[1].get_start() + path[2] )
+         print bb, bb.get_start(), bb.get_end()
+
+         print "\t\t", x.get_local_variables()
+
+         if path[0] == "R" and find == False :
+            print "Insert"
+            code = path[1].get_method().get_code()
+            idx = code.get_relative_idx( bb.get_start() )
+            size_r = code.inserts_at( idx, [ [ "iload_3" ], [ "iconst_0" ] ] )
+
+            print size_r
+            code.insert_at( idx + 2, [ "if_icmpge", (bb.get_end() - bb.get_start()) + 3 ] )
+
+            find = True
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
@@ -139,6 +153,7 @@ class WM_L2 :
       for field in self.__vm.get_fields() :
       #   if random.randint(0, 1) == 1 :
          self.__dependencies.append( DepF( field ) )
+         break
 
       for i in self.__dependencies : 
          i.run( self.__vm, self.__analysis )
