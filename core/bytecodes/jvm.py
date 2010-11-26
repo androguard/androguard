@@ -1125,6 +1125,16 @@ class JavaCode :
          i.show( self.__maps[nb] )
          nb += 1
 
+   def get_relative_idx(self, idx) :
+      n = 0
+      x = 0
+      for i in self.__bytecodes :
+         if n == idx :
+            return x
+         n += i.get_length()
+         x += 1
+      return -1
+
    def get_at(self, idx) :
       return self.__bytecodes[ idx ]
 
@@ -1178,6 +1188,8 @@ class JavaCode :
          if i > val :
             self.__branches[ nb ] = i + size 
          nb += 1
+
+  
 
    def insert_at(self, idx, bytecode) :
       """Insert bytecode at a specific index"""
@@ -1366,10 +1378,23 @@ class CodeAttribute(BasicAttribute) :
 
          i += 1
 
+   def inserts_at(self, idx, l_bc) :
+      total_size = 0
+      for i in l_bc :
+         size = self.insert_at( idx, i )
+         idx += size
+         total_size += size
+      return total_size
+
    def insert_at(self, idx, bytecode) :
       size = self.__code.insert_at(idx, bytecode)
       # Adjust the length of our bytecode
       self.low_struct.set_value( { "code_length" : self.low_struct.get_value().code_length + size } )
+
+      return size
+
+   def get_relative_idx(self, idx) :
+      return self.__code.get_relative_idx(idx)
 
    def get_at(self, idx) :
       return self.__code.get_at(idx)

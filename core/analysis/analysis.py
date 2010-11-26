@@ -77,14 +77,18 @@ class ToString :
       return self.__string
 
 class BreakBlock(object) :
-   def __init__(self, _vm) :
-      self._ins = []
+   def __init__(self, _vm, idx) :
       self._vm = _vm
+      self._start = idx
+      self._end = self._start 
 
+      self._ins = []
+      
       self._ops = []
 
       self._fields = {}
       self._methods = {}
+
 
    def get_ops(self) :
       return self._ops
@@ -97,6 +101,13 @@ class BreakBlock(object) :
 
    def push(self, ins) :
       self._ins.append(ins)
+      self._end += ins.get_length()
+
+   def get_start(self) :
+      return self._start
+
+   def get_end(self) :
+      return self._end
 
    def show(self) :
       for i in self._ins :
@@ -272,10 +283,17 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
+   def get_break_block(self, idx) :
+      for i in self.__break_blocks :
+         if idx >= i.get_start() and idx <= i.get_end() :
+            return i
+      return None
+
    def analyze_break_blocks(self) :
-      current_break = JVMBreakBlock( self.__vm )
+      idx = self.get_start()
+
+      current_break = JVMBreakBlock( self.__vm, idx )
       self.__break_blocks.append(current_break)
-     
       for i in self.__ins :
          name = i.get_name()
 
@@ -289,10 +307,12 @@ class JVMBasicBlock :
          current_break.push( i )
          if match == True :
             current_break.analyze()
-            current_break = JVMBreakBlock( self.__vm )
+            current_break = JVMBreakBlock( self.__vm, current_break.get_end() )
 
             self.__break_blocks.append( current_break )
          #########################################################
+
+         idx += i.get_length()
 
    def analyze(self) :
       idx = 0
@@ -371,8 +391,8 @@ class JVMBasicBlock :
       print "\t\tC --->", ', '.join( i.get_name() for i in self.__childs )
 
 class JVMBreakBlock(BreakBlock) : 
-   def __init__(self, _vm) :
-      super(JVMBreakBlock, self).__init__(_vm)
+   def __init__(self, _vm, idx) :
+      super(JVMBreakBlock, self).__init__(_vm, idx)
       
       self.__info = { 
                         "F" : [ "get_field_descriptor", self._fields, ContextField ],
@@ -542,7 +562,7 @@ class TaintedVariables :
             for var in self.__vars[k] :
                print "\t\t ", var
                for path in self.__vars[k][var].get_paths() :
-                  print "\t\t\t => ", path
+                  print "\t\t\t => ", path[0], path[1].get_name(), path[2]
 
 class BasicBlocks :
    def __init__(self, _vm, _tv) :
@@ -610,12 +630,19 @@ class GVM_BCA :
             current_basic.analyze_break_blocks()
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.__basic_blocks )
             self.__basic_blocks.push( current_basic )
+      current_basic.analyze_break_blocks()
 
       for i in self.__basic_blocks.get() :
          i.set_childs()
 
       for i in self.__basic_blocks.get() :
          i.analyze()
+
+   def get_break_block(self, idx) :
+      for i in self.__basic_blocks.get() :
+         if idx >= i.get_start() and idx <= i.get_end() :
+            return i.get_break_block( idx )
+      return None
 
    def get_bb(self) :
       return self.__break_blocks
