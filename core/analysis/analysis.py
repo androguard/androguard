@@ -228,15 +228,10 @@ class JVMBasicBlock :
 
       self.__break_blocks = []
       
-      self.__local_variables = {}
-
       self.__name = "%s-BB@0x%x" % (self.__method.get_name(), self.__start)
 
    def get_method(self) :
       return self.__method
-
-   def get_local_variables(self) :
-      return self.__local_variables
 
    def get_name(self) :
       return self.__name
@@ -309,11 +304,10 @@ class JVMBasicBlock :
             else :
                value = i.get_operands()
 
-            if value not in self.__local_variables :
-               self.__local_variables[ value ] = []
+            variable_name = "%s-%s" % (i.get_name()[0], value)
             
-            self.__local_variables[ value ].append( (idx, i.get_name()[0]) )
-
+            self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
+            self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (idx, self, 'R'), self.__method ) 
          if i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -323,7 +317,7 @@ class JVMBasicBlock :
                desc = ExternalFM( o[0], o[1], o[2] )
 
 #               print "RES", res, "-->", desc.get_name()
-            self.__context.get_tainted_fields().push_info( desc, (FIELDS[ i.get_name() ][0], self, idx) )
+            self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], self, idx) )
          
          idx += i.get_length()
 
@@ -471,14 +465,21 @@ class JVMBreakBlock(BreakBlock) :
          return "F" + i.get_operands()[2]
 
 
-class TaintedField :
-   def __init__(self, field) :
-      self.__field = field
+TAINTED_LOCAL_VARIABLE = 0
+TAINTED_FIELD = 1
+class TaintedVariable :
+   def __init__(self, var, _type) :
+      self.__var = var
+      self.__type = _type
 
       self.__paths = []
 
+   def get_type(self) :
+      return self.__type
+
    def get_info(self) :
-      return [ self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() ]
+      if self.__type == TAINTED_FIELD :
+         return [ self.__var.get_class_name(), self.__var.get_name(), self.__var.get_descriptor() ]
 
    def push(self, info) :
       self.__paths.append( info )
@@ -486,38 +487,67 @@ class TaintedField :
    def get_paths(self) :
       return self.__paths
 
-class TaintedFields :
+class TaintedVariables :
    def __init__(self, _vm) :
       self.__vm = _vm
-      self.__fields = {}
+      self.__vars = {}
 
-   def get(self, class_name, name, descriptor) :
-      for i in self.__fields :
-         if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
-            return self.__fields[i]
+   def get_local_variables(self, _method) :
+      return self.__vars[ _method ]
+
+   def get_field(self, class_name, name, descriptor) :
+      for i in self.__vars :
+         if isinstance( self.__vars[i], dict ) == False :
+            if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
+               return self.__vars[i]
       return None
 
-   def add(self, field) :
-      self.__fields[ field ] = TaintedField( field )
+   def add(self, var, _type, _method=None) :
+      if _type == TAINTED_FIELD :
+         self.__vars[ var ] = TaintedVariable( var, _type )
+      elif _type == TAINTED_LOCAL_VARIABLE :
+         if _method not in self.__vars :
+            self.__vars[ _method ] = {}
 
-   def push_info(self, field, info) :
+         if var not in self.__vars[ _method ] : 
+            self.__vars[ _method ][ var ] = TaintedVariable( var, _type )
+      else :
+         raise("ooop")
+
+   def push_info(self, _type, var, info, _method=None) :
       try :
-         self.__fields[ field ].push( info ) 
+         if _type == TAINTED_FIELD : 
+            self.__vars[ var ].push( info ) 
+         elif _type == TAINTED_LOCAL_VARIABLE :
+            self.__vars[ _method ][ var ].push( info )
+         else :
+            raise("ooop")
       except KeyError :
          pass
 
    def show(self) :
       print "TAINTED FIELDS :"
 
-      for k in self.__fields :
-         print "\t -->", self.__fields[k].get_info()
-         for path in self.__fields[k].get_paths() :
-            print "\t\t =>", path
+      for k in self.__vars :
+         if isinstance( self.__vars[k], dict ) == False :
+            print "\t -->", self.__vars[k].get_info()
+            for path in self.__vars[k].get_paths() :
+               print "\t\t =>", path
+
+
+      print "TAINTED LOCAL VARIABLES :"
+      for k in self.__vars :
+         if isinstance( self.__vars[k], dict ) == True :
+            print "\t -->", k.get_class_name(), k.get_name(), k.get_descriptor()
+            for var in self.__vars[k] :
+               print "\t\t ", var
+               for path in self.__vars[k][var].get_paths() :
+                  print "\t\t\t => ", path
 
 class BasicBlocks :
-   def __init__(self, _vm, _tf) :
+   def __init__(self, _vm, _tv) :
       self.__vm = _vm
-      self.__tainted_fields = _tf
+      self.__tainted_variables = _tv
 
       self.__bb = []
 
@@ -530,20 +560,19 @@ class BasicBlocks :
             return i
       return None
 
-   def get_tainted_fields(self) :
-      return self.__tainted_fields
+   def get_tainted_variables(self) :
+      return self.__tainted_variables
 
    def get(self) :
       for i in self.__bb :
          yield i
 
 class GVM_BCA :
-   def __init__(self, _vm, _method, tf) :
+   def __init__(self, _vm, _method, tv) :
       self.__vm = _vm
       self.__method = _method
 
-      self.__tainted_fields = tf
-
+      self.__tainted_variables = tv
 
       BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
              "TS" : JVM_TOSTRING }
@@ -558,7 +587,7 @@ class GVM_BCA :
 
       code = self.__method.get_code()
 
-      self.__basic_blocks = BasicBlocks( self.__vm, self.__tainted_fields )
+      self.__basic_blocks = BasicBlocks( self.__vm, self.__tainted_variables )
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.__basic_blocks )
       self.__basic_blocks.push( current_basic )
       
@@ -601,17 +630,7 @@ class GVM_BCA :
       return []
 
    def get_local_variables(self) :
-      l = {} 
-      for i in self.__basic_blocks.get() :
-         l[ i ] = {}
-
-         x = i.get_local_variables()
-         for j in x :
-            if j not in l[ i ] :
-               l[ i ][ j ] = []
-
-            l[ i ][ j ].append( x[j] )
-      return l
+      return self.__tainted_variables.get_local_variables( self.__method )
 
    def get_ops(self) :
       l = []
@@ -629,7 +648,7 @@ class GVM_BCA :
          i.show()
          print ""
    
-      self.__basic_blocks.get_tainted_fields().show()
+      self.__basic_blocks.get_tainted_variables().show()
       #for i in self.__break_blocks :
       #   print "\t", i
       #   i.show()
@@ -673,19 +692,19 @@ class VMBCA :
    def __init__(self, _vm) :
       self.__vm = _vm
 
-      self.__tainted_fields = TaintedFields( self.__vm ) 
+      self.__tainted_variables = TaintedVariables( self.__vm ) 
       for i in self.__vm.get_fields() :
-         self.__tainted_fields.add( i )
+         self.__tainted_variables.add( i, TAINTED_FIELD )
       
       self.__methods = []
       self.__hmethods = {}
       for i in self.__vm.get_methods() :
-         x = GVM_BCA( self.__vm, i, self.__tainted_fields )
+         x = GVM_BCA( self.__vm, i, self.__tainted_variables )
          self.__methods.append( x )
          self.__hmethods[ i ] = x
 
    def get_tainted_field(self, class_name, name, descriptor) :
-      return self.__tainted_fields.get( class_name, name, descriptor )
+      return self.__tainted_variables.get_field( class_name, name, descriptor )
 
    def show(self) :
       for i in self.__methods :

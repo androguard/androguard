@@ -101,10 +101,12 @@ class DepF :
       print "F -->", self.__G.successors( self.__field.get_name() )
       taint_field = _analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
       for path in taint_field.get_paths() :
-         print "\t", path[0], path[1].get_name(), path[1].get_start() + path[2],
+         print "\t", path[0], path[1].get_name(), path[1].get_start() + path[2]
          x = _analysis.get( path[1].get_method() )
 
-         print x.get_local_variables()[ path[1] ]   #path[1].get_local_variables()
+         print x.get_local_variables()
+         #print x.get_local_variables()[ path[1] ]
+         #print x.get_local_variables()[ path[1] ]   #path[1].get_local_variables()
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
