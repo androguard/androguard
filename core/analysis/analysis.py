@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import re, random, string
 
 import jvm, dvm
 
@@ -729,6 +729,12 @@ class VMBCA :
          x = GVM_BCA( self.__vm, i, self.__tainted_variables )
          self.__methods.append( x )
          self.__hmethods[ i ] = x
+
+   def get_like_field(self) :
+      return [ random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ]),
+               "ACC_PUBLIC",
+               "I"
+             ]
 
    def get_tainted_field(self, class_name, name, descriptor) :
       return self.__tainted_variables.get_field( class_name, name, descriptor )
