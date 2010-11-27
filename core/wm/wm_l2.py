@@ -16,15 +16,38 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc, hashlib, string
+import misc, hashlib, string, random
 
 from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
 from networkx import draw_graphviz, write_dot
 
-import random
-
 def INIT() :
    return WM_L2
+
+# name, access_flags, descriptor
+# initial value
+# all access (write)
+# all dependencies actions (read / write )
+class Field :
+   def __init__(self, _vm, _analysis) :
+      self.__vm = _vm
+      self.__analysis = _analysis
+
+      self.__name, self.__access_flag, self.__descriptor = self.__analysis.get_like_field()
+
+      self.generate_init()
+
+   def generate_init(self) :
+      pass
+
+   def get_name(self) :
+      return self.__name
+
+   def get_access_flag(self) :
+      return self.__access_flag
+
+   def get_descriptor(self) :
+      return self.__descriptor
 
 class DepF :
    def __init__(self, field) :
@@ -73,16 +96,29 @@ class DepF :
       #write_dot(G,'file.dot')
      
    def run(self, _vm, _analysis) : 
-      ############ Create dependencies fields ############
-      fields = { self.__field.get_name() : self.__field.get_name() }
+      ###############################################################
+      ##  dict (method) of list ( offset / list (of instructions) ) #
+      ##        - insert an element                                 #
+      ##        - modify the offset with the new insertion          #
+      ###############################################################
+      list_OB = {} 
 
+      ############ Create dependencies fields ############
+      fields = { self.__field.get_name() : Field( _vm, _analysis ) }
+
+      ############ Create the name, the initial value and all access of the field ############
       for i in self.__G.node :
-         print i, self.__G.predecessors( i )
+         print i, "PRE ->", self.__G.predecessors( i ), self.__G.degree()[i]
 
          if i not in fields :
-            fields[ i ] = random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ])
-            _vm.insert_field( self.__field.get_class_name(), fields[ i ], [ "ACC_PUBLIC", "I" ] )
+            fields[ i ] = Field( _vm, _analysis )
+            _vm.insert_field( self.__field.get_class_name(), fields[ i ].get_name(), [ fields[ i ].get_access_flag(), fields[ i ].get_descriptor() ] ) 
+            
 
+      return
+
+      ############ Create the depedency ############
+      
       ############################################################################
       # Integer variables :
       # X -> Y 
@@ -97,7 +133,6 @@ class DepF :
       #         - a parameter
       #         - a new one
       ############################################################################
-
       find = False
 
       print "F -->", self.__G.successors( self.__field.get_name() )
@@ -121,6 +156,24 @@ class DepF :
             code.insert_at( idx + 2, [ "if_icmpge", (bb.get_end() - bb.get_start()) + 3 ] )
 
             find = True
+
+      ##### Insert all modifications
+      for m in list_OB :
+         code = m.get_code()
+
+         i = 0
+         while i < len( list_OB[ m ] ) :
+            v = list_OB[ m ][ i ]
+            size_r = code.inserts_at( v[0], v[1] )
+
+            j = i + 1
+            while j < len( list_OB[ m ] ) :
+               v1 = list_OB[ m ][ j ]
+               if v1[0] > v[0] :
+                  v1[0] += size_r
+               j = j + 1
+            i = i + 1
+
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
