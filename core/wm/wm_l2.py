@@ -29,29 +29,49 @@ def INIT() :
 # all access (write)
 # all dependencies actions (read / write )
 class Field :
-   def __init__(self, _vm, _analysis) :
+   def __init__(self, _vm, _analysis, field, offsets, real=False) :
       self.__vm = _vm
       self.__analysis = _analysis
 
-      self.__name, self.__access_flag, self.__descriptor = self.__analysis.get_like_field()
+      self.__field = field
+      self.__offsets = offsets
+      
+      self.__real = real
+     
+      self.__init_offset = 0
+      self.__init_value = None
 
-      self.generate_init()
+      self.__access_offset = []
 
-   def generate_init(self) :
-      pass
+   def run(self, degree) :
+      if self.__real == False :
+         self.__init_offset = self.__offsets.add_offset( self.__analysis.get_free_offset( "<init>" ) )
+         
+         value = self.__analysis.get_free_init_value( "<init>", self.__field.get_descriptor() )
+         self.__init_value = self.__analysis.create_affectation( "<init>", self.__field, value )
+
+         for i in range(0, degree) :
+            self.__access_offset.append( self.__offsets.add_offset( self.__analysis.get_free_offset( "." ) ) )
 
    def get_name(self) :
-      return self.__name
+      return self.__field.get_name()
 
    def get_access_flag(self) :
-      return self.__access_flag
+      return self.__field.get_access_flag()
 
    def get_descriptor(self) :
-      return self.__descriptor
+      return self.__field.get_descriptor()
+
+class Offset :
+   def __init__(self, idx) :
+      self.__idx = idx
 
 class DepF :
    def __init__(self, field) :
+      self.__offsets = []
+
       self.__field = field
+
 
       ############ create depency field graph #########
       self.__depth = 3 
@@ -94,7 +114,12 @@ class DepF :
 
       #draw_graphviz(G)
       #write_dot(G,'file.dot')
-     
+    
+   def add_offset(self, idx) :
+      x = Offset( idx ) 
+      self.__offsets.append( x )
+      return x
+
    def run(self, _vm, _analysis) : 
       ###############################################################
       ##  dict (method) of list ( offset / list (of instructions) ) #
@@ -104,16 +129,22 @@ class DepF :
       list_OB = {} 
 
       ############ Create dependencies fields ############
-      fields = { self.__field.get_name() : Field( _vm, _analysis ) }
+      fields = { self.__field.get_name() : Field( _vm, _analysis, self.__field, self, True ) }
+      fields[ self.__field.get_name() ].run( self.__G.degree()[ self.__field.get_name() ] )
 
       ############ Create the name, the initial value and all access of the field ############
       for i in self.__G.node :
          print i, "PRE ->", self.__G.predecessors( i ), self.__G.degree()[i]
 
          if i not in fields :
-            fields[ i ] = Field( _vm, _analysis )
-            _vm.insert_field( self.__field.get_class_name(), fields[ i ].get_name(), [ fields[ i ].get_access_flag(), fields[ i ].get_descriptor() ] ) 
+            name, access_flag, descriptor = _analysis.get_like_field()
+            _vm.insert_field( self.__field.get_class_name(), name, [ access_flag, descriptor ] ) 
             
+            fields[ i ] = Field( _vm, _analysis, _vm.get_field_descriptor( self.__field.get_class_name(), name, descriptor ), self )
+            fields[ i ].run( self.__G.degree()[i] )
+            
+      for i in fields :
+         fields[ i ].show()
 
       return
 

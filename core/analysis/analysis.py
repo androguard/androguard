@@ -283,6 +283,9 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
+   def get_random_break_block(self) :
+      return self.__break_blocks[ random.randint(0, len(self.__break_blocks) - 1) ]
+
    def get_break_block(self, idx) :
       for i in self.__break_blocks :
          if idx >= i.get_start() and idx <= i.get_end() :
@@ -317,9 +320,15 @@ class JVMBasicBlock :
    def analyze(self) :
       idx = 0
       for i in self.__ins :
-         if "load" in i.get_name() :
-            if "_" in i.get_name() :
-               name = i.get_name().split("load")
+         if "load" in i.get_name() or "store" in i.get_name() :
+            action = i.get_name()
+
+            access_flag = [ "R", "load" ]
+            if "store" in action : 
+               access_flag = [ "W", "store" ]
+
+            if "_" in action :
+               name = i.get_name().split(access_flag[1])
                value = name[1][-1]
             else :
                value = i.get_operands()
@@ -327,7 +336,7 @@ class JVMBasicBlock :
             variable_name = "%s-%s" % (i.get_name()[0], value)
             
             self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
-            self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (idx, self, 'R'), self.__method ) 
+            self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (idx, self, access_flag[0]), self.__method ) 
          if i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -552,7 +561,7 @@ class TaintedVariables :
          if isinstance( self.__vars[k], dict ) == False :
             print "\t -->", self.__vars[k].get_info()
             for path in self.__vars[k].get_paths() :
-               print "\t\t =>", path
+               print "\t\t =>", path[0], path[1].get_name(), path[2]
 
 
       print "TAINTED LOCAL VARIABLES :"
@@ -638,6 +647,12 @@ class GVM_BCA :
       for i in self.__basic_blocks.get() :
          i.analyze()
 
+   def get_free_offset(self, idx=0) :
+      for i in self.__basic_blocks.get() :
+         if idx >= i.get_start() :
+            return i.get_random_break_block().get_start()
+      return -1
+
    def get_break_block(self, idx) :
       for i in self.__basic_blocks.get() :
          if idx >= i.get_start() and idx <= i.get_end() :
@@ -676,12 +691,6 @@ class GVM_BCA :
          print ""
    
       self.__basic_blocks.get_tainted_variables().show()
-      #for i in self.__break_blocks :
-      #   print "\t", i
-      #   i.show()
-
-      #self.__tainted_fields.show()
-
       #self.show_fields()
       #self.show_methods()
 
@@ -695,16 +704,6 @@ class GVM_BCA :
       else:                      
          yield root
    
-   def show_fields(self) :
-      print "\t #FIELDS :"
-      l = []
-      for i in self.__bb :
-         fields = i.get_fields()
-         for field in fields :
-            print "\t\t-->", field.get_class_name(), field.get_name(), field.get_descriptor()
-            for context in fields[field] :
-               print "\t\t\t |---|",  context.mode, context.details
-
    def show_methods(self) :
       print "\t #METHODS :"
       l = []
@@ -725,16 +724,37 @@ class VMBCA :
       
       self.__methods = []
       self.__hmethods = {}
+      self.__nmethods = {}
+
       for i in self.__vm.get_methods() :
          x = GVM_BCA( self.__vm, i, self.__tainted_variables )
          self.__methods.append( x )
          self.__hmethods[ i ] = x
+         self.__nmethods[ i.get_name() ] = x
 
    def get_like_field(self) :
       return [ random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ]),
                "ACC_PUBLIC",
                "I"
              ]
+
+   def get_free_init_value(self, method_name, descriptor) :
+      return self.__tainted_variables.get_free_init_value( descriptor, method_name )
+
+   def get_free_offset(self, method_name, idx=0) :
+      # Random method "." to get a free offset
+      if method_name == "." :
+         for i in self.__hmethods :
+            if random.randint(0, 1) == 1 :
+               return self.__hmethods[i].get_free_offset(idx)
+         return self.__methods[0].get_free_offset(idx)
+
+      # We would like a specific free offset in a method
+      try :
+         return self.__nmethods[ method_name ].get_free_offset( idx )
+      except KeyError :
+         # We haven't found the method ...
+         return -1
 
    def get_tainted_field(self, class_name, name, descriptor) :
       return self.__tainted_variables.get_field( class_name, name, descriptor )
