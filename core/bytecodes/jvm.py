@@ -24,6 +24,8 @@ from struct import pack, unpack, calcsize
 from collections import namedtuple
 import re
 
+import jvm_generate
+
 # Special functions to manage more easily special arguments of bytecode 
 def special_F0(x) :
    return [ i for i in x ]
@@ -251,7 +253,7 @@ JAVA_OPCODES = {
                   0x0  : [ "nop" ],
                   0x57 : [ "pop" ],
                   0x58 : [ "pop2" ],
-                  0xb5 : [ "putfield", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field" ],
+                  0xb5 : [ "putfield", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field", "get_field_index" ],
                   0xb3 : [ "putstatic", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field", "get_field_index" ],
                   0xa9 : [ "ret", "index:B", special_F0, special_F0, None ],
                   0xb1 : [ "return" ],
@@ -579,6 +581,12 @@ class FieldInfo :
 
    def get_attributes(self) :
       return self.__attributes
+
+   def get_name_index(self) :
+      return self.format.get_value().name_index
+
+   def get_descriptor_index(self) :
+      return self.format.get_value().descriptor_index
 
    def show(self) :
       print self.format.get_value(), self.get_name(), self.get_descriptor()
@@ -1193,7 +1201,6 @@ class JavaCode :
 
    def insert_at(self, idx, bytecode) :
       """Insert bytecode at a specific index"""
-
       # Get the op_value and add it to the raw_buff
       op_name = bytecode[0]
       op_value = INVERT_JAVA_OPCODES[ op_name ]
@@ -1209,7 +1216,6 @@ class JavaCode :
         
          # Special values for this op_value (advanced bytecode)
          if len( JAVA_OPCODES[ op_value ] ) == 6 :
-            
             
             value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *bytecode[1:] )
             if value == -1 :
@@ -1382,7 +1388,7 @@ class CodeAttribute(BasicAttribute) :
       total_size = 0
       for i in l_bc :
          size = self.insert_at( idx, i )
-         idx += size
+         idx += 1 
          total_size += size
       return total_size
 
@@ -2248,7 +2254,7 @@ class ClassManager :
       new_fr_index = self.get_field_ref_index( new_class_index, new_name_and_type_index )
       if new_fr_index == -1 :
          new_fr = CreateFieldRef( self, new_class_index, new_name_and_type_index )
-         self.add_constant_pool( FieldRef( self, bytecode.BuffHandle( new_mr.get_raw() ) ) )
+         self.add_constant_pool( FieldRef( self, bytecode.BuffHandle( new_fr.get_raw() ) ) )
          new_fr_index = self.get_constant_pool_count() - 1
       return new_fr_index
 
@@ -2565,6 +2571,10 @@ class JVMFormat(bytecode._Bytecode) :
       self.__fields.append( new_field )
       self.fields_count.set_value( self.fields_count.get_value() + 1 )
 
+      # Add a FieldRef and a NameAndType
+      name_and_type_index = self.__CM.create_name_and_type_by_index( new_field.get_name_index(), new_field.get_descriptor_index() )
+      self.__CM.create_field_ref( self.__CM.get_this_class(), name_and_type_index )                                                                                                                                              
+
    def insert_craft_method(self, name, proto, codes) :
       """Insert a craft method into the class
   
@@ -2709,6 +2719,9 @@ class JVMFormat(bytecode._Bytecode) :
          @rtype: string
       """
       return self._get_raw()
+
+   def get_generator(self) :
+      return jvm_generate.JVMGenerate
 
    def get_INTEGER_INSTRUCTIONS(self) :
       return INTEGER_INSTRUCTIONS

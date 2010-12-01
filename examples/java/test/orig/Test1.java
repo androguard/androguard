@@ -12,6 +12,8 @@ public class Test1 {
     public int test_base(int _value, int _value2) {
       int y = 0;
       
+      System.out.println("VALUE = " + this.value + " VALUE 2 = " + this.value2);
+
       for(int i = 0; i < (_value + _value2); i++) {
          y = this.value + y - this.value2;
          y = y & 200 * test1(20);
