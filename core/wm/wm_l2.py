@@ -173,6 +173,7 @@ class DepF :
             fields[ i ] = Field( _vm, _analysis, _vm_generate, _vm.get_field_descriptor( self.__field.get_class_name(), name, descriptor ), self )
             fields[ i ].run( self.__G.degree()[i] )
 
+      ########## Add all fields initialisation into the final list ############
       for i in fields :
          x = fields[ i ].insert_init()
          if x != None :
@@ -181,30 +182,6 @@ class DepF :
             except KeyError :
                list_OB[ x[0] ] = []
                list_OB[ x[0] ].append( (x[1], x[2]) )
-
-      ##### Insert all modifications
-      for m in list_OB :
-         code = m.get_code()
-
-         i = 0
-         while i < len( list_OB[ m ] ) :
-            v = list_OB[ m ][ i ]
-
-            print "INSERT @ %d(%d) %s" % (v[0].get_idx(), code.get_relative_idx( v[0].get_idx() ), m.get_name()), v[1]
-            size_r = code.inserts_at( code.get_relative_idx( v[0].get_idx() ), v[1] )
-
-            code.show()
-
-            j = i + 1
-            while j < len( list_OB[ m ] ) :
-               v1 = list_OB[ m ][ j ]
-               if v1[0].get_idx() >= v[0].get_idx() :
-                  print "ADJUST", v1, v1[0].get_idx()
-                  v1[0].add_idx( size_r )
-               j = j + 1
-            i = i + 1
-
-      return
 
       ############ Create the depedency ############
       
@@ -226,25 +203,43 @@ class DepF :
 
       print "F -->", self.__G.successors( self.__field.get_name() )
       taint_field = _analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
+      
       for path in taint_field.get_paths() :
-         print "\t", path[0], "%s (%d-%d)" % (path[1].get_name(), path[1].get_start(), path[1].get_end()) , path[1].get_start() + path[2], 
-         x = _analysis.get( path[1].get_method() )
+         print "\t", path.get_access_flag(), "%s (%d-%d)" % (path.get_bb().get_name(), path.get_bb().get_start(), path.get_bb().get_end()) , path.get_bb().get_start() + path.get_idx(), 
+         x = _analysis.get( path.get_bb().get_method() )
 
-         bb = x.get_break_block( path[1].get_start() + path[2] )
-         print bb, bb.get_start(), bb.get_end()
+         bb = x.get_break_block( path.get_bb().get_start() + path.get_idx() )
 
          print "\t\t", x.get_local_variables()
 
-         if path[0] == "R" and find == False :
-            print "Insert"
-            code = path[1].get_method().get_code()
-            idx = code.get_relative_idx( bb.get_start() )
-            size_r = code.inserts_at( idx, [ [ "iload_3" ], [ "iconst_0" ] ] )
+         if path.get_access_flag() == "R" and find == False :
+            o = self.add_offset( _analysis.get_free_offset( path.get_method(), bb.get_start() ) )
 
-            print size_r
-            code.insert_at( idx + 2, [ "if_icmpge", (bb.get_end() - bb.get_start()) + 3 ] )
+            try :
+               list_OB[ path.get_method() ].append( o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", (bb.get_end() - bb.get_start()) + 3 ] ] )
+            except KeyError :
+               list_OB[ path.get_method() ] = []
+               list_OB[ path.get_method() ].append( (o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", (bb.get_end() - bb.get_start()) + 3 ] ] ) )
 
             find = True
+
+      ##### Insert all modifications
+      for m in list_OB :
+         code = m.get_code()
+
+         i = 0
+         while i < len( list_OB[ m ] ) :
+            v = list_OB[ m ][ i ]
+
+            size_r = code.inserts_at( code.get_relative_idx( v[0].get_idx() ), v[1] )
+
+            j = i + 1
+            while j < len( list_OB[ m ] ) :
+               v1 = list_OB[ m ][ j ]
+               if v1[0].get_idx() >= v[0].get_idx() :
+                  v1[0].add_idx( size_r )
+               j = j + 1
+            i = i + 1
 
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
