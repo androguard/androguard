@@ -283,6 +283,11 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
+   def get_random_free_break_block(self) :
+      for i in self.__break_blocks :
+         print i, i.show()
+
+
    def get_random_break_block(self) :
       return self.__break_blocks[ random.randint(0, len(self.__break_blocks) - 1) ]
 
@@ -336,7 +341,7 @@ class JVMBasicBlock :
             variable_name = "%s-%s" % (i.get_name()[0], value)
             
             self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
-            self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (idx, self, access_flag[0]), self.__method ) 
+            self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.__method) ) 
          if i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -346,7 +351,7 @@ class JVMBasicBlock :
                desc = ExternalFM( o[0], o[1], o[2] )
 
 #               print "RES", res, "-->", desc.get_name()
-            self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], self, idx) )
+            self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
          
          idx += i.get_length()
 
@@ -498,6 +503,25 @@ class JVMBreakBlock(BreakBlock) :
 
 TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
+class Path :
+   def __init__(self, info) :
+      self.__access_flag = info[0]
+      self.__idx = info[1]
+      self.__bb = info[2]
+      self.__method = info[3]
+
+   def get_access_flag(self) :
+      return self.__access_flag
+
+   def get_idx(self) :
+      return self.__idx
+
+   def get_bb(self) :
+      return self.__bb
+
+   def get_method(self) :
+      return self.__method
+
 class TaintedVariable :
    def __init__(self, var, _type) :
       self.__var = var
@@ -513,10 +537,11 @@ class TaintedVariable :
          return [ self.__var.get_class_name(), self.__var.get_name(), self.__var.get_descriptor() ]
 
    def push(self, info) :
-      self.__paths.append( info )
+      self.__paths.append( Path( info ) )
 
    def get_paths(self) :
-      return self.__paths
+      for i in self.__paths :
+         yield i
 
 class TaintedVariables :
    def __init__(self, _vm) :
@@ -550,7 +575,7 @@ class TaintedVariables :
          if _type == TAINTED_FIELD : 
             self.__vars[ var ].push( info ) 
          elif _type == TAINTED_LOCAL_VARIABLE :
-            self.__vars[ _method ][ var ].push( info )
+            self.__vars[ info[-1] ][ var ].push( info )
          else :
             raise("ooop")
       except KeyError :
@@ -563,7 +588,7 @@ class TaintedVariables :
          if isinstance( self.__vars[k], dict ) == False :
             print "\t -->", self.__vars[k].get_info()
             for path in self.__vars[k].get_paths() :
-               print "\t\t =>", path[0], path[1].get_name(), path[2]
+               print "\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx()
 
 
       print "TAINTED LOCAL VARIABLES :"
@@ -573,7 +598,7 @@ class TaintedVariables :
             for var in self.__vars[k] :
                print "\t\t ", var
                for path in self.__vars[k][var].get_paths() :
-                  print "\t\t\t => ", path[0], path[1].get_name(), path[2]
+                  print "\t\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx()
 
 class BasicBlocks :
    def __init__(self, _vm, _tv) :
@@ -652,7 +677,7 @@ class GVM_BCA :
    def get_free_offset(self, idx=0) :
       for i in self.__basic_blocks.get() :
          if idx >= i.get_start() :
-            return i.get_random_break_block().get_start()
+            return i.get_random_free_break_block().get_start()
       return -1
 
    def get_break_block(self, idx) :
