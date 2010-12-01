@@ -29,15 +29,16 @@ def INIT() :
 # all access (write)
 # all dependencies actions (read / write )
 class Field :
-   def __init__(self, _vm, _analysis, field, offsets, real=False) :
+   def __init__(self, _vm, _analysis, _vm_generate, field, offsets, real=False) :
       self.__vm = _vm
       self.__analysis = _analysis
+      self.__vm_generate = _vm_generate
 
       self.__field = field
       self.__offsets = offsets
       
       self.__real = real
-     
+
       self.__init_offset = 0
       self.__init_value = None
 
@@ -45,13 +46,32 @@ class Field :
 
    def run(self, degree) :
       if self.__real == False :
-         self.__init_offset = self.__offsets.add_offset( self.__analysis.get_free_offset( "<init>" ) )
-         
-         value = self.__analysis.get_free_init_value( "<init>", self.__field.get_descriptor() )
-         self.__init_value = self.__analysis.create_affectation( "<init>", self.__field, value )
+         self.__init_method = self.__analysis.get_init_method()
+
+         # Get the initial offset to add the field into the init method
+         self.__init_offset = self.__offsets.add_offset( self.__analysis.get_free_offset( self.__init_method ) )
+
+         # Generate the initial value of our field, and the bytecodes associated
+         value = self.__analysis.get_random_integer_value( self.__init_method, self.__field.get_descriptor() )
+         self.__init_value = self.__vm_generate.create_affectation( self.__init_method, [ 0, self.__field, value ] )
 
          for i in range(0, degree) :
             self.__access_offset.append( self.__offsets.add_offset( self.__analysis.get_free_offset( "." ) ) )
+
+   def insert_init(self) :
+      """ return method object, init_offset (Offset object), init_value (a list of instructions ) """
+      if self.__real == False :
+         return self.__init_method, self.__init_offset, self.__init_value
+
+      #   code = self.__vm.get_method_descriptor( self.__field.get_class_name(), "<init>", "()V" ).get_code()
+      #   idx = code.get_relative_idx( self.__init_offset.get_idx() )
+
+      #   print "INSERT @ ", self.__init_offset, idx
+
+      #   print self.__init_value
+      #   code.inserts_at( idx, self.__init_value )
+
+      return None
 
    def get_name(self) :
       return self.__field.get_name()
@@ -66,34 +86,42 @@ class Offset :
    def __init__(self, idx) :
       self.__idx = idx
 
+   def get_idx(self) :
+      return self.__idx
+
+   def add_idx(self, off) :
+      self.__idx += off
+
 class DepF :
    def __init__(self, field) :
       self.__offsets = []
 
       self.__field = field
 
-
       ############ create depency field graph #########
+      # Initial values to build the graph (depth, width, cycles)
       self.__depth = 3 
       self.__width = 3 
-      self.__cycle = 2
+      self.__cycles = 2
       
       self.__G = DiGraph()
       
       G = self.__G
 
       G.add_node( self._new_node(G) )
+      # Create randomlu the graph without cycle
       self.__random( G, 0 )
 
+      # Find the best path to add cycles
       d = all_pairs_dijkstra_path_length( G )
       l = list( reversed( sorted( d, key=lambda key: len(d[key]) ) ) )
       for i in l :
-         if self.__cycle == 0 :
+         if self.__cycles == 0 :
             break
 
          d_tmp = sorted( d[i], key=lambda key: d[i][key] )
          G.add_edge( d_tmp[-1], i)
-         self.__cycle = self.__cycle - 1
+         self.__cycles = self.__cycles - 1
 
       print simple_cycles( G )
 
@@ -109,6 +137,7 @@ class DepF :
       degree = G.degree()
       high_degree = sorted( degree, key=lambda key : degree[key] )[-1]
 
+      # Link our protected field with the node which has the highest degree
       G.add_edge( field.get_name(), high_degree )
       G.add_edge( high_degree, field.get_name() )
 
@@ -120,7 +149,7 @@ class DepF :
       self.__offsets.append( x )
       return x
 
-   def run(self, _vm, _analysis) : 
+   def run(self, _vm, _analysis, _vm_generate) : 
       ###############################################################
       ##  dict (method) of list ( offset / list (of instructions) ) #
       ##        - insert an element                                 #
@@ -129,22 +158,51 @@ class DepF :
       list_OB = {} 
 
       ############ Create dependencies fields ############
-      fields = { self.__field.get_name() : Field( _vm, _analysis, self.__field, self, True ) }
+      fields = { self.__field.get_name() : Field( _vm, _analysis, _vm_generate, self.__field, self, True ) }
       fields[ self.__field.get_name() ].run( self.__G.degree()[ self.__field.get_name() ] )
 
       ############ Create the name, the initial value and all access of the field ############
       for i in self.__G.node :
          print i, "PRE ->", self.__G.predecessors( i ), self.__G.degree()[i]
 
+         # We have not yet add this new field
          if i not in fields :
             name, access_flag, descriptor = _analysis.get_like_field()
             _vm.insert_field( self.__field.get_class_name(), name, [ access_flag, descriptor ] ) 
             
-            fields[ i ] = Field( _vm, _analysis, _vm.get_field_descriptor( self.__field.get_class_name(), name, descriptor ), self )
+            fields[ i ] = Field( _vm, _analysis, _vm_generate, _vm.get_field_descriptor( self.__field.get_class_name(), name, descriptor ), self )
             fields[ i ].run( self.__G.degree()[i] )
-            
+
       for i in fields :
-         fields[ i ].show()
+         x = fields[ i ].insert_init()
+         if x != None :
+            try :
+               list_OB[ x[0] ].append( (x[1], x[2]) )
+            except KeyError :
+               list_OB[ x[0] ] = []
+               list_OB[ x[0] ].append( (x[1], x[2]) )
+
+      ##### Insert all modifications
+      for m in list_OB :
+         code = m.get_code()
+
+         i = 0
+         while i < len( list_OB[ m ] ) :
+            v = list_OB[ m ][ i ]
+
+            print "INSERT @ %d(%d) %s" % (v[0].get_idx(), code.get_relative_idx( v[0].get_idx() ), m.get_name()), v[1]
+            size_r = code.inserts_at( code.get_relative_idx( v[0].get_idx() ), v[1] )
+
+            code.show()
+
+            j = i + 1
+            while j < len( list_OB[ m ] ) :
+               v1 = list_OB[ m ][ j ]
+               if v1[0].get_idx() >= v[0].get_idx() :
+                  print "ADJUST", v1, v1[0].get_idx()
+                  v1[0].add_idx( size_r )
+               j = j + 1
+            i = i + 1
 
       return
 
@@ -188,24 +246,6 @@ class DepF :
 
             find = True
 
-      ##### Insert all modifications
-      for m in list_OB :
-         code = m.get_code()
-
-         i = 0
-         while i < len( list_OB[ m ] ) :
-            v = list_OB[ m ][ i ]
-            size_r = code.inserts_at( v[0], v[1] )
-
-            j = i + 1
-            while j < len( list_OB[ m ] ) :
-               v1 = list_OB[ m ][ j ]
-               if v1[0] > v[0] :
-                  v1[0] += size_r
-               j = j + 1
-            i = i + 1
-
-
    def _new_node(self, G) :
       return "X%d" % (len(G.node))
 
@@ -223,9 +263,11 @@ class DepF :
 
 
 class WM_L2 :
-   def __init__(self, vm, analysis) :
-      self.__vm = vm
-      self.__analysis = analysis
+   def __init__(self, _vm, _analysis) :
+      self.__vm = _vm
+      self.__analysis = _analysis
+
+      self.__vm_generate = self.__vm.get_generator()( self.__vm, self.__analysis )
 
       self.__dependencies = []
 
@@ -240,7 +282,7 @@ class WM_L2 :
          break
 
       for i in self.__dependencies : 
-         i.run( self.__vm, self.__analysis )
+         i.run( self.__vm, self.__analysis, self.__vm_generate )
 
       self.__context[ "L_X" ].append( 20000 )
       self.__context[ "L_X" ].append( 20001 )

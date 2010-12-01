@@ -396,6 +396,8 @@ class JVMBasicBlock :
          i.show(nb)
          nb += 1
 
+      print "\t\tBreakBlocks --->", len(self.__break_blocks)
+
       print "\t\tF --->", ', '.join( i.get_name() for i in self.__fathers )
       print "\t\tC --->", ', '.join( i.get_name() for i in self.__childs )
 
@@ -738,12 +740,16 @@ class VMBCA :
                "I"
              ]
 
-   def get_free_init_value(self, method_name, descriptor) :
-      return self.__tainted_variables.get_free_init_value( descriptor, method_name )
+   def get_init_method(self) :
+      m = self.__vm.get_method("<init>")
+      return m[0]
 
-   def get_free_offset(self, method_name, idx=0) :
+   def get_random_integer_value(self, method, descriptor) :
+      return 0
+
+   def get_free_offset(self, method, idx=0) :
       # Random method "." to get a free offset
-      if method_name == "." :
+      if method == "." :
          for i in self.__hmethods :
             if random.randint(0, 1) == 1 :
                return self.__hmethods[i].get_free_offset(idx)
@@ -751,10 +757,16 @@ class VMBCA :
 
       # We would like a specific free offset in a method
       try :
-         return self.__nmethods[ method_name ].get_free_offset( idx )
+         return self.__hmethods[ method ].get_free_offset( idx )
       except KeyError :
          # We haven't found the method ...
          return -1
+
+   def get_free_relative_offset(self, method, idx=0) :
+      value = self.get_free_offset( method, idx )
+
+      code = method.get_code()
+      return code.get_relative_idx( value )
 
    def get_tainted_field(self, class_name, name, descriptor) :
       return self.__tainted_variables.get_field( class_name, name, descriptor )

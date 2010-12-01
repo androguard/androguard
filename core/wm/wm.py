@@ -47,7 +47,8 @@ class WM :
                list_x.append( z )
 
             self.__wms[ "CLASS" ].append( (i, wb) )
-      
+     
+      # Create the secret sharing for class
       if list_x != [] :
          self.__wms[ "SSS_CLASS" ] = DWBO( "TOTO", list_x )
 
@@ -70,10 +71,9 @@ class WM :
 
                self.__wms[ "METHODS" ][ method ].append( (i, wb) )
 
-         if len(list_x) > 4 :
+         # Create the secret sharing for methods
+         if list_x != [] :
             self.__wms[ "SSS_METHODS" ][ method ] = DWBO( "TOTO", list_x )
-
-               #self.__ob = DWBO( "TOTO", list_x )#hashlib.sha512( method.get_raw() ).hexdigest(), list_x )
 
       #for i in self.__a.get_bb() :
       #   print i
