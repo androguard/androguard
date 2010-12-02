@@ -168,8 +168,14 @@ class Stack :
    def push(self, elem) :
       self.__elems.append( elem )
 
+   def get(self) :
+      return self.__elems[-1]
+
    def pop(self) :
       return self.__elems.pop(-1)
+
+   def nil(self) :
+      return len(self.__elems) == 0
 
    def show(self) :
       nb = 0
@@ -182,30 +188,133 @@ class Stack :
          nb += 1
 
 
-TEST = { 
-         "aload_0" : [ { "push_objectref" : 0 } ],
-         
-         "bipush" :  [ { "push_integer_i" : None } ],
-         "sipush" :  [ { "push_integer_i" : None } ],
-         
-         "iconst_0" : [ { "push_integer_d" : 0 } ], 
-         
-         "iload_1" : [ { "push_integer_l" : 1 } ], 
-         "iload_2" : [ { "push_integer_l" : 2 } ], 
-         "iload_3" : [ { "push_integer_l" : 3 } ], 
-         
-         "istore_2" : [ { "pop_objectref" : None }, { "set_objectref" : 2 } ],
-         "istore_3" : [ { "pop_objectref" : None }, { "set_objectref" : 3 } ],
-         
-         "invokespecial" : [ { "pop_callstack" : None }, { "pop_objectref" : None } ],
-         
-         "putfield" : [ { "putfield" : None }, { "pop_objectref" : None } ],
-         "getfield" : [ { "getfield" : None } ],
+def push_objectref(_vm, ins, special, stack) :
+   value = "OBJ_REF_@_%d" % special
+   stack.push( value )
 
-         "if_icmpge" : [],
-         "iadd" : [],
-         "invokevirtual" : [],
-       }
+   return []
+
+def push_integer_i(_vm, ins, special, stack) :
+   value = ins.get_operands()
+   stack.push( value )
+
+   return []
+
+def push_integer_d(_vm, ins, special, stack) :
+   stack.push( special )
+
+   return []
+
+def push_integer_l(_vm, ins, special, stack) :
+   stack.push( "VARIABLE_LOCAL_@_%d" % special )
+   return []
+
+def push_integer_l_i(_vm, ins, special, stack) :
+   stack.push( "VARIABLE_LOCAL_@_%d" % ins.get_operands() )
+
+   return []
+
+def pop_objectref(_vm, ins, special, stack) :
+   return [ stack.pop() ]
+
+def putfield(_vm, ins, special, stack) :
+   return [ stack.pop() ]
+
+def getfield(_vm, ins, special, stack) :
+   l = [ stack.pop() ]
+   stack.push( "FIELD" )
+
+   return l
+
+def getstatic(_vm, ins, special, stack) :
+   stack.push( "FIELD_STATIC" )
+
+   return []
+
+def new(_vm, ins, special, stack) :
+   stack.push( "NEW_OBJ" )
+   return []
+
+def dup(_vm, ins, special, stack) :
+   stack.push( stack.get() )
+   return []
+
+def ldc(_vm, ins, special, stack) :
+   stack.push( "STRING" )
+   return []
+
+def invokespecial(_vm, ins, special, stack) :
+   desc = ins.get_operands()[-1]
+   param = desc[1:desc.find(")")]
+   ret = desc[desc.find(")")+1:]
+
+   print "DESC --->", param, calc_nb( param ), ret, calc_nb( ret )
+
+   for i in range(0, calc_nb( param )) :
+      stack.pop()
+
+   stack.pop()
+                     
+   for i in range(0, calc_nb( ret )):
+      stack.push( "E" )
+
+   return []
+
+def set_objectref(_vm, ins, special, stack) :
+   print "SET OBJECT REF ", special, " --> ", stack.pop() 
+   return []
+
+def set_objectref_i(_vm, ins, special, stack) :
+   print "SET OBJECT REF ", ins.get_operands(), " --> ", stack.pop()
+   return []
+
+def calc_nb(info) :
+   if info == "" or info == "V" :
+      return 0
+
+   if ";" in info :
+      n = 0
+      for i in info.split(";") :
+         if i != "" :
+            n += 1
+      return n 
+   else :
+      return len(info)
+
+INSTRUCTIONS_ACTIONS = { 
+         "aload_0" : [ { push_objectref : 0 } ],
+         
+         "bipush" :  [ { push_integer_i : None } ],
+         "sipush" :  [ { push_integer_i : None } ],
+         
+         "iconst_0" : [ { push_integer_d : 0 } ], 
+         "iconst_3" : [ { push_integer_d : 3 } ],
+
+         "iload" : [ { push_integer_l_i : None } ],
+         "iload_1" : [ { push_integer_l : 1 } ], 
+         "iload_2" : [ { push_integer_l : 2 } ], 
+         "iload_3" : [ { push_integer_l : 3 } ], 
+         
+         "istore" : [ { set_objectref_i : None } ],
+
+         "istore_2" : [ { set_objectref : 2 } ],
+         "istore_3" : [ { set_objectref : 3 } ],
+         
+         "invokespecial" : [ { invokespecial : None } ], 
+         "invokevirtual": [ { invokespecial : None } ], 
+         
+         "putfield" : [ { putfield : None }, { pop_objectref : None } ],
+         "getfield" : [ { getfield : None } ],
+         
+         "getstatic" : [ { getstatic : None } ],
+
+         "new" : [ { new : None } ],
+         
+         "dup" : [ { dup : None } ],
+
+         "ldc" : [ { ldc : None } ],
+}
+
 
 class ExternalMethod :
    def __init__(self, class_name, name, descriptor) :
@@ -236,9 +345,10 @@ class JVMBasicBlock :
       self.__start = start
       self.__end = self.__start
 
-
       self.__break_blocks = []
-      
+
+      self.__free_blocks_offsets = []
+
       self.__name = "%s-BB@0x%x" % (self.__method.get_name(), self.__start)
 
    def get_method(self) :
@@ -283,10 +393,21 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
+   def next_free_block_offset(self, idx=0) :
+      print idx, self.__free_blocks_offsets
+      for i in self.__free_blocks_offsets :
+         if i > idx :
+            return i
+      return -1
+
+   def get_random_free_block_offset(self) :
+      return self.__free_blocks_offsets[ random.randint(0, len(self.__free_blocks_offsets) - 1) ]
+
    def get_random_free_break_block(self) :
       for i in self.__break_blocks :
-         print i, i.show()
-
+         if i.get_free() == True :
+            return i
+      return None
 
    def get_random_break_block(self) :
       return self.__break_blocks[ random.randint(0, len(self.__break_blocks) - 1) ]
@@ -355,52 +476,45 @@ class JVMBasicBlock :
          
          idx += i.get_length()
 
-   def analyze2(self) :
+   def analyze_code(self) :
+      stack = Stack()
+
+      self.__free_blocks_offsets.append( self.get_start() )
+
+      idx = 0
       for i in self.__ins :
          res = []
-         if i.get_name() in TEST :
-            for action in TEST[i.get_name()] :
-               for k in action :
-                  if k == "push_objectref" :
-                     value = "obj%d" % action[k] 
-                     stack.push( value )
-                  elif k == "push_integer_i" :
-                     value = i.get_operands()
-                     stack.push( value )
-                  elif k == "push_integer_d" :
-                     stack.push( action[k] )
-                  elif k == "push_integer_l" :
-                     stack.push( "VL%d" % action[k] )
-                  elif k == "pop_callstack" :
-                     pass #res.append( stack.pop() )
-                  elif k == "pop_objectref" :
-                     res.append( stack.pop() )
-                  elif k == "putfield" :
-                     res.append( stack.pop() )
-                  elif k == "getfield" :
-                     res.append( stack.pop() )
-                     stack.push( "F" )
-      #            elif k == "set_value" : 
-      #               print "SET VALUE ", action[k], " --> ", res
-      #               stack.pop()
-      #               stack.pop()
-                  elif k == "set_objectref" :
-                     print "SET OBJECT REF ", action[k], " --> ", res
-                  else : 
-                     raise("iiips")
-        
-                  stack.show()
-         else :
-            raise("ooops")
+
+         try : 
+            print i.get_name(), i.get_name() in INSTRUCTIONS_ACTIONS
+            for actions in INSTRUCTIONS_ACTIONS[ i.get_name() ] :
+               for action in actions :
+                  x = action( self.__vm, i, actions[action], stack )
+                  for val in x :
+                     res.append( val )
+
+            stack.show()
+         except KeyError :
+            print "[[[[ %s is not in INSTRUCTIONS_ACTIONS ]]]]" % i.get_name()
+
+         idx += i.get_length()
+
+         if stack.nil() == True and i != self.__ins[-1] :
+            self.__free_blocks_offsets.append( idx + self.get_start() )
 
    def show(self) :
       print "\t@", self.__name
+      
+      idx = 0
       nb = 0
       for i in self.__ins :
-         print nb,
+         print "\t\t", nb, idx,
          i.show(nb)
          nb += 1
+         idx += i.get_length()
 
+      print ""
+      print "\t\tFree blocks offsets --->", self.__free_blocks_offsets
       print "\t\tBreakBlocks --->", len(self.__break_blocks)
 
       print "\t\tF --->", ', '.join( i.get_name() for i in self.__fathers )
@@ -416,6 +530,17 @@ class JVMBreakBlock(BreakBlock) :
                     }
 
    
+   def get_free(self) :
+      if self._ins == [] :
+         return False
+
+      if "store" in self._ins[-1].get_name() :
+         return True
+      elif "putfield" in self._ins[-1].get_name() :
+         return True
+
+      return False
+
    def analyze(self) :
       ctt = []
 
@@ -664,9 +789,13 @@ class GVM_BCA :
          current_basic.push( i )
          if match == True :
             current_basic.analyze_break_blocks()
+            current_basic.analyze_code()
+
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.__basic_blocks )
             self.__basic_blocks.push( current_basic )
+      
       current_basic.analyze_break_blocks()
+      current_basic.analyze_code()
 
       for i in self.__basic_blocks.get() :
          i.set_childs()
@@ -674,10 +803,29 @@ class GVM_BCA :
       for i in self.__basic_blocks.get() :
          i.analyze()
 
-   def get_free_offset(self, idx=0) :
+   def get_free_before_offset(self, idx=0) :
       for i in self.__basic_blocks.get() :
-         if idx >= i.get_start() :
-            return i.get_random_free_break_block().get_start()
+         if i.get_end() <= idx :
+            x = i.get_random_free_break_block()
+            if x != None :
+               return x.get_end()
+      return -1
+
+
+   def get_free_block_offset(self, idx=0) :
+      for i in self.__basic_blocks.get() :
+         if i.get_start() >= idx :
+            x = i.get_random_free_block_offset()
+            return x
+      return -1
+
+   def next_free_block_offset(self, idx=0) :
+      for i in self.__basic_blocks.get() : 
+         if i.get_start() >= idx :
+            x = i.next_free_block_offset( idx )
+            print x, idx
+            if x != -1 :
+               return x
       return -1
 
    def get_break_block(self, idx) :
@@ -772,17 +920,41 @@ class VMBCA :
    def get_random_integer_value(self, method, descriptor) :
       return 0
 
-   def get_free_offset(self, method, idx=0) :
+   def get_free_end_offset(self, method, idx=0) :
+      # We would like a specific free offset in a method
+      try :
+         return self.__hmethods[ method ].get_free_end_offset( idx )
+      except KeyError :
+         # We haven't found the method ...
+         return -1
+
+   def get_free_before_offset(self, method, idx=0) :
+      # We would like a specific free offset in a method
+      try :
+         return self.__hmethods[ method ].get_free_before_offset( idx )
+      except KeyError :
+         # We haven't found the method ...
+         return -1
+
+   def next_free_block_offset(self, method, idx=0) :
+      # We would like a specific free offset in a method
+      try :
+         return self.__hmethods[ method ].next_free_block_offset( idx )
+      except KeyError :
+         # We haven't found the method ...
+         return -1
+
+   def get_free_block_offset(self, method, idx=0) :
       # Random method "." to get a free offset
       if method == "." :
          for i in self.__hmethods :
             if random.randint(0, 1) == 1 :
-               return self.__hmethods[i].get_free_offset(idx)
-         return self.__methods[0].get_free_offset(idx)
+               return self.__hmethods[i].get_free_block_offset(idx)
+         return self.__methods[0].get_free_block_offset(idx)
 
       # We would like a specific free offset in a method
       try :
-         return self.__hmethods[ method ].get_free_offset( idx )
+         return self.__hmethods[ method ].get_free_block_offset( idx )
       except KeyError :
          # We haven't found the method ...
          return -1
