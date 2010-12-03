@@ -49,17 +49,30 @@ class Field :
          self.__init_method = self.__analysis.get_init_method()
 
          # Get the initial offset to add the field into the init method
-         self.__init_offset = self.__offsets.add_offset( self.__analysis.get_free_block_offset( self.__init_method ) )
-   
-         if self.__init_offset.get_idx() == -1 :
-            raise("ooo")
+         self.__init_offset = self.__offsets.add_offset( self.__analysis.next_free_block_offset( self.__init_method ) )
          
          # Generate the initial value of our field, and the bytecodes associated
          value = self.__analysis.get_random_integer_value( self.__init_method, self.__field.get_descriptor() )
          self.__init_value = self.__vm_generate.create_affectation( self.__init_method, [ 0, self.__field, value ] )
 
          for i in range(0, degree) :
-            self.__access_offset.append( self.__offsets.add_offset( self.__analysis.get_free_block_offset( "." ) ) )
+            meth, off = self.__analysis.random_free_block_offset( "^\<init\>" )
+            self.__access_offset.append( (False, meth, self.__offsets.add_offset( off ) ) )
+      else :
+         # Get all read/write access to our field
+         taint_field = self.__analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
+         n = 0
+         for i in taint_field.get_paths_access("RW") :
+            self.__access_offset.append( (True, i.get_method(), self.__offsets.add_offset( i.get_idx() ) ) )
+
+            n += 1
+            if n == degree :
+               break
+
+         # insert fake write access to the real field
+         if n < degree :
+            raise("ooo")
+
 
    def insert_init(self) :
       """ return method object, init_offset (Offset object), init_value (a list of instructions ) """
@@ -67,6 +80,15 @@ class Field :
          return self.__init_method, self.__init_offset, self.__init_value
 
       return None
+
+   def show(self) :
+      if self.__real == False :
+         print self.__field.get_name(), self.__init_offset.get_idx(), self.__init_value
+      else :
+         print self.__field.get_name()
+
+      for i in self.__access_offset :
+         print "\t", i[0], i[1].get_name(), i[2].get_idx()
 
    def get_name(self) :
       return self.__field.get_name()
@@ -170,6 +192,9 @@ class DepF :
 
       ########## Add all fields initialisation into the final list ############
       for i in fields :
+         print "FIELD ->", i, 
+         fields[ i ].show()
+         
          x = fields[ i ].insert_init()
          if x != None :
             try :
@@ -198,8 +223,9 @@ class DepF :
 
       print "F -->", self.__G.successors( self.__field.get_name() )
       taint_field = _analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
-      
       for path in taint_field.get_paths() :
+         continue
+
          print "\t", path.get_access_flag(), "%s (%d-%d)" % (path.get_bb().get_name(), path.get_bb().get_start(), path.get_bb().get_end()) , path.get_bb().get_start() + path.get_idx(), 
          x = _analysis.get( path.get_bb().get_method() )
 
@@ -208,20 +234,18 @@ class DepF :
          print "\t\t", x.get_local_variables()
 
          if path.get_access_flag() == "R" and find == False :
-            o = self.add_offset( _analysis.get_free_before_offset( path.get_method(), bb.get_start() ) )
+            o = self.add_offset( _analysis.prev_free_block_offset( path.get_method(), bb.get_start() ) )
       
-            val = _analysis.next_free_block_offset( path.get_method(), path.get_bb().get_start() + path.get_idx() )#bb.get_end() #path.get_bb().get_start() + path.get_idx() + 3 #x.get_free_offset( path.get_bb().get_start() + path.get_idx() )
+            val = _analysis.next_free_block_offset( path.get_method(), o.get_idx() ) 
 
-            print "here", o.get_idx(), val
-
-            if o.get_idx() == -1 :
+            if o.get_idx() == -1 or val == -1 :
                raise("ooop")
 
-            try :
-               list_OB[ path.get_method() ].append( o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", val - o.get_idx() + 3 ] ] )
-            except KeyError :
-               list_OB[ path.get_method() ] = []
-               list_OB[ path.get_method() ].append( (o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", val - o.get_idx() + 3 ] ] ) )
+            #try :
+            #   list_OB[ path.get_method() ].append( o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", val - o.get_idx() + 3 ] ] )
+            #except KeyError :
+            #   list_OB[ path.get_method() ] = []
+            #   list_OB[ path.get_method() ].append( (o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", val - o.get_idx() + 3 ] ] ) )
 
             find = True
 
@@ -236,7 +260,7 @@ class DepF :
             print "INSERT ", v[0].get_idx(), v[1] 
 
             size_r = code.inserts_at( code.get_relative_idx( v[0].get_idx() ), v[1] )
-            code.show()
+            #code.show()
 
             j = i + 1
             while j < len( list_OB[ m ] ) :
