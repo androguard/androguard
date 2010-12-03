@@ -70,7 +70,8 @@ def interact() :
    except IOError:
       pass
 
-   import bytecode, jvm, dvm
+   import bytecode, jvm, dvm, analysis
+
    mydict = {
       # *VM Format
       "JVMFormat" : jvm.JVMFormat,
@@ -85,6 +86,9 @@ def interact() :
       "VM_INT_AUTO" : androguard.VM_INT_AUTO,
       "VM_INT_BASIC_MATH_FORMULA" : androguard.VM_INT_BASIC_MATH_FORMULA,
       "VM_INT_BASIC_PRNG" : androguard.VM_INT_BASIC_PRNG,
+
+      # Androguard Analysis
+      "VMBCA" : analysis.VMBCA,
    }
 
    import __builtin__

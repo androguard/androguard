@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import re, random, string
+import re, random, string, cPickle
 
 import jvm, dvm
 
@@ -187,68 +187,74 @@ class Stack :
          print "\t-->", nb, ": ", i
          nb += 1
 
+class StackTraces :
+   def __init__(self) : 
+      self.__elems = []
+   
+   def save(self, idx, i_idx, ins, stack_pickle, msg_pickle) :
+      self.__elems.append( (idx, i_idx, ins, stack_pickle, msg_pickle) )
 
-def push_objectref(_vm, ins, special, stack) :
+   def show(self) :
+      for i in self.__elems :
+         print i[0], i[1], i[2].get_name() 
+
+         cPickle.loads( i[3] ).show()
+         print "\t", cPickle.loads( i[4] )
+
+def push_objectref(_vm, ins, special, stack, res, ret_v) :
    value = "OBJ_REF_@_%d" % special
    stack.push( value )
 
-   return []
+def push_objectres(_vm, ins, special, stack, res, ret_v) :
+   value = ""
+   for i in range(0, special[0]) :
+      value += str( res.pop() ) + special[1]
 
-def push_integer_i(_vm, ins, special, stack) :
+   value = value[:-1]
+
+   stack.push( value )
+
+def push_integer_i(_vm, ins, special, stack, res, ret_v) :
    value = ins.get_operands()
    stack.push( value )
 
-   return []
-
-def push_integer_d(_vm, ins, special, stack) :
+def push_integer_d(_vm, ins, special, stack, res, ret_v) :
    stack.push( special )
 
-   return []
-
-def push_integer_l(_vm, ins, special, stack) :
+def push_integer_l(_vm, ins, special, stack, res, ret_v) :
    stack.push( "VARIABLE_LOCAL_@_%d" % special )
-   return []
 
-def push_integer_l_i(_vm, ins, special, stack) :
+def push_integer_l_i(_vm, ins, special, stack, res, ret_v) :
    stack.push( "VARIABLE_LOCAL_@_%d" % ins.get_operands() )
 
-   return []
+def pop_objectref(_vm, ins, special, stack, res, ret_v) :
+   ret_v.add_return( stack.pop() )
 
-def pop_objectref(_vm, ins, special, stack) :
-   return [ stack.pop() ]
+def putfield(_vm, ins, special, stack, res, ret_v) :
+   ret_v.add_return( stack.pop() )
 
-def putfield(_vm, ins, special, stack) :
-   return [ stack.pop() ]
-
-def getfield(_vm, ins, special, stack) :
-   l = [ stack.pop() ]
+def getfield(_vm, ins, special, stack, res, ret_v) :
+   ret_v.add_return( stack.pop() ) 
    stack.push( "FIELD" )
 
-   return l
-
-def getstatic(_vm, ins, special, stack) :
+def getstatic(_vm, ins, special, stack, res, ret_v) :
    stack.push( "FIELD_STATIC" )
 
-   return []
-
-def new(_vm, ins, special, stack) :
+def new(_vm, ins, special, stack, res, ret_v) :
    stack.push( "NEW_OBJ" )
-   return []
 
-def dup(_vm, ins, special, stack) :
+def dup(_vm, ins, special, stack, res, ret_v) :
    stack.push( stack.get() )
-   return []
 
-def ldc(_vm, ins, special, stack) :
+def ldc(_vm, ins, special, stack, res, ret_v) :
    stack.push( "STRING" )
-   return []
 
-def invokespecial(_vm, ins, special, stack) :
+def invoke(_vm, ins, special, stack, res, ret_v) :
    desc = ins.get_operands()[-1]
    param = desc[1:desc.find(")")]
    ret = desc[desc.find(")")+1:]
 
-   print "DESC --->", param, calc_nb( param ), ret, calc_nb( ret )
+#   print "DESC --->", param, calc_nb( param ), ret, calc_nb( ret )
 
    for i in range(0, calc_nb( param )) :
       stack.pop()
@@ -258,15 +264,11 @@ def invokespecial(_vm, ins, special, stack) :
    for i in range(0, calc_nb( ret )):
       stack.push( "E" )
 
-   return []
+def set_objectref(_vm, ins, special, stack, res, ret_v) :
+   ret_v.add_msg( "SET OBJECT REF %d --> %s" % (special, str(stack.pop())) )
 
-def set_objectref(_vm, ins, special, stack) :
-   print "SET OBJECT REF ", special, " --> ", stack.pop() 
-   return []
-
-def set_objectref_i(_vm, ins, special, stack) :
-   print "SET OBJECT REF ", ins.get_operands(), " --> ", stack.pop()
-   return []
+def set_objectref_i(_vm, ins, special, stack, res, ret_v) :
+   ret_v.add_msg( "SET OBJECT REF %d --> %s" % (ins.get_operands(), str(stack.pop())) )
 
 def calc_nb(info) :
    if info == "" or info == "V" :
@@ -282,39 +284,225 @@ def calc_nb(info) :
       return len(info)
 
 INSTRUCTIONS_ACTIONS = { 
+         "aastore" : [],
+         "aconst_null" : [],
+         "aload" : [],
          "aload_0" : [ { push_objectref : 0 } ],
-         
+         "aload_1" : [ { push_objectref : 1 } ],
+         "aload_2" : [ { push_objectref : 2 } ],
+         "aload_3" : [ { push_objectref : 3 } ],
+         "anewarray" : [],
+         "areturn" : [],
+         "arraylength" : [],
+         "astore" : [],
+         "areturn" : [],
+         "arraylength" : [],
+         "astore" : [],
+         "astore_0" : [],
+         "astore_1" : [],
+         "astore_2" : [],
+         "astore_3" : [],
+         "athrow" : [],
+         "baload" : [],
+         "bastore" : [],
          "bipush" :  [ { push_integer_i : None } ],
-         "sipush" :  [ { push_integer_i : None } ],
-         
+         "caload" : [],
+         "castore" : [],
+         "checkcast" : [],
+         "d2f" : [],
+         "d2i" : [],
+         "d2l" : [],
+         "dadd" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '+' ] } ],
+         "daload" : [],
+         "dastore" : [],
+         "dcmpg" : [],
+         "dcmpl" : [],
+         "dconst_0" : [],
+         "dconst_1" : [],
+         "ddiv" : [],
+         "dload" : [],
+         "dload_0" : [],
+         "dload_1" : [],
+         "dload_2" : [],
+         "dload_3" : [],
+         "dmul" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '*' ] } ],
+         "dneg" : [],
+         "drem" : [],
+         "dreturn" : [],
+         "dstore" : [],
+         "dstore_0" : [],
+         "dstore_1" : [],
+         "dstore_2" : [],
+         "dstore_3" : [],
+         "dsub" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '-' ] } ],
+         "dup" : [ { dup : None } ],
+         "dup_x1" : [],
+         "dup_x2" : [],
+         "dup2" : [],
+         "dup2_x1" : [],
+         "dup2_x2" : [],
+         "f2d" : [],
+         "f2i" : [],
+         "f2l" : [],
+         "fadd" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '+' ] } ],
+         "faload" : [],
+         "fastore" : [],
+         "fcmpg" : [],
+         "fcmpl" : [],
+         "fconst_0" : [],
+         "fconst_1" : [],
+         "fconst_2" : [],
+         "fdiv" : [],
+         "fload" : [],
+         "fload_0" : [],
+         "fload_1" : [],
+         "fload_2" : [],
+         "fload_3" : [],
+         "fmul" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '*' ] } ],
+         "fneg" : [],
+         "freturn" : [],
+         "fstore" : [],
+         "fstore_0" : [],
+         "fstore_1" : [],
+         "fstore_2" : [],
+         "fstore_3" : [],
+         "fsub" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '-' ] } ],
+         "getfield" : [ { getfield : None } ],
+         "getstatic" : [ { getstatic : None } ],
+         "goto" : [ {} ],
+         "goto_w" : [ {} ],
+         "i2b" : [],
+         "i2c" : [],
+         "i2d" : [],
+         "i2f" : [],
+         "i2l" : [],
+         "i2s" : [],
+         "iadd" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '+' ] } ],
+         "iaload" : [],
+         "iand" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '&' ] } ],
+         "iastore" : [],
+         "iconst_m1" : [],
          "iconst_0" : [ { push_integer_d : 0 } ], 
+         "iconst_1" : [ { push_integer_d : 1 } ], 
+         "iconst_2" : [ { push_integer_d : 2 } ], 
          "iconst_3" : [ { push_integer_d : 3 } ],
-
+         "iconst_4" : [ { push_integer_d : 4 } ],
+         "iconst_5" : [ { push_integer_d : 5 } ],
+         "idiv" : [],
+         "if_acmpeq" : [],
+         "if_acmpne" : [],
+         "if_icmpeq" : [],
+         "if_icmpne" : [],
+         "if_icmplt" : [],
+         "if_icmpge" : [ { pop_objectref : None }, { pop_objectref : None } ],
+         "if_icmpgt" : [],
+         "if_icmple" : [],
+         "ifeq" : [],
+         "ifne" : [],
+         "iflt" : [],
+         "ifge" : [],
+         "ifgt" : [],
+         "ifle" : [ { pop_objectref : None } ],
+         "ifnonnull" : [],
+         "ifnull" : [],
+         "iinc" : [ {} ],
          "iload" : [ { push_integer_l_i : None } ],
          "iload_1" : [ { push_integer_l : 1 } ], 
          "iload_2" : [ { push_integer_l : 2 } ], 
          "iload_3" : [ { push_integer_l : 3 } ], 
-         
+         "imul" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '*' ] } ],
+         "ineg" : [],
+         "instanceof" : [],
+         "invokeinterface" : [],
+         "invokespecial" : [ { invoke : None } ], 
+         "invokestatic" : [],
+         "invokevirtual": [ { invoke : None } ], 
+         "ior" : [],
+         "irem" : [],
+         "ireturn" : [ { pop_objectref : None } ],
+         "ishl" : [],
+         "ishr" : [],
          "istore" : [ { set_objectref_i : None } ],
-
+         "istore_0" : [ { set_objectref : 0 } ],
+         "istore_1" : [ { set_objectref : 1 } ],
          "istore_2" : [ { set_objectref : 2 } ],
          "istore_3" : [ { set_objectref : 3 } ],
-         
-         "invokespecial" : [ { invokespecial : None } ], 
-         "invokevirtual": [ { invokespecial : None } ], 
-         
-         "putfield" : [ { putfield : None }, { pop_objectref : None } ],
-         "getfield" : [ { getfield : None } ],
-         
-         "getstatic" : [ { getstatic : None } ],
-
-         "new" : [ { new : None } ],
-         
-         "dup" : [ { dup : None } ],
-
+         "isub" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '-' ] } ],
+         "iushr" : [],
+         "ixor" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '^' ] } ],
+         "jsr" : [],
+         "jsr_w" : [],
+         "l2d" : [],
+         "l2f" : [],
+         "l2i" : [],
+         "ladd" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '+' ] } ],
+         "laload" : [],
+         "land" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '&' ] } ],
+         "lastore" : [],
+         "lcmp" : [],
+         "lconst_0" : [],
+         "lconst_1" : [],
          "ldc" : [ { ldc : None } ],
+         "ldc_w" : [],
+         "ldc2_w" : [],
+         "ldiv" : [],
+         "lload" : [],
+         "lload_0" : [],
+         "lload_1" : [],
+         "lload_2" : [],
+         "lload_3" : [],
+         "lmul" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '*' ] } ],
+         "lneg" : [],
+         "lookupswitch" : [],
+         "lor" : [],
+         "lrem" : [],
+         "lreturn" : [],
+         "lshl" : [],
+         "lshr" : [],
+         "lstore" : [],
+         "lstore_0" : [],
+         "lstore_1" : [],
+         "lstore_2" : [],
+         "lstore_3" : [],
+         "lsub" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '-' ] } ],
+         "lushr" : [],
+         "lxor" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '^' ] } ],
+         "monitorenter" : [],
+         "monitorexit" : [],
+         "multianewarray" : [],
+         "new" : [ { new : None } ],
+         "nop" : [],
+         "pop" : [],
+         "pop2" : [],
+         "putfield" : [ { putfield : None }, { pop_objectref : None } ],
+         "putstatic" : [],
+         "ret" : [],
+         "return" : [ {} ],
+         "saload" : [],
+         "sastore" : [],
+         "sipush" :  [ { push_integer_i : None } ],
+         "swap" : [],
+         "tableswitch" : [],
+         "wide" : [],
 }
 
+
+class ReturnValues :
+   def __init__(self) :
+      self.__elems = []
+      self.__msgs = []
+
+   def add_msg(self, e) :
+      self.__msgs.append( e )
+
+   def add_return(self, e) :
+      self.__elems.append( e )
+
+   def get_msg(self) :
+      return self.__msgs
+
+   def get_return(self) :
+      return self.__elems
 
 class ExternalMethod :
    def __init__(self, class_name, name, descriptor) :
@@ -335,6 +523,7 @@ class JVMBasicBlock :
       self.__context = _context
 
       self.__stack = Stack()
+      self.__stack_traces = StackTraces()
 
       self.__break = []
       self.__ins = []
@@ -393,8 +582,21 @@ class JVMBasicBlock :
       for c in self.__childs :
          c.set_fathers( self )
 
+   def prev_free_block_offset(self, idx=0) :
+      last = -1
+
+      for i in self.__free_blocks_offsets :
+         if i < idx :
+            last = i
+         else :
+            return last
+      return -1
+
+   def random_free_block_offset(self) :
+      return self.__free_blocks_offsets[ random.randint(0, len(self.__free_blocks_offsets) - 1) ]
+
    def next_free_block_offset(self, idx=0) :
-      print idx, self.__free_blocks_offsets
+      #print idx, self.__free_blocks_offsets
       for i in self.__free_blocks_offsets :
          if i > idx :
             return i
@@ -402,12 +604,6 @@ class JVMBasicBlock :
 
    def get_random_free_block_offset(self) :
       return self.__free_blocks_offsets[ random.randint(0, len(self.__free_blocks_offsets) - 1) ]
-
-   def get_random_free_break_block(self) :
-      for i in self.__break_blocks :
-         if i.get_free() == True :
-            return i
-      return None
 
    def get_random_break_block(self) :
       return self.__break_blocks[ random.randint(0, len(self.__break_blocks) - 1) ]
@@ -477,29 +673,39 @@ class JVMBasicBlock :
          idx += i.get_length()
 
    def analyze_code(self) :
-      stack = Stack()
+      self.analyze_break_blocks()
 
       self.__free_blocks_offsets.append( self.get_start() )
 
       idx = 0
       for i in self.__ins :
-         res = []
+         ret_v = ReturnValues()
 
+         res = []
          try : 
-            print i.get_name(), i.get_name() in INSTRUCTIONS_ACTIONS
+#            print i.get_name(), i.get_name() in INSTRUCTIONS_ACTIONS
+
+            if INSTRUCTIONS_ACTIONS[ i.get_name() ] == [] :
+               print "[[[[ %s is not yet implemented ]]]]" % i.get_name()
+               raise("ooops")
+
+            i_idx = 0
             for actions in INSTRUCTIONS_ACTIONS[ i.get_name() ] :
                for action in actions :
-                  x = action( self.__vm, i, actions[action], stack )
-                  for val in x :
+                  action( self.__vm, i, actions[action], self.__stack, res, ret_v )
+                  for val in ret_v.get_return() :
                      res.append( val )
 
-            stack.show()
+            #self.__stack.show()
+               self.__stack_traces.save( idx, i_idx, i, cPickle.dumps( self.__stack ), cPickle.dumps( ret_v.get_msg() ) )
+               i_idx += 1
+
          except KeyError :
             print "[[[[ %s is not in INSTRUCTIONS_ACTIONS ]]]]" % i.get_name()
 
          idx += i.get_length()
 
-         if stack.nil() == True and i != self.__ins[-1] :
+         if self.__stack.nil() == True and i != self.__ins[-1] :
             self.__free_blocks_offsets.append( idx + self.get_start() )
 
    def show(self) :
@@ -519,6 +725,8 @@ class JVMBasicBlock :
 
       print "\t\tF --->", ', '.join( i.get_name() for i in self.__fathers )
       print "\t\tC --->", ', '.join( i.get_name() for i in self.__childs )
+
+      self.__stack_traces.show()
 
 class JVMBreakBlock(BreakBlock) : 
    def __init__(self, _vm, idx) :
@@ -664,6 +872,11 @@ class TaintedVariable :
    def push(self, info) :
       self.__paths.append( Path( info ) )
 
+   def get_paths_access(self, mode) :
+      for i in self.__paths :
+         if i.get_access_flag() in mode :
+            yield i
+
    def get_paths(self) :
       for i in self.__paths :
          yield i
@@ -744,6 +957,9 @@ class BasicBlocks :
    def get_tainted_variables(self) :
       return self.__tainted_variables
 
+   def get_random(self) :
+      return self.__bb[ random.randint(0, len(self.__bb) - 1) ]
+
    def get(self) :
       for i in self.__bb :
          yield i
@@ -788,13 +1004,11 @@ class GVM_BCA :
          
          current_basic.push( i )
          if match == True :
-            current_basic.analyze_break_blocks()
             current_basic.analyze_code()
 
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.__basic_blocks )
             self.__basic_blocks.push( current_basic )
       
-      current_basic.analyze_break_blocks()
       current_basic.analyze_code()
 
       for i in self.__basic_blocks.get() :
@@ -803,29 +1017,31 @@ class GVM_BCA :
       for i in self.__basic_blocks.get() :
          i.analyze()
 
-   def get_free_before_offset(self, idx=0) :
+   def prev_free_block_offset(self, idx=0) :
+      l = []
       for i in self.__basic_blocks.get() :
-         if i.get_end() <= idx :
-            x = i.get_random_free_break_block()
-            if x != None :
-               return x.get_end()
-      return -1
+         if i.get_start() <= idx :
+            l.append( i )
 
-
-   def get_free_block_offset(self, idx=0) :
-      for i in self.__basic_blocks.get() :
-         if i.get_start() >= idx :
-            x = i.get_random_free_block_offset()
+      l.reverse()
+      for i in l :
+         x = i.prev_free_block_offset( idx )
+         #print "PREV", x, idx
+         if x != -1 :
             return x
       return -1
 
+   def random_free_block_offset(self) :
+      b = self.__basic_blocks.get_random()
+      x = b.random_free_block_offset()
+      return x
+
    def next_free_block_offset(self, idx=0) :
       for i in self.__basic_blocks.get() : 
-         if i.get_start() >= idx :
-            x = i.next_free_block_offset( idx )
-            print x, idx
-            if x != -1 :
-               return x
+         x = i.next_free_block_offset( idx )
+         #print "NEXT", x, idx
+         if x != -1 :
+            return x
       return -1
 
    def get_break_block(self, idx) :
@@ -865,11 +1081,8 @@ class GVM_BCA :
          i.show()
          print ""
    
-      self.__basic_blocks.get_tainted_variables().show()
       #self.show_fields()
       #self.show_methods()
-
-      print "\n"
 
    def _iterFlatten(self, root):
       if isinstance(root, (list, tuple)):      
@@ -920,23 +1133,47 @@ class VMBCA :
    def get_random_integer_value(self, method, descriptor) :
       return 0
 
-   def get_free_end_offset(self, method, idx=0) :
+   def prev_free_block_offset(self, method, idx=0) :
       # We would like a specific free offset in a method
       try :
-         return self.__hmethods[ method ].get_free_end_offset( idx )
+         return self.__hmethods[ method ].prev_free_block_offset( idx )
       except KeyError :
          # We haven't found the method ...
          return -1
 
-   def get_free_before_offset(self, method, idx=0) :
+   def random_free_block_offset(self, method) :
+      # Random method "." to get a free offset
+      if isinstance(method, str) :
+         p = re.compile(method)
+         for i in self.__hmethods :
+            if random.randint(0, 1) == 1 :
+               if p.match( i.get_name() ) == None :
+                  return i, self.__hmethods[i].random_free_block_offset()
+         
+         for i in self.__hmethods :
+            if p.match( i.get_name() ) == None :
+               return i, self.__hmethods[i].random_free_block_offset()
+
       # We would like a specific free offset in a method
       try :
-         return self.__hmethods[ method ].get_free_before_offset( idx )
+         return self.__hmethods[ method ].random_free_block_offset()
       except KeyError :
          # We haven't found the method ...
          return -1
 
    def next_free_block_offset(self, method, idx=0) :
+      # Random method "." to get a free offset
+      if isinstance(method, str) :
+         p = re.compile(method)
+         for i in self.__hmethods :
+            if random.randint(0, 1) == 1 :
+               if p.match( i.get_name() ) == None :
+                  return i, self.__hmethods[i].next_free_block_offset(idx)
+         
+         for i in self.__hmethods :
+            if p.match( i.get_name() ) == None :
+               return i, self.__hmethods[i].next_free_block_offset(idx)
+
       # We would like a specific free offset in a method
       try :
          return self.__hmethods[ method ].next_free_block_offset( idx )
@@ -944,31 +1181,11 @@ class VMBCA :
          # We haven't found the method ...
          return -1
 
-   def get_free_block_offset(self, method, idx=0) :
-      # Random method "." to get a free offset
-      if method == "." :
-         for i in self.__hmethods :
-            if random.randint(0, 1) == 1 :
-               return self.__hmethods[i].get_free_block_offset(idx)
-         return self.__methods[0].get_free_block_offset(idx)
-
-      # We would like a specific free offset in a method
-      try :
-         return self.__hmethods[ method ].get_free_block_offset( idx )
-      except KeyError :
-         # We haven't found the method ...
-         return -1
-
-   def get_free_relative_offset(self, method, idx=0) :
-      value = self.get_free_offset( method, idx )
-
-      code = method.get_code()
-      return code.get_relative_idx( value )
-
    def get_tainted_field(self, class_name, name, descriptor) :
       return self.__tainted_variables.get_field( class_name, name, descriptor )
 
    def show(self) :
+      self.__tainted_variables.show()
       for i in self.__methods :
          i.show()
 
