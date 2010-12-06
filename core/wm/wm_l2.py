@@ -44,7 +44,11 @@ class Field :
 
       self.__access_offset = []
 
-   def run(self, degree) :
+   def run(self, degree, prefix=[]) :
+      """ Number of degree which corresponds to the number of affectation """
+      """ prefix -> list of elements [ METHOD, OFFSET ] """
+      
+      # New field
       if self.__real == False :
          self.__init_method = self.__analysis.get_init_method()
 
@@ -56,8 +60,19 @@ class Field :
          self.__init_value = self.__vm_generate.create_affectation( self.__init_method, [ 0, self.__field, value ] )
 
          for i in range(0, degree) :
-            meth, off = self.__analysis.random_free_block_offset( "^\<init\>" )
+            meth = None
+            off = -1
+
+            if prefix != [] :
+               x = prefix.pop()
+               off = self.__analysis.prev_free_block_offset( x[0], x[1] )
+               meth = x[0]
+            else :
+               meth, off = self.__analysis.random_free_block_offset( "^\<init\>" )
+            
             self.__access_offset.append( (False, meth, self.__offsets.add_offset( off ) ) )
+
+      # It's an original field, we must search original access
       else :
          # Get all read/write access to our field
          taint_field = self.__analysis.get_tainted_field( self.__field.get_class_name(), self.__field.get_name(), self.__field.get_descriptor() )
@@ -178,12 +193,14 @@ class DepF :
       fields = { self.__field.get_name() : Field( _vm, _analysis, _vm_generate, self.__field, self, True ) }
       fields[ self.__field.get_name() ].run( self.__G.degree()[ self.__field.get_name() ] )
 
+      print self.__field.get_name(), ": REAL_FIELD ->", self.__G.predecessors( self.__field.get_name() ), self.__G.degree()[self.__field.get_name()]
+
       ############ Create the name, the initial value and all access of the field ############
       for i in self.__G.node :
-         print i, "PRE ->", self.__G.predecessors( i ), self.__G.degree()[i]
-
          # We have not yet add this new field
          if i not in fields :
+            print i, "PRE ->", self.__G.predecessors( i ), self.__G.degree()[i]
+            
             name, access_flag, descriptor = _analysis.get_like_field()
             _vm.insert_field( self.__field.get_class_name(), name, [ access_flag, descriptor ] ) 
             
