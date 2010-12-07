@@ -60,6 +60,12 @@ def special_F3R(x) :
    val = x & 0xFFFFFFFF
    return [ (val & 0xFF000000) >> 24, (val & 0x00FF0000) >> 16, (val & 0x0000FF00) >> 8, val & 0x000000FF ]
 
+def special_F4(x) :
+   return [ (x[0] << 8) | x[1], x[2] ]
+
+def special_F4R(x) :
+   pass
+
 # The list of java bytecodes, with their value, name, and special functions !
 JAVA_OPCODES = {
                   0x32 : [ "aaload" ],
@@ -191,7 +197,7 @@ JAVA_OPCODES = {
                   0x68 : [ "imul" ],
                   0x74 : [ "ineg" ], 
                   0xc1 : [ "instanceof", "indexbyte1:B indexbyte2:B" ],
-                  0xb9 : [ "invokeinterface", "indexbyte1:B indexbyte2:B count:B null:B" ],
+                  0xb9 : [ "invokeinterface", "indexbyte1:B indexbyte2:B count:B null:B", special_F1, special_F1R, "get_interface", "get_interface_index" ],
                   0xb7 : [ "invokespecial", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_method", "get_method_index" ],
                   0xb8 : [ "invokestatic", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_method", "get_method_index" ],
                   0xb6 : [ "invokevirtual", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_method", "get_method_index" ],
@@ -247,7 +253,7 @@ JAVA_OPCODES = {
                   0x83 : [ "lxor" ],
                   0xc2 : [ "monitorenter" ],
                   0xc3 : [ "monitorexit" ],
-                  0xc5 : [ "multianewarray", "indexbyte1:B indexbyte2:B dimensions:B" ],
+                  0xc5 : [ "multianewarray", "indexbyte1:B indexbyte2:B dimensions:B", special_F4, special_F4R, None ],
                   0xbb : [ "new", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_class" ],
                   0xbc : [ "newarray", "atype:B", special_F0, special_F0, "get_array_type" ],
                   0x0  : [ "nop" ],
@@ -428,6 +434,12 @@ class MethodRef(CpInfo) :
 class InterfaceMethodRef(CpInfo) :
    def __init__(self, class_manager, buff) :
       super(InterfaceMethodRef, self).__init__( buff )
+
+   def get_class_index(self) :
+      return self.format.get_value().class_index
+
+   def get_name_and_type_index(self) :
+      return self.format.get_value().name_and_type_index
 
 class FieldRef(CpInfo) :
    def __init__(self, class_manager, buff) :
@@ -2027,6 +2039,21 @@ class ClassManager :
 
    def get_item(self, idx) :
       return self.__constant_pool[ idx - 1]
+
+   def get_interface(self, idx) :
+      if self.get_item(idx).get_name() != "CONSTANT_InterfaceMethodref" :
+         return []
+
+      class_idx = self.get_item(idx).get_class_index()
+      name_and_type_idx = self.get_item(idx).get_name_and_type_index()
+
+      return [ self.get_string( self.get_item(class_idx).get_name_index() ), 
+               self.get_string( self.get_item(name_and_type_idx).get_name_index() ),
+               self.get_string( self.get_item(name_and_type_idx).get_descriptor_index() )
+             ]
+
+   def get_interface_index(self, class_name, name, descriptor) :
+      raise("ooo")
 
    def get_method(self, idx) :
       if self.get_item(idx).get_name() != "CONSTANT_Methodref" :
