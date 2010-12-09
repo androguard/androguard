@@ -282,8 +282,17 @@ BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if." ]
 MATH_JVM_OPCODES = { ".and" : '&',
                      ".add" : '+',
                      ".sub" : '-',
+                     ".mul" : '*',
+                     ".div" : '/',
+                     ".shl" : '<<',
+                     ".shr" : '>>',
                      ".xor" : '^',
+                     ".or" : '|',
                    }
+
+MATH_JVM_RE = []
+for i in MATH_JVM_OPCODES :
+   MATH_JVM_RE.append( (re.compile( i ), MATH_JVM_OPCODES[i]) )
 
 INVOKE_JVM_OPCODES = [ "invoke." ]
 FIELD_READ_JVM_OPCODES = [ "get." ]

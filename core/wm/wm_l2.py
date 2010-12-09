@@ -55,7 +55,7 @@ class Field :
          # Get the initial offset to add the field into the init method
          self.__init_offset = self.__offsets.add_offset( self.__analysis.next_free_block_offset( self.__init_method ) )
          
-         # Generate the initial value of our field, and the bytecodes associated
+         # Generate the initial access of our field (depends of the degree), and the bytecodes associated
          value = self.__analysis.get_random_integer_value( self.__init_method, self.__field.get_descriptor() )
          self.__init_value = self.__vm_generate.create_affectation( self.__init_method, [ 0, self.__field, value ] )
 
@@ -69,7 +69,10 @@ class Field :
                meth = x[0]
             else :
                meth, off = self.__analysis.random_free_block_offset( "^\<init\>" )
-            
+      
+            self.__vm_generate.write( meth, off, self.__field )
+            raise("oo")
+
             self.__access_offset.append( (False, meth, self.__offsets.add_offset( off ) ) )
 
       # It's an original field, we must search original access
@@ -84,10 +87,9 @@ class Field :
             if n == degree :
                break
 
-         # insert fake write access to the real field
+         # insert fake read/write access to the real field
          if n < degree :
             raise("ooo")
-
 
    def insert_init(self) :
       """ return method object, init_offset (Offset object), init_value (a list of instructions ) """
@@ -205,6 +207,7 @@ class DepF :
             _vm.insert_field( self.__field.get_class_name(), name, [ access_flag, descriptor ] ) 
             
             fields[ i ] = Field( _vm, _analysis, _vm_generate, _vm.get_field_descriptor( self.__field.get_class_name(), name, descriptor ), self )
+            # degree of the field, prefix must be add if the protection is for a real field
             fields[ i ].run( self.__G.degree()[i] )
 
       ########## Add all fields initialisation into the final list ############
@@ -263,7 +266,6 @@ class DepF :
             #except KeyError :
             #   list_OB[ path.get_method() ] = []
             #   list_OB[ path.get_method() ].append( (o, [ [ "iload_3" ], [ "iconst_0" ], [ "if_icmpge", val - o.get_idx() + 3 ] ] ) )
-
             find = True
 
       ##### Insert all modifications
