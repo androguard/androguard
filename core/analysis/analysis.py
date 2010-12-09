@@ -146,10 +146,6 @@ FIELDS = {
 
 METHODS = [ "invokestatic", "invokevirtual", "invokespecial" ]
 
-MATH_JVM_RE = []
-for i in jvm.MATH_JVM_OPCODES :
-   MATH_JVM_RE.append( (re.compile( i ), jvm.MATH_JVM_OPCODES[i]) )
-
 JVM_TOSTRING = { "O" : jvm.MATH_JVM_OPCODES.keys(),
                  "I" : jvm.INVOKE_JVM_OPCODES,
                  "G" : jvm.FIELD_READ_JVM_OPCODES,
@@ -201,6 +197,10 @@ class StackTraces :
    def save(self, idx, i_idx, ins, stack_pickle, msg_pickle) :
       self.__elems.append( (idx, i_idx, ins, stack_pickle, msg_pickle) )
 
+   def get(self) :
+      for i in self.__elems :
+         yield (i[0], i[1], i[2], cPickle.loads( i[3] ), cPickle.loads( i[4] ) )
+
    def show(self) :
       for i in self.__elems :
          print i[0], i[1], i[2].get_name() 
@@ -213,10 +213,10 @@ def push_objectref(_vm, ins, special, stack, res, ret_v) :
    stack.push( value )
 
 def push_objectref_l(_vm, ins, special, stack, res, ret_v) :
-   stack.push( "@{VARIABLE_LOCAL_%d}" % special )
+   stack.push( "VARIABLE_LOCAL_%d" % special )
 
 def push_objectref_l_i(_vm, ins, special, stack, res, ret_v) :
-   stack.push( "@{VARIABLE_LOCAL_%d}" % ins.get_operands() )
+   stack.push( "VARIABLE_LOCAL_%d" % ins.get_operands() )
 
 def pop_objectref(_vm, ins, special, stack, res, ret_v) :
    ret_v.add_return( stack.pop() )
@@ -354,13 +354,13 @@ INSTRUCTIONS_ACTIONS = {
          "astore_1" : [ { set_objectref : 1 } ],
          "astore_2" : [ { set_objectref : 2 } ],
          "astore_3" : [ { set_objectref : 3 } ],
-         "athrow" : [ { pop_objectref : None }, { push_objectres : [ 1, "THROW" ] } ],
+         "athrow" : [ { pop_objectref : None }, { push_objectres : [ 1, "throw" ] } ],
          "baload" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectref : 0 } ],
          "bastore" : [ { set_arrayref : "byte" } ],
          "bipush" :  [ { push_integer_i : None } ],
          "caload" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectref : 0 } ],
          "castore" : [ { set_arrayref : "char" } ],
-         "checkcast" : [ { pop_objectref : None }, { push_objectres : [ 1, "CHECKCAST" ] } ],
+         "checkcast" : [ { pop_objectref : None }, { push_objectres : [ 1, "checkcast" ] } ],
          "d2f" : [ { pop_objectref : None }, { push_objectres : [ 1, 'float' ] } ],
          "d2i" : [ { pop_objectref : None }, { push_objectres : [ 1, 'integer' ] } ],
          "d2l" : [  { pop_objectref : None }, { push_objectres : [ 1, 'long' ] } ],
@@ -379,7 +379,7 @@ INSTRUCTIONS_ACTIONS = {
          "dload_3" : [  { push_objectref_l : 3 } ],
          "dmul" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '*' ] } ],
          "dneg" : [ { pop_objectref : None }, { push_objectres : [ 1, '-' ] } ],
-         "drem" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, 'REM' ] } ],
+         "drem" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, 'rem' ] } ],
          "dreturn" : [ { pop_objectref : None } ],
          "dstore" : [ { set_objectref_i : None } ],
          "dstore_0" : [ { set_objectref : 0 } ],
@@ -484,9 +484,9 @@ INSTRUCTIONS_ACTIONS = {
          "ixor" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '^' ] } ],
          "jsr" : [ { push_integer_i : None } ],
          "jsr_w" : [ { push_integer_i : None } ],
-         "l2d" : [ { pop_objectref : None }, { push_objectres : [ 1, 'double->' ] } ],
-         "l2f" : [ { pop_objectref : None }, { push_objectres : [ 1, 'float->' ] } ],
-         "l2i" : [ { pop_objectref : None }, { push_objectres : [ 1, 'integer->' ] } ],
+         "l2d" : [ { pop_objectref : None }, { push_objectres : [ 1, 'double' ] } ],
+         "l2f" : [ { pop_objectref : None }, { push_objectres : [ 1, 'float' ] } ],
+         "l2i" : [ { pop_objectref : None }, { push_objectres : [ 1, 'integer' ] } ],
          "ladd" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '+' ] } ],
          "laload" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectref : 0 } ],
          "land" : [ { pop_objectref : None }, { pop_objectref : None }, { push_objectres : [ 2, '&' ] } ],
@@ -788,8 +788,8 @@ class JVMBasicBlock :
       print "\t\tFree blocks offsets --->", self.free_blocks_offsets
       print "\t\tBreakBlocks --->", len(self.break_blocks)
 
-      print "\t\tF --->", ', '.join( i.get_name() for i in self.fathers )
-      print "\t\tC --->", ', '.join( i.get_name() for i in self.childs )
+      print "\t\tF --->", ', '.join( i[2].get_name() for i in self.fathers )
+      print "\t\tC --->", ', '.join( i[2].get_name() for i in self.childs )
 
       self.stack_traces.show()
 
@@ -825,7 +825,7 @@ class JVMBreakBlock(BreakBlock) :
 
          t = ""
 
-         for mre in MATH_JVM_RE :
+         for mre in jvm.MATH_JVM_RE :
             if mre[0].match( i.get_name() ) :
                self._ops.append( mre[1] )
                break
@@ -1115,9 +1115,6 @@ class GVM_BCA :
             return i.get_break_block( idx )
       return None
 
-   def get_bb(self) :
-      return self.__break_blocks
-
    def get_ts(self) :
       return self.__TS.get_string()
 
@@ -1243,6 +1240,10 @@ class VMBCA :
 
    def get_tainted_field(self, class_name, name, descriptor) :
       return self.tainted_variables.get_field( class_name, name, descriptor )
+
+   def get_methods(self) :
+      for i in self.hmethods :
+         yield self.hmethods[i]
 
    def show(self) :
       self.tainted_variables.show()

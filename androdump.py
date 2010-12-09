@@ -76,14 +76,21 @@ class AndroPreDump :
       self.dumpMemory( "java_dump_memory" )
 #      self.dumpFiles( "java_files" )
 
+   def write(self, idx, buff) :
+      self.process.writeBytes( idx, buff )
+
    def getFilesBuffer(self) :
       for i in self.data :
          d = i[1]
          x = d.find(MAGIC_PATTERN)
+         idx = x
          while x != -1 :
-            yield d[x:]
+            yield i[0].start + idx, d[x:]
             d = d[x+len(MAGIC_PATTERN):]
+
+            idx += len(MAGIC_PATTERN)
             x = d.find(MAGIC_PATTERN)
+            idx += x
 
    def dumpMemory(self, base_filename) :
       for i in self.data :
@@ -103,16 +110,28 @@ class AndroDump :
 
       for i in self.__adp.getFilesBuffer() :
          try :
-            j = jvm.JVMFormat( i )
-            for method in j.get_methods() :
-               print method.get_class_name(), method.get_name(), method.get_descriptor()
-         except :
-            pass
+            print "0x%x :" % (i[0])
+            j = jvm.JVMFormat( i[1] )
 
+            for method in j.get_methods() :
+               print "\t -->", method.get_class_name(), method.get_name(), method.get_descriptor()
+
+#               if (method.get_class_name() == "Test2" and method.get_name() == "main") :
+#                  print "patch"
+
+#                  code = method.get_code()
+                  #code.remplace_at( 51, [ "bipush", 20 ] )
+#                  code.show()
+
+#            print "\t\t-> %x" % (len(j.save()))
+
+#            self.__adp.write( i[0], j.save() )
+         except Exception, e :
+            print e
+         
 def main(options, arguments) :                    
    if options.input != None :
       apd = AndroPreDump( options.input )
-      
       AndroDump( apd )
 
    elif options.version != None :
