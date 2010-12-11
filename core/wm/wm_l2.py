@@ -304,7 +304,6 @@ class DepF :
          G.add_edge( "X%d" % depth, nd )
          self.__random( G, self._current_node(G) )
 
-
 class WM_L2 :
    def __init__(self, _vm, _analysis) :
       self.__vm = _vm
