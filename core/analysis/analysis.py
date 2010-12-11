@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
+from networkx import draw_graphviz, write_dot
+
 import re, random, string, cPickle
 import jvm, dvm
 
@@ -1014,7 +1017,7 @@ class BasicBlocks :
 
    def get_basic_block(self, idx) :
       for i in self.bb :
-         if idx >= i.get_start() and idx <= i.get_end() :
+         if idx >= i.get_start() and idx < i.get_end() :
             return i
       return None
 
@@ -1023,6 +1026,17 @@ class BasicBlocks :
 
    def get_random(self) :
       return self.bb[ random.randint(0, len(self.bb) - 1) ]
+
+   def export_dot(self, output) :
+      G = DiGraph()
+
+      for i in self.bb :
+         G.add_node( i.get_name() )
+         for j in i.childs :
+            G.add_edge( i.get_name(), j[2].get_name() )
+
+      draw_graphviz(G)                                                                                                                                                                                                           
+      write_dot(G, output)
 
    def get(self) :
       for i in self.bb :
@@ -1236,6 +1250,8 @@ class VMBCA :
          return -1
 
    def get_tainted_variables(self) :
+      """
+      """
       return self.tainted_variables
 
    def get_tainted_field(self, class_name, name, descriptor) :

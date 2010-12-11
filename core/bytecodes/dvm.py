@@ -75,8 +75,8 @@ class FillArrayData :
       general_format = self.format.get_value()
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
-   def show(self) :
-      print self.format.get_value(), self.data
+   def show(self, pos) :
+      print pos, self.format.get_value(), self.data
 
    def get_size(self) :
       general_format = self.format.get_value()
@@ -97,8 +97,8 @@ class SparseSwitch :
          self.targets.append( unpack('<L', buff[idx:idx+4]) )
          idx += 4
         
-   def show(self) :
-     print self.format.get_value(), self.keys, self.targets
+   def show(self, pos) :
+     print pos, self.format.get_value(), self.keys, self.targets
 
    def get_size(self) :
      return calcsize(SPARSE_SWITCH[0]) + (self.format.get_value().size * calcsize('<L')) * 2
@@ -113,8 +113,8 @@ class PackedSwitch :
          self.targets.append( unpack('<L', buff[idx:idx+4]) )
          idx += 4
         
-   def show(self) :
-     print self.format.get_value(), self.targets
+   def show(self, pos) :
+     print pos, self.format.get_value(), self.targets
 
    def get_size(self) :
      return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
@@ -1582,6 +1582,9 @@ class EncodedTypeAddrPair :
    def get_obj(self) :
       return []
 
+   def show(self) :
+      print "ENCODED_TYPE_ADDR_PAIR", self.type_idx, self.addr
+
    def get_raw(self) :
       return writeuleb128( self.type_idx ) + writeuleb128( self.addr )
 
@@ -1633,11 +1636,13 @@ class EncodedCatchHandlerList :
       return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.list)
 
 class DBCSpe :
-   def __init__(self, x) :
-      pass
+   def __init__(self, cm, x) :
+      self.__CM = cm
+      self.__x = x
 
-   def show(self) :
-      raise("oop")
+
+   def show(self, pos) :
+      self.__x.show( pos )
 
 class DBC :
    def __init__(self, class_manager, op_name, operands, raw_buff) :

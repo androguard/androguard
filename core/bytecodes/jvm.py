@@ -66,6 +66,62 @@ def special_F4(x) :
 def special_F4R(x) :
    pass
 
+def specialSwitch(x) :
+   return x
+
+def TableSwitch(idx, raw_format) :
+   r_buff = []
+   r_format = ">"
+
+   idx = idx + 1
+   
+   n = 0
+   if idx % 4 :
+      n = 4 - (idx % 4)
+   
+   for i in range(0, n) :
+      r_buff.append( "bytepad%d" % i )
+      r_format += "B"
+
+   r_buff.extend( [ "default", "low", "high" ] )
+   r_format += "LLL"
+
+   idx = 1 + n + 4 
+  
+   low = unpack('>L', raw_format[ idx : idx + 4 ])[0]
+   idx = idx + 4
+   high = unpack('>L', raw_format[ idx : idx + 4 ])[0]
+
+   for i in range(0, high - low + 1) :
+      r_buff.append( "offset%d" % i ) 
+      r_format += "L"
+
+   return specialSwitch, specialSwitch, r_buff, r_format, None
+
+def LookupSwitch(idx, raw_format) :
+   r_buff = []
+   r_format = ">"
+
+   idx = idx + 1
+
+   n = 0
+   if idx % 4 :
+      n = 4 - (idx % 4)
+   
+   for i in range(0, n) :
+      r_buff.append( "bytepad%d" % i )
+      r_format += "B"
+
+   r_buff.extend( [ "default", "npairs" ] )
+   r_format += "LL"
+
+   idx = 1 + n + 4
+   for i in range(0,  unpack('>L', raw_format[ idx : idx + 4 ])[0]) :
+      r_buff.extend( [ "match%d" % i, "offset%d" % i ] )
+      r_format += "LL"
+
+   return specialSwitch, specialSwitch, r_buff, r_format, None
+
 # The list of java bytecodes, with their value, name, and special functions !
 JAVA_OPCODES = {
                   0x32 : [ "aaload" ],
@@ -90,7 +146,7 @@ JAVA_OPCODES = {
                   0x10 : [ "bipush", "byte:B", special_F0, special_F0R, None ],
                   0x34 : [ "caload" ],
                   0x55 : [ "castore" ],
-                  0xc0 : [ "checkcast", "indexbyte1:B indexbyte2:B" ],
+                  0xc0 : [ "checkcast", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, None ],
                   0x90 : [ "d2f" ],
                   0x8e : [ "d2i" ],
                   0x8f : [ "d2l" ],
@@ -153,7 +209,7 @@ JAVA_OPCODES = {
                   0xb4 : [ "getfield", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field" ],
                   0xb2 : [ "getstatic", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_field", "get_field_index" ],
                   0xa7 : [ "goto", "branchbyte1:B branchbyte2:B", special_F2, special_F2R, None ],
-                  0xc8 : [ "goto_w", "branchbyte1:B branchbyte2:B branchbyte3:B branchbyte4:B" ],
+                  0xc8 : [ "goto_w", "branchbyte1:B branchbyte2:B branchbyte3:B branchbyte4:B", special_F3, special_F3R, None ],
                   0x91 : [ "i2b" ],
                   0x92 : [ "i2c" ],
                   0x87 : [ "i2d" ],
@@ -196,7 +252,7 @@ JAVA_OPCODES = {
                   0x1d : [ "iload_3" ],
                   0x68 : [ "imul" ],
                   0x74 : [ "ineg" ], 
-                  0xc1 : [ "instanceof", "indexbyte1:B indexbyte2:B" ],
+                  0xc1 : [ "instanceof", "indexbyte1:B indexbyte2:B", special_F2, special_F2R, None ],
                   0xb9 : [ "invokeinterface", "indexbyte1:B indexbyte2:B count:B null:B", special_F1, special_F1R, "get_interface", "get_interface_index" ],
                   0xb7 : [ "invokespecial", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_method", "get_method_index" ],
                   0xb8 : [ "invokestatic", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_method", "get_method_index" ],
@@ -237,7 +293,7 @@ JAVA_OPCODES = {
                   0x21 : [ "lload_3" ],
                   0x69 : [ "lmul" ],
                   0x75 : [ "lneg" ],
-                  0xab : [ "lookupswitch", "bytepad1:B bytepad2:B bytepad3:B defaultbyte1:B defaultbyte2:B defaultbyte2:B defaultbyte3:B defaultbyte4:B npairs1:B npairs2:B npairs3:B npairs4:B" ], # TODO
+                  0xab : [ "lookupswitch", LookupSwitch ],
                   0x81 : [ "lor" ],
                   0x71 : [ "lrem" ],
                   0xad : [ "lreturn" ],
@@ -267,7 +323,7 @@ JAVA_OPCODES = {
                   0x56 : [ "sastore" ],
                   0x11 : [ "sipush", "byte1:B byte2:B", special_F1, special_F1R, None ],
                   0x5f : [ "swap" ],
-                  0xaa : [ "tableswitch" ], # FIXME
+                  0xaa : [ "tableswitch", TableSwitch ], 
                   0xc4 : [ "wide" ], # FIXME
                }
 
@@ -302,7 +358,7 @@ BREAK_JVM_OPCODES = [ "invoke.", "put.", ".store", "iinc", "pop", ".return", "if
 
 INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
 
-def EXTRACT_INFORMATION(op_value) :
+def EXTRACT_INFORMATION_SIMPLE(op_value) :
    """Extract information (special functions) about a bytecode"""
    r_function = JAVA_OPCODES[ op_value ][2]      
    v_function = JAVA_OPCODES[ op_value ][3]                                             
@@ -322,6 +378,10 @@ def EXTRACT_INFORMATION(op_value) :
       r_buff.append( name.replace(' ', '') )
       r_format += val
 
+   return ( r_function, v_function, r_buff, r_format, f_function )
+
+def EXTRACT_INFORMATION_VARIABLE(idx, op_value, raw_format) :
+   r_function, v_function, r_buff, r_format, f_function = JAVA_OPCODES[ op_value ][1]( idx, raw_format )
    return ( r_function, v_function, r_buff, r_format, f_function )
 
 
@@ -802,7 +862,7 @@ class CreateCodeAttributeInfo :
          raw_buff += pack( '>B', op_value )
       
          if len( JAVA_OPCODES[ op_value ] ) > 1 :
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
             raw_buff += pack(r_format, *v_function( *i[1:] ) )
 
       self.__code = JavaCode( self.__CM, raw_buff )
@@ -1017,12 +1077,17 @@ class JavaCode :
       while i < len(self.__raw_buff) :
          op_value = unpack( '>B', self.__raw_buff[i])[0]
          if op_value in JAVA_OPCODES :
-            if len( JAVA_OPCODES[ op_value ] ) > 2 : 
-               r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
-               len_format = calcsize(r_format)
+            if len( JAVA_OPCODES[ op_value ] ) >= 2 : 
+               # it's a fixed length opcode
+               if isinstance(JAVA_OPCODES[ op_value ][1], str) == True :
+                  r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
+               # it's a variable length opcode
+               else :
+                  r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_VARIABLE( i, op_value, self.__raw_buff[ i : ] )
 
+               len_format = calcsize(r_format)
                raw_buff = self.__raw_buff[ i : i + 1 + len_format ]
-               
+
                jbc = JBC( class_manager, JAVA_OPCODES[ op_value ][0], raw_buff, ( r_function, v_function, r_buff, r_format, f_function ) )
                self.__bytecodes.append( jbc )
 
@@ -1055,7 +1120,7 @@ class JavaCode :
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]      
             raw_buff = pack( '>B', op_value )
 
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             new_class_index = self.__CM.create_class( operands[0] )
             new_name_and_type_index = self.__CM.create_name_and_type( operands[1], operands[2] )
@@ -1075,7 +1140,7 @@ class JavaCode :
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]            
             raw_buff = pack( '>B', op_value )
 
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             new_class_index = self.__CM.create_class( operands )
             
@@ -1088,7 +1153,7 @@ class JavaCode :
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]      
             raw_buff = pack( '>B', op_value )
 
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             new_class_index = self.__CM.create_class( operands[0] )
             new_name_and_type_index = self.__CM.create_name_and_type( operands[1], operands[2] )
@@ -1109,7 +1174,7 @@ class JavaCode :
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]            
             raw_buff = pack( '>B', op_value )
 
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             if operands[0] != "CONSTANT_Integer" and operands[0] != "CONSTANT_String" :
                bytecode.Exit( "...." )
@@ -1130,7 +1195,7 @@ class JavaCode :
             op_value = INVERT_JAVA_OPCODES[ i.get_name() ]            
             raw_buff = pack( '>B', op_value )
 
-            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )
+            r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             new_class_index = self.__CM.create_class( operands )
             
@@ -1218,8 +1283,6 @@ class JavaCode :
             self.__branches[ nb ] = i + size 
          nb += 1
 
-  
-
    def insert_at(self, idx, bytecode) :
       """Insert bytecode at a specific index"""
       # Get the op_value and add it to the raw_buff
@@ -1233,7 +1296,7 @@ class JavaCode :
       if len( JAVA_OPCODES[ op_value ] ) > 1 :
 
          # Find information about the op_value
-         r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION( op_value )     
+         r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )     
         
          # Special values for this op_value (advanced bytecode)
          if len( JAVA_OPCODES[ op_value ] ) == 6 :

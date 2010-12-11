@@ -16,7 +16,7 @@ TEST2 = './examples/java/Hello.class'
 _a = androguard.AndroguardS( TEST )
 _b = androguard.AndroguardS( TEST2 )
 
-#_a.show()
+_a.show()
 
 #nb = 0
 #for field in _a.gets( "fields" ) :

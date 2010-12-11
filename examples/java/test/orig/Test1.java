@@ -25,7 +25,16 @@ public class Test1 {
          this.value2 = y;
       }
 
-      this.value2 = this.pouet();
+      switch(this.value) {
+         case 0 : this.value2 = this.pouet();
+         default : this.value2 = this.pouet2();
+      }
+      
+      switch(this.value) {
+         case 1 : this.value2 = this.pouet();
+         case 2 : this.value2 = this.pouet2();
+         case 3 : this.value2 = this.pouet3();
+      }
 
       return y;
     }
@@ -33,6 +42,14 @@ public class Test1 {
     public int pouet() {
       int v  = this.value;
       return v;
+    }
+
+    public int pouet2() {
+      return 90;
+    }
+
+    public int pouet3() {
+      return 80;
     }
 
     public int test1(int val) {

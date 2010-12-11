@@ -51,12 +51,14 @@ FILES = [
           ("Demo1Main.class", 1)
         ]
 
-if TEST_TYPE & TYPE_JVM : 
-   for i in FILES :
-      if i[1] == 0 :
-         TEST.append( BASE_TEST + i[0] )
-   else :
-         TEST.append( BASE_MAIN_TEST + i[0] )
+if TEST_TYPE & TYPE_JVM :
+   TEST.append( "./examples/java/test/orig/Test1.class" )
+
+   #for i in FILES :
+   #   if i[1] == 0 :
+   #      TEST.append( BASE_TEST + i[0] )
+   #else :
+   #      TEST.append( BASE_MAIN_TEST + i[0] )
 
 ### DALVIK TEST ###
 FILES = [ 
@@ -69,6 +71,8 @@ if TEST_TYPE & TYPE_DVM :
       TEST.append( i )
 
 ### ALL ###
+
+print TEST
 
 a = androguard.Androguard( TEST )
 
