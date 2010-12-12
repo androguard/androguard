@@ -12,7 +12,7 @@ TEST  = 'examples/java/test/orig/Test1.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
 
 a = androguard.AndroguardS( TEST )
-x = analysis.VMBCA( a.get_vm() )
+x = analysis.VM_BCA( a.get_vm() )
 
 #x.show()
 

@@ -22,7 +22,14 @@ import sys, os, cmd, threading, code, re
 
 from optparse import OptionParser
 
-import androguard, misc
+from androguard import *
+from jvm import *
+from dvm import *
+from analysis import *
+
+from misc import *
+
+from IPython.Shell import IPShellEmbed
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 
@@ -37,109 +44,16 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
-class ConfClass:
-    def configure(self, cnf):
-        self.__dict__ = cnf.__dict__.copy()
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        s="Version    = %s\n" % misc.VERSION
-        keys = self.__class__.__dict__.copy()
-        keys.update(self.__dict__)
-        keys = keys.keys()
-        keys.sort()
-        for i in keys:
-            if i[0] != "_":
-                s += "%-10s = %s\n" % (i, repr(getattr(self, i)))
-        return s[:-1]
-
-class Conf(ConfClass):
-   session = ""
-
 def interact() :
-   conf = Conf()
-   try:
-      import rlcompleter, readline, atexit
-   except ImportError:
-      pass
-   else:
-      histfile = os.path.join(os.environ["HOME"], ".androlyze_history")
-      atexit.register(readline.write_history_file, histfile)
-   try:
-      readline.read_history_file(histfile)
-   except IOError:
-      pass
-
-   import bytecode, jvm, dvm, analysis
-
-   mydict = {
-      # *VM Format
-      "JVMFormat" : jvm.JVMFormat,
-      "DalvikVMFormat" : dvm.DalvikVMFormat,
-
-      # Androguard
-      "AndroguardS" : androguard.AndroguardS,
-      "Androguard" : androguard.Androguard,
-
-      # Androguard VM*
-      "VM_int" : androguard.VM_int,
-      "VM_INT_AUTO" : androguard.VM_INT_AUTO,
-      "VM_INT_BASIC_MATH_FORMULA" : androguard.VM_INT_BASIC_MATH_FORMULA,
-      "VM_INT_BASIC_PRNG" : androguard.VM_INT_BASIC_PRNG,
-
-      # Androguard Analysis
-      "VMBCA" : analysis.VMBCA,
-   }
-
-   import __builtin__
-   __builtin__.__dict__.update(globals())
-   __builtin__.__dict__.update(mydict)
-
-   class InterpCompleter(rlcompleter.Completer):
-      def global_matches(self, text):
-         matches = []
-         n = len(text)       
-         for lst in [dir(__builtin__), session.keys()]:
-            for word in lst:            
-               if word[:n] == text and word != "__builtins__":               
-                  matches.append(word)
-         return matches
-
-
-      def attr_matches(self, text):
-         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
-         if not m :
-            return
-
-         expr, attr = m.group(1, 3)
-         try:
-            object = eval(expr)
-         except:
-            object = eval(expr, session)
-
-         words = filter(lambda x: x[0] != "_", dir(object))
-         
-         matches = []
-         n = len(attr)
-         for word in words:
-            if word[:n] == attr and word != "__builtins__":
-               matches.append("%s.%s" % (expr, word))
-         return matches
-
-   readline.set_completer(InterpCompleter().complete)
-   readline.parse_and_bind("C-o: operate-and-get-next")
-   readline.parse_and_bind("tab: complete")
-
-   session={"conf": conf}
-               
-   code.interact(banner="Welcome to Androlyze %s" % misc.VERSION, local=session)
+   ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
+   ipshell()
 
 def main(options, arguments) :                    
    if options.shell != None :
       interact()
    
    elif options.input != None :
-      _a = androguard.AndroguardS( options.input )
+      _a = AndroguardS( options.input )
       
       if options.display != None :
          _a.show()
@@ -151,7 +65,7 @@ def main(options, arguments) :
             field.show()
 
    elif options.version != None :
-      print "Androlyze version %s" % misc.VERSION
+      print "Androlyze version %s" % VERSION
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()

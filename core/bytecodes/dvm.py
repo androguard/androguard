@@ -26,6 +26,13 @@ import sys, re, types, string
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
+######################################################## APK FORMAT ########################################################
+class APK :
+   def __init__(self, filename) :
+      self.filename = filename
+
+
+######################################################## DEX FORMAT ########################################################
 
 HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', namedtuple( "HEADER", "magic checksum signature file_size header_size endian_tag link_size link_off " \
                                                                "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
