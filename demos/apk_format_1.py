@@ -9,9 +9,9 @@ sys.path.append(PATH_INSTALL + "/core/bytecodes")
 import dvm
 
 TEST = "./examples/android/Test/bin/Test-debug.apk"
-# TEST = ""
+TEST = "examples/android/Hello_Kitty/Hello_Kitty_Wallpapers_3.0.0.apk"
 
-a = dvm.APK( open(TEST).read() )
+a = dvm.APK( TEST )
 a.show()
 
 j = dvm.DalvikVMFormat( a.get_dex() )

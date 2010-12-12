@@ -22,15 +22,54 @@ import bytecode
 import misc
 from bytecode import SV, SVs
 
-import sys, re, types, string
+import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
+from subprocess import Popen, PIPE, STDOUT
+
+AAPT_PATH = "./externals/android/8/aapt"
 ######################################################## APK FORMAT ########################################################
 class APK :
-   def __init__(self, filename) :
+   def __init__(self, filename, raw=False) :
       self.filename = filename
 
+      self.permissions = {}
+      self.permissions_global = []
+
+      if raw == True :
+         self.__raw = filename
+      else :
+         fd = open( filename, "r" )
+         self.__raw = fd.read()
+         fd.close()
+
+      self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
+
+      for i in self.zip.namelist() :
+         if ".xml" in i :
+            compile = Popen([AAPT_PATH , "d", "permissions", self.filename, i], stdout=PIPE, stderr=STDOUT)
+            stdout, stderr = compile.communicate()
+            x = ""
+            for j in stdout.split("\n") :
+               if "package:" in j :
+                  x = i + j.split(":")[1]
+                  self.permissions[ x ] = []
+               else :
+                  if j != "" :
+                     self.permissions[ x ].append( j )
+                     if j not in self.permissions_global :
+                        self.permissions_global.append( j )
+
+   def get_dex(self) :
+      return self.zip.read("classes.dex")
+
+   def get_permissions(self) :
+      return self.permissions, self.permissions_global
+
+   def show(self) :
+      print self.zip.namelist()
+      print self.permissions_global
 
 ######################################################## DEX FORMAT ########################################################
 
