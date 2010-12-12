@@ -95,7 +95,7 @@ class WM :
       fd.write("<?xml version=\"1.0\"?>\n") 
       fd.write("<andro id=\"androguard wm for %s\">\n" % class_name)
 
-      a = analysis.VMBCA( andro.get_vm() )
+      a = analysis.VM_BCA( andro.get_vm() )
       a.show()
 
       _vm = andro.get_class( class_name )
@@ -113,7 +113,7 @@ class WM :
 
 class WMCheck :
    def __init__(self, andro, class_name, input_file) :
-      a = analysis.VMBCA( andro.get_vm() )
+      a = analysis.VM_BCA( andro.get_vm() )
       
       fd = open(input_file, "r")
       buffxml = fd.read()
@@ -239,8 +239,9 @@ class Androguard :
    """Androguard is the main object to abstract and manage differents formats
    
       @param files : a list of filenames (filename must be terminated by .class or .dex)   
+      @param raw : 
    """
-   def __init__(self, files, config=None) :
+   def __init__(self, files, raw=None) :
       self.__files = files
       self.__bc = []
       self._analyze()
@@ -366,7 +367,7 @@ class AndroguardS :
 
       @param filename : the filename to use (filename must be terminated by .class or .dex)   
    """
-   def __init__(self, filename) :
+   def __init__(self, filename, raw=False) :
       self.__filename = filename
       self.__orig_a = Androguard( [ filename ] )
       self.__a = self.__orig_a.get( "file", filename )

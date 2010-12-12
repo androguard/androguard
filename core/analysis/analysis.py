@@ -1042,12 +1042,19 @@ class BasicBlocks :
       for i in self.bb :
          yield i
 
-class GVM_BCA :
-   def __init__(self, _vm, _method, tv) :
+class M_BCA :
+   """
+      This class analyses a method of a class/dex file
+
+      @param _vm :  a virtual machine object
+      @param _method : a method object
+      @param tv : a tainted variables object
+   """
+   def __init__(self, _vm, _method, _tv) :
       self.__vm = _vm
       self.__method = _method
 
-      self.__tainted_variables = tv
+      self.__tainted_variables = _tv
 
       BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
              "TS" : JVM_TOSTRING }
@@ -1066,8 +1073,6 @@ class GVM_BCA :
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
      
-#      print self.__method.get_name()
-
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
@@ -1105,7 +1110,6 @@ class GVM_BCA :
       l.reverse()
       for i in l :
          x = i.prev_free_block_offset( idx )
-         #print "PREV", x, idx
          if x != -1 :
             return x
       return -1
@@ -1118,7 +1122,6 @@ class GVM_BCA :
    def next_free_block_offset(self, idx=0) :
       for i in self.basic_blocks.get() : 
          x = i.next_free_block_offset( idx )
-         #print "NEXT", x, idx
          if x != -1 :
             return x
       return -1
@@ -1157,9 +1160,6 @@ class GVM_BCA :
          i.show()
          print ""
    
-      #self.show_fields()
-      #self.show_methods()
-
    def show_methods(self) :
       print "\t #METHODS :"
       l = []
@@ -1170,38 +1170,54 @@ class GVM_BCA :
             for context in methods[method] :
                print "\t\t\t |---|", context.details
 
-class VMBCA :
+class VM_BCA :
+   """
+      This class analyses a class file or a dex file
+
+      @param _vm : a virtual machine object
+   """
    def __init__(self, _vm) :
       self.__vm = _vm
 
       self.tainted_variables = TaintedVariables( self.__vm ) 
       for i in self.__vm.get_fields() :
          self.tainted_variables.add( i, TAINTED_FIELD )
-      
+
       self.methods = []
       self.hmethods = {}
       self.__nmethods = {}
 
       for i in self.__vm.get_methods() :
-         x = GVM_BCA( self.__vm, i, self.tainted_variables )
+         x = M_BCA( self.__vm, i, self.tainted_variables )
          self.methods.append( x )
          self.hmethods[ i ] = x
          self.__nmethods[ i.get_name() ] = x
 
+   # FIXME
    def get_like_field(self) :
       return [ random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ]),
                "ACC_PUBLIC",
                "I"
              ]
 
+   # FIXME
    def get_init_method(self) :
       m = self.__vm.get_method("<init>")
       return m[0]
 
+   # FIXME
    def get_random_integer_value(self, method, descriptor) :
       return 0
 
    def prev_free_block_offset(self, method, idx=0) :
+      """
+         Find the previous offset where you can insert a block
+         
+         @param method : a reference of a method object where you would like the offset
+         @param idx : the index to start the research
+
+         @rtype : return -1 if an error occured, otherwise the offset
+      """
       # We would like a specific free offset in a method
       try :
          return self.hmethods[ method ].prev_free_block_offset( idx )
@@ -1210,7 +1226,13 @@ class VMBCA :
          return -1
 
    def random_free_block_offset(self, method) :
-      # Random method "." to get a free offset
+      """
+         Find a random offset where you can insert a block
+         
+         @param method : a reference of method object or a string which represents a regexp
+
+         @rtype : return -1 if an error occured, otherwise the offset
+      """
       if isinstance(method, str) :
          p = re.compile(method)
          for i in self.hmethods :
@@ -1230,18 +1252,14 @@ class VMBCA :
          return -1
 
    def next_free_block_offset(self, method, idx=0) :
-      # Random method "." to get a free offset
-      if isinstance(method, str) :
-         p = re.compile(method)
-         for i in self.hmethods :
-            if random.randint(0, 1) == 1 :
-               if p.match( i.get_name() ) == None :
-                  return i, self.hmethods[i].next_free_block_offset(idx)
+      """
+         Find the next offset where you can insert a block
          
-         for i in self.hmethods :
-            if p.match( i.get_name() ) == None :
-               return i, self.hmethods[i].next_free_block_offset(idx)
+         @param method : a reference of a method object where you would like the offset
+         @param idx : the index to start the research
 
+         @rtype : return -1 if an error occured, otherwise the offset
+      """
       # We would like a specific free offset in a method
       try :
          return self.hmethods[ method ].next_free_block_offset( idx )
@@ -1251,29 +1269,53 @@ class VMBCA :
 
    def get_tainted_variables(self) :
       """
+         Return the tainted variables
+
+         @rtype : L{TaintedVariables}
       """
       return self.tainted_variables
 
    def get_tainted_field(self, class_name, name, descriptor) :
+      """
+         Return a specific tainted field
+
+         @param class_name : the name of the class
+         @param name : the name of the field
+         @param descriptor : the descriptor of the field
+
+         @rtype : L{TaintedVariable}
+      """
       return self.tainted_variables.get_field( class_name, name, descriptor )
 
    def get_methods(self) :
+      """
+         Return each analysis method
+
+         @rtype : L{M_BCA}
+      """
       for i in self.hmethods :
          yield self.hmethods[i]
 
    def show(self) :
+      """
+         Show the analysis of the class
+      """
       self.tainted_variables.show()
       for i in self.methods :
          i.show()
 
-   def get_methods(self) :
-      return self.methods
-
    def get(self, method) :
+      """ 
+         @param method : a reference to method from a vm class
+
+         @rtype : 
+      """
       return self.hmethods[ method ]
 
+   # FIXME
    def get_op(self, op) :
       return [ (i.get_method(), i.get_op(op)) for i in self.l ]
 
+   # FIXME
    def get_ops(self, method) :
       return [ (i.get_method(), i.get_ops()) for i in self.l ]
