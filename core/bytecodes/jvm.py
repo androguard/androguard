@@ -333,7 +333,7 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
-BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if." ]
+BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if.", "return", ".return" ]
 
 MATH_JVM_OPCODES = { ".and" : '&',
                      ".add" : '+',
@@ -1206,6 +1206,11 @@ class JavaCode :
       return methods
 
    def get(self) :
+      """
+         Return all bytecodes
+
+         @rtype : L{list}
+      """
       return self.__bytecodes
 
    def get_raw(self) :
@@ -1220,6 +1225,13 @@ class JavaCode :
          nb += 1
 
    def get_relative_idx(self, idx) :
+      """
+         Return the relative idx by given an offset in the code
+         
+         @param idx : an offset in the code
+
+         @rtype : the relative index in the code, it's the position in the list of a bytecode
+      """
       n = 0
       x = 0
       for i in self.__bytecodes :
@@ -1230,10 +1242,23 @@ class JavaCode :
       return -1
 
    def get_at(self, idx) :
+      """
+         Return a specific bytecode at an index
+         
+         @param : the index of a bytecode
+
+         @rtype : L{JBC}
+      """
       return self.__bytecodes[ idx ]
 
    def remove_at(self, idx) :
-      """Remove bytecode at a specific index"""
+      """
+         Remove bytecode at a specific index
+
+         @param idx : the index to remove the bytecode
+
+         @rtype : the length of the removed bytecode
+      """
       val = self.__bytecodes[idx]
       val_m = self.__maps[idx]
 
@@ -1284,7 +1309,14 @@ class JavaCode :
          nb += 1
 
    def insert_at(self, idx, bytecode) :
-      """Insert bytecode at a specific index"""
+      """
+         Insert bytecode at a specific index
+         
+         @param idx : the index to insert the bytecode
+         @param bytecode : a list which represent the bytecode
+
+         @rtype : the length of the inserted bytecode
+      """
       # Get the op_value and add it to the raw_buff
       op_name = bytecode[0]
       op_value = INVERT_JAVA_OPCODES[ op_name ]
@@ -1330,13 +1362,24 @@ class JavaCode :
       if new_jbc.get_name() in BRANCH_JVM_OPCODES :
          self.__branches.append( idx )
 
+      # FIXME 
+      # modify the exception table
+      # modify tableswitch and lookupswitch instructions
+
       # return the length of the raw_buff
       return len(raw_buff)
 
    def remplace_at(self, idx, bytecode) :
-      """Remplace bytecode at a specific index by another bytecode (remplace = remove + insert)"""
-      size = self.remove_at(idx) * (-1)
-      size += self.insert_at(idx, bytecode)
+      """
+         Remplace bytecode at a specific index by another bytecode (remplace = remove + insert)
+         
+         @param idx : the index to insert the bytecode
+         @param bytecode : a list which represent the bytecode
+
+         @rtype : the length of the inserted bytecode
+      """
+      self.remove_at(idx) * (-1)
+      size = self.insert_at(idx, bytecode)
 
       return size
 
@@ -2376,12 +2419,14 @@ class ClassManager :
 
 
 class JVMFormat(bytecode._Bytecode) :
-   """An object which is the main class to handle properly a class file.
+   """
+      An object which is the main class to handle properly a class file.
       Exported fields : magic, minor_version, major_version, constant_pool_count, access_flags, this_class, super_class, interfaces_count, fields_count, methods_count, attributes_count
-
-      @param buff : the buffer which represents the open file
    """
    def __init__(self, buff) :
+      """
+         @param buff : the buffer which represents the open file
+      """
       super(JVMFormat, self).__init__( buff )
       super(JVMFormat, self).register( bytecode.SHOW, self.show )
 
@@ -2469,6 +2514,13 @@ class JVMFormat(bytecode._Bytecode) :
          self.__attributes.append( ai )
      
    def get_class(self, class_name) :
+      """
+         Verify the name of the class
+         
+         @param class_name : the name of the class
+         
+         @rtype : True if the class name is valid, otherwise it's False
+      """
       x = self.__CM.get_this_class_name() == class_name
       if x == True :
          return x
@@ -2476,7 +2528,8 @@ class JVMFormat(bytecode._Bytecode) :
       return self.__CM.get_this_class_name() == class_name.replace(".", "/")
 
    def get_field(self, name) :
-      """Return into a list all fields which corresponds to the regexp 
+      """
+         Return into a list all fields which corresponds to the regexp 
          
          @param name : the name of the field (a regexp)
       """
@@ -2561,7 +2614,11 @@ class JVMFormat(bytecode._Bytecode) :
       return l 
 
    def get_class_manager(self) :
-      """Return directly the class manager"""
+      """
+         Return directly the class manager
+      
+         @rtype : L{ClassManager}
+      """
       return self.__CM
 
    def set_used_field(self, old, new) :
@@ -2609,7 +2666,9 @@ class JVMFormat(bytecode._Bytecode) :
 
 
    def show(self) :
-      """Show the .class format into a human readable format"""
+      """
+         Show the .class format into a human readable format
+      """
       bytecode._Print( "MAGIC", self.magic.get_value() )
       bytecode._Print( "MINOR VERSION", self.minor_version.get_value() )
       bytecode._Print( "MAJOR VERSION", self.major_version.get_value() )
@@ -2663,6 +2722,13 @@ class JVMFormat(bytecode._Bytecode) :
       self.__CM.add_string( value )
 
    def insert_field(self, class_name, name, descriptor) :
+      """
+         Insert a field into the class
+  
+         @param class_name : the class of the field
+         @param name : the name of the field
+         @param descriptor : a list with the access_flag and the descriptor ( [ "ACC_PUBLIC", "I" ] )
+      """
       new_field = CreateFieldInfo( self.__CM, name, descriptor )
    
       new_field = FieldInfo( self.__CM, bytecode.BuffHandle( new_field.get_raw() ) )
@@ -2675,7 +2741,8 @@ class JVMFormat(bytecode._Bytecode) :
       self.__CM.create_field_ref( self.__CM.get_this_class(), name_and_type_index )                                                                                                                                              
 
    def insert_craft_method(self, name, proto, codes) :
-      """Insert a craft method into the class
+      """
+         Insert a craft method into the class
   
          @param name : the name of the new method
          @param proto : a list which describe the method ( [ ACCESS_FLAGS, RETURN_TYPE, ARGUMENTS ], ie : [ "ACC_PUBLIC", "[B", "[B" ] )
@@ -2688,7 +2755,8 @@ class JVMFormat(bytecode._Bytecode) :
       self._insert_basic_method( MethodInfo( self.__CM, bytecode.BuffHandle( new_method.get_raw() ) ) )
 
    def insert_direct_method(self, name, ref_method) :
-      """Insert a direct method (MethodInfo Object) into the class
+      """
+         Insert a direct method (MethodInfo object) into the class
    
          @param name : the name of the new method
          @param ref_method : the MethodInfo Object 
@@ -2813,7 +2881,8 @@ class JVMFormat(bytecode._Bytecode) :
       return buff
 
    def save(self) :
-      """Return the class (with the modifications) into raw format
+      """
+         Return the class (with the modifications) into raw format
       
          @rtype: string
       """

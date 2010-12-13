@@ -902,6 +902,87 @@ class JVMBreakBlock(BreakBlock) :
          return "F" + i.get_operands()[2]
 
 
+class DVMBasicBlock :
+   def __init__(self, start, _vm, _method, _context) :
+      self.__vm = _vm
+      self.__method = _method
+      self.__context = _context
+
+      self.ins = []
+
+      self.fathers = []
+      self.childs = []
+
+      self.start = start
+      self.end = self.start
+
+      self.break_blocks = []
+
+      self.free_blocks_offsets = []
+
+      self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
+
+   def get_method(self) :
+      return self.__method
+
+   def get_name(self) :
+      return self.name
+
+   def get_start(self) :
+      return self.start
+
+   def get_end(self) :
+      return self.end
+
+   def push(self, i) :
+      i.show(0)
+
+      self.ins.append( i )
+      self.end += i.get_length()
+
+   def set_fathers(self, f) :
+      self.fathers.append( f )
+
+   def set_childs(self) :
+      i = self.ins[-1]
+      i.show(0)
+
+      print i.get_name(), i.get_operands(), self.end
+
+      if "return" in i.get_name() :
+         pass
+      elif "goto" in i.get_name() :
+         off = i.get_operands()[-1][1] * 2
+         
+         self.childs.append( ( self.end, off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
+      elif "if" in i.get_name() :
+         off = i.get_operands()[-1][1] * 2
+
+         self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
+         self.childs.append( ( self.end, off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
+         
+         print self.end + 1, off + (self.end - i.get_length())
+      #FIXME
+      elif "packed" in i.get_name() :
+         pass
+      else :
+         raise("ooo")
+
+#      if "invoke" in i.get_name() :
+#         self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
+#         self.childs.append( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) )
+
+      for c in self.childs :
+         c[2].set_fathers( ( c[1], c[0], self ) )
+
+   def analyze(self) :
+      idx = 0
+      for i in self.ins :
+         pass
+
+   def analyze_code(self) :
+      pass
+
 TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 class Path :
@@ -1015,6 +1096,9 @@ class BasicBlocks :
    def push(self, bb):
       self.bb.append( bb )
 
+   def pop(self, idx) :
+      return self.bb.pop( idx )
+
    def get_basic_block(self, idx) :
       for i in self.bb :
          if idx >= i.get_start() and idx < i.get_end() :
@@ -1059,7 +1143,8 @@ class M_BCA :
       BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
              "TS" : JVM_TOSTRING }
       if self.__vm.get_type() == "DVM" :
-         BO = { "TS" : DVM_TOSTRING }
+         BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock,
+                "TS" : DVM_TOSTRING }
 
       self.__TS = ToString( BO[ "TS" ] )
       
@@ -1072,7 +1157,9 @@ class M_BCA :
       self.basic_blocks = BasicBlocks( self.__vm, self.__tainted_variables )
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
-     
+
+      print "METHOD", _method.get_name()
+
       bc = code.get_bc()
       for i in bc.get() :
          name = i.get_name()
@@ -1091,7 +1178,10 @@ class M_BCA :
          if match == True :
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
             self.basic_blocks.push( current_basic )
-      
+     
+      if current_basic.ins == [] :
+         self.basic_blocks.pop( -1 )
+
       for i in self.basic_blocks.get() :
          i.set_childs()
 
