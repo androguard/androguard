@@ -632,8 +632,10 @@ class JVMBasicBlock :
       elif "if" in i.get_name() :
          self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
          self.childs.append( ( self.end, i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
-      else :
-         raise("oops")
+      elif "tableswitch" in i.get_name() :
+         raise("ooo")
+      elif "lookupswitch" in i.get_name() :
+         raise("ooo")
 
       for c in self.childs :
          c[2].set_fathers( ( c[1], c[0], self ) )
@@ -935,8 +937,7 @@ class DVMBasicBlock :
       return self.end
 
    def push(self, i) :
-      i.show(0)
-
+      #i.show(0)
       self.ins.append( i )
       self.end += i.get_length()
 
@@ -945,9 +946,9 @@ class DVMBasicBlock :
 
    def set_childs(self) :
       i = self.ins[-1]
-      i.show(0)
 
-      print i.get_name(), i.get_operands(), self.end
+      #print "CHILD", 
+      #i.show(0)
 
       if "return" in i.get_name() :
          pass
@@ -960,17 +961,18 @@ class DVMBasicBlock :
 
          self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
          self.childs.append( ( self.end, off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-         
-         print self.end + 1, off + (self.end - i.get_length())
-      #FIXME
       elif "packed" in i.get_name() :
-         pass
-      else :
-         raise("ooo")
+         self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
+         
+         code = self.__method.get_code().get_bc()
+         off = i.get_operands()[-1][1] * 2
+         data =  code.get_ins_off( off + (self.end - i.get_length()) )
 
-#      if "invoke" in i.get_name() :
-#         self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
-#         self.childs.append( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) )
+         for target in data.get_operands() :
+            off = target[0]
+            self.childs.append( ( self.end, self.end + off, self.__context.get_basic_block( self.end + off ) ) )
+      elif "sparse" in i.get_name() :
+         raise("ooo")
 
       for c in self.childs :
          c[2].set_fathers( ( c[1], c[0], self ) )
@@ -1158,7 +1160,7 @@ class M_BCA :
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
 
-      print "METHOD", _method.get_name()
+      #print "METHOD", _method.get_name()
 
       bc = code.get_bc()
       for i in bc.get() :

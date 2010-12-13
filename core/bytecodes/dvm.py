@@ -121,7 +121,7 @@ class FillArrayData :
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
    def get_name(self) :
-      return "fill-array-data"
+      return "FILL-ARRAY-DATA"
 
    def show(self, pos) :
       print pos, self.format.get_value(), self.data
@@ -149,7 +149,7 @@ class SparseSwitch :
       return self.targets
 
    def get_name(self) :
-      return "sparse-switch"
+      return "SPARSE-SWITCH"
 
    def show(self, pos) :
      print pos, self.format.get_value(), self.keys, self.targets
@@ -171,10 +171,10 @@ class PackedSwitch :
       return self.targets
 
    def get_name(self) :
-      return "packed-switch"
+      return "PACKED-SWITCH"
 
    def show(self, pos) :
-     print pos, self.format.get_value(), self.targets
+      print pos, self.format.get_value(), self.targets
 
    def get_length(self) :
       return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
@@ -418,7 +418,7 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
                               
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
-BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return." ]
+BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed." ] #, "sparse." ]
 
 def readuleb128(buff) :
    result = ord( buff.read(1) )
@@ -1807,11 +1807,15 @@ class DCode :
          else :
             sub_ops = sub_ops[2:] + sub_ops[0:2]
 
+         #print sub_ops
 
          for sub_op in sub_ops :
             zero_count = string.count(sub_op, '0')
                      
+            #print sub_op, "ZERO", zero_count
             if zero_count == len(sub_op) :
+               for zero in range(0, zero_count) :
+                  l.pop(0)
                continue
 
             size = ((len(sub_op) - zero_count)  * 4)
@@ -1820,8 +1824,9 @@ class DCode :
             pos_op = string.find(mnemonic[2], sub_op)
             if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' : 
                signed = 1
-
-
+            
+            
+            #print mnemonic, repr(sub_op), signed
             ttype = "op@"
 
             truc = False
@@ -1851,6 +1856,10 @@ class DCode :
       return operands, None
 
    def _extract(self, signed, l, size) :
+      #print signed, l, size
+      #if size == 16 :
+      #   print repr(chr( (l[0] << 4) + (l[1]) ) + chr( (l[2] << 4) + (l[3]) ))
+
       func = string.capitalize
 
       if signed == 1 :
@@ -1872,6 +1881,16 @@ class DCode :
 
    def get_raw(self) :
       return self.__insn
+
+   def get_ins_off(self, off) :
+      idx = 0
+
+      for i in self.__bytecodes :
+         if idx == off :
+            return i
+         idx += i.get_length()
+
+      return None
 
    def show(self) :
       nb = 0
