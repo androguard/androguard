@@ -29,7 +29,6 @@ sys.path.append(PATH_INSTALL + "/core/wm")
 
 import bytecode, jvm, dvm, misc, analysis, opaque, vm, wm
 
-
 VM_INT_AUTO = 0
 VM_INT_BASIC_MATH_FORMULA = 1
 VM_INT_BASIC_PRNG = 2
@@ -239,11 +238,13 @@ class Androguard :
    """Androguard is the main object to abstract and manage differents formats
    
       @param files : a list of filenames (filename must be terminated by .class or .dex)   
-      @param raw : 
+      @param raw : specify if the filename is in fact a raw buffer (default : False) #FIXME
    """
-   def __init__(self, files, raw=None) :
+   def __init__(self, files, raw=False) :
       self.__files = files
+      self.__raw = raw
       self.__bc = []
+
       self._analyze()
 
    def _iterFlatten(self, root):
@@ -366,10 +367,11 @@ class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
 
       @param filename : the filename to use (filename must be terminated by .class or .dex)   
+      @param raw : specify if the filename is in fact a raw buffer (default : False) #FIXME
    """
    def __init__(self, filename, raw=False) :
       self.__filename = filename
-      self.__orig_a = Androguard( [ filename ] )
+      self.__orig_a = Androguard( [ filename ], raw )
       self.__a = self.__orig_a.get( "file", filename )
       
    def get_vm(self) :

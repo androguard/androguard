@@ -28,8 +28,8 @@ from struct import pack, unpack, calcsize
 
 from subprocess import Popen, PIPE, STDOUT
 
-AAPT_PATH = "./externals/android/8/aapt"
 ######################################################## APK FORMAT ########################################################
+AAPT_PATH = "./externals/android/8/aapt"
 class APK :
    def __init__(self, filename, raw=False) :
       self.filename = filename
@@ -72,7 +72,6 @@ class APK :
       print self.permissions_global
 
 ######################################################## DEX FORMAT ########################################################
-
 HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', namedtuple( "HEADER", "magic checksum signature file_size header_size endian_tag link_size link_off " \
                                                                "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
                                                                "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
@@ -121,10 +120,13 @@ class FillArrayData :
       general_format = self.format.get_value()
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
+   def get_name(self) :
+      return "fill-array-data"
+
    def show(self, pos) :
       print pos, self.format.get_value(), self.data
 
-   def get_size(self) :
+   def get_length(self) :
       general_format = self.format.get_value()
       return calcsize(FILL_ARRAY_DATA[0]) + ( general_format.size * general_format.element_width )
 
@@ -143,10 +145,16 @@ class SparseSwitch :
          self.targets.append( unpack('<L', buff[idx:idx+4]) )
          idx += 4
         
+   def get_operands(self) :
+      return self.targets
+
+   def get_name(self) :
+      return "sparse-switch"
+
    def show(self, pos) :
      print pos, self.format.get_value(), self.keys, self.targets
 
-   def get_size(self) :
+   def get_length(self) :
      return calcsize(SPARSE_SWITCH[0]) + (self.format.get_value().size * calcsize('<L')) * 2
 
 class PackedSwitch :
@@ -158,13 +166,18 @@ class PackedSwitch :
       for i in range(0, self.format.get_value().size) :
          self.targets.append( unpack('<L', buff[idx:idx+4]) )
          idx += 4
-        
+
+   def get_operands(self) :
+      return self.targets
+
+   def get_name(self) :
+      return "packed-switch"
+
    def show(self, pos) :
      print pos, self.format.get_value(), self.targets
 
-   def get_size(self) :
-     return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
-
+   def get_length(self) :
+      return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
 
 DALVIK_OPCODES = {
                   0x00 : [ "10x", "nop"                         ],
@@ -405,6 +418,7 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
                               
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
+BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return." ]
 
 def readuleb128(buff) :
    result = ord( buff.read(1) )
@@ -1682,28 +1696,43 @@ class EncodedCatchHandlerList :
       return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.list)
 
 class DBCSpe :
-   def __init__(self, cm, x) :
+   def __init__(self, cm, op) :
       self.__CM = cm
-      self.__x = x
+      self.op = op
 
+   def get_name(self) :
+      return self.op.get_name()
+   
+   def get_operands(self) :
+      return  self.op.get_operands()
+
+   def get_length(self) :
+      return self.op.get_length()
 
    def show(self, pos) :
-      self.__x.show( pos )
+      self.op.show( pos )
 
 class DBC :
    def __init__(self, class_manager, op_name, operands, raw_buff) :
       self.__CM = class_manager
 
-      self.__op_name = op_name
-      self.__operands = operands
-      self.__raw_buff = raw_buff
+      self.op_name = op_name
+      self.operands = operands
+      self.raw_buff = raw_buff
+
+   def get_length(self) :
+#      return len(self.raw_buff) / 2
+      return len(self.raw_buff)
 
    def get_name(self) :
       """Return the name of the bytecode"""
-      return self.__op_name
+      return self.op_name
+
+   def get_operands(self) :
+      return self.operands
 
    def show(self, pos) :
-      print pos, self.__op_name, ' '.join(self._more_info(n[0], n[1]) for n in self.__operands)
+      print self.op_name, ' '.join(self._more_info(n[0], n[1]) for n in self.operands)
 
    def _more_info(self, c, v) :
       if "string" in c :
@@ -1736,7 +1765,7 @@ class DCode :
             self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
 
             del self.__h_special_bytecodes[ real_j ]
-            j += special_e.get_size()
+            j += special_e.get_length()
          else :
             op_value = unpack( '<B', self.__insn[j] )[0]
             
@@ -1846,9 +1875,12 @@ class DCode :
 
    def show(self) :
       nb = 0
+      idx = 0
       for i in self.__bytecodes :
-         print nb,
+         print nb, "0x%x" % idx,   
          i.show(nb)
+
+         idx += i.get_length()
          nb += 1
    
 class DalvikCode : 
