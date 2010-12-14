@@ -610,6 +610,9 @@ class JVMBasicBlock :
    def get_end(self) :
       return self.end
 
+   def get_last(self) :
+      return self.ins[-1]
+
    def push(self, i) :
       self.ins.append( i )
       self.end += i.get_length()
@@ -623,19 +626,33 @@ class JVMBasicBlock :
       if "invoke" in i.get_name() :
          self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
          self.childs.append( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) )
+      
       elif "return" in i.get_name() :
          pass
+      
       elif "goto" in i.get_name() :
          self.childs.append( ( self.end, i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
+      
       elif "jsr" in i.get_name() :
          self.childs.append( ( self.end, i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
+      
       elif "if" in i.get_name() :
          self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
          self.childs.append( ( self.end, i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
+      
       elif "tableswitch" in i.get_name() :
-         raise("ooo")
+         self.childs.append( ( self.end, i.get_operands().default + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands().default + (self.end - i.get_length()) ) ) )
+         
+         for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
+            off = getattr(i.get_operands(), "offset%d" % idx)
+            self.childs.append( ( self.end, off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
+      
       elif "lookupswitch" in i.get_name() :
-         raise("ooo")
+         self.childs.append( ( self.end, i.get_operands().default + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands().default + (self.end - i.get_length()) ) ) )
+
+         for idx in range(0, i.get_operands().npairs) :
+            off = getattr(i.get_operands(), "offset%d" % idx)
+            self.childs.append( ( self.end, off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
 
       for c in self.childs :
          c[2].set_fathers( ( c[1], c[0], self ) )
@@ -936,6 +953,9 @@ class DVMBasicBlock :
    def get_end(self) :
       return self.end
 
+   def get_last(self) :
+      return self.ins[-1]
+
    def push(self, i) :
       #i.show(0)
       self.ins.append( i )
@@ -1117,9 +1137,10 @@ class BasicBlocks :
       G = DiGraph()
 
       for i in self.bb :
-         G.add_node( i.get_name() )
+         name = i.get_name() + " " + i.get_last().get_name()
+         G.add_node( name )
          for j in i.childs :
-            G.add_edge( i.get_name(), j[2].get_name() )
+            G.add_edge( name, j[2].get_name() + " " + j[2].get_last().get_name() )
 
       draw_graphviz(G)                                                                                                                                                                                                           
       write_dot(G, output)
