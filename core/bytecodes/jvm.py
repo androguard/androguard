@@ -333,7 +333,7 @@ INVERT_JAVA_OPCODES = dict([( JAVA_OPCODES[k][0], k ) for k in JAVA_OPCODES])
 # List of java bytecodes which can modify the control flow
 BRANCH_JVM_OPCODES = [ "goto", "goto_w", "if_acmpeq", "if_icmpeq", "if_icmpne", "if_icmplt", "if_icmpge", "if_icmpgt", "if_icmple", "ifeq", "ifne", "iflt", "ifge", "ifgt", "ifle", "ifnonnull", "ifnull", "jsr", "jsr_w" ]
 
-BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if.", "return", ".return" ]
+BRANCH2_JVM_OPCODES = [ "goto", "goto.", "jsr", "jsr.", "if.", "return", ".return", "tableswitch", "lookupswitch" ]
 
 MATH_JVM_OPCODES = { ".and" : '&',
                      ".add" : '+',

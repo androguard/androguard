@@ -1045,6 +1045,15 @@ class StringDataItem :
       self.utf16_size = readuleb128( buff ) 
       self.data = buff.read( self.utf16_size + 1 )
 
+      if self.data[-1] != '\x00' :
+         i = buff.read( 1 )
+         self.utf16_size += 1
+         self.data += i
+         while i != '\x00' :
+            i = buff.read( 1 )
+            self.utf16_size += 1
+            self.data += i
+                  
    def reload(self) :
       pass
 
@@ -1067,7 +1076,7 @@ class StringIdItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      
+     
       self.string_data_off = SV( '<L', buff.read( 4 ) )
 
    def reload(self) :
@@ -2160,7 +2169,7 @@ class ClassManager :
 
    def add_type_item(self, type_item, item) :
       self.__manage_item[ type_item ] = item
-    
+   
       sdi = False
       if type_item == "TYPE_STRING_DATA_ITEM" :
          sdi = True
