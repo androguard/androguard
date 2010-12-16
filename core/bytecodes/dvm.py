@@ -1103,6 +1103,9 @@ class IdItem(object) :
       for i in range(0, size) :
          self.elem.append( TClass(buff, cm) )
 
+   def gets(self) :
+      return self.elem
+
    def get(self, idx) :
       return self.elem[ idx ]
 
@@ -1529,7 +1532,6 @@ class ClassDataItem :
 
    def get_fields(self) :
       return [ x for x in self.static_fields ] + [ x for x in self.instance_fields ]
-
 
    def get_off(self) :
       return self.__offset.off
@@ -2209,8 +2211,12 @@ class ClassManager :
       proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
       return [  proto.get_shorty(), proto.get_return_type() ]
 
-   def get_field(self, idx) :
+   def get_field(self, idx, ref=False) :
       field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
+
+      if ref == True :
+         return field
+
       return [ field.get_class(), field.get_type(), field.get_name() ]
 
    def get_method(self, idx) :
@@ -2262,6 +2268,9 @@ class MapList :
       return [ bytecode.Buff( self.__offset.off, self.size.get_value_buff()) ] + \
              [ x.get_raw() for x in self.map_item ]
 
+   def get_class_manager(self) :
+      return self.__CM
+
 class Data :
    def __init__(self, buff) :
       pass
@@ -2280,6 +2289,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
       self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
       self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
+      self.fields = self.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
       self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
 
    def show(self) :
@@ -2355,6 +2365,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
                l.append( j )
       return l
 
+   def get_all_fields(self) :
+      return self.fields.gets()
+
    def get_fields(self) :
       """Return all objects fields"""
       l = []
@@ -2402,10 +2415,14 @@ class DalvikVMFormat(bytecode._Bytecode) :
                if field_name == j.get_name() and descriptor == j.get_descriptor() :
                   return i
       return None
-
-   def save(self) :
-      """Return the class (with the modifications) into raw format"""
-      return self._get_raw()
    
+   def get_class_manager(self) :
+      """
+         Return directly the class manager
+      
+         @rtype : L{ClassManager}
+      """
+      return self.map_list.get_class_manager()
+
    def get_type(self) :
       return "DVM"

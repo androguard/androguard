@@ -53,12 +53,17 @@
     <target name="-pre-compile">
     </target>
 
+
     [This is typically used for code obfuscation.
      Compiled code location: ${out.classes.absolute.dir}
      If this is not done in place, override ${out.dex.input.absolute.dir}]
+   -->
+
     <target name="-post-compile">
+       <echo>Running Androguard ...</echo>
+       <exec executable="../../../ant/androguard_ant.py"> <arg value="${out.classes.absolute.dir}"/> <arg value="${basedir}/androguard.xml"/> </exec>
     </target>
--->
+
 
 
     <!-- Execute the Android Setup task that will setup some properties
@@ -76,7 +81,7 @@
              - copy/paste the content of the rules files (minus the top node)
                into this file, *after* the <setup> task
              - disable the import of the rules by changing the setup task
-               below to <setup import="false" />. 
+               below to <setup import="false" />.
              - customize to your needs.
     -->
     <setup />

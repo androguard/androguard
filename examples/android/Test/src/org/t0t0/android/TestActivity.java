@@ -11,5 +11,7 @@ public class TestActivity extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        Test1 t = new Test1();
+        t.go();
     }
 }

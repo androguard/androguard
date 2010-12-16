@@ -4,7 +4,7 @@ from xml.sax.saxutils import escape, unescape
 
 import misc
 
-import wm_l1, wm_l2, wm_l3, wm_l4
+import wm_l1, wm_l2, wm_l3, wm_l4, wm_l5
 
 WM_CLASS = 0
 WM_METHOD = 1
@@ -13,12 +13,14 @@ WM_L1 = 0
 WM_L2 = 1
 WM_L3 = 2
 WM_L4 = 3
+WM_L5 = 4
 
 WM_BIND = {
             WM_L1 : (wm_l1.INIT(), WM_METHOD),
             WM_L2 : (wm_l2.INIT(), WM_CLASS),
             WM_L3 : (wm_l3.INIT(), WM_METHOD),
             WM_L4 : (wm_l4.INIT(), WM_METHOD),
+            WM_L5 : (wm_l5.INIT(), WM_METHOD),
          }
 
 class WM :
@@ -39,6 +41,8 @@ class WM :
       for i in wm_type :
          if WM_BIND[ i ][1] == WM_CLASS :
             wb = WM_BIND[ i ][0](vm, self.__a)
+            
+            print "CREATING %s ... %s" % (class_name, wb.get_name())
             wb.run()
 
             l_x = wb.get()
@@ -55,10 +59,13 @@ class WM :
       ######### WM in methods ##########
       for method in vm.get_methods() :
          list_x = []
-      
+     
+         print "CREATING %s %s %s ..." % (method.get_class_name(), method.get_name(), method.get_descriptor()),
          for i in wm_type :
             if WM_BIND[ i ][1] == WM_METHOD :
                wb = WM_BIND[ i ][0]( vm, method, self.__a )
+            
+               print wb.get_name(),
                wb.run()
 
                l_x = wb.get()
@@ -70,15 +77,11 @@ class WM :
                   self.__wms[ "METHODS" ][ method ] = []
 
                self.__wms[ "METHODS" ][ method ].append( (i, wb) )
+         print ""
 
          # Create the secret sharing for methods
          if list_x != [] :
             self.__wms[ "SSS_METHODS" ][ method ] = DWBO( "TOTO", list_x )
-
-      #for i in self.__a.get_bb() :
-      #   print i
-      #   i.show()
-      #   print ""
 
 
       # X : [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
@@ -106,6 +109,7 @@ class WM :
    def save(self) :
       buffer = ""
 
+      # Save class watermarks
       if self.__wms[ "SSS_CLASS" ] != None :
          sss = self.__wms[ "SSS_CLASS" ]
 
@@ -118,6 +122,7 @@ class WM :
 
          buffer += "</class>\n"
 
+      # Save methods watermarks
       for i in self.__wms[ "SSS_METHODS" ] :
          sss = self.__wms[ "SSS_METHODS" ][ i ]
          buffer += "<method class=\"%s\" name=\"%s\" descriptor=\"%s\">\n" % ( i.get_class_name(), escape( i.get_name() ), i.get_descriptor() )
@@ -133,14 +138,19 @@ class WM :
 
 class WMMLoad :
    def __init__(self, item) :
+      # Load a specific watermark method from a xml file
+
+      # get class name, method name and method descriptor
       self.__class_name = item.getAttribute('class')
       self.__name = unescape( item.getAttribute('name') )
       self.__descriptor = item.getAttribute('descriptor')
-      
+
       self.__wms = []
 
+      # get the threshold
       th = int( item.getElementsByTagName( 'threshold' )[0].firstChild.data )
 
+      # load the y
       x = base64.b64decode( item.getElementsByTagName( 'sss' )[0].firstChild.data )
       self.__dwbo = DWBOCheck( cPickle.loads( x ), th )
 
@@ -148,7 +158,8 @@ class WMMLoad :
       for s_item in item.getElementsByTagName( 'wm' ) :
          _type = int( s_item.getAttribute('type') )
 
-         wb = WM_BIND[ _type ]( None, None, None )
+         # load the context of the original watermark
+         wb = WM_BIND[ _type ][0]( None, None, None )
         
          x = cPickle.loads( base64.b64decode( s_item.firstChild.data ) )
          wb.set_context( x )
@@ -169,6 +180,7 @@ class WMLoad :
    def __init__(self, document) :
       self.__methods = []
 
+      # load each watermark method
       for item in document.getElementsByTagName('method') :
          self.__methods.append( WMMLoad( item ) )
 
@@ -177,13 +189,13 @@ class WMLoad :
 
 class WMCheck :
    def __init__(self, wm_orig, vm, method, analysis) :
-      print method.get_name()
 
+      # check if a watermark is present on the compared method
       for _method in wm_orig.get_methods() :
          list_x = []
          print "\t --->", _method.get_name()
          for _type, _wm in _method.get_wms() :
-            wb = WM_BIND[ _type ]( vm, method, analysis )
+            wb = WM_BIND[ _type ][0]( vm, method, analysis )
 
             wb.set_context( _wm.get_import_context() )
             wb.run()
@@ -196,7 +208,6 @@ class WMCheck :
          print "\t\t X :", list_x
          sols =  _method.get_dwbo().verify_with_X( list_x )
          print "\t\t SOL :", len(sols)
-
       print ""
 
 class Polynomial :
@@ -322,16 +333,19 @@ class AlgoWM :
       return sols
 
 class DWBO : 
-   def __init__(self, hash, val) :
+   def __init__(self, hash, val, max_threshold=-1) :
       self.__hash = hash
       self.__val = val
+
+      if max_threshold == -1 :
+         th = (len(self.__val) / 2) + 1
 
       self.__sss = ShamirSecretScheme(self.__hash, self.__val, (len(self.__val) / 2) + 1)
       self.__points = self.__sss.split()
 
-   def verify_with_X(self, coord_x) :
-      result, success = self.__sss.join( coord_x, self.__points.values() )
-      return result, success
+#   def verify_with_X(self, coord_x) :
+#      result, success = self.__sss.join( coord_x, self.__points.values() )
+#      return result, success
 
    def get_y(self) :
       return [ self.__points[k] for k in self.__points ]

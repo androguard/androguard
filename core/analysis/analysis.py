@@ -921,6 +921,13 @@ class JVMBreakBlock(BreakBlock) :
          return "F" + i.get_operands()[2]
 
 
+DVM_FIELDS_ACCESS = {
+      "iput" : "W",
+      "iget" : "R",
+      "sget" : "R",
+      "sput" : "W",
+   }
+
 class DVMBasicBlock :
    def __init__(self, start, _vm, _method, _context) :
       self.__vm = _vm
@@ -1000,7 +1007,16 @@ class DVMBasicBlock :
    def analyze(self) :
       idx = 0
       for i in self.ins :
-         pass
+         if i.get_name() in DVM_FIELDS_ACCESS :
+            o = i.get_operands()
+            desc = self.__vm.get_class_manager().get_field(o[-1][1], True)
+
+            if desc == None :
+               raise("oo") #desc = ExternalFM( o[0], o[1], o[2] )
+
+            self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
+      
+         idx += i.get_length()
 
    def analyze_code(self) :
       pass
@@ -1048,6 +1064,9 @@ class TaintedVariable :
          if i.get_access_flag() in mode :
             yield i
 
+   def gets(self) :
+      return self.__paths
+
    def get_paths(self) :
       for i in self.__paths :
          yield i
@@ -1059,6 +1078,16 @@ class TaintedVariables :
 
    def get_local_variables(self, _method) :
       return self.__vars[ _method ]
+
+   def get_fields_in_bb(self, bb) :
+      l = []
+      for i in self.__vars :
+         if isinstance( self.__vars[i], dict ) == False :
+            for j in self.__vars[i].gets() :
+               if j.get_bb() == bb :
+                  l.append( (i.get_name(), j.get_access_flag()) ) #self.__vars[i] )
+
+      return l
 
    def get_field(self, class_name, name, descriptor) :
       for i in self.__vars :
@@ -1087,7 +1116,7 @@ class TaintedVariables :
             self.__vars[ info[-1] ][ var ].push( info )
          else :
             raise("ooop")
-      except KeyError :
+      except KeyError, e :
          pass
 
    def show(self) :
@@ -1148,6 +1177,14 @@ class BasicBlocks :
    def get(self) :
       for i in self.bb :
          yield i
+
+   def create_graph(self) :
+      self.G = DiGraph()
+
+      for i in self.bb :
+         self.G.add_node( i.get_name() )
+         for j in i.childs :
+            self.G.add_edge( i.get_name(), j[-1].get_name() )
 
 class M_BCA :
    """
@@ -1213,6 +1250,8 @@ class M_BCA :
 
       for i in self.basic_blocks.get() :
          i.analyze_code()
+
+      self.basic_blocks.create_graph()
 
    def prev_free_block_offset(self, idx=0) :
       l = []
@@ -1293,7 +1332,7 @@ class VM_BCA :
       self.__vm = _vm
 
       self.tainted_variables = TaintedVariables( self.__vm ) 
-      for i in self.__vm.get_fields() :
+      for i in self.__vm.get_all_fields() :
          self.tainted_variables.add( i, TAINTED_FIELD )
 
       self.methods = []

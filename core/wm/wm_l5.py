@@ -16,44 +16,34 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc
-import hashlib
+import misc, hashlib, string, random
 
 def INIT() :
-   return WM_L1
+   return WM_L5
 
-class WM_L1 :
-   def __init__(self, vm, method, analysis) :
-      self.__vm = vm
-      self.__method = method
-      self.__analysis = analysis
+class WM_L5 :
+   def __init__(self, _vm, _method, _analysis) :
+      self.__vm = _vm
+      self.__method = _method
+      self.__analysis = _analysis
 
       self.__context = {
                            "L_X" : [],
-                           "STRING" : "",
                        }
 
    def get_name(self) :
-      return "WM_STRING"
+      return "WM_GRAPH"
 
    def run(self) :
-      x = self.__analysis.get(self.__method)
-
-      self.__context[ "STRING" ] = x.get_ts()
-
-      self.__context[ "L_X" ].append( 
-                                       misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() ) 
-                                    )
+      pass
 
    def challenge(self, external_wm) :
-      distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
-
-      if distance <= 2 :
-         return self.__context[ "L_X" ]
-
-      return []
+      return self.__context[ "L_X" ]
 
    def get(self) :
+      for i in range(0, 30) :
+         self.__context[ "L_X" ].append( i )
+
       return self.__context[ "L_X" ]
 
    def set_context(self, values) :

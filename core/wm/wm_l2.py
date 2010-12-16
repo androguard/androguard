@@ -69,10 +69,9 @@ class Field :
                meth = x[0]
             else :
                meth, off = self.__analysis.random_free_block_offset( "^\<init\>" )
-      
-            self.__vm_generate.write( meth, off, self.__field )
-            raise("oo")
 
+            # Generate the access of the new field
+            self.__vm_generate.write( meth, off, self.__field )
             self.__access_offset.append( (False, meth, self.__offsets.add_offset( off ) ) )
 
       # It's an original field, we must search original access
@@ -178,6 +177,9 @@ class DepF :
       #draw_graphviz(G)
       #write_dot(G,'file.dot')
     
+   def get_field(self) :
+      return self.__field
+
    def add_offset(self, idx) :
       x = Offset( idx ) 
       self.__offsets.append( x )
@@ -317,18 +319,24 @@ class WM_L2 :
                            "L_X" : [],
                        }
 
+   def get_name(self) :
+      return "WM_FIELDS_DEPENDENCY"
+
    def run(self) :
       for field in self.__vm.get_fields() :
       #   if random.randint(0, 1) == 1 :
+
          self.__dependencies.append( DepF( field ) )
          break
 
       for i in self.__dependencies : 
+         print "* RUN DEPENDENCY FOR ", i.get_field().get_name()
          i.run( self.__vm, self.__analysis, self.__vm_generate )
+         
+         print "* GENERATE X FOR ", i.get_field().get_name()
+         i.generate_x()
+         self.__context[ "L_X" ].extend( i.get_x() )
 
-      self.__context[ "L_X" ].append( 20000 )
-      self.__context[ "L_X" ].append( 20001 )
-      self.__context[ "L_X" ].append( 20002 )
 
    def challenge(self, external_wm) :
       return []

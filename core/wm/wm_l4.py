@@ -32,6 +32,9 @@ class WM_L4 :
                            "OP_BIND" : {},
                        }
 
+   
+   def get_name(self) :
+      return "WM_OP"
 
    def __init_context(self) :
       self.__context[ "OP_BIND" ][ '&' ] = self.new_randint()

@@ -32,5 +32,6 @@ def __main__() :
 
       a = androguard.Androguard( files )
       a.do( sys.argv[2] )
+      a.save()
 
 __main__()

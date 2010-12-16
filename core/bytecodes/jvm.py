@@ -2593,6 +2593,9 @@ class JVMFormat(bytecode._Bytecode) :
             methods.append( i )
       return methods 
 
+   def get_all_fields(self) :
+      return self.__fields
+
    def get_fields(self) :
       """Return all objects fields"""
       return self.__fields
