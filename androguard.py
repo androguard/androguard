@@ -82,6 +82,7 @@ WM_L1 = wm.WM_L1
 WM_L2 = wm.WM_L2
 WM_L3 = wm.WM_L3
 WM_L4 = wm.WM_L4
+WM_L5 = wm.WM_L5
 class WM :
    def __init__(self, andro, class_name, output_dir, wm_type, output_file) :
       self.__output_dir = output_dir
@@ -95,7 +96,6 @@ class WM :
       fd.write("<andro id=\"androguard wm for %s\">\n" % class_name)
 
       a = analysis.VM_BCA( andro.get_vm() )
-      a.show()
 
       _vm = andro.get_class( class_name )
       w = wm.WM( _vm, class_name, wm_type, a )
@@ -104,7 +104,6 @@ class WM :
       fd.write("</andro>\n")
 
       fd.close()
-
 
       fd = open(output_dir + class_name + ".class", "w" )
       fd.write( _vm.save() )
@@ -121,7 +120,6 @@ class WMCheck :
       document = xml.dom.minidom.parseString(buffxml)
 
       w_orig = wm.WMLoad( document )
-
       for method in andro.get_methods() :
          _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
          
@@ -357,11 +355,11 @@ class Androguard :
 
       document = xml.dom.minidom.parseString(buffxml)
       
-      for item in document.getElementsByTagName('method') :
-         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
-            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
-               vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
-               VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
+#      for item in document.getElementsByTagName('method') :
+#         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
+#            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
+#               vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
+#               VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
 
 class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
