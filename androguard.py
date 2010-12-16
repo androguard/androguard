@@ -354,7 +354,9 @@ class Androguard :
       fd.close()
 
       document = xml.dom.minidom.parseString(buffxml)
-      
+     
+      raise("ooo")
+
 #      for item in document.getElementsByTagName('method') :
 #         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
 #            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
