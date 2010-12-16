@@ -334,8 +334,8 @@ class WM_L2 :
          i.run( self.__vm, self.__analysis, self.__vm_generate )
          
          print "* GENERATE X FOR ", i.get_field().get_name()
-         i.generate_x()
-         self.__context[ "L_X" ].extend( i.get_x() )
+         #i.generate_x()
+         #self.__context[ "L_X" ].extend( i.get_x() )
 
 
    def challenge(self, external_wm) :

@@ -24,33 +24,16 @@ from optparse import OptionParser
 
 import androguard, misc
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
+option_0 = { 'name' : ('-i', '--input'), 'help' : 'file to be check', 'nargs' : 1 }
 
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
-
-option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more easily with objects', 'action' : 'count' }
+option_1 = { 'name' : ('-x', '--xml'), 'help' : 'you xml watermark !', 'nargs' : '1' }
 
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+options = [option_0, option_1, option_5]
 
 def main(options, arguments) :                    
-   if options.input != None :
-      _a = androguard.AndroguardS( options.input )
-      
-      if options.display != None :
-         _a.show()
-      elif options.method != None :
-         for method in _a.get("method", options.method) :
-            method.show()
-      elif options.field != None :
-         for field in _a.get("field", options.field) :
-            field.show()
-
-   elif options.version != None :
+   if options.version != None :
       print "Andromarks version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     

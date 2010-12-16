@@ -8,10 +8,10 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, analysis
 
 OUTPUT = "./output/"
-#TEST  = 'examples/java/test/orig/Test1.class'
+TEST  = 'examples/java/test/orig/Test1.class'
 #TEST  = 'examples/java/Demo1/orig/DES.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
-TEST = 'examples/android/Test/bin/classes.dex'
+#TEST = 'examples/android/Test/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
 
 a = androguard.AndroguardS( TEST )
