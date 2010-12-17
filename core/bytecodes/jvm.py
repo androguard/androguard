@@ -391,6 +391,7 @@ FIELD_INFO              =       [ '>HHHH',      namedtuple("FieldInfo", "access_
 LINE_NUMBER_TABLE       =       [ '>HH',        namedtuple("LineNumberTable", "start_pc line_number") ]
 EXCEPTION_TABLE         =       [ '>HHHH',      namedtuple("ExceptionTable", "start_pc end_pc handler_pc catch_type") ]
 LOCAL_VARIABLE_TABLE    =       [ '>HHHHH',     namedtuple("LocalVariableTable", "start_pc length name_index descriptor_index index") ]
+LOCAL_VARIABLE_TYPE_TABLE    =       [ '>HHHHH',     namedtuple("LocalVariableTypeTable", "start_pc length name_index signature_index index") ]
 
 CODE_LOW_STRUCT         =       [ '>HHL',       namedtuple( "LOW", "max_stack max_locals code_length" ) ]
 
@@ -1608,20 +1609,305 @@ class LocalVariableTableAttribute(BasicAttribute) :
       # } local_variable_table[local_variable_table_length];
       self.local_variable_table_length = SV( '>H', buff.read(2) )
 
-      self.__local_variable_table = []
+      self.local_variable_table = []
       for i in range(0, self.local_variable_table_length.get_value()) :
-         lvt = SVs( LOCAL_VARIABLE_TABLE[0], LOCAL_VARIABLE_TABLE[1], buff.read( 10 ) )
-
-         self.__local_variable_table.append( lvt )
+         lvt = SVs( LOCAL_VARIABLE_TABLE[0], LOCAL_VARIABLE_TABLE[1], buff.read( calcsize(LOCAL_VARIABLE_TABLE[0]) ) )
+         self.local_variable_table.append( lvt )
 
    def get_raw(self) :
       return self.local_variable_table_length.get_value_buff() + \
-             ''.join(x.get_value_buff() for x in self.__local_variable_table)
+             ''.join(x.get_value_buff() for x in self.local_variable_table)
 
    def show(self) :
-      print self.local_variable_table_length 
-      for x in self.__local_variable_table :
+      print "LocalVariableTable", self.local_variable_table_length.get_value()
+      for x in self.local_variable_table :
          print x.get_value()
+
+class LocalVariableTypeTableAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(LocalVariableTypeTableAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # u2 local_variable_type_table_length;
+      # { u2 start_pc;
+      #   u2 length;
+      #   u2 name_index;
+      #   u2 signature_index;
+      #   u2 index;
+      # } local_variable_type_table[local_variable_type_table_length];
+      self.local_variable_type_table_length = SV( '>H', buff.read(2) )
+      
+      self.local_variable_type_table = []
+      for i in range(0, self.local_variable_type_table_length.get_value()) :
+         lvtt = SVs( LOCAL_VARIABLE_TYPE_TABLE[0], LOCAL_VARIABLE_TYPE_TABLE[1], buff.read( calcsize(LOCAL_VARIABLE_TYPE_TABLE[0]) ) )
+         self.local_variable_type_table.append( lvtt )
+
+   def get_raw(self) :
+      return self.local_variable_type_table_length.get_value_buff() + \
+             ''.join(x.get_value_buff() for x in self.local_variable_type_table)
+
+   def show(self) :
+      print "LocalVariableTypeTable", self.local_variable_type_table_length.get_value()
+      for x in self.local_variable_type_table :
+         print x.get_value()
+
+class SourceDebugExtensionAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(SourceDebugExtensionAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+      # u1 debug_extension[attribute_length];
+
+      self.debug_extension = buff.read( self.attribute_length )
+
+   def get_raw(self) :
+      return self.debug_extension
+
+   def show(self) :
+      print "SourceDebugExtension", self.debug_extension.get_value()
+
+class DeprecatedAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(DeprecatedAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+   def get_raw(self) :
+      return ''
+
+   def show(self) :
+      print "Deprecated"
+
+class SyntheticAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(SyntheticAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+   def get_raw(self) :
+      return ''
+
+   def show(self) :
+      print "Synthetic"
+
+class SignatureAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(SignatureAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # u2 signature_index;
+      self.signature_index = SV( '>H', buff.read(2) )
+
+   def get_raw(self) :
+      return self.signature_index.get_value_buff()
+
+   def show(self) :
+      print "Signature", self.signature_index.get_value()
+
+class RuntimeVisibleAnnotationsAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(RuntimeVisibleAnnotationsAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+      
+      # u2 num_annotations;
+      # annotation annotations[num_annotations];
+      self.num_annotations = SV( '>H', buff.read(2) )
+
+      self.annotations = []
+      for i in range(0, self.num_annotations.get_value()) :
+         self.annotations.append( Annotation(cm, buff) )
+
+   def get_raw(self) :
+      return self.num_annotations.get_value_buff() + \
+             ''.join(x.get_raw() for x in self.annotations)
+
+   def show(self) :
+      print "RuntimeVisibleAnnotations", self.num_annotations.get_value()
+      for i in self.annotations :
+         i.show()
+
+class RuntimeInvisibleAnnotationsAttribute(RuntimeVisibleAnnotationsAttribute) :
+   def show(self) :
+      print "RuntimeInvisibleAnnotations", self.num_annotations.get_value()
+      for i in self.annotations :
+         i.show()
+
+class RuntimeVisibleParameterAnnotationsAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(RuntimeVisibleParameterAnnotationsAttribute, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # u1 num_parameters;
+      #{
+      #       u2 num_annotations;
+      #       annotation annotations[num_annotations];
+      #} parameter_annotations[num_parameters];
+
+      self.num_parameters = SV( '>H', buff.read(2) )
+      self.parameter_annotations = []
+      for i in range(0, self.num_parameters.get_value()) :
+         self.parameter_annotations.append( ParameterAnnotation( cm, buff ) )
+
+   def get_raw(self) :
+      return self.num_parameters.get_value_buff() + \
+             ''.join(x.get_raw() for x in self.parameter_annotations)
+
+   def show(self) :
+      print "RuntimeVisibleParameterAnnotations", self.num_parameters.get_value()
+      for i in self.parameter_annotations :
+         i.show()
+
+class RuntimeInvisibleParameterAnnotationsAttribute(RuntimeVisibleParameterAnnotationsAttribute) :
+   def show(self) :
+      print "RuntimeVisibleParameterAnnotations", self.num_annotations.get_value()
+      for i in self.parameter_annotations :
+         i.show()
+
+class ParameterAnnotation :
+   def __init__(cm, buff) :
+      # u2 num_annotations;
+      # annotation annotations[num_annotations];
+      self.num_annotations = SV( '>H', buff.read(2) )
+      self.annotations = []
+
+      for i in range(0, self.num_annotations.get_value()) :
+         self.annotations = Annotation( cm, buff )
+
+      
+   def get_raw(self) :
+      return self.num_annotations.get_value_buff() + \
+             ''.join(x.get_raw() for x in self.annotations)
+
+   def show(self) :
+      print "ParameterAnnotation", self.num_annotations.get_value()
+      for i in self.annotations :
+         i.show()
+
+class AnnotationDefaultAttribute(BasicAttribute) :
+   def __init__(self, cm, buff) :
+      super(AnnotationDefault, self).__init__()
+      # u2 attribute_name_index;
+      # u4 attribute_length;
+
+      # element_value default_value;
+
+      self.default_value = ElementValue( cm, buff )
+
+   def get_raw(self) :
+      return self.default_value.get_raw()
+
+   def show(self) :
+      print "AnnotationDefault"
+      self.default_value.show()
+
+class Annotation :
+   def __init__(self, cm, buff) :
+      # u2 type_index;
+      # u2 num_element_value_pairs;
+      # {    u2 element_name_index;
+      #      element_value value;
+      # }    element_value_pairs[num_element_value_pairs]
+      self.type_index = SV( '>H', buff.read(2) )
+      self.num_element_value_pairs = SV( '>H', buff.read(2) )
+
+      self.element_value_pairs = []
+
+      for i in range(0, self.num_element_value_pairs.get_value()) :
+         self.element_value_pairs.append( ElementValuePair(cm, buff) )
+
+   def get_raw(self) :
+      return self.type_index.get_value_buff() + self.num_element_value_pairs.get_value_buff() + \
+             ''.join(x.get_raw() for x in self.element_value_pairs)
+
+   def show(self) :
+      print "Annotation", self.type_index.get_value(), self.num_element_value_pairs.get_value()
+      for i in self.element_value_pairs :
+         i.show()
+
+
+class ElementValuePair :
+   def __init__(self, cm, buff) :
+      # u2 element_name_index;
+      # element_value value;
+      self.element_name_index = SV( '>H', buff.read(2) )
+      self.value = ElementValue(cm, buff)
+
+   def get_raw(self) :
+      return self.element_name_index.get_value_buff() + \
+             self.value.get_raw()
+
+   def show(self) :
+      print "ElementValuePair", self.element_name_index.get_value()
+      self.value.show()
+
+ENUM_CONST_VALUE = [ '>HH', namedtuple("EnumConstValue", "type_name_index const_name_index") ]
+class ElementValue :
+   def __init__(self, cm, buff) :
+      # u1 tag;
+      # union {
+      #         u2    const_value_index;
+      #         {
+      #                 u2 type_name_index;
+      #                 u2 const_name_index;
+      #         } enum_const_value;
+      #         u2    class_info_index;
+      #         annotation annotation_value;
+      #         {
+      #                 u2    num_values;
+      #                 element_value values[num_values];
+      #         } array_value;
+      # } value;
+      self.tag = SV( '>B', buff.read(1) )
+      
+      tag = chr( self.tag.get_value() )
+      if tag == 'B' or tag == 'C' or tag == 'D' or tag == 'F' or tag == 'I' or tag == 'J' or tag == 'S' or tag == 'Z' or tag == 's' :
+         self.value = SV( '>H', buff.read(2) )
+      elif tag == 'e' :
+         self.value = SVs( ENUM_CONST_VALUE[0], ENUM_CONST_VALUE[1], buff.read( calcsize(ENUM_CONST_VALUE[0]) ) )
+      elif tag == 'c' :
+         self.value = SV( '>H', buff.read(2) )
+      elif tag == '@' :
+         self.value = Annotation( cm, buff )
+      elif tag == '[' :
+         self.value = ArrayValue( cm, buff )
+      else :
+         bytecode.Exit( "tag %c not in VERIFICATION_TYPE_INFO" % self.tag.get_value() )
+
+   def get_raw(self) :
+      if isinstance(self.value, SV) or isinstance(self.value, SVs) :
+         return self.tag.get_value_buff() + self.value.get_value_buff() 
+
+      return self.tag.get_value_buff() + self.value.get_raw()
+
+   def show(self) :
+      print "ElementValue", self.tag.get_value()
+      if isinstance(self.value, SV) or isinstance(self.value, SVs) :
+         print self.value.get_value()
+      else :
+         self.value.show()
+
+class ArrayValue :
+   def __init__(self, cm, buff) :
+      # u2    num_values;
+      # element_value values[num_values];
+      self.num_values = SV( '>H', buff.read(2) )
+
+      self.values = []
+      for i in range(0, self.num_values.get_value()) :
+         self.values.append( ElementValue(cm, buff) )
+
+   def get_raw(self) :
+      return self.num_values.get_value_buff() + \
+             ''.join(x.get_raw() for x in self.values)
+
+   def show(self) :
+      print "ArrayValue", self.num_values.get_value()
+      for i in self.values :
+         i.show()
 
 class ExceptionsAttribute(BasicAttribute) :
    def __init__(self, cm, buff) :
@@ -1644,7 +1930,7 @@ class ExceptionsAttribute(BasicAttribute) :
       return self.__exception_index_table
 
    def show(self) :
-      print self.number_of_exceptions
+      print "Exceptions", self.number_of_exceptions.get_value()
       for i in self.__exception_index_table :
          print "\t", i
 
@@ -2067,15 +2353,25 @@ class EnclosingMethodAttribute(BasicAttribute) :
 
 ATTRIBUTE_INFO_DESCR = { 
       "Code" : CodeAttribute,   
+      "Deprecated" : DeprecatedAttribute,
       "SourceFile" : SourceFileAttribute,   
       "Exceptions" : ExceptionsAttribute,   
       "LineNumberTable" : LineNumberTableAttribute,   
       "LocalVariableTable" : LocalVariableTableAttribute,
+      "LocalVariableTypeTable" : LocalVariableTypeTableAttribute,
       "StackMapTable" : StackMapTableAttribute,
       "InnerClasses" : InnerClassesAttribute,
       "ConstantValue" : ConstantValueAttribute,
       "EnclosingMethod" : EnclosingMethodAttribute,
-   }
+      "Signature" : SignatureAttribute,
+      "Synthetic" : SyntheticAttribute,
+      "SourceDebugExtension" : SourceDebugExtensionAttribute,
+      "RuntimeVisibleAnnotations" : RuntimeVisibleAnnotationsAttribute,
+      "RuntimeInvisibleAnnotations" : RuntimeInvisibleAnnotationsAttribute,   
+      "RuntimeVisibleParameterAnnotations" : RuntimeVisibleParameterAnnotationsAttribute,
+      "RuntimeInvisibleParameterAnnotations" : RuntimeInvisibleParameterAnnotationsAttribute,
+      "AnnotationDefault" : AnnotationDefaultAttribute,
+}
 
 class AttributeInfo :
    """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
