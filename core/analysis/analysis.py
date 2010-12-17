@@ -734,7 +734,7 @@ class JVMBasicBlock :
             
             self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
             self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.__method) ) 
-         if i.get_name() in FIELDS :
+         elif i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
 
@@ -745,6 +745,12 @@ class JVMBasicBlock :
 #               print "RES", res, "-->", desc.get_name()
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
          
+         elif "new" in i.get_name() or "invokestatic" in i.get_name() or "invokevirtual" in i.get_name() or "getstatic" in i.get_name() :
+            if "new" in i.get_name() :
+               self.__context.get_tainted_packages().push_info( i.get_operands(), i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+            else :
+               self.__context.get_tainted_packages().push_info( i.get_operands()[0], i.get_operands(), (TAINTED_PACKAGE_CALL, idx, self, self.__method) )
+
          idx += i.get_length()
 
    def analyze_code(self) :
@@ -1025,22 +1031,22 @@ TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 class Path :
    def __init__(self, info) :
-      self.__access_flag = info[0]
-      self.__idx = info[1]
-      self.__bb = info[2]
-      self.__method = info[3]
+      self.access_flag = info[0]
+      self.idx = info[1]
+      self.bb = info[2]
+      self.method = info[3]
 
    def get_access_flag(self) :
-      return self.__access_flag
+      return self.access_flag
 
    def get_idx(self) :
-      return self.__idx
+      return self.idx
 
    def get_bb(self) :
-      return self.__bb
+      return self.bb
 
    def get_method(self) :
-      return self.__method
+      return self.method
 
 class TaintedVariable :
    def __init__(self, var, _type) :
@@ -1079,7 +1085,7 @@ class TaintedVariables :
    def get_local_variables(self, _method) :
       return self.__vars[ _method ]
 
-   def get_fields_in_bb(self, bb) :
+   def get_fields_by_bb(self, bb) :
       l = []
       for i in self.__vars :
          if isinstance( self.__vars[i], dict ) == False :
@@ -1137,10 +1143,54 @@ class TaintedVariables :
                for path in self.__vars[k][var].get_paths() :
                   print "\t\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx()
 
+TAINTED_PACKAGE_CREATE = 0
+TAINTED_PACKAGE_CALL = 1
+class PathP(Path) :
+   def __init__(self, meth, info) :
+      Path.__init__( self, info )
+      self.meth = meth
+
+   def get_method(self) :
+      return self.meth
+
+class TaintedPackage :
+   def __init__(self, name) :
+      self.name = name
+      self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
+
+   def push(self, meth, info) :
+      self.paths[ info[0] ].append( PathP( meth, info ) )
+
+   def show(self) :
+      print self.name
+      for _type in self.paths :
+         print "\t -->", _type
+         for path in self.paths[ _type ] :
+            print "\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method()
+
+class TaintedPackages :
+   def __init__(self, _vm) :
+      self.__vm = _vm                                                                                                                                                                                                             
+      self.__packages = {}
+
+   def push_info(self, class_name, meth, info) :
+      print class_name
+
+      if class_name not in self.__packages :
+         self.__packages[ class_name ] = TaintedPackage( class_name )
+
+      self.__packages[ class_name ].push( meth, info )
+
+#   def get_packages_by_methods(self, method) :
+   def show(self) :
+      print "TAINTED PACKAGES"
+      for k in self.__packages :
+         self.__packages[ k ].show()
+
 class BasicBlocks :
    def __init__(self, _vm, _tv) :
       self.__vm = _vm
-      self.__tainted_variables = _tv
+      self.__tainted = _tv
 
       self.bb = []
 
@@ -1156,8 +1206,11 @@ class BasicBlocks :
             return i
       return None
 
+   def get_tainted_packages(self) :
+      return self.__tainted["packages"]
+
    def get_tainted_variables(self) :
-      return self.__tainted_variables
+      return self.__tainted["variables"]
 
    def get_random(self) :
       return self.bb[ random.randint(0, len(self.bb) - 1) ]
@@ -1188,7 +1241,7 @@ class BasicBlocks :
 
 class M_BCA :
    """
-      This class analyses a method of a class/dex file
+      This class analyses in details a method of a class/dex file
 
       @param _vm :  a virtual machine object
       @param _method : a method object
@@ -1198,7 +1251,7 @@ class M_BCA :
       self.__vm = _vm
       self.__method = _method
 
-      self.__tainted_variables = _tv
+      self.__tainted = _tv
 
       BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
              "TS" : JVM_TOSTRING }
@@ -1214,7 +1267,7 @@ class M_BCA :
 
       code = self.__method.get_code()
 
-      self.basic_blocks = BasicBlocks( self.__vm, self.__tainted_variables )
+      self.basic_blocks = BasicBlocks( self.__vm, self.__tainted )
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
 
@@ -1294,7 +1347,7 @@ class M_BCA :
       return []
 
    def get_local_variables(self) :
-      return self.__tainted_variables.get_local_variables( self.__method )
+      return self.__tainted["variables"].get_local_variables( self.__method )
 
    def get_ops(self) :
       l = []
@@ -1331,16 +1384,21 @@ class VM_BCA :
    def __init__(self, _vm) :
       self.__vm = _vm
 
-      self.tainted_variables = TaintedVariables( self.__vm ) 
+      self.tainted_variables = TaintedVariables( self.__vm )
+      self.tainted_packages = TaintedPackages( self.__vm )
+
+      self.tainted = { "variables" : self.tainted_variables,
+                       "packages" : self.tainted_packages,
+                     }
+
       for i in self.__vm.get_all_fields() :
          self.tainted_variables.add( i, TAINTED_FIELD )
 
       self.methods = []
       self.hmethods = {}
       self.__nmethods = {}
-
       for i in self.__vm.get_methods() :
-         x = M_BCA( self.__vm, i, self.tainted_variables )
+         x = M_BCA( self.__vm, i, self.tainted )
          self.methods.append( x )
          self.hmethods[ i ] = x
          self.__nmethods[ i.get_name() ] = x
