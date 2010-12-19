@@ -29,7 +29,6 @@ for method in a.get_methods() :
       print "\t %s %x %x" % (i.name, i.start, i.end), i.ins[-1].get_name(), '[ CHILDS = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ FATHERS = ', ', '.join( j[2].get_name() for j in i.fathers ), ']', i.free_blocks_offsets
 
       print "\t\t", x.tainted_variables.get_fields_by_bb( i )
-
-   #print x.tainted_packages.get_packages_by_methods( method )
+      #print x.tainted_packages.get_packages_by_bb( i )
 
 x.tainted_packages.show()

@@ -1150,6 +1150,9 @@ class PathP(Path) :
       Path.__init__( self, info )
       self.meth = meth
 
+   def get_name(self) :
+      return self.meth[1]
+
    def get_method(self) :
       return self.meth
 
@@ -1158,16 +1161,19 @@ class TaintedPackage :
       self.name = name
       self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
 
+   def gets(self) :
+      return self.paths
+
    def push(self, meth, info) :
       self.paths[ info[0] ].append( PathP( meth, info ) )
 
-   def show(self) :
+   def show(self, format) :
       print self.name
       for _type in self.paths :
          print "\t -->", _type
-         for path in self.paths[ _type ] :
+         for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :
             print "\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method()
-
+            
 class TaintedPackages :
    def __init__(self, _vm) :
       self.__vm = _vm                                                                                                                                                                                                             
@@ -1181,11 +1187,25 @@ class TaintedPackages :
 
       self.__packages[ class_name ].push( meth, info )
 
-#   def get_packages_by_methods(self, method) :
+   def get_packages_by_bb(self, bb):
+      l = []
+      for i in self.__packages :
+         paths = self.__packages[i].gets()
+         for j in paths :
+            for k in paths[j] : 
+               if k.get_bb() == bb :
+                  l.append( (i, k.get_access_flag(), k.get_idx(), k.get_method()) )
+
+      return l
+
    def show(self) :
-      print "TAINTED PACKAGES"
+      print "TAINTED PACKAGES by name"
       for k in self.__packages :
-         self.__packages[ k ].show()
+         self.__packages[ k ].show("get_name")
+
+      print "TAINTED PACKAGES by idx"
+      for k in self.__packages :
+         self.__packages[ k ].show("get_idx")
 
 class BasicBlocks :
    def __init__(self, _vm, _tv) :
