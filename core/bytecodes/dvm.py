@@ -72,6 +72,8 @@ class APK :
       print self.permissions_global
 
 ######################################################## DEX FORMAT ########################################################
+DEX_FILE_MAGIC = 'dex\n035\x00'
+
 HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', namedtuple( "HEADER", "magic checksum signature file_size header_size endian_tag link_size link_off " \
                                                                "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
                                                                "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
@@ -2243,7 +2245,7 @@ class MapList :
 
          mi = MapItem( buff, self.__CM )
          self.map_item.append( mi )
-      
+
          buff.set_idx( idx + mi.get_length() )
 
          self.__CM.add_type_item( TYPE_MAP_ITEM[ mi.get_type() ], mi.get_item() )

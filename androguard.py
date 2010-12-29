@@ -256,9 +256,9 @@ class Androguard :
    def _analyze(self) :
       for i in self.__files :
          if ".class" in i :
-            bc = jvm.JVMFormat( open(i).read() )
+            bc = jvm.JVMFormat( open(i, "r").read() )
          elif ".dex" in i :
-            bc = dvm.DalvikVMFormat( open(i).read() )
+            bc = dvm.DalvikVMFormat( open(i, "r").read() )
          else :
             raise( "Unknown bytecode" )
 
