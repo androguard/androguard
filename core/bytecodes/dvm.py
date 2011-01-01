@@ -1437,7 +1437,8 @@ class EncodedMethod :
 
    def show(self) :
       print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
-      self._code.show()
+      if self._code != None :
+         self._code.show()
    
    def get_access(self) :
       return self.access_flags
@@ -1572,12 +1573,14 @@ class ClassItem :
       self._name = self.__CM.get_type( general_format.class_idx )
       self._sname = self.__CM.get_type( general_format.superclass_idx )
 
-      self._class_data_item = self.__CM.get_class_data_item( general_format.class_data_off )
-      self._class_data_item.reload()
+      if general_format.class_data_off != 0 :
+         self._class_data_item = self.__CM.get_class_data_item( general_format.class_data_off )
+         self._class_data_item.reload()
 
    def show(self) :
       print "CLASS_ITEM", self._name, self._sname, self.format.get_value()
-      self._class_data_item.show()
+      if self._class_data_item != None :
+         self._class_data_item.show()
    
    def get_name(self) :
       return self._name
@@ -1586,10 +1589,14 @@ class ClassItem :
       return "%s:%s" % (self._name, self._sname)
 
    def get_methods(self) :
-      return self._class_data_item.get_methods()
+      if self._class_data_item != None :
+         return self._class_data_item.get_methods()
+      return []
 
    def get_fields(self) :
-      return self._class_data_item.get_fields()
+      if self._class_data_item != None :
+         return self._class_data_item.get_fields()
+      return []
 
    def get_obj(self) :
       return []
@@ -2104,7 +2111,7 @@ class MapItem :
 
       elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_MAP_LIST" :
          pass # It's me I think !!!
-
+      
       else :
          bytecode.Exit( "Map item @ 0x%x(%d) is unknown" % (buff.get_idx(), buff.get_idx()) )
 
@@ -2229,6 +2236,7 @@ class ClassManager :
       for i in self.__manage_item_off :
          if i > idx :
             return i
+      return idx
 
 class MapList :
    def __init__(self, off, buff) :
@@ -2286,6 +2294,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
    def load_class(self) :
       self.__header = HeaderItem( 0, self, ClassManager() )
+#      self.__header.show()
 
       self.map_list = MapList( self.__header.get_value().map_off, self )
 

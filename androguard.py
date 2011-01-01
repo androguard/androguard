@@ -259,6 +259,9 @@ class Androguard :
             bc = jvm.JVMFormat( open(i, "r").read() )
          elif ".dex" in i :
             bc = dvm.DalvikVMFormat( open(i, "r").read() )
+         elif ".apk" in i :
+            x = dvm.APK( i )
+            bc = dvm.DalvikVMFormat( x.get_dex() )
          else :
             raise( "Unknown bytecode" )
 
