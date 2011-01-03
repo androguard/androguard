@@ -991,19 +991,17 @@ class DVMBasicBlock :
 
          self.childs.append( ( self.end - i.get_length(), self.end, self.__context.get_basic_block( self.end + 1 ) ) )
          self.childs.append( ( self.end - i.get_length(), off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-      elif "packed" in i.get_name() :
-         self.childs.append( ( self.end, self.end + 1, self.__context.get_basic_block( self.end + 1 ) ) )
+      elif "packed" in i.get_name() or "sparse" in i.get_name() :
+         self.childs.append( ( self.end - i.get_length(), self.end, self.__context.get_basic_block( self.end + 1 ) ) )
          
          code = self.__method.get_code().get_bc()
          off = i.get_operands()[-1][1] * 2
-         data =  code.get_ins_off( off + (self.end - i.get_length()) )
+         data = code.get_ins_off( off + (self.end - i.get_length()) )
 
          for target in data.get_operands() :
             off = target[0]
-            self.childs.append( ( self.end - i.get_length(), self.end + off, self.__context.get_basic_block( self.end + off ) ) )
-      elif "sparse" in i.get_name() :
-         raise("ooo")
-
+            self.childs.append( ( self.end - i.get_length(), off*2 + (self.end - i.get_length()), self.__context.get_basic_block( self.end + off ) ) )
+      
       for c in self.childs :
          c[2].set_fathers( ( c[1], c[0], self ) )
 
