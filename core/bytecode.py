@@ -42,6 +42,28 @@ def _Print(name, arg) :
 
    print buff
 
+def PrettyShow(idx, paths, nb, ins) :
+   for j in paths :
+      m_in = j[0]
+      m_ax = j[1]
+      if j[0] > j[1] :
+         m_in = j[1]
+         m_ax = j[0]
+
+      if idx >= m_in and idx <= m_ax :
+         if idx == j[0] :
+            print "o",
+         if idx == j[1] :
+            print ">",
+
+         if idx != j[0] and idx != j[1] :
+            print "|",
+      else :
+         print " ",
+
+   print nb, "0x%x" % idx,
+   ins.show( idx )
+
 class SV : 
    """SV is used to handle more easily a value"""
    def __init__(self, size, buff) :
