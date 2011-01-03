@@ -761,11 +761,11 @@ class MethodInfo :
          i.show()
       print "*" * 80
 
-   def pretty_show(self, m_a) :
+   def pretty_show(self, vm_a) :
       print "*" * 80
       print self.format.get_value(), self.__CM.get_string( self.format.get_value().name_index ), self.__CM.get_string( self.format.get_value().descriptor_index )
       for i in self.__attributes :
-         i.pretty_show(m_a)
+         i.pretty_show(vm_a.hmethods[ self ])
       print "*" * 80
 
 class CreateString :
@@ -1064,12 +1064,12 @@ class JBC :
          pos - the position into the bytecodes (integer)
       """
       if self.__special_value == None :
-         print self.__op_name
+         print self.__op_name,
       else :
          if self.__op_name in BRANCH_JVM_OPCODES :
-            print self.__op_name, self.__special_value, self.__special_value + pos
+            print self.__op_name, self.__special_value, self.__special_value + pos,
          else : 
-            print self.__op_name, self.__special_value
+            print self.__op_name, self.__special_value,
 
 class JavaCode :
    """JavaCode manages a list of bytecode to a specific method, by decoding a raw buffer and transform each bytecode into a JBC object"""
@@ -1232,6 +1232,7 @@ class JavaCode :
       for i in self.__bytecodes :
          print nb, self.__maps[nb],
          i.show( self.__maps[nb] )
+         print 
          nb += 1
 
    def pretty_show(self, m_a) :
@@ -3055,8 +3056,53 @@ class JVMFormat(bytecode._Bytecode) :
          i.show()
          nb += 1
   
-   def pretty_show(self) :
-      pass
+   def pretty_show(self, vm_a) :
+      """
+         Show the .class format into a human readable format
+      """
+      bytecode._Print( "MAGIC", self.magic.get_value() )
+      bytecode._Print( "MINOR VERSION", self.minor_version.get_value() )
+      bytecode._Print( "MAJOR VERSION", self.major_version.get_value() )
+      bytecode._Print( "CONSTANT POOL COUNT", self.constant_pool_count.get_value() )
+      
+      nb = 0
+      for i in self.__constant_pool :
+         print nb,
+         i.show()
+         nb += 1
+
+
+      bytecode._Print( "ACCESS FLAGS", self.access_flags.get_value() )
+      bytecode._Print( "THIS CLASS", self.this_class.get_value() )
+      bytecode._Print( "SUPER CLASS", self.super_class.get_value() )
+
+      bytecode._Print( "INTERFACE COUNT", self.interfaces_count.get_value() )
+      nb = 0
+      for i in self.__interfaces :
+         print nb,
+         i.show()
+      
+      bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
+      nb = 0
+      for i in self.__fields :
+         print nb,
+         i.show()
+         nb += 1
+
+
+      bytecode._Print( "METHODS COUNT", self.methods_count.get_value() )
+      nb = 0
+      for i in self.__methods :
+         print nb,
+         i.pretty_show(vm_a)
+         nb += 1
+
+      
+      bytecode._Print( "ATTRIBUTES COUNT", self.attributes_count.get_value() )
+      nb = 0
+      for i in self.__attributes :
+         print nb,
+         i.show()
 
    def insert_string(self, value) :
       """Insert a string into the constant pool list (Constant_Utf8)

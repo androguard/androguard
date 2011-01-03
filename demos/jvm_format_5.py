@@ -15,8 +15,9 @@ j = jvm.JVMFormat( open(TEST).read() )
 x = analysis.VM_BCA( j )
 
 # SHOW CLASS (verbose and pretty) 
-j.pretty_show( x )
+#j.pretty_show( x )
 
 # SHOW METHODS
-#for i in j.get_methods() :
-#   i.pretty_show( x.hmethods[ i ] )
+for i in j.get_methods() :
+   print i
+   i.pretty_show( x )
