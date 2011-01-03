@@ -1516,6 +1516,7 @@ class ClassDataItem :
          i.reload()
 
    def show(self) :
+      raise("ooo")
       print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
             (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
 
@@ -1534,6 +1535,26 @@ class ClassDataItem :
       print "VM"
       for i in self.virtual_methods :
          i.show()
+
+   def pretty_show(self, vm_a) :
+      print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
+            (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
+
+      print "SF"
+      for i in self.static_fields :
+         i.show()
+
+      print "IF"
+      for i in self.instance_fields :
+         i.show()
+
+      print "DM"
+      for i in self.direct_methods :
+         i.pretty_show( vm_a.hmethods[ i ] )
+
+      print "VM"
+      for i in self.virtual_methods :
+         i.pretty_show( vm_a.hmethods[ i ] )
 
    def get_methods(self) :
       return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
@@ -1584,9 +1605,7 @@ class ClassItem :
 
    def show(self) :
       print "CLASS_ITEM", self._name, self._sname, self.format.get_value()
-      if self._class_data_item != None :
-         self._class_data_item.show()
-   
+  
    def get_name(self) :
       return self._name
 
@@ -1746,7 +1765,6 @@ class DBC :
       self.raw_buff = raw_buff
 
    def get_length(self) :
-#      return len(self.raw_buff) / 2
       return len(self.raw_buff)
 
    def get_name(self) :
@@ -1757,7 +1775,27 @@ class DBC :
       return self.operands
 
    def show(self, pos) :
-      print self.op_name, ' '.join(self._more_info(n[0], n[1]) for n in self.operands)
+      print self.op_name,
+
+      v = []
+      r = []
+      for i in self.operands[1:] :
+         if i[0] == "v" :
+            v.append( i )
+         else :
+            r.append( i )
+
+      if "invoke" in self.op_name :
+         off = v[0][1]
+         x = v[2:4]
+         x.reverse()
+         t = v[4:]
+         t.reverse()
+         x.extend( t )
+         print ', '.join(self._more_info(n[0], n[1]) for n in x[:off]), ' '.join(self._more_info(n[0], n[1]) for n in r)
+      else :
+         v.reverse()
+         print ', '.join(self._more_info(n[0], n[1]) for n in v), ' '.join(self._more_info(n[0], n[1]) for n in r)
 
    def _more_info(self, c, v) :
       if "string" in c :
@@ -1819,6 +1857,7 @@ class DCode :
       operands = []
       t_ops = mnemonic[3].split(' ')
 
+#      print "la", mnemonic
       l = []
       for i in buff_operands :
          l.append( (ord(i) & 0b11110000) >> 4 )
@@ -1832,8 +1871,7 @@ class DCode :
          else :
             sub_ops = sub_ops[2:] + sub_ops[0:2]
 
-         #print sub_ops
-
+#         print sub_ops
          for sub_op in sub_ops :
             zero_count = string.count(sub_op, '0')
                      
@@ -1867,12 +1905,16 @@ class DCode :
                if sub_op != "op" :
                   ttype = "v"
 
+#            print "SIZE", size
             val = self._extract( signed, l, size ) << (zero_count * 4)
    
             operands.append( [ttype, val] )
 
             if len(l) == 0 :
                break
+
+#      if mnemonic[1] == "invoke-direct" :
+#         print "ID", operands
 
       if len(mnemonic) == 5 :
          return operands, (operands[2][1], mnemonic[4])
@@ -1931,7 +1973,9 @@ class DCode :
       for i in m_a.basic_blocks.get() :
          for j in i.childs :
             paths.append( ( j[0], j[1] ) )
-           
+
+      print "PATHS", paths
+
       nb = 0
       idx = 0
       for i in self.__bytecodes :
@@ -2061,6 +2105,9 @@ class CodeItem :
       for i in self.code :
          i.show()
 
+   def pretty_show(self, vm_a) :
+      print "CODE_ITEM"
+
    def get_obj(self) :
       return [ i for i in self.code ]
 
@@ -2157,7 +2204,25 @@ class MapItem :
             for i in self.item :
                i.show()
          else :   
-            self.item.show()
+            if isinstance(self.item, CodeItem) == False :
+               self.item.show()
+
+   def pretty_show(self, vm_a) :
+      bytecode._Print( "MAP_ITEM", self.format )
+      bytecode._Print( "\tTYPE_ITEM", TYPE_MAP_ITEM[ self.format.get_value().type ])
+
+      if self.item != None :
+         if isinstance( self.item, list ):
+            for i in self.item :
+               if isinstance(i, ClassDataItem) :
+                  i.pretty_show(vm_a)
+               elif isinstance(self.item, CodeItem) == False :
+                  i.show()
+         else :
+            if isinstance(self.item, ClassDataItem) :
+               self.item.pretty_show(vm_a)
+            elif isinstance(self.item, CodeItem) == False :
+               self.item.show()
 
    def get_obj(self) :
       if self.item == None :
@@ -2296,6 +2361,11 @@ class MapList :
       for i in self.map_item :
          i.show()
 
+   def pretty_show(self, vm_a) :
+      bytecode._Print("MAP_LIST SIZE", self.size.get_value())
+      for i in self.map_item :
+         i.pretty_show(vm_a)
+
    def get_obj(self) :
       return [ x for x in self.map_item ]
 
@@ -2331,6 +2401,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
    def show(self) :
       """Show the .class format into a human readable format"""
       self.map_list.show()
+
+   def pretty_show(self, vm_a) :
+      self.map_list.pretty_show(vm_a)
 
    def _iterFlatten(self, root):
       if isinstance(root, (list, tuple)):      
