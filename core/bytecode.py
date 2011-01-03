@@ -43,6 +43,7 @@ def _Print(name, arg) :
    print buff
 
 def PrettyShow(idx, paths, nb, ins) :
+   p = []
    for j in paths :
       m_in = j[0]
       m_ax = j[1]
@@ -52,6 +53,7 @@ def PrettyShow(idx, paths, nb, ins) :
 
       if idx >= m_in and idx <= m_ax :
          if idx == j[0] :
+            p.append( j[1] )
             print "o",
          if idx == j[1] :
             print ">",
@@ -63,6 +65,10 @@ def PrettyShow(idx, paths, nb, ins) :
 
    print nb, "0x%x" % idx,
    ins.show( idx )
+
+   if p != [] :
+      print "[", ' '.join("%x" % i for i in p), "]",
+   print
 
 class SV : 
    """SV is used to handle more easily a value"""

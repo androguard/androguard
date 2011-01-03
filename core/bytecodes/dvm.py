@@ -1550,11 +1550,11 @@ class ClassDataItem :
 
       print "DM"
       for i in self.direct_methods :
-         i.pretty_show( vm_a.hmethods[ i ] )
+         i.pretty_show( vm_a )
 
       print "VM"
       for i in self.virtual_methods :
-         i.pretty_show( vm_a.hmethods[ i ] )
+         i.pretty_show( vm_a )
 
    def get_methods(self) :
       return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
@@ -1792,10 +1792,10 @@ class DBC :
          t = v[4:]
          t.reverse()
          x.extend( t )
-         print ', '.join(self._more_info(n[0], n[1]) for n in x[:off]), ' '.join(self._more_info(n[0], n[1]) for n in r)
+         print ', '.join(self._more_info(n[0], n[1]) for n in x[:off]), ' '.join(self._more_info(n[0], n[1]) for n in r),
       else :
          v.reverse()
-         print ', '.join(self._more_info(n[0], n[1]) for n in v), ' '.join(self._more_info(n[0], n[1]) for n in r)
+         print ', '.join(self._more_info(n[0], n[1]) for n in v), ' '.join(self._more_info(n[0], n[1]) for n in r),
 
    def _more_info(self, c, v) :
       if "string" in c :
@@ -2042,6 +2042,7 @@ class DalvikCode :
    def show(self) :
       self._begin_show()
       self._code.show()
+      print
       self._end_show()
 
    def _end_show(self) :
@@ -2102,9 +2103,6 @@ class CodeItem :
       print "CODE_ITEM"
       for i in self.code :
          i.show()
-
-   def pretty_show(self, vm_a) :
-      print "CODE_ITEM"
 
    def get_obj(self) :
       return [ i for i in self.code ]
