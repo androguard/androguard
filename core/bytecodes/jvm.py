@@ -3054,7 +3054,10 @@ class JVMFormat(bytecode._Bytecode) :
          print nb,
          i.show()
          nb += 1
-   
+  
+   def pretty_show(self) :
+      pass
+
    def insert_string(self, value) :
       """Insert a string into the constant pool list (Constant_Utf8)
    

@@ -42,7 +42,7 @@ option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more
 
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-option_6 = { 'name' : ('-v', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
+option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
 
