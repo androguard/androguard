@@ -761,6 +761,13 @@ class MethodInfo :
          i.show()
       print "*" * 80
 
+   def pretty_show(self, m_a) :
+      print "*" * 80
+      print self.format.get_value(), self.__CM.get_string( self.format.get_value().name_index ), self.__CM.get_string( self.format.get_value().descriptor_index )
+      for i in self.__attributes :
+         i.pretty_show(m_a)
+      print "*" * 80
+
 class CreateString :
    """Create a specific String constant by given the name index"""
    def __init__(self, class_manager, bytes) :
@@ -1218,13 +1225,29 @@ class JavaCode :
       return ''.join(x.get_raw() for x in self.__bytecodes)
 
    def show(self) :
+      """
+         Display the code like a disassembler
+      """
       nb = 0
-      print repr( self.__raw_buff )
       for i in self.__bytecodes :
-         print nb, self.__maps[nb], "\t", 
+         print nb, self.__maps[nb],
          i.show( self.__maps[nb] )
          nb += 1
 
+   def pretty_show(self, m_a) :
+      """
+         Display the code like a disassembler but with instructions' links
+      """
+      paths = []
+      for i in m_a.basic_blocks.get() :
+         for j in i.childs :
+            paths.append( ( j[0], j[1] ) )
+           
+      nb = 0
+      for i in self.__bytecodes :
+         bytecode.PrettyShow( self.__maps[nb], paths, nb, i )
+         nb += 1
+   
    def get_relative_idx(self, idx) :
       """
          Return the relative idx by given an offset in the code
@@ -1475,14 +1498,25 @@ class CodeAttribute(BasicAttribute) :
          i.show()
       print "!" * 70
 
-   def show(self) :
+   def _begin_show(self) :
       print "!" * 70
       print self.low_struct.get_value()
-      self.__code.show()
+
+   def _end_show(self) :
       bytecode._Print( "ATTRIBUTES_COUNT", self.attributes_count.get_value() )
       for i in self.__attributes :
          i.show()
       print "!" * 70
+
+   def show(self) :
+      self._begin_show()
+      self.__code.show()
+      self._end_show()
+
+   def pretty_show(self, m_a) :
+      self._begin_show()
+      self.__code.pretty_show(m_a)   
+      self._end_show()
 
    def _patch_bytecodes(self) :
       return self.__code._patch_bytecodes()
@@ -2383,13 +2417,13 @@ class AttributeInfo :
       self.__name = self.__CM.get_string( self.format.get_value().attribute_name_index )
 
       try :
-         self.__info = ATTRIBUTE_INFO_DESCR[ self.__name ](self.__CM, buff)
+         self._info = ATTRIBUTE_INFO_DESCR[ self.__name ](self.__CM, buff)
       except KeyError, ke :
          bytecode.Exit( "AttributeInfo %s doesn't exit" % self.__name )
 
    def get_item(self) :
       """Return the specific attribute info"""
-      return self.__info
+      return self._info
 
    def get_name(self) :
       """Return the name of the attribute"""
@@ -2397,11 +2431,11 @@ class AttributeInfo :
 
    def get_raw(self) :
       v1 = self.format.get_value().attribute_length
-      v2 = len(self.__info.get_raw())
+      v2 = len(self._info.get_raw())
       if v1 != v2 :
          self.set_attribute_length( v2 )
 
-      return self.format.get_value_buff() + self.__info.get_raw()
+      return self.format.get_value_buff() + self._info.get_raw()
 
    def get_attribute_name_index(self) :
       return self.format.get_value().attribute_name_index
@@ -2416,16 +2450,24 @@ class AttributeInfo :
       return self.format
 
    def _fix_attributes(self, new_cm) :
-      self.__info._fix_attributes( new_cm )
+      self._info._fix_attributes( new_cm )
 
    def set_cm(self, cm) :
       self.__CM = cm
-      self.__info.set_cm( cm )
+      self._info.set_cm( cm )
 
    def show(self) :
       print self.format, self.__name
-      if self.__info != None :
-         self.__info.show()
+      if self._info != None :
+         self._info.show()
+
+   def pretty_show(self, m_a) :
+      print self.format, self.__name
+      if self._info != None :
+         if isinstance(self._info, CodeAttribute) :
+            self._info.pretty_show(m_a)
+         else :
+            self._info.show()
 
 class ClassManager :
    """ClassManager can be used by all classes to get more information"""

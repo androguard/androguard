@@ -42,7 +42,9 @@ option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more
 
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+option_6 = { 'name' : ('-v', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
+
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
 
 def interact() :
    ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
@@ -54,12 +56,23 @@ def main(options, arguments) :
    
    elif options.input != None :
       _a = AndroguardS( options.input )
-      
+      _x = None
+
+      if options.pretty != None :
+         _x = analysis.VM_BCA( _a.get_vm() )
+
       if options.display != None :
-         _a.show()
+         if options.pretty != None :
+            _a.pretty_show( _x )
+         else :
+            _a.show()
+
       elif options.method != None :
          for method in _a.get("method", options.method) :
-            method.show()
+            if options.pretty != None :
+               method.pretty_show( _x )
+            else :
+               method.show()
       elif options.field != None :
          for field in _a.get("field", options.field) :
             field.show()

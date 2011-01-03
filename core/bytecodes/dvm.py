@@ -1439,7 +1439,12 @@ class EncodedMethod :
       print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
       if self._code != None :
          self._code.show()
-   
+
+   def pretty_show(self, vm_a) :
+      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
+      if self._code != None :
+         self._code.pretty_show(vm_a)
+
    def get_access(self) :
       return self.access_flags
 
@@ -1845,7 +1850,6 @@ class DCode :
             if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' : 
                signed = 1
             
-            
             #print mnemonic, repr(sub_op), signed
             ttype = "op@"
 
@@ -1922,6 +1926,19 @@ class DCode :
          idx += i.get_length()
          nb += 1
    
+   def pretty_show(self, m_a) :
+      paths = []
+      for i in m_a.basic_blocks.get() :
+         for j in i.childs :
+            paths.append( ( j[0], j[1] ) )
+           
+      nb = 0
+      idx = 0
+      for i in self.__bytecodes :
+         bytecode.PrettyShow( idx, paths, nb, i )
+         idx += ( i.get_length() )
+         nb += 1
+
 class DalvikCode : 
    def __init__(self, buff, cm) :
       self.__CM = cm
@@ -1945,7 +1962,7 @@ class DalvikCode :
 
       ushort = calcsize( '<H' )
 
-      self.__code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+      self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
       if (self.insns_size.get_value() % 2 == 1) :
          self.__padding = SV( '<H', buff.read( 2 ) )
@@ -1960,12 +1977,12 @@ class DalvikCode :
          self.__handlers.append( EncodedCatchHandlerList( buff ) )
 
    def get_bc(self) :
-      return self.__code
+      return self._code
 
    def get_off(self) :
       return self.__off
 
-   def show(self) :
+   def _begin_show(self) :
       print "*" * 80 
       print "DALVIK_CODE :"
       bytecode._Print("\tREGISTERS_SIZE", self.registers_size)
@@ -1980,10 +1997,18 @@ class DalvikCode :
 
       print ""
 
-      self.__code.show()
+   def show(self) :
+      self._begin_show()
+      self._code.show()
+      self._end_show()
 
+   def _end_show(self) :
       print "*" * 80
 
+   def pretty_show(self, vm_a) :
+      self._begin_show()
+      self._code.pretty_show(vm_a)
+      self._end_show()
 
    def get_obj(self) :
       return [ i for i in self.__handlers ]
@@ -1995,7 +2020,7 @@ class DalvikCode :
               self.tries_size.get_value_buff() + \
               self.debug_info_off.get_value_buff() + \
               self.insns_size.get_value_buff() + \
-              self.__code.get_raw()
+              self._code.get_raw()
 
       if (self.insns_size.get_value() % 2 == 1) :
          buff += self.__padding.get_value_buff()
