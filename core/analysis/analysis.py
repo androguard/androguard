@@ -626,7 +626,6 @@ class JVMBasicBlock :
       if "invoke" in i.get_name() :
          self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
          self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
-      
       elif "return" in i.get_name() :
          pass
       
@@ -970,7 +969,6 @@ class DVMBasicBlock :
       return self.ins[-1]
 
    def push(self, i) :
-      #i.show(0)
       self.ins.append( i )
       self.end += i.get_length()
 
@@ -1001,9 +999,10 @@ class DVMBasicBlock :
          for target in data.get_operands() :
             off = target[0]
             self.childs.append( ( self.end - i.get_length(), off*2 + (self.end - i.get_length()), self.__context.get_basic_block( self.end + off ) ) )
-      
+
       for c in self.childs :
-         c[2].set_fathers( ( c[1], c[0], self ) )
+         if c[2] != None :
+            c[2].set_fathers( ( c[1], c[0], self ) )
 
    def analyze(self) :
       idx = 0
@@ -1252,7 +1251,8 @@ class BasicBlocks :
       for i in self.bb :
          self.G.add_node( i.get_name() )
          for j in i.childs :
-            self.G.add_edge( i.get_name(), j[-1].get_name() )
+            if j[2] != None :
+               self.G.add_edge( i.get_name(), j[2].get_name() )
 
 class M_BCA :
    """
@@ -1280,9 +1280,12 @@ class M_BCA :
       for i in BO["BasicOPCODES"] :
          BO["BasicOPCODES_H"].append( re.compile( i ) )
 
-      code = self.__method.get_code()
-
       self.basic_blocks = BasicBlocks( self.__vm, self.__tainted )
+      
+      code = self.__method.get_code()
+      if code == None :
+         return
+
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
 

@@ -1443,7 +1443,7 @@ class EncodedMethod :
    def pretty_show(self, vm_a) :
       print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
       if self._code != None :
-         self._code.pretty_show(vm_a)
+         self._code.pretty_show( vm_a.hmethods[ self ] )
 
    def get_access(self) :
       return self.access_flags
@@ -1973,8 +1973,6 @@ class DCode :
       for i in m_a.basic_blocks.get() :
          for j in i.childs :
             paths.append( ( j[0], j[1] ) )
-
-      print "PATHS", paths
 
       nb = 0
       idx = 0
