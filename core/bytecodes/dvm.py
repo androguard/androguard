@@ -1531,7 +1531,6 @@ class ClassDataItem :
          i.reload()
 
    def show(self) :
-      raise("ooo")
       print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
             (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
 

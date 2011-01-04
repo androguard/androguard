@@ -11,7 +11,7 @@ sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/vm")
 sys.path.append(PATH_INSTALL + "/core/wm")
 
-import bytecode, dvm
+import dvm
 
 PLFM_DALVIK = 0x10000
 class dalvik_processor_t(idaapi.processor_t):                                                                                                                                                                                   
