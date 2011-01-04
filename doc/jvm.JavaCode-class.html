@@ -118,7 +118,8 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="get"></a><span class="summary-sig-name">get</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#get" class="summary-sig-name">get</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return all bytecodes</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JavaCode.get">source&nbsp;code</a></span>
             
@@ -150,7 +151,8 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="show"></a><span class="summary-sig-name">show</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td><span class="summary-sig"><a name="show"></a><span class="summary-sig-name">show</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Display the code like a disassembler</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JavaCode.show">source&nbsp;code</a></span>
             
@@ -166,8 +168,45 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="get_at"></a><span class="summary-sig-name">get_at</span>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">idx</span>)</span></td>
+          <td><span class="summary-sig"><a name="pretty_show"></a><span class="summary-sig-name">pretty_show</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">m_a</span>)</span><br />
+      Display the code like a disassembler but with instructions' links</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JavaCode.pretty_show">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#get_relative_idx" class="summary-sig-name">get_relative_idx</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">idx</span>)</span><br />
+      Return the relative idx by given an offset in the code</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JavaCode.get_relative_idx">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#get_at" class="summary-sig-name">get_at</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">idx</span>)</span><br />
+      Return a specific bytecode at an index</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JavaCode.get_at">source&nbsp;code</a></span>
             
@@ -183,7 +222,7 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="remove_at"></a><span class="summary-sig-name">remove_at</span>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#remove_at" class="summary-sig-name">remove_at</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">idx</span>)</span><br />
       Remove bytecode at a specific index</td>
           <td align="right" valign="top">
@@ -255,7 +294,7 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="insert_at"></a><span class="summary-sig-name">insert_at</span>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#insert_at" class="summary-sig-name">insert_at</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">idx</span>,
         <span class="summary-sig-arg">bytecode</span>)</span><br />
       Insert bytecode at a specific index</td>
@@ -274,7 +313,7 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="remplace_at"></a><span class="summary-sig-name">remplace_at</span>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="jvm.JavaCode-class.html#remplace_at" class="summary-sig-name">remplace_at</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">idx</span>,
         <span class="summary-sig-arg">bytecode</span>)</span><br />
       Remplace bytecode at a specific index by another bytecode (remplace =
@@ -306,6 +345,173 @@
     </td>
   </tr>
 </table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="get"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.get">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return all bytecodes</p>
+  <p>@rtype : <code class="link">list</code></p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_relative_idx"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_relative_idx</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">idx</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.get_relative_idx">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return the relative idx by given an offset in the code</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>idx</code></strong> - an offset in the code
+          <p>@rtype : the relative index in the code, it's the position in 
+          the list of a bytecode</p></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_at"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_at</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">idx</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.get_at">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return a specific bytecode at an index</p>
+  <p>@param : the index of a bytecode</p>
+  <p>@rtype : <a href="jvm.JBC-class.html" class="link">JBC</a></p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="remove_at"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">remove_at</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">idx</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.remove_at">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Remove bytecode at a specific index</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>idx</code></strong> - the index to remove the bytecode
+          <p>@rtype : the length of the removed bytecode</p></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="insert_at"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">insert_at</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">idx</span>,
+        <span class="sig-arg">bytecode</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.insert_at">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Insert bytecode at a specific index</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>idx</code></strong> - the index to insert the bytecode</li>
+        <li><strong class="pname"><code>bytecode</code></strong> - a list which represent the bytecode
+          <p>@rtype : the length of the inserted bytecode</p></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="remplace_at"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">remplace_at</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">idx</span>,
+        <span class="sig-arg">bytecode</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JavaCode.remplace_at">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Remplace bytecode at a specific index by another bytecode (remplace = 
+  remove + insert)</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>idx</code></strong> - the index to insert the bytecode</li>
+        <li><strong class="pname"><code>bytecode</code></strong> - a list which represent the bytecode
+          <p>@rtype : the length of the inserted bytecode</p></li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
 <!-- ==================== NAVIGATION BAR ==================== -->
 <table class="navbar" border="0" width="100%" cellpadding="0"
        bgcolor="#a0c0ff" cellspacing="0">
@@ -334,7 +540,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Wed Nov 10 13:59:55 2010
+    Generated by Epydoc 3.0.1 on Tue Jan  4 09:27:32 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"
