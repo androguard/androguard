@@ -1,3 +1,5 @@
+import sys
+
 import idaapi
 from idc import *
 
