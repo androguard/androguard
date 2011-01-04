@@ -129,6 +129,24 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#get_class" class="summary-sig-name">get_class</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">class_name</span>)</span><br />
+      Verify the name of the class</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_class">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#get_field" class="summary-sig-name">get_field</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">name</span>)</span><br />
       Return into a list all fields which corresponds to the regexp</td>
@@ -192,6 +210,22 @@
       Return into a list all methods which corresponds to the regexp</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_method">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_all_fields"></a><span class="summary-sig-name">get_all_fields</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_all_fields">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -273,7 +307,7 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a name="get_class_manager"></a><span class="summary-sig-name">get_class_manager</span>(<span class="summary-sig-arg">self</span>)</span><br />
+          <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#get_class_manager" class="summary-sig-name">get_class_manager</a>(<span class="summary-sig-arg">self</span>)</span><br />
       Return directly the class manager</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_class_manager">source&nbsp;code</a></span>
@@ -345,11 +379,49 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a name="pretty_show"></a><span class="summary-sig-name">pretty_show</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">vm_a</span>)</span><br />
+      Show the .class format into a human readable format</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.pretty_show">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#insert_string" class="summary-sig-name">insert_string</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">value</span>)</span><br />
       Insert a string into the constant pool list (Constant_Utf8)</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.insert_string">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#insert_field" class="summary-sig-name">insert_field</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">class_name</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">descriptor</span>)</span><br />
+      Insert a field into the class</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.insert_field">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -386,7 +458,7 @@
           <td><span class="summary-sig"><a href="jvm.JVMFormat-class.html#insert_direct_method" class="summary-sig-name">insert_direct_method</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">name</span>,
         <span class="summary-sig-arg">ref_method</span>)</span><br />
-      Insert a direct method (MethodInfo Object) into the class</td>
+      Insert a direct method (MethodInfo object) into the class</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.insert_direct_method">source&nbsp;code</a></span>
             
@@ -473,6 +545,22 @@
       Return the class (with the modifications) into raw format</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.save">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="get_generator"></a><span class="summary-sig-name">get_generator</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_generator">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -753,8 +841,33 @@
     </ul></dd>
     <dt>Overrides:
         object.__init__
-        <dd><em class="note">(inherited documentation)</em></dd>
     </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_class"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_class</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">class_name</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_class">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Verify the name of the class</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>class_name</code></strong> - the name of the class
+          <p>@rtype : True if the class name is valid, otherwise it's 
+          False</p></li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -864,6 +977,27 @@
   </dl>
 </td></tr></table>
 </div>
+<a name="get_class_manager"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_class_manager</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JVMFormat.get_class_manager">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return directly the class manager</p>
+  <p>@rtype : <a href="jvm.ClassManager-class.html" 
+  class="link">ClassManager</a></p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
 <a name="set_used_field"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -966,6 +1100,35 @@
   </dl>
 </td></tr></table>
 </div>
+<a name="insert_field"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">insert_field</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">class_name</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">descriptor</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="jvm-pysrc.html#JVMFormat.insert_field">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Insert a field into the class</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>class_name</code></strong> - the class of the field</li>
+        <li><strong class="pname"><code>name</code></strong> - the name of the field</li>
+        <li><strong class="pname"><code>descriptor</code></strong> - a list with the access_flag and the descriptor ( [ 
+          &quot;ACC_PUBLIC&quot;, &quot;I&quot; ] )</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="insert_craft_method"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1013,7 +1176,7 @@
     </td>
   </tr></table>
   
-  <p>Insert a direct method (MethodInfo Object) into the class</p>
+  <p>Insert a direct method (MethodInfo object) into the class</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -1075,7 +1238,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Wed Nov 10 13:59:55 2010
+    Generated by Epydoc 3.0.1 on Tue Jan  4 09:27:32 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

@@ -135,6 +135,23 @@
       
     </td>
   </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="pretty_show"></a><span class="summary-sig-name">pretty_show</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">vm_a</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.pretty_show">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
 <tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
@@ -227,6 +244,22 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a name="get_all_fields"></a><span class="summary-sig-name">get_all_fields</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.get_all_fields">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a name="get_fields"></a><span class="summary-sig-name">get_fields</span>(<span class="summary-sig-arg">self</span>)</span><br />
       Return all objects fields</td>
           <td align="right" valign="top">
@@ -301,10 +334,10 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="dvm.DalvikVMFormat-class.html#save" class="summary-sig-name">save</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Return the class (with the modifications) into raw format</td>
+          <td><span class="summary-sig"><a href="dvm.DalvikVMFormat-class.html#get_class_manager" class="summary-sig-name">get_class_manager</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return directly the class manager</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.save">source&nbsp;code</a></span>
+            <span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.get_class_manager">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -476,6 +509,23 @@
         <span class="summary-sig-arg">fct</span>)</span></td>
           <td align="right" valign="top">
             <span class="codelink"><a href="bytecode-pysrc.html#_Bytecode.register">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="save"></a><span class="summary-sig-name">save</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">filename</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="bytecode-pysrc.html#_Bytecode.save">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -696,25 +746,24 @@
   </dl>
 </td></tr></table>
 </div>
-<a name="save"></a>
+<a name="get_class_manager"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">save</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_class_manager</span>(<span class="sig-arg">self</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.save">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="dvm-pysrc.html#DalvikVMFormat.get_class_manager">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Return the class (with the modifications) into raw format</p>
+  <p>Return directly the class manager</p>
+  <p>@rtype : <a href="dvm.ClassManager-class.html" 
+  class="link">ClassManager</a></p>
   <dl class="fields">
-    <dt>Overrides:
-        <a href="bytecode._Bytecode-class.html#save">bytecode._Bytecode.save</a>
-    </dt>
   </dl>
 </td></tr></table>
 </div>
@@ -747,7 +796,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Wed Nov 10 13:59:54 2010
+    Generated by Epydoc 3.0.1 on Tue Jan  4 09:27:30 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"
