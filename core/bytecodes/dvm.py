@@ -154,7 +154,7 @@ class SparseSwitch :
       return "SPARSE-SWITCH"
 
    def show(self, pos) :
-     print pos, self.format.get_value(), self.keys, self.targets
+     print pos, self.format.get_value(), self.keys, self.targets,
 
    def get_length(self) :
      return calcsize(SPARSE_SWITCH[0]) + (self.format.get_value().size * calcsize('<L')) * 2
@@ -176,7 +176,7 @@ class PackedSwitch :
       return "PACKED-SWITCH"
 
    def show(self, pos) :
-      print pos, self.format.get_value(), self.targets
+      print pos, self.format.get_value(), self.targets,
 
    def get_length(self) :
       return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
@@ -679,6 +679,9 @@ class TypeLItem :
    def show(self) :
       print "TYPE_LITEM", self.type_idx.get_value()
 
+   def get_string(self) :
+      return self.__CM.get_type( self.type_idx.get_value() )
+
    def get_obj(self) :
       return []
 
@@ -704,11 +707,17 @@ class TypeList :
    def reload(self) :
       pass
 
+   def get_type_list_off(self) :
+      return self.__offset.off + len(self.pad)
+
+   def get_string(self) :
+      return ' '.join(i.get_string() for i in self.list)
+
    def show(self) :
       print "TYPE_LIST"
       nb = 0
       for i in self.list :
-         print nb,
+         print nb, self.__offset.off + len(self.pad),
          i.show()
          nb = nb + 1
 
@@ -1193,12 +1202,15 @@ class ProtoItem :
       self.format = SVs( PROTO_ID_ITEM[0], PROTO_ID_ITEM[1], buff.read( calcsize(PROTO_ID_ITEM[0]) ) )
       self._shorty = None
       self._return = None
-      
-      self.__cm = cm
+      self._params = None
 
    def reload(self) :
       self._shorty = self.__CM.get_string( self.format.get_value().shorty_idx )
       self._return = self.__CM.get_type( self.format.get_value().return_type_idx )
+      self._params = self.__CM.get_type_list( self.format.get_value().parameters_off )
+
+   def get_params(self) :
+      return self._params
 
    def get_shorty(self) :
       return self._shorty
@@ -1312,6 +1324,9 @@ class MethodItem :
       self._proto = self.__CM.get_proto( general_format.proto_idx )
       self._name = self.__CM.get_string( general_format.name_idx )
 
+   def get_type(self) :
+      return self.format.get_value().proto_idx
+
    def show(self) :
       print "METHOD_ITEM", self._name, self._proto, self._class, self.format.get_value()
    
@@ -1381,7 +1396,7 @@ class EncodedField :
       name = self.__CM.get_field( self.__field_idx )
       self._class_name = name[0]
       self._name = name[2]
-      self._proto = name[1]
+      self._proto = ''.join(i for i in name[1])
 
    def get_access(self) :
       return self.access_flags
@@ -1430,7 +1445,7 @@ class EncodedMethod :
    def reload(self) :
       v = self.__CM.get_method( self.__method_idx )
       self._class_name = v[0]
-      self._proto = v[1]
+      self._proto = ''.join(i for i in v[1])
       self._name = v[2]
 
       self._code = self.__CM.get_code( self.code_off )
@@ -1964,6 +1979,7 @@ class DCode :
       for i in self.__bytecodes :
          print nb, "0x%x" % idx,   
          i.show(nb)
+         print
 
          idx += i.get_length()
          nb += 1
@@ -2042,7 +2058,6 @@ class DalvikCode :
    def show(self) :
       self._begin_show()
       self._code.show()
-      print
       self._end_show()
 
    def _end_show(self) :
@@ -2298,13 +2313,23 @@ class ClassManager :
       except KeyError :
          bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
 
+   def get_type_list(self, off) :
+      if off == 0 :
+         return "()"
+
+      for i in self.__manage_item[ "TYPE_TYPE_LIST" ] :
+         if i.get_type_list_off() == off :
+            return "(" + i.get_string() + ")"
+      
+      return None
+
    def get_type(self, idx) :
       type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
       return self.get_string( type )
 
    def get_proto(self, idx) :
       proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
-      return [  proto.get_shorty(), proto.get_return_type() ]
+      return [ proto.get_params(), proto.get_return_type() ]
 
    def get_field(self, idx, ref=False) :
       field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )

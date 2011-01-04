@@ -20,4 +20,4 @@ x = analysis.VM_BCA( j )
 
 # SHOW METHODS
 for i in j.get_methods() :
-   i.pretty_show(  x ) #.hmethods[ i ] )
+   i.pretty_show( x ) 
