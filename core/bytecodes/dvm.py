@@ -2421,7 +2421,6 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
    def load_class(self) :
       self.__header = HeaderItem( 0, self, ClassManager() )
-#      self.__header.show()
 
       self.map_list = MapList( self.__header.get_value().map_off, self )
 
@@ -2434,6 +2433,14 @@ class DalvikVMFormat(bytecode._Bytecode) :
    def show(self) :
       """Show the .class format into a human readable format"""
       self.map_list.show()
+
+   def save(self) :
+      """
+         Return the dex (with the modifications) into raw format
+      
+         @rtype: string
+      """
+      return self._get_raw()
 
    def pretty_show(self, vm_a) :
       self.map_list.pretty_show(vm_a)

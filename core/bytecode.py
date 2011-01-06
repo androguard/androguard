@@ -152,10 +152,17 @@ class Buff :
 
 class _Bytecode(object) :
    def __init__(self, buff) :
+      try :
+         import psyco
+         psyco.full()
+      except ImportError :
+         pass
+
       self.__buff = buff
       
       self.__registers = { SHOW : [] }
       self.__idx = 0
+
 
    def read(self, size) :
       if isinstance(size, SV) :

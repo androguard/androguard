@@ -25,7 +25,7 @@ _x = analysis.VM_BCA( _d )
 KEY = "\x01\x02\x03\x04\x05\x06\x07\x08"
 _des = pyDes.des( KEY )
 
-_x.tainted_packages.export_call_graph("toto.dot", "Lcom/swampy/sexpos/pos")
+#_x.tainted_packages.export_call_graph("toto.dot", "Lcom/swampy/sexpos/pos")
 
 tainted_string = _x.tainted_variables.get_string( "DES" )
 if tainted_string != None :

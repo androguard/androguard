@@ -9,6 +9,7 @@ calc = float(cxy - minxy) / maxxy
 #include <stdio.h>
 #include <string.h>
 
+#include "./z/z.h"
 #include "./bz2/bz2.h"
 
 #define M_BLOCK 1000000
@@ -20,36 +21,31 @@ float ncd(void *orig, unsigned int size_orig, void *cmp, unsigned int size_cmp)
 
    unsigned int s1, s2, s3, size_join_buff, max, min, ret;
 
-   bz2_wrapper_t bwt;
-   bz2Init(&bwt);
-
    s1 = sizeof(inbuf);
-   ret = bz2Compress(&bwt, 9, 0, 30, orig, size_orig, inbuf, &s1);
-   printf("RET = %d AVAIL OUT %d\n", ret, s1);
+   ret = zCompress(9, 0, 30, orig, size_orig, inbuf, &s1);
+   //printf("RET = %d AVAIL OUT %d\n", ret, s1);
    if (ret < 0) {
-
    }
 
    s2 = sizeof(inbuf);
-   ret = bz2Compress(&bwt, 9, 0, 30, cmp, size_cmp, inbuf, &s2);
-   printf("RET = %d AVAIL OUT %d\n", ret, s2);
+   ret = zCompress(9, 0, 30, cmp, size_cmp, inbuf, &s2);
+   //printf("RET = %d AVAIL OUT %d\n", ret, s2);
    if (ret < 0) {
    }
 
-   size_join_buff = size_orig + size_cmp + 1;
+   size_join_buff = size_orig + size_cmp;
    joinbuff = (void *)malloc( size_join_buff );
    if (joinbuff == NULL) {
-
    }
 
    memcpy(joinbuff, orig, size_orig);
    memcpy(joinbuff+size_orig, cmp, size_cmp);
 
    s3 = sizeof(inbuf);
-   ret = bz2Compress(&bwt, 9, 0, 30, joinbuff, size_join_buff, inbuf, &s3);
+   ret = zCompress(9, 0, 30, joinbuff, size_join_buff, inbuf, &s3);
    free(joinbuff);
 
-   printf("RET = %d AVAIL OUT %d\n", ret, s3);
+   //printf("RET = %d %d AVAIL OUT %d\n", ret, size_join_buff, s3);
    if (ret < 0) {
    }
 
@@ -60,8 +56,6 @@ float ncd(void *orig, unsigned int size_orig, void *cmp, unsigned int size_cmp)
       min = s1;
    }
 
-   printf("RES = %f\n", (float)(s3 - min) / max);
-
-   return 0.0;
+   return (float)(s3 - min) / max;
 }
 
