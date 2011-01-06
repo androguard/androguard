@@ -1,12 +1,31 @@
-from ctypes import (cdll, Structure, Union, sizeof, addressof, create_string_buffer, c_byte, c_ubyte, c_char, c_short, c_ushort, c_int, c_uint, c_ulong, c_char_p, c_void_p, c_ulonglong, c_longlong)
+from ctypes import cdll, c_float
 
+class NCD :
+   def __init__(self) :
+      self._u = cdll.LoadLibrary( "./libncd/libncd.so" )
+      self._u.ncd.restype = c_float
+      self._threads = []
 
-u = cdll.LoadLibrary( "./libncd/libncd.so" )
-print u
+   def get(self, s1, s2) :
+      return self._u.ncd( s1, len(s1), s2, len(s2) )
 
-TEST1 = "TOTOO"
-TEST2 = "OUPS LA BOOOM"
+def benchmark(n, ref) :
+   import itertools
 
-u.ncd( TEST1, len(TEST1),
-       TEST2, len(TEST2)
-      )
+   idx = 0
+   for i in itertools.permutations(ref) :
+      perm = ''.join(j for j in i)
+      res = n.get(ref, perm)
+      if res < 0.2 :
+         print idx, res, ref, perm
+      idx += 1
+
+if __name__ == "__main__" :
+   try : 
+      import psyco
+      psyco.full()
+   except ImportError:
+      pass
+
+   n = NCD()
+   benchmark(n, "androgua")

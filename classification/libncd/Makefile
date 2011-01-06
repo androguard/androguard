@@ -1,12 +1,12 @@
 SRC	= 	ncd.c
 
-LDFLAGS =	-lbz2
+LDFLAGS =	-lbz2 -lz
 CFLAGS  +=      -Wall       
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
 
-EXT_BZ2 = "bz2/bz2.o"
+EXT_ZIP = z/z.o bz2/bz2.o
 
 LIBNAME = "libncd"
 
@@ -14,25 +14,18 @@ OBJ	= $(SRC:.c=.o)
 
 .SILENT:
 
-all :   BZ2 $(OBJ) LIBNCD 
-#	tests 
+all :   ZIP $(OBJ) LIBNCD 
 
-BZ2 :
+ZIP :
+	cd z && make
 	cd bz2 && make
 	
 LIBNCD :
-	$(CC) -o $(LIBNAME).so $(OBJ) $(EXT_BZ2) -shared $(LDFLAGS)
-
-tests :
-	$(CC) -c test_bz2.c $(CFLAGS)
-	$(CC) -o test_bz2 test_bz2.o $(OBJ) $(EXT_BZ2_OBJ) $(LDFLAGS)
-
-install :
-	cp $(LIBNAME).so $(LIBNAME_INSTALL)
-	cp wrapper.h $(LIBNAME_INCLUDE_INSTALL)
+	$(CC) -o $(LIBNAME).so $(OBJ) $(EXT_ZIP) -shared $(LDFLAGS)
 
 clean :
 	$(RM) *.o $(LIBNAME).so
+	cd z && make clean
 	cd bz2 && make clean
 
 %.o   : %.c
