@@ -83,7 +83,7 @@ MAP_ITEM = [ '<HHLL', namedtuple("MAP_ITEM", "type unused size offset") ]
 
 PROTO_ID_ITEM = [ '<LLL', namedtuple("PROTO_ID_ITEM", "shorty_idx return_type_idx parameters_off" ) ]
 METHOD_ID_ITEM = [ '<HHL', namedtuple("METHOD_ID_ITEM", "class_idx proto_idx name_idx" ) ]
-FIELD_ID_ITEM = [ '<HHL', namedtuple("FILED_ID_ITEM", "class_idx type_idx name_idx") ]
+FIELD_ID_ITEM = [ '<HHL', namedtuple("FIELD_ID_ITEM", "class_idx type_idx name_idx") ]
 
 CLASS_DEF_ITEM = [ '<LLLLLLLL', namedtuple("CLASS_DEF_ITEM", "class_idx access_flags superclass_idx interfaces_off source_file_idx annotations_off class_data_off static_values_off") ]
 
@@ -126,7 +126,11 @@ class FillArrayData :
       return "FILL-ARRAY-DATA"
 
    def show(self, pos) :
-      print pos, self.format.get_value(), self.data
+      print pos, self.format.get_value(), repr(self.data),
+      buff = ""
+      for i in range(0, len(self.data)) :
+         buff += "\\x%02x" % ord( self.data[i] )
+      print buff[:-1]
 
    def get_length(self) :
       general_format = self.format.get_value()
@@ -1277,12 +1281,18 @@ class FieldItem :
       self._type = self.__CM.get_type( general_format.type_idx )
       self._name = self.__CM.get_string( general_format.name_idx )
 
+   def get_class_name(self) :
+      return self._class
+
    def get_class(self) :
       return self._class
 
    def get_type(self) :
       return self._type
 
+   def get_descriptor(self) :
+      return self._type
+   
    def get_name(self) :
       return self._name
 
@@ -1451,12 +1461,12 @@ class EncodedMethod :
       self._code = self.__CM.get_code( self.code_off )
 
    def show(self) :
-      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
+      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s %s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
       if self._code != None :
          self._code.show()
 
    def pretty_show(self, vm_a) :
-      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s,%s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
+      print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s %s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
       if self._code != None :
          self._code.pretty_show( vm_a.hmethods[ self ] )
 
@@ -1815,9 +1825,11 @@ class DBC :
       if "string" in c :
          return "%s%x{%s}" % (c, v, self.__CM.get_string(v))
       elif "meth" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_method(v))
+         m = self.__CM.get_method(v)
+         return "%s%x{%s %s%s,%s}" % (c, v, m[0], m[1][0], m[1][1], m[2])
       elif "field" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_field(v))
+         f = self.__CM.get_field(v)
+         return "%s%x{%s %s,%s}" % (c, v, f[0], f[1], f[2])
       elif "type" in c :
          return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
       return "%s%x" % (c, v)
@@ -2417,6 +2429,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
       self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
       self.fields = self.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
       self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
+      self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
 
    def show(self) :
       """Show the .class format into a human readable format"""
@@ -2523,10 +2536,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
       """
       for i in self.classes.class_def :
-         if class_name == i.get_name() : 
-            for j in i.get_methods() :
-               if method_name == j.get_name() and descriptor == j.get_descriptor() :
-                  return j
+         for j in i.get_methods() :
+            if class_name == j.get_class_name() and method_name == j.get_name() and descriptor == j.get_descriptor() :
+               return j
       return None
 
    def get_field_descriptor(self, class_name, field_name, descriptor) :
@@ -2552,6 +2564,12 @@ class DalvikVMFormat(bytecode._Bytecode) :
          @rtype : L{ClassManager}
       """
       return self.map_list.get_class_manager()
+
+   def get_strings(self) :
+      """
+         Return all strings
+      """
+      return [i.get() for i in self.strings]
 
    def get_type(self) :
       return "DVM"

@@ -2963,6 +2963,11 @@ class JVMFormat(bytecode._Bytecode) :
       """
       return self.__CM
 
+   def get_strings(self) :
+      """
+      """
+      return []
+
    def set_used_field(self, old, new) :
       """
          Change the description of a field
