@@ -18,6 +18,7 @@
 
 from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
 from networkx import draw_graphviz, write_dot
+import matplotlib.pyplot as plt
 
 import re, random, string, cPickle
 import jvm, dvm
@@ -745,10 +746,13 @@ class JVMBasicBlock :
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
          
          elif "new" in i.get_name() or "invokestatic" in i.get_name() or "invokevirtual" in i.get_name() or "getstatic" in i.get_name() :
+            print i.get_operands()
+
             if "new" in i.get_name() :
-               self.__context.get_tainted_packages().push_info( i.get_operands(), i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+               self.__context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             else :
-               self.__context.get_tainted_packages().push_info( i.get_operands()[0], i.get_operands(), (TAINTED_PACKAGE_CALL, idx, self, self.__method) )
+               #raise("ooo")
+               self.__context.get_tainted_packages().push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
 
          idx += i.get_length()
 
@@ -927,10 +931,37 @@ class JVMBreakBlock(BreakBlock) :
 
 
 DVM_FIELDS_ACCESS = {
-      "iput" : "W",
       "iget" : "R",
+      "iget-wide" : "R",
+      "iget-object" : "R",
+      "iget-boolean" : "R",
+      "iget-byte" : "R",
+      "iget-char" : "R",
+      "iget-short" : "R",
+
+      "iput" : "W",
+      "iput-wide" : "W",
+      "iput-object" : "W",
+      "iput-boolean" : "W",
+      "iput-byte" : "W",
+      "iput-char" : "W",
+      "iput-short" : "W",
+      
       "sget" : "R",
+      "sget-wide" : "R",
+      "sget-object" : "R",
+      "sget-boolean" : "R",
+      "sget-byte" : "R",
+      "sget-char" : "R",
+      "sget-short" : "R",
+
       "sput" : "W",
+      "sput-wide" : "W",
+      "sput-object" : "W",
+      "sput-boolean" : "W",
+      "sput-byte" : "W",
+      "sput-char" : "W",
+      "sput-short" : "W",
    }
 
 class DVMBasicBlock :
@@ -1010,12 +1041,24 @@ class DVMBasicBlock :
          if i.get_name() in DVM_FIELDS_ACCESS :
             o = i.get_operands()
             desc = self.__vm.get_class_manager().get_field(o[-1][1], True)
-
             if desc == None :
                raise("oo") #desc = ExternalFM( o[0], o[1], o[2] )
 
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
-      
+         elif "invoke" in i.get_name() :
+            idx_meth = 0
+            for op in i.get_operands() :
+               if op[0] == "meth@" :
+                  idx_meth = op[1]
+                  break
+
+            method_info = self.__vm.get_class_manager().get_method( idx_meth )
+            self.__context.get_tainted_packages().push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
+         elif "const-string" in i.get_name() :
+            string_name = self.__vm.get_class_manager().get_string( i.get_operands()[-1][1] )
+            self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
+            self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
+
          idx += i.get_length()
 
    def analyze_code(self) :
@@ -1023,6 +1066,7 @@ class DVMBasicBlock :
 
 TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
+TAINTED_STRING = 2
 class Path :
    def __init__(self, info) :
       self.access_flag = info[0]
@@ -1055,6 +1099,7 @@ class TaintedVariable :
    def get_info(self) :
       if self.__type == TAINTED_FIELD :
          return [ self.__var.get_class_name(), self.__var.get_name(), self.__var.get_descriptor() ]
+      return self.__var
 
    def push(self, info) :
       self.__paths.append( Path( info ) )
@@ -1076,8 +1121,17 @@ class TaintedVariables :
       self.__vm = _vm
       self.__vars = {}
 
+   def get_string(self, s) :
+      try :
+         return self.__vars[ s ]
+      except KeyError :
+         return None
+
    def get_local_variables(self, _method) :
-      return self.__vars[ _method ]
+      try :
+         return self.__vars[ _method ]
+      except KeyError :
+         return None
 
    def get_fields_by_bb(self, bb) :
       l = []
@@ -1085,20 +1139,23 @@ class TaintedVariables :
          if isinstance( self.__vars[i], dict ) == False :
             for j in self.__vars[i].gets() :
                if j.get_bb() == bb :
-                  l.append( (i.get_name(), j.get_access_flag()) ) #self.__vars[i] )
-
+                  l.append( (i.get_name(), j.get_access_flag()) )
       return l
 
    def get_field(self, class_name, name, descriptor) :
       for i in self.__vars :
-         if isinstance( self.__vars[i], dict ) == False :
+         if isinstance( self.__vars[i], dict ) == False and isinstance( i, str ) == False :
             if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
                return self.__vars[i]
       return None
 
    def add(self, var, _type, _method=None) :
       if _type == TAINTED_FIELD :
-         self.__vars[ var ] = TaintedVariable( var, _type )
+         if var not in self.__vars :
+            self.__vars[ var ] = TaintedVariable( var, _type )
+      elif _type == TAINTED_STRING :
+         if var not in self.__vars :
+            self.__vars[ var ] = TaintedVariable( var, _type )
       elif _type == TAINTED_LOCAL_VARIABLE :
          if _method not in self.__vars :
             self.__vars[ _method ] = {}
@@ -1112,6 +1169,8 @@ class TaintedVariables :
       try :
          if _type == TAINTED_FIELD : 
             self.__vars[ var ].push( info ) 
+         elif _type == TAINTED_STRING :
+            self.__vars[ var ].push( info )
          elif _type == TAINTED_LOCAL_VARIABLE :
             self.__vars[ info[-1] ][ var ].push( info )
          else :
@@ -1140,46 +1199,65 @@ class TaintedVariables :
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
 class PathP(Path) :
-   def __init__(self, meth, info) :
+   def __init__(self, info) :
       Path.__init__( self, info )
-      self.meth = meth
+      if info[0] == TAINTED_PACKAGE_CALL :
+         self.name = info[-2]
+         self.descriptor = info[-1]
 
    def get_name(self) :
-      return self.meth[1]
-
-   def get_method(self) :
-      return self.meth
+      return self.name
+   
+   def get_descriptor(self) :
+      return self.descriptor
 
 class TaintedPackage :
    def __init__(self, name) :
       self.name = name
       self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
 
+   def get_name(self) :
+      return self.name
+
    def gets(self) :
       return self.paths
 
-   def push(self, meth, info) :
-      self.paths[ info[0] ].append( PathP( meth, info ) )
+   def push(self, info) :
+      self.paths[ info[0] ].append( PathP( info ) )
+
+   def get_method(self, name, descriptor) :
+      l = []
+      for path in self.paths[ TAINTED_PACKAGE_CALL ] :
+         if path.get_name() == name and path.get_descriptor() == descriptor :
+            l.append( path )
+      return l
+
+   def get_methods(self) :
+      return [ path for path in self.paths[ TAINTED_PACKAGE_CALL ] ]
 
    def show(self, format) :
       print self.name
       for _type in self.paths :
          print "\t -->", _type
-         for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :
-            print "\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method()
-            
+         if _type == TAINTED_PACKAGE_CALL :
+            for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :
+               print "\t\t => %s %s <-- %s@%s@%x in %s" % (path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+         else :
+            for path in self.paths[ _type ] :
+               print "\t\t => %s@%s@%x in %s" % (path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+
 class TaintedPackages :
    def __init__(self, _vm) :
       self.__vm = _vm                                                                                                                                                                                                             
       self.__packages = {}
 
-   def push_info(self, class_name, meth, info) :
-      #print class_name
+   def _add_pkg(self, name) :
+      if name not in self.__packages :
+         self.__packages[ name ] = TaintedPackage( name )
 
-      if class_name not in self.__packages :
-         self.__packages[ class_name ] = TaintedPackage( class_name )
-
-      self.__packages[ class_name ].push( meth, info )
+   def push_info(self, class_name, info) :
+      self._add_pkg( class_name )
+      self.__packages[ class_name ].push( info )
 
    def get_packages_by_bb(self, bb):
       l = []
@@ -1191,6 +1269,37 @@ class TaintedPackages :
                   l.append( (i, k.get_access_flag(), k.get_idx(), k.get_method()) )
 
       return l
+
+   def get_method(self, class_name, name, descriptor) :
+      try :
+         return self.__packages[ class_name ].get_method( name, descriptor )
+      except KeyError :
+         return []
+
+   def export_call_graph(self, output, class_name) :
+      G = DiGraph()
+
+      H = {}
+
+      for i in self.__packages :
+         paths = self.__packages[ i ].get_methods()
+         for j in paths :
+            if class_name in self.__packages[ i ].get_name() : #and class_name not in j.get_method().get_class_name() :
+               #node1 = "%s\\n%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
+               #node2 = "%s\\n%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name(), j.get_descriptor())
+               node1 = "%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name() )
+               node2 = "%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name() )
+               
+               n = "%s%s" % (node1, node2)
+               if n not in H :
+                  H[ n ] = True
+
+                  print node1, "--->", node2
+                  G.add_edge( node1, node2 )
+      #plt.show()
+
+      draw_graphviz(G)                                                                                                                                                                                                           
+      write_dot(G, output)
 
    def show(self) :
       print "TAINTED PACKAGES by name"
