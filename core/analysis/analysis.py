@@ -746,12 +746,9 @@ class JVMBasicBlock :
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
          
          elif "new" in i.get_name() or "invokestatic" in i.get_name() or "invokevirtual" in i.get_name() or "getstatic" in i.get_name() :
-            print i.get_operands()
-
             if "new" in i.get_name() :
                self.__context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             else :
-               #raise("ooo")
                self.__context.get_tainted_packages().push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
 
          idx += i.get_length()
@@ -1054,6 +1051,9 @@ class DVMBasicBlock :
 
             method_info = self.__vm.get_class_manager().get_method( idx_meth )
             self.__context.get_tainted_packages().push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
+         elif "new-instance" in i.get_name() :
+            type_info = self.__vm.get_class_manager().get_type( i.get_operands()[-1][1] )
+            self.__context.get_tainted_packages().push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
          elif "const-string" in i.get_name() :
             string_name = self.__vm.get_class_manager().get_string( i.get_operands()[-1][1] )
             self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
@@ -1088,32 +1088,29 @@ class Path :
 
 class TaintedVariable :
    def __init__(self, var, _type) :
-      self.__var = var
-      self.__type = _type
+      self.var = var
+      self.type = _type
 
-      self.__paths = []
+      self.paths = []
 
    def get_type(self) :
-      return self.__type
+      return self.type
 
    def get_info(self) :
-      if self.__type == TAINTED_FIELD :
-         return [ self.__var.get_class_name(), self.__var.get_name(), self.__var.get_descriptor() ]
-      return self.__var
+      if self.type == TAINTED_FIELD :
+         return [ self.var.get_class_name(), self.var.get_name(), self.var.get_descriptor() ]
+      return self.var
 
    def push(self, info) :
-      self.__paths.append( Path( info ) )
+      self.paths.append( Path( info ) )
 
    def get_paths_access(self, mode) :
-      for i in self.__paths :
+      for i in self.paths :
          if i.get_access_flag() in mode :
             yield i
 
-   def gets(self) :
-      return self.__paths
-
    def get_paths(self) :
-      for i in self.__paths :
+      for i in self.paths :
          yield i
 
 class TaintedVariables :
@@ -1121,80 +1118,76 @@ class TaintedVariables :
       self.__vm = _vm
       self.__vars = {}
 
+      self.__vars[ TAINTED_LOCAL_VARIABLE ] = {}
+      self.__vars[ TAINTED_FIELD ] = {}
+      self.__vars[ TAINTED_STRING ] = {}
+
+   # functions to get particulars elements
+
    def get_string(self, s) :
       try :
-         return self.__vars[ s ]
+         return self.__vars[ TAINTED_STRING ][ s ]
       except KeyError :
          return None
 
+   def get_field(self, class_name, name, descriptor) :
+      for i in self.__vars[ TAINTED_FIELD ] :
+            if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
+               return self.__vars[ TAINTED_FIELD ] [i]
+      return None
+  
+   # global functions
+   
+   def get_strings(self) :
+      for i in self.__vars[ TAINTED_STRING ] :
+         yield self.__vars[ TAINTED_STRING ][ i ]
+
+   def get_fields(self) :
+      for i in self.__vars[ TAINTED_FIELD ] :
+         yield self.__vars[ TAINTED_FIELD ][ i ]
+
+   # specifics functions
+   
    def get_local_variables(self, _method) :
       try :
-         return self.__vars[ _method ]
+         return self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ]
       except KeyError :
          return None
 
    def get_fields_by_bb(self, bb) :
       l = []
-      for i in self.__vars :
-         if isinstance( self.__vars[i], dict ) == False :
-            for j in self.__vars[i].gets() :
+      for i in self.__vars[ TAINTED_FIELD ] :
+            for j in self.__vars[ TAINTED_FIELD ][i].gets() :
                if j.get_bb() == bb :
                   l.append( (i.get_name(), j.get_access_flag()) )
       return l
 
-   def get_field(self, class_name, name, descriptor) :
-      for i in self.__vars :
-         if isinstance( self.__vars[i], dict ) == False and isinstance( i, str ) == False :
-            if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
-               return self.__vars[i]
-      return None
 
    def add(self, var, _type, _method=None) :
       if _type == TAINTED_FIELD :
-         if var not in self.__vars :
-            self.__vars[ var ] = TaintedVariable( var, _type )
+         if var not in self.__vars[ TAINTED_FIELD ] :
+            self.__vars[ TAINTED_FIELD ][ var ] = TaintedVariable( var, _type )
       elif _type == TAINTED_STRING :
-         if var not in self.__vars :
-            self.__vars[ var ] = TaintedVariable( var, _type )
+         if var not in self.__vars[ TAINTED_STRING ] :
+            self.__vars[ TAINTED_STRING ][ var ] = TaintedVariable( var, _type )
       elif _type == TAINTED_LOCAL_VARIABLE :
-         if _method not in self.__vars :
-            self.__vars[ _method ] = {}
+         if _method not in self.__vars[ TAINTED_LOCAL_VARIABLE ] :
+            self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ] = {}
 
-         if var not in self.__vars[ _method ] : 
-            self.__vars[ _method ][ var ] = TaintedVariable( var, _type )
+         if var not in self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ] : 
+            self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ][ var ] = TaintedVariable( var, _type )
       else :
          raise("ooop")
 
-   def push_info(self, _type, var, info, _method=None) :
-      try :
-         if _type == TAINTED_FIELD : 
-            self.__vars[ var ].push( info ) 
-         elif _type == TAINTED_STRING :
-            self.__vars[ var ].push( info )
-         elif _type == TAINTED_LOCAL_VARIABLE :
-            self.__vars[ info[-1] ][ var ].push( info )
-         else :
-            raise("ooop")
-      except KeyError, e :
-         pass
-
-   def show(self) :
-      print "TAINTED FIELDS :"
-      for k in self.__vars :
-         if isinstance( self.__vars[k], dict ) == False :
-            print "\t -->", self.__vars[k].get_info()
-            for path in self.__vars[k].get_paths() :
-               print "\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx()
-
-
-      print "TAINTED LOCAL VARIABLES :"
-      for k in self.__vars :
-         if isinstance( self.__vars[k], dict ) == True :
-            print "\t -->", k.get_class_name(), k.get_name(), k.get_descriptor()
-            for var in self.__vars[k] :
-               print "\t\t ", var
-               for path in self.__vars[k][var].get_paths() :
-                  print "\t\t\t =>", path.get_access_flag(), path.get_bb().get_name(), path.get_idx()
+   def push_info(self, _type, var, info) :
+      if _type == TAINTED_FIELD or _type == TAINTED_STRING :
+         self.add( var, _type )
+         self.__vars[ _type ][ var ].push( info ) 
+      elif _type == TAINTED_LOCAL_VARIABLE :
+         self.add( var, _type, info[-1] )
+         self.__vars[ TAINTED_LOCAL_VARIABLE ][ info[-1] ][ var ].push( info )
+      else :
+         raise("ooop")
 
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
@@ -1204,7 +1197,7 @@ class PathP(Path) :
       if info[0] == TAINTED_PACKAGE_CALL :
          self.name = info[-2]
          self.descriptor = info[-1]
-
+      
    def get_name(self) :
       return self.name
    
@@ -1216,7 +1209,7 @@ class TaintedPackage :
       self.name = name
       self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
 
-   def get_name(self) :
+   def get_info(self) :
       return self.name
 
    def gets(self) :
@@ -1232,6 +1225,11 @@ class TaintedPackage :
             l.append( path )
       return l
 
+   def get_paths(self) :
+      for i in self.paths :
+         for j in self.paths[ i ] :
+            yield j
+
    def get_methods(self) :
       return [ path for path in self.paths[ TAINTED_PACKAGE_CALL ] ]
 
@@ -1241,10 +1239,10 @@ class TaintedPackage :
          print "\t -->", _type
          if _type == TAINTED_PACKAGE_CALL :
             for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :
-               print "\t\t => %s %s <-- %s@%s@%x in %s" % (path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+               print "\t\t => %s %s <-- %s@%x in %s" % (path.get_name(), path.get_descriptor(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
          else :
             for path in self.paths[ _type ] :
-               print "\t\t => %s@%s@%x in %s" % (path.get_access_flag(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+               print "\t\t => %s@%x in %s" % (path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
 
 class TaintedPackages :
    def __init__(self, _vm) :
@@ -1270,6 +1268,10 @@ class TaintedPackages :
 
       return l
 
+   def get_packages(self) :
+      for i in self.__packages :
+         yield self.__packages[ i ]
+
    def get_method(self, class_name, name, descriptor) :
       try :
          return self.__packages[ class_name ].get_method( name, descriptor )
@@ -1284,11 +1286,9 @@ class TaintedPackages :
       for i in self.__packages :
          paths = self.__packages[ i ].get_methods()
          for j in paths :
-            if class_name in self.__packages[ i ].get_name() : #and class_name not in j.get_method().get_class_name() :
-               #node1 = "%s\\n%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
-               #node2 = "%s\\n%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name(), j.get_descriptor())
-               node1 = "%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name() )
-               node2 = "%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name() )
+            if class_name in self.__packages[ i ].get_name() : 
+               node1 = "%s\\n%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
+               node2 = "%s\\n%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name(), j.get_descriptor())
                
                n = "%s%s" % (node1, node2)
                if n not in H :
@@ -1305,10 +1305,6 @@ class TaintedPackages :
       print "TAINTED PACKAGES by name"
       for k in self.__packages :
          self.__packages[ k ].show("get_name")
-
-      print "TAINTED PACKAGES by idx"
-      for k in self.__packages :
-         self.__packages[ k ].show("get_idx")
 
 class BasicBlocks :
    def __init__(self, _vm, _tv) :

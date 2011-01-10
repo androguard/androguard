@@ -939,6 +939,8 @@ class EncodedValue :
          self.value = buff.read( self.__value_arg + 1 )
       elif self.__value_type == VALUE_ARRAY :
          self.value = EncodedArray( buff, cm )
+      elif self.__value_type == VALUE_ANNOTATION :
+         self.value = EncodedAnnotation( buff, cm ) 
       elif self.__value_type == VALUE_BYTE :
          self.value = buff.read( 1 )
       elif self.__value_type == VALUE_NULL :
@@ -946,7 +948,7 @@ class EncodedValue :
       elif self.__value_type == VALUE_BOOLEAN :
          pass
       else :
-         raise( "oops" )
+         bytecode.Exit( "Unknown value 0x%x" % self.__value_type )
 
    def show(self) :
       print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, repr(self.value)
