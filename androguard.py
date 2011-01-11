@@ -255,7 +255,7 @@ class Androguard :
 
    def _analyze(self) :
       for i in self.__files :
-         print "processing ", i
+         #print "processing ", i
          if ".class" in i :
             bc = jvm.JVMFormat( open(i, "r").read() )
          elif ".dex" in i :

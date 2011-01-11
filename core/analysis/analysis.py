@@ -1359,6 +1359,76 @@ class BasicBlocks :
             if j[2] != None :
                self.G.add_edge( i.get_name(), j[2].get_name() )
 
+GRAMMAR_TYPE_CLEAR = 0
+GRAMMAR_TYPE_PSEUDO_ANONYMOUS = 1
+GRAMMAR_TYPE_ANONYMOUS = 2
+class Signature :
+   def __init__(self, tainted_information) :
+      self.__tainted = tainted_information
+
+      self.__grammars = {
+         GRAMMAR_TYPE_CLEAR : ( ),
+         GRAMMAR_TYPE_PSEUDO_ANONYMOUS : ( ),
+         GRAMMAR_TYPE_ANONYMOUS : ( self._get_bb, self._get_strings, self._get_fields, self._get_packages ),
+      }
+
+   def _get_bb(self, analysis_method) :
+      l = []
+
+      for b in analysis_method.basic_blocks.get() :
+         l.append( (b.start, "B") )
+         
+         if "return" in b.get_last().get_name() :
+            l.append( (b.end, "R") )
+         elif "if" in b.get_last().get_name() :
+            l.append( (b.end, "I") )
+         elif "goto" in b.get_last().get_name() :
+            l.append( (b.end, "G") )
+      
+      return l
+   
+   def _get_strings(self, analysis_method) :
+      l = []
+
+      for s in self.__tainted["variables"].get_strings() :
+         for path in s.get_paths() :
+            l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s.get_info())) )
+
+      return l
+
+   def _get_fields(self, analysis_method) :
+      l = []
+
+      for f in self.__tainted["variables"].get_fields() :
+         for path in f.get_paths() :
+            if path.get_method() == analysis_method.get_method() :
+               if path.get_access_flag() == "R" :
+                  l.append( (path.get_bb().start + path.get_idx(), "F") )
+               else :
+                  l.append( (path.get_bb().start + path.get_idx(), "FW") )
+
+      return l
+
+   def _get_packages(self, analysis_method) :
+      l = []
+
+      for m in self.__tainted["packages"].get_packages() :
+         for path in m.get_paths() :
+            if path.get_method() == analysis_method.get_method() :
+               if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
+                  l.append( (path.get_bb().start + path.get_idx(), "PC") )
+               else :
+                  l.append( (path.get_bb().start + path.get_idx(), "PM") )
+
+      return l
+
+   def get_method(self, analysis_method, grammar_type) :
+      l = []
+      for i in self.__grammars[ grammar_type ] :
+         l.extend( i( analysis_method ) )
+      l.sort()
+      return ''.join(i[1] for i in l)
+
 class M_BCA :
    """
       This class analyses in details a method of a class/dex file
@@ -1514,6 +1584,8 @@ class VM_BCA :
                        "packages" : self.tainted_packages,
                      }
 
+      self.signature = Signature( self.tainted )
+
       for i in self.__vm.get_all_fields() :
          self.tainted_variables.add( i, TAINTED_FIELD )
 
@@ -1628,6 +1700,14 @@ class VM_BCA :
       """
       for i in self.hmethods :
          yield self.hmethods[i]
+
+   def get_method_signature(self, method, grammar_type) :
+      """
+         Return a specific signature for a specific method
+
+         @rtype : string
+      """
+      return self.signature.get_method( self.hmethods[ method ], grammar_type )
 
    def show(self) :
       """
