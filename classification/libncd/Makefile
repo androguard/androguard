@@ -12,7 +12,7 @@ LIBNAME = "libncd"
 
 OBJ	= $(SRC:.c=.o)
 
-.SILENT:
+#.SILENT:
 
 all :   ZIP $(OBJ) LIBNCD 
 
