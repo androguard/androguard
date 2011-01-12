@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
    avail_out = sizeof(data2);
 
-   ret = bz2Compress(9, 0, 30, data, strlen(STRING1), data2, &avail_out);
+   ret = bz2Compress(9, data, strlen(STRING1), data2, &avail_out);
    printf("RET = %d AVAIL OUT %d\n", ret, avail_out);
    hexdump(data, sizeof(data), (size_t)data);
    hexdump(data2, sizeof(data2), (size_t)data2);

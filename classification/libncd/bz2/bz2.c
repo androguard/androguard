@@ -2,16 +2,18 @@
 
 #include <bzlib.h>
 
-int bz2Compress(int blockSize100k, int verbosity, int workFactor, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+int bz2Compress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
 {
    int ret;
+   int verbosity = 0;
+   int workFactor = 30;
    bz_stream strm;
 
    strm.bzalloc = NULL;
    strm.bzfree = NULL;   
    strm.opaque = NULL;
 
-   ret = BZ2_bzCompressInit(&strm, blockSize100k, verbosity, workFactor);
+   ret = BZ2_bzCompressInit(&strm, level, verbosity, workFactor);
    if (ret != BZ_OK) return ret;
 
    strm.next_in = data;
