@@ -3,7 +3,7 @@
 #include <zlib.h>
 
 
-int zCompress(int blockSize100k, int verbosity, int workFactor, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+int zCompress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
 {
    int ret;
    z_stream strm;
@@ -12,7 +12,7 @@ int zCompress(int blockSize100k, int verbosity, int workFactor, void *data, unsi
    strm.zalloc = Z_NULL;
    strm.zfree = Z_NULL;
    strm.opaque = Z_NULL;
-   ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
+   ret = deflateInit(&strm, level);
    if (ret != Z_OK)
       return ret;
 

@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int bz2Compress(int, int, int, void *, unsigned int, void *, unsigned int *);
+int bz2Compress(int, void *, unsigned int, void *, unsigned int *);
 
 #endif

@@ -1384,7 +1384,6 @@ class Signature :
             l.append( (b.end, "I") )
          elif "goto" in b.get_last().get_name() :
             l.append( (b.end, "G") )
-      
       return l
    
    def _get_strings(self, analysis_method) :
@@ -1393,7 +1392,6 @@ class Signature :
       for s in self.__tainted["variables"].get_strings() :
          for path in s.get_paths() :
             l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s.get_info())) )
-
       return l
 
    def _get_fields(self, analysis_method) :
@@ -1406,7 +1404,6 @@ class Signature :
                   l.append( (path.get_bb().start + path.get_idx(), "F") )
                else :
                   l.append( (path.get_bb().start + path.get_idx(), "FW") )
-
       return l
 
    def _get_packages(self, analysis_method) :
