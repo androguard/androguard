@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys, hashlib
 
 from sqlalchemy import create_engine
@@ -84,9 +102,9 @@ class APK(Base) :
       self.apkraw_id = apkraw_id
       
       for method in _andro.get_methods() :
-         m = Method( method, _analysis )
-         self.methods.append( m )
-
+         if method.get_code() != None and method.get_code().get_length() > 15 :
+            m = Method( method, _analysis )
+            self.methods.append( m )
 
    def __repr__(self) :
       return "<APK('')>"
@@ -133,8 +151,15 @@ class AndroDB :
 #      for row in self._session.query(Signature).all():
 #         print "Signature -->", row.id, row.method_id, row.grammar, row.value
 
-adb = AndroDB( DBNAME )
-#adb.add( "./examples/android/Test/bin/Test-debug.apk" )
-#adb.add( "./examples/android/Demo1/bin/Demo1-debug.apk" )
+if __name__ == "__main__" :
+   try :
+      import psyco
+      psyco.full()
+   except ImportError :
+      pass
 
-#adb.show()
+   adb = AndroDB( DBNAME )
+   #adb.add( "./examples/android/Test/bin/Test-debug.apk" )
+   #adb.add( "./examples/android/Demo1/bin/Demo1-debug.apk" )
+   
+   #adb.show()
