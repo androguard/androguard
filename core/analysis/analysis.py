@@ -1102,7 +1102,9 @@ class TaintedVariable :
       return self.var
 
    def push(self, info) :
-      self.paths.append( Path( info ) )
+      p = Path( info )
+      self.paths.append( p )
+      return p
 
    def get_paths_access(self, mode) :
       for i in self.paths :
@@ -1113,14 +1115,22 @@ class TaintedVariable :
       for i in self.paths :
          yield i
 
+   def get_paths_length(self) :
+      return len(self.paths)
+
 class TaintedVariables :
    def __init__(self, _vm) :
       self.__vm = _vm
-      self.__vars = {}
+      self.__vars = {
+         TAINTED_LOCAL_VARIABLE : {},
+         TAINTED_FIELD : {},
+         TAINTED_STRING : {},
+      }
 
-      self.__vars[ TAINTED_LOCAL_VARIABLE ] = {}
-      self.__vars[ TAINTED_FIELD ] = {}
-      self.__vars[ TAINTED_STRING ] = {}
+      self.__methods = {
+         TAINTED_FIELD : {},
+         TAINTED_STRING : {},
+      }
 
    # functions to get particulars elements
 
@@ -1140,14 +1150,26 @@ class TaintedVariables :
    
    def get_strings(self) :
       for i in self.__vars[ TAINTED_STRING ] :
-         yield self.__vars[ TAINTED_STRING ][ i ]
+         yield self.__vars[ TAINTED_STRING ][ i ], i
 
    def get_fields(self) :
       for i in self.__vars[ TAINTED_FIELD ] :
-         yield self.__vars[ TAINTED_FIELD ][ i ]
+         yield self.__vars[ TAINTED_FIELD ][ i ], i
 
    # specifics functions
-   
+
+   def get_strings_by_method(self, method) :
+      try :
+         return self.__methods[ TAINTED_STRING ][ method ]
+      except KeyError :
+         return {} 
+
+   def get_fields_by_method(self, method) :
+      try :
+         return self.__methods[ TAINTED_FIELD ][ method ]
+      except KeyError :
+         return {} 
+
    def get_local_variables(self, _method) :
       try :
          return self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ]
@@ -1157,11 +1179,10 @@ class TaintedVariables :
    def get_fields_by_bb(self, bb) :
       l = []
       for i in self.__vars[ TAINTED_FIELD ] :
-            for j in self.__vars[ TAINTED_FIELD ][i].gets() :
-               if j.get_bb() == bb :
-                  l.append( (i.get_name(), j.get_access_flag()) )
+         for j in self.__vars[ TAINTED_FIELD ][i].gets() :
+            if j.get_bb() == bb :
+               l.append( (i.get_name(), j.get_access_flag()) )
       return l
-
 
    def add(self, var, _type, _method=None) :
       if _type == TAINTED_FIELD :
@@ -1182,15 +1203,33 @@ class TaintedVariables :
    def push_info(self, _type, var, info) :
       if _type == TAINTED_FIELD or _type == TAINTED_STRING :
          self.add( var, _type )
-         self.__vars[ _type ][ var ].push( info ) 
+         p = self.__vars[ _type ][ var ].push( info ) 
+         
+         try :
+            self.__methods[ _type ][ p.get_method() ][ var ].append( p )
+         except KeyError :
+            try :
+               self.__methods[ _type ][ p.get_method() ][ var ] = []
+            except KeyError :
+               self.__methods[ _type ][ p.get_method() ] = {}
+               self.__methods[ _type ][ p.get_method() ][ var ] = []
+
+            self.__methods[ _type ][ p.get_method() ][ var ].append( p )
+
       elif _type == TAINTED_LOCAL_VARIABLE :
          self.add( var, _type, info[-1] )
          self.__vars[ TAINTED_LOCAL_VARIABLE ][ info[-1] ][ var ].push( info )
       else :
          raise("ooop")
 
+
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
+
+TAINTED_PACKAGE = { 
+   TAINTED_PACKAGE_CREATE : "C",
+   TAINTED_PACKAGE_CALL : "M"
+}
 class PathP(Path) :
    def __init__(self, info) :
       Path.__init__( self, info )
@@ -1216,7 +1255,9 @@ class TaintedPackage :
       return self.paths
 
    def push(self, info) :
-      self.paths[ info[0] ].append( PathP( info ) )
+      p = PathP( info )
+      self.paths[ info[0] ].append( p )
+      return p
 
    def get_method(self, name, descriptor) :
       l = []
@@ -1229,6 +1270,12 @@ class TaintedPackage :
       for i in self.paths :
          for j in self.paths[ i ] :
             yield j
+
+   def get_paths_length(self) :
+      x = 0
+      for i in self.paths :
+         x += len(self.paths[ i ])
+      return x
 
    def get_methods(self) :
       return [ path for path in self.paths[ TAINTED_PACKAGE_CALL ] ]
@@ -1248,6 +1295,7 @@ class TaintedPackages :
    def __init__(self, _vm) :
       self.__vm = _vm                                                                                                                                                                                                             
       self.__packages = {}
+      self.__methods = {}
 
    def _add_pkg(self, name) :
       if name not in self.__packages :
@@ -1255,7 +1303,24 @@ class TaintedPackages :
 
    def push_info(self, class_name, info) :
       self._add_pkg( class_name )
-      self.__packages[ class_name ].push( info )
+      p = self.__packages[ class_name ].push( info )
+
+      try :
+         self.__methods[ p.get_method() ][ class_name ].append( p )
+      except :
+         try :
+            self.__methods[ p.get_method() ][ class_name ] = []
+         except :
+            self.__methods[ p.get_method() ] = {}
+            self.__methods[ p.get_method() ][ class_name ] = []
+         
+         self.__methods[ p.get_method() ][ class_name ].append( p )
+
+   def get_packages_by_method(self, method) :
+      try :
+         return self.__methods[ method ]
+      except KeyError :
+         return {}
 
    def get_packages_by_bb(self, bb):
       l = []
@@ -1270,7 +1335,7 @@ class TaintedPackages :
 
    def get_packages(self) :
       for i in self.__packages :
-         yield self.__packages[ i ]
+         yield self.__packages[ i ], i
 
    def get_method(self, class_name, name, descriptor) :
       try :
@@ -1365,11 +1430,15 @@ GRAMMAR_TYPE_ANONYMOUS = 2
 class Signature :
    def __init__(self, tainted_information) :
       self.__tainted = tainted_information
+      
+      self._cached_fields = {}
+      self._cached_packages = {}
+
 
       self.__grammars = {
          GRAMMAR_TYPE_CLEAR : ( ),
-         GRAMMAR_TYPE_PSEUDO_ANONYMOUS : ( ),
-         GRAMMAR_TYPE_ANONYMOUS : ( self._get_bb, self._get_strings, self._get_fields, self._get_packages ),
+         GRAMMAR_TYPE_PSEUDO_ANONYMOUS : ( self._get_bb, self._get_strings_pa, self._get_fields_pa, self._get_packages_pa  ),
+         GRAMMAR_TYPE_ANONYMOUS : ( self._get_bb, self._get_strings_a, self._get_fields_a, self._get_packages_a ),
       }
 
    def _get_bb(self, analysis_method) :
@@ -1386,37 +1455,76 @@ class Signature :
             l.append( (b.end, "G") )
       return l
    
-   def _get_strings(self, analysis_method) :
+   def _get_strings_pa(self, analysis_method) :
       l = []
 
-      for s in self.__tainted["variables"].get_strings() :
-         for path in s.get_paths() :
-            l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s.get_info())) )
+      strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+      for s in strings_method :
+         for path in strings_method[s] :
+            l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s) ) )
       return l
 
-   def _get_fields(self, analysis_method) :
-      l = []
+   def _get_fields_pa(self, analysis_method) :
+      fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
 
-      for f in self.__tainted["variables"].get_fields() :
-         for path in f.get_paths() :
-            if path.get_method() == analysis_method.get_method() :
-               if path.get_access_flag() == "R" :
-                  l.append( (path.get_bb().start + path.get_idx(), "F") )
-               else :
-                  l.append( (path.get_bb().start + path.get_idx(), "FW") )
+      if self._cached_fields == {} :
+         for f_t, f in self.__tainted["variables"].get_fields() :
+            self._cached_fields[ f ] = f_t.get_paths_length()
+         n = 0
+         for f in sorted( self._cached_fields ) :
+            self._cached_fields[ f ] = n
+            n += 1
+
+      l = []
+      for f in fields_method :
+         for path in fields_method[ f ] :
+            l.append( (path.get_bb().start + path.get_idx(), "F%d%s" % (self._cached_fields[ f ], path.get_access_flag()) ) )
       return l
 
-   def _get_packages(self, analysis_method) :
+   def _get_packages_pa(self, analysis_method) :
+      packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+     
+      if self._cached_packages == {} :
+         for m_t, m in self.__tainted["packages"].get_packages() :
+            self._cached_packages[ m ] = m_t.get_paths_length()
+         n = 0
+         for m in sorted( self._cached_packages ) :
+            self._cached_packages[ m ] = n
+            n += 1
+
+      l = []
+      for m in packages_method :
+         for path in packages_method[ m ] :
+            l.append( (path.get_bb().start + path.get_idx(), "P%d%s" % (self._cached_packages[ m ], TAINTED_PACKAGE[ path.get_access_flag() ]) ) )
+      return l
+
+   def _get_strings_a(self, analysis_method) :
       l = []
 
-      for m in self.__tainted["packages"].get_packages() :
-         for path in m.get_paths() :
-            if path.get_method() == analysis_method.get_method() :
-               if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
-                  l.append( (path.get_bb().start + path.get_idx(), "PC") )
-               else :
-                  l.append( (path.get_bb().start + path.get_idx(), "PM") )
+      strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+      for s in strings_method :
+         for path in strings_method[s] :
+            l.append( (path.get_bb().start + path.get_idx(), "S") )
+      return l
 
+   def _get_fields_a(self, analysis_method) :
+      fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
+      
+      l = []
+
+      for f in fields_method :
+         for path in fields_method[ f ] :
+            l.append( (path.get_bb().start + path.get_idx(), "F%s" % path.get_access_flag()) )
+      return l
+
+   def _get_packages_a(self, analysis_method) :
+      packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+
+      l = []
+
+      for m in packages_method :
+         for path in packages_method[ m ] :
+            l.append( (path.get_bb().start + path.get_idx(), "P%s" % (TAINTED_PACKAGE[ path.get_access_flag() ]) ) )
       return l
 
    def get_method(self, analysis_method, grammar_type) :

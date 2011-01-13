@@ -240,9 +240,13 @@ class Androguard :
    """
    def __init__(self, files, raw=False) :
       self.__files = files
-      self.__raw = raw
-      self.__bc = []
+      
+      self.__orig_raw = {}
+      for i in self.__files :
+         self.__orig_raw[ i ] = open(i, "r").read()
 
+      self.__bc = []
+      
       self._analyze()
 
    def _iterFlatten(self, root):
@@ -257,9 +261,9 @@ class Androguard :
       for i in self.__files :
          #print "processing ", i
          if ".class" in i :
-            bc = jvm.JVMFormat( open(i, "r").read() )
+            bc = jvm.JVMFormat( self.__orig_raw[ i ] )
          elif ".dex" in i :
-            bc = dvm.DalvikVMFormat( open(i, "r").read() )
+            bc = dvm.DalvikVMFormat( self.__orig_raw[ i ] )
          elif ".apk" in i :
             x = dvm.APK( i )
             bc = dvm.DalvikVMFormat( x.get_dex() )
@@ -280,6 +284,9 @@ class Androguard :
       for _, bc in self.__bc :
          l.append( bc._get_raw() )
       return l
+
+   def get_orig_raw(self) :
+      return self.__orig_raw
 
    def get_method_descriptor(self, class_name, method_name, descriptor) :
       """
@@ -371,13 +378,16 @@ class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
 
       @param filename : the filename to use (filename must be terminated by .class or .dex)   
-      @param raw : specify if the filename is in fact a raw buffer (default : False) #FIXME
+      @param raw : specify if the filename is a raw buffer (default : False)
    """
    def __init__(self, filename, raw=False) :
       self.__filename = filename
       self.__orig_a = Androguard( [ filename ], raw )
       self.__a = self.__orig_a.get( "file", filename )
       
+   def get_orig_raw(self) :
+      return self.__orig_a.get_orig_raw()[ self.__filename ]
+
    def get_vm(self) :
       """
          This method returns the VMFormat which correspond to the file
