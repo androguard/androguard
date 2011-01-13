@@ -60,4 +60,4 @@ if __name__ == "__main__" :
          print "\t -->", n.get("FMMMF", "MMFF"),
          print "\t -->", n.get("FMMMF", "FMMMF"),
 
-         print "\t bench -->", benchmark(n, "androg")
+         print "\t bench -->", benchmark(n, "androgu")

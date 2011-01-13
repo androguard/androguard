@@ -31,12 +31,14 @@ for method in a.get_methods() :
       #print "\t\t", x.tainted_variables.get_fields_by_bb( i )
       #print x.tainted_packages.get_packages_by_bb( i )
 
+#   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_CLEAR)
+   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS)
    print x.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS)
 
 print ""
 # Strings
 print "STRINGS"
-for s in x.tainted_variables.get_strings() :
+for s, _ in x.tainted_variables.get_strings() :
    print "String : ", repr(s.get_info())
    for path in s.get_paths() :
       print "\t\t =>", path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
@@ -44,7 +46,7 @@ for s in x.tainted_variables.get_strings() :
 print ""
 # Fields
 print "FIELDS"
-for f in x.tainted_variables.get_fields() :
+for f, _ in x.tainted_variables.get_fields() :
    print "field : ", repr(f.get_info())
    for path in f.get_paths() :
       print "\t\t =>", path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
@@ -52,7 +54,7 @@ for f in x.tainted_variables.get_fields() :
 print ""
 # Packages
 print "PACKAGES"
-for m in x.tainted_packages.get_packages() :
+for m, _ in x.tainted_packages.get_packages() :
    print "package : ", repr(m.get_info())
    for path in m.get_paths() :
       if path.get_access_flag() == analysis.TAINTED_PACKAGE_CREATE :
