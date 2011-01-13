@@ -2047,6 +2047,9 @@ class DalvikCode :
          
          self.__handlers.append( EncodedCatchHandlerList( buff ) )
 
+   def get_length(self) :
+      return self.insns_size.get_value()
+
    def get_bc(self) :
       return self._code
 
@@ -2118,11 +2121,10 @@ class CodeItem :
          self.__code_off[ x.get_off() ] = x
 
    def get_code(self, off) :
-      # FIXME
       try : 
          return self.__code_off[off]
       except KeyError :
-         pass
+         return None
 
    def reload(self) :
       pass

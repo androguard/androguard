@@ -1,3 +1,21 @@
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import hashlib
 
 from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
@@ -25,8 +43,8 @@ ZLIB_COMPRESS =         0
 BZ2_COMPRESS =          1
 SMAZ_COMPRESS =         2
 class NCD :
-   def __init__(self) :
-      self._u = cdll.LoadLibrary( "./libncd/libncd.so" )
+   def __init__(self, path="./libncd/libncd.so") :
+      self._u = cdll.LoadLibrary( path )
       self._u.ncd.restype = c_float
       self._threads = []
       self._level = 9

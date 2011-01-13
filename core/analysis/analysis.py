@@ -1604,6 +1604,9 @@ class M_BCA :
 
       self.basic_blocks.create_graph()
 
+   def get_length(self) :
+      return self.get_code().get_length()
+
    def prev_free_block_offset(self, idx=0) :
       l = []
       for i in self.basic_blocks.get() :
