@@ -24,31 +24,53 @@ void set_compress_type(int type) {
    }
 }
 
-float ncd(int level, void *orig, unsigned int size_orig, void *cmp, unsigned int size_cmp)
+struct libncd {
+   void *orig;
+   unsigned int size_orig;
+   void *cmp;
+   unsigned size_cmp;
+
+   unsigned int *corig;
+   unsigned int *ccmp;
+};
+
+typedef struct libncd libncd_t;
+
+float ncd(int level, libncd_t *n) 
 {
+   unsigned int s1, s2, s3, size_join_buff, max, min, ret;
    void *joinbuff;
 
-   unsigned int s1, s2, s3, size_join_buff, max, min, ret;
+   //printf("ORIG = 0x%x SIZE_ORIG = 0x%x CMP = 0x%x SIZE_CMP = 0x%x 0x%x 0x%x\n", (unsigned int)(n->orig), n->size_orig, (unsigned int)(n->cmp), n->size_cmp, *(n->corig), *(n->ccmp));
 
-   s1 = sizeof(inbuf);
-   ret = generic_Compress(level, orig, size_orig, inbuf, &s1);
-   //printf("RET = %d AVAIL OUT %d\n", ret, s1);
-   if (ret < 0) {
+   s1 = *(n->corig);
+   if (s1 == 0) {
+      s1 = sizeof(inbuf);
+      ret = generic_Compress(level, n->orig, n->size_orig, inbuf, &s1);
+      //printf("RET = %d AVAIL OUT %d\n", ret, s1);
+      if (ret < 0) {
+      }
+
+      *(n->corig) = s1;
    }
 
-   s2 = sizeof(inbuf);
-   ret = generic_Compress(level, cmp, size_cmp, inbuf, &s2);
-   //printf("RET = %d AVAIL OUT %d\n", ret, s2);
-   if (ret < 0) {
+   s2 = *(n->ccmp);
+   if (s2 == 0) {
+      s2 = sizeof(inbuf);
+      ret = generic_Compress(level, n->cmp, n->size_cmp, inbuf, &s2);
+      //printf("RET = %d AVAIL OUT %d\n", ret, s2);
+      if (ret < 0) {
+      }
+      *(n->ccmp) = s2;
    }
 
-   size_join_buff = size_orig + size_cmp;
+   size_join_buff = n->size_orig + n->size_cmp;
    joinbuff = (void *)malloc( size_join_buff );
    if (joinbuff == NULL) {
    }
 
-   memcpy(joinbuff, orig, size_orig);
-   memcpy(joinbuff+size_orig, cmp, size_cmp);
+   memcpy(joinbuff, n->orig, n->size_orig);
+   memcpy(joinbuff+n->size_orig, n->cmp, n->size_cmp);
 
    s3 = sizeof(inbuf);
    ret = generic_Compress(level, joinbuff, size_join_buff, inbuf, &s3);
