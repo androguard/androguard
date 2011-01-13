@@ -1,4 +1,25 @@
-from ctypes import cdll, c_float
+import hashlib
+
+from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
+
+#struct libncd {
+#   void *orig;
+#   unsigned int size_orig;
+#   void *cmp;
+#   unsigned size_cmp;
+
+#   unsigned int *corig;
+#   unsigned int *ccmp;
+#};
+class LIBNCD_T(Structure) :
+   _fields_ = [("orig", c_void_p),
+               ("size_orig", c_uint),
+               ("cmp", c_void_p),
+               ("size_cmp", c_uint),
+
+               ("corig", c_uint),
+               ("ccmp", c_uint),
+              ]
 
 ZLIB_COMPRESS =         0
 BZ2_COMPRESS =          1
@@ -10,13 +31,50 @@ class NCD :
       self._threads = []
       self._level = 9
 
+      self.__libncd_t = LIBNCD_T()
+
+      self.__cached = {
+         ZLIB_COMPRESS : {},
+         BZ2_COMPRESS : {},
+         SMAZ_COMPRESS : {},
+      }
+
    def set_level(self, level) :
       self._level = level
 
+   
+   def get_cached(self, s) :
+      try :
+         return self.__cached[ self._type ][ hashlib.md5( s ).hexdigest() ]
+      except KeyError :
+         return c_uint( 0 )
+
+   def add_cached(self, s, v) :
+      h = hashlib.md5( s ).hexdigest()
+      if h not in self.__cached[ self._type ] :
+         self.__cached[ self._type ][ h ] = v
+
    def get(self, s1, s2) :
-      return self._u.ncd( self._level, s1, len(s1), s2, len(s2) )
+      self.__libncd_t.orig = cast( s1, c_void_p ) 
+      self.__libncd_t.size_orig = len(s1)
+
+      self.__libncd_t.cmp = cast( s2, c_void_p )
+      self.__libncd_t.size_cmp = len(s2)
+
+      corig = self.get_cached(s1)
+      ccmp = self.get_cached(s2)
+      self.__libncd_t.corig = addressof( corig )
+      self.__libncd_t.ccmp = addressof( ccmp )
+
+      res = self._u.ncd( self._level, addressof( self.__libncd_t ) )
+      
+      self.add_cached(s1, corig)
+      self.add_cached(s2, ccmp)
+
+      return res
 
    def set_compress_type(self, t):
+      self._type = t
       self._u.set_compress_type(t)
 
 def benchmark(n, ref) :
@@ -47,7 +105,7 @@ if __name__ == "__main__" :
       pass
 
    n = NCD()
-   
+  
    for i in TESTS :
       n.set_compress_type( TESTS[i] )
       print "* ", i 
