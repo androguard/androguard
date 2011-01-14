@@ -309,5 +309,3 @@ class VM_int_basic_prng(VM_int) :
       atoil = MetaPolyREIL( atoil.get() )
       
       self._irtj = IL_REIL_TO_JAVA( orig_class_name, atoil.get() )
-      
-

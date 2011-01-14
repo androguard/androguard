@@ -39,6 +39,9 @@ class REIL_REGISTER :
    def get_type(self) :
       return self.__type
 
+   def set_value(self, v) :
+      self.__value = v
+
    def get_value(self) :
       return self.__value
 
@@ -88,7 +91,6 @@ class REIL_BASE(object) :
       if isinstance( self.rcv0, REIL_REGISTER ) :
          l.append( self.rcv0 )
 
-
       if isinstance( self.rcv1, REIL_REGISTER ) :
          l.append( self.rcv1 )
 
@@ -96,6 +98,12 @@ class REIL_BASE(object) :
          l.append( self.rcvout )
 
       return l
+
+   def get(self, rcv) :
+      return rcv.get_value()
+
+   def put(self, rcv, v) :
+      rcv.set_value( v )
 
    def get_size(self) :
       return 1
@@ -213,6 +221,9 @@ class REIL_STM(REIL_BASE) :
       self.rcv1 = None
       self.rcvout = rcvout
 
+   def run(self, memory) :
+      memory.write( self.rcvout.get_value(), self.rcv0.get_value(), self.rcv0.get_size() )
+
 class REIL_STR(REIL_BASE) :
    def __init__(self, rcv0, rcvout) :
       self.name = "STR"
@@ -228,6 +239,12 @@ class REIL_SUB(REIL_BASE) :
       self.rcv0 = rcv0
       self.rcv1 = rcv1
       self.rcvout = rcvout
+
+   def run(self) :
+      v1 = self.rcv0.get_value() 
+      v2 = self.rcv1.get_value() 
+
+      self.rcvout.set_value( v1 - v2 )
 
 class REIL_UNDEF(REIL_BASE) :
    def __init__(self) :
@@ -252,6 +269,15 @@ class REIL_XOR(REIL_BASE) :
       self.rcv0 = rcv0
       self.rcv1 = rcv1
       self.rcvout = rcvout
+
+def REIL_STRING(s, addr) :
+   idx = 0
+   l = []
+   for i in s :
+      l.append( REIL_STM( REIL_LITERAL(ord(i), 1), REIL_LITERAL(addr + idx, 4) ) )
+      idx += 1
+
+   return l
 
 def INIT_VAR(l) :
    return [ REIL_STR( REIL_LITERAL(i.get_value(), i.get_size()), i) for i in l ]
@@ -504,3 +530,48 @@ class REIL_TO_JAVA :
 
    def get_raw(self) :
       return self.__buff + "\n"
+
+class Memory :
+   def __init__(self) :
+      self.__memory = {}
+
+   def write(self, addr, value, size) :
+      if size == 1 :
+         self._writeByte( addr, value )
+      else :
+         raise("ooo")
+
+   def _writeByte(self, addr, value) :
+      self.__memory[ addr ] = value
+
+   def show(self) :
+      for i in sorted( self.__memory ) :
+         print "%x:%x" % (i, self.__memory[i]),
+      print
+
+class VM_REIL :
+   def __init__(self) :
+      self.__regs = {}
+      self._memory = Memory()
+
+   def register_regs(self, regs) :
+      for reg in regs :
+         if reg.get_str() not in self.__regs :
+            self.__regs[ reg.get_str() ] = reg
+
+   def show(self) :
+      print "REGS :"
+      for i in self.__regs :
+         print "\t --->", self.__regs[i].get_name(), self.__regs[i].get_size(), "%x" % self.__regs[i].get_value()
+      
+      print "MEMORY :"
+      self._memory.show()
+
+   def execute(self, il_reil) :
+      for i in il_reil :
+         self.register_regs( i.get_registers() )
+         
+         if i.get_name() == "STM" :
+            i.run( self._memory )
+         else :
+            i.run()
