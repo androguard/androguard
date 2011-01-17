@@ -2,8 +2,8 @@ import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, str
 
 from xml.sax.saxutils import escape, unescape
 
+from error import log_loading, warning
 import misc
-
 import wm_l1, wm_l2, wm_l3, wm_l4, wm_l5
 
 WM_CLASS = 0
@@ -82,29 +82,6 @@ class WM :
          # Create the secret sharing for methods
          if list_x != [] :
             self.__wms[ "SSS_METHODS" ][ method ] = DWBO( "TOTO", list_x )
-
-
-      # X : [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
-      # [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
-
-
-#      X = [ 45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872] # [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872]
-#      ob = DWBO( "TOTO", [45320332736772208547853609619680203699510933865184698619245616070443536495415L, 386, 1565, 872, 1465, 872, 1179, 872] )
-#      print ob.verify_with_X( X )
-#      raise("ooops")
-
-#      ob = DWBO( "55f3f36e2c93ea69e1871102d3f8653f38ab7b36", [ 12345668, 90877676, 878978, 87987673 ] )
-#      ob.show()
-
-#      print self.__a.get_freq()
-#      self.__ob.show()
-
-#      print self.__ob.verify_with_X( self.__a.get_freq() )
-#      print ob.verify_with_X( [ 12345668, 90877676, 878978, 87987673, 788789 ] )
-#      print ob.verify_with_X( [ 12345668, 90877676, 878978, 4, 87987673 ] )
-#      print ob.verify_with_X( [ 1, 2, 3, 4, 5, 6 ] )
-
-#      raise("ooops")
 
    def save(self) :
       buffer = ""
@@ -258,7 +235,10 @@ class ShamirSecretScheme :
 #      print "THRESHOLD %d" % self.__threshold
 
       self.poly = Polynomial(self.__threshold, self.__secret_long, len(self.__secret))
-      
+     
+    def get_secret(self) :
+       return self.__secret
+
     def get_threshold(self) :
        return self.__threshold
 
@@ -268,7 +248,6 @@ class ShamirSecretScheme :
             points[i] = self.poly.get_n_point( i )
 
         return points
-
 
 class AlgoWM :
    def __init__(self, th) :
@@ -284,21 +263,37 @@ class AlgoWM :
       return ys[0]
 
    def run(self, coord_x, coord_y) :
+      try :
+         import gmpy
+         coord_x = [ gmpy.mpz(i) for i in coord_x ]
+         coord_y = [ gmpy.mpz(i) for i in coord_y ]
+      except ImportError :
+         warning("module gmpy not found")
+
+      try :
+         import psyco
+      
+         psyco.bind(self._run)
+         psyco.bind(self.NevilleAlgorithm)
+         psyco.bind(self.interpolate)
+      except ImportError :
+         warning("module psyco not found")
+
+      return self._run( coord_x, coord_y )
+
+   def _run(self, coord_x, coord_y) :
       sols = []
       
       res = itertools.combinations( coord_x, self.__threshold + 1)     
       nb = 0
       for i in res :
-         print nb, "/", len(coord_x) * (self.__threshold + 1)
          nb += 1
-#         print "I", i
          
          res2 = itertools.product( i, coord_y )
          l = []
          for j in res2 :
 #            print "\t res2 j", j
             l.append( j )
-         print ""
 
          res3 = itertools.combinations( l, self.__threshold + 1 )
          for j in res3 :
@@ -329,7 +324,6 @@ class AlgoWM :
 #               print final_x, final_y
                sol = self.NevilleAlgorithm( final_x, final_y )
                sols.append( sol )
-
       return sols
 
 class DWBO : 
@@ -346,6 +340,9 @@ class DWBO :
 #   def verify_with_X(self, coord_x) :
 #      result, success = self.__sss.join( coord_x, self.__points.values() )
 #      return result, success
+
+   def get_secret(self) :
+      return self.__sss.get_secret()
 
    def get_y(self) :
       return [ self.__points[k] for k in self.__points ]
