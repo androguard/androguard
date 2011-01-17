@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+
 from struct import unpack, pack
 
-SHOW = 0
+from error import warning
 
 # Handle exit message
 def Exit( msg ):
@@ -150,13 +151,14 @@ class Buff :
 
       self.size = len(buff)
 
+SHOW = 0
 class _Bytecode(object) :
    def __init__(self, buff) :
       try :
          import psyco
          psyco.full()
       except ImportError :
-         pass
+         warning("module psyco not found")
 
       self.__buff = buff
       
@@ -202,7 +204,6 @@ class _Bytecode(object) :
 
    def length_buff(self) :
       return len( self.__buff )
-
 
    def show(self) :
       print self

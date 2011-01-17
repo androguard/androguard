@@ -162,4 +162,4 @@ if __name__ == "__main__" :
    #adb.add( "./examples/android/Test/bin/Test-debug.apk" )
    #adb.add( "./examples/android/Demo1/bin/Demo1-debug.apk" )
    
-   #adb.show()
+   adb.show()
