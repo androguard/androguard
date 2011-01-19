@@ -23,8 +23,8 @@ from error import warning
 
 # Handle exit message
 def Exit( msg ):
-   print "Error : ", msg
-   raise("ooops")
+   warning("Error : ", msg)
+   raise("oops")
 
 # Print arg into a correct format
 def _Print(name, arg) :

@@ -4,23 +4,18 @@ from xml.sax.saxutils import escape, unescape
 
 from error import log_loading, warning
 import misc
-import wm_l1, wm_l2, wm_l3, wm_l4, wm_l5
+import bm_a0
 
 WM_CLASS = 0
 WM_METHOD = 1
 
-WM_L1 = 0
-WM_L2 = 1
-WM_L3 = 2
-WM_L4 = 3
-WM_L5 = 4
-
+WM_BM_A0 = 0
 WM_BIND = {
-            WM_L1 : (wm_l1.INIT(), WM_METHOD),
-            WM_L2 : (wm_l2.INIT(), WM_CLASS),
-            WM_L3 : (wm_l3.INIT(), WM_METHOD),
-            WM_L4 : (wm_l4.INIT(), WM_METHOD),
-            WM_L5 : (wm_l5.INIT(), WM_METHOD),
+            WM_BM_A0 : (bm_a0.INIT(), WM_METHOD),
+           # WM_L2 : (wm_l2.INIT(), WM_CLASS),
+           # WM_L3 : (wm_l3.INIT(), WM_METHOD),
+           # WM_L4 : (wm_l4.INIT(), WM_METHOD),
+           # WM_L5 : (wm_l5.INIT(), WM_METHOD),
          }
 
 class WM :
@@ -336,10 +331,6 @@ class DWBO :
 
       self.__sss = ShamirSecretScheme(self.__hash, self.__val, (len(self.__val) / 2) + 1)
       self.__points = self.__sss.split()
-
-#   def verify_with_X(self, coord_x) :
-#      result, success = self.__sss.join( coord_x, self.__points.values() )
-#      return result, success
 
    def get_secret(self) :
       return self.__sss.get_secret()
