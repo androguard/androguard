@@ -78,36 +78,27 @@ class VM_int :
 
       method.show()
 
-WM_L1 = wm.WM_L1
-WM_L2 = wm.WM_L2
-WM_L3 = wm.WM_L3
-WM_L4 = wm.WM_L4
-WM_L5 = wm.WM_L5
+WM_TYPES = {
+   "WM_BM_A0" : wm.WM_BM_A0,
+}
+
 class WM :
-   def __init__(self, andro, class_name, output_dir, wm_type, output_file) :
+   def __init__(self, andro, class_name, output_dir, wm_type) :
       self.__output_dir = output_dir
 
       if wm_type == [] :
          raise("....")
 
-      fd = open(output_file, "w")
-
-      fd.write("<?xml version=\"1.0\"?>\n") 
-      fd.write("<andro id=\"androguard wm for %s\">\n" % class_name)
-
       a = analysis.VM_BCA( andro.get_vm() )
 
-      _vm = andro.get_class( class_name )
-      w = wm.WM( _vm, class_name, wm_type, a )
-      fd.write( w.save() )
-
-      fd.write("</andro>\n")
-
-      fd.close()
+      self._w = wm.WM( andro.get_vm(), class_name, wm_type, a )
 
       fd = open(output_dir + class_name + ".class", "w" )
-      fd.write( _vm.save() )
+      fd.write( andro.get_vm().save() )
       fd.close()
+
+   def get(self) :
+      return self._w
 
 class WMCheck :
    def __init__(self, andro, class_name, input_file) :
@@ -352,6 +343,9 @@ class Androguard :
       for i in self.__bc :
          yield i[1].get_vm()
 
+   def get_bc(self) :
+      return self.__bc
+
    def show(self) :
       """
          Display all files
@@ -365,9 +359,26 @@ class Androguard :
       fd.close()
 
       document = xml.dom.minidom.parseString(buffxml)
-     
-      raise("ooo")
 
+      watermark_item = document.getElementsByTagName( "watermark" )[0]
+      watermark_types = []
+      for item in watermark_item.getElementsByTagName( "type" ) :
+         watermark_types.append( WM_TYPES[ str( item.firstChild.data ) ] )
+      watermark_output = watermark_item.getElementsByTagName( "output" )[0].firstChild.data
+      print watermark_types, "--->", watermark_output
+
+      fd = open(watermark_output, "w")
+
+      fd.write("<?xml version=\"1.0\"?>\n") 
+      fd.write("<andro id=\"androguard wm\">\n")
+      wms = []
+      for i in self.get_bc() :
+         for class_name in i[1].get_classes_names() :
+            wm = WM( i[1], class_name, "./output/", watermark_types )
+            fd.write( wm.get().save() )
+
+      fd.write("</andro>\n")
+      fd.close()
 #      for item in document.getElementsByTagName('method') :
 #         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
 #            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :

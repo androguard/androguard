@@ -13,7 +13,7 @@ sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/analysis")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/vm")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/wm")
 
-import androguard, bytecode
+import androguard
 
 def get_classes(path) :
    g_files = []
@@ -22,7 +22,6 @@ def get_classes(path) :
          for file in files :
             if ".class" in file :
                g_files.append(root + "/" + file)
-
    return g_files
 
 def __main__() :
@@ -32,6 +31,6 @@ def __main__() :
 
       a = androguard.Androguard( files )
       a.do( sys.argv[2] )
-      a.save()
+      #a.save()
 
 __main__()

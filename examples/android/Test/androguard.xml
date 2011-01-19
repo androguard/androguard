@@ -2,20 +2,22 @@
 <parent id="androguard Test">
 
    <watermark>
-      <wm>WM_L5</wm>
+      <type>WM_BM_A0</type>
       <output>wm.xml</output>
    </watermark>
 
-   <protect_names type="methods">
-      <except>externals</except>
-   </protect>
+   <protect_names type="class">
+      
+      <except_class>
+         <name>org/t0t0/android/TestActivity</name>
+      </except_class>
 
-   <protect_names type="fields">
       <except_fields>
          <class>org/t0t0/android/Test1</class>
          <name>value</name>
          <descriptor>I</descriptor>
       </except_fields>
+
    </protect_names>
-   
+
 </parent>
