@@ -22,19 +22,29 @@ import sys, os, cmd, threading, re
 
 from optparse import OptionParser
 
-import androguard, misc
+import androguard, wm, misc
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file to be check', 'nargs' : 1 }
 
-option_1 = { 'name' : ('-x', '--xml'), 'help' : 'you xml watermark !', 'nargs' : '1' }
+option_1 = { 'name' : ('-x', '--xml'), 'help' : 'you xml watermark !', 'nargs' : 1 }
+option_2 = { 'name' : ('-d', '--directory'), 'help' : 'the directory of files to check !', 'nargs' : 1 }
 
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_5]
+options = [option_0, option_1, option_2, option_5]
 
 def main(options, arguments) :                    
    if options.version != None :
       print "Andromarks version %s" % misc.VERSION
+
+   elif options.directory != None and options.xml != None :
+      for root, dirs, files in os.walk( options.directory ) :
+         if files != [] :
+            for file in files :
+               if ".class" in file :
+                  _b = androguard.AndroguardS(root + "/" + file)
+                  for class_name in _b.get_classes_names() :
+                     androguard.WMCheck( _b, class_name, "./wm.xml" )
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()

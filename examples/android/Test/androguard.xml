@@ -2,7 +2,8 @@
 <parent id="androguard Test">
 
    <watermark>
-      <type>WM_BM_A0</type>
+      <type>BM_A0</type>
+      <type>BM_A1</type>
       <output>wm.xml</output>
    </watermark>
 

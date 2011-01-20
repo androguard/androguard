@@ -1,22 +1,18 @@
 import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, string, threading
-
 from xml.sax.saxutils import escape, unescape
 
 from error import log_loading, warning
 import misc
-import bm_a0
 
 WM_CLASS = 0
 WM_METHOD = 1
 
-WM_BM_A0 = 0
-WM_BIND = {
-            WM_BM_A0 : (bm_a0.INIT(), WM_METHOD),
-           # WM_L2 : (wm_l2.INIT(), WM_CLASS),
-           # WM_L3 : (wm_l3.INIT(), WM_METHOD),
-           # WM_L4 : (wm_l4.INIT(), WM_METHOD),
-           # WM_L5 : (wm_l5.INIT(), WM_METHOD),
-         }
+import bm_a0
+
+WM_BIND = {}
+
+for i in bm_a0.INIT() :
+   WM_BIND[ i.NAME ] = ( i, i.TYPE )
 
 class WM :
    def __init__(self, vm, class_name, wm_type, analysis) :
@@ -37,7 +33,7 @@ class WM :
          if WM_BIND[ i ][1] == WM_CLASS :
             wb = WM_BIND[ i ][0](vm, self.__a)
             
-            print "CREATING %s ... %s" % (class_name, wb.get_name())
+            print "CREATING %s ... %s" % (class_name, wb.NAME)
             wb.run()
 
             l_x = wb.get()
@@ -60,7 +56,7 @@ class WM :
             if WM_BIND[ i ][1] == WM_METHOD :
                wb = WM_BIND[ i ][0]( vm, method, self.__a )
             
-               print wb.get_name(),
+               print wb.NAME,
                wb.run()
 
                l_x = wb.get()
@@ -90,7 +86,7 @@ class WM :
          buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( sss.get_y() ) ) )
 
          for j in self.__wms[ "CLASS" ] :
-            buffer += "<wm type=\"%d\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
+            buffer += "<wm type=\"%s\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
 
          buffer += "</class>\n"
 
@@ -102,7 +98,7 @@ class WM :
          buffer += "<sss>%s</sss>\n" %  ( base64.b64encode( cPickle.dumps( sss.get_y() ) ) )
 
          for j in self.__wms[ "METHODS" ][i] :
-            buffer += "<wm type=\"%d\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
+            buffer += "<wm type=\"%s\">%s</wm>\n" % ( j[0], base64.b64encode( cPickle.dumps( j[1].get_export_context() ) ) )
 
          buffer += "</method>\n"
 
@@ -128,14 +124,16 @@ class WMMLoad :
 
 
       for s_item in item.getElementsByTagName( 'wm' ) :
-         _type = int( s_item.getAttribute('type') )
+         _type = str( s_item.getAttribute('type') )
 
          # load the context of the original watermark
-         wb = WM_BIND[ _type ][0]( None, None, None )
+         if WM_BIND[ _type ][1] == WM_CLASS :
+            wb = WM_BIND[ _type ][0]( None, None )
+         else :
+            wb = WM_BIND[ _type ][0]( None, None, None )
         
          x = cPickle.loads( base64.b64decode( s_item.firstChild.data ) )
          wb.set_context( x )
-
 
          self.__wms.append( (_type, wb) )
    
@@ -151,21 +149,33 @@ class WMMLoad :
 class WMLoad :
    def __init__(self, document) :
       self.__methods = []
+      self.__classes = []
+
+      # load each watermark class 
+      for item in document.getElementsByTagName('class') :
+         self.__classes.append( WMMLoad( item ) )
 
       # load each watermark method
       for item in document.getElementsByTagName('method') :
          self.__methods.append( WMMLoad( item ) )
 
+   def get_classes(self) :
+      return self.__classes
+
    def get_methods(self) :
       return self.__methods
 
 class WMCheck :
-   def __init__(self, wm_orig, vm, method, analysis) :
+   def __init__(self, wm_orig, andro, analysis) :
+      for _class in wm_orig.get_classes() :
+         print _class
+
+
+      raise("ooo")
 
       # check if a watermark is present on the compared method
       for _method in wm_orig.get_methods() :
          list_x = []
-         print "\t --->", _method.get_name()
          for _type, _wm in _method.get_wms() :
             wb = WM_BIND[ _type ][0]( vm, method, analysis )
 
@@ -177,9 +187,15 @@ class WMCheck :
             for i in l_x :
                list_x.append( i )
 
-         print "\t\t X :", list_x
+         #print "\t\t X :", list_x
          sols =  _method.get_dwbo().verify_with_X( list_x )
-         print "\t\t SOL :", len(sols)
+         if len(sols) > 0 :
+            print "\t --->", _method.get_name(), 
+            print "\t\t SOL :", len(sols), "--->",  
+            for sol in sols :
+               if sol > 0 :
+                  print repr( misc.long2str(long(sol)) ),
+
       print ""
 
 class Polynomial :

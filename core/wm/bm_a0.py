@@ -16,47 +16,48 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc
+import hashlib
 
+import misc
+from wm import WM_CLASS, WM_METHOD
 import analysis as _analysis
 
 def INIT() :
-   return BM_A0
+   return [ BM_A0, BM_A1 ]
 
 class BM_A0 :
-   def __init__(self, vm, method, analysis) :
+   TYPE = WM_CLASS
+   NAME = "BM_A0"
+   def __init__(self, vm, analysis) :
       self.__vm = vm
-      self.__method = method
       self.__analysis = analysis
 
       self.__context = {
                            "L_X" : [],
-                           "SIGNATURES" : {},
+                           "SIGNATURES" : [],
                        }
 
-      print analysis.get_method_signature(method, _analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS)
-      print analysis.get_method_signature(method, _analysis.GRAMMAR_TYPE_ANONYMOUS)
-      raise("oo")
-
-   def get_name(self) :
-      return "WM_STRING"
-
    def run(self) :
-      x = self.__analysis.get(self.__method)
+      for i in self.__vm.get_methods() :
+         self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature( i, _analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS) )
+         self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature( i, _analysis.GRAMMAR_TYPE_ANONYMOUS) )
+         self.__context[ "SIGNATURES" ].append( self.__analysis.get( i ).get_ts() )
 
-      self.__context[ "STRING" ] = x.get_ts()
-
-      self.__context[ "L_X" ].append( 
-                                       misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() ) 
-                                    )
+      for i in self.__context[ "SIGNATURES" ] :
+         if len(i) > 0 :
+            self.__context[ "L_X" ].append( 
+                                             misc.str2long( hashlib.md5( i ).hexdigest() )
+                                          )
 
    def challenge(self, external_wm) :
-      distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
+      return external_wm.get_context()[ "L_X" ]
+      raise("oo")
+      #distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
 
-      if distance <= 2 :
-         return self.__context[ "L_X" ]
+      #if distance <= 2 :
+      #   return self.__context[ "L_X" ]
 
-      return []
+      #return []
 
    def get(self) :
       return self.__context[ "L_X" ]
@@ -69,7 +70,51 @@ class BM_A0 :
       return self.__context
 
    def get_export_context(self) :
+      return {}
+
+   def get_import_context(self) :
+      return {}
+
+class BM_A1 :
+   TYPE = WM_METHOD
+   NAME = "BM_A1"
+   def __init__(self, vm, method, analysis) :
+      self.__vm = vm
+      self.__method = method
+      self.__analysis = analysis
+      if self.__analysis != None :
+         self.__method_analysis = self.__analysis.get(self.__method)
+
+      self.__context = {
+                           "L_X" : [],
+                           "SIGNATURES" : [],
+                       }
+   def run(self) :
+      self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature(self.__method, _analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS) )
+      self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature(self.__method, _analysis.GRAMMAR_TYPE_ANONYMOUS) )
+      self.__context[ "SIGNATURES" ].append( self.__method_analysis.get_ts() )
+
+      for i in self.__context[ "SIGNATURES" ] :
+         if len(i) > 0 :
+            self.__context[ "L_X" ].append( 
+                                             misc.str2long( hashlib.md5( i ).hexdigest() )
+                                          )
+
+   def challenge(self, external_wm) :
+      return external_wm.get_context()[ "L_X" ]
+
+   def get(self) :
+      return self.__context[ "L_X" ]
+
+   def set_context(self, values) :
+      for x in values :
+         self.__context[ x ] = values[ x ]
+
+   def get_context(self) :
       return self.__context
+
+   def get_export_context(self) :
+      return {}
 
    def get_import_context(self) :
       return {}
