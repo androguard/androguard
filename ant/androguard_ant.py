@@ -13,7 +13,10 @@ sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/analysis")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/vm")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/wm")
 
+import traceback
+
 import androguard
+from error import warning
 
 def get_classes(path) :
    g_files = []
@@ -30,7 +33,10 @@ def __main__() :
       files = get_classes( sys.argv[1] )
 
       a = androguard.Androguard( files )
-      a.do( sys.argv[2] )
-      #a.save()
+      try :
+         a.do( sys.argv[2] )
+      except Exception, e:
+         warning("!!!! Androguard failed !!!!")
+         traceback.print_exc()
 
 __main__()

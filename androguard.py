@@ -78,10 +78,6 @@ class VM_int :
 
       method.show()
 
-WM_TYPES = {
-   "WM_BM_A0" : wm.WM_BM_A0,
-}
-
 class WM :
    def __init__(self, andro, class_name, output_dir, wm_type) :
       self.__output_dir = output_dir
@@ -111,10 +107,12 @@ class WMCheck :
       document = xml.dom.minidom.parseString(buffxml)
 
       w_orig = wm.WMLoad( document )
-      for method in andro.get_methods() :
-         _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
+      w_cmp = wm.WMCheck( w_orig, andro, a )
+
+      #for method in andro.get_methods() :
+      #   _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
          
-         w_cmp = wm.WMCheck( w_orig, _vm, _method, a )
+      #   w_cmp = wm.WMCheck( w_orig, _vm, _method, a )
          #w_cmp.show()
 
 
@@ -363,7 +361,7 @@ class Androguard :
       watermark_item = document.getElementsByTagName( "watermark" )[0]
       watermark_types = []
       for item in watermark_item.getElementsByTagName( "type" ) :
-         watermark_types.append( WM_TYPES[ str( item.firstChild.data ) ] )
+         watermark_types.append( str( item.firstChild.data ) )
       watermark_output = watermark_item.getElementsByTagName( "output" )[0].firstChild.data
       print watermark_types, "--->", watermark_output
 
@@ -379,6 +377,7 @@ class Androguard :
 
       fd.write("</andro>\n")
       fd.close()
+
 #      for item in document.getElementsByTagName('method') :
 #         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
 #            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
