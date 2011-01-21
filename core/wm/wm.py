@@ -60,6 +60,8 @@ class WM :
                wb.run()
 
                l_x = wb.get()
+
+               print l_x,
          
                for z in l_x :
                   list_x.append( z )
@@ -167,36 +169,56 @@ class WMLoad :
 
 class WMCheck :
    def __init__(self, wm_orig, andro, analysis) :
+      # check if a watermark is present with the compared class
       for _class in wm_orig.get_classes() :
-         print _class
+         print "\t[*]",_class.get_name(),
 
-
-      raise("ooo")
-
-      # check if a watermark is present on the compared method
-      for _method in wm_orig.get_methods() :
          list_x = []
-         for _type, _wm in _method.get_wms() :
-            wb = WM_BIND[ _type ][0]( vm, method, analysis )
+         for _type, _wm in _class.get_wms() :
+            wb = WM_BIND[ _type ][0]( andro, analysis )
 
             wb.set_context( _wm.get_import_context() )
             wb.run()
 
             l_x = _wm.challenge( wb )
+            list_x.extend( l_x )
 
-            for i in l_x :
-               list_x.append( i )
-
-         #print "\t\t X :", list_x
-         sols =  _method.get_dwbo().verify_with_X( list_x )
-         if len(sols) > 0 :
-            print "\t --->", _method.get_name(), 
-            print "\t\t SOL :", len(sols), "--->",  
+            sols =  _class.get_dwbo().verify_with_X( list_x )
+            print len(list_x), len(sols), "--",
+            
             for sol in sols :
                if sol > 0 :
-                  print repr( misc.long2str(long(sol)) ),
+                  s = misc.long2str(long(sol))[::-1]
+                  if "TOTO" in s :
+                     print repr(s),
+         print
 
-      print ""
+
+      # check if a watermark is present with the compared method
+      for _method in wm_orig.get_methods() :
+         print "\t\t[+]", _method.get_name()
+
+         for real_method in andro.get_methods() :
+            list_x = []
+            for _type, _wm in _method.get_wms() :
+               wb = WM_BIND[ _type ][0]( andro, real_method, analysis )
+
+               wb.set_context( _wm.get_import_context() )
+               wb.run()
+
+               l_x = _wm.challenge( wb )
+               list_x.extend( l_x )
+
+            print "\t\t\t--->", real_method.get_name(), len(list_x), list_x,
+            sols =  _method.get_dwbo().verify_with_X( list_x )
+            if len(sols) > 0 :
+               print len(sols), "--",
+               for sol in sols :
+                  if sol > 0 :
+                     s = misc.long2str(long(sol))[::-1]
+                     if "TOTO" in s :
+                        print repr(s),
+            print
 
 class Polynomial :
     def __init__(self, degree, secret_long, length) :

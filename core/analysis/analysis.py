@@ -1425,7 +1425,6 @@ class BasicBlocks :
                self.G.add_edge( i.get_name(), j[2].get_name() )
 
 GRAMMAR_TYPE_CLEAR = 0
-GRAMMAR_TYPE_PSEUDO_ANONYMOUS = 1
 GRAMMAR_TYPE_ANONYMOUS = 2
 class Signature :
    def __init__(self, tainted_information) :
@@ -1437,7 +1436,6 @@ class Signature :
 
       self.__grammars = {
          GRAMMAR_TYPE_CLEAR : ( ),
-         GRAMMAR_TYPE_PSEUDO_ANONYMOUS : ( self._get_bb, self._get_strings_pa, self._get_fields_pa, self._get_packages_pa  ),
          GRAMMAR_TYPE_ANONYMOUS : ( self._get_bb, self._get_strings_a, self._get_fields_a, self._get_packages_a ),
       }
 

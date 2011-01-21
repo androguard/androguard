@@ -5,6 +5,8 @@ import sys, time
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/wm")
+sys.path.append(PATH_INSTALL + "/core/analysis")
+sys.path.append(PATH_INSTALL + "/core/bytecodes")
 
 import misc
 from wm import DWBO, DWBOCheck

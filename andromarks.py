@@ -42,6 +42,7 @@ def main(options, arguments) :
          if files != [] :
             for file in files :
                if ".class" in file :
+                  print "FILE", file
                   _b = androguard.AndroguardS(root + "/" + file)
                   for class_name in _b.get_classes_names() :
                      androguard.WMCheck( _b, class_name, "./wm.xml" )

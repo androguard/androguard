@@ -39,25 +39,17 @@ class BM_A0 :
 
    def run(self) :
       for i in self.__vm.get_methods() :
-         self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature( i, _analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS) )
          self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature( i, _analysis.GRAMMAR_TYPE_ANONYMOUS) )
          self.__context[ "SIGNATURES" ].append( self.__analysis.get( i ).get_ts() )
 
       for i in self.__context[ "SIGNATURES" ] :
-         if len(i) > 0 :
+         if len(i) > 10 :
             self.__context[ "L_X" ].append( 
                                              misc.str2long( hashlib.md5( i ).hexdigest() )
                                           )
 
    def challenge(self, external_wm) :
       return external_wm.get_context()[ "L_X" ]
-      raise("oo")
-      #distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
-
-      #if distance <= 2 :
-      #   return self.__context[ "L_X" ]
-
-      #return []
 
    def get(self) :
       return self.__context[ "L_X" ]
@@ -90,15 +82,15 @@ class BM_A1 :
                            "SIGNATURES" : [],
                        }
    def run(self) :
-      self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature(self.__method, _analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS) )
       self.__context[ "SIGNATURES" ].append( self.__analysis.get_method_signature(self.__method, _analysis.GRAMMAR_TYPE_ANONYMOUS) )
       self.__context[ "SIGNATURES" ].append( self.__method_analysis.get_ts() )
 
       for i in self.__context[ "SIGNATURES" ] :
-         if len(i) > 0 :
+         if len(i) > 10 :
             self.__context[ "L_X" ].append( 
                                              misc.str2long( hashlib.md5( i ).hexdigest() )
                                           )
+   #         print i 
 
    def challenge(self, external_wm) :
       return external_wm.get_context()[ "L_X" ]
