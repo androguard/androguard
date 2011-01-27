@@ -26,8 +26,9 @@ sys.path.append(PATH_INSTALL + "/core/predicates")
 sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/vm")
 sys.path.append(PATH_INSTALL + "/core/wm")
+sys.path.append(PATH_INSTALL + "/core/protection")
 
-import bytecode, jvm, dvm, misc, analysis, opaque, vm, wm
+import bytecode, jvm, dvm, misc, analysis, opaque, vm, wm, protection
 
 VM_INT_AUTO = 0
 VM_INT_BASIC_MATH_FORMULA = 1
@@ -79,19 +80,13 @@ class VM_int :
       method.show()
 
 class WM :
-   def __init__(self, andro, class_name, output_dir, wm_type) :
-      self.__output_dir = output_dir
-
+   def __init__(self, andro, class_name, wm_type) :
       if wm_type == [] :
          raise("....")
 
       a = analysis.VM_BCA( andro.get_vm() )
 
       self._w = wm.WM( andro.get_vm(), class_name, wm_type, a )
-
-      fd = open(output_dir + class_name + ".class", "w" )
-      fd.write( andro.get_vm().save() )
-      fd.close()
 
    def get(self) :
       return self._w
@@ -108,13 +103,6 @@ class WMCheck :
 
       w_orig = wm.WMLoad( document )
       w_cmp = wm.WMCheck( w_orig, andro, a )
-
-      #for method in andro.get_methods() :
-      #   _method, _vm = andro.get_method_descriptor(method.get_class_name(), method.get_name(), method.get_descriptor())
-         
-      #   w_cmp = wm.WMCheck( w_orig, _vm, _method, a )
-         #w_cmp.show()
-
 
 def OBFU_NAMES_GEN(prefix="") :
    return prefix + random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
@@ -358,31 +346,52 @@ class Androguard :
 
       document = xml.dom.minidom.parseString(buffxml)
 
-      watermark_item = document.getElementsByTagName( "watermark" )[0]
-      watermark_types = []
-      for item in watermark_item.getElementsByTagName( "type" ) :
-         watermark_types.append( str( item.firstChild.data ) )
-      watermark_output = watermark_item.getElementsByTagName( "output" )[0].firstChild.data
-      print watermark_types, "--->", watermark_output
+      main_path = document.getElementsByTagName( "main_path" )[0].firstChild.data
+      libs_path = document.getElementsByTagName( "libs_path" )[0].firstChild.data
 
-      fd = open(watermark_output, "w")
+      if document.getElementsByTagName( "watermark" ) != [] :
+         watermark_item = document.getElementsByTagName( "watermark" )[0]
+         watermark_types = []
+         for item in watermark_item.getElementsByTagName( "type" ) :
+            watermark_types.append( str( item.firstChild.data ) )
+         watermark_output = watermark_item.getElementsByTagName( "output" )[0].firstChild.data
+         print watermark_types, "--->", watermark_output
 
-      fd.write("<?xml version=\"1.0\"?>\n") 
-      fd.write("<andro id=\"androguard wm\">\n")
-      wms = []
-      for i in self.get_bc() :
-         for class_name in i[1].get_classes_names() :
-            wm = WM( i[1], class_name, "./output/", watermark_types )
-            fd.write( wm.get().save() )
+         fd = open(watermark_output, "w")
 
-      fd.write("</andro>\n")
-      fd.close()
+         fd.write("<?xml version=\"1.0\"?>\n") 
+         fd.write("<andro id=\"androguard wm\">\n")
+         wms = []
+         for i in self.get_bc() :
+            for class_name in i[1].get_classes_names() :
+               wm = WM( i[1], class_name, watermark_types )
+               fd.write( wm.get().save() )
+         fd.write("</andro>\n")
+         fd.close()
 
+      if document.getElementsByTagName( "protect_code" ) != [] :
+         protect_code_item = document.getElementsByTagName( "protect_code" )[0]
+
+         protection.ProtectCode( main_path + libs_path )
+        # print "LAAAAAAAAAAAAAAAAa", protect_code_item
+         
+      #   Protect()
+         
 #      for item in document.getElementsByTagName('method') :
 #         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
 #            if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild.data == "1" :
 #               vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
 #               VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
+
+   def save(self, output_dir=None) :
+      if output_dir == None :
+         for file_name, bc in self.get_bc() :
+            print "[+] [AG] SAVING ... ", file_name
+            fd = open(file_name, "w")
+            fd.write( bc.save() )
+            fd.close()
+      else :
+         pass
 
 class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard

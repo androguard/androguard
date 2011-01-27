@@ -12,6 +12,7 @@ sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/predicates")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/analysis")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/vm")
 sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/wm")
+sys.path.append( PATH_ANDROGUARD_INSTALL + "/core/protection")
 
 import traceback
 
@@ -35,6 +36,7 @@ def __main__() :
       a = androguard.Androguard( files )
       try :
          a.do( sys.argv[2] )
+         a.save()
       except Exception, e:
          warning("!!!! Androguard failed !!!!")
          traceback.print_exc()
