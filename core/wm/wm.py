@@ -33,7 +33,7 @@ class WM :
          if WM_BIND[ i ][1] == WM_CLASS :
             wb = WM_BIND[ i ][0](vm, self.__a)
             
-            print "CREATING %s ... %s" % (class_name, wb.NAME)
+            print "[+] [WM] CREATING %s ... %s" % (class_name, wb.NAME)
             wb.run()
 
             l_x = wb.get()
@@ -51,7 +51,7 @@ class WM :
       for method in vm.get_methods() :
          list_x = []
      
-         print "CREATING %s %s %s ..." % (method.get_class_name(), method.get_name(), method.get_descriptor()),
+         print "[+] [WM] CREATING %s %s %s ..." % (method.get_class_name(), method.get_name(), method.get_descriptor()),
          for i in wm_type :
             if WM_BIND[ i ][1] == WM_METHOD :
                wb = WM_BIND[ i ][0]( vm, method, self.__a )

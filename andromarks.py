@@ -26,7 +26,7 @@ import androguard, wm, misc
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file to be check', 'nargs' : 1 }
 
-option_1 = { 'name' : ('-x', '--xml'), 'help' : 'you xml watermark !', 'nargs' : 1 }
+option_1 = { 'name' : ('-x', '--xml'), 'help' : 'your xml watermark !', 'nargs' : 1 }
 option_2 = { 'name' : ('-d', '--directory'), 'help' : 'the directory of files to check !', 'nargs' : 1 }
 
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }

@@ -90,8 +90,7 @@ class BM_A1 :
             self.__context[ "L_X" ].append( 
                                              misc.str2long( hashlib.md5( i ).hexdigest() )
                                           )
-   #         print i 
-
+   
    def challenge(self, external_wm) :
       return external_wm.get_context()[ "L_X" ]
 
