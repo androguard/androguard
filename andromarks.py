@@ -45,7 +45,7 @@ def main(options, arguments) :
                   print "FILE", file
                   _b = androguard.AndroguardS(root + "/" + file)
                   for class_name in _b.get_classes_names() :
-                     androguard.WMCheck( _b, class_name, "./wm.xml" )
+                     androguard.WMCheck( _b, class_name, options.xml )
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()
