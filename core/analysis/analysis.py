@@ -180,9 +180,10 @@ class Stack :
       return len(self.__elems) == 0
 
    def insert_stack(self, idx, elems) :
-      for i in elems :
-         self.__elems.insert(idx, i)
-         idx += 1
+      if elems != self.__elems :
+         for i in elems :
+            self.__elems.insert(idx, i)
+            idx += 1
 
    def show(self) :
       nb = 0
@@ -717,6 +718,7 @@ class JVMBasicBlock :
    def analyze(self) :
       idx = 0
       for i in self.ins :
+         ################### TAINTED LOCAL VARIABLE ###################
          if "load" in i.get_name() or "store" in i.get_name() :
             action = i.get_name()
 
@@ -734,6 +736,9 @@ class JVMBasicBlock :
             
             self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
             self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.__method) ) 
+         #########################################################
+
+         ################### TAINTED FIELD ###################
          elif i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -744,12 +749,25 @@ class JVMBasicBlock :
 
 #               print "RES", res, "-->", desc.get_name()
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
-         
+         #########################################################
+
+         ################### TAINTED PACKAGES ################### 
          elif "new" in i.get_name() or "invokestatic" in i.get_name() or "invokevirtual" in i.get_name() or "getstatic" in i.get_name() :
             if "new" in i.get_name() :
                self.__context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             else :
                self.__context.get_tainted_packages().push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
+         #########################################################
+
+         ################### TAINTED INTEGERS ###################
+         if "ldc" in i.get_name() :
+            o = i.get_operands()
+            if o[0] == "CONSTANT_Integer" :
+               self.__context.get_tainted_integers().push_info( i, (o[1], idx, self, self.__method) )
+         
+         if "sipush" in i.get_name() :
+            self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
+         #########################################################
 
          idx += i.get_length()
 
@@ -766,7 +784,7 @@ class JVMBasicBlock :
 
       idx = 0
       for i in self.ins :
-#         print self.start + idx, idx, 
+#         print i.get_name(), self.start + idx, idx 
 #         i.show(idx)
 
          if self.start + idx in d :
@@ -776,7 +794,7 @@ class JVMBasicBlock :
 
          res = []
          try : 
-#            print i.get_name(), i.get_name() in INSTRUCTIONS_ACTIONS
+            #print i.get_name(), i.get_name() in INSTRUCTIONS_ACTIONS
 
             if INSTRUCTIONS_ACTIONS[ i.get_name() ] == [] :
                print "[[[[ %s is not yet implemented ]]]]" % i.get_name()
@@ -800,7 +818,7 @@ class JVMBasicBlock :
 
          if self.__stack.nil() == True and i != self.ins[-1] :
             self.free_blocks_offsets.append( idx + self.get_start() )
-
+         
    def show(self) :
       print "\t@", self.name
       
@@ -1222,6 +1240,18 @@ class TaintedVariables :
       else :
          raise("ooop")
 
+class TaintedInteger :
+   pass
+
+class TaintedIntegers :
+   def __init__(self, _vm) :
+      self.__vm = _vm
+
+   def push_info(self, ins, info) :
+      print ins, info
+
+   def get_integers(self) :
+      return []
 
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
@@ -1361,7 +1391,6 @@ class TaintedPackages :
 
                   print node1, "--->", node2
                   G.add_edge( node1, node2 )
-      #plt.show()
 
       draw_graphviz(G)                                                                                                                                                                                                           
       write_dot(G, output)
@@ -1389,6 +1418,9 @@ class BasicBlocks :
          if idx >= i.get_start() and idx < i.get_end() :
             return i
       return None
+
+   def get_tainted_integers(self) :
+      return self.__tainted["integers"]
 
    def get_tainted_packages(self) :
       return self.__tainted["packages"]
@@ -1587,7 +1619,7 @@ class M_BCA :
          if match == True :
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
             self.basic_blocks.push( current_basic )
-     
+    
       if current_basic.ins == [] :
          self.basic_blocks.pop( -1 )
 
@@ -1685,9 +1717,11 @@ class VM_BCA :
 
       self.tainted_variables = TaintedVariables( self.__vm )
       self.tainted_packages = TaintedPackages( self.__vm )
+      self.tainted_integers = TaintedIntegers( self.__vm )
 
       self.tainted = { "variables" : self.tainted_variables,
                        "packages" : self.tainted_packages,
+                       "integers" : self.tainted_integers,
                      }
 
       self.signature = Signature( self.tainted )

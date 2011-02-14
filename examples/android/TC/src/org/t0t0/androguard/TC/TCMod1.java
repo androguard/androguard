@@ -1,3 +1,5 @@
+package org.t0t0.androguard.TC;                                                                                                                                                                                                   
+
 public class TCMod1 {
    public int TC1 = 0;
    private int TC2 = 3;
