@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, xml.dom.minidom, re, random, string
+import sys, xml.dom.minidom, re, random, string, os
 
 PATH_INSTALL = "./"
 
@@ -348,7 +348,7 @@ class Androguard :
 
       main_path = document.getElementsByTagName( "main_path" )[0].firstChild.data
       libs_path = document.getElementsByTagName( "libs_path" )[0].firstChild.data
-
+      
       if document.getElementsByTagName( "watermark" ) != [] :
          watermark_item = document.getElementsByTagName( "watermark" )[0]
          watermark_types = []
@@ -383,15 +383,22 @@ class Androguard :
 #               vm_type = INVERT_VM_INT_TYPE[ item.getElementsByTagName( PROTECT_VM_INTEGER_TYPE )[0].firstChild.data ]
 #               VM_int( self, item.getAttribute('class'), item.getAttribute('name'), item.getAttribute('descriptor'), vm_type )
 
-   def save(self, output_dir=None) :
-      if output_dir == None :
-         for file_name, bc in self.get_bc() :
-            print "[+] [AG] SAVING ... ", file_name
-            fd = open(file_name, "w")
-            fd.write( bc.save() )
-            fd.close()
+      if document.getElementsByTagName( "save_path" ) != [] :
+         self.save( main_path + document.getElementsByTagName( "save_path" )[0].firstChild.data )
       else :
-         pass
+         self.save()
+
+   def save(self, output_dir=None) :
+      for file_name, bc in self.get_bc() :
+         if output_dir == None :
+            output_file_name = file_name
+         else :
+            output_file_name = output_dir + os.path.basename( file_name )
+
+         print "[+] [AG] SAVING ... ", output_file_name
+         fd = open(output_file_name, "w")
+         fd.write( bc.save() )
+         fd.close()
 
 class AndroguardS :
    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard

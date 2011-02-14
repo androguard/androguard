@@ -36,7 +36,6 @@ def __main__() :
       a = androguard.Androguard( files )
       try :
          a.do( sys.argv[2] )
-         a.save()
       except Exception, e:
          warning("!!!! Androguard failed !!!!")
          traceback.print_exc()

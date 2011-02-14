@@ -2,6 +2,8 @@
 <parent id="androguard TC">
 
    <main_path>./examples/java/TC/</main_path>
+
+   <save_path>./new/</save_path>
    <libs_path>./libs/</libs_path>
 
    <watermark>
