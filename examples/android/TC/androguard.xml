@@ -1,9 +1,7 @@
 <?xml version="1.0"?>                                                           
-<parent id="androguard TC">
+<parent id="androguard Test">
 
-   <main_path>./examples/java/TC/</main_path>
-
-   <save_path>./new/</save_path>
+   <main_path>./examples/android/TC/</main_path>
    <libs_path>./libs/</libs_path>
 
    <watermark>
@@ -13,17 +11,16 @@
    </watermark>
 
    <protect_code>
-
    </protect_code>
 
    <protect_names type="class">
       
       <except_class>
-         <name>TCMain</name>
+         <name>org/t0t0/androguard/TC/TCActivity</name>
       </except_class>
 
       <except_fields>
-         <class>TCMod1</class>
+         <class>org/t0t0/androguard/TC/TCMod1</class>
          <name>TC1</name>
          <descriptor>I</descriptor>
       </except_fields>

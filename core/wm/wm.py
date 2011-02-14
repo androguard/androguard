@@ -1,4 +1,4 @@
-import os, sys, hashlib, random, types, itertools, hashlib, cPickle, base64, string, threading
+import os, sys, hashlib, random, math, types, itertools, hashlib, cPickle, base64, string, threading
 from xml.sax.saxutils import escape, unescape
 
 from error import log_loading, warning
@@ -33,10 +33,12 @@ class WM :
          if WM_BIND[ i ][1] == WM_CLASS :
             wb = WM_BIND[ i ][0](vm, self.__a)
             
-            print "[+] [WM] CREATING %s ... %s" % (class_name, wb.NAME)
+            print "[+] [WM] CREATING %s ... %s" % (class_name, wb.NAME),
             wb.run()
 
             l_x = wb.get()
+
+            print l_x,
 
             for z in l_x :
                list_x.append( z )
@@ -46,6 +48,7 @@ class WM :
       # Create the secret sharing for class
       if list_x != [] :
          self.__wms[ "SSS_CLASS" ] = DWBO( "TOTO", list_x )
+      print ""
 
       ######### WM in methods ##########
       for method in vm.get_methods() :
@@ -70,11 +73,11 @@ class WM :
                   self.__wms[ "METHODS" ][ method ] = []
 
                self.__wms[ "METHODS" ][ method ].append( (i, wb) )
-         print ""
 
          # Create the secret sharing for methods
          if list_x != [] :
             self.__wms[ "SSS_METHODS" ][ method ] = DWBO( "TOTO", list_x )
+         print ""
 
    def save(self) :
       buffer = ""
@@ -221,21 +224,20 @@ class WMCheck :
             print
 
 class Polynomial :
-    def __init__(self, degree, secret_long, length) :
+    def __init__(self, degree, secret_long) :
         self.degree = degree
         self.x0 = secret_long
-        self.length = length
 
         self.coeff = {}
         self.coeff[0] = secret_long
 
         for i in range(1, self.degree+1) :
-            self.coeff[i] = self.get_random_number(length)
+            self.coeff[i] = random.randint( 0, int( 10 ** ( math.log10( secret_long ) ) + 1) )
 
-#        print "f(x) = %d " % self.coeff[0],
-#	for i in range(1, self.degree+1) :
-#		 print "+ %d x^%d" % (self.coeff[i], i),
-#	print ""
+        print "{ f(x) = %d " % self.coeff[0],
+	for i in range(1, self.degree+1) :
+            print "+ %d x^%d" % (self.coeff[i], i),
+	print "} "
 
     def get_n_point(self, x) :
         res = 0
@@ -244,13 +246,6 @@ class Polynomial :
 
         res += self.coeff[0]
         return res
-
-    def get_random_number(self, randomBytes=128):
-        """Return a random long integer."""
-        rf = open('/dev/urandom', 'r')
-        rl = misc.str2long(rf.read(randomBytes))
-        rf.close()
-        return rl                  
 
 class ShamirSecretScheme :
     def __init__(self, secret, pieces, threshold) :
@@ -267,8 +262,8 @@ class ShamirSecretScheme :
 #      print "HASH SECRET %s" % self.__hash
 #      print "THRESHOLD %d" % self.__threshold
 
-      self.poly = Polynomial(self.__threshold, self.__secret_long, len(self.__secret))
-     
+      self.poly = Polynomial(self.__threshold, self.__secret_long)
+
     def get_secret(self) :
        return self.__secret
 
@@ -298,6 +293,7 @@ class AlgoWM :
    def run(self, coord_x, coord_y) :
       try :
          import gmpy
+
          coord_x = [ gmpy.mpz(i) for i in coord_x ]
          coord_y = [ gmpy.mpz(i) for i in coord_y ]
       except ImportError :

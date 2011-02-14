@@ -84,17 +84,13 @@ class WM :
       if wm_type == [] :
          raise("....")
 
-      a = analysis.VM_BCA( andro.get_vm() )
-
-      self._w = wm.WM( andro.get_vm(), class_name, wm_type, a )
+      self._w = wm.WM( andro.get_vm(), class_name, wm_type, andro.get_analysis() )
 
    def get(self) :
       return self._w
 
 class WMCheck :
    def __init__(self, andro, class_name, input_file) :
-      a = analysis.VM_BCA( andro.get_vm() )
-      
       fd = open(input_file, "r")
       buffxml = fd.read()
       fd.close()
@@ -102,7 +98,7 @@ class WMCheck :
       document = xml.dom.minidom.parseString(buffxml)
 
       w_orig = wm.WMLoad( document )
-      w_cmp = wm.WMCheck( w_orig, andro, a )
+      w_cmp = wm.WMCheck( w_orig, andro, andro.get_analysis() )
 
 def OBFU_NAMES_GEN(prefix="") :
    return prefix + random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
@@ -170,6 +166,12 @@ class BC :
    def get_vm(self) :
       return self.__bc
 
+   def get_analysis(self) :
+      return self.__a
+
+   def analyze(self) :
+      self.__a = analysis.VM_BCA( self.__bc )
+
    def _get(self, val, name) :
       l = []
       r = getattr(self.__bc, val)(name)
@@ -223,7 +225,6 @@ class Androguard :
          self.__orig_raw[ i ] = open(i, "r").read()
 
       self.__bc = []
-      
       self._analyze()
 
    def _iterFlatten(self, root):
@@ -248,6 +249,10 @@ class Androguard :
             raise( "Unknown bytecode" )
 
          self.__bc.append( (i, BC( bc )) )
+
+   def __analyze(self) :
+      for i in self.get_bc() :
+         i[1].analyze()
 
    def get_class(self, class_name) :
       for _, bc in self.__bc :
@@ -340,6 +345,8 @@ class Androguard :
          bc.show()
 
    def do(self, fileconf) :
+      self.__analyze()
+
       fd = open(fileconf, "r")
       buffxml = fd.read()
       fd.close()
@@ -371,11 +378,7 @@ class Androguard :
 
       if document.getElementsByTagName( "protect_code" ) != [] :
          protect_code_item = document.getElementsByTagName( "protect_code" )[0]
-
-         protection.ProtectCode( main_path + libs_path )
-        # print "LAAAAAAAAAAAAAAAAa", protect_code_item
-         
-      #   Protect()
+         protection.ProtectCode( [ i[1] for i in self.get_bc() ], main_path + libs_path )
          
 #      for item in document.getElementsByTagName('method') :
 #         if item.getElementsByTagName( PROTECT_VM_INTEGER )[0].firstChild != None :
