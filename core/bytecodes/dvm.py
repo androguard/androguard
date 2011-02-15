@@ -1963,19 +1963,12 @@ class DCode :
             if len(l) == 0 :
                break
 
-#      if mnemonic[1] == "invoke-direct" :
-#         print "ID", operands
-
       if len(mnemonic) == 5 :
          return operands, (operands[2][1], mnemonic[4])
       
       return operands, None
 
    def _extract(self, signed, l, size) :
-      #print signed, l, size
-      #if size == 16 :
-      #   print repr(chr( (l[0] << 4) + (l[1]) ) + chr( (l[2] << 4) + (l[3]) ))
-
       func = string.capitalize
 
       if signed == 1 :
