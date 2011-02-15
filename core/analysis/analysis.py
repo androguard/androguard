@@ -1057,7 +1057,7 @@ class DVMBasicBlock :
             o = i.get_operands()
             desc = self.__vm.get_class_manager().get_field(o[-1][1], True)
             if desc == None :
-               raise("oo") #desc = ExternalFM( o[0], o[1], o[2] )
+               raise("oo")
 
             self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
          elif "invoke" in i.get_name() :
@@ -1081,6 +1081,9 @@ class DVMBasicBlock :
 
    def analyze_code(self) :
       pass
+
+   def get_ins(self) :
+      return self.ins
 
 TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
