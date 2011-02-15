@@ -1770,11 +1770,14 @@ class DBCSpe :
       self.__CM = cm
       self.op = op
 
+   def reload(self) :
+      pass
+
    def get_name(self) :
       return self.op.get_name()
    
    def get_operands(self) :
-      return  self.op.get_operands()
+      return self.op.get_operands()
 
    def get_length(self) :
       return self.op.get_length()
@@ -1790,21 +1793,11 @@ class DBC :
       self.operands = operands
       self.raw_buff = raw_buff
 
-   def get_length(self) :
-      return len(self.raw_buff)
-
-   def get_name(self) :
-      """Return the name of the bytecode"""
-      return self.op_name
-
-   def get_operands(self) :
-      return self.operands
-
-   def show(self, pos) :
-      print self.op_name,
-
+   def reload(self) :
       v = []
       r = []
+      l = []
+
       for i in self.operands[1:] :
          if i[0] == "v" :
             v.append( i )
@@ -1818,23 +1811,52 @@ class DBC :
          t = v[4:]
          t.reverse()
          x.extend( t )
-         print ', '.join(self._more_info(n[0], n[1]) for n in x[:off]), ' '.join(self._more_info(n[0], n[1]) for n in r),
+         l.extend( [ self._more_info(n[0], n[1]) for n in x[:off] ] )
+         l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       else :
          v.reverse()
-         print ', '.join(self._more_info(n[0], n[1]) for n in v), ' '.join(self._more_info(n[0], n[1]) for n in r),
+         l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
+         l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
+     
+      self.operands = l
+
+   def get_length(self) :
+      return len(self.raw_buff)
+
+   def get_name(self) :
+      """Return the name of the bytecode"""
+      return self.op_name
+
+   def get_operands(self) :
+      return self.operands
+
+   def show(self, pos) :
+      print self.op_name,
+
+      l = []
+      for i in self.operands :
+         if i[0] != "v" :
+            l.append( "[" + ' '.join( str(j) for j in i ) + "]" )
+         else :
+            l.append( ''.join( str(j) for j in i ) )
+         l.append( "," )
+      
+      if l != [] :
+         l.pop(-1)
+         print ' '.join( i for i in l ),
 
    def _more_info(self, c, v) :
       if "string" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_string(v))
+         return [ c, v, self.__CM.get_string(v) ]
       elif "meth" in c :
          m = self.__CM.get_method(v)
-         return "%s%x{%s %s%s,%s}" % (c, v, m[0], m[1][0], m[1][1], m[2])
+         return [ c, v, m[0], m[1][0], m[1][1], m[2] ]
       elif "field" in c :
          f = self.__CM.get_field(v)
-         return "%s%x{%s %s,%s}" % (c, v, f[0], f[1], f[2])
+         return [ c, v, f[0], f[1], f[2] ]
       elif "type" in c :
-         return "%s%x{%s}" % (c, v, self.__CM.get_type(v))
-      return "%s%x" % (c, v)
+         return [ c, v, self.__CM.get_type(v) ]
+      return [ c, v ]
 
 class DCode :
    def __init__(self, class_manager, size, buff) :
@@ -1986,6 +2008,10 @@ class DCode :
 
       return None
 
+   def reload(self) :
+      for i in self.__bytecodes :
+         i.reload()
+
    def show(self) :
       nb = 0
       idx = 0
@@ -2046,6 +2072,9 @@ class DalvikCode :
             self.__tries.append( try_item )
          
          self.__handlers.append( EncodedCatchHandlerList( buff ) )
+
+   def reload(self) :
+      self._code.reload()
 
    def get_length(self) :
       return self.insns_size.get_value()
@@ -2127,7 +2156,8 @@ class CodeItem :
          return None
 
    def reload(self) :
-      pass
+      for i in self.code :
+         i.reload()
 
    def show(self) :
       print "CODE_ITEM"
