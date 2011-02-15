@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, time, types
+import sys, time, types, random, string
 
 VERSION = "ALPHA 0-update3"
 
@@ -337,3 +337,6 @@ class ProgressBar(object):
         self.update(self.maxval)
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+
+def random_string() :
+   return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )

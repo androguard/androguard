@@ -1251,7 +1251,7 @@ class TaintedIntegers :
       self.__vm = _vm
 
    def push_info(self, ins, info) :
-      print ins, info
+      print ins, ins.get_name(), ins.get_operands(), info
 
    def get_integers(self) :
       return []
