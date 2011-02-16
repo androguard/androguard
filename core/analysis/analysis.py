@@ -1579,9 +1579,8 @@ def determineNextDVM(i, end, m) :
       off = i.get_operands()[-1][1] * 2
       data = code.get_ins_off( off + end )
 
-      for target in data.get_operands() :
-         off = target[0]
-         x.append( off*2 + end )
+      for target in data.get_targets() :
+         x.append( target*2 + end )
 
       return x
    return []

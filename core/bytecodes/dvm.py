@@ -144,15 +144,18 @@ class SparseSwitch :
 
       idx = calcsize(SPARSE_SWITCH[0])
       for i in range(0, self.format.get_value().size) :
-         self.keys.append( unpack('<L', buff[idx:idx+4]) )
+         self.keys.append( unpack('<L', buff[idx:idx+4])[0] )
          idx += 4
 
       for i in range(0, self.format.get_value().size) :
-         self.targets.append( unpack('<L', buff[idx:idx+4]) )
+         self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
          idx += 4
-        
-   def get_operands(self) :
+   
+   def get_targets(self) :
       return self.targets
+
+   def get_operands(self) :
+      return [ self.keys, self.targets ]
 
    def get_name(self) :
       return "SPARSE-SWITCH"
@@ -170,10 +173,13 @@ class PackedSwitch :
 
       idx = calcsize(PACKED_SWITCH[0])
       for i in range(0, self.format.get_value().size) :
-         self.targets.append( unpack('<L', buff[idx:idx+4]) )
+         self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
          idx += 4
 
    def get_operands(self) :
+      return [ self.format.get_value().first_key, self.targets ]
+
+   def get_targets(self) :
       return self.targets
 
    def get_name(self) :
@@ -1776,6 +1782,9 @@ class DBCSpe :
    def get_name(self) :
       return self.op.get_name()
    
+   def get_targets(self) :
+      return self.op.get_targets()
+
    def get_operands(self) :
       return self.op.get_operands()
 
