@@ -1475,6 +1475,10 @@ class CodeAttribute(BasicAttribute) :
              self.attributes_count.get_value_buff()                    + \
              ''.join(x.get_raw() for x in self.__attributes)
 
+   def get_length(self) :
+      return self.low_struct.get_value().code_length
+
+
    def get_max_stack(self) :
       return self.low_struct.get_value().max_stack
 

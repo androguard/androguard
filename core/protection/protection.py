@@ -26,11 +26,49 @@ class GenerateMainCode :
 
       for i in self.__functions :
          for j in self.__functions[i] :
-            print j
+            # split the descriptor and build params and ret
+            x = j[1].split(")")
+            params = self._build_params( x[0][1:] )
+            ret = self._build_ret( x[1] )
+
+            fd.write("public %s %s(%s) {\n" % ( params, j[0], ret ))
+
+
+            fd.write("}\n")
 
       fd.write("}\n")
       fd.close()
 
+      for i in self.__gc :
+         self.__gc[ i ].do()
+
+   def _build_params(self, v) :
+      if v == "" :
+         return "void"
+      raise("ooo")
+
+   def _build_ret(self, v) :
+      FD = { "B" : "byte",
+             "C" : "char",
+             "D" : "double",
+
+           }
+
+      l = []
+
+      i = 0
+      while i < len(v) :
+         if v[i] == "L" :
+            raise("ooo")
+         elif v[i] == "[" :
+            raise("ooo")
+         else :
+            l.append( FD[ v[i] ] )
+
+      i = i + 1
+
+
+         
    def compile(self) :
       compile = Popen([ "/usr/bin/javac", "%s.java" % self.__name ], stdout=PIPE, stderr=STDOUT)
       stdout, stderr = compile.communicate()
@@ -50,9 +88,10 @@ class GenerateCode :
 
       self.idx_init = self.analysis.random_free_block_offset( "^\<init\>" )
       self.gmc.addFunction( self.ident, misc.random_string(), "()V" )
-
 #      self.gmc.patchInstruction( "^\<init\>", self.idx_init, [ "aload_0" ] )
 
+   def do(self) :
+      pass
 
 
 class ProtectCode :
