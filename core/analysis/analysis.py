@@ -622,41 +622,20 @@ class JVMBasicBlock :
    def set_fathers(self, f) :
       self.fathers.append( f )
 
-   def set_childs(self) :
-      i = self.ins[-1]
+   def set_childs(self, values) :
+      #print self, self.start, self.end, values, self.ins[-1].get_name()
+      if values == [] :
+         next_block = self.__context.get_basic_block( self.end + 1 )
+         if next_block != None :
+            self.childs.append( ( self.end - self.ins[-1].get_length(), self.end, next_block ) )
+      else :
+         for i in values :
+            #print i, self.__context.get_basic_block( i )
+            self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
       
-      if "invoke" in i.get_name() :
-         self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
-         self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
-      elif "return" in i.get_name() :
-         pass
-      
-      elif "goto" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
-      
-      elif "jsr" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
-      
-      elif "if" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), self.end, self.__context.get_basic_block( self.end + 1 ) ) )
-         self.childs.append( ( self.end - i.get_length(), i.get_operands() + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands() + (self.end - i.get_length()) ) ) )
-      
-      elif "tableswitch" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), i.get_operands().default + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands().default + (self.end - i.get_length()) ) ) )
-         
-         for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
-            off = getattr(i.get_operands(), "offset%d" % idx)
-            self.childs.append( ( self.end - i.get_length(), off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-      
-      elif "lookupswitch" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), i.get_operands().default + (self.end - i.get_length()), self.__context.get_basic_block( i.get_operands().default + (self.end - i.get_length()) ) ) )
-
-         for idx in range(0, i.get_operands().npairs) :
-            off = getattr(i.get_operands(), "offset%d" % idx)
-            self.childs.append( ( self.end - i.get_length(), off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-
       for c in self.childs :
-         c[2].set_fathers( ( c[1], c[0], self ) )
+         if c[2] != None :
+            c[2].set_fathers( ( c[1], c[0], self ) )
 
    def prev_free_block_offset(self, idx=0) :
       last = -1
@@ -1021,31 +1000,17 @@ class DVMBasicBlock :
    def set_fathers(self, f) :
       self.fathers.append( f )
 
-   def set_childs(self) :
-      i = self.ins[-1]
-
-      if "return" in i.get_name() :
-         pass
-      elif "goto" in i.get_name() :
-         off = i.get_operands()[-1][1] * 2
-         
-         self.childs.append( ( self.end - i.get_length(), off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-      elif "if" in i.get_name() :
-         off = i.get_operands()[-1][1] * 2
-
-         self.childs.append( ( self.end - i.get_length(), self.end, self.__context.get_basic_block( self.end + 1 ) ) )
-         self.childs.append( ( self.end - i.get_length(), off + (self.end - i.get_length()), self.__context.get_basic_block( off + (self.end - i.get_length()) ) ) )
-      elif "packed" in i.get_name() or "sparse" in i.get_name() :
-         self.childs.append( ( self.end - i.get_length(), self.end, self.__context.get_basic_block( self.end + 1 ) ) )
-         
-         code = self.__method.get_code().get_bc()
-         off = i.get_operands()[-1][1] * 2
-         data = code.get_ins_off( off + (self.end - i.get_length()) )
-
-         for target in data.get_operands() :
-            off = target[0]
-            self.childs.append( ( self.end - i.get_length(), off*2 + (self.end - i.get_length()), self.__context.get_basic_block( self.end + off ) ) )
-
+   def set_childs(self, values) :
+      #print self, self.start, self.end, values, self.ins[-1].get_name()
+      if values == [] :
+         next_block = self.__context.get_basic_block( self.end + 1 )
+         if next_block != None :
+            self.childs.append( ( self.end - self.ins[-1].get_length(), self.end, next_block ) )
+      else :
+         for i in values :
+            #print i, self.__context.get_basic_block( i )
+            self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
+      
       for c in self.childs :
          if c[2] != None :
             c[2].set_fathers( ( c[1], c[0], self ) )
@@ -1567,6 +1532,60 @@ class Signature :
       l.sort()
       return ''.join(i[1] for i in l)
 
+def determineNextJVM(i, end, m) :
+   #if "invoke" in i.get_name() :
+   #   self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
+   #   self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
+   if "goto" in i.get_name() :
+      return [ i.get_operands() + end ]
+   elif "jsr" in i.get_name() :
+      return [ i.get_operands() + end ]
+   elif "if" in i.get_name() :
+      return [ end + i.get_length(), i.get_operands() + end ]
+   elif "tableswitch" in i.get_name() :
+      x = []
+
+      x.append( i.get_operands().default + end )
+      for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
+         off = getattr(i.get_operands(), "offset%d" % idx)
+         
+         x.append( off + end )
+      return x
+   elif "lookupswitch" in i.get_name() :
+      x = []
+
+      x.append( i.get_operands().default + end )
+
+      for idx in range(0, i.get_operands().npairs) :
+         off = getattr(i.get_operands(), "offset%d" % idx)
+         x.append( off + end )
+      return x
+   return []
+
+def determineNextDVM(i, end, m) :
+   if "goto" in i.get_name() :
+      off = i.get_operands()[-1][1] * 2
+      return [ off + end ]
+   elif "if" in i.get_name() :
+      off = i.get_operands()[-1][1] * 2
+
+      return [ end + i.get_length(), off + (end) ]
+   elif "packed" in i.get_name() or "sparse" in i.get_name() :
+      x = []
+
+      x.append( end + i.get_length() )
+
+      code = m.get_code().get_bc()
+      off = i.get_operands()[-1][1] * 2
+      data = code.get_ins_off( off + end )
+
+      for target in data.get_operands() :
+         off = target[0]
+         x.append( off*2 + end )
+
+      return x
+   return []
+
 class M_BCA :
    """
       This class analyses in details a method of a class/dex file
@@ -1581,10 +1600,10 @@ class M_BCA :
 
       self.__tainted = _tv
 
-      BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, 
+      BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : determineNextJVM, 
              "TS" : JVM_TOSTRING }
       if self.__vm.get_type() == "DVM" :
-         BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock,
+         BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : determineNextDVM,
                 "TS" : DVM_TOSTRING }
 
       self.__TS = ToString( BO[ "TS" ] )
@@ -1602,32 +1621,54 @@ class M_BCA :
       current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
       self.basic_blocks.push( current_basic )
 
-      #print "METHOD", _method.get_name()
-
+      ##########################################################
+      
       bc = code.get_bc()
+      l = []
+      h = {} 
+      idx = 0
+      for i in bc.get() :
+         for j in BO["BasicOPCODES_H"] :
+            if j.match(i.get_name()) != None :
+               v = BO["Dnext"]( i, idx, self.__method ) 
+               h[ idx ] = v
+               l.extend( v )
+               break
+
+         idx += i.get_length()
+
+   #   print self.__method.get_name(), sorted(l), h
+      idx = 0
       for i in bc.get() :
          name = i.get_name()
 
-         ################## String construction ###################
          self.__TS.push( name )
-        
-         ##################### Basic Block ########################
-         match = False
-         for j in BO["BasicOPCODES_H"] :
-            if j.match(name) != None :
-               match = True
-               break
-         
+
+         here = False
+         # index is a destination
+         if idx in l :
+            if current_basic.ins != [] : 
+               current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
+               self.basic_blocks.push( current_basic )
+            here = True
+
          current_basic.push( i )
-         if match == True :
+
+         # index is a branch instruction
+         if idx in h and here == False :
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
             self.basic_blocks.push( current_basic )
+
+         idx += i.get_length()
     
       if current_basic.ins == [] :
          self.basic_blocks.pop( -1 )
 
       for i in self.basic_blocks.get() :
-         i.set_childs()
+         try :
+            i.set_childs( h[ i.end - i.ins[-1].get_length() ] )
+         except KeyError :
+            i.set_childs( [] )
 
       for i in self.basic_blocks.get() :
          i.analyze()
