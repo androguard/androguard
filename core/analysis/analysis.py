@@ -623,7 +623,7 @@ class JVMBasicBlock :
       self.fathers.append( f )
 
    def set_childs(self, values) :
-      #print self, self.start, self.end, values, self.ins[-1].get_name()
+#      print self, self.start, self.end, values, self.ins[-1].get_name()
       if values == [] :
          next_block = self.__context.get_basic_block( self.end + 1 )
          if next_block != None :
@@ -631,7 +631,8 @@ class JVMBasicBlock :
       else :
          for i in values :
             #print i, self.__context.get_basic_block( i )
-            self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
+            if i != -1 :
+               self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
       
       for c in self.childs :
          if c[2] != None :
@@ -1004,12 +1005,12 @@ class DVMBasicBlock :
       #print self, self.start, self.end, values, self.ins[-1].get_name()
       if values == [] :
          next_block = self.__context.get_basic_block( self.end + 1 )
-         if next_block != None :
+         if next_block != None : 
             self.childs.append( ( self.end - self.ins[-1].get_length(), self.end, next_block ) )
       else :
          for i in values :
-            #print i, self.__context.get_basic_block( i )
-            self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
+            if i != -1 :
+               self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
       
       for c in self.childs :
          if c[2] != None :
@@ -1563,7 +1564,9 @@ def determineNextJVM(i, end, m) :
    return []
 
 def determineNextDVM(i, end, m) :
-   if "goto" in i.get_name() :
+   if "return" in i.get_name() :
+      return [ -1 ]
+   elif "goto" in i.get_name() :
       off = i.get_operands()[-1][1] * 2
       return [ off + end ]
    elif "if" in i.get_name() :
