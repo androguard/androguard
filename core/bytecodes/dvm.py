@@ -122,6 +122,9 @@ class FillArrayData :
       general_format = self.format.get_value()
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
+   def get_data(self) :
+      return self.data
+
    def get_name(self) :
       return "FILL-ARRAY-DATA"
 
@@ -513,6 +516,31 @@ def writesleb128(value) :
       remaining >>= 7
 
    return buff
+
+def determineNext(i, end, m) :
+   if "return" in i.get_name() :
+      return [ -1 ]
+   elif "goto" in i.get_name() :
+      off = i.get_operands()[-1][1] * 2
+      return [ off + end ]
+   elif "if" in i.get_name() :
+      off = i.get_operands()[-1][1] * 2
+
+      return [ end + i.get_length(), off + (end) ]
+   elif "packed" in i.get_name() or "sparse" in i.get_name() :
+      x = []
+
+      x.append( end + i.get_length() )
+
+      code = m.get_code().get_bc()
+      off = i.get_operands()[-1][1] * 2
+      data = code.get_ins_off( off + end )
+
+      for target in data.get_targets() :
+         x.append( target*2 + end )
+
+      return x
+   return []
 
 class HeaderItem :
    def __init__(self, size, buff, cm) :
@@ -1778,6 +1806,9 @@ class DBCSpe :
 
    def reload(self) :
       pass
+
+   def get_data(self) :
+      return self.op.get_data()
 
    def get_name(self) :
       return self.op.get_name()

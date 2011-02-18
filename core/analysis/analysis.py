@@ -1533,61 +1533,6 @@ class Signature :
       l.sort()
       return ''.join(i[1] for i in l)
 
-def determineNextJVM(i, end, m) :
-   #if "invoke" in i.get_name() :
-   #   self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
-   #   self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
-   if "goto" in i.get_name() :
-      return [ i.get_operands() + end ]
-   elif "jsr" in i.get_name() :
-      return [ i.get_operands() + end ]
-   elif "if" in i.get_name() :
-      return [ end + i.get_length(), i.get_operands() + end ]
-   elif "tableswitch" in i.get_name() :
-      x = []
-
-      x.append( i.get_operands().default + end )
-      for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
-         off = getattr(i.get_operands(), "offset%d" % idx)
-         
-         x.append( off + end )
-      return x
-   elif "lookupswitch" in i.get_name() :
-      x = []
-
-      x.append( i.get_operands().default + end )
-
-      for idx in range(0, i.get_operands().npairs) :
-         off = getattr(i.get_operands(), "offset%d" % idx)
-         x.append( off + end )
-      return x
-   return []
-
-def determineNextDVM(i, end, m) :
-   if "return" in i.get_name() :
-      return [ -1 ]
-   elif "goto" in i.get_name() :
-      off = i.get_operands()[-1][1] * 2
-      return [ off + end ]
-   elif "if" in i.get_name() :
-      off = i.get_operands()[-1][1] * 2
-
-      return [ end + i.get_length(), off + (end) ]
-   elif "packed" in i.get_name() or "sparse" in i.get_name() :
-      x = []
-
-      x.append( end + i.get_length() )
-
-      code = m.get_code().get_bc()
-      off = i.get_operands()[-1][1] * 2
-      data = code.get_ins_off( off + end )
-
-      for target in data.get_targets() :
-         x.append( target*2 + end )
-
-      return x
-   return []
-
 class M_BCA :
    """
       This class analyses in details a method of a class/dex file
@@ -1602,10 +1547,10 @@ class M_BCA :
 
       self.__tainted = _tv
 
-      BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : determineNextJVM, 
+      BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : jvm.determineNext, 
              "TS" : JVM_TOSTRING }
       if self.__vm.get_type() == "DVM" :
-         BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : determineNextDVM,
+         BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : dvm.determineNext,
                 "TS" : DVM_TOSTRING }
 
       self.__TS = ToString( BO[ "TS" ] )
