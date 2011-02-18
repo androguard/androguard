@@ -69,6 +69,44 @@ def special_F4R(x) :
 def specialSwitch(x) :
    return x
 
+FD = { "B" : "byte",
+       "C" : "char",
+       "D" : "double",
+       "F" : "float",
+       "I" : "int",
+       "J" : "long",
+       "S" : "short",
+       "Z" : "boolean",
+       "V" : "void",
+}
+
+def formatFD(v) :
+   #print v, "--->",
+   l = []
+
+   i = 0
+   while i < len(v) :
+      if v[i] == "L" :
+         base_object = ""
+         i = i + 1
+         while v[i] != ";" :
+            base_object += v[i]
+            i = i + 1
+         l.append( os.path.basename( base_object ) )
+      elif v[i] == "[" :
+         z = []
+         while v[i] == "[" :
+            z.append( "[]" )
+            i = i + 1
+
+         l.append( [ FD[ v[i] ], z ] )
+      else :
+         l.append( FD[ v[i] ] )
+      i = i + 1
+
+      #print l
+   return l
+
 def TableSwitch(idx, raw_format) :
    r_buff = []
    r_format = ">"
@@ -310,7 +348,7 @@ JAVA_OPCODES = {
                   0xc2 : [ "monitorenter" ],
                   0xc3 : [ "monitorexit" ],
                   0xc5 : [ "multianewarray", "indexbyte1:B indexbyte2:B dimensions:B", special_F4, special_F4R, None ],
-                  0xbb : [ "new", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_class" ],
+                  0xbb : [ "new", "indexbyte1:B indexbyte2:B", special_F1, special_F1R, "get_class", "get_class_index2" ],
                   0xbc : [ "newarray", "atype:B", special_F0, special_F0, "get_array_type" ],
                   0x0  : [ "nop" ],
                   0x57 : [ "pop" ],
@@ -384,6 +422,37 @@ def EXTRACT_INFORMATION_VARIABLE(idx, op_value, raw_format) :
    r_function, v_function, r_buff, r_format, f_function = JAVA_OPCODES[ op_value ][1]( idx, raw_format )
    return ( r_function, v_function, r_buff, r_format, f_function )
 
+def determineNext(i, end, m) :
+   #if "invoke" in i.get_name() :
+   #   self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
+   #   self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
+   if "return" in i.get_name() :
+      return [ -1 ]
+   elif "goto" in i.get_name() :
+      return [ i.get_operands() + end ]
+   elif "jsr" in i.get_name() :
+      return [ i.get_operands() + end ]
+   elif "if" in i.get_name() :
+      return [ end + i.get_length(), i.get_operands() + end ]
+   elif "tableswitch" in i.get_name() :
+      x = []
+
+      x.append( i.get_operands().default + end )
+      for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
+         off = getattr(i.get_operands(), "offset%d" % idx)
+         
+         x.append( off + end )
+      return x
+   elif "lookupswitch" in i.get_name() :
+      x = []
+
+      x.append( i.get_operands().default + end )
+
+      for idx in range(0, i.get_operands().npairs) :
+         off = getattr(i.get_operands(), "offset%d" % idx)
+         x.append( off + end )
+      return x
+   return []
 
 METHOD_INFO             =       [ '>HHHH',      namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]
 ATTRIBUTE_INFO          =       [ '>HL',        namedtuple("AttributeInfo", "attribute_name_index attribute_length") ]
@@ -923,11 +992,13 @@ class CreateFieldInfo :
       type_value = proto[1]
 
       self.__access_flags = INVERT_ACC_FIELD_FLAGS[ access_flags_value ]
-      self.__name_index = self.__CM.add_string( name )
+      self.__name_index = self.__CM.get_string_index( name )
       if self.__name_index == -1 :
+         self.__name_index = self.__CM.add_string( name )
+      else :
          bytecode.Exit("field %s is already present ...." % name)
 
-      self.__descriptor_index = self.__CM.get_string_index( type_value )
+      self.__descriptor_index = self.__CM.add_string( type_value ) 
 
       self.__attributes = []
 
@@ -956,9 +1027,7 @@ class CreateMethodInfo :
          self.__name_index = self.__CM.add_string( name )   
 
       proto_final = "(" + arguments_value + ")" + return_value
-      self.__descriptor_index = self.__CM.get_string_index( proto_final )
-      if self.__descriptor_index == -1 :
-         self.__descriptor_index = self.__CM.add_string( proto_final )
+      self.__descriptor_index = self.__CM.add_string( proto_final )
 
       self.__attributes = []
 
@@ -1260,6 +1329,7 @@ class JavaCode :
       n = 0
       x = 0
       for i in self.__bytecodes :
+         #print n, idx
          if n == idx :
             return x
          n += i.get_length()
@@ -1333,7 +1403,7 @@ class JavaCode :
             self.__branches[ nb ] = i + size 
          nb += 1
 
-   def insert_at(self, idx, bytecode) :
+   def insert_at(self, idx, byte_code) :
       """
          Insert bytecode at a specific index
          
@@ -1343,7 +1413,7 @@ class JavaCode :
          @rtype : the length of the inserted bytecode
       """
       # Get the op_value and add it to the raw_buff
-      op_name = bytecode[0]
+      op_name = byte_code[0]
       op_value = INVERT_JAVA_OPCODES[ op_name ]
       raw_buff = pack( '>B', op_value )
 
@@ -1358,13 +1428,13 @@ class JavaCode :
          # Special values for this op_value (advanced bytecode)
          if len( JAVA_OPCODES[ op_value ] ) == 6 :
             
-            value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *bytecode[1:] )
+            value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *byte_code[1:] )
             if value == -1 :
-               bytecode.Exit( "Unable to found method ", str(bytecode[1:]) )
+               bytecode.Exit( "Unable to found " + str(byte_code[1:]) )
 
             raw_buff += pack(r_format, *v_function( value ) )
          else :
-            raw_buff += pack(r_format, *v_function( *bytecode[1:] ) )
+            raw_buff += pack(r_format, *v_function( *byte_code[1:] ) )
  
          new_jbc = JBC(self.__CM, op_name, raw_buff, ( r_function, v_function, r_buff, r_format, f_function ) )
       else :
@@ -1373,7 +1443,7 @@ class JavaCode :
       # Adjust each branch with the new insertion
       val_m = self.__maps[ idx ]
       for i in self.__branches :
-         self.__bytecodes[i].adjust_i( self.__maps[i], val_m, new_jbc.get_length() )
+         self.__byte_codes[i].adjust_i( self.__maps[i], val_m, new_jbc.get_length() )
      
       # Insert the new bytecode at the correct index
       # Adjust maps + branches
@@ -2559,7 +2629,10 @@ class ClassManager :
                return idx
          idx += 1
 
-   def get_class(self, idx):
+   def get_class(self, idx) :
+      if self.get_item(idx).get_name() != "CONSTANT_Class" :
+         return []
+
       return [ self.get_string( self.get_item(idx).get_name_index() ) ]
 
    def get_array_type(self, idx) :
@@ -2643,6 +2716,17 @@ class ClassManager :
          idx += 1
       return -1
 
+   def get_class_index2(self, class_name) :
+      idx = 1 
+      for i in self.__constant_pool :
+         res = self.get_class( idx )
+         if res != [] :
+            name = res[0]
+            if name == class_name :
+               return idx
+         idx += 1
+      return -1
+
    def get_used_fields(self) :
       l = []
       for i in self.__constant_pool :
@@ -2711,10 +2795,10 @@ class ClassManager :
       return class_index
 
    def create_name_and_type(self, name, desc) :
-      name_method_index = self.add_string( name )
-      descriptor_method_index = self.add_string( desc )
+      name_index = self.add_string( name )
+      descriptor_index = self.add_string( desc )
 
-      return self._create_name_and_type( name_method_index, descriptor_method_index )
+      return self._create_name_and_type( name_index, descriptor_index )
 
    def create_name_and_type_by_index(self, name_method_index, descriptor_method_index) :
       return self._create_name_and_type( name_method_index, descriptor_method_index )

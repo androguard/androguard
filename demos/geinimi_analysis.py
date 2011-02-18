@@ -17,8 +17,7 @@ import analysis
 TEST = "./geinimi/geinimi.apk"
 
 _a = AndroguardS( TEST )
-_d = _a.get_vm()
-_x = analysis.VM_BCA( _d )
+_x = analysis.VM_BCA( _a.get_vm() )
 
 #print _a.get_strings()
 
@@ -49,7 +48,7 @@ if tainted_field != None :
          b = ""
          for ins in path.get_method().get_code().get_bc().get() :
             if ins.get_name() == "FILL-ARRAY-DATA" :
-               b += ins.op.data
+               b += ins.get_data()
 
          print repr( _des.decrypt( b ) )
 
