@@ -12,6 +12,9 @@ class GenerateMainCode :
       
       self.__name = "GMC"# + misc.random_string()
 
+   def getClass(self) :
+      return self.__name
+
    def add(self, _vm, _analysis) :
       r = misc.random_string()
       self.__info_gc[ r ] = ( _vm, _analysis )
@@ -74,11 +77,26 @@ class GenerateMainCode :
       code.inserts_at( code.get_relative_idx( idx ), ins )
 
    def do(self) :
+      fd = open(self.__name + ".c", "w")
+      fd.write("#include <jni.h>\n")
+      
+      fd.write("JNIEXPORT void JNICALL Java_GMC_GMCInit(JNIEnv *env, jclass cls) {\n")
+      fd.write("printf(\"[GMC][native] init !!!!\\n\");\n")
+      fd.write("}\n")
+
+      fd.close()
+
       fd = open(self.__name + ".java", "w")
       fd.write("class %s {\n" % self.__name)
 
+      fd.write("private native void GMCInit();\n");
+
+      fd.write("static { System.loadLibrary(\"%s\"); }" % self.__name)
+
       fd.write("public %s(){\n" % self.__name)
+      fd.write("GMCInit();\n")
       fd.write("System.out.println(\"[GMC] init\");\n")
+
       fd.write("}")
 
       for i in self.__functions :
@@ -123,6 +141,15 @@ class GenerateMainCode :
       return l[0]
       
    def compile(self) :
+      print "[GMC] CREATING NATIVE OBJECTS ...."
+
+      JAVA_INCLUDE = "/usr/lib/jvm/java-6-sun/include"
+      compile = Popen([ "gcc", "-c", "GMC.c", "-I"+JAVA_INCLUDE, "-I"+JAVA_INCLUDE+"/linux"], stdout=PIPE, stderr=STDOUT)
+      stdout, stderr = compile.communicate()
+      print "[GMC] COMPILATION RESULTS", stdout, stderr
+      if stdout != "" :
+         raise("ooo")
+
       print "[GMC] CREATING CLASS ...."
       compile = Popen([ "/usr/bin/javac", "%s.java" % self.__name ], stdout=PIPE, stderr=STDOUT)
       stdout, stderr = compile.communicate()
@@ -130,7 +157,15 @@ class GenerateMainCode :
       if stdout != "":
          raise("ooo")
 
+
    def save(self, path) :
+      print "[GMC] CREATING SHARED LIBRARY ...."
+      compile = Popen([ "gcc", "-o", "%s/libGMC.so" % path, "GMC.o", "-shared" ], stdout=PIPE, stderr=STDOUT)
+      stdout, stderr = compile.communicate()
+      print "[GMC] COMPILATION RESULTS", stdout, stderr
+      if stdout != "" :
+         raise("ooo")
+      
       print "[GMC] CREATING JAR ...."
       compile = Popen([ "/usr/bin/jar", "-fc", "%s/%s.jar" % (path, self.__name) , "%s.class" % (self.__name)  ],  stdout=PIPE, stderr=STDOUT)
       stdout, stderr = compile.communicate()
@@ -159,12 +194,15 @@ class GenerateCode :
       self.gmc.addInFunction( self.ident, f_name, f_desc, "}\n")
 
       self.gmc.addLibraryDependencies( self.ident )
-      field = self.gmc.addNewField( self.ident, "ACC_PUBLIC", "LGMC;" )
+      field = self.gmc.addNewField( self.ident, "ACC_PUBLIC", jvm.classToJclass( self.gmc.getClass() ) )
 
-      co = self.gmc.createObject( self.ident, "GMC", field )
-      
+      co = self.gmc.createObject( self.ident, self.gmc.getClass(), field )
       self.gmc.insertAt( self.ident, method_init, idx_init, co )
 
+      for i in self.vm.get_methods() :
+         print i.get_name(), i.get_descriptor()
+
+      #self.gmc.createCall( self.ident, "", field, [] )
 
 #      self.gmc.addFunction( self.ident, misc.random_string(), "(IDLjava/lang/Thread;)Ljava/lang/Object;" )
 #      self.gmc.patchInstruction( "^\<init\>", self.idx_init, [ "aload_0" ] )

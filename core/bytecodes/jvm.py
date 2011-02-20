@@ -454,6 +454,9 @@ def determineNext(i, end, m) :
       return x
    return []
 
+def classToJclass(x) :
+   return "L%s;" % x
+
 METHOD_INFO             =       [ '>HHHH',      namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]
 ATTRIBUTE_INFO          =       [ '>HL',        namedtuple("AttributeInfo", "attribute_name_index attribute_length") ]
 FIELD_INFO              =       [ '>HHHH',      namedtuple("FieldInfo", "access_flags name_index descriptor_index attributes_count") ]
@@ -2547,8 +2550,8 @@ class AttributeInfo :
 class ClassManager :
    """ClassManager can be used by all classes to get more information"""
    def __init__(self, constant_pool, constant_pool_count) :
-      self.__constant_pool = constant_pool
-      self.__constant_pool_count = constant_pool_count
+      self.constant_pool = constant_pool
+      self.constant_pool_count = constant_pool_count
 
       self.__this_class = None
 
@@ -2566,7 +2569,7 @@ class ClassManager :
       bytecode.Exit( "get_value not yet implemented for %s" % name )
 
    def get_item(self, idx) :
-      return self.__constant_pool[ idx - 1]
+      return self.constant_pool[ idx - 1]
 
    def get_interface(self, idx) :
       if self.get_item(idx).get_name() != "CONSTANT_InterfaceMethodref" :
@@ -2597,7 +2600,7 @@ class ClassManager :
 
    def get_method_index(self, class_name, name, descriptor) :
       idx = 1 
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          res = self.get_method( idx ) 
          if res != [] :
             m_class_name, m_name, m_descriptor = res
@@ -2621,7 +2624,7 @@ class ClassManager :
 
    def get_field_index(self, name, descriptor) :
       idx = 1 
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          res = self.get_field( idx ) 
          if res != [] :
             _, m_name, m_descriptor = res
@@ -2640,7 +2643,7 @@ class ClassManager :
 
    def get_string_index(self, name) :
       idx = 1 
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Utf8" :
             if i.get_bytes() == name :
                return idx 
@@ -2649,7 +2652,7 @@ class ClassManager :
 
    def get_integer_index(self, value) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Integer" :
             if i.get_format().get_value().bytes == value :
                return idx
@@ -2658,7 +2661,7 @@ class ClassManager :
 
    def get_cstring_index(self, value) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_String" :
             if self.get_string( i.get_format().get_value().string_index ) == value :
                return idx
@@ -2667,7 +2670,7 @@ class ClassManager :
 
    def get_name_and_type_index(self, name_method_index, descriptor_method_index) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_NameAndType" :
             value = i.get_format().get_value()
             if value.name_index == name_method_index and value.descriptor_index == descriptor_method_index :
@@ -2677,7 +2680,7 @@ class ClassManager :
 
    def get_class_by_index(self, name_index) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Class" :
             value = i.get_format().get_value()
             if value.name_index == name_index :
@@ -2687,7 +2690,7 @@ class ClassManager :
 
    def get_method_ref_index(self, new_class_index, new_name_and_type_index) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Methodref" :
             value = i.get_format().get_value()
             if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index :
@@ -2697,7 +2700,7 @@ class ClassManager :
 
    def get_field_ref_index(self, new_class_index, new_name_and_type_index) :
       idx = 1
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Fieldref" :
             value = i.get_format().get_value()
             if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index :
@@ -2707,7 +2710,7 @@ class ClassManager :
 
    def get_class_index(self, method_name) :
       idx = 1 
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          res = self.get_method( idx )
          if res != [] :
             _, name, _ = res
@@ -2718,7 +2721,7 @@ class ClassManager :
 
    def get_class_index2(self, class_name) :
       idx = 1 
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          res = self.get_class( idx )
          if res != [] :
             name = res[0]
@@ -2729,26 +2732,26 @@ class ClassManager :
 
    def get_used_fields(self) :
       l = []
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Fieldref" :
             l.append( i )
       return l
 
    def get_used_methods(self) :
       l = []
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Methodref" :
             l.append( i )
       return l
 
    def get_string(self, idx) :
-      if self.__constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
-         return self.__constant_pool[idx - 1].get_bytes()
+      if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
+         return self.constant_pool[idx - 1].get_bytes()
       return None
 
    def set_string(self, idx, name) :
-      if self.__constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
-         self.__constant_pool[idx - 1].set_bytes( name )
+      if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
+         self.constant_pool[idx - 1].set_bytes( name )
       else :
          bytecode.Exit( "invalid index %d to set string %s" % (idx, name) )
 
@@ -2761,10 +2764,10 @@ class ClassManager :
       buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, len(name) ) + pack( ">%ss" % len(name), name )
       ci = CONSTANT_INFO[ tag_value ][-1]( self, bytecode.BuffHandle( buff ) )
       
-      self.__constant_pool.append( ci )
-      self.__constant_pool_count.set_value( self.__constant_pool_count.get_value() + 1 )
+      self.constant_pool.append( ci )
+      self.constant_pool_count.set_value( self.constant_pool_count.get_value() + 1 )
    
-      return self.__constant_pool_count.get_value() - 1
+      return self.constant_pool_count.get_value() - 1
 
    def set_this_class(self, this_class) :
       self.__this_class = this_class
@@ -2776,11 +2779,11 @@ class ClassManager :
       return self.get_class( self.__this_class.get_value() )[0]
 
    def add_constant_pool(self, elem) :
-      self.__constant_pool.append( elem )
-      self.__constant_pool_count.set_value( self.__constant_pool_count.get_value() + 1 )
+      self.constant_pool.append( elem )
+      self.constant_pool_count.set_value( self.constant_pool_count.get_value() + 1 )
       
    def get_constant_pool_count(self) :
-      return self.__constant_pool_count.get_value()
+      return self.constant_pool_count.get_value()
 
    def create_class(self, name) :
       class_name_index = self.add_string( name )
@@ -2871,8 +2874,8 @@ class JVMFormat(bytecode._Bytecode) :
       self.constant_pool_count = SV( '>H', self.read( 2 ) )
 
       #  cp_info constant_pool[constant_pool_count-1];
-      self.__constant_pool = []
-      self.__CM = ClassManager( self.__constant_pool, self.constant_pool_count )
+      self.constant_pool = []
+      self.__CM = ClassManager( self.constant_pool, self.constant_pool_count )
       
       i = 1
       while(i < self.constant_pool_count.get_value()) :
@@ -2882,7 +2885,7 @@ class JVMFormat(bytecode._Bytecode) :
             bytecode.Exit( "tag %d not in CONSTANT_INFO" % tag.get_value() )
 
          ci = CONSTANT_INFO[ tag.get_value() ][-1]( self.__CM, self )
-         self.__constant_pool.append( ci )
+         self.constant_pool.append( ci )
 
          i = i + 1
          # CONSTANT_Long or CONSTANT_Double
@@ -2891,7 +2894,7 @@ class JVMFormat(bytecode._Bytecode) :
          #      located at index n + 2. The constant_pool index n + 1 must be valid but is
          #      considered unusable.
          if tag.get_value() == 5 or tag.get_value() == 6 : 
-            self.__constant_pool.append( EmptyConstant() )
+            self.constant_pool.append( EmptyConstant() )
             i = i + 1
 
       # u2 access_flags;
@@ -2907,29 +2910,29 @@ class JVMFormat(bytecode._Bytecode) :
       self.interfaces_count   = SV( '>H', self.read( 2 ) )
 
       # u2 interfaces[interfaces_count];
-      self.__interfaces = []
+      self.interfaces = []
       for i in range(0, self.interfaces_count.get_value()) :
          tag = SV( '>H', self.read( 2 ) )
-         self.__interfaces.append( tag )
+         self.interfaces.append( tag )
 
 
       # u2 fields_count;
       self.fields_count = SV( '>H', self.read( 2 ) )
 
       # field_info fields[fields_count];
-      self.__fields = []
+      self.fields = []
       for i in range(0, self.fields_count.get_value()) :
          fi = FieldInfo( self.__CM, self ) 
-         self.__fields.append( fi )
+         self.fields.append( fi )
 
       # u2 methods_count;
       self.methods_count = SV( '>H', self.read( 2 ) )
 
       # method_info methods[methods_count];
-      self.__methods = []
+      self.methods = []
       for i in range(0, self.methods_count.get_value()) :
          mi = MethodInfo( self.__CM, self ) 
-         self.__methods.append( mi )
+         self.methods.append( mi )
          
       # u2 attributes_count;
       self.attributes_count = SV( '>H', self.read( 2 ) )
@@ -2965,7 +2968,7 @@ class JVMFormat(bytecode._Bytecode) :
       """
       prog = re.compile( name )
       fields = []
-      for i in self.__fields :
+      for i in self.fields :
          if prog.match( i.get_name() ) :
             fields.append( i )
       return fields
@@ -2985,7 +2988,7 @@ class JVMFormat(bytecode._Bytecode) :
          if class_name != self.__CM.get_this_class_name() :
             return None
 
-      for i in self.__methods :
+      for i in self.methods :
          if method_name == i.get_name() and descriptor == i.get_descriptor() :
             return i
 
@@ -3006,7 +3009,7 @@ class JVMFormat(bytecode._Bytecode) :
          if class_name != self.__CM.get_this_class_name() :
             return None
 
-      for i in self.__fields :
+      for i in self.fields :
          if field_name == i.get_name() and descriptor == i.get_descriptor() :
             return i
       return None
@@ -3018,30 +3021,30 @@ class JVMFormat(bytecode._Bytecode) :
       """
       prog = re.compile( name )
       methods = []
-      for i in self.__methods :
+      for i in self.methods :
          if prog.match( i.get_name() ) :
             methods.append( i )
       return methods 
 
    def get_all_fields(self) :
-      return self.__fields
+      return self.fields
 
    def get_fields(self) :
       """Return all objects fields"""
-      return self.__fields
+      return self.fields
 
    def get_methods(self) :
       """Return all objects methods"""
-      return self.__methods
+      return self.methods
 
    def get_constant_pool(self) :
       """Return the constant pool list"""
-      return self.__constant_pool
+      return self.constant_pool
 
    def get_strings(self) :
       """Return all strings into the class"""
       l = []
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          if i.get_name() == "CONSTANT_Utf8" :
             l.append( i.get_bytes() )
       return l 
@@ -3113,7 +3116,7 @@ class JVMFormat(bytecode._Bytecode) :
       bytecode._Print( "CONSTANT POOL COUNT", self.constant_pool_count.get_value() )
       
       nb = 0
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          print nb,
          i.show()
          nb += 1
@@ -3125,13 +3128,13 @@ class JVMFormat(bytecode._Bytecode) :
 
       bytecode._Print( "INTERFACE COUNT", self.interfaces_count.get_value() )
       nb = 0
-      for i in self.__interfaces :
+      for i in self.interfaces :
          print nb,
          i.show()
       
       bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
       nb = 0
-      for i in self.__fields :
+      for i in self.fields :
          print nb,
          i.show()
          nb += 1
@@ -3139,7 +3142,7 @@ class JVMFormat(bytecode._Bytecode) :
 
       bytecode._Print( "METHODS COUNT", self.methods_count.get_value() )
       nb = 0
-      for i in self.__methods :
+      for i in self.methods :
          print nb,
          i.show()
          nb += 1
@@ -3162,7 +3165,7 @@ class JVMFormat(bytecode._Bytecode) :
       bytecode._Print( "CONSTANT POOL COUNT", self.constant_pool_count.get_value() )
       
       nb = 0
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          print nb,
          i.show()
          nb += 1
@@ -3174,13 +3177,13 @@ class JVMFormat(bytecode._Bytecode) :
 
       bytecode._Print( "INTERFACE COUNT", self.interfaces_count.get_value() )
       nb = 0
-      for i in self.__interfaces :
+      for i in self.interfaces :
          print nb,
          i.show()
       
       bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
       nb = 0
-      for i in self.__fields :
+      for i in self.fields :
          print nb,
          i.show()
          nb += 1
@@ -3188,7 +3191,7 @@ class JVMFormat(bytecode._Bytecode) :
 
       bytecode._Print( "METHODS COUNT", self.methods_count.get_value() )
       nb = 0
-      for i in self.__methods :
+      for i in self.methods :
          print nb,
          i.pretty_show(vm_a)
          nb += 1
@@ -3219,7 +3222,7 @@ class JVMFormat(bytecode._Bytecode) :
    
       new_field = FieldInfo( self.__CM, bytecode.BuffHandle( new_field.get_raw() ) )
 
-      self.__fields.append( new_field )
+      self.fields.append( new_field )
       self.fields_count.set_value( self.fields_count.get_value() + 1 )
 
       # Add a FieldRef and a NameAndType
@@ -3311,7 +3314,7 @@ class JVMFormat(bytecode._Bytecode) :
       #ref_method.show()
 
       # Insert the method
-      self.__methods.append( ref_method )
+      self.methods.append( ref_method )
       self.methods_count.set_value( self.methods_count.get_value() + 1 )
 
    def _get_raw(self) :
@@ -3326,7 +3329,7 @@ class JVMFormat(bytecode._Bytecode) :
       buff += self.constant_pool_count.get_value_buff()
 
       #  cp_info constant_pool[constant_pool_count-1];
-      for i in self.__constant_pool :
+      for i in self.constant_pool :
          buff += i.get_raw()
 
       # u2 access_flags;
@@ -3340,21 +3343,21 @@ class JVMFormat(bytecode._Bytecode) :
       buff += self.interfaces_count.get_value_buff()
 
       # u2 interfaces[interfaces_count];
-      for i in self.__interfaces :
+      for i in self.interfaces :
          buff += i.get_value_buff()
 
       # u2 fields_count;
       buff += self.fields_count.get_value_buff()
 
       # field_info fields[fields_count];
-      for i in self.__fields :
+      for i in self.fields :
          buff += i.get_raw()
 
       # u2 methods_count;
       buff += self.methods_count.get_value_buff()
 
       # method_info methods[methods_count];
-      for i in self.__methods :
+      for i in self.methods :
          buff += i.get_raw()
 
       # u2 attributes_count;
