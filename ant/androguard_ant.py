@@ -31,7 +31,9 @@ def get_classes(path) :
 def __main__() :
    print sys.argv
    if len( sys.argv ) > 1 :
-      files = get_classes( sys.argv[1] )
+      files = []
+      for p in sys.argv[1].split(":") :
+         files.extend( get_classes( p ) )
 
       a = androguard.Androguard( files )
       try :

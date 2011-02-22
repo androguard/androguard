@@ -2,11 +2,15 @@ from error import log_loading, warning
 from subprocess import Popen, PIPE, STDOUT
 import os
 
+from networkx import DiGraph, all_pairs_dijkstra_path, simple_cycles, single_source_dijkstra_path, predecessor
+
+from analysis import TAINTED_PACKAGE_CREATE
 import jvm, misc
 
 class GenerateMainCode :
    def __init__(self) :
       self.__gc = {}
+      self.__hi = {}
       self.__info_gc = {}
       self.__functions = {}
       
@@ -15,10 +19,13 @@ class GenerateMainCode :
    def getClass(self) :
       return self.__name
 
-   def add(self, _vm, _analysis) :
+   def addVM(self, _vm, _analysis, objects_create) :
       r = misc.random_string()
       self.__info_gc[ r ] = ( _vm, _analysis )
-      self.__gc[ r ] = GenerateCode( self, r, _vm, _analysis )
+
+      gc = GenerateCode( self, r, _vm, _analysis, objects_create )
+      self.__gc[ r ] = gc
+      self.__hi[ r ] = HandleINT( gc )
 
    def addFunction(self, ident, name, desc) :
       if ident not in self.__functions :
@@ -80,7 +87,7 @@ class GenerateMainCode :
       fd = open(self.__name + ".c", "w")
       fd.write("#include <jni.h>\n")
       
-      fd.write("JNIEXPORT void JNICALL Java_GMC_GMCInit(JNIEnv *env, jclass cls) {\n")
+      fd.write("JNIEXPORT void JNICALL Java_%s_GMCInit(JNIEnv *env, jclass cls) {\n" % self.__name)
       fd.write("printf(\"[GMC][native] init !!!!\\n\");\n")
       fd.write("}\n")
 
@@ -96,8 +103,19 @@ class GenerateMainCode :
       fd.write("public %s(){\n" % self.__name)
       fd.write("GMCInit();\n")
       fd.write("System.out.println(\"[GMC] init\");\n")
+      fd.write("Throwable t = new Throwable();\n" )
+      fd.write("for ( StackTraceElement s : t.getStackTrace()) {\n" )
+      fd.write("System.out.println( \"s : \" + s.getMethodName() );\n" )
+      fd.write("}\n")
 
       fd.write("}")
+
+      for i in self.__gc :
+         self.__gc[ i ].do()
+
+      self.insertINT()
+      
+      self.patch()
 
       for i in self.__functions :
          for name in self.__functions[i] :
@@ -117,10 +135,19 @@ class GenerateMainCode :
       fd.write("}\n")
       fd.close()
 
-      for i in self.__gc :
-         self.__gc[ i ].do()
-
       self.compile()
+
+   def insertINT(self) :
+      for i in self.__gc :
+         for (integer, idx, method) in self.__hi[ i ].gets() :
+            code = method.get_code()
+           
+            print "[GMC] insertINT", method, integer, idx, code.get_relative_idx( idx )
+
+            #code.inserts_at( code.get_relative_idx( idx ), ins )
+
+   def patch(self) :
+      pass
 
    def _build_params(self, v) :
       l = jvm.formatFD(v)
@@ -144,7 +171,7 @@ class GenerateMainCode :
       print "[GMC] CREATING NATIVE OBJECTS ...."
 
       JAVA_INCLUDE = "/usr/lib/jvm/java-6-sun/include"
-      compile = Popen([ "gcc", "-c", "GMC.c", "-I"+JAVA_INCLUDE, "-I"+JAVA_INCLUDE+"/linux"], stdout=PIPE, stderr=STDOUT)
+      compile = Popen([ "gcc", "-c", "%s.c" % self.__name, "-I"+JAVA_INCLUDE, "-I"+JAVA_INCLUDE+"/linux"], stdout=PIPE, stderr=STDOUT)
       stdout, stderr = compile.communicate()
       print "[GMC] COMPILATION RESULTS", stdout, stderr
       if stdout != "" :
@@ -160,7 +187,7 @@ class GenerateMainCode :
 
    def save(self, path) :
       print "[GMC] CREATING SHARED LIBRARY ...."
-      compile = Popen([ "gcc", "-o", "%s/libGMC.so" % path, "GMC.o", "-shared" ], stdout=PIPE, stderr=STDOUT)
+      compile = Popen([ "gcc", "-o", "%s/lib%s.so" % (path, self.__name), "%s.o" % self.__name, "-shared" ], stdout=PIPE, stderr=STDOUT)
       stdout, stderr = compile.communicate()
       print "[GMC] COMPILATION RESULTS", stdout, stderr
       if stdout != "" :
@@ -174,51 +201,110 @@ class GenerateMainCode :
          raise("ooo")
 
 class GenerateCode :
-   def __init__(self, _gmc, _ident, _vm, _analysis) :
+   def __init__(self, _gmc, _ident, _vm, _analysis, objects_create) :
       self.gmc = _gmc
       self.ident = _ident
       self.vm = _vm
       self.analysis = _analysis
+      self.objects_create = objects_create
 
-      method_init = self.vm.get_method( "<init>" )[0]
-      idx_init = self.analysis.hmethods[ method_init ].random_free_block_offset()
+#      method_init = self.vm.get_method( "<init>" )[0]
+#      idx_init = self.analysis.hmethods[ method_init ].random_free_block_offset()
 
-      f_name = misc.random_string()
-      f_desc = "()V"
+#      f_name = misc.random_string()
+#      f_desc = "()V"
 
-      self.gmc.addFunction( self.ident, f_name, f_desc )
-      self.gmc.addInFunction( self.ident, f_name, f_desc, "System.out.println(\"ANDROGUARD\\n\");\n" )
-      self.gmc.addInFunction( self.ident, f_name, f_desc, "Throwable t = new Throwable();\n" )
-      self.gmc.addInFunction( self.ident, f_name, f_desc, "for ( StackTraceElement s : t.getStackTrace()) {\n" )
-      self.gmc.addInFunction( self.ident, f_name, f_desc, "System.out.println( \"s : \" + s.getMethodName() );\n" )
-      self.gmc.addInFunction( self.ident, f_name, f_desc, "}\n")
+#      self.gmc.addFunction( self.ident, f_name, f_desc )
+#      self.gmc.addInFunction( self.ident, f_name, f_desc, "System.out.println(\"ANDROGUARD\\n\");\n" )
+#      self.gmc.addInFunction( self.ident, f_name, f_desc, "Throwable t = new Throwable();\n" )
+#      self.gmc.addInFunction( self.ident, f_name, f_desc, "for ( StackTraceElement s : t.getStackTrace()) {\n" )
+#      self.gmc.addInFunction( self.ident, f_name, f_desc, "System.out.println( \"s : \" + s.getMethodName() );\n" )
+#      self.gmc.addInFunction( self.ident, f_name, f_desc, "}\n")
 
-      self.gmc.addLibraryDependencies( self.ident )
-      field = self.gmc.addNewField( self.ident, "ACC_PUBLIC", jvm.classToJclass( self.gmc.getClass() ) )
+#      self.gmc.addLibraryDependencies( self.ident )
+#      field = self.gmc.addNewField( self.ident, "ACC_PUBLIC", jvm.classToJclass( self.gmc.getClass() ) )
 
-      co = self.gmc.createObject( self.ident, self.gmc.getClass(), field )
-      self.gmc.insertAt( self.ident, method_init, idx_init, co )
+#      co = self.gmc.createObject( self.ident, self.gmc.getClass(), field )
+#      self.gmc.insertAt( self.ident, method_init, idx_init, co )
 
-      for i in self.vm.get_methods() :
-         print i.get_name(), i.get_descriptor()
+#      for i in self.vm.get_methods() :
+#         print i.get_name(), i.get_descriptor()
 
-      #self.gmc.createCall( self.ident, "", field, [] )
-
+#####################
+#      #self.gmc.createCall( self.ident, "", field, [] )
+#
 #      self.gmc.addFunction( self.ident, misc.random_string(), "(IDLjava/lang/Thread;)Ljava/lang/Object;" )
 #      self.gmc.patchInstruction( "^\<init\>", self.idx_init, [ "aload_0" ] )
+#####################
 
    def do(self) :
-      pass
+      print self.objects_create
 
+class HandleINT :
+   def __init__(self, gc) :
+      self.gc = gc
+
+   def gets(self) :
+      for i in self.gc.vm.get_methods() :
+         for j in self.gc.analysis.tainted_integers.get_method( i ) :
+            p = j.get()
+            #print p.get_value(), p.get_idx(), p.get_bb(), p.get_method() 
+            yield (p.get_value(), p.get_idx() + p.get_bb().start, p.get_method())
+
+   def length(self) :
+      nb = 0
+      for i in self.gc.vm.get_methods() :
+         nb += len( self.gc.analysis.tainted_integers.get_method( i ) )
+
+      return nb
 
 class ProtectCode :
    def __init__(self, vms, libs_output) :
       gmc = GenerateMainCode()
+      g = DiGraph()
+      
+      classes = [ i.get_vm().get_classes_names()[0] for i in vms ]
 
+      objects_create = {}
+      methods_call = {}
       for i in vms :
-      #   print i.get_vm(), i.get_analysis()
+         objects_create[ i.get_vm() ] = []
 
-         gmc.add( i.get_vm(), i.get_analysis() )
+         for m, _ in i.get_analysis().tainted_packages.get_packages() :
+            paths = m.get_paths()
+            for j in paths :
+               if j.get_method().get_class_name() in classes and m.get_info() in classes :
+                  node1 = "%s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
+
+                  if j.get_access_flag() == TAINTED_PACKAGE_CREATE :
+                     node2 = "%s" % (m.get_info())
+                     print node1, "(create ---->)", node2
+                    
+                     ### An object of a specific type is created, we must add it
+                     objects_create[ i.get_vm() ].append( (j, m) )
+                  else :
+                     node2 = "%s %s %s" % (m.get_info(), j.get_name(), j.get_descriptor())
+                     print node1, "(call ---->)", node2
+
+                     g.add_edge(node2, node1)
+
+      for i in g.node :
+         #print i, "---->", g.successors( i )
+         print i, "---->"
+         sources = predecessor( g, i )
+         for j in sources :
+            if sources[j] != [] :
+               print "\t\t", j, "-->", sources[j]
+
+      #for i in g.node :
+      #   print i, "---->"
+      #   sources = single_source_dijkstra_path(g, i)
+      #   for j in sources :
+      #      print "\t\t", j, "-->", sources[j]
+
+      
+      for i in vms :
+         gmc.addVM( i.get_vm(), i.get_analysis(), objects_create[i.get_vm()] )
 
       gmc.do()
       gmc.save( libs_output )
