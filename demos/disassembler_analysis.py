@@ -21,7 +21,8 @@ x = analysis.VM_BCA( a.get_vm() )
 for method in a.get_methods() :
    g = x.hmethods[ method ]
    
-   print method.get_class_name(), method.get_name(), method.get_descriptor(), method.get_code().get_length()
+   print method.get_class_name(), method.get_name(), method.get_descriptor(), method.get_code().get_length(), method.get_code().registers_size.get_value()
+
    idx = 0
    for i in g.basic_blocks.get() :
       print "\t %s %x %x" % (i.name, i.start, i.end), i.ins[-1].get_name(), '[ CHILDS = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ FATHERS = ', ', '.join( j[2].get_name() for j in i.fathers ), ']', i.free_blocks_offsets

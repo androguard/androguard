@@ -1625,6 +1625,8 @@ class CodeAttribute(BasicAttribute) :
          i += 1
 
    def inserts_at(self, idx, l_bc) :
+#      self.low_struct.set_value( { "max_stack" : self.low_struct.get_value().max_stack + 2 } )
+#      print self.low_struct.get_value()
       total_size = 0
       for i in l_bc :
          size = self.insert_at( idx, i )

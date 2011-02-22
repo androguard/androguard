@@ -698,7 +698,7 @@ class JVMBasicBlock :
    def analyze(self) :
       idx = 0
       for i in self.ins :
-         ################### TAINTED LOCAL VARIABLE ###################
+         ################### TAINTED LOCAL VARIABLES ###################
          if "load" in i.get_name() or "store" in i.get_name() :
             action = i.get_name()
 
@@ -718,7 +718,7 @@ class JVMBasicBlock :
             self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.__method) ) 
          #########################################################
 
-         ################### TAINTED FIELD ###################
+         ################### TAINTED FIELDS ###################
          elif i.get_name() in FIELDS :
             o = i.get_operands()
             desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
@@ -732,7 +732,7 @@ class JVMBasicBlock :
          #########################################################
 
          ################### TAINTED PACKAGES ################### 
-         elif "new" in i.get_name() or "invokestatic" in i.get_name() or "invokevirtual" in i.get_name() or "getstatic" in i.get_name() :
+         elif "new" in i.get_name() or "invoke" in i.get_name() or "getstatic" in i.get_name() :
             if "new" in i.get_name() :
                self.__context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             else :
@@ -745,7 +745,7 @@ class JVMBasicBlock :
             if o[0] == "CONSTANT_Integer" :
                self.__context.get_tainted_integers().push_info( i, (o[1], idx, self, self.__method) )
          
-         if "sipush" in i.get_name() :
+         elif "sipush" in i.get_name() :
             self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
          #########################################################
 
@@ -818,6 +818,9 @@ class JVMBasicBlock :
       print "\t\tC --->", ', '.join( i[2].get_name() for i in self.childs )
 
       self.stack_traces.show()
+
+   def get_ins(self) :
+      return self.ins
 
 class JVMBreakBlock(BreakBlock) : 
    def __init__(self, _vm, idx) :
@@ -1209,19 +1212,48 @@ class TaintedVariables :
       else :
          raise("ooop")
 
+class PathI(Path) :
+   def __init__(self, info) :
+      Path.__init__( self, info )
+      self.value = info[0]
+
+   def get_value(self) :
+      return self.value
+
 class TaintedInteger :
-   pass
+   def __init__(self, info) :
+      self.info = PathI( info )
+
+   def get(self) :
+      return self.info
 
 class TaintedIntegers :
    def __init__(self, _vm) :
       self.__vm = _vm
+      self.__integers = []
+      self.__hash = {}
+
+   def get_method(self, method) :
+      try :
+         return self.__hash[ method ]
+      except KeyError :
+         return []
 
    def push_info(self, ins, info) :
-      pass
-      #print ins, ins.get_name(), ins.get_operands(), info
+      print ins, ins.get_name(), ins.get_operands(), info
+      
+      ti = TaintedInteger( info )
+      self.__integers.append( ti )
+     
+      try :
+         self.__hash[ info[-1] ].append( ti )
+      except KeyError :
+         self.__hash[ info[-1] ] = []
+         self.__hash[ info[-1] ].append( ti )
 
    def get_integers(self) :
-      return []
+      for i in self.__integers :
+         yield i
 
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
