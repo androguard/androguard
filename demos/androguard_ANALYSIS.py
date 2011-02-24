@@ -15,7 +15,7 @@ TEST = 'examples/android/Test/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
 
 a = androguard.AndroguardS( TEST )
-x = analysis.VM_BCA( a.get_vm() )
+x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
 
 #x.show()
 

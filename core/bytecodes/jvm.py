@@ -16,15 +16,42 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import bytecode
-
-from bytecode import SV, SVs
-
 from struct import pack, unpack, calcsize
 from collections import namedtuple
-import re
+import re, zipfile, StringIO
+
+import bytecode
+from bytecode import SV, SVs
 
 import jvm_generate
+
+######################################################## JAR FORMAT ########################################################
+class JAR :
+   def __init__(self, filename, raw=False) :
+      self.filename = filename
+
+      if raw == True :
+         self.__raw = filename
+      else :
+         fd = open( filename, "r" )
+         self.__raw = fd.read()
+         fd.close()
+
+      self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
+
+   def get_classes(self) :
+      l = []
+      for i in self.zip.namelist() :
+         if ".class" in i :
+            l.append( (i, self.zip.read(i)) )
+
+      return l
+
+
+   def show(self) :
+      print self.zip.namelist()
+
+######################################################## CLASS FORMAT ########################################################
 
 # Special functions to manage more easily special arguments of bytecode 
 def special_F0(x) :
