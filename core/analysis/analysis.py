@@ -294,6 +294,7 @@ def dup2(_vm, ins, special, stack, res, ret_v) :
 
 #FIXME
 def ldc(_vm, ins, special, stack, res, ret_v) :
+   #print ins.get_name(), ins.get_operands(), special
    stack.push( "STRING" )
 
 def invoke(_vm, ins, special, stack, res, ret_v) :
@@ -740,8 +741,9 @@ class JVMBasicBlock :
          #########################################################
 
          ################### TAINTED INTEGERS ###################
-         if "ldc" in i.get_name() :
+         if "ldc" == i.get_name() :
             o = i.get_operands()
+
             if o[0] == "CONSTANT_Integer" :
                self.__context.get_tainted_integers().push_info( i, (o[1], idx, self, self.__method) )
          
@@ -787,7 +789,7 @@ class JVMBasicBlock :
                   for val in ret_v.get_return() :
                      res.append( val )
 
-#               self.__stack.show()
+               #self.__stack.show()
                self.stack_traces.save( idx, i_idx, i, cPickle.dumps( self.__stack ), cPickle.dumps( ret_v.get_msg() ) )
                i_idx += 1
 
@@ -1013,7 +1015,12 @@ class DVMBasicBlock :
       else :
          for i in values :
             if i != -1 :
-               self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
+               next_block = self.__context.get_basic_block( i )
+               #FIXME
+               #print self, self.start, self.end, values, self.ins[-1].get_name()
+               #   raise("ooo")
+               if next_block != None :
+                  self.childs.append( ( self.end - self.ins[-1].get_length(), i, next_block) )
       
       for c in self.childs :
          if c[2] != None :
@@ -1574,7 +1581,7 @@ class M_BCA :
       @param _method : a method object
       @param tv : a tainted variables object
    """
-   def __init__(self, _vm, _method, _tv) :
+   def __init__(self, _vm, _method, _tv, code_analysis=False) :
       self.__vm = _vm
       self.__method = _method
 
@@ -1653,8 +1660,9 @@ class M_BCA :
       for i in self.basic_blocks.get() :
          i.analyze()
 
-      for i in self.basic_blocks.get() :
-         i.analyze_code()
+      if code_analysis == True :
+         for i in self.basic_blocks.get() :
+            i.analyze_code()
 
       self.basic_blocks.create_graph()
 
@@ -1736,7 +1744,7 @@ class VM_BCA :
 
       @param _vm : a virtual machine object
    """
-   def __init__(self, _vm) :
+   def __init__(self, _vm, code_analysis=False) :
       self.__vm = _vm
 
       self.tainted_variables = TaintedVariables( self.__vm )
@@ -1757,7 +1765,7 @@ class VM_BCA :
       self.hmethods = {}
       self.__nmethods = {}
       for i in self.__vm.get_methods() :
-         x = M_BCA( self.__vm, i, self.tainted )
+         x = M_BCA( self.__vm, i, self.tainted, code_analysis )
          self.methods.append( x )
          self.hmethods[ i ] = x
          self.__nmethods[ i.get_name() ] = x

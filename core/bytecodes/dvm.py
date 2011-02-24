@@ -2555,6 +2555,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
       return buff
 
+   def get_classes_names(self) :
+      return [ i.get_name() for i in self.classes.class_def ]
+
    def get_method(self, name) :
       """Return into a list all methods which corresponds to the regexp
 

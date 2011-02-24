@@ -170,7 +170,7 @@ class BC :
       return self.__a
 
    def analyze(self) :
-      self.__a = analysis.VM_BCA( self.__bc )
+      self.__a = analysis.VM_BCA( self.__bc, code_analysis=True )
 
    def _get(self, val, name) :
       l = []
@@ -240,6 +240,9 @@ class Androguard :
          #print "processing ", i
          if ".class" in i :
             bc = jvm.JVMFormat( self.__orig_raw[ i ] )
+         elif ".jar" in i :
+            x = jvm.JAR( i )
+            bc = x.get_classes()
          elif ".dex" in i :
             bc = dvm.DalvikVMFormat( self.__orig_raw[ i ] )
          elif ".apk" in i :
@@ -248,7 +251,11 @@ class Androguard :
          else :
             raise( "Unknown bytecode" )
 
-         self.__bc.append( (i, BC( bc )) )
+         if isinstance(bc, list) :
+            for j in bc :
+               self.__bc.append( (j[0], BC( jvm.JVMFormat(j[1]) ) ) )
+         else :
+            self.__bc.append( (i, BC( bc )) )
 
    def __analyze(self) :
       for i in self.get_bc() :
@@ -331,8 +338,7 @@ class Androguard :
       return list( self._iterFlatten(l) )
    
    def get_vms(self) :
-      for i in self.__bc :
-         yield i[1].get_vm()
+      return [ i[1].get_vm() for i in self.__bc ]
 
    def get_bc(self) :
       return self.__bc
