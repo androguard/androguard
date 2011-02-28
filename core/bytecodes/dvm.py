@@ -122,6 +122,9 @@ class FillArrayData :
       general_format = self.format.get_value()
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
+   def get_raw(self) :
+      return self.format.get_raw() + self.data
+
    def get_data(self) :
       return self.data
 
@@ -154,6 +157,10 @@ class SparseSwitch :
          self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
          idx += 4
    
+   # FIXME : return correct raw
+   def get_raw(self) :
+      return self.format.get_raw()
+
    def get_targets(self) :
       return self.targets
 
@@ -178,6 +185,10 @@ class PackedSwitch :
       for i in range(0, self.format.get_value().size) :
          self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
          idx += 4
+
+   # FIXME : return correct raw
+   def get_raw(self) :
+      return self.format.get_raw()
 
    def get_operands(self) :
       return [ self.format.get_value().first_key, self.targets ]
@@ -1810,6 +1821,9 @@ class DBCSpe :
    def get_data(self) :
       return self.op.get_data()
 
+   def get_raw(self) :
+      return self.op.get_raw()
+
    def get_name(self) :
       return self.op.get_name()
    
@@ -1869,6 +1883,9 @@ class DBC :
 
    def get_operands(self) :
       return self.operands
+
+   def get_raw(self) :
+      return self.raw_buff
 
    def show(self, pos) :
       print self.op_name,

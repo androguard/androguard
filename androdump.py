@@ -33,7 +33,7 @@ from ptrace.debugger import ProcessExit, DebuggerError, PtraceDebugger, ProcessE
 from ptrace.debugger.memory_mapping import readProcessMappings
 ####################
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'pid, filename', 'nargs' : 1 }
+option_0 = { 'name' : ('-i', '--input'), 'help' : 'pid', 'nargs' : 1 }
 
 option_1 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
