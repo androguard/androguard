@@ -18,7 +18,7 @@
 
 import sys, time, types, random, string
 
-VERSION = "ALPHA 0-update3"
+VERSION = "BETA 0"
 
 class Color:
     normal = "\033[0m"
