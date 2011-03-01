@@ -1881,14 +1881,6 @@ class VM_BCA :
       """
       return self.signature.get_method( self.hmethods[ method ], grammar_type )
 
-   def show(self) :
-      """
-         Show the analysis of the class
-      """
-      self.tainted_variables.show()
-      for i in self.methods :
-         i.show()
-
    def get(self, method) :
       """ 
          @param method : a reference to method from a vm class
