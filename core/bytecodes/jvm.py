@@ -2987,6 +2987,9 @@ class JVMFormat(bytecode._Bytecode) :
       return self.__CM.get_this_class_name() == class_name.replace(".", "/")
 
    def get_classes_names(self) :
+      """
+         Return the names of classes
+      """
       return [ self.__CM.get_this_class_name() ]
 
    def get_field(self, name) :

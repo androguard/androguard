@@ -30,9 +30,13 @@ from subprocess import Popen, PIPE, STDOUT
 from xml.dom import minidom
 
 ######################################################## APK FORMAT ########################################################
-AAPT_PATH = "./externals/android/8/aapt"
 class APK :
+   """APK manages apk file format"""
    def __init__(self, filename, raw=False) :
+      """
+         @param filename : specify the path of the file, or raw data
+         @param raw : specify (boolean) if the filename is a path or raw data
+      """
       self.filename = filename
 
       self.xml = {}
@@ -58,25 +62,54 @@ class APK :
                   self.permissions.append( str( item.getAttribute("android:name") ) )
 
    def get_dex(self) :
+      """
+         Return the raw data of the classes dex file
+      """
       return self.zip.read("classes.dex")
 
    def get_elements(self, tag_name, attribute) :
+      """
+         Return elements in xml files which match with the tag name and the specific attribute
+
+         @param tag_name : a string which specify the tag name
+         @param attribute : a string which specify the attribute
+      """
       l = []
       for i in self.xml :
          for item in self.xml[i].getElementsByTagName(tag_name) :
             l.append( str( item.getAttribute(attribute) ) )
       return l
 
+   def get_activity(self) :
+      """
+         Return the android:name attribute of all activities
+      """
+      return self.get_elements("activity", "android:name")
+
+   def get_service(self) :
+      """
+         Return the android:name attribute of all services
+      """
+      return self.get_elements("service", "android:name")
+
+   def get_receiver(self) :
+      """
+         Return the android:name attribute of all receivers
+      """
+      return self.get_elements("receiver", "android:name")
+
    def get_permissions(self) :
+      """
+         Return permissions   
+      """
       return self.permissions
 
    def show(self) :
       print self.zip.namelist()
-      print self.xml
-      print self.permissions
-      print self.get_elements("activity", "android:name")
-      print self.get_elements("service", "android:name")
-      print self.get_elements("receiver", "android:name")
+      print self.get_permissions()
+      print self.get_activity() 
+      print self.get_service()
+      print self.get_receiver()
 
 ######################################################## AXML FORMAT ########################################################
 
@@ -499,6 +532,14 @@ class AXMLPrinter :
       if id >> 24 == 1 :
          return "android:"
       return ""
+
+def FormatClassToDex(input) :
+   """  
+      Transofmr a typical xml format class into dex format
+
+      @param input : the input class name
+   """
+   return "L" + input.replace(".", "/") + ";"
 
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
@@ -3002,6 +3043,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
       return buff
 
    def get_classes_names(self) :
+      """
+         Return the names of classes
+      """
       return [ i.get_name() for i in self.classes.class_def ]
 
    def get_method(self, name) :
@@ -3063,6 +3107,20 @@ class DalvikVMFormat(bytecode._Bytecode) :
             if class_name == j.get_class_name() and method_name == j.get_name() and descriptor == j.get_descriptor() :
                return j
       return None
+
+   def get_method_class(self, class_name) :
+      """
+         Return methods of a class
+
+         @param class_name : the class name
+      """
+      l = []
+      for i in self.classes.class_def :
+         for j in i.get_methods() :
+            if class_name == j.get_class_name() :
+               l.append( j )
+
+      return l
 
    def get_field_descriptor(self, class_name, field_name, descriptor) :
       """
