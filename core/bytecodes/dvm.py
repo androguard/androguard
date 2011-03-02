@@ -112,7 +112,8 @@ class APK :
       print self.get_receiver()
 
 ######################################################## AXML FORMAT ########################################################
-
+# Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
+# Thx
 class StringBlock :
    def __init__(self, buff) :
       buff.read( 4 )
