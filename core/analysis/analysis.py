@@ -16,11 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
-from networkx import draw_graphviz, write_dot
-import matplotlib.pyplot as plt
-
 import re, random, string, cPickle
+
+from error import error
 import jvm, dvm
 
 class ContextField :
@@ -753,6 +751,7 @@ class JVMBasicBlock :
 
          idx += i.get_length()
 
+   # FIXME : create a recursive function to follow the cfg, because it does not work with obfuscator
    def analyze_code(self) :
       self.analyze_break_blocks()
       
@@ -1291,6 +1290,10 @@ class TaintedPackage :
       self.name = name
       self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
 
+   def get_name(self) :
+      return self.name
+
+   # FIXME : remote it to use get_name
    def get_info(self) :
       return self.name
 
@@ -1445,6 +1448,12 @@ class BasicBlocks :
       return self.bb[ random.randint(0, len(self.bb) - 1) ]
 
    def export_dot(self, output) :
+      try :
+         from networkx import DiGraph
+         from networkx import draw_graphviz, write_dot
+      except ImportError :
+         error("module networkx not found")
+
       G = DiGraph()
 
       for i in self.bb :
@@ -1461,6 +1470,11 @@ class BasicBlocks :
          yield i
 
    def create_graph(self) :
+      try :
+         from networkx import DiGraph
+      except ImportError :
+         error("module networkx not found")
+
       self.G = DiGraph()
 
       for i in self.bb :

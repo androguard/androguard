@@ -11,3 +11,7 @@ log_loading = logging.getLogger("andro.loading")          # logs when loading an
 
 def warning(x):
    log_runtime.warning(x)
+
+def error(x) :
+   log_runtime.error(x)
+   raise()

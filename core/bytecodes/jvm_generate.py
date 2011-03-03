@@ -16,17 +16,21 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles                                                                                                                                                       
-from networkx import draw_graphviz, write_dot
-
 import random
 
+from error import error
 import jvm
 
 class Automaton :
    def __init__(self, _analysis) :
       self.__analysis = _analysis
       
+      try :                                  
+         from networkx import DiGraph
+         from networkx import draw_graphviz, write_dot
+      except ImportError :
+         error("module networkx not found")
+
       self.__G = DiGraph()                                                                                                                                                                                                        
 
       for m in self.__analysis.get_methods() :
