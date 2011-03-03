@@ -30,10 +30,12 @@ import androguard, analysis
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xgmml', 'nargs' : 1 }
 option_2 = { 'name' : ('-f', '--functions'), 'help' : 'include function calls', 'action' : 'count' }
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-options = [option_0, option_1, option_2, option_3]
+option_3 = { 'name' : ('-e', '--externals'), 'help' : 'include function to extern calls', 'action' : 'count' }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+options = [option_0, option_1, option_2, option_3, option_4]
 
 METHODS_ID = {}
+EXTERNAL_METHODS_ID = {}
 NODES_ID = {}
 EDGES_ID = {}
 
@@ -44,6 +46,15 @@ NODE_GRAPHIC = {
                  "type" : "ELLIPSE",
                  "width" : 1,
                  "fill" : "#e1e1e1",
+                 "outline" : "#000000",
+               },
+
+   "extern" : { 
+                 "h" : 20.0,
+                 "w" : 20.0,
+                 "type" : "ELLIPSE",
+                 "width" : 1,
+                 "fill" : "#ff8c00",
                  "outline" : "#000000",
                }
 }
@@ -57,6 +68,11 @@ EDGE_GRAPHIC = {
    "fcg" : {
                "width" : 3,
                "fill" : "#9acd32",
+   },
+
+   "efcg" : {
+               "width" : 3,
+               "fill" : "#808000",
    }
 }
 
@@ -129,7 +145,7 @@ def export_xgmml_cfg(g, fd) :
             EDGES_ID[ label ] = id
 
 def export_xgmml_fcg(a, x, fd) :
-   classes = a.get_vm().get_classes_names()
+   classes = a.get_classes_names()
 
    # Methods flow graph
    for m, _ in x.tainted_packages.get_packages() :
@@ -166,7 +182,61 @@ def export_xgmml_fcg(a, x, fd) :
             
                EDGES_ID[ label ] = id
 
-def export_apps_to_xgmml( input, output, fcg ) :
+def export_xgmml_efcg(a, x, fd) :
+   classes = a.get_classes_names()
+
+   # Methods flow graph
+   for m, _ in x.tainted_packages.get_packages() :
+      paths = m.get_methods()
+      for j in paths :
+         if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+            if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+               t =  m.get_info() + j.get_name() + j.get_descriptor() 
+               if t not in EXTERNAL_METHODS_ID :
+                  fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), escape(t)))
+
+                  fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(m.get_info())))
+                  fd.write("<att type=\"string\" name=\"name\" value=\"%s\"/>\n" % (escape(j.get_name())))
+                  fd.write("<att type=\"string\" name=\"descriptor\" value=\"%s\"/>\n" % (escape(j.get_descriptor())))
+
+                  cl = NODE_GRAPHIC["extern"]
+      
+                  fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\\n%s\"/>\n" % (escape(m.get_info()), escape(j.get_name()), escape(j.get_descriptor())))
+
+                  fd.write("<graphics type=\"%s\" h=\"%.1f\" w=\"%.1f\" width=\"%d\" fill=\"%s\" outline=\"%s\">\n" % ( cl["type"], cl["h"], cl["h"], cl["width"], cl["fill"], cl["outline"]))
+                  fd.write("</graphics>\n") 
+
+                  fd.write("</node>\n")
+
+                  NODES_ID[ t ] = len(NODES_ID)
+                  EXTERNAL_METHODS_ID[ t ] = NODES_ID[ t ] 
+               
+               bb1 = x.hmethods[ j.get_method() ].basic_blocks.get_basic_block( j.get_idx() )
+
+               node1 = get_node_name(j.get_method(), bb1) + "@0x%x" % j.get_idx()
+               node2 = "%s-%s-%s" % (m.get_info(), escape(j.get_name()), escape(j.get_descriptor()))
+
+               label = "%s (efcg) %s" % (node1, node2)
+
+               if label in EDGES_ID :
+                  continue
+
+               id = len(NODES_ID) + len(EDGES_ID)
+
+               fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, 
+                                                                                          label, 
+                                                                                          NODES_ID[ j.get_method().get_class_name() + bb1.name + j.get_method().get_descriptor() ], 
+                                                                                          EXTERNAL_METHODS_ID[ m.get_info() + j.get_name() + j.get_descriptor() ]) )
+
+               cl = EDGE_GRAPHIC["efcg"]
+               fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
+               fd.write("</graphics>\n")
+
+               fd.write("</edge>\n")
+            
+               EDGES_ID[ label ] = id
+
+def export_apps_to_xgmml( input, output, fcg, efcg ) :
    a = androguard.Androguard( [ input ] )
 
    fd = open(output, "w")
@@ -183,12 +253,15 @@ def export_apps_to_xgmml( input, output, fcg ) :
       if fcg :
          export_xgmml_fcg(vm, x, fd)
 
+      if efcg :
+         export_xgmml_efcg(vm, x, fd)
+
    fd.write("</graph>")
    fd.close()
 
 def main(options, arguments) :
    if options.input != None and options.output != None :
-      export_apps_to_xgmml( options.input, options.output, options.functions )
+      export_apps_to_xgmml( options.input, options.output, options.functions, options.externals )
 
 if __name__ == "__main__" :
    parser = OptionParser()

@@ -17,7 +17,7 @@ TEST = 'examples/android/Test/bin/classes.dex'
 a = androguard.AndroguardS( TEST )
 x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
 
-#x.show()
+classes = a.get_vm().get_classes_names()
 
 # CFG
 for method in a.get_methods() :
@@ -60,3 +60,25 @@ for m, _ in x.tainted_packages.get_packages() :
          print "\t\t =>", path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
       else :
          print "\t\t =>", path.get_name(), path.get_descriptor(), "from --->", path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
+
+
+# Internal Methods -> Internal Methods
+print "Internal --> Internal"
+for m, _ in x.tainted_packages.get_packages() :
+   paths = m.get_methods()
+   for j in paths :
+      if j.get_method().get_class_name() in classes and m.get_info() in classes :
+         if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+            print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
+                                                     m.get_info(), j.get_name(), j.get_descriptor())
+
+# Internal Methods -> External Methods
+print "Internal --> External"
+for m, _ in x.tainted_packages.get_packages() :
+   paths = m.get_methods()
+   for j in paths :
+      if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+         if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+            print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
+                                                   m.get_info(), j.get_name(), j.get_descriptor())
+
