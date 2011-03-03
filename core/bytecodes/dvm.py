@@ -3135,7 +3135,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
                return j
       return None
 
-   def get_method_class(self, class_name) :
+   def get_methods_class(self, class_name) :
       """
          Return methods of a class
 
@@ -3144,6 +3144,20 @@ class DalvikVMFormat(bytecode._Bytecode) :
       l = []
       for i in self.classes.class_def :
          for j in i.get_methods() :
+            if class_name == j.get_class_name() :
+               l.append( j )
+
+      return l
+   
+   def get_fields_class(self, class_name) :
+      """
+         Return fields of a class
+
+         @param class_name : the class name
+      """
+      l = []
+      for i in self.classes.class_def :
+         for j in i.get_fields() :
             if class_name == j.get_class_name() :
                l.append( j )
 
@@ -3162,7 +3176,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
          if class_name == i.get_name() : 
             for j in i.get_fields() :
                if field_name == j.get_name() and descriptor == j.get_descriptor() :
-                  return i
+                  return j 
       return None
    
    def get_class_manager(self) :

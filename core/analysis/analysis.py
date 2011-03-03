@@ -1115,6 +1115,10 @@ class TaintedVariable :
    def get_paths_length(self) :
       return len(self.paths)
 
+   def show_paths(self) :
+      for path in self.paths :
+         print path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
+
 class TaintedVariables :
    def __init__(self, _vm) :
       self.__vm = _vm
