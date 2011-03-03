@@ -16,10 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc, hashlib, string, random
+import hashlib, string, random
 
-from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
-from networkx import draw_graphviz, write_dot
+from error import error
+import misc
+
+try :
+   from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles
+   from networkx import draw_graphviz, write_dot
+except ImportError :
+   error("module networkx not found")
 
 def INIT() :
    return WM_L2

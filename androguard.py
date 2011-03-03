@@ -28,7 +28,8 @@ sys.path.append(PATH_INSTALL + "/core/vm")
 sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
 
-import bytecode, jvm, dvm, misc, analysis, opaque, vm, wm, protection
+import bytecode, jvm, dvm, misc, analysis, opaque
+from error import error
 
 VM_INT_AUTO = 0
 VM_INT_BASIC_MATH_FORMULA = 1
@@ -47,6 +48,8 @@ class VM_int :
       @param vm_int_type : the type of the Virtual Machine
    """
    def __init__(self, andro, class_name, method_name, descriptor, vm_int_type) :
+      import vm
+
       method, _vm = andro.get_method_descriptor(class_name, method_name, descriptor)
       code = method.get_code()
 
@@ -83,7 +86,7 @@ class WM :
    def __init__(self, andro, class_name, wm_type) :
       if wm_type == [] :
          raise("....")
-
+      
       self._w = wm.WM( andro.get_vm(), class_name, wm_type, andro.get_analysis() )
 
    def get(self) :
@@ -363,6 +366,8 @@ class Androguard :
       libs_path = document.getElementsByTagName( "libs_path" )[0].firstChild.data
       
       if document.getElementsByTagName( "watermark" ) != [] :
+         import wm
+
          watermark_item = document.getElementsByTagName( "watermark" )[0]
          watermark_types = []
          for item in watermark_item.getElementsByTagName( "type" ) :
@@ -383,6 +388,8 @@ class Androguard :
          fd.close()
 
       if document.getElementsByTagName( "protect_code" ) != [] :
+         import protection
+
          protect_code_item = document.getElementsByTagName( "protect_code" )[0]
          protection.ProtectCode( [ i[1] for i in self.get_bc() ], main_path + libs_path )
          
