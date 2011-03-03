@@ -2286,7 +2286,7 @@ class DBCSpe :
       self.__CM = cm
       self.op = op
 
-   def reload(self) :
+   def _reload(self) :
       pass
 
    def get_data(self) :
@@ -2301,6 +2301,9 @@ class DBCSpe :
    def get_targets(self) :
       return self.op.get_targets()
 
+   def get_formatted_operands(self) :
+      return []
+
    def get_operands(self) :
       return self.op.get_operands()
 
@@ -2311,14 +2314,17 @@ class DBCSpe :
       self.op.show( pos )
 
 class DBC :
-   def __init__(self, class_manager, op_name, operands, raw_buff) :
+   def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
       self.__CM = class_manager
 
       self.op_name = op_name
       self.operands = operands
+      self.formatted_operands = []
       self.raw_buff = raw_buff
 
-   def reload(self) :
+      self.op_value = op_value
+
+   def _reload(self) :
       v = []
       r = []
       l = []
@@ -2329,7 +2335,13 @@ class DBC :
          else :
             r.append( i )
 
-      if "invoke" in self.op_name :
+      # const instruction, convert value into float
+      if self.op_value == 0x14 :
+         x = r[0][1] | r[1][1] << 16
+         self.formatted_operands.append( ("#f", unpack("f", pack("i", x))[0] ) )
+
+      # Invoke* instructions
+      if self.op_value >= 0x6e and self.op_value <= 0x78 : 
          off = v[0][1]
          x = v[2:4]
          x.reverse()
@@ -2338,6 +2350,7 @@ class DBC :
          x.extend( t )
          l.extend( [ self._more_info(n[0], n[1]) for n in x[:off] ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
+      # Other instructions
       else :
          v.reverse()
          l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
@@ -2346,19 +2359,27 @@ class DBC :
       self.operands = l
 
    def get_length(self) :
+      """Return the length of the instruction"""
       return len(self.raw_buff)
 
    def get_name(self) :
       """Return the name of the bytecode"""
       return self.op_name
 
+   def get_formatted_operands(self) :
+      """Return the formatted operands"""
+      return self.formatted_operands
+
    def get_operands(self) :
+      """Return the operands"""
       return self.operands
 
    def get_raw(self) :
+      """Return the raw buffer"""
       return self.raw_buff
 
    def show(self, pos) :
+      """Display the instruction"""
       print self.op_name,
 
       l = []
@@ -2368,7 +2389,12 @@ class DBC :
          else :
             l.append( ''.join( str(j) for j in i ) )
          l.append( "," )
-      
+
+      if self.formatted_operands != [] :
+         for i in self.formatted_operands :
+            l.append( "{" + str(i[1]) + "}" )
+            l.append(",")
+
       if l != [] :
          l.pop(-1)
          print ' '.join( i for i in l ),
@@ -2423,7 +2449,7 @@ class DCode :
                   if special != None :
                      self.__h_special_bytecodes[ special[0] + real_j ] = special[1] 
 
-               self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], operands, self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ) )
+               self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], op_value, operands, self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ) )
 
                j += ( int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort)
             else :
@@ -2531,7 +2557,7 @@ class DCode :
 
    def reload(self) :
       for i in self.__bytecodes :
-         i.reload()
+         i._reload()
 
    def show(self) :
       nb = 0
