@@ -28,7 +28,7 @@ public class Test1 {
       }
 
       switch(this.value) {
-         case 0 : this.value2 = this.pouet();
+         case 0 : this.value2 = this.pouet() + this.pouet(5);
          default : this.value2 = this.pouet2();
       }
       
@@ -52,6 +52,10 @@ public class Test1 {
 
     public int pouet3() {
       return 80;
+    }
+
+    public int pouet(int a) {
+      return a * 4;
     }
 
     public int test1(int val) {

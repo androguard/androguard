@@ -23,12 +23,14 @@ import sys, os, cmd, threading, code, re
 from optparse import OptionParser
 
 from androguard import *
+from bytecode import *
 from jvm import *
 from dvm import *
 from analysis import *
 
 from misc import *
 
+import IPython.ipapi
 from IPython.Shell import IPShellEmbed
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
