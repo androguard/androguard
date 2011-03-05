@@ -534,14 +534,6 @@ class AXMLPrinter :
          return "android:"
       return ""
 
-def FormatClassToDex(input) :
-   """  
-      Transofmr a typical xml format class into dex format
-
-      @param input : the input class name
-   """
-   return "L" + input.replace(".", "/") + ";"
-
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
 
@@ -3074,6 +3066,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
          Return the names of classes
       """
       return [ i.get_name() for i in self.classes.class_def ]
+
+   def get_classes(self) :
+      return self.classes.class_def
 
    def get_method(self, name) :
       """Return into a list all methods which corresponds to the regexp

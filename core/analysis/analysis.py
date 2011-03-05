@@ -1146,6 +1146,13 @@ class TaintedVariables :
                return self.__vars[ TAINTED_FIELD ] [i]
       return None
   
+
+   def get_field_by_ref(self, ref) :
+      for i in self.__vars[ TAINTED_FIELD ] :
+         if i.get_class_name() == ref.get_class_name() and i.get_name() == ref.get_name() and i.get_descriptor() == ref.get_descriptor() :
+            return self.__vars[ TAINTED_FIELD ] [i]
+      return None
+
    # global functions
    
    def get_strings(self) :

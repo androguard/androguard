@@ -2992,6 +2992,18 @@ class JVMFormat(bytecode._Bytecode) :
       """
       return [ self.__CM.get_this_class_name() ]
 
+   def get_name(self) :
+      """
+
+      """
+      return self.__CM.get_this_class_name()
+
+   def get_classes(self) :
+      """
+
+      """
+      return [ self ]
+
    def get_field(self, name) :
       """
          Return into a list all fields which corresponds to the regexp 

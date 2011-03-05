@@ -218,3 +218,76 @@ class _Bytecode(object) :
       buff = self._save()
       fd.write( buff )
       fd.close()
+
+def FormatClassToJava(input) :
+   """  
+      Transofmr a typical xml format class into java format
+
+      @param input : the input class name
+   """
+   return "L" + input.replace(".", "/") + ";"
+
+def FormatClassToPython(input) :
+   i = input[:-1]
+   i = i.replace("/", "_")
+   i = i.replace("$", "_")
+
+   return i
+
+def FormatNameToPython(input) :
+   i = input.replace("<", "")
+   i = i.replace(">", "")
+   i = i.replace("$", "_")
+
+   return i
+
+def FormatDescriptorToPython(input) :
+   i = input.replace("/", "_") 
+   i = i.replace(";", "")
+   i = i.replace("[", "_")
+   i = i.replace("(", "_")
+   i = i.replace(")", "__")
+
+   return i
+
+####################### class/method/field export ########################
+def ExportVMToPython(vm) :
+   for _class in vm.get_classes() :
+      ### Class
+      name = "CLASS_" + FormatClassToPython( _class.get_name() )
+      setattr( vm, name, _class )
+
+      ### Methods
+      m = {} 
+      for method in _class.get_methods() :
+         if method.get_name() not in m :
+            m[ method.get_name() ] = []
+         m[ method.get_name() ].append( method )
+
+      for i in m :
+         if len(m[i]) == 1 :
+            j = m[i][0]
+            name = "METHOD_" + FormatNameToPython( j.get_name() )
+            setattr( _class, name, j )
+         else :
+            for j in m[i] :
+               name = "METHOD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
+               setattr( _class, name, j )
+
+      ### Fields
+      f = {}
+      for field in _class.get_fields() :
+         if field.get_name() not in f :
+            f[ field.get_name() ] = []
+         f[ field.get_name() ].append( field )
+
+      for i in f :
+         if len(f[i]) == 1 :
+            j = f[i][0]
+            name = "FIELD_" + FormatNameToPython( j.get_name() )
+            setattr( _class, name, j )
+         else :
+            for j in f[i] :
+               name = "FIELD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
+               setattr( _class, name, j )
+
