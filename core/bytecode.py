@@ -247,6 +247,7 @@ def FormatDescriptorToPython(input) :
    i = i.replace("[", "_")
    i = i.replace("(", "_")
    i = i.replace(")", "__")
+   i = i.replace(" ", "")
 
    return i
 
