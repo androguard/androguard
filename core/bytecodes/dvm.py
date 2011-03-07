@@ -537,21 +537,33 @@ class AXMLPrinter :
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
 
-HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', namedtuple( "HEADER", "magic checksum signature file_size header_size endian_tag link_size link_off " \
-                                                               "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
-                                                               "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
-                                                               "class_defs_size class_defs_off data_size data_off" ) ]
 
-MAP_ITEM = [ '<HHLL', namedtuple("MAP_ITEM", "type unused size offset") ]
+HEADER_NAMEDTUPLE = namedtuple( "HEADER_NAMEDTUPLE", "magic checksum signature file_size header_size endian_tag link_size link_off " \
+                                                     "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
+                                                     "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
+                                                     "class_defs_size class_defs_off data_size data_off" )
+HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', HEADER_NAMEDTUPLE ]
 
-PROTO_ID_ITEM = [ '<LLL', namedtuple("PROTO_ID_ITEM", "shorty_idx return_type_idx parameters_off" ) ]
-METHOD_ID_ITEM = [ '<HHL', namedtuple("METHOD_ID_ITEM", "class_idx proto_idx name_idx" ) ]
-FIELD_ID_ITEM = [ '<HHL', namedtuple("FIELD_ID_ITEM", "class_idx type_idx name_idx") ]
+MAP_ITEM_NAMEDTUPLE = namedtuple("MAP_ITEM_NAMEDTUPLE", "type unused size offset")
+MAP_ITEM = [ '<HHLL', MAP_ITEM_NAMEDTUPLE ]
 
-CLASS_DEF_ITEM = [ '<LLLLLLLL', namedtuple("CLASS_DEF_ITEM", "class_idx access_flags superclass_idx interfaces_off source_file_idx annotations_off class_data_off static_values_off") ]
+PROTO_ID_ITEM_NAMEDTUPLE = namedtuple("PROTO_ID_ITEM_NAMEDTUPLE", "shorty_idx return_type_idx parameters_off" )
+PROTO_ID_ITEM = [ '<LLL', PROTO_ID_ITEM_NAMEDTUPLE ]
 
-TRY_ITEM = [ '<LHH', namedtuple("TRY_ITEM", "start_addr insn_count handler_off" ) ]
-ANNOTATIONS_DIRECTORY_ITEM = [ '<LLLL', namedtuple("ANNOTATIONS_DIRECTORY_ITEM", "class_annotations_off fields_size annotated_methods_size annotated_parameters_size") ]
+METHOD_ID_ITEM_NAMEDTUPLE = namedtuple("METHOD_ID_ITEM_NAMEDTUPLE", "class_idx proto_idx name_idx" )
+METHOD_ID_ITEM = [ '<HHL', METHOD_ID_ITEM_NAMEDTUPLE ]
+
+FIELD_ID_ITEM_NAMEDTUPLE = namedtuple("FIELD_ID_ITEM_NAMEDTUPLE", "class_idx type_idx name_idx")
+FIELD_ID_ITEM = [ '<HHL', FIELD_ID_ITEM_NAMEDTUPLE ]
+
+CLASS_DEF_ITEM_NAMEDTUPLE = namedtuple("CLASS_DEF_ITEM_NAMEDTUPLE", "class_idx access_flags superclass_idx interfaces_off source_file_idx annotations_off class_data_off static_values_off")
+CLASS_DEF_ITEM = [ '<LLLLLLLL', CLASS_DEF_ITEM_NAMEDTUPLE ]
+
+TRY_ITEM_NAMEDTUPLE = namedtuple("TRY_ITEM_NAMEDTUPLE", "start_addr insn_count handler_off" )
+TRY_ITEM = [ '<LHH', TRY_ITEM_NAMEDTUPLE ]
+
+ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE = namedtuple("ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE", "class_annotations_off fields_size annotated_methods_size annotated_parameters_size")
+ANNOTATIONS_DIRECTORY_ITEM = [ '<LLLL', ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE ]
 
 TYPE_MAP_ITEM = {
                   0x0    : "TYPE_HEADER_ITEM",
@@ -574,9 +586,14 @@ TYPE_MAP_ITEM = {
                   0x2006 : "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                 }
 
-SPARSE_SWITCH = [ '<HH', namedtuple("SPARSE_SWITCH", "ident size") ]
-PACKED_SWITCH = [ '<HHL', namedtuple("PACKED_SWITCH", "ident size first_key") ]
-FILL_ARRAY_DATA = [ '<HHL', namedtuple("FILL_ARRAY_DATA", "ident element_width size") ]
+SPARSE_SWITCH_NAMEDTUPLE = namedtuple("SPARSE_SWITCH_NAMEDTUPLE", "ident size")
+SPARSE_SWITCH = [ '<HH', SPARSE_SWITCH_NAMEDTUPLE ]
+
+PACKED_SWITCH_NAMEDTUPLE = namedtuple("PACKED_SWITCH_NAMEDTUPLE", "ident size first_key")
+PACKED_SWITCH = [ '<HHL', PACKED_SWITCH_NAMEDTUPLE ]
+
+FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size") 
+FILL_ARRAY_DATA = [ '<HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
 
 class FillArrayData :
    def __init__(self, buff) :
@@ -2988,7 +3005,6 @@ class Data :
 class DalvikVMFormat(bytecode._Bytecode) :
    def __init__(self, buff) :
       super(DalvikVMFormat, self).__init__( buff )
-      super(DalvikVMFormat, self).register( bytecode.SHOW, self.show )
 
       self.load_class()
 

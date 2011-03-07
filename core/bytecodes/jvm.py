@@ -2887,7 +2887,6 @@ class JVMFormat(bytecode._Bytecode) :
          @param buff : the buffer which represents the open file
       """
       super(JVMFormat, self).__init__( buff )
-      super(JVMFormat, self).register( bytecode.SHOW, self.show )
 
       self._load_class()
 
