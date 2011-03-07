@@ -154,7 +154,6 @@ class Buff :
 
       self.size = len(buff)
 
-SHOW = 0
 class _Bytecode(object) :
    def __init__(self, buff) :
       try :
@@ -165,7 +164,6 @@ class _Bytecode(object) :
 
       self.__buff = buff
       
-      self.__registers = { SHOW : [] }
       self.__idx = 0
 
 
@@ -207,11 +205,6 @@ class _Bytecode(object) :
 
    def length_buff(self) :
       return len( self.__buff )
-
-   def show(self) :
-      print self
-      for i in self.__registers[ SHOW ] :
-         i()
 
    def save(self, filename) :
       fd = open(filename, "w")

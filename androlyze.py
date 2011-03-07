@@ -33,6 +33,8 @@ from misc import *
 import IPython.ipapi
 from IPython.Shell import IPShellEmbed
 
+from cPickle import dumps, loads
+
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 
 option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
@@ -47,6 +49,14 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
+
+def save_session(l, filename) :
+   fd = open(filename, "w")
+   fd.write( dumps(l, -1) )
+   fd.close()
+
+def load_session(filename) :
+   return loads( open(filename, "r").read() ) 
 
 def interact() :
    ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)

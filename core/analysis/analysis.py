@@ -1502,7 +1502,7 @@ class Signature :
 
       self.__grammars = {
          GRAMMAR_TYPE_CLEAR : ( ),
-         GRAMMAR_TYPE_ANONYMOUS : ( self._get_bb, self._get_strings_a, self._get_fields_a, self._get_packages_a ),
+         GRAMMAR_TYPE_ANONYMOUS : ( "_get_bb", "_get_strings_a", "_get_fields_a", "_get_packages_a" ),
       }
 
    def _get_bb(self, analysis_method) :
@@ -1594,7 +1594,7 @@ class Signature :
    def get_method(self, analysis_method, grammar_type) :
       l = []
       for i in self.__grammars[ grammar_type ] :
-         l.extend( i( analysis_method ) )
+         l.extend( getattr(self, i)( analysis_method ) )
       l.sort()
       return ''.join(i[1] for i in l)
 
