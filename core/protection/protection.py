@@ -1,3 +1,21 @@
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 from error import log_loading, warning
 from subprocess import Popen, PIPE, STDOUT
 import os
@@ -238,7 +256,7 @@ class GenerateCode :
 #####################
 
    def do(self) :
-      print self.objects_create
+      print self.vm.get_name(), "Objects create", self.objects_create
 
 class HandleINT :
    def __init__(self, gc) :
@@ -258,9 +276,8 @@ class HandleINT :
 
       return nb
 
-class ProtectCode :
-   def __init__(self, vms, libs_output) :
-      gmc = GenerateMainCode()
+class ObjectPaths :
+   def __init__(self, vms) :
       g = DiGraph()
       
       classes = [ i.get_vm().get_classes_names()[0] for i in vms ]
@@ -277,17 +294,19 @@ class ProtectCode :
                   node1 = "%s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
 
                   if j.get_access_flag() == TAINTED_PACKAGE_CREATE :
-                     node2 = "%s" % (m.get_info())
+                     node2 = "%s-0x%x" % (m.get_info(), j.get_bb().start + j.get_idx())
                      print node1, "(create ---->)", node2
                     
                      ### An object of a specific type is created, we must add it
                      objects_create[ i.get_vm() ].append( (j, m) )
+                     
+                     g.add_edge(node2, node1)
                   else :
                      node2 = "%s %s %s" % (m.get_info(), j.get_name(), j.get_descriptor())
                      print node1, "(call ---->)", node2
 
-                     g.add_edge(node2, node1)
 
+      # Get all paths of created objects
       for i in g.node :
          #print i, "---->", g.successors( i )
          print i, "---->"
@@ -302,12 +321,100 @@ class ProtectCode :
       #   for j in sources :
       #      print "\t\t", j, "-->", sources[j]
 
-      
-      for i in vms :
-         gmc.addVM( i.get_vm(), i.get_analysis(), objects_create[i.get_vm()] )
 
-      gmc.do()
-      gmc.save( libs_output )
+#############################################
+class VMsModiciation :
+   def __init__(self, vms) :
+      pass
+
+class VMModification :
+   def __init__(self, vm) :
+      pass
+#############################################
+
+
+#############################################
+class Protection(object) :
+   def __init__(self) :
+      pass
+
+class ProtectionClear(Protection) :
+   def __init__(self) :
+      pass
+
+class ProtectionCrypt(Protection) :
+   def __init__(self) :
+      pass
+
+#############################################
+
+
+#############################################
+"""
+   Handle all bytecodes modification in classes
+      - save add/remove modifications
+      - apply at the end modifcations to have no problems
+"""
+class Modification :
+   def __init__(self) :
+      pass
+
+#############################################
+
+
+#############################################
+"""
+   Save information about added code
+      - useful to show the overhead of the protection
+"""
+class OverHead :
+   def __init__(self) :
+      pass
+#############################################
+
+class ProtectCode :
+   def __init__(self, vms, libs_output) :
+      mo = Modification( vms )
+      vmsmo = VMsModiciation( vms, mo )
+
+      # S1
+      ########################################################
+      # Get all created objects paths
+      op = ObjectPaths( vms )
+      
+      # S2
+      ########################################################
+      # Get data to be protect and remove original bytecodes
+
+
+      # S3
+      ########################################################
+      # Generate keys 
+
+      # Protect data
+
+      # S4
+      ########################################################
+      # Add new bytecodes to generate keys
+      
+      # Add new bytecodes to get protected data
+
+      # S5
+      ########################################################
+      # Apply all modifications
+      mo.patch()
+
+      # S6
+      ########################################################
+      # Save files ...
+      mo.save( libs_output )
+
+#      gmc = GenerateMainCode()     
+#      for i in vms :
+#         gmc.addVM( i.get_vm(), i.get_analysis(), objects_create[i.get_vm()] )
+
+#      gmc.do()
+#      gmc.save( libs_output )
 
 #         for inte, _ in i.get_analysis().tainted_integers.get_integers() :
 #            print "integer : ", repr(inte.get_info())

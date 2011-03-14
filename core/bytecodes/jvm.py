@@ -33,7 +33,7 @@ class JAR :
       if raw == True :
          self.__raw = filename
       else :
-         fd = open( filename, "r" )
+         fd = open( filename, "rb" )
          self.__raw = fd.read()
          fd.close()
 
