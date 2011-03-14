@@ -45,7 +45,7 @@ class APK :
       if raw == True :
          self.__raw = filename
       else :
-         fd = open( filename, "r" )
+         fd = open( filename, "rb" )
          self.__raw = fd.read()
          fd.close()
 
@@ -60,6 +60,9 @@ class APK :
 
                for item in self.xml[i].getElementsByTagName('uses-permission') :
                   self.permissions.append( str( item.getAttribute("android:name") ) )
+
+   def get_files(self) :
+      return self.zip.namelist()
 
    def get_dex(self) :
       """

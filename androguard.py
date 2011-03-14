@@ -87,6 +87,7 @@ class WM :
       if wm_type == [] :
          raise("....")
       
+      import wm
       self._w = wm.WM( andro.get_vm(), class_name, wm_type, andro.get_analysis() )
 
    def get(self) :
@@ -94,7 +95,7 @@ class WM :
 
 class WMCheck :
    def __init__(self, andro, class_name, input_file) :
-      fd = open(input_file, "r")
+      fd = open(input_file, "rb")
       buffxml = fd.read()
       fd.close()
 
@@ -225,7 +226,7 @@ class Androguard :
       
       self.__orig_raw = {}
       for i in self.__files :
-         self.__orig_raw[ i ] = open(i, "r").read()
+         self.__orig_raw[ i ] = open(i, "rb").read()
 
       self.__bc = []
       self._analyze()
@@ -356,7 +357,7 @@ class Androguard :
    def do(self, fileconf) :
       self.__analyze()
 
-      fd = open(fileconf, "r")
+      fd = open(fileconf, "rb")
       buffxml = fd.read()
       fd.close()
 
@@ -366,8 +367,6 @@ class Androguard :
       libs_path = document.getElementsByTagName( "libs_path" )[0].firstChild.data
       
       if document.getElementsByTagName( "watermark" ) != [] :
-         import wm
-
          watermark_item = document.getElementsByTagName( "watermark" )[0]
          watermark_types = []
          for item in watermark_item.getElementsByTagName( "type" ) :
