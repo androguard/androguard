@@ -74,15 +74,22 @@ You must go to the website to see more example :
 
 see the directory 'doc'
 
+2.1.1 --] Instructions
+
+http://code.google.com/p/androguard/wiki/Instructions
+
+
 2.2 --] Demos
 
 see the source codes in the directory 'demos'
 
-2.3 --] Androlyze 
-http://code.google.com/p/androguard/wiki/Usage#Androlyze
+2.3 --] Tools 
 
-You can used the command line to display and filter information. But it's
-better to use the shell :
+http://code.google.com/p/androguard/wiki/Usage
+
+2.3.1 --] Androlyze 
+
+You can used the command line to display and filter information. But it's better to use the shell :
 
 ./androlyze.py -s
 Welcome to Androlyze ALPHA 0-update1
@@ -101,8 +108,92 @@ Welcome to Androlyze ALPHA 0-update1
 >>> fd.write(j.save())
 >>> fd.close()
 
-2.4 --] Andromarks
-http://code.google.com/p/androguard/wiki/Usage#Andromarks
+2.3.2 --] Androxgmml
+
+http://androguard.blogspot.com/2011/02/android-apps-visualization.html
+
+You can used it to transform an apk/jar/class/dex files format into an xgmml graph which represent the control flow graph or the functions call.
+
+$ ./androxgmml.py -h
+Usage: androxgmml.py [options]
+
+Options:
+-h, --help            show this help message and exit
+-i INPUT, --input=INPUT 
+                     filename input
+-o OUTPUT, --output=OUTPUT
+                     filename output of the xgmml
+-f, --functions       include function calls
+-e, --externals       include extern function calls
+-v, --version         version of the API
+
+./androxgmml.py -i myapp.jar -o output.xgmml
+./androxgmml.py -i myapp.apk -o output.xgmml
+./androxgmml.py -i myclass.class -o output.xgmml
+./androxgmml.py -i mydex.dex -o output.xgmml
+
+# with functions call :
+./androxgmml.py -i myapp.jar -f -o output.xgmml
+
+# with external function calls
+./androxgmml.py -i myapp.jar -e -o output.xgmml
+
+# with both
+./androxgmml.py -i myapp.jar -e -f -o output.xgmml
+
+2.3.3 --] Androaxml
+
+http://androguard.blogspot.com/2011/03/androids-binary-xml.html
+
+You can used it to transform Android's binary XML (eg: AndroidManifest?.xml) into classic xml (human readable ;)).
+
+$ ./androaxml.py -h
+Usage: androaxml.py [options]
+
+Options:
+-h, --help            show this help message and exit
+-i INPUT, --input=INPUT
+                     filename input (APK or android's binary xml)
+-o OUTPUT, --output=OUTPUT
+                     filename output of the xml
+-v, --version         version of the API
+
+
+$ ./androaxml.py -i yourfile.apk -o output.xml
+$ ./androaxml.py -i AndroidManifest.xml -o output.xml
+
+2.3.4 --] Androdump
+
+http://androguard.blogspot.com/2010/11/androdump-dump-your-jvm.htm
+
+$ ./androdump.py -h
+Usage: androdump.py [options]
+
+Options:
+-h, --help            show this help message and exit
+-i INPUT, --input=INPUT 
+                      pid
+-v, --version         version of the API
+
+pouik@camelot:~/androguard$ ps aux |grep java
+   pouik 21008 0.1 0.5 673840 10688 pts/5 Sl+ 10:28 0:02 java Test2
+   pouik 21548 0.0 0.0 3060 812 pts/2 S+ 11:00 0:00 grep java
+pouik@camelot:~/androguard$ ./androdump.py -i 21008
+   HEADER 0x6f990000-0x6fee0000 (rw-p)
+
+   Test2 ()V
+   Test2 get_x ()I
+   Test2 main ([Ljava/lang/String;)V
+   Test2bis ()V
+   Test2bis get_T ()Ljava/lang/String;
+
+2.4 --] Disassembler 
+
+http://code.google.com/p/androguard/wiki/Disassembler
+
+2.5 --] Analysis 
+
+http://code.google.com/p/androguard/wiki/Analysis
 
 3 -] References
 

@@ -48,7 +48,10 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
+option_7 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
+
+
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
 
 def save_session(l, filename) :
    fd = open(filename, "w")
@@ -70,11 +73,9 @@ def main(options, arguments) :
       _a = AndroguardS( options.input )
       _x = None
 
-      if options.pretty != None :
-         _x = analysis.VM_BCA( _a.get_vm() )
-
       if options.display != None :
          if options.pretty != None :
+            _x = analysis.VM_BCA( _a.get_vm() )
             _a.pretty_show( _x )
          else :
             _a.show()
@@ -82,12 +83,24 @@ def main(options, arguments) :
       elif options.method != None :
          for method in _a.get("method", options.method) :
             if options.pretty != None :
+               _x = analysis.VM_BCA( _a.get_vm() )
                method.pretty_show( _x )
             else :
                method.show()
+      
       elif options.field != None :
          for field in _a.get("field", options.field) :
             field.show()
+      
+      elif options.xpermissions != None :
+         _x = analysis.VM_BCA( _a.get_vm() )
+         perms_access = _x.tainted_packages.get_permissions( [] )
+         for perm in perms_access :
+            print "PERM : ", perm
+            for path in perms_access[ perm ] :
+               print "\t%s %s %s (@%s-0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                                path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                                path.get_class_name(), path.get_name(), path.get_descriptor())
 
    elif options.version != None :
       print "Androlyze version %s" % VERSION
