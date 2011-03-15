@@ -21,6 +21,8 @@ import re, random, string, cPickle
 from error import error
 import jvm, dvm
 
+from dvm_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
+
 class ContextField :
    def __init__(self, mode) :
       self.mode = mode
@@ -1279,13 +1281,23 @@ TAINTED_PACKAGE = {
    TAINTED_PACKAGE_CREATE : "C",
    TAINTED_PACKAGE_CALL : "M"
 }
+
+def show_PathP(paths) :
+   for path in paths :
+      print "%s %s %s ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                        path.get_class_name(), path.get_name(), path.get_descriptor())
+
 class PathP(Path) :
-   def __init__(self, info) :
+   def __init__(self, info, class_name) :
       Path.__init__( self, info )
+      self.class_name = class_name
       if info[0] == TAINTED_PACKAGE_CALL :
          self.name = info[-2]
          self.descriptor = info[-1]
       
+   def get_class_name(self) :
+      return self.class_name
+
    def get_name(self) :
       return self.name
    
@@ -1308,7 +1320,7 @@ class TaintedPackage :
       return self.paths
 
    def push(self, info) :
-      p = PathP( info )
+      p = PathP( info, self.get_name() )
       self.paths[ info[0] ].append( p )
       return p
 
@@ -1395,6 +1407,31 @@ class TaintedPackages :
          return self.__packages[ class_name ].get_method( name, descriptor )
       except KeyError :
          return []
+
+   def get_permissions(self, permissions_needed):
+      permissions = {}
+
+      pn = permissions_needed
+      if permissions_needed == [] :
+         pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+
+      classes = self.__vm.get_classes_names()
+
+      for m, _ in self.get_packages() :
+         paths = m.get_methods()
+         for j in paths :
+            if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+               if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                  data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
+                  if data in DVM_PERMISSIONS_BY_ELEMENT :
+                     if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn :
+                        try :
+                           permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                        except KeyError :
+                           permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
+                           permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+
+      return permissions
 
    #def export_call_graph(self, output, class_name) :
    #   G = DiGraph()

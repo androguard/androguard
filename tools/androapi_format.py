@@ -106,19 +106,31 @@ for perm in PERMISSIONS :
 
 fd = open("../core/bytecodes/dvm_permissions.py", "w")
 
-fd.write("DVM_PERMISSIONS = { \n")
+fd.write("DVM_PERMISSIONS_BY_PERMISSION = {\n")
 
 for perm in PERMISSIONS : 
-   fd.write("\"%s\" = {\n" % perm)
+   fd.write("\"%s\" : {\n" % perm)
 
    for package in PERMISSIONS[perm] :
-      fd.write("\t\"%s\" : [\n" % package)
+      fd.write("\t\"L%s;\" : [\n" % package.replace(".", "/"))
       
       for element in PERMISSIONS[perm][package] :
          fd.write("\t\t(\"%s\", \"%s\", \"%s\"),\n" % (element[0], element[-2], element[-1]) )
 
       fd.write("\t],\n")
    fd.write("},\n")
+fd.write("}\n\n")
+
+
+fd.write("DVM_PERMISSIONS_BY_ELEMENT = { \n")
+for perm in PERMISSIONS : 
+   for package in PERMISSIONS[perm] :
+      for element in PERMISSIONS[perm][package] :
+         fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(".", "/"), element[-2], element[-1], perm))
 fd.write("}\n")
+
+
+
+
 
 fd.close()
