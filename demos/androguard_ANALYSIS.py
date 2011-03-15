@@ -84,9 +84,9 @@ for m, _ in x.tainted_packages.get_packages() :
             print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
                                                    j.get_class_name(), j.get_name(), j.get_descriptor())
 
+# Show methods used by permission
+from analysis import show_PathP
 perms_access = x.tainted_packages.get_permissions( [] )
 for perm in perms_access :
    print "PERM : ", perm
-   for j in perms_access[ perm ] :
-      print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                             j.get_class_name(), j.get_name(), j.get_descriptor())
+   show_PathP( perms_access[ perm ] )

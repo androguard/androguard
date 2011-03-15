@@ -1284,8 +1284,9 @@ TAINTED_PACKAGE = {
 
 def show_PathP(paths) :
    for path in paths :
-      print "%s %s %s ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                        path.get_class_name(), path.get_name(), path.get_descriptor())
+      print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                    path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                    path.get_class_name(), path.get_name(), path.get_descriptor())
 
 class PathP(Path) :
    def __init__(self, info, class_name) :
@@ -1432,33 +1433,6 @@ class TaintedPackages :
                            permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
 
       return permissions
-
-   #def export_call_graph(self, output, class_name) :
-   #   G = DiGraph()
-
-   #   H = {}
-
-   #   for i in self.__packages :
-   #      paths = self.__packages[ i ].get_methods()
-   #      for j in paths :
-   #         if class_name in self.__packages[ i ].get_name() : 
-   #            node1 = "%s\\n%s\\n%s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
-   #            node2 = "%s\\n%s\\n%s" % (self.__packages[ i ].get_name(), j.get_name(), j.get_descriptor())
-               
-   #            n = "%s%s" % (node1, node2)
-   #            if n not in H :
-   #               H[ n ] = True
-
-   #               print node1, "--->", node2
-   #               G.add_edge( node1, node2 )
-
-   #   draw_graphviz(G)                                                                                                                                                                                                           
-   #   write_dot(G, output)
-
-   def show(self) :
-      print "TAINTED PACKAGES by name"
-      for k in self.__packages :
-         self.__packages[ k ].show("get_name")
 
 class BasicBlocks :
    def __init__(self, _vm, _tv) :
