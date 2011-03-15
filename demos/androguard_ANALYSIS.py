@@ -11,8 +11,9 @@ OUTPUT = "./output/"
 #TEST  = 'examples/java/test/orig/Test1.class'
 #TEST  = 'examples/java/Demo1/orig/DES.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
-TEST = 'examples/android/Test/bin/classes.dex'
+#TEST = 'examples/android/Test/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
+TEST = "apks/DroidDream/tmp/classes.dex"
 
 a = androguard.AndroguardS( TEST )
 x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
@@ -24,7 +25,7 @@ for method in a.get_methods() :
    g = x.hmethods[ method ]
    
 #   g.basic_blocks.export_dot( OUTPUT + "%s-%s" % (method.get_name(), hashlib.md5( "%s-%s" % (method.get_class_name(), method.get_descriptor())).hexdigest()) + ".dot" )
-   print method.get_class_name(), method.get_name(), method.get_descriptor(), method.get_code().get_length()
+   print method.get_class_name(), method.get_name(), method.get_descriptor()
    for i in g.basic_blocks.get() :
       print "\t %s %x %x" % (i.name, i.start, i.end), i.ins[-1].get_name(), '[ CHILDS = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ FATHERS = ', ', '.join( j[2].get_name() for j in i.fathers ), ']', i.free_blocks_offsets
 
@@ -33,6 +34,7 @@ for method in a.get_methods() :
 
 #   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_CLEAR)
    print x.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS)
+
 
 print ""
 # Strings
@@ -70,7 +72,7 @@ for m, _ in x.tainted_packages.get_packages() :
       if j.get_method().get_class_name() in classes and m.get_info() in classes :
          if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
             print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                                     m.get_info(), j.get_name(), j.get_descriptor())
+                                                   j.get_class_name(), j.get_name(), j.get_descriptor())
 
 # Internal Methods -> External Methods
 print "Internal --> External"
@@ -80,5 +82,11 @@ for m, _ in x.tainted_packages.get_packages() :
       if j.get_method().get_class_name() in classes and m.get_info() not in classes :
          if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
             print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                                   m.get_info(), j.get_name(), j.get_descriptor())
+                                                   j.get_class_name(), j.get_name(), j.get_descriptor())
 
+perms_access = x.tainted_packages.get_permissions( [] )
+for perm in perms_access :
+   print "PERM : ", perm
+   for j in perms_access[ perm ] :
+      print "\t\t %s %s %s ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
+                                             j.get_class_name(), j.get_name(), j.get_descriptor())
