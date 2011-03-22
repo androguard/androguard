@@ -749,6 +749,10 @@ class JVMBasicBlock :
          
          elif "sipush" in i.get_name() :
             self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
+         
+         elif "bipush" in i.get_name() :
+            self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
+
          #########################################################
 
          idx += i.get_length()
@@ -796,6 +800,8 @@ class JVMBasicBlock :
 
          except KeyError :
             print "[[[[ %s is not in INSTRUCTIONS_ACTIONS ]]]]" % i.get_name()
+         except IndexError :
+            print "[[[[ Analysis failed in %s-%s-%s ]]]]" % (self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor())
 
          idx += i.get_length()
 

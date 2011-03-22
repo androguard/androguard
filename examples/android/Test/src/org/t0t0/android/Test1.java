@@ -2,6 +2,11 @@ package org.t0t0.android;
 
 import java.io.PrintStream;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;                 
+
 public class Test1 {
     public int value;
     public int value2;
@@ -67,6 +72,23 @@ public class Test1 {
     public int go() {
       System.out.println(" test_base(500, 3) " + this.test_base( 500, 3 ) );
 
+      double yy = -4.0;
+      System.out.println(yy);
+      
+      yy = 32800.0;
+      System.out.println(yy);
+
+
       return 0;
-    }    
+    } 
+
+   public static int except(Context context) {
+      try {
+         PackageManager manager = context.getPackageManager();
+         PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
+         return 1;
+      } catch (NameNotFoundException e) {
+         return 2;
+      }
+   }   
 }

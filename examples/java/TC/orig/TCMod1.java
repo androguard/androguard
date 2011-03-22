@@ -48,11 +48,17 @@ public class TCMod1 {
          }
       }
 
+      TCA a = new TCA() ;
+      a.T1();
+
       System.out.println("TC1 == -2234819 : " + this.equal( this.TC1, "-2234819" ));
    
       i = 300; j =-188;
       System.out.println("I == 300 : " + this.equal( i, "300" ));
       System.out.println("J == -188 : " + this.equal( j, "-188" ));
+
+      TCD d = new TCD();
+      d.T1();
 
       do {
          this.TC2 += ( j - i );         
@@ -60,5 +66,11 @@ public class TCMod1 {
          i -= 2;
       } while ( j < i );
       System.out.println("TC2 == -24056 : " + this.equal( this.TC2, "-24056" ));
+      TCA a1 = new TCA() ;
+      a1.T1();
+
+      TCB b = new TCB( a );
+      b.T1();
+
    }
 }
