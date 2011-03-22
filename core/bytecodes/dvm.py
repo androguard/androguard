@@ -2347,11 +2347,44 @@ class DBC :
          else :
             r.append( i )
 
+      # 0x12 : [ "11n", "const/4",                    "vA, #+B", "B|A|op" ],
+      if self.op_value == 0x12 :
+         self.formatted_operands.append( ("#l", r[0][1]) )
+
+      # 0x13 : [ "21s", "const/16",                   "vAA, #+BBBB", "AA|op BBBB" ],
+      elif self.op_value == 0x13 :
+         self.formatted_operands.append( ("#l", r[0][1]) )
+
+      # 0x14 : [ "31i", "const",                      "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
       # const instruction, convert value into float
-      if self.op_value == 0x14 :
+      elif self.op_value == 0x14 :
          x = r[0][1] | r[1][1] << 16
          self.formatted_operands.append( ("#f", unpack("f", pack("i", x))[0] ) )
 
+      # 0x15 : [ "21h", "const/high16",               "vAA, #+BBBB0000", "AA|op BBBB0000" ],
+      elif self.op_value == 0x15 :
+         self.formatted_operands.append( ("#f", unpack( 'f', pack('i', r[0][1]))[0] ) )
+
+      # 0x16 : [ "21s", "const-wide/16",              "vAA, #+BBBB", "AA|op BBBB" ],
+      elif self.op_value == 0x16 :
+         self.formatted_operands.append( ("#l", r[0][1]) )
+
+      # 0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
+      elif self.op_value == 0x17 :
+         self.formatted_operands.append( ("#l", r[0][1]) )
+      
+      # 0x18 : [ "51l", "const-wide",                 "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
+      # convert value to double
+      elif self.op_value == 0x18 :
+         x = (r[0][1]) | (r[1][1] << 16) | (r[2][1] << 32) | (r[3][1] << 48)
+         self.formatted_operands.append( ("#d", unpack( 'd', pack('Q', x ) )[0]) )
+
+
+      # 0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
+      # convert value to double
+      elif self.op_value == 0x19 :
+         self.formatted_operands.append( ("#d", unpack( 'd', pack('q', r[0][1]))[0]) )
+     
       # Invoke* instructions
       if self.op_value >= 0x6e and self.op_value <= 0x78 : 
          off = v[0][1]
@@ -2623,14 +2656,14 @@ class DalvikCode :
       if (self.insns_size.get_value() % 2 == 1) :
          self.__padding = SV( '<H', buff.read( 2 ) )
 
-      self.__tries = []
-      self.__handlers = []
+      self.tries = []
+      self.handlers = []
       if self.tries_size.get_value() > 0 :
          for i in range(0, self.tries_size.get_value()) :
             try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
-            self.__tries.append( try_item )
+            self.tries.append( try_item )
          
-         self.__handlers.append( EncodedCatchHandlerList( buff ) )
+         self.handlers.append( EncodedCatchHandlerList( buff ) )
 
    def reload(self) :
       self._code.reload()
@@ -2654,7 +2687,7 @@ class DalvikCode :
       bytecode._Print("\tDEBUG_INFO_OFF", self.debug_info_off)
       bytecode._Print("\tINSNS_SIZE", self.insns_size)
 
-      for i in self.__handlers :
+      for i in self.handlers :
          i.show()
 
       print ""
@@ -2688,8 +2721,8 @@ class DalvikCode :
          buff += self.__padding.get_value_buff()
 
       if self.tries_size.get_value() > 0 :
-         buff += ''.join(i.get_value_buff() for i in self.__tries)
-         for i in self.__handlers :
+         buff += ''.join(i.get_value_buff() for i in self.tries)
+         for i in self.handlers :
             buff += i.get_raw()
 
       return bytecode.Buff( self.__offset.off,

@@ -16,12 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from error import log_loading, warning
+from struct import pack, unpack
 from subprocess import Popen, PIPE, STDOUT
 import os
 
-from networkx import DiGraph, all_pairs_dijkstra_path, simple_cycles, single_source_dijkstra_path, predecessor
-
+from error import log_loading, warning
 from analysis import TAINTED_PACKAGE_CREATE
 import jvm, misc
 
@@ -258,78 +257,152 @@ class GenerateCode :
    def do(self) :
       print self.vm.get_name(), "Objects create", self.objects_create
 
-class HandleINT :
-   def __init__(self, gc) :
-      self.gc = gc
+class Node :
+   def __init__(self, name) :
+      self.name = name
+      self.child = []
+      self.father = []
 
-   def gets(self) :
-      for i in self.gc.vm.get_methods() :
-         for j in self.gc.analysis.tainted_integers.get_method( i ) :
-            p = j.get()
-            #print p.get_value(), p.get_idx(), p.get_bb(), p.get_method() 
-            yield (p.get_value(), p.get_idx() + p.get_bb().start, p.get_method())
+   def add(self, node, idx) :
+      self.child.append( [node, idx] )
 
-   def length(self) :
-      nb = 0
-      for i in self.gc.vm.get_methods() :
-         nb += len( self.gc.analysis.tainted_integers.get_method( i ) )
+   def add_p(self, node) :
+      self.father.append( node )
 
-      return nb
+class Nodes :
+   def __init__(self, paths) :
+      self.nodes = {}
+      self.paths = paths
 
-class ObjectPaths :
-   def __init__(self, vms) :
-      g = DiGraph()
+   def add(self, name) :
+      if name not in self.nodes :
+         self.nodes[ name ] = Node( name )
+
+   def add_edge(self, n1, idx, n2) :
+      self.nodes[ n1 ].add( n2, idx )
+      self.nodes[ n2 ].add_p( n1 )
+
+   def get_all_paths(self) :
+      for i in self.nodes :
+         if self.nodes[i].father == [] and self.nodes[i].child != [] :
+            self.get_all_paths2( [i, None], [] )
+      return self.paths.get()
+
+   def get_all_paths2(self, n, l) :
+      l.append( n )
+
+      for j in self.nodes[ n[0] ].child :
+         self.get_all_paths2( j, list(l) ) 
+
+      if self.nodes[ l[-1][0] ].child == [] :
+         self.paths.add( l )
+      else :
+         del l
+
+   def get_nodes(self) :
+      for i in self.nodes :
+         yield self.nodes[ i ]
+
+   def show(self) :
+      for i in self.nodes :
+         print "N ", i
+         print "\t", self.nodes[ i ].child
+
+class Paths :
+   def __init__(self) :
+      self.paths = []
+
+   def add(self, p) :
+      self.paths.append( [ list(i) for i in p ] )
+
+   def get(self) :
+      for i in self.paths :
+         z = i[0]
+
+         i[0].pop(-1)
+         j = 0 
+         while j < len(i) - 1 :
+            i[j].append( i[j+1].pop(-1) )
+            j += 1
+
+         i[j].append( None )
+
+      return self.paths
+
+class InformationPaths :
+   def __init__(self, vmsmo) :
+      P = Paths()
+      N = Nodes( P )
       
-      classes = [ i.get_vm().get_classes_names()[0] for i in vms ]
+      classes = [ i.get_vm().get_classes_names()[0] for i in vmsmo.gets() ]
 
-      objects_create = {}
-      methods_call = {}
-      for i in vms :
-         objects_create[ i.get_vm() ] = []
-
-         for m, _ in i.get_analysis().tainted_packages.get_packages() :
+      for i in vmsmo.gets() :
+         for m, _ in i.get_vm_analysis().tainted_packages.get_packages() :
             paths = m.get_paths()
             for j in paths :
                if j.get_method().get_class_name() in classes and m.get_info() in classes :
-                  node1 = "%s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor())
-
+                  node1 = "%s" % (j.get_method().get_class_name())
+                  
+                  N.add( node1 )
                   if j.get_access_flag() == TAINTED_PACKAGE_CREATE :
-                     node2 = "%s-0x%x" % (m.get_info(), j.get_bb().start + j.get_idx())
-                     print node1, "(create ---->)", node2
-                    
-                     ### An object of a specific type is created, we must add it
-                     objects_create[ i.get_vm() ].append( (j, m) )
-                     
-                     g.add_edge(node2, node1)
-                  else :
-                     node2 = "%s %s %s" % (m.get_info(), j.get_name(), j.get_descriptor())
-                     print node1, "(call ---->)", node2
+                     node2 = "%s" % (j.get_class_name())
+                     N.add( node2 )
+                     N.add_edge( node1, j, node2 )
 
+      self.objects_paths = N.get_all_paths()
+      self.N = N
 
-      # Get all paths of created objects
-      for i in g.node :
-         #print i, "---->", g.successors( i )
-         print i, "---->"
-         sources = predecessor( g, i )
-         for j in sources :
-            if sources[j] != [] :
-               print "\t\t", j, "-->", sources[j]
+   def get_objects_paths(self) :
+      return self.objects_paths
 
-      #for i in g.node :
-      #   print i, "---->"
-      #   sources = single_source_dijkstra_path(g, i)
-      #   for j in sources :
-      #      print "\t\t", j, "-->", sources[j]
+   def get_classes_with_no_father(self) :
+      l = []
+      for i in self.N.get_nodes() :
+         if i.father == [] and i.child != [] :
+            l.append( i.name )
+      return l
 
+   def show(self) :
+      print "ALL OBJECTS PATHS", len(self.objects_paths), self.objects_paths
+
+      for i in self.objects_paths :
+         print i
+
+         for j in i :
+            print "\t--->", j[0],
+            if j[1] != None :
+               print " : ", j[1].get_method().get_class_name(), j[1].get_method().get_name(), j[1].get_method().get_descriptor(), "0x%x" % (j[1].get_bb().start + j[1].get_idx()), " ->", j[1].get_class_name(),
+            print
 
 #############################################
 class VMsModiciation :
-   def __init__(self, vms) :
-      pass
+   def __init__(self, vms, mo) :
+      self.vms = vms
+      self.mo = mo
+
+      self._vms = {}
+
+      for i in self.vms :
+         self._vms[ i ] = VMModification( i, mo )
+
+   def gets(self) :
+      for i in self._vms :
+         yield self._vms[ i ]
 
 class VMModification :
-   def __init__(self, vm) :
-      pass
+   def __init__(self, vm, mo) :
+      self.vm = vm
+      self.mo = mo
+
+   def remove(self, class_name, method_name, descriptor, idx, insn_nb) :
+      return self.mo.remove( self.vm, class_name, method_name, descriptor, idx, insn_nb )
+
+   def get_vm(self) :
+      return self.vm.get_vm()
+
+   def get_vm_analysis(self) :
+      return self.vm.get_analysis()
+      
 #############################################
 
 
@@ -338,8 +411,11 @@ class Protection(object) :
    def __init__(self) :
       pass
 
+   def patch(self) :
+      pass
+
 class ProtectionClear(Protection) :
-   def __init__(self) :
+   def __init__(self, vmsmo, ip, protdata) :
       pass
 
 class ProtectionCrypt(Protection) :
@@ -355,9 +431,24 @@ class ProtectionCrypt(Protection) :
       - save add/remove modifications
       - apply at the end modifcations to have no problems
 """
+MODIFICATION_ADD = 0
+MODIFICATION_REMOVE = 1
 class Modification :
-   def __init__(self) :
-      pass
+   def __init__(self, vms) :
+      self.__vmmo = {}
+
+      for vm in vms :
+         self.__vmmo[ vm ] = []
+
+   # Remove insn_nb instructions @ idx
+   def remove(self, vm, class_name, method_name, descriptor, idx, insn_nb) :
+      method = vm.get_method_descriptor( class_name, method_name, descriptor )
+      code = method.get_code()
+
+      self.__vmmo[ vm ].append( [MODIFICATION_REMOVE, method, code.get_relative_idx( idx ), insn_nb] )
+
+   def patch(self) :
+      raise("ooo")
 
 #############################################
 
@@ -365,11 +456,67 @@ class Modification :
 #############################################
 """
    Save information about added code
-      - useful to show the overhead of the protection
+      - useful to show the complexity (and the overhead) of the protection
 """
-class OverHead :
+class Complexity :
    def __init__(self) :
       pass
+#############################################
+
+
+#############################################
+
+"""
+
+   - If object creation is used with default constructor :
+      - newInstance
+   - Else if object creation is used with a particular constructor :
+      - <init> of class is renamed
+      - newInstance (call the new <init> constructor)
+      - call a specific method (which is the original constructor)
+"""
+
+class HandleObject :
+   def __init__(self, vmsmo, paths) :
+      for path in paths :
+         for j in path :
+            if j[1] != None :
+               print j
+
+class HandleInt :
+   def __init__(self, vmsmo, classes) :
+      self.vmsmo = vmsmo
+      self.excluded_classes = classes
+
+      self.data = {}
+
+      for i in self.vmsmo.gets() :
+         vm = i.get_vm()
+         vm_analysis = i.get_vm_analysis()
+         print vm, vm_analysis, vm.get_classes_names()
+         
+         for method in vm.get_methods() :
+            if method.get_class_name() not in self.excluded_classes :
+               for j in vm_analysis.tainted_integers.get_method( method ) :
+                  p = j.get()
+                  print "\t", p.get_value(), p.get_idx(), p.get_bb(), p.get_method(), method.get_class_name(), method.get_name(), method.get_descriptor()
+
+                  if method.get_class_name() not in self.data :
+                     self.data[ method.get_class_name() ] = []
+
+                  # Remove data from the class
+                  i.remove( method.get_class_name(), method.get_name(), method.get_descriptor(), p.get_bb().start + p.get_idx(), 1 )
+                  
+                  # Add protected data for next steps
+                  self.data[ method.get_class_name() ].append( [ len(self.data[ method.get_class_name() ]), pack('<L', p.get_value()), "INTEGER" ] )
+
+   def get_data(self) :
+      return self.data
+
+class ProtectData :
+   def __init__(self, data) :
+      print data
+
 #############################################
 
 class ProtectCode :
@@ -379,25 +526,35 @@ class ProtectCode :
 
       # S1
       ########################################################
-      # Get all created objects paths
-      op = ObjectPaths( vms )
-      
+      # Get all created information paths
+      ip = InformationPaths( vmsmo )
+      ip.show()
+
       # S2
       ########################################################
-      # Get data to be protect and remove original bytecodes
-
+      # Get data to be protected and remove original bytecodes
+      #         - integers
+      #         - object creation
+      #         - ...
+#      HandleObject( vmsmo, ip.get_objects_paths() )
+      hi = HandleInt( vmsmo, ip.get_classes_with_no_father() )
+   
+      # Save protected data to be independant of what we are protectecting (int, string ...)
+      pd = ProtectData( hi.get_data() )
 
       # S3
       ########################################################
       # Generate keys 
-
       # Protect data
-
+      prot = ProtectionClear( vmsmo, ip, pd )
+      
       # S4
       ########################################################
       # Add new bytecodes to generate keys
-      
+      prot.patch()
+
       # Add new bytecodes to get protected data
+      hi.patch( pd )
 
       # S5
       ########################################################
