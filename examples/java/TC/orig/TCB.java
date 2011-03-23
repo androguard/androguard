@@ -8,10 +8,10 @@ public class TCB {
 
       System.out.print(c + " " + b + " ---- ");
       if (c.equals(b)) {
-         return "True";
+         return " OK ";
       }
 
-      return "False";
+      return "  X ";
    }
 
    public TCB(TCA a)

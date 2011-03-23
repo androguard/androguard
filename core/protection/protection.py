@@ -407,16 +407,31 @@ class VMModification :
 
 
 #############################################
+"""
+   Create the new library (native and java)
+      - 
+      -
+"""
 class Protection(object) :
-   def __init__(self) :
-      pass
+   def __init__(self, vmsmo, ip) :
+      self.vmsmo = vmsmo
+      self.ip = ip
+
+   def generate_keys(self) :
+      print self.ip.get_objects_paths()
+
+      raise("ooo")
 
    def patch(self) :
       pass
 
 class ProtectionClear(Protection) :
    def __init__(self, vmsmo, ip, protdata) :
-      pass
+      super(ProtectionClear, self).__init__( vmsmo, ip )
+      
+      self.generate_keys()
+
+      raise("ooo")
 
 class ProtectionCrypt(Protection) :
    def __init__(self) :
