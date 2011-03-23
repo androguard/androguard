@@ -1473,7 +1473,7 @@ class JavaCode :
       # Adjust each branch with the new insertion
       val_m = self.__maps[ idx ]
       for i in self.__branches :
-         self.__byte_codes[i].adjust_i( self.__maps[i], val_m, new_jbc.get_length() )
+         self.__bytecodes[i].adjust_i( self.__maps[i], val_m, new_jbc.get_length() )
      
       # Insert the new bytecode at the correct index
       # Adjust maps + branches

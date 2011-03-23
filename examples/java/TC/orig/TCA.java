@@ -8,10 +8,10 @@ public class TCA {
 
       System.out.print(c + " " + b + " ---- ");
       if (c.equals(b)) {
-         return "True";
+         return " OK ";
       }
 
-      return "False";
+      return "  X ";
    }
 
    public TCA()
