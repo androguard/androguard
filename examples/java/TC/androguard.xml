@@ -6,11 +6,12 @@
    <save_path>./new/</save_path>
    <libs_path>./libs/</libs_path>
 
-   <watermark>
+<!--  <watermark>
       <type>BM_A0</type>
       <type>BM_A1</type>
       <output>wm.xml</output>
    </watermark>
+   -->
 
    <protect_code>
    </protect_code>
