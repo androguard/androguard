@@ -2377,7 +2377,7 @@ class DBC :
       # convert value to double
       elif self.op_value == 0x18 :
          x = (r[0][1]) | (r[1][1] << 16) | (r[2][1] << 32) | (r[3][1] << 48)
-         self.formatted_operands.append( ("#d", unpack( 'd', pack('Q', x ) )[0]) )
+         self.formatted_operands.append( ("#d", unpack( 'd', pack('q', x ) )[0]) )
 
 
       # 0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],

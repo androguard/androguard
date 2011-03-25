@@ -21,8 +21,9 @@ from subprocess import Popen, PIPE, STDOUT
 import os
 
 from error import log_loading, warning
+from misc import random_string
 from analysis import TAINTED_PACKAGE_CREATE
-import jvm, misc
+import jvm
 
 class GenerateMainCode :
    def __init__(self) :
@@ -74,7 +75,7 @@ class GenerateMainCode :
       _vm = self.__info_gc[ ident ][0]
       class_name = _vm.get_classes_names()[0]
       
-      name = misc.random_string()
+      name = random_string()
       _vm.insert_field( class_name, name, [ _access, _type ] )
 
       return [ name, _access, _type ]
@@ -409,18 +410,137 @@ class VMModification :
 #############################################
 """
    Create the new library (native and java)
-      - 
+      - generate keys from paths, and code to create the keys 
       -
 """
 class Protection(object) :
    def __init__(self, vmsmo, ip) :
       self.vmsmo = vmsmo
       self.ip = ip
+      self.keys = {}
+
+      self.TMP_PATH = "/dev/shm"
+
+      self.native_lib = {}
+      self.java_lib = {}
+
+      self._generate_native_templates( self.native_lib )
+      self._generate_java_templates( self.java_lib, self.native_lib )
+
+   def _generate_native_templates(self, native_lib) :
+      name = random_string()
+      native_lib[ name ] = {}
+
+      native_lib[ name ]["F_INIT"] = [ 0, random_string(), "void", "" ]
+
+      buff = "#include <jni.h>\n"
+
+      buff += "JNIEXPORT void JNICALL Java_AG_%s(JNIEnv *env, jclass cls) {\n" % (native_lib[ name ]["F_INIT"][1])
+      buff += "printf(\"[AndroGuard][native] init.\\n\");\n"
+      buff += "}\n"
+
+      native_lib[ name ]["RAW"] = buff
+
+   def _generate_java_templates(self, java_lib, native_lib) :
+      name = random_string()
+      java_lib[ name ] = {}
+
+      java_lib[ name ]["C_INIT"] = name
+
+      buff = "class %s {\n" % name
+
+      for i in native_lib :
+         if "F_" in i :
+            if i[0] == 0 :
+               buff += "private native %s %s (%s);\n" % (i[2], i[1], i[3])
+
+      buff += "static { System.loadLibrary(\"libAG.so\"); }\n"
+      buff += "}\n"
+
+      java_lib[ name ]["RAW"] = buff
 
    def generate_keys(self) :
-      print self.ip.get_objects_paths()
+      for i in self.ip.get_objects_paths() :
+         print "la", i
+         for j in i :
+            if j[1] == None :
+               print "\t%s" % (j[0])
+            else :
+               print "\t%s 0x%x" % (j[0], j[1].get_bb().start + j[1].get_idx())
+               key = "%s 0x%x" % (j[0], j[1].get_bb().start + j[1].get_idx())
+               if key not in self.keys :
+                  self.keys[ key ] = j 
 
+      print self.keys, len(self.keys)
       raise("ooo")
+
+   def compile(self) :
+      self._compile_native()
+      self._compile_java()
+
+      self._remove_files()
+
+   def _compile_native(self) :
+      JAVA_INCLUDE = "/usr/lib/jvm/java-6-sun/include"
+      
+      print "[AG] CREATING .o ...."
+      for i in self.native_lib :
+         fd = open("%s/%s.c" % (self.TMP_PATH, i), "w")
+         fd.write(self.native_lib[i]["RAW"])
+         fd.close()
+
+         compile = Popen(["gcc", "-c", "%s/%s.c" % (self.TMP_PATH, i), "-o", "%s/%s.o" % (self.TMP_PATH, i), "-I"+JAVA_INCLUDE, "-I"+JAVA_INCLUDE+"/linux"], stdout=PIPE, stderr=STDOUT)
+         stdout, stderr = compile.communicate()
+         print "\t[AG] COMPILATION %s RESULTS :" % i, stdout, stderr
+         if stdout != "" :
+            raise("ooo")
+
+      print "[AG] CREATING SHARED LIBRARY ...."
+      
+      l = [ "gcc", "-o", "/dev/shm/libAG.so" ]
+      for i in self.native_lib :
+         l.append( "%s/%s.o" % (self.TMP_PATH, i) )
+      l.append( "-shared" )
+
+      compile = Popen(l, stdout=PIPE, stderr=STDOUT)
+      stdout, stderr = compile.communicate()
+      print "\t[AG] COMPILATION RESULTS", stdout, stderr
+      if stdout != "" :
+         raise("ooo")
+
+   def _compile_java(self) :
+      print "[AG] CREATING .class ...."
+      for i in self.java_lib :
+         fd = open("%s/%s.java" % (self.TMP_PATH, i), "w")
+         fd.write(self.java_lib[i]["RAW"])
+         fd.close()
+
+         compile = Popen([ "/usr/bin/javac", "%s/%s.java" % (self.TMP_PATH, i) ], stdout=PIPE, stderr=STDOUT)
+         stdout, stderr = compile.communicate()
+         print "\t[AG] COMPILATION %s RESULTS" % i, stdout, stderr
+         if stdout != "":
+            raise("ooo")
+
+      print "[AG] CREATING JAR ...."
+
+      l = [ "/usr/bin/jar", "-fc", "%s/libAG.jar" % (self.TMP_PATH) ]
+      for i in self.java_lib :
+         l.append( "%s/%s.class" % (self.TMP_PATH, i) )
+
+      compile = Popen(l,  stdout=PIPE, stderr=STDOUT)
+      stdout, stderr = compile.communicate()
+      print "\t[AG] COMPILATION RESULTS", stdout, stderr
+      if stdout != "":
+         raise("ooo")
+
+   def _remove_files(self) :
+      for i in self.native_lib :
+         os.unlink("%s/%s.c" % (self.TMP_PATH, i))
+         os.unlink("%s/%s.o" % (self.TMP_PATH, i))
+
+      for i in self.java_lib :
+         os.unlink("%s/%s.java" % (self.TMP_PATH, i))
+         os.unlink("%s/%s.class" % (self.TMP_PATH, i))
 
    def patch(self) :
       pass
@@ -428,10 +548,7 @@ class Protection(object) :
 class ProtectionClear(Protection) :
    def __init__(self, vmsmo, ip, protdata) :
       super(ProtectionClear, self).__init__( vmsmo, ip )
-      
       self.generate_keys()
-
-      raise("ooo")
 
 class ProtectionCrypt(Protection) :
    def __init__(self) :
@@ -567,9 +684,16 @@ class ProtectCode :
       ########################################################
       # Add new bytecodes to generate keys
       prot.patch()
+      
+      raise("ooo")
 
+      # Compile new libs
+      #prot.compile()
+      
       # Add new bytecodes to get protected data
       hi.patch( pd )
+
+
 
       # S5
       ########################################################
