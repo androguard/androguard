@@ -642,12 +642,18 @@ class JVMBasicBlock :
    def prev_free_block_offset(self, idx=0) :
       last = -1
 
+      #print "IDX", idx, self.free_blocks_offsets
+
+      if self.free_blocks_offsets == [] :
+         return -1
+
       for i in self.free_blocks_offsets :
-         if i < idx :
+         if i <= idx :
             last = i
          else :
             return last
-      return -1
+
+      return last 
 
    def random_free_block_offset(self) :
       return self.free_blocks_offsets[ random.randint(0, len(self.free_blocks_offsets) - 1) ]
@@ -1507,8 +1513,8 @@ class BasicBlocks :
             if j[2] != None :
                self.G.add_edge( i.get_name(), j[2].get_name() )
 
-GRAMMAR_TYPE_CLEAR = 0
-GRAMMAR_TYPE_ANONYMOUS = 2
+FIELD_ACCESS = { "R" : 0, "W" : 1 }
+PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1 }
 class Signature :
    def __init__(self, tainted_information) :
       self.__tainted = tainted_information
@@ -1518,36 +1524,46 @@ class Signature :
 
 
       self.__grammars = {
-         GRAMMAR_TYPE_CLEAR : ( ),
-         GRAMMAR_TYPE_ANONYMOUS : ( "_get_bb", "_get_strings_a", "_get_fields_a", "_get_packages_a" ),
+         0 : ( "_get_strings_a", "_get_fields_a", "_get_packages_a" ),
+         1 : ( "_get_strings_pa", "_get_fields_a", "_get_packages_a" ),
+         2 : ( "_get_strings_pa", "_get_fields_a", "_get_packages_pa_1" ),
+         3 : ( "_get_strings_pa", "_get_fields_a", "_get_packages_pa_2" )
       }
 
-   def _get_bb(self, analysis_method) :
+   
+   def _get_bb(self, analysis_method, functions, options) :
       l = []
-
       for b in analysis_method.basic_blocks.get() :
          l.append( (b.start, "B") )
-         
+         l.append( (b.start, "[") )
+            
+         internal = []
+
          if "return" in b.get_last().get_name() :
-            l.append( (b.end, "R") )
+            internal.append( (b.end, "R") )
          elif "if" in b.get_last().get_name() :
-            l.append( (b.end, "I") )
+            internal.append( (b.end, "I") )
          elif "goto" in b.get_last().get_name() :
-            l.append( (b.end, "G") )
+            internal.append( (b.end, "G") )
+
+         for f in functions :
+            try :
+               internal.extend( getattr( self, f )( analysis_method, options ) )
+            except TypeError :
+               internal.extend( getattr( self, f )( analysis_method ) )
+
+         internal.sort()
+
+         for i in internal :
+            if i[0] >= b.start and i[0] <= b.end :
+               l.append( i )
+
+         del internal
+
+         l.append( (b.end, "]") )
       return l
-   
-   def _get_strings_pa(self, analysis_method) :
-      l = []
 
-      strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
-      for s in strings_method :
-         for path in strings_method[s] :
-            l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s) ) )
-      return l
-
-   def _get_fields_pa(self, analysis_method) :
-      fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
-
+   def _init_caches(self) :
       if self._cached_fields == {} :
          for f_t, f in self.__tainted["variables"].get_fields() :
             self._cached_fields[ f ] = f_t.get_paths_length()
@@ -1556,10 +1572,21 @@ class Signature :
             self._cached_fields[ f ] = n
             n += 1
 
+      if self._cached_packages == {} :
+         for m_t, m in self.__tainted["packages"].get_packages() :
+            self._cached_packages[ m ] = m_t.get_paths_length()
+         n = 0
+         for m in sorted( self._cached_packages ) :
+            self._cached_packages[ m ] = n
+            n += 1
+
+   def _get_strings_pa(self, analysis_method) :
       l = []
-      for f in fields_method :
-         for path in fields_method[ f ] :
-            l.append( (path.get_bb().start + path.get_idx(), "F%d%s" % (self._cached_fields[ f ], path.get_access_flag()) ) )
+
+      strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+      for s in strings_method :
+         for path in strings_method[s] :
+            l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s) ) )
       return l
 
    def _get_packages_pa(self, analysis_method) :
@@ -1595,7 +1622,7 @@ class Signature :
 
       for f in fields_method :
          for path in fields_method[ f ] :
-            l.append( (path.get_bb().start + path.get_idx(), "F%s" % path.get_access_flag()) )
+            l.append( (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ]) )
       return l
 
    def _get_packages_a(self, analysis_method) :
@@ -1605,14 +1632,62 @@ class Signature :
 
       for m in packages_method :
          for path in packages_method[ m ] :
-            l.append( (path.get_bb().start + path.get_idx(), "P%s" % (TAINTED_PACKAGE[ path.get_access_flag() ]) ) )
+            l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+      return l
+   
+   def _get_packages_pa_1(self, analysis_method, include_packages) :
+      packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+
+      l = []
+
+      for m in packages_method :
+         for path in packages_method[ m ] :
+            present = False
+            for i in include_packages :
+               if m.find(i) == 0 :
+                  present = True
+                  break
+
+            if present == False :
+               continue
+
+
+            if path.get_access_flag() == 1 :
+               l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+            else :
+               l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
+
+      return l
+   
+   def _get_packages_pa_2(self, analysis_method, include_packages) :
+      packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+
+      l = []
+
+      for m in packages_method :
+         for path in packages_method[ m ] :
+            present = False
+            for i in include_packages :
+               if m.find(i) == 0 :
+                  present = True
+                  break
+
+            if present == False :
+               l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+               continue
+
+
+            if path.get_access_flag() == 1 :
+               l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+            else :
+               l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
+
       return l
 
-   def get_method(self, analysis_method, grammar_type) :
-      l = []
-      for i in self.__grammars[ grammar_type ] :
-         l.extend( getattr(self, i)( analysis_method ) )
-      l.sort()
+   def get_method(self, analysis_method, grammar_type, options=[]) :
+      self._init_caches()
+
+      l = self._get_bb( analysis_method, self.__grammars[ grammar_type ], options )
       return ''.join(i[1] for i in l)
 
 class M_BCA :
@@ -1915,13 +1990,13 @@ class VM_BCA :
       for i in self.hmethods :
          yield self.hmethods[i]
 
-   def get_method_signature(self, method, grammar_type) :
+   def get_method_signature(self, method, grammar_type, options=[]) :
       """
          Return a specific signature for a specific method
 
          @rtype : string
       """
-      return self.signature.get_method( self.hmethods[ method ], grammar_type )
+      return self.signature.get_method( self.hmethods[ method ], grammar_type, options )
 
    def get(self, method) :
       """ 
