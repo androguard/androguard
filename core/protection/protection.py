@@ -258,6 +258,7 @@ class GenerateCode :
    def do(self) :
       print self.vm.get_name(), "Objects create", self.objects_create
 
+#######################################################
 class Node :
    def __init__(self, name) :
       self.name = name
@@ -385,6 +386,11 @@ class VMsModiciation :
 
       for i in self.vms :
          self._vms[ i ] = VMModification( i, mo )
+   
+   def get(self, class_name) :
+      for i in self._vms :
+         if class_name in self._vms[ i ].get_vm().get_classes_names() :
+            return self._vms[ i ]
 
    def gets(self) :
       for i in self._vms :
@@ -395,8 +401,14 @@ class VMModification :
       self.vm = vm
       self.mo = mo
 
+   def insert(self, class_name, method_name, descriptor, idx, ins) :
+      return self.mo.insert( self.vm, class_name, method_name, descriptor, idx, ins )
+
    def remove(self, class_name, method_name, descriptor, idx, insn_nb) :
       return self.mo.remove( self.vm, class_name, method_name, descriptor, idx, insn_nb )
+
+   def library(self, class_name, functions) :
+      return self.mo.library( self.vm, class_name, functions )
 
    def get_vm(self) :
       return self.vm.get_vm()
@@ -421,6 +433,8 @@ class Protection(object) :
 
       self.TMP_PATH = "/dev/shm"
 
+      self.names_libs = {}
+
       self.native_lib = {}
       self.java_lib = {}
 
@@ -431,11 +445,11 @@ class Protection(object) :
       name = random_string()
       native_lib[ name ] = {}
 
-      native_lib[ name ]["F_INIT"] = [ 0, random_string(), "void", "" ]
+      native_lib[ name ]["F_INIT"] = [ 0, random_string(), "V", "()" ]
 
       buff = "#include <jni.h>\n"
 
-      buff += "JNIEXPORT void JNICALL Java_AG_%s(JNIEnv *env, jclass cls) {\n" % (native_lib[ name ]["F_INIT"][1])
+      buff += "JNIEXPORT %s JNICALL Java_AG_%s(JNIEnv *env, jclass cls) {\n" % (native_lib[ name ]["F_INIT"][2], native_lib[ name ]["F_INIT"][1])
       buff += "printf(\"[AndroGuard][native] init.\\n\");\n"
       buff += "}\n"
 
@@ -446,6 +460,7 @@ class Protection(object) :
       java_lib[ name ] = {}
 
       java_lib[ name ]["C_INIT"] = name
+      java_lib[ name ]["METHODS"] = {}
 
       buff = "class %s {\n" % name
 
@@ -455,13 +470,14 @@ class Protection(object) :
                buff += "private native %s %s (%s);\n" % (i[2], i[1], i[3])
 
       buff += "static { System.loadLibrary(\"libAG.so\"); }\n"
-      buff += "}\n"
 
       java_lib[ name ]["RAW"] = buff
 
-   def generate_keys(self) :
+      self.names_libs[ "MAIN" ] = java_lib[ name ]
+
+   def _generate_keys(self) :
       for i in self.ip.get_objects_paths() :
-         print "la", i
+         print i
          for j in i :
             if j[1] == None :
                print "\t%s" % (j[0])
@@ -469,12 +485,22 @@ class Protection(object) :
                print "\t%s 0x%x" % (j[0], j[1].get_bb().start + j[1].get_idx())
                key = "%s 0x%x" % (j[0], j[1].get_bb().start + j[1].get_idx())
                if key not in self.keys :
-                  self.keys[ key ] = j 
+                  self.keys[ key ] = j[:]
+                  self.keys[ key ].append( self.vmsmo.get( j[0] ) ) 
 
       print self.keys, len(self.keys)
-      raise("ooo")
+      
+
+   def _close_java(self) :
+      for i in self.java_lib :
+         for j in self.java_lib[i]["METHODS"] :
+            self.java_lib[i]["RAW"] += self.java_lib[i]["METHODS"][j]["RAW"]
+
+         self.java_lib[i]["RAW"] += "}\n"
 
    def compile(self) :
+      self._close_java()
+      
       self._compile_native()
       self._compile_java()
 
@@ -550,6 +576,53 @@ class ProtectionClear(Protection) :
       super(ProtectionClear, self).__init__( vmsmo, ip )
       self.generate_keys()
 
+   def generate_keys(self) :
+      # get the number of unique keys from paths
+      self._generate_keys()
+
+      # associate each keys with a couple of modification :
+      #         - inside a class
+      #         - inside native/java libs
+      
+      lib = self.names_libs["MAIN"]
+      
+      name = random_string()
+      lib["METHODS"][name] = [ 0, name, "PUBLIC", "()", "V", "" ]
+      buff =  "System.out.println(\"[AG][java] %s\");\n" % name
+      buff += "Throwable t = new Throwable();\n"
+      buff += "for ( StackTraceElement s : t.getStackTrace()) {\n"
+      buff += "System.out.println( \"s : \" + s.getMethodName() );\n"
+      buff += "}\n"
+      lib["METHODS"][name][-1] = buff
+
+      for i in self.keys :
+         # Fix depedencies library
+         self.keys[i][-1].library( self.names_libs["MAIN"]["C_INIT"], [ (x, self.names_libs["MAIN"]["METHODS"][x][3] + self.names_libs["MAIN"]["METHODS"][x][4]) for x in self.names_libs["MAIN"]["METHODS"] ] )
+
+
+         # Insert new bytecodes
+         idx = self.keys[i][-1].get_vm_analysis().prev_free_block_offset( self.keys[i][1].get_method(), self.keys[i][1].get_bb().start + self.keys[i][1].get_idx() )
+         path = self.keys[i][1]
+
+         print i, idx
+
+      #l.append( [ "aload_0" ] )
+      #      l.append( [ "new", _type ] )
+      #            l.append( [ "dup" ] )
+      #                  l.append( [ "invokespecial", _type, '<init>', '()V' ] )
+      #                        l.append( [ "putfield", _field[0], _field[2] ] )
+
+         instructions = []
+         #334: new     #32; //class TCC
+         #337: dup
+         #338: invokespecial   #33; //Method TCC."<init>":()V
+         #341: astore_2
+         #342: aload_2
+         #343: invokevirtual   #34; //Method TCC.T1:()V
+         #346: return
+         self.keys[i][-1].insert( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), idx, instructions )
+
+
 class ProtectionCrypt(Protection) :
    def __init__(self) :
       pass
@@ -565,6 +638,12 @@ class ProtectionCrypt(Protection) :
 """
 MODIFICATION_ADD = 0
 MODIFICATION_REMOVE = 1
+MODIFICATION_DEPENDENCIES_LIBRARY = 2
+
+MODIF_TYPE = { MODIFICATION_ADD : "ADD",
+               MODIFICATION_REMOVE : "REMOVE",
+               MODIFICATION_DEPENDENCIES_LIBRARY : "LIBRARY",
+             }
 class Modification :
    def __init__(self, vms) :
       self.__vmmo = {}
@@ -578,6 +657,35 @@ class Modification :
       code = method.get_code()
 
       self.__vmmo[ vm ].append( [MODIFICATION_REMOVE, method, code.get_relative_idx( idx ), insn_nb] )
+
+   def insert(self, vm, class_name, method_name, descriptor, idx, instructions) :
+      method = vm.get_method_descriptor( class_name, method_name, descriptor )
+      code = method.get_code()
+
+      self.__vmmo[ vm ].append( [MODIFICATION_ADD, method, code.get_relative_idx( idx ), instructions] )
+
+   def library(self, vm, class_name, functions) :
+      self.__vmmo[ vm ].append( [MODIFICATION_DEPENDENCIES_LIBRARY, class_name, functions] )
+
+#      class_name = _vm.get_classes_names()[0]
+
+#            cm = _vm.get_class_manager()
+#                  id_class = cm.create_class( self.__name )
+
+#                        for func in self.__functions[ident] :
+#                                    for desc in self.__functions[ident][ func ] :
+#                                                   id_name_and_type = cm.create_name_and_type( func, desc )
+#                                                               cm.create_method_ref( id_class, id_name_and_type )
+   def summary(self) :
+      print "summary modification of classes"
+
+      for i in self.__vmmo :
+         print i
+         for modif in self.__vmmo[ i ] :
+            if modif[0] == MODIFICATION_ADD or modif[0] == MODIFICATION_REMOVE :
+               print "\t", MODIF_TYPE[ modif[0] ], modif[1].get_class_name(), modif[1].get_name(), modif[1].get_descriptor(), modif[2:]
+            else :
+               print "\t", MODIF_TYPE[ modif[0] ], modif[1:]
 
    def patch(self) :
       raise("ooo")
@@ -684,7 +792,9 @@ class ProtectCode :
       ########################################################
       # Add new bytecodes to generate keys
       prot.patch()
-      
+
+      mo.summary()
+
       raise("ooo")
 
       # Compile new libs
