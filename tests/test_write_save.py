@@ -8,6 +8,13 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard
 
+def test(got, expected):
+   if got == expected:
+      prefix = ' OK '
+   else:
+      prefix = '  X '
+   print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
+   return (got == expected)
 
 def hexdump(src, length=8, off=0):
    result = []   
@@ -34,25 +41,24 @@ elif len(sys.argv) == 2 :
 TEST = []
 
 ### JAVA TEST ###
-BASE_TEST = "./examples/java/Demo1/orig/"
-BASE_MAIN_TEST = "./examples/java/Demo1/orig_main/"
-
-FILES = [ 
-          ("BaseCipher.class", 0),
-          ("DES.class", 0), 
-          ("DES$Context.class", 0), 
-          ("IBlockCipher.class", 0), 
-          ("IBlockCipherSpi.class", 0), 
-          ("Properties$1.class", 0), 
-          ("Properties.class", 0), 
-          ("Registry.class", 0), 
-          ("Util.class", 0), 
-          ("WeakKeyException.class", 0), 
-          ("Demo1Main.class", 1)
+FILES_JVM = [ 
+          "examples/java/Demo1/orig/BaseCipher.class",
+          "examples/java/Demo1/orig/DES.class",
+          "examples/java/Demo1/orig/DES$Context.class",
+          "examples/java/Demo1/orig/IBlockCipher.class",
+          "examples/java/Demo1/orig/IBlockCipherSpi.class",
+          "examples/java/Demo1/orig/Properties$1.class",
+          "examples/java/Demo1/orig/Properties.class",
+          "examples/java/Demo1/orig/Registry.class",
+          "examples/java/Demo1/orig/Util.class",
+          "examples/java/Demo1/orig/WeakKeyException.class", 
+          "examples/java/Demo1/orig_main/Demo1Main.class",
         ]
 
 if TEST_TYPE & TYPE_JVM :
-   TEST.append( "./examples/java/test/orig/Test1.class" )
+   for i in FILES_JVM :
+      TEST.append( i )
+   #TEST.append( "./examples/java/test/orig/Test1.class" )
 
    #for i in FILES :
    #   if i[1] == 0 :
@@ -61,18 +67,14 @@ if TEST_TYPE & TYPE_JVM :
    #      TEST.append( BASE_MAIN_TEST + i[0] )
 
 ### DALVIK TEST ###
-FILES = [ 
+FILES_DVM = [ 
             "examples/android/Demo1/bin/classes.dex",
             "examples/dalvik/test/bin/classes.dex"
         ]
 
 if TEST_TYPE & TYPE_DVM :
-   for i in FILES :
+   for i in FILES_DVM :
       TEST.append( i )
-
-### ALL ###
-
-print TEST
 
 a = androguard.Androguard( TEST )
 
@@ -82,9 +84,9 @@ while i < len(TEST) :
    _a = a.get("file", TEST[i])
    b2 = _a.save()
 
-   if hashlib.md5( b1 ).hexdigest() != hashlib.md5( b2 ).hexdigest() :
-      print "HASH %s NO GO" % TEST[i]
-
+   ret = test( hashlib.md5( b1 ).hexdigest(), hashlib.md5( b2 ).hexdigest() )
+   print TEST[i]
+   if ret :
       j = 0 
       end = max(len(b1), len(b2))
       while j < end :
@@ -104,9 +106,5 @@ while i < len(TEST) :
             print hexdump(b2[j - 2: j + 10], off=j-2) + "\n"
 
          j += 1
-
-   else :
-      print "HASH %s GO" % TEST[i]
-  
    i += 1
 
