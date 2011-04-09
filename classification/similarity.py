@@ -20,7 +20,7 @@ import hashlib
 
 from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
 
-#struct libncd {
+#struct libsimilarity {
 #   void *orig;
 #   unsigned int size_orig;
 #   void *cmp;
@@ -29,7 +29,7 @@ from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create
 #   unsigned int *corig;
 #   unsigned int *ccmp;
 #};
-class LIBNCD_T(Structure) :
+class LIBSIMILARITY_T(Structure) :
    _fields_ = [("orig", c_void_p),
                ("size_orig", c_uint),
                ("cmp", c_void_p),
@@ -42,54 +42,78 @@ class LIBNCD_T(Structure) :
 ZLIB_COMPRESS =         0
 BZ2_COMPRESS =          1
 SMAZ_COMPRESS =         2
-class NCD :
+LZMA_COMPRESS =         3
+XZ_COMPRESS =           4
+class SIMILARITY :
    def __init__(self, path="./libsimilarity/libsimilarity.so") :
       self._u = cdll.LoadLibrary( path )
+      
+      self._u.compress.restype = c_uint
       self._u.ncd.restype = c_float
-      self._threads = []
+      self._u.ncs.restype = c_float
+      self._u.cmid.restype = c_float
+      
       self._level = 9
 
-      self.__libncd_t = LIBNCD_T()
+      self.__libsim_t = LIBSIMILARITY_T()
 
-      self.__cached = {
+      self.__caches = {
          ZLIB_COMPRESS : {},
          BZ2_COMPRESS : {},
          SMAZ_COMPRESS : {},
+         LZMA_COMPRESS : {},
+         XZ_COMPRESS : {},
       }
 
    def set_level(self, level) :
       self._level = level
 
-   
-   def get_cached(self, s) :
+   def get_in_caches(self, s) :
       try :
-         return self.__cached[ self._type ][ hashlib.md5( s ).hexdigest() ]
+         return self.__caches[ self._type ][ hashlib.md5( s ).hexdigest() ]
       except KeyError :
          return c_uint( 0 )
 
-   def add_cached(self, s, v) :
+   def add_in_caches(self, s, v) :
       h = hashlib.md5( s ).hexdigest()
-      if h not in self.__cached[ self._type ] :
-         self.__cached[ self._type ][ h ] = v
+      if h not in self.__caches[ self._type ] :
+         self.__caches[ self._type ][ h ] = v
 
-   def get(self, s1, s2) :
-      self.__libncd_t.orig = cast( s1, c_void_p ) 
-      self.__libncd_t.size_orig = len(s1)
+   def clear_caches(self) :
+      for i in self.__caches :
+         self.__caches[i] = {}
 
-      self.__libncd_t.cmp = cast( s2, c_void_p )
-      self.__libncd_t.size_cmp = len(s2)
+   def compress(self, s1) :
+      res = self._u.compress( self._level, cast( s1, c_void_p ), len( s1 ) )
+      return res
 
-      corig = self.get_cached(s1)
-      ccmp = self.get_cached(s2)
-      self.__libncd_t.corig = addressof( corig )
-      self.__libncd_t.ccmp = addressof( ccmp )
+   def _sim(self, s1, s2, func) :
+      self.__libsim_t.orig = cast( s1, c_void_p ) 
+      self.__libsim_t.size_orig = len(s1)
 
-      res = self._u.ncd( self._level, addressof( self.__libncd_t ) )
+      self.__libsim_t.cmp = cast( s2, c_void_p )
+      self.__libsim_t.size_cmp = len(s2)
+
+      corig = self.get_in_caches(s1)
+      ccmp = self.get_in_caches(s2)
+      self.__libsim_t.corig = addressof( corig )
+      self.__libsim_t.ccmp = addressof( ccmp )
+
+      res = func( self._level, addressof( self.__libsim_t ) )
       
-      self.add_cached(s1, corig)
-      self.add_cached(s2, ccmp)
+      self.add_in_caches(s1, corig)
+      self.add_in_caches(s2, ccmp)
 
       return res
+      
+   def ncd(self, s1, s2) :
+      return self._sim( s1, s2, self._u.ncd )
+
+   def ncs(self, s1, s2) :
+      return self._sim( s1, s2, self._u.ncs )
+
+   def cmid(self, s1, s2) :
+      return self._sim( s1, s2, self._u.cmid )
 
    def set_compress_type(self, t):
       self._type = t

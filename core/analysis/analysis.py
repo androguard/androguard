@@ -1522,7 +1522,6 @@ class Signature :
       self._cached_fields = {}
       self._cached_packages = {}
 
-
       self.__grammars = {
          0 : ( "_get_strings_a", "_get_fields_a", "_get_packages_a" ),
          1 : ( "_get_strings_pa", "_get_fields_a", "_get_packages_a" ),
@@ -1650,7 +1649,6 @@ class Signature :
 
             if present == False :
                continue
-
 
             if path.get_access_flag() == 1 :
                l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )

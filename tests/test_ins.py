@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys, re
 
 PATH_INSTALL = "./"                                                                                                                                                                                                               
@@ -7,17 +25,10 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
 
-from jvm import BRANCH2_JVM_OPCODES, determineNext
 
-TEST_CASE  = 'examples/java/TC/orig/TCE.class'
+TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 
-VALUES = { "TCE <init> ()V" : [
-                  ("if_icmpge", [116]),
-                  ("if_icmpge", [19]),
-                  ("goto", [-18]),
-                  ("lookupswitch", [22, 19]),
-                  ("lookupswitch", [47, 40, 34, 37]),
-                  ("goto", [-123]),
+VALUES = { "Lorg/t0t0/androguard/TC/TCA; <init> ()V" : [
                   ("return", [-1]),
             ],
 }

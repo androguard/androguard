@@ -2395,6 +2395,10 @@ class DBC :
          x.extend( t )
          l.extend( [ self._more_info(n[0], n[1]) for n in x[:off] ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
+      # Add* instructions
+      elif self.op_value >= 0x90 and self.op_value <= 0xaf :
+         l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
+         l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Other instructions
       else :
          v.reverse()
