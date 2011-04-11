@@ -1,6 +1,6 @@
 SRC	= 	similarity.c
 
-LDFLAGS =	-lbz2 -lz -llzma
+LDFLAGS =	-lm -lbz2 -lz -llzma
 CFLAGS  +=      -Wall       
 mkdir	=	mkdir -p
 CD      =       cd

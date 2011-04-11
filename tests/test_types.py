@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 
 PATH_INSTALL = "./"                                                                                                                                                                                                               
@@ -7,9 +25,9 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
 
-TEST_CASE  = 'examples/android/TestCase/bin/classes.dex'
+TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 
-VALUES = { "Lorg/t0t0/android/TestCase1; <init> ()V" : [
+VALUES = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
                   42,
                   -42,
                   0,

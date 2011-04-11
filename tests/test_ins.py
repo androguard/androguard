@@ -28,57 +28,20 @@ import androguard, analysis
 
 TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 
-VALUES = { "Lorg/t0t0/androguard/TC/TCA; <init> ()V" : [
-                  ("return", [-1]),
-            ],
-}
+VALUES = { "Lorg/t0t0/androguard/TC/TCA; <init> ()V" : {
+               0 : ("invoke-direct", [['v', 4], ['meth@', 5, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+               6 : ("const/16", [['v', 0], ['#+', 30]]),
+               10 : ("iput", [['v', 0], ['v', 4], ['field@', 4, 'Lorg/t0t0/androguard/TC/TCA;', 'I', 'TC1']]),
+               78 : ("invoke-virtual", [['v', 0], ['v', 1], ['meth@', 3, 'Ljava/io/PrintStream;', '(Ljava/lang/String;)', 'V', 'println']]),
+            },
 
-###############################################
-MODIF = { "TCE <init> ()V" : [
-            ("remove_at", 28),
-       ]
+            "Lorg/t0t0/androguard/TC/TCE; <init> ()V" : {
+               316 : ("if-ge", [['v', 2], ['v', 1], ['+', 12]]),
+               332 : ("add-int/2addr", [['v', 3], ['v', 4]]),
+               334 : ("add-int/lit8", [['v', 2], ['v', 2], ['#+', 1]]),
+               386 : ("add-int/lit8", [['v', 3], ['v', 3], ['#+', 2]]),
+            },
 }
-###############################################
-
-###############################################
-MODIF2 = { "TCE <init> ()V" : [
-            ("insert_at", 28, [ "aload_0"]),
-         ]
-}
-###############################################
-
-###############################################
-MODIF3 = { "TCE <init> ()V" : [
-            ("remove_at", 88),
-         ]
-}
-
-VALUES3 = { "TCE <init> ()V" : [
-                  ("if_icmpge", [113]),
-                  ("if_icmpge", [16]),
-                  ("goto", [-15]),
-                  ("lookupswitch", [22, 19]),
-                  ("lookupswitch", [47, 40, 34, 37]),
-                  ("goto", [-120]),
-                  ("return", [-1]),
-            ],
-}
-###############################################
-
-###############################################
-MODIF4 = { "TCE <init> ()V" : [
-            ("insert_at", 88, [ "sipush", 400 ]),
-         ]
-}
-###############################################
-
-###############################################
-MODIF4 = { "TCE <init> ()V" : [
-            ("insert_at", 88, [ "sipush", 400 ]),
-         ]
-}
-###############################################
-
 
 def test(got, expected):
    if got == expected:
@@ -104,11 +67,7 @@ def getVal(i) :
    
    return [-1]
 
-def check(a, values, branch) :
-   b = []
-   for i in branch : 
-      b.append( re.compile( i ) )
-
+def check(a, values) :
    for method in a.get_methods() :
       key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
    
@@ -120,46 +79,20 @@ def check(a, values, branch) :
       bc = code.get_bc()
 
       idx = 0
-      v = 0
       for i in bc.get() :
-#         print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
-         for j in b :
-            if j.match(i.get_name()) != None :
-               elem = values[key][v]
-               test("%s %s" % (elem[0], elem[1]), "%s %s" % (i.get_name(), getVal(i)))
-
-               v += 1
-               break
+         #print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
+         if idx in values[key] :
+            elem = values[key][idx]
+            
+            val1 = i.get_name() + "%s" % i.get_operands()
+            val2 = elem[0] + "%s" % elem[1]
+            
+            test(val1, val2)
+            
+            del values[key][idx]
 
          idx += i.get_length()
 
-def modify(a, modif) :
-   for method in a.get_methods() :
-      key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
-
-      if key not in modif :
-         continue
-
-      print "MODIFYING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
-      code = method.get_code()
-
-      for i in modif[key] :
-         getattr( code, i[0] )( *i[1:] )
-
 a = androguard.AndroguardS( TEST_CASE )
 
-### INIT CHECK ###
-check( a, VALUES, BRANCH2_JVM_OPCODES )
-### APPLY MODIFICATION ###
-modify( a, MODIF )
-### CHECK IF MODIFICATION IS OK ###
-check( a, VALUES, BRANCH2_JVM_OPCODES )
-
-modify( a, MODIF2 )
-check( a, VALUES, BRANCH2_JVM_OPCODES )
-
-modify( a, MODIF3 )
-check( a, VALUES3, BRANCH2_JVM_OPCODES )
-
-modify( a, MODIF4 )
-check( a, VALUES, BRANCH2_JVM_OPCODES )
+check( a, VALUES )
