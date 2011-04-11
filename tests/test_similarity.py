@@ -191,12 +191,13 @@ def benchmark(func, ref, threshold, fcmp) :
 
    return tres/idx, nb, idx, t2 - t1
 
-TESTS = { "ZLIB"        : ZLIB_COMPRESS,
-          "BZ2"         : BZ2_COMPRESS,
-          "LZMA"        : LZMA_COMPRESS,
-          "XZ"          : XZ_COMPRESS,
-   #       "SMAZ"         : SMAZ_COMPRESS,
-        }
+def TestEntropy(n, tests, diff) :
+   nb = 0
+   t1 = time.clock()
+   for i in tests :
+      nb += test( n.entropy(i[0]), n.entropy(i[1]), lambda x, y : (max(x,y) - min(x,y)) <= diff )
+   t2 = time.clock()
+   print "* Entropy %fs %d/%d" % (t2 - t1, nb, len(tests))
 
 def TestProperties(n) :
    # Properties
@@ -204,6 +205,13 @@ def TestProperties(n) :
    Monotonicity( n, TESTS_RANDOM_SIGN )
    Symetry( n, TESTS_RANDOM_SIGN )
    Distributivity( n, TESTS_RANDOM_SIGN )
+
+TESTS = { "ZLIB"        : ZLIB_COMPRESS,
+          "BZ2"         : BZ2_COMPRESS,
+          "LZMA"        : LZMA_COMPRESS,
+          "XZ"          : XZ_COMPRESS,
+   #       "SMAZ"         : SMAZ_COMPRESS,
+        }
 
 if __name__ == "__main__" :
    try : 
@@ -213,12 +221,16 @@ if __name__ == "__main__" :
       pass
 
    n = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
-  
+      
+   TestEntropy( n, TESTS_CLOSED_SIGN, 0.04 )
+   TestEntropy( n, TESTS_DIFFERENT_SIGN, 0.8 )
+
    for i in TESTS :
       n.set_compress_type( TESTS[i] )
       print "* ", i 
 
       #TestProperties( n )
+
 
       # Closed signature
       TestNCD( n, TESTS_CLOSED_SIGN, "closed" )

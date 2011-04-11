@@ -17,20 +17,8 @@
  You should have received a copy of the GNU Lesser General Public License
  along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdio.h>
-#include <string.h>
 
-#include "./z/z.h"
-#include "./bz2/bz2.h"
-#include "./smaz/smaz.h"
-#include "./lzma/lzma.h"
-#include "./xz/xz.h"
-
-#define TYPE_Z          0
-#define TYPE_BZ2        1
-#define TYPE_SMAZ       2
-#define TYPE_LZMA       3
-#define TYPE_XZ         4
+#include "similarity.h"
 
 #define M_BLOCK         1000000
 
@@ -51,19 +39,8 @@ void set_compress_type(int type) {
    }
 }
 
-struct libsimilarity {
-   void *orig;
-   unsigned int size_orig;
-   void *cmp;
-   unsigned size_cmp;
-
-   unsigned int *corig;
-   unsigned int *ccmp;
-};
-
-typedef struct libsimilarity libsimilarity_t;
-
-unsigned int compress(int level, void *orig, unsigned int size_orig) {
+unsigned int compress(int level, void *orig, unsigned int size_orig) 
+{
    unsigned int s1, ret;
 
    ret = generic_Compress( level, orig, size_orig, inbuf, &s1 );
@@ -128,11 +105,13 @@ float ncd(int level, libsimilarity_t *n)
    return (float)(s3 - min) / max;
 }
 
-float ncs(int level, libsimilarity_t *n) {
+float ncs(int level, libsimilarity_t *n) 
+{
    return 1 - ncd( level, n );
 }
 
-float cmid(int level, libsimilarity_t *n) {
+float cmid(int level, libsimilarity_t *n) 
+{
    unsigned int s1, s2, s3, size_join_buff, max, min, ret;
    void *joinbuff;
 
@@ -183,4 +162,30 @@ float cmid(int level, libsimilarity_t *n) {
    }
 
    return (float)(s1 + s2 - s3)/min;
+}
+
+float entropy(void *orig, unsigned int size_orig)
+{
+   float e;
+   char a;
+   int i;
+   int byte_counters[256];
+   char *c_orig = orig;
+
+   e = 0.0;
+   memset(byte_counters, '\0', sizeof(byte_counters));
+
+   for(i=0; i < size_orig; i++) {
+      a = c_orig[i];
+      byte_counters[ (int)a ] ++;
+   }  
+   
+   for (i=0; i < 256; i++) {
+      double p_i  = (double)byte_counters[i] / (double)size_orig;
+      if (p_i > 0.0) {
+         e -= p_i * (log(p_i) / log(2));
+      }
+   }
+
+   return e;
 }
