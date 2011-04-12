@@ -2623,9 +2623,18 @@ class DCode :
    def pretty_show(self, m_a) :
       paths = []
       for i in m_a.basic_blocks.get() :
-         for j in i.childs :
-            paths.append( ( j[0], j[1] ) )
+         val = 0 
+         if len(i.childs) > 1 :
+            val = 1
+         elif len(i.childs) == 1 :
+            val = 2
 
+         for j in i.childs :
+            paths.append( ( j[0], j[1], val ) )
+            if val == 1 :
+               val = 0
+
+      print paths
       nb = 0
       idx = 0
       for i in self.__bytecodes :
