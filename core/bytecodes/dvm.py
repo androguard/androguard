@@ -2634,7 +2634,6 @@ class DCode :
             if val == 1 :
                val = 0
 
-      print paths
       nb = 0
       idx = 0
       for i in self.__bytecodes :
