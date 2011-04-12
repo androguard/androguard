@@ -170,6 +170,7 @@ class Const4( Instruction ) :
         print 'Const4 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -186,6 +187,7 @@ class Const16( Instruction ) :
         print 'Const16 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -202,6 +204,7 @@ class Const( Instruction ) :
         print 'Const :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -218,6 +221,7 @@ class ConstHigh16( Instruction ) :
         print 'ConstHigh16 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -233,10 +237,11 @@ class ConstWide16( Instruction ) :
     def __init__( self, args ) :
         print 'ConstWide16 :', args
         Instruction.__init__( self, args )
-        val = args[1:]
-        val = ( val[0][1] ) | ( val[1][1] << 16 ) | ( val[2][1] << 32 ) | (
-        val[3][1] << 48 )
-        self.value = struct.unpack( 'd', struct.pack( 'q', val ) )[0]
+        #val = args[1:]
+        #val = ( val[0][1] ) | ( val[1][1] << 16 ) | ( val[2][1] << 32 ) | (
+        #val[3][1] << 48 )
+        self.value = struct.unpack( 'd', struct.pack( 'd', args[1][1] ) )[0]
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -252,10 +257,9 @@ class ConstWide32( Instruction ) :
     def __init__( self, args ) :
         print 'ConstWide32 :', args
         Instruction.__init__( self, args )
-        val = args[1:]
-        val = ( val[0][1] ) | ( val[1][1] << 16 ) | ( val[2][1] << 32 ) | (
-        val[3][1] << 48 )
-        self.value = struct.unpack( 'd', struct.pack( 'q', val ) )[0]
+        val = ( ( 0xFFFF & args[2][1] ) << 16 ) | ( ( 0xFFFF & args[1][1] ) )
+        self.value = struct.unpack( 'd', struct.pack( 'd', val ) )[0]
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -272,9 +276,10 @@ class ConstWide( Instruction ) :
         print 'ConstWide :', args
         Instruction.__init__( self, args )
         val = args[1:]
-        val = ( val[0][1] ) | ( val[1][1] << 16 ) | ( val[2][1] << 32 ) | (
-        val[3][1] << 48 )
+        val = ( 0xFFFF & val[0][1] ) | ( ( 0xFFFF & val[1][1] ) << 16 ) | ( (
+        0xFFFF & val[2][1] ) << 32 ) | ( ( 0xFFFF & val[3][1] ) << 48 )
         self.value = struct.unpack( 'd', struct.pack( 'q', val ) )[0]
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -292,6 +297,7 @@ class ConstWideHigh16( Instruction ) :
         Instruction.__init__( self, args )
         self.value = struct.unpack( 'd', struct.pack( 'q', int( args[1][1] ) )
         )[0]
+        print '==>', self.value
     
     def getValue( self ) :
         return self.value
@@ -308,6 +314,7 @@ class ConstString( Instruction ) :
         print 'ConstString :', args
         Instruction.__init__( self, args )
         self.value = '"' + args[1][2] + '"'
+        print '==>', self.value
 
     def getValue( self ) :
         return self.value
@@ -929,7 +936,8 @@ class AddInt( Instruction ) :
 #        print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return [ self.source1, self.source2 ]
+        return '%s + %s' % ( self.source1.getValue( ), self.source2.getValue())
+        #[ self.source1, self.source2 ]
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
 class SubInt( Instruction ) :
@@ -1841,6 +1849,48 @@ TYPE_DESCRIPTOR = {
     'D' : 'double'
 }
 
+ACCESS_FLAGS_CLASSES = {
+    0x1 : 'ACC_PUBLIC',
+    0x2 : 'ACC_PRIVATE',
+    0x4 : 'ACC_PROTECTED',
+    0x8 : 'ACC_STATIC',
+    0x10 : 'ACC_FINAL',
+    0x200 : 'ACC_INTERFACE',
+    0x400 : 'ACC_ABSTRACT',
+    0x1000 : 'ACC_SYNTHETIC',
+    0x2000 : 'ACC_ANNOTATION',
+    0x4000 : 'ACC_ENUM'
+}
+
+ACCESS_FLAGS_FIELDS = {
+    0x1 : 'ACC_PUBLIC',
+    0x2 : 'ACC_PRIVATE',
+    0x4 : 'ACC_PROTECTED',
+    0x8 : 'ACC_STATIC',
+    0x10 : 'ACC_FINAL',
+    0x40 : 'ACC_VOLATILE',
+    0x80 : 'ACC_TRANSIENT',
+    0x1000 : 'ACC_SYNTHETIC',
+    0x4000 : 'ACC_ENUM'
+}
+
+ACCESS_FLAGS_METHODS = {
+    0x1 : 'ACC_PUBLIC',
+    0x2 : 'ACC_PRIVATE',
+    0x4 : 'ACC_PROTECTED',
+    0x8 : 'ACC_STATIC',
+    0x10 : 'ACC_FINAL',
+    0x20 : 'ACC_SYNCHRONIZED',
+    0x40 : 'ACC_BRIDGE',
+    0x80 : 'ACC_VARARGS',
+    0x100 : 'ACC_NATIVE',
+    0x400 : 'ACC_ABSTRACT',
+    0x800 : 'ACC_STRICT',
+    0x1000 : 'ACC_SYNTHETIC',
+    0x10000 : 'ACC_CONSTRUCTOR',
+    0x20000 : 'ACC_DECLARED_SYNCHRONIZED'
+}
+
 def getType( type_ ) :
     res = TYPE_DESCRIPTOR.get( type_ )
     if res is None :
@@ -1889,6 +1939,12 @@ class Method( ) :
         self.memory = { }
         self.method = method
         code = method.get_code( )
+        access = method.get_access( )
+        self.access = []
+        for flag, acc in ACCESS_FLAGS_METHODS.iteritems( ) :
+            if flag & access :
+                self.access.append( acc )
+
         self.lins = code.get_bc( ).get( )
         
         self.nbregisters = code.registers_size.get_value( )
@@ -1916,6 +1972,9 @@ class Method( ) :
         while self.processNextIns( ) :
             print '========================'
         print
+        self.debug( )
+
+    def debug( self ) :
         print 'Dump of method :'
         for i, j in self.memory.iteritems( ) :
             if isinstance( j, This ) or isinstance( j, Param ) or i == 'heap' :
@@ -1924,10 +1983,19 @@ class Method( ) :
                 print '%s : %s, used : %s ' % ( i, j, j.used )
         print
         print 'Dump of ins :'
-        j = 0
+        acc = ''
+        for i in self.access :
+            acc += i[4:].lower( ) + ' '
+        proto = acc + self.type + ' ' + self.method.get_name( ) + '('
+        if self.paramsType :
+            proto += ', '.join( [ '%s %s' % ( i, j ) for ( i, j ) in zip(
+            self.paramsType, [self.memory[self.nbregisters - i].getValue( ) for
+            i in xrange( 1, self.nbparams ) ] ) ] )
+        proto += ') {'
+        print proto
         for i in self.ins :
-            print 'n#%d : %s' % ( j, i )
-            j += 1
+            print '%s;' % i
+        print '}'
         
     def processNextIns( self ) :
         if self.cur < len( self.lins ) :
@@ -1990,8 +2058,8 @@ class DvMachine( ) :
 
 if __name__ == '__main__' :
 
-    #TEST = 'examples/android/Test/bin/test.dex'
-    TEST = 'examples/android/Test/bin/classes.dex'
+    TEST = 'examples/android/Test/bin/test.dex'
+    #TEST = 'examples/android/Test/bin/classes.dex'
     #TEST = 'examples/java/Demo1/orig/DES.class'
 
     a = androguard.AndroguardS( TEST )
@@ -1999,7 +2067,7 @@ if __name__ == '__main__' :
 
     machine = DvMachine( a )
 
-    meth = 'go'
+    meth = 'testDouble'
     print
     print 'Selection de la methode %s.' % meth
     print
