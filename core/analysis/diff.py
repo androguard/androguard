@@ -63,7 +63,11 @@ class Method :
       setattr(self, "entropy_" + name, self.sim.entropy( buff ))
 
    def similarity(self, new_method, name_attribute) :
-      print self.sim.ncd( getattr(self, name_attribute), getattr(new_method, name_attribute) )
+      x = getattr( self, "hash_" + name_attribute )
+
+      x[ new_method ] = self.sim.ncd( getattr(self, name_attribute), getattr(new_method, name_attribute) )
+
+      setattr(self, "hash_" + name_attribute, x)
 
    def show(self) :
       print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), self.entropy
