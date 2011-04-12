@@ -19,6 +19,7 @@
 
 from struct import unpack, pack
 
+from misc import Color
 from error import warning
 
 # Handle exit message
@@ -46,6 +47,12 @@ def _Print(name, arg) :
 def PrettyShow(idx, paths, nb, ins) :
    p = []
    for j in paths :
+      way = Color.green
+      if j[2] == 1 :
+         way = Color.red
+      elif j[2] == 2 :
+         way = Color.blue
+
       m_in = j[0]
       m_ax = j[1]
       if j[0] > j[1] :
@@ -57,18 +64,18 @@ def PrettyShow(idx, paths, nb, ins) :
             p.append( j[1] )
             print "o",
          if idx == j[1] :
-            print ">",
+            print "%s>%s" % (way, Color.normal),
 
          if idx != j[0] and idx != j[1] :
-            print "|",
+            print "%s|%s" % (way, Color.normal),
       else :
          print " ",
 
-   print nb, "0x%x" % idx,
+   print "%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
    ins.show( idx )
 
    if p != [] :
-      print "[", ' '.join("%x" % i for i in p), "]",
+      print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
    print
 
 class SV : 
