@@ -22,7 +22,7 @@ import sys, os, cmd, threading, re
 
 from optparse import OptionParser
 
-import androguard, misc
+import androguard, misc, diff
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 
@@ -37,20 +37,13 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
-def main(options, arguments) :                    
-   if options.input != None :
-      _a = androguard.AndroguardS( options.input )
-      
-      if options.display != None :
-         _a.show()
-      elif options.method != None :
-         for method in _a.get("method", options.method) :
-            method.show()
-      elif options.field != None :
-         for field in _a.get("field", options.field) :
-            field.show()
+def main(options, arguments) :  
+   a = androguard.Androguard( arguments )
+   a.ianalyze()
 
-   elif options.version != None :
+   d = diff.Diff( [ i[1] for i in a.get_bc() ] )
+
+   if options.version != None :
       print "Androdiff version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     

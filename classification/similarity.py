@@ -66,6 +66,8 @@ class SIMILARITY :
          XZ_COMPRESS : {},
       }
 
+      self.set_compress_type( ZLIB_COMPRESS )
+
    def set_level(self, level) :
       self._level = level
 
