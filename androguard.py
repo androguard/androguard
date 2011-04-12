@@ -27,6 +27,7 @@ sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/vm")
 sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
+sys.path.append(PATH_INSTALL + "/classification")
 
 import bytecode, jvm, dvm, misc, analysis, opaque
 from error import error
@@ -261,7 +262,7 @@ class Androguard :
          else :
             self.__bc.append( (i, BC( bc )) )
 
-   def __analyze(self) :
+   def ianalyze(self) :
       for i in self.get_bc() :
          i[1].analyze()
 
@@ -355,7 +356,7 @@ class Androguard :
          bc.show()
 
    def do(self, fileconf) :
-      self.__analyze()
+      self.ianalyze()
 
       fd = open(fileconf, "rb")
       buffxml = fd.read()

@@ -611,6 +611,9 @@ class FillArrayData :
    def get_data(self) :
       return self.data
 
+   def get_operands(self) :
+      return self.data
+
    def get_name(self) :
       return "FILL-ARRAY-DATA"
 

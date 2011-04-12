@@ -18,7 +18,7 @@
 
 
 from error import error
-import dvm
+from similarity import *
 
 #96 0x17e aget-object v4 , v6 , v8
 #97 0x182 aget v5 , v8 , v8
@@ -40,3 +40,50 @@ import dvm
 #103 0x196 goto [+ -23]
 #104 0x198 new-instance v0 , [type@ 20 Lorg/t0t0/androguard/TC/TCA;]
 
+def filter_ins( ins ) :
+   return "%s%s" % (ins.get_name(), ins.get_operands())
+
+class Method :
+   def __init__(self, m, mx, sim) :
+      self.m = m
+      self.mx = mx
+      self.sim = sim
+
+
+   def add_attribute(self, name, func) :
+      buff = ""
+
+      code = self.m.get_code()
+      bc = code.get_bc()
+     
+      for i in bc.get() :
+         buff += func( i )
+
+      setattr(self, name, buff)
+      setattr(self, "entropy_" + name, self.sim.entropy( buff ))
+
+   def similarity(self, new_method, name_attribute) :
+      print self.sim.ncd( getattr(self, name_attribute), getattr(new_method, name_attribute) )
+
+   def show(self) :
+      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), self.entropy
+
+class Diff :
+   def __init__(self, vms) :
+      self.vms = vms
+      self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
+      self.methods = {} 
+
+      for i in self.vms :
+         self.methods[ i ] = []
+         for m in i.get_vm().get_methods() :
+            m = Method( m, i.get_analysis().hmethods[ m ], self.sim ) 
+            self.methods[ i ].append( m ) 
+            m.add_attribute( "filter_buff_1", filter_ins )
+
+      for i in self.methods :
+         for j in self.methods[i] :
+            for i1 in self.methods :
+               if i1 != i :
+                  for k in self.methods[i1] :
+                     j.similarity( k, "filter_buff_1" )
