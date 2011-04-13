@@ -76,6 +76,15 @@ class MoveObjectFrom16( Instruction ) :
         print 'MoveObjectFrom16 :', args
         Instruction.__init__( self, args )
 
+    def emulate( self, memory ) :
+        # FIXME ? : vBBBB peut addresser 64k registres max, et vAA 256 max
+        self.value = memory.get( 'heap' )
+        memory['heap'] = None
+        print 'value :', self.value
+
+    def getValue( self ) :
+        return self.value.getValue( )
+
 # move-object/16 vAAAA, vBBBB ( 16b, 16b )
 class MoveObject16( Instruction ) :
     pass
@@ -133,6 +142,10 @@ class ReturnVoid( Instruction ) :
         print 'ReturnVoid has no dest register'
 
     def emulate( self, memory ) :
+        heap = memory.get( 'heap' )
+        if heap :
+            self.dump.append( heap.getValue( ) )
+            memory['heap'] = None
         self.dump.append( 'return' )
 
     def __str__( self ) :
@@ -149,9 +162,7 @@ class Return( Instruction ) :
 
     def emulate( self, memory ) :
         self.returnValue = memory[self.returnRegister]
-        s = 'return %s' % self.returnValue.getContent( ).getValue( )
-        # FIXME
-        self.dump.append( s )
+        self.dump.append( 'return %s' % self.returnValue.getContent( ).getValue( ) )
 
     def __str__( self ) :
         return 'Return (' + str( self.returnValue ) + ')'
@@ -170,13 +181,14 @@ class Const4( Instruction ) :
         print 'Const4 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        self.type = 'I'
         print '==>', self.value
 
     def getValue( self ) :
         return self.value
         
     def getType( self ) :
-        return 'int?'
+        return self.type
 
     def __str__( self ) :
         return 'Const4 : ' + str( self.value )
@@ -187,13 +199,14 @@ class Const16( Instruction ) :
         print 'Const16 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        self.type = 'I'
         print '==>', self.value
 
     def getValue( self ) :
         return self.value
 
     def getType( self ) :
-        return 'int?'
+        return self.type
 
     def __str__( self ) :
         return 'Const16 : ' + str( self.value )
@@ -204,13 +217,14 @@ class Const( Instruction ) :
         print 'Const :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        self.type = 'I'
         print '==>', self.value
 
     def getValue( self ) :
         return self.value
 
     def getType( self ) :
-        return 'int?'
+        return self.type
 
     def __str__( self ) :
         return 'Const : ' + str( self.value )
@@ -221,13 +235,14 @@ class ConstHigh16( Instruction ) :
         print 'ConstHigh16 :', args
         Instruction.__init__( self, args )
         self.value = int( args[1][1] )
+        self.type = 'F'
         print '==>', self.value
 
     def getValue( self ) :
         return self.value
 
     def getType( self ) :
-        return 'long?'
+        return self.type
 
     def __str__( self ) :
         return 'ConstHigh16 : ' + str( self.value )
@@ -237,9 +252,7 @@ class ConstWide16( Instruction ) :
     def __init__( self, args ) :
         print 'ConstWide16 :', args
         Instruction.__init__( self, args )
-        #val = args[1:]
-        #val = ( val[0][1] ) | ( val[1][1] << 16 ) | ( val[2][1] << 32 ) | (
-        #val[3][1] << 48 )
+        self.type = 'J'
         self.value = struct.unpack( 'd', struct.pack( 'd', args[1][1] ) )[0]
         print '==>', self.value
 
@@ -247,7 +260,7 @@ class ConstWide16( Instruction ) :
         return self.value
 
     def getType( self ) :
-        return 'double?'
+        return self.type
 
     def __str__( self ) :
         return 'Constwide16 : ' + str( self.value )
@@ -257,6 +270,7 @@ class ConstWide32( Instruction ) :
     def __init__( self, args ) :
         print 'ConstWide32 :', args
         Instruction.__init__( self, args )
+        self.type = 'J'
         val = ( ( 0xFFFF & args[2][1] ) << 16 ) | ( ( 0xFFFF & args[1][1] ) )
         self.value = struct.unpack( 'd', struct.pack( 'd', val ) )[0]
         print '==>', self.value
@@ -265,7 +279,7 @@ class ConstWide32( Instruction ) :
         return self.value
 
     def getType( self ) :
-        return 'double?'
+        return self.type
 
     def __str__( self ) :
         return 'Constwide32 : ' + str( self.value )
@@ -276,8 +290,9 @@ class ConstWide( Instruction ) :
         print 'ConstWide :', args
         Instruction.__init__( self, args )
         val = args[1:]
-        val = ( 0xFFFF & val[0][1] ) | ( ( 0xFFFF & val[1][1] ) << 16 ) | ( (
-        0xFFFF & val[2][1] ) << 32 ) | ( ( 0xFFFF & val[3][1] ) << 48 )
+        val = ( 0xFFFF & val[0][1] ) | ( ( 0xFFFF & val[1][1] ) << 16 ) | ( \
+              ( 0xFFFF & val[2][1] ) << 32 ) | ( ( 0xFFFF & val[3][1] ) << 48 )
+        self.type = 'D'
         self.value = struct.unpack( 'd', struct.pack( 'q', val ) )[0]
         print '==>', self.value
 
@@ -285,7 +300,7 @@ class ConstWide( Instruction ) :
         return self.value
 
     def getType( self ) :
-        return 'double?'
+        return self.type
 
     def __str__( self ) :
         return 'ConstWide : ' + str( self.value )
@@ -295,15 +310,15 @@ class ConstWideHigh16( Instruction ) :
     def __init__( self, args ) :
         print 'ConstWideHigh16 :', args
         Instruction.__init__( self, args )
-        self.value = struct.unpack( 'd', struct.pack( 'q', int( args[1][1] ) )
-        )[0]
+        self.value = struct.unpack( 'd', struct.pack( 'q', int( args[1][1] ) ) )[0]
+        self.type = 'D'
         print '==>', self.value
     
     def getValue( self ) :
         return self.value
 
     def getType( self ) :
-        return 'double?'
+        return self.type
 
     def __str__( self ) :
         return 'ConstWide : ' + str( self.value )
@@ -741,7 +756,7 @@ class InvokeVirtual( Instruction ) :
                 params.append( memory[param].getContent( ) )
             else :
                 print 'Error, register %d does not exist.' % param
-        self.ins ='%s.%s( %s )' % ( memory[self.register].getContent( \
+        self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
         ).getValue( ), self.methCalled, ', '.join( [ str( param.getValue( ) ) for
         param in params ] ) )
         print 'Ins :: %s' % self.ins
@@ -773,7 +788,6 @@ class InvokeDirect( Instruction ) :
         self.methCalled = args[-1][-1]
 
     def emulate( self, memory ) :
-        #memory['heap'] = self
         self.ins =  memory[self.register].getContent( )
         params = []
         for param in self.params :
@@ -786,7 +800,7 @@ class InvokeDirect( Instruction ) :
 
     def getValue( self ) :
         return '%s %s( %s )' % ( self.ins.getValue( ), self.type, ', '.join(
-        self.params ) )
+        [ str( param.getValue( ) ) for param in self.params ] ) )
 
 #    def getReg( self ) :
 #        print 'InvokeDirect has no dest register.'
@@ -1999,6 +2013,7 @@ class Method( ) :
         
     def processNextIns( self ) :
         if self.cur < len( self.lins ) :
+            heap = self.memory.get( 'heap' )
             ins = self.lins[self.cur]
             print 'Name :', ins.get_name( ), 'Operands :', ins.get_operands( )
             newIns = INSTRUCTION_SET.get( ins.get_name( ).lower( ) )
@@ -2007,7 +2022,6 @@ class Method( ) :
                 return False
             newIns = newIns( ins.get_operands( )  )
             newIns.setDestDump( self.ins )
-            heap = self.memory.get( 'heap' )
             newIns.emulate( self.memory )
             regnum = newIns.getReg( )
             if regnum is not None :
@@ -2017,10 +2031,7 @@ class Method( ) :
                 else :
                     register.modify( newIns )
             print '----> newIns : %s, register : %s.' % ( ins.get_name( ), regnum )
-            heapaft = self.memory.get( 'heap' )
-            #print 'Heapprv :', heap
-            #print 'Heapaft :', heapaft
-            if heap and heapaft :
+            if heap and self.memory.get( 'heap' ) :
                 print 'Append :', self.memory['heap'].getValue( )
                 self.ins.append( self.memory['heap'].getValue( ) )
                 self.memory['heap'] = None
@@ -2067,7 +2078,7 @@ if __name__ == '__main__' :
 
     machine = DvMachine( a )
 
-    meth = 'testDouble'
+    meth = 'go'
     print
     print 'Selection de la methode %s.' % meth
     print
