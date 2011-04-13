@@ -617,12 +617,15 @@ class FillArrayData :
    def get_name(self) :
       return "FILL-ARRAY-DATA"
 
-   def show(self, pos) :
-      print pos, self.format.get_value(), repr(self.data),
-      buff = ""
+   def show_buff(self, pos) :
+      buff = self.get_name() + " "
+
       for i in range(0, len(self.data)) :
          buff += "\\x%02x" % ord( self.data[i] )
-      print buff[:-1]
+      return buff
+
+   def show(self, pos) :
+      print self.show_buff(pos),
 
    def get_length(self) :
       general_format = self.format.get_value()
@@ -655,9 +658,16 @@ class SparseSwitch :
 
    def get_name(self) :
       return "SPARSE-SWITCH"
+   
+   def show_buff(self, pos) :
+      buff = self.get_name() + " "
+      for i in range(0, len(self.keys)) :
+         buff += "%x:%x " % (self.keys[i], self.targets[i])
+
+      return buff
 
    def show(self, pos) :
-     print pos, self.format.get_value(), self.keys, self.targets,
+     print self.show_buff( pos ),
 
    def get_length(self) :
      return calcsize(SPARSE_SWITCH[0]) + (self.format.get_value().size * calcsize('<L')) * 2
@@ -685,8 +695,17 @@ class PackedSwitch :
    def get_name(self) :
       return "PACKED-SWITCH"
 
+   def show_buff(self, pos) :
+      buff = self.get_name() + " "
+      buff += "%x:" % self.format.get_value().first_key
+
+      for i in self.targets :
+         buff += " %x" % i
+
+      return buff
+      
    def show(self, pos) :
-      print pos, self.format.get_value(), self.targets,
+      print self.show_buff( pos ),
 
    def get_length(self) :
       return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
@@ -930,7 +949,7 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
                               
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
-BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed." ] #, "sparse." ]
+BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed.",  "sparse." ]
 
 def readuleb128(buff) :
    result = ord( buff.read(1) )
@@ -2325,8 +2344,11 @@ class DBCSpe :
    def get_length(self) :
       return self.op.get_length()
 
+   def show_buff(self, pos) :
+      return self.op.show_buff( pos )
+
    def show(self, pos) :
-      self.op.show( pos )
+      print self.op.show_buff( pos ),
 
 class DBC :
    def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
@@ -2433,7 +2455,11 @@ class DBC :
 
    def show(self, pos) :
       """Display the instruction"""
-      print self.op_name,
+      print self.show_buff(pos),
+
+   def show_buff(self, pos) :
+      """Return the instruction in a buffer"""
+      buff = self.op_name
 
       l = []
       for i in self.operands :
@@ -2450,7 +2476,9 @@ class DBC :
 
       if l != [] :
          l.pop(-1)
-         print ' '.join( i for i in l ),
+         buff += ' '.join( i for i in l )
+
+      return buff
 
    def _more_info(self, c, v) :
       if "string" in c :

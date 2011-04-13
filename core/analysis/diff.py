@@ -20,6 +20,7 @@
 from error import error
 from similarity import *
 
+# Lorg/t0t0/androguard/TC/TCMod1; ()V,T1
 #96 0x17e aget-object v4 , v6 , v8
 #97 0x182 aget v5 , v8 , v8
 #98 0x186 add-int/lit8 v8 , v8 , [#+ 1]
@@ -43,6 +44,12 @@ from similarity import *
 def filter_ins( ins ) :
    return "%s%s" % (ins.get_name(), ins.get_operands())
 
+FILTERS = [ 
+            ("FILTER_1", filter_ins),
+
+          ]
+
+
 class Method :
    def __init__(self, m, mx, sim) :
       self.m = m
@@ -63,14 +70,31 @@ class Method :
       setattr(self, "entropy_" + name, self.sim.entropy( buff ))
 
    def similarity(self, new_method, name_attribute) :
-      x = getattr( self, "hash_" + name_attribute )
+      x = None
+      try :
+         x = getattr( self, "hash_" + name_attribute )
+      except AttributeError :
+         setattr( self, "hash_" + name_attribute, {} )
+         x = getattr( self, "hash_" + name_attribute )
 
       x[ new_method ] = self.sim.ncd( getattr(self, name_attribute), getattr(new_method, name_attribute) )
 
-      setattr(self, "hash_" + name_attribute, x)
+   def sort(self, name_attribute, nb) :
+      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), getattr( self, "entropy_" + name_attribute )
+
+      x = getattr( self, "hash_" + name_attribute )
+
+      z = sorted(x.iteritems(), key=lambda (k,v): (v,k))[ : nb ]
+
+      for i in z :
+         e1 = getattr( self, "entropy_" + name_attribute )
+         e2 = getattr( i[0], "entropy_" + name_attribute )
+
+         if e1 != e2 :
+            print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
 
    def show(self) :
-      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), self.entropy
+      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
 
 class Diff :
    def __init__(self, vms) :
@@ -91,3 +115,6 @@ class Diff :
                if i1 != i :
                   for k in self.methods[i1] :
                      j.similarity( k, "filter_buff_1" )
+
+      for j in self.methods[ self.vms[0] ] :
+         j.sort( "filter_buff_1", 1 )

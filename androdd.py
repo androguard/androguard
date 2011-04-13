@@ -22,36 +22,81 @@ import sys, os, cmd, threading, re
 
 from optparse import OptionParser
 
-import androguard, misc
+import androguard, analysis, misc
+from bytecode import Dot
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
+option_1 = { 'name' : ('-o', '--output'), 'help' : 'base directory to output all files', 'nargs' : 1 }
 
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_2 = { 'name' : ('-d', '--dot'), 'help' : 'display the file in human readable format', 'action' : 'count' }
 
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more easily with objects', 'action' : 'count' }
+options = [option_0, option_1, option_2, option_3]
 
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+def valid_class_name( class_name ):
+   if class_name[-1] == ";" :
+      return class_name[1:-1]
+   return class_name
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+def create_directory( class_name, output ) :
+   output_name = output
+   if output_name[-1] != "/" :
+      output_name = output_name + "/"
+
+   try :
+      os.makedirs( output_name + class_name )
+   except OSError :
+      pass
+
+def create_directories( a, output ) :
+   for vm in a.get_vms() :
+      for class_name in vm.get_classes_names() :
+         create_directory( valid_class_name( class_name ), output )
+
+def export_apps_to_dot( a, output ) :
+   output_name = output
+   if output_name[-1] != "/" :
+      output_name = output_name + "/"
+
+   for vm in a.get_vms() :
+      x = analysis.VM_BCA( vm )
+      for method in vm.get_methods() :
+         filename = output_name + valid_class_name( method.get_class_name() )
+         if filename[-1] != "/" :
+            filename = filename + "/"
+        
+         descriptor = method.get_descriptor()
+         descriptor = descriptor.replace(";", "")
+         descriptor = descriptor.replace(" ", "")
+         descriptor = descriptor.replace("(", "-")
+         descriptor = descriptor.replace(")", "-")
+         descriptor = descriptor.replace("/", "_")
+
+         filename = filename + method.get_name() + descriptor
+
+         fd = open( filename + ".dot", "w")
+
+         fd.write("digraph code {\n")
+         fd.write("graph [bgcolor=white];\n")
+         fd.write("node [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n")
+
+         fd.write( Dot(method, x.hmethods[ method ]) )
+
+         fd.write("}\n")
+         fd.close()
 
 def main(options, arguments) :                    
-   if options.input != None :
-      _a = androguard.AndroguardS( options.input )
+   if options.input != None and options.output != None :
+      a = androguard.Androguard( [ options.input ] )
       
-      if options.display != None :
-         _a.show()
-      elif options.method != None :
-         for method in _a.get("method", options.method) :
-            method.show()
-      elif options.field != None :
-         for field in _a.get("field", options.field) :
-            field.show()
+      create_directories( a, options.output )
+
+      if options.dot != None :
+         export_apps_to_dot( a, options.output )
 
    elif options.version != None :
-      print "Androdiff version %s" % misc.VERSION
+      print "Androdd version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()
