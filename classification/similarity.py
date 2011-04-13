@@ -44,6 +44,7 @@ BZ2_COMPRESS =          1
 SMAZ_COMPRESS =         2
 LZMA_COMPRESS =         3
 XZ_COMPRESS =           4
+SNAPPY_COMPRESS =       5
 class SIMILARITY :
    def __init__(self, path="./libsimilarity/libsimilarity.so") :
       self._u = cdll.LoadLibrary( path )
@@ -64,6 +65,7 @@ class SIMILARITY :
          SMAZ_COMPRESS : {},
          LZMA_COMPRESS : {},
          XZ_COMPRESS : {},
+         SNAPPY_COMPRESS : {},
       }
 
       self.set_compress_type( ZLIB_COMPRESS )

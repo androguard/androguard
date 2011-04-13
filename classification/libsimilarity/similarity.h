@@ -1,4 +1,4 @@
-#ifndef _LIBSIMILARITY_H                                                                                                                                                           
+#ifndef _LIBSIMILARITY_H
 #define _LIBSIMILARITY_H
 
 #include <stdio.h>
@@ -10,12 +10,14 @@
 #include "./smaz/smaz.h"
 #include "./lzma/lzma.h"
 #include "./xz/xz.h"
+#include "./snappy/snappy.h"
 
 #define TYPE_Z          0
 #define TYPE_BZ2        1
 #define TYPE_SMAZ       2
 #define TYPE_LZMA       3
 #define TYPE_XZ         4
+#define TYPE_SNAPPY     5 
 
 struct libsimilarity {
    void *orig;
