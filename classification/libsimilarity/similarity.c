@@ -36,6 +36,8 @@ void set_compress_type(int type) {
       generic_Compress = lzmaCompress;
    } else if (type == TYPE_XZ) {
       generic_Compress = xzCompress;
+   } else if (type == TYPE_SNAPPY) {
+      generic_Compress = snappyCompress;
    }
 }
 

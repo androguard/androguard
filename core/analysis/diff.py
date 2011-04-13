@@ -90,8 +90,8 @@ class Method :
          e1 = getattr( self, "entropy_" + name_attribute )
          e2 = getattr( i[0], "entropy_" + name_attribute )
 
-         if e1 != e2 :
-            print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
+         #if e1 != e2 :
+         print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
 
    def show(self) :
       print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
@@ -100,6 +100,7 @@ class Diff :
    def __init__(self, vms) :
       self.vms = vms
       self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
+      self.sim.set_compress_type( SNAPPY_COMPRESS )
       self.methods = {} 
 
       for i in self.vms :
@@ -117,4 +118,4 @@ class Diff :
                      j.similarity( k, "filter_buff_1" )
 
       for j in self.methods[ self.vms[0] ] :
-         j.sort( "filter_buff_1", 1 )
+         j.sort( "filter_buff_1", 3 )

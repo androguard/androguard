@@ -210,6 +210,7 @@ TESTS = { "ZLIB"        : ZLIB_COMPRESS,
           "BZ2"         : BZ2_COMPRESS,
           "LZMA"        : LZMA_COMPRESS,
           "XZ"          : XZ_COMPRESS,
+          "SNAPPY"      : SNAPPY_COMPRESS,
    #       "SMAZ"         : SMAZ_COMPRESS,
         }
 
