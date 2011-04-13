@@ -2459,7 +2459,7 @@ class DBC :
 
    def show_buff(self, pos) :
       """Return the instruction in a buffer"""
-      buff = self.op_name
+      buff = self.op_name + " "
 
       l = []
       for i in self.operands :
