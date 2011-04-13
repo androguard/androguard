@@ -2422,7 +2422,7 @@ class DBC :
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Add* instructions
       elif 0x90 <= self.op_value <= 0xaf or 0xd8 <= self.op_value <= 0xe2 \
-        or self.op_value == 0x08 :
+        or self.op_value == 0x08 or self.op_value == 0x02 :
          l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Other instructions

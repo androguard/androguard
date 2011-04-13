@@ -5,7 +5,7 @@ import androguard
 import analysis
 import struct
 
-class Instruction( ) :
+class Instruction(object) :
     def __init__( self, args ) :
 	self.args = args
         self.register = args[0][1]
@@ -26,7 +26,7 @@ class Instruction( ) :
         print 'emulation not implemented for this instruction.'
 
 # nop
-class Nop( Instruction ) :
+class Nop(Instruction) :
     def __init__( self, args ) :
         print 'Nop', args
 
@@ -37,63 +37,71 @@ class Nop( Instruction ) :
         return ''
 
 # move vA, vB ( 4b, 4b )
-class Move( Instruction ) :
+class Move(Instruction) :
     def __init__( self, args ) :
         print 'Move', args
-        Instruction.__init__( self, args )
+        super(Move, self).__init__(args)
 
 # move/from16 vAA, vBBBB ( 8b, 16b )
-class MoveFrom16( Instruction ) :
+class MoveFrom16(Instruction) :
     def __init__( self, args ) :
         print 'MoveFrom16', args
-        Instruction.__init__( self, args )
+        super(MoveFrom16, self).__init__(args)
+        self.source = int( args[1][1] )
+
+    def emulate( self, memory ) :
+        self.value = memory[self.source].getContent( )
+        print 'value :', self.value
+
+    def getValue( self ) :
+        return self.value.getValue( )
 
 # move/16 vAAAA, vBBBB ( 16b, 16b )
-class Move16( Instruction ) :
+class Move16(Instruction) :
     pass
 
 # move-wide vA, vB ( 4b, 4b )
-class MoveWide( Instruction ) :
+class MoveWide(Instruction) :
     pass
 
 # move-wide/from16 vAA, vBBBB ( 8b, 16b )
-class MoveWideFrom16( Instruction ) :
+class MoveWideFrom16(Instruction) :
     def __init__( self, args ) :
         print 'MoveWideFrom16 :', args
-        Instruction.__init__( self, args )
+        super(MoveWideFrom16, self).__init__(args)
 
 # move-wide/16 vAAAA, vBBBB ( 16b, 16b )
-class MoveWide16( Instruction ) :
+class MoveWide16(Instruction) :
     pass
 
 # move-object vA, vB ( 4b, 4b )
-class MoveObject( Instruction ) :
+class MoveObject(Instruction) :
     pass
 
 # move-object/from16 vAA, vBBBB ( 8b, 16b )
-class MoveObjectFrom16( Instruction ) :
+class MoveObjectFrom16(Instruction) :
     def __init__( self, args ) :
         print 'MoveObjectFrom16 :', args
-        Instruction.__init__( self, args )
+        super(MoveObjectFrom16, self).__init__(args)
+        self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
         # FIXME ? : vBBBB peut addresser 64k registres max, et vAA 256 max
-        self.value = memory.get( 'heap' )
-        memory['heap'] = None
+        self.value = memory[self.source].getContent( )
         print 'value :', self.value
 
     def getValue( self ) :
         return self.value.getValue( )
 
 # move-object/16 vAAAA, vBBBB ( 16b, 16b )
-class MoveObject16( Instruction ) :
+class MoveObject16(Instruction) :
     pass
 
 # move-result vAA ( 8b )
-class MoveResult( Instruction ) :
+class MoveResult(Instruction) :
     def __init__( self, args ) :
         print 'MoveResult :', args
-        Instruction.__init__( self, args )
+        super(MoveResult, self).__init__(args)
 
     def emulate( self, memory ) :
         self.value = memory['heap']
@@ -107,14 +115,14 @@ class MoveResult( Instruction ) :
         return 'Move res in v' + str( self.register ) 
 
 # move-result-wide vAA ( 8b )
-class MoveResultWide( Instruction ) :
+class MoveResultWide(Instruction) :
     pass
 
 # move-result-object ( 8b )
-class MoveResultObject( Instruction ) :
+class MoveResultObject(Instruction) :
     def __init__( self, args ) :
         print 'MoveResultObject :', args
-        Instruction.__init__( self, args )
+        super(MoveResultObject, self).__init__(args)
 
     def emulate( self, memory ) :
         self.value = memory['heap']
@@ -128,13 +136,13 @@ class MoveResultObject( Instruction ) :
         return 'MoveResObj in v' + str( self.register )
 
 # move-exception vAA ( 8b )
-class MoveException( Instruction ) :
+class MoveException(Instruction) :
     def __init__( self, args ) :
         print 'MoveException :', args
-        Instruction.__init__( self, args )
+        super(MoveException, self).__init__(args)
 
 # return-void
-class ReturnVoid( Instruction ) :
+class ReturnVoid(Instruction) :
     def __init__( self, args ) :
         print 'ReturnVoid'
 
@@ -152,7 +160,7 @@ class ReturnVoid( Instruction ) :
         return 'Return'
 
 # return vAA ( 8b )
-class Return( Instruction ) :
+class Return(Instruction) :
     def __init__( self, args ) :
         print 'Return :', args
         self.returnRegister = args[0][1]
@@ -168,18 +176,18 @@ class Return( Instruction ) :
         return 'Return (' + str( self.returnValue ) + ')'
 
 # return-wide vAA ( 8b )
-class ReturnWide( Instruction ) :
+class ReturnWide(Instruction) :
     pass
 
 # return-object vAA ( 8b )
-class ReturnObject( Instruction ) :
+class ReturnObject(Instruction) :
     pass
 
 # const/4 vA, #+B ( 4b, 4b )
-class Const4( Instruction ) :
+class Const4(Instruction) :
     def __init__( self, args ) :
         print 'Const4 :', args
-        Instruction.__init__( self, args )
+        super(Const4, self).__init__(args)
         self.value = int( args[1][1] )
         self.type = 'I'
         print '==>', self.value
@@ -194,10 +202,10 @@ class Const4( Instruction ) :
         return 'Const4 : ' + str( self.value )
 
 # const/16 vAA, #+BBBB ( 8b, 16b )
-class Const16( Instruction ) :
+class Const16(Instruction) :
     def __init__( self, args ) :
         print 'Const16 :', args
-        Instruction.__init__( self, args )
+        super(Const16, self).__init__(args)
         self.value = int( args[1][1] )
         self.type = 'I'
         print '==>', self.value
@@ -212,10 +220,10 @@ class Const16( Instruction ) :
         return 'Const16 : ' + str( self.value )
 
 # const vAA, #+BBBBBBBB ( 8b, 32b )
-class Const( Instruction ) :
+class Const(Instruction) :
     def __init__( self, args ) :
         print 'Const :', args
-        Instruction.__init__( self, args )
+        super(Const, self).__init__(args)
         self.value = int( args[1][1] )
         self.type = 'I'
         print '==>', self.value
@@ -230,10 +238,10 @@ class Const( Instruction ) :
         return 'Const : ' + str( self.value )
 
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
-class ConstHigh16( Instruction ) :
+class ConstHigh16(Instruction) :
     def __init__( self, args ) :
         print 'ConstHigh16 :', args
-        Instruction.__init__( self, args )
+        super(ConstHigh16, self).__init__(args)
         self.value = int( args[1][1] )
         self.type = 'F'
         print '==>', self.value
@@ -248,10 +256,10 @@ class ConstHigh16( Instruction ) :
         return 'ConstHigh16 : ' + str( self.value )
 
 # const-wide/16 vAA, #+BBBB ( 8b, 16b )
-class ConstWide16( Instruction ) :
+class ConstWide16(Instruction) :
     def __init__( self, args ) :
         print 'ConstWide16 :', args
-        Instruction.__init__( self, args )
+        super(ConstWide16, self).__init__(args)
         self.type = 'J'
         self.value = struct.unpack( 'd', struct.pack( 'd', args[1][1] ) )[0]
         print '==>', self.value
@@ -266,10 +274,10 @@ class ConstWide16( Instruction ) :
         return 'Constwide16 : ' + str( self.value )
 
 # const-wide/32 vAA, #+BBBBBBBB ( 8b, 32b )
-class ConstWide32( Instruction ) :
+class ConstWide32(Instruction) :
     def __init__( self, args ) :
         print 'ConstWide32 :', args
-        Instruction.__init__( self, args )
+        super(ConstWide32, self).__init__(args)
         self.type = 'J'
         val = ( ( 0xFFFF & args[2][1] ) << 16 ) | ( ( 0xFFFF & args[1][1] ) )
         self.value = struct.unpack( 'd', struct.pack( 'd', val ) )[0]
@@ -285,10 +293,10 @@ class ConstWide32( Instruction ) :
         return 'Constwide32 : ' + str( self.value )
 
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
-class ConstWide( Instruction ) :
+class ConstWide(Instruction) :
     def __init__( self, args ) :
         print 'ConstWide :', args
-        Instruction.__init__( self, args )
+        super(ConstWide, self).__init__(args)
         val = args[1:]
         val = ( 0xFFFF & val[0][1] ) | ( ( 0xFFFF & val[1][1] ) << 16 ) | ( \
               ( 0xFFFF & val[2][1] ) << 32 ) | ( ( 0xFFFF & val[3][1] ) << 48 )
@@ -306,10 +314,10 @@ class ConstWide( Instruction ) :
         return 'ConstWide : ' + str( self.value )
 
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
-class ConstWideHigh16( Instruction ) :
+class ConstWideHigh16(Instruction) :
     def __init__( self, args ) :
         print 'ConstWideHigh16 :', args
-        Instruction.__init__( self, args )
+        super(ConstWideHigh16, self).__init__(args)
         self.value = struct.unpack( 'd', struct.pack( 'q', int( args[1][1] ) ) )[0]
         self.type = 'D'
         print '==>', self.value
@@ -324,10 +332,10 @@ class ConstWideHigh16( Instruction ) :
         return 'ConstWide : ' + str( self.value )
 
 # const-string vAA ( 8b )
-class ConstString( Instruction ) :
+class ConstString(Instruction) :
     def __init__( self, args ) :
         print 'ConstString :', args
-        Instruction.__init__( self, args )
+        super(ConstString, self).__init__(args)
         self.value = '"' + args[1][2] + '"'
         print '==>', self.value
 
@@ -338,38 +346,38 @@ class ConstString( Instruction ) :
         return self.value
 
 # const-string/jumbo vAA ( 8b )
-class ConstStringJumbo( Instruction ) :
+class ConstStringJumbo(Instruction) :
     pass
 
 # const-class vAA ( 8b )
-class ConstClass( Instruction ) :
+class ConstClass(Instruction) :
     pass
 
 # monitor-enter vAA ( 8b )
-class MonitorEnter( Instruction ) :
+class MonitorEnter(Instruction) :
     pass
 
 # monitor-exit vAA ( 8b )
-class MonitorExit( Instruction ) :
+class MonitorExit(Instruction) :
     pass
 
 # check-cast vAA ( 8b )
-class CheckCast( Instruction ) :
+class CheckCast(Instruction) :
     pass
 
 # instance-of vA, vB ( 4b, 4b )
-class InstanceOf( Instruction ) :
+class InstanceOf(Instruction) :
     pass
 
 # array-length vA, vB ( 4b, 4b )
-class ArrayLength( Instruction ) :
+class ArrayLength(Instruction) :
     pass
 
 # new-instance vAA ( 8b )
-class NewInstance( Instruction ) :
+class NewInstance(Instruction) :
     def __init__( self, args ) :
         print 'NewInstance :', args
-        Instruction.__init__( self, args )
+        super(NewInstance, self).__init__(args)
         self.type = args[1][2]
 
     def emulate( self, memory ) :
@@ -385,96 +393,96 @@ class NewInstance( Instruction ) :
         return 'New (' + self.type + ')'
 
 # new-array vA, vB ( 8b, size )
-class NewArray( Instruction ) :
+class NewArray(Instruction) :
     def __init__( self, args ) :
         print 'NewArray :', args
-        Instruction.__init__( self, args )
+        super(NewArray, self).__init__(args)
 
 # filled-new-array {vD, vE, vF, vG, vA} ( 4b each )
-class FilledNewArray( Instruction ) :
+class FilledNewArray(Instruction) :
     pass
 
 # filled-new-array/range {vCCCC..vNNNN} ( 16b )
-class FilledNewArrayRange( Instruction ) :
+class FilledNewArrayRange(Instruction) :
     pass
 
 # fill-array-data vAA, +BBBBBBBB ( 8b, 32b )
-class FillArrayData( Instruction ) :
+class FillArrayData(Instruction) :
     pass
 
 # throw vAA ( 8b )
-class Throw( Instruction ) :
+class Throw(Instruction) :
     pass
 
 # goto +AA ( 8b )
-class Goto( Instruction ) :
+class Goto(Instruction) :
     def __init__( self, args ) :
         print 'Goto :', args
-        Instruction.__init__( self, args )
+        super(Goto, self).__init__(args)
 
     def getReg( self ) :
         print 'Goto has no dest register'
 
 # goto/16 +AAAA ( 16b )
-class Goto16( Instruction ) :
+class Goto16(Instruction) :
     pass
 
 # goto/32 +AAAAAAAA ( 32b )
-class Goto32( Instruction ) :
+class Goto32(Instruction) :
     pass
 
 # packed-switch vAA, +BBBBBBBB ( reg to test, 32b )
-class PackedSwitch( Instruction ) :
+class PackedSwitch(Instruction) :
     def __init__( self, args ) :
         print 'PackedSwitch :', args
-        #Instruction.__init__( self, args )
+        #super(PackedSwitch, self).__init__(args)
 
     def getReg( self ) :
         print 'PackedSwitch has no dest register.'
 
 # sparse-switch vAA, +BBBBBBBB ( reg to test, 32b )
-class SparseSwitch( Instruction ) :
+class SparseSwitch(Instruction) :
     pass
 
 # cmp-float ( 8b, 8b, 8b )
-class CmplFloat( Instruction ) :
+class CmplFloat(Instruction) :
     pass
 
 # cmpg-float ( 8b, 8b, 8b )
-class CmpgFloat( Instruction ) :
+class CmpgFloat(Instruction) :
     pass
 
 # cmpl-double ( 8b, 8b, 8b )
-class CmplDouble( Instruction ) :
+class CmplDouble(Instruction) :
     pass
 
 # cmpg-double ( 8b, 8b, 8b )
-class CmpgDouble( Instruction ) :
+class CmpgDouble(Instruction) :
     pass
 
 # cmp-long ( 8b, 8b, 8b )
-class CmpLong( Instruction ) :
+class CmpLong(Instruction) :
     pass
 
 # if-eq vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfEq( Instruction ) :
+class IfEq(Instruction) :
     pass
 
 # if-ne vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfNe( Instruction ) :
+class IfNe(Instruction) :
     pass
 
 # if-lt vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfLt( Instruction ) :
+class IfLt(Instruction) :
     def __init__( self, args ) :
         print 'IfLt :', args
-        Instruction.__init__( self, args )
+        super(IfLt, self).__init__(args)
 
 # if-ge vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfGe( Instruction ) :
+class IfGe(Instruction) :
     def __init__( self, args ) :
         print 'IfGe :', args
-        #Instruction.__init__( self, args )
+        #super(IfGe, self).__init__(args)
         self.firstTest = int( args[0][1] )
         self.secondTest = int( args[1][1] )
         self.branch = int( args[2][1] )
@@ -487,102 +495,102 @@ class IfGe( Instruction ) :
         return 'IfGe : ' + str( self.value )
 
 # if-gt vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfGt( Instruction ) :
+class IfGt(Instruction) :
     pass
 
 # if-le vA, vB, +CCCC ( 4b, 4b, 16b )
-class IfLe( Instruction ) :
+class IfLe(Instruction) :
     pass
 
 # if-eqz vAA, +BBBB ( 8b, 16b )
-class IfEqz( Instruction ) :
+class IfEqz(Instruction) :
     pass
 
 # if-nez vAA, +BBBB ( 8b, 16b )
-class IfNez( Instruction ) :
+class IfNez(Instruction) :
     pass
 
 # if-ltz vAA, +BBBB ( 8b, 16b )
-class IfLtz( Instruction ) :
+class IfLtz(Instruction) :
     pass
 
 # if-gez vAA, +BBBB ( 8b, 16b )
-class IfGez( Instruction ) :
+class IfGez(Instruction) :
     pass
 
 # if-gtz vAA, +BBBB ( 8b, 16b )
-class IfGtz( Instruction ) :
+class IfGtz(Instruction) :
     pass
 
 # if-lez vAA, +BBBB (8b, 16b )
-class IfLez( Instruction ) :
+class IfLez(Instruction) :
     def __init__( self, args ) :
         print 'IfLez :', args
-        Instruction.__init__( self, args )
+        super(IfLez, self).__init__(args)
 
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGet( Instruction ) :
+class AGet(Instruction) :
     pass
 
 # aget-wide vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetWide( Instruction ) :
+class AGetWide(Instruction) :
     pass
 
 # aget-object vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetObject( Instruction ) :
+class AGetObject(Instruction) :
     pass
 
 # aget-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetBoolean( Instruction ) :
+class AGetBoolean(Instruction) :
     pass
 
 # aget-byte vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetByte( Instruction ) :
+class AGetByte(Instruction) :
     pass
 
 # aget-char vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetChar( Instruction ) :
+class AGetChar(Instruction) :
     pass
 
 # aget-short vAA, vBB, vCC ( 8b, 8b, 8b )
-class AGetShort( Instruction ) :
+class AGetShort(Instruction) :
     pass
 
 # aput vAA, vBB, vCC ( 8b, 8b, 8b )
-class APut( Instruction ) :
+class APut(Instruction) :
     def __init__( self, args ) :
         print 'APut :', args
-        Instruction.__init__( self, args )
+        super(Aput, self).__init__(args)
 
 # aput-wide vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutWide( Instruction ) :
+class APutWide(Instruction) :
     pass
 
 # aput-object vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutObject( Instruction ) :
+class APutObject(Instruction) :
     pass
 
 # aput-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutBoolean( Instruction ) :
+class APutBoolean(Instruction) :
     pass
 
 # aput-byte vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutByte( Instruction ) :
+class APutByte(Instruction) :
     pass
 
 # aput-char vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutChar( Instruction ) :
+class APutChar(Instruction) :
     pass
 
 # aput-short vAA, vBB, vCC ( 8b, 8b, 8b )
-class APutShort( Instruction ) :
+class APutShort(Instruction) :
     pass
 
 # iget vA, vB ( 4b, 4b )
-class IGet( Instruction ) :
+class IGet(Instruction) :
     def __init__( self, args ) :
         print 'IGet :', args
-        Instruction.__init__( self, args )
+        super(IGet, self).__init__(args)
         self.location = args[-1][2]
         self.type = args[-1][3]
         self.name = args[-1][4]
@@ -603,72 +611,72 @@ class IGet( Instruction ) :
         return '(' + self.type + ') ' + self.location + '.' + self.name
 
 # iget-wide vA, vB ( 4b, 4b )
-class IGetWide( Instruction ) :
+class IGetWide(Instruction) :
     pass
 
 # iget-object vA, vB ( 4b, 4b )
-class IGetObject( Instruction ) :
+class IGetObject(Instruction) :
     pass
 
 # iget-boolean vA, vB ( 4b, 4b )
-class IGetBoolean( Instruction ) :
+class IGetBoolean(Instruction) :
     pass
 
 # iget-byte vA, vB ( 4b, 4b )
-class IGetByte( Instruction ) :
+class IGetByte(Instruction) :
     pass
 
 # iget-char vA, vB ( 4b, 4b )
-class IGetChar( Instruction ) :
+class IGetChar(Instruction) :
     pass
 
 # iget-short vA, vB ( 4b, 4b )
-class IGetShort( Instruction ) :
+class IGetShort(Instruction) :
     pass
 
 # iput vA, vB ( 4b, 4b )
-class IPut( Instruction ) :
+class IPut(Instruction) :
     def __init__( self, args ) :
         print 'IPut', args
-        Instruction.__init__( self, args )
+        super(IPut, self).__init__(args)
 
 # iput-wide vA, vB ( 4b, 4b )
-class IPutWide( Instruction ) :
+class IPutWide(Instruction) :
     pass
 
 # iput-object vA, vB ( 4b, 4b )
-class IPutObject( Instruction ) :
+class IPutObject(Instruction) :
     pass
 
 # iput-boolean vA, vB ( 4b, 4b )
-class IPutBoolean( Instruction ) :
+class IPutBoolean(Instruction) :
     pass
 
 # iput-byte vA, vB ( 4b, 4b )
-class IPutByte( Instruction ) :
+class IPutByte(Instruction) :
     pass
 
 # iput-char vA, vB ( 4b, 4b )
-class IPutChar( Instruction ) :
+class IPutChar(Instruction) :
     pass
 
 # iput-short vA, vB ( 4b, 4b )
-class IPutShort( Instruction ) :
+class IPutShort(Instruction) :
     pass
 
 # sget vAA ( 8b )
-class SGet( Instruction ) :
+class SGet(Instruction) :
     pass
 
 # sget-wide vAA ( 8b )
-class SGetWide( Instruction ) :
+class SGetWide(Instruction) :
     pass
 
 # sget-object vAA ( 8b )
-class SGetObject( Instruction ) :
+class SGetObject(Instruction) :
     def __init__( self, args ) :
         print 'SGetObject :', args
-        Instruction.__init__( self, args )
+        super(SGetObject, self).__init__(args)
         self.location = args[1][2][1:-1].replace( '/', '.' )
         self.type = args[1][3][1:-1].replace( '/', '.' )
         self.name = args[1][4]
@@ -686,54 +694,54 @@ class SGetObject( Instruction ) :
         return '(' + self.type + ') ' + self.location + '.' + self.name
 
 # sget-boolean vAA ( 8b )
-class SGetBoolean( Instruction ) :
+class SGetBoolean(Instruction) :
     pass
 
 # sget-byte vAA ( 8b )
-class SGetByte( Instruction ) :
+class SGetByte(Instruction) :
     pass
 
 # sget-char vAA ( 8b )
-class SGetChar( Instruction ) :
+class SGetChar(Instruction) :
     pass
 
 # sget-short vAA ( 8b )
-class SGetShort( Instruction ) :
+class SGetShort(Instruction) :
     pass
 
 # sput vAA ( 8b )
-class SPut( Instruction ) :
+class SPut(Instruction) :
     pass
 
 # sput-wide vAA ( 8b )
-class SPutWide( Instruction ) :
+class SPutWide(Instruction) :
     pass
 
 # sput-object vAA ( 8b )
-class SPutObject( Instruction ) :
+class SPutObject(Instruction) :
     pass
 
 # sput-boolean vAA ( 8b )
-class SPutBoolean( Instruction ) :
+class SPutBoolean(Instruction) :
     pass
 
 # sput-wide vAA ( 8b )
-class SPutByte( Instruction ) :
+class SPutByte(Instruction) :
     pass
 
 # sput-char vAA ( 8b )
-class SPutChar( Instruction ) :
+class SPutChar(Instruction) :
     pass
 
 # sput-short vAA ( 8b )
-class SPutShort( Instruction ) :
+class SPutShort(Instruction) :
     pass
 
 # invoke-virtual {vD, vE, vF, vG, vA} ( 4b each )
-class InvokeVirtual( Instruction ) :
+class InvokeVirtual(Instruction) :
     def __init__( self, args ) :
         print 'InvokeVirtual :', args
-        Instruction.__init__( self, args )
+        super(InvokeVirtual, self).__init__(args)
         self.params = [ int( i[1] ) for i in args[1:-1] ]
         self.type = args[-1][2]
         self.paramsType = args[-1][3]
@@ -773,14 +781,14 @@ class InvokeVirtual( Instruction ) :
         '(' + self.paramsType + str( self.params ) + ' )'
 
 # invoke-super {vD, vE, vF, vG, vA} ( 4b each )
-class InvokeSuper( Instruction ) :
+class InvokeSuper(Instruction) :
     pass
 
 # invoke-direct {vD, vE, vF, vG, vA} ( 4b each )
-class InvokeDirect( Instruction ) :
+class InvokeDirect(Instruction) :
     def __init__( self, args ) :
         print 'InvokeDirect :', args
-        Instruction.__init__( self, args )
+        super(InvokeDirect, self).__init__(args)
         self.params = [ int( i[1] ) for i in args[1:-1] ]
         self.type = args[-1][2][1:-1].replace( '/', '.' )
         self.paramsType = args[-1][3][1:-1].split( )
@@ -811,136 +819,190 @@ class InvokeDirect( Instruction ) :
         ' + str( self.paramsType ) + ', ' + str( self.params ) + ' )'
 
 # invoke-static {vD, vE, vF, vG, vA} ( 4b each )
-class InvokeStatic( Instruction ) :
+class InvokeStatic(Instruction) :
     pass
 
 # invoke-interface {vD, vE, vF, vG, vA} ( 4b each )
-class InvokeInterface( Instruction ) :
+class InvokeInterface(Instruction) :
     pass
 
 # invoke-virtual/range {vCCCC..vNNNN} ( 16b each )
-class InvokeVirtualRange( Instruction ) :
+class InvokeVirtualRange(Instruction) :
     def __init__( self, args ) :
         print 'InvokeVirtualRange :', args
-        Instruction.__init__( self, args )
+        super(InvokeVirtualRange, self).__init__(args)
+        self.params = [ int( i[1] ) for i in args[1:-1] ]
+        self.type = args[-1][2]
+        self.paramsType = args[-1][3]
+        self.returnType = args[-1][4]
+        self.methCalled = args[-1][-1]
+
+    def emulate( self, memory ) :
+        memory['heap'] = self
+        params = []
+        for param in self.params :
+            par = memory.get( param )
+            if par :
+                print 'param : ', memory[param].getContent().getValue(), 'str :',
+                print str( memory[param].getContent().getValue())
+                params.append( memory[param].getContent( ) )
+            else :
+                print 'Error, register %d does not exist.' % param
+        self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
+        ).getValue( ), self.methCalled, ', '.join( [ str( param.getValue( ) ) for
+        param in params ] ) )
+        print 'Ins :: %s' % self.ins
+
+    def getValue( self ) :
+        return self.ins
+
+    def getReg( self ) :
+        print 'InvokeVirtual has no dest register.'
+        return None
+
+    def __str__( self ) :
+        return 'InvokeVirtualRange (' + self.returnType + ')' + self.methCalled +\
+        '(' + self.paramsType + str( self.params ) + ' )'
 
 # invoke-super/range {vCCCC..vNNNN} ( 16b each )
-class InvokeSuperRange( Instruction ) :
+class InvokeSuperRange(Instruction) :
     pass
 
 # invoke-direct/range {vCCCC..vNNNN} ( 16b each )
-class InvokeDirectRange( Instruction ) :
+class InvokeDirectRange(Instruction) :
     def __init__( self, args ) :
         print 'InvokeDirectRange :', args
-        Instruction.__init__( self, args )
+        super(InvokeDirectRange, self).__init__(args)
+        self.params = [ int( i[1] ) for i in args[1:-1] ]
+        self.type = args[-1][2][1:-1].replace( '/', '.' )
+        self.paramsType = args[-1][3][1:-1].split( )
+        self.returnType = args[-1][4]
+        self.methCalled = args[-1][-1]
+
+    def emulate( self, memory ) :
+        self.ins =  memory[self.register].getContent( )
+        params = []
+        for param in self.params :
+            print 'param : ', memory[param].getContent().getValue(), 'str :',
+            print str( memory[param].getContent().getValue())
+            params.append( memory[ param ].getContent( ) )
+        self.params = params
+
+    def getValue( self ) :
+        return '%s %s( %s )' % ( self.ins.getValue( ), self.type, ', '.join(
+        [ str( param.getValue( ) ) for param in self.params ] ) )
+
+    def __str__( self ) :
+        return 'InvokeDirectRange (' + self.returnType + ')' + self.methCalled + '(\
+        ' + str( self.paramsType ) + ', ' + str( self.params ) + ' )'
 
 # invoke-static/range {vCCCC..vNNNN} ( 16b each )
-class InvokeStaticRange( Instruction ) :
+class InvokeStaticRange(Instruction) :
     pass
 
 # invoke-interface/range {vCCCC..vNNNN} ( 16b each )
-class InvokeInterfaceRange( Instruction ) :
+class InvokeInterfaceRange(Instruction) :
     pass
 
 # neg-int vA, vB ( 4b, 4b )
-class NegInt( Instruction ) :
+class NegInt(Instruction) :
     pass
 
 # not-int vA, vB ( 4b, 4b )
-class NotInt( Instruction ) :
+class NotInt(Instruction) :
     pass
 
 # neg-long vA, vB ( 4b, 4b )
-class NegLong( Instruction ) :
+class NegLong(Instruction) :
     pass
 
 # not-long vA, vB ( 4b, 4b )
-class NotLong( Instruction ) :
+class NotLong(Instruction) :
     pass
 
 # neg-float vA, vB ( 4b, 4b )
-class NegFloat( Instruction ) :
+class NegFloat(Instruction) :
     pass
 
 # neg-double vA, vB ( 4b, 4b )
-class NegDouble( Instruction ) :
+class NegDouble(Instruction) :
     pass
 
 # int-to-long vA, vB ( 4b, 4b )
-class IntToLong( Instruction ) :
+class IntToLong(Instruction) :
     pass
 
 # int-to-float vA, vB ( 4b, 4b )
-class IntToFloat( Instruction ) :
+class IntToFloat(Instruction) :
     pass
 
 # int-to-double vA, vB ( 4b, 4b )
-class IntToDouble( Instruction ) :
+class IntToDouble(Instruction) :
     def __init__( self, args ) :
         print 'IntToDouble :', args
-        Instruction.__init__( self, args )
+        super(IntToDouble, self).__init__(args)
 
 # long-to-int vA, vB ( 4b, 4b )
-class LongToInt( Instruction ) :
+class LongToInt(Instruction) :
     pass
 
 # long-to-float vA, vB ( 4b, 4b )
-class LongToFloat( Instruction ) :
+class LongToFloat(Instruction) :
     pass
 
 # long-to-double vA, vB ( 4b, 4b )
-class LongToDouble( Instruction ) :
+class LongToDouble(Instruction) :
     pass
 
 # float-to-int vA, vB ( 4b, 4b )
-class FloatToInt( Instruction ) :
+class FloatToInt(Instruction) :
     pass
 
 # float-to-long vA, vB ( 4b, 4b )
-class FloatToLong( Instruction ) :
+class FloatToLong(Instruction) :
     pass
 
 # float-to-double vA, vB ( 4b, 4b )
-class FloatToDouble( Instruction ) :
+class FloatToDouble(Instruction) :
     def __init__( self, args ) :
         print 'FloatToDouble :', args
-        Instruction.__init__( self, args )
+        super(FloatToDouble, self).__init__(args)
 
 # double-to-int vA, vB ( 4b, 4b )
-class DoubleToInt( Instruction ) :
+class DoubleToInt(Instruction) :
     pass
 
 # double-to-long vA, vB ( 4b, 4b )
-class DoubleToLong( Instruction ) :
+class DoubleToLong(Instruction) :
     pass
 
 # double-to-float vA, vB ( 4b, 4b )
-class DoubleToFloat( Instruction ) :
+class DoubleToFloat(Instruction) :
     pass
 
 # int-to-byte vA, vB ( 4b, 4b )
-class IntToByte( Instruction ) :
+class IntToByte(Instruction) :
     pass
 
 # int-to-char vA, vB ( 4b, 4b )
-class IntToChar( Instruction ) :
+class IntToChar(Instruction) :
     pass
 
 # int-to-short vA, vB ( 4b, 4b )
-class IntToShort( Instruction ) :
+class IntToShort(Instruction) :
     pass
 
 # add-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class AddInt( Instruction ) :
+class AddInt(Instruction) :
     def __init__( self, args ) :
         print 'AddInt :', args
-        Instruction.__init__( self, args )
-        self.firstSource = int( args[1][1] )
-        self.secondSource = int( args[2][1] )
+        super(AddInt, self).__init__(args)
+        self.source1 = int( args[1][1] )
+        self.source2 = int( args[2][1] )
 
     def emulate( self, memory ) :
-        self.source1 = memory[self.firstSource].getContent( )
-        self.source2 = memory[self.secondSource].getContent( )
+        self.source1 = memory[self.source1].getContent( )
+        self.source2 = memory[self.source2].getContent( )
 #        try :
 #            source1 = int( source1 )
 #            source2 = int( source2 )
@@ -950,20 +1012,21 @@ class AddInt( Instruction ) :
 #        print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return '%s + %s' % ( self.source1.getValue( ), self.source2.getValue())
+        return '%s + %s' % ( self.source1.getValue( ), self.source2.getValue( ) )
         #[ self.source1, self.source2 ]
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class SubInt( Instruction ) :
+class SubInt(Instruction) :
     def __init__( self, args ) :
         print 'SubInt :', args
-        Instruction.__init__( self, args )
-        self.firstSource = int( args[1][1] )
-        self.secondSource = int( args[2][1] )
+        super(SubInt, self).__init__(args)
+        self.source1 = int( args[1][1] )
+        self.source2 = int( args[2][1] )
 
     def emulate( self, memory ) :
-        source1 = memory[self.firstSource].getContent( )
-        source2 = memory[self.secondSource].getContent( )
+        self.source1 = memory[self.source1].getContent( )
+        self.source2 = memory[self.source2].getContent( )
+        self.ins = '%s - %s'
 #        try :
 #            source1 = int( source1 )
 #            source2 = int( source2 )
@@ -972,20 +1035,22 @@ class SubInt( Instruction ) :
 #            self.ins = '%s - %s' % ( source1, source2 )
 #        print 'Ins : %s' % self.ins
 
-#    def getValue( self ) :
-#        return self.ins
+    def getValue( self ) :
+        return self.ins % ( self.source1.getValue( ), self.source2.getValue( ) )
 
 # mul-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class MulInt( Instruction ) :
+class MulInt(Instruction) :
     def __init__( self, args ) :
         print 'MulInt :', args
-        Instruction.__init__( self, args )
-        self.firstSource = int( args[1][1] )
-        self.secondSource = int( args[2][1] )
+        super(MulInt, self).__init__(args)
+        self.source1 = int( args[1][1] )
+        self.source2 = int( args[2][1] )
 
     def emulate( self, memory ) :
-        source1 = memory[self.firstSource].getContent( )
-        source2 = memory[self.secondSource].getContent( )
+        self.source1 = memory[self.source1].getContent( )
+        self.source2 = memory[self.source2].getContent( )
+        self.ins = '%s * %s'
+        print 'Ins : %s', self.ins
 #        try :
 #            source1 = int( source1 )
 #            source2 = int( source2 )
@@ -994,20 +1059,22 @@ class MulInt( Instruction ) :
 #            self.ins = '%s * %s' % ( source1, source2 )
 #        print 'Ins : %s' % self.ins
 
-#    def getValue( self ) :
-#        return self.value
+    def getValue( self ) :
+        return self.ins % ( self.source1.getValue( ), self.source2.getValue( ) )
 
 # div-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class DivInt( Instruction ) :
+class DivInt(Instruction) :
     def __init__( self, args ) :
         print 'DivInt :', args
-        Instruction.__init__( self, args )
-        self.firstSource = int( args[1][1] )
-        self.secondSource = int( args[2][1] )
+        super(DivInt, self).__init__(args)
+        self.source1 = int( args[1][1] )
+        self.source2 = int( args[2][1] )
 
     def emulate( self, memory ) :
-        source1 = memory[self.firstSource].getContent( )
-        source2 = memory[self.secondSource].getContent( )
+        self.source1 = memory[self.source1].getContent( )
+        self.source2 = memory[self.source2].getContent( )
+        self.ins = '%s / %s'
+        print 'Ins : %s', self.ins
 #        try :
 #            source1 = int( source1 )
 #            source2 = int( source2 )
@@ -1016,132 +1083,132 @@ class DivInt( Instruction ) :
 #            self.ins = '%s / %s' % ( source1, source2 )
 #        print 'Ins : %s' % self.ins
 
-#    def getValue( self ) :
-#        return self.value
+    def getValue( self ) :
+        return self.ins % ( self.source1.getValue( ), self.source2.getValue( ) )
 
 # rem-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class RemInt( Instruction ) :
+class RemInt(Instruction) :
     pass
 
 # and-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class AndInt( Instruction ) :
+class AndInt(Instruction) :
     pass
 
 # or-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class OrInt( Instruction ) :
+class OrInt(Instruction) :
     pass
 
 # xor-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class XorInt( Instruction ) :
+class XorInt(Instruction) :
     pass
 
 # shl-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class ShlInt( Instruction ) :
+class ShlInt(Instruction) :
     pass
 
 # shr-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class ShrInt( Instruction ) :
+class ShrInt(Instruction) :
     pass
 
 # ushr-int vAA, vBB, vCC ( 8b, 8b, 8b )
-class UShrInt( Instruction ) :
+class UShrInt(Instruction) :
     pass
 
 # add-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class AddLong( Instruction ) :
+class AddLong(Instruction) :
     pass
 
 # sub-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class SubLong( Instruction ) :
+class SubLong(Instruction) :
     pass
 
 # mul-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class MulLong( Instruction ) :
+class MulLong(Instruction) :
     pass
 
 # div-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class DivLong( Instruction ) :
+class DivLong(Instruction) :
     pass
 
 # rem-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class RemLong( Instruction ) :
+class RemLong(Instruction) :
     pass
 
 # and-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class AndLong( Instruction ) :
+class AndLong(Instruction) :
     pass
 
 # or-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class OrLong( Instruction ) :
+class OrLong(Instruction) :
     pass
 
 # xor-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class XorLong( Instruction ) :
+class XorLong(Instruction) :
     pass
 
 # shl-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class ShlLong( Instruction ) :
+class ShlLong(Instruction) :
     pass
 
 # shr-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class ShrLong( Instruction ) :
+class ShrLong(Instruction) :
     pass
 
 # ushr-long vAA, vBB, vCC ( 8b, 8b, 8b )
-class UShrLong( Instruction ) :
+class UShrLong(Instruction) :
     pass
 
 # add-float vAA, vBB, vCC ( 8b, 8b, 8b )
-class AddFloat( Instruction ) :
+class AddFloat(Instruction) :
     pass
 
 # sub-float vAA, vBB, vCC ( 8b, 8b, 8b )
-class SubFloat( Instruction ) :
+class SubFloat(Instruction) :
     pass
 
 # mul-float vAA, vBB, vCC ( 8b, 8b, 8b )
-class MulFloat( Instruction ) :
+class MulFloat(Instruction) :
     pass
 
 # div-float vAA, vBB, vCC ( 8b, 8b, 8b )
-class DivFloat( Instruction ) :
+class DivFloat(Instruction) :
     pass
 
 # rem-float vAA, vBB, vCC ( 8b, 8b, 8b )
-class RemFloat( Instruction ) :
+class RemFloat(Instruction) :
     pass
 
 # add-double vAA, vBB, vCC ( 8b, 8b, 8b )
-class AddDouble( Instruction ) :
+class AddDouble(Instruction) :
     def __init__( self, args ) :
         print 'AddDouble :', args
-        Instruction.__init__( self, args )
+        super(AddDouble, self).__init__(args)
 
 # sub-double vAA, vBB, vCC ( 8b, 8b, 8b )
-class SubDouble( Instruction ) :
+class SubDouble(Instruction) :
     def __init__( self, args ) :
         print 'SubDouble :', args
-        Instruction.__init__( self, args )
+        super(SubDouble, self).__init__(args)
 
 # mul-double vAA, vBB, vCC ( 8b, 8b, 8b )
-class MulDouble( Instruction ) :
+class MulDouble(Instruction) :
     def __init__( self, args ) :
         print 'MulDouble :', args
-        Instruction.__init__( self, args )
+        super(MulDouble, self).__init__(args)
 
 # div-double vAA, vBB, vCC ( 8b, 8b, 8b )
-class DivDouble( Instruction ) :
+class DivDouble(Instruction) :
     pass
 
 # rem-double vAA, vBB, vCC ( 8b, 8b, 8b )
-class RemDouble( Instruction ) :
+class RemDouble(Instruction) :
     pass
 
 # add-int/2addr vA, vB ( 4b, 4b )
-class AddInt2Addr( Instruction ) :
+class AddInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'AddInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(AddInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
@@ -1156,373 +1223,394 @@ class AddInt2Addr( Instruction ) :
         return [ self.op1, self.op2 ]
 
 # sub-int/2addr vA, vB ( 4b, 4b )
-class SubInt2Addr( Instruction ) :
+class SubInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'SubInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(SubInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s - %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s - %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # mul-int/2addr vA, vB ( 4b, 4b )
-class MulInt2Addr( Instruction ) :
+class MulInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'MulInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(MulInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s * %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s * %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # div-int/2addr vA, vB ( 4b, 4b )
-class DivInt2Addr( Instruction ) :
+class DivInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'DivInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(DivInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s / %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s / %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # rem-int/2addr vA, vB ( 4b, 4b )
-class RemInt2Addr( Instruction ) :
+class RemInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'RemInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(RemInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s %% %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s %% %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # and-int/2addr vA, vB ( 4b, 4b )
-class AndInt2Addr( Instruction ) :
+class AndInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'AndInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(AndInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s & %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s & %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # or-int/2addr vA, vB ( 4b, 4b )
-class OrInt2Addr( Instruction ) :
+class OrInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'OrInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(OrInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s | %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s | %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # xor-int/2addr vA, vB ( 4b, 4b )
-class XorInt2Addr( Instruction ) :
+class XorInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'XorInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(XorInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s ^ %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s ^ %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # shl-int/2addr vA, vB ( 4b, 4b )
-class ShlInt2Addr( Instruction ) :
+class ShlInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'ShlInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(ShlInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s << ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s << ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # shr-int/2addr vA, vB ( 4b, 4b )
-class ShrInt2Addr( Instruction ) :
+class ShrInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'ShrInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(ShrInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s >> ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s >> ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # ushr-int/2addr vA, vB ( 4b, 4b )
-class UShrInt2Addr( Instruction ) :
+class UShrInt2Addr(Instruction) :
     def __init__( self, args ) :
         print 'UShrInt2Addr :', args
-        Instruction.__init__( self, args )
+        super(UShrInt2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s >> ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s >> ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # add-long/2addr vA, vB ( 4b, 4b )
-class AddLong2Addr( Instruction ) :
+class AddLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'AddLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(AddLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s + %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s + %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # sub-long/2addr vA, vB ( 4b, 4b )
-class SubLong2Addr( Instruction ) :
+class SubLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'SubLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(SubLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s - %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s - %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # mul-long/2addr vA, vB ( 4b, 4b )
-class MulLong2Addr( Instruction ) :
+class MulLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'MulLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(MulLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s * %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s * %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # div-long/2addr vA, vB ( 4b, 4b )
-class DivLong2Addr( Instruction ) :
+class DivLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'DivLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(DivLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s / %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s / %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # rem-long/2addr vA, vB ( 4b, 4b )
-class RemLong2Addr( Instruction ) :
+class RemLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'RemLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(RemLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s % %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s %% %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # and-long/2addr vA, vB ( 4b, 4b )
-class AndLong2Addr( Instruction ) :
+class AndLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'AddLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(AndLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s & %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s & %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # or-long/2addr vA, vB ( 4b, 4b )
-class OrLong2Addr( Instruction ) :
+class OrLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'OrLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(OrLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s | %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s | %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # xor-long/2addr vA, vB ( 4b, 4b )
-class XorLong2Addr( Instruction ) :
+class XorLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'XorLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(XorLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s ^ %s' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s ^ %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # shl-long/2addr vA, vB ( 4b, 4b )
-class ShlLong2Addr( Instruction ) :
+class ShlLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'ShlLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(ShlLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s << ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s << ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # shr-long/2addr vA, vB ( 4b, 4b )
-class ShrLong2Addr( Instruction ) :
+class ShrLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'ShrLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(ShrLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s >> ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s >> ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # ushr-long/2addr vA, vB ( 4b, 4b )
-class UShrLong2Addr( Instruction ) :
+class UShrLong2Addr(Instruction) :
     def __init__( self, args ) :
         print 'UShrLong2Addr :', args
-        Instruction.__init__( self, args )
+        super(UShrLong2Addr, self).__init__(args)
         self.source = int( args[1][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s >> ( %s & 0x1f )' % ( memory[self.register].getContent( ).getValue( ),
-        memory[self.source].getContent( ).getValue( ) )
+        self.source = memory[self.source].getContent( )
+        self.dest = memory[self.register].getContent( )
+        self.ins = '%s >> ( %s & 0x1f )'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.dest.getValue( ), self.source.getValue( ) )
 
 # add-float/2addr vA, vB ( 4b, 4b )
-class AddFloat2Addr( Instruction ) :
+class AddFloat2Addr(Instruction) :
     pass
 
 # sub-float/2addr vA, vB ( 4b, 4b )
-class SubFloat2Addr( Instruction ) :
+class SubFloat2Addr(Instruction) :
     pass
 
 # mul-float/2addr vA, vB ( 4b, 4b )
-class MulFloat2Addr( Instruction ) :
+class MulFloat2Addr(Instruction) :
     pass
 
 # div-float/2addr vA, vB ( 4b, 4b )
-class DivFloat2Addr( Instruction ) :
+class DivFloat2Addr(Instruction) :
     pass
 
 # rem-float/2addr vA, vB ( 4b, 4b )
-class RemFloat2Addr( Instruction ) :
+class RemFloat2Addr(Instruction) :
     pass
 
 # add-double/2addr vA, vB ( 4b, 4b )
-class AddDouble2Addr( Instruction ) :
+class AddDouble2Addr(Instruction) :
     pass
 
 # sub-double/2addr vA, vB ( 4b, 4b )
-class SubDouble2Addr( Instruction ) :
+class SubDouble2Addr(Instruction) :
     pass
 
 # mul-double/2addr vA, vB ( 4b, 4b )
-class MulDouble2Addr( Instruction ) :
+class MulDouble2Addr(Instruction) :
     pass
 
 # div-double/2addr vA, vB ( 4b, 4b )
-class DivDouble2Addr( Instruction ) :
+class DivDouble2Addr(Instruction) :
     pass
 
 # rem-double/2addr vA, vB ( 4b, 4b )
-class RemDouble2Addr( Instruction ) :
+class RemDouble2Addr(Instruction) :
     pass
 
 # add-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class AddIntLit16( Instruction ) :
+class AddIntLit16(Instruction) :
     pass
 
 # rsub-int vA, vB, #+CCCC ( 4b, 4b, 16b )
-class RSubInt( Instruction ) :
+class RSubInt(Instruction) :
     pass
 
 # mul-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class MulIntLit16( Instruction ) :
+class MulIntLit16(Instruction) :
     def __init__( self, args ) :
         print 'MulIntLit16 :', args
-        Instruction.__init__( self, args )
+        super(MulIntLit16, self).__init__(args)
         self.source = int( args[1][1] )
         self.const = int( args[2][1] )
 
@@ -1535,38 +1623,30 @@ class MulIntLit16( Instruction ) :
         return self.ins
 
 # div-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class DivIntLit16( Instruction ) :
+class DivIntLit16(Instruction) :
     pass
 
 # rem-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class RemIntLit16( Instruction ) :
+class RemIntLit16(Instruction) :
     pass
 
 # and-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class AndIntLit16( Instruction ) :
+class AndIntLit16(Instruction) :
     pass
 
 # or-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class OrIntLit16( Instruction ) :
+class OrIntLit16(Instruction) :
     pass
 
 # xor-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-class XorIntLit16( Instruction ) :
+class XorIntLit16(Instruction) :
     pass
 
 # add-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class AddIntLit8( Instruction ) :
-    pass
-
-# rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class RSubIntLit8( Instruction ) :
-    pass
-
-# mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class MulIntLit8( Instruction ) :
+class AddIntLit8(Instruction) :
     def __init__( self, args ) :
-        print 'MulIntLit8 :', args
-        Instruction.__init__( self, args )
+        print 'AddIntLit8 :', args
+        super(AddIntLit8, self).__init__(args)
         self.source = int( args[1][1] )
         self.const = int( args[2][1] )
 
@@ -1578,36 +1658,56 @@ class MulIntLit8( Instruction ) :
     def getValue( self ) :
         return self.ins
 
+# rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
+class RSubIntLit8(Instruction) :
+    pass
+
+# mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
+class MulIntLit8(Instruction) :
+    def __init__( self, args ) :
+        print 'MulIntLit8 :', args
+        super(MulIntLit8, self).__init__(args)
+        self.source = int( args[1][1] )
+        self.const = int( args[2][1] )
+
+    def emulate( self, memory ) :
+        self.source = memory[self.source].getContent( )
+        self.ins = '%s * %s'
+        print 'Ins : %s' % self.ins
+
+    def getValue( self ) :
+        return self.ins % ( self.source.getValue( ), self.const )
+
 # div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class DivIntLit8( Instruction ) :
+class DivIntLit8(Instruction) :
     pass
 
 # rem-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class RemIntLit8( Instruction ) :
+class RemIntLit8(Instruction) :
     pass
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class AndIntLit8( Instruction ) :
+class AndIntLit8(Instruction) :
     pass
 
 # or-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class OrIntLit8( Instruction ) :
+class OrIntLit8(Instruction) :
     pass
 
 # xor-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class XorIntLit8( Instruction ) :
+class XorIntLit8(Instruction) :
     pass
 
 # shl-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class ShlIntLit8( Instruction ) :
+class ShlIntLit8(Instruction) :
     pass
 
 # shr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class ShrIntLit8( Instruction ) :
+class ShrIntLit8(Instruction) :
     pass
 
 # ushr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class UShrIntLit8( Instruction ) :
+class UShrIntLit8(Instruction) :
     pass
 
 class This( ) :
@@ -1964,6 +2064,7 @@ class Method( ) :
         self.nbregisters = code.registers_size.get_value( )
         self.nbparams = code.ins_size.get_value( )
         self.this = self.nbregisters - self.nbparams
+        print 'THIS ( %s ) : %d' % ( method.get_name( ), self.this )
         self.memory[ self.this ] = Register( This( ), self.this )
         # FIXME : prendre en compte le cas method static
         for i in xrange( 1, self.nbparams ) :
@@ -2078,7 +2179,7 @@ if __name__ == '__main__' :
 
     machine = DvMachine( a )
 
-    meth = 'go'
+    meth = 'test'
     print
     print 'Selection de la methode %s.' % meth
     print
