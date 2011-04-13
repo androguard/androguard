@@ -1271,7 +1271,7 @@ class TaintedIntegers :
          return []
 
    def push_info(self, ins, info) :
-      print ins, ins.get_name(), ins.get_operands(), info
+      #print ins, ins.get_name(), ins.get_operands(), info
       
       ti = TaintedInteger( info )
       self.__integers.append( ti )

@@ -50,7 +50,6 @@ option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 
 
 option_7 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
 
-
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
 
 def save_session(l, filename) :

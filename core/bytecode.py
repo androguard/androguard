@@ -78,6 +78,30 @@ def PrettyShow(idx, paths, nb, ins) :
       print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
    print
 
+def Dot(m, mx) :
+   buff = ""
+   for i in mx.basic_blocks.get() :
+      val = "green"
+      if len(i.childs) > 1 :
+         val = "red"
+      elif len(i.childs) == 1 :                                                                                                                                                                                                
+         val = "blue"
+
+      for j in i.childs :
+         buff += "\"%s\" -> \"%s\" [color=\"%s\"];\n" % ( i.get_name(), j[-1].get_name(), val )
+         if val == "red" :
+            val = "green"
+    
+      idx = i.start
+      label = ""
+      for ins in i.ins :
+         label += "%x %s\l" % (idx, ins.show_buff(idx))
+         idx += ins.get_length()
+
+      buff +=  "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (i.get_name(), label)
+      
+   return buff
+
 class SV : 
    """SV is used to handle more easily a value"""
    def __init__(self, size, buff) :
@@ -291,4 +315,3 @@ def ExportVMToPython(vm) :
             for j in f[i] :
                name = "FIELD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
                setattr( _class, name, j )
-

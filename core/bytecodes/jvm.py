@@ -1157,18 +1157,25 @@ class JBC :
 #            print self.__special_value            
             self.__raw_buff = pack( '>B', INVERT_JAVA_OPCODES[ self.__op_name ] ) + pack(self.__special[3], *self.__special[1]( self.__special_value ) )
 
+   def show_buff(self, pos) :
+      buff = ""
+      if self.__special_value == None :
+         buff += self.__op_name
+      else :
+         if self.__op_name in BRANCH_JVM_OPCODES :
+            buff += "%s %s %s" % (self.__op_name, self.__special_value, self.__special_value + pos)
+         else : 
+            buff += "%s %s" % (self.__op_name, self.__special_value)
+
+      return buff
+      
    def show(self, pos) :
       """Show the bytecode at a specific position
       
          pos - the position into the bytecodes (integer)
       """
-      if self.__special_value == None :
-         print self.__op_name,
-      else :
-         if self.__op_name in BRANCH_JVM_OPCODES :
-            print self.__op_name, self.__special_value, self.__special_value + pos,
-         else : 
-            print self.__op_name, self.__special_value,
+      print self.show_buff( pos ),
+
 
 class JavaCode :
    """JavaCode manages a list of bytecode to a specific method, by decoding a raw buffer and transform each bytecode into a JBC object"""
