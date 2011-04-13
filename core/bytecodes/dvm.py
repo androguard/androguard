@@ -2396,14 +2396,14 @@ class DBC :
 
       # 0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
       elif self.op_value == 0x17 :
-         self.formatted_operands.append( ("#l", r[0][1]) )
+         x = ( ( 0xFFFF & r[1][1] ) << 16 ) | ( ( 0xFFFF & r[0][1] ) )
+         self.formatted_operands.append( ("#l", unpack( 'd', pack('d', x))[0] ) )
       
       # 0x18 : [ "51l", "const-wide",                 "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
       # convert value to double
       elif self.op_value == 0x18 :
-         x = (r[0][1]) | (r[1][1] << 16) | (r[2][1] << 32) | (r[3][1] << 48)
+         x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1]) << 16) | ((0xFFFF & r[2][1]) << 32) | ((0xFFFF & r[3][1]) << 48)
          self.formatted_operands.append( ("#d", unpack( 'd', pack('q', x ) )[0]) )
-
 
       # 0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
       # convert value to double
@@ -2421,8 +2421,8 @@ class DBC :
          l.extend( [ self._more_info(n[0], n[1]) for n in x[:off] ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Add* instructions
-      elif self.op_value >= 0x90 and self.op_value <= 0xaf \
-        or self.op_value >= 0xd8 and self.op_value <= 0xe2 :
+      elif 0x90 <= self.op_value <= 0xaf or 0xd8 <= self.op_value <= 0xe2 \
+        or self.op_value == 0x08 :
          l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Other instructions

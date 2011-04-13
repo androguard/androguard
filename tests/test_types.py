@@ -25,9 +25,10 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
 
-TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+#TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+TEST_CASE = 'examples/android/Test/bin/test.dex'
 
-VALUES = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
+VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
                   42,
                   -42,
                   0,
@@ -44,6 +45,76 @@ VALUES = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
                   -42.0,
                   0.0,
             ],
+}
+
+VALUES = { 'Ltest4/test5/Test4; testDouble ()V' : [
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3,
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3,
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+
+        65534,
+        65535,
+        65536,
+        65537,
+
+        37269,
+        32768,
+        32767,
+        32766,
+
+        65534,
+        65535,
+        65536,
+        65537,
+
+        32769,
+        32768,
+        32767,
+        32766,
+
+        5346952,
+        5346952,
+        ],
 }
 
 def test(got, expected):
