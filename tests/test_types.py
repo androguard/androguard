@@ -26,7 +26,7 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, analysis
 
 #TEST_CASE  = 'examples/android/TC/bin/classes.dex'
-TEST_CASE = 'examples/android/Test/bin/test.dex'
+TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
                   42,
@@ -47,12 +47,7 @@ VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
             ],
 }
 
-VALUES = { 'Ltest4/test5/Test4; testDouble ()V' : [
-        -10,
-        -9,
-        -8,
-        -7,
-        -6,
+VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
         -5,
         -4,
         -3,
@@ -64,17 +59,7 @@ VALUES = { 'Ltest4/test5/Test4; testDouble ()V' : [
         3,
         4,
         5,
-        6,
-        7,
-        8,
-        9,
-        10,
 
-        -10,
-        -9,
-        -8,
-        -7,
-        -6,
         -5,
         -4,
         -3,
@@ -86,18 +71,35 @@ VALUES = { 'Ltest4/test5/Test4; testDouble ()V' : [
         3,
         4,
         5,
-        6,
-        7,
-        8,
-        9,
-        10,
+
+        -5,
+        -4,
+        -3,
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
 
         65534,
         65535,
         65536,
         65537,
 
-        37269,
+        32769,
+        32768,
+        32767,
+        32766,
+
+        65534,
+        65535,
+        65536,
+        65537,
+
+        32769,
         32768,
         32767,
         32766,
@@ -114,6 +116,27 @@ VALUES = { 'Ltest4/test5/Test4; testDouble ()V' : [
 
         5346952,
         5346952,
+        5346952,
+
+        65534.5,
+        65535.5,
+        65536.5,
+        65537.5,
+
+        32769.5,
+        32768.5,
+        32767.5,
+        32766.5,
+
+        65534.5,
+        65535.5,
+        65536.5,
+        65537.5,
+
+        32769.5,
+        32768.5,
+        32767.5,
+        32766.5,
         ],
 }
 
