@@ -26,21 +26,29 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, analysis
 
 
-TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+TESTS_CASES  = [ #'examples/android/TC/bin/classes.dex',
+                 'examples/android/TestsAndroguard/bin/classes.dex',
+               ]
 
-VALUES = { "Lorg/t0t0/androguard/TC/TCA; <init> ()V" : {
-               0 : ("invoke-direct", [['v', 4], ['meth@', 5, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
-               6 : ("const/16", [['v', 0], ['#+', 30]]),
-               10 : ("iput", [['v', 0], ['v', 4], ['field@', 4, 'Lorg/t0t0/androguard/TC/TCA;', 'I', 'TC1']]),
-               78 : ("invoke-virtual", [['v', 0], ['v', 1], ['meth@', 3, 'Ljava/io/PrintStream;', '(Ljava/lang/String;)', 'V', 'println']]),
-            },
+VALUES = { 
+            'examples/android/TestsAndroguard/bin/classes.dex' : {
+                  "Ltests/androguard/TestInvoke; <init> ()V" : {
+                     0x0 : ("invoke-direct" ,[['v',1] , ['meth@', 3, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+                  },
+               }, 
+            #"Lorg/t0t0/androguard/TC/TCA; <init> ()V" : {
+            #   0 : ("invoke-direct", [['v', 4], ['meth@', 5, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+            #   6 : ("const/16", [['v', 0], ['#+', 30]]),
+            #   10 : ("iput", [['v', 0], ['v', 4], ['field@', 4, 'Lorg/t0t0/androguard/TC/TCA;', 'I', 'TC1']]),
+            #   78 : ("invoke-virtual", [['v', 0], ['v', 1], ['meth@', 3, 'Ljava/io/PrintStream;', '(Ljava/lang/String;)', 'V', 'println']]),
+            #},
 
-            "Lorg/t0t0/androguard/TC/TCE; <init> ()V" : {
-               316 : ("if-ge", [['v', 2], ['v', 1], ['+', 12]]),
-               332 : ("add-int/2addr", [['v', 3], ['v', 4]]),
-               334 : ("add-int/lit8", [['v', 2], ['v', 2], ['#+', 1]]),
-               386 : ("add-int/lit8", [['v', 3], ['v', 3], ['#+', 2]]),
-            },
+            #"Lorg/t0t0/androguard/TC/TCE; <init> ()V" : {
+            #   316 : ("if-ge", [['v', 2], ['v', 1], ['+', 12]]),
+            #   332 : ("add-int/2addr", [['v', 3], ['v', 4]]),
+            #   334 : ("add-int/lit8", [['v', 2], ['v', 2], ['#+', 1]]),
+            #   386 : ("add-int/lit8", [['v', 3], ['v', 3], ['#+', 2]]),
+            #},
 }
 
 def test(got, expected):
@@ -70,7 +78,7 @@ def getVal(i) :
 def check(a, values) :
    for method in a.get_methods() :
       key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
-   
+  
       if key not in values :
          continue
 
@@ -93,6 +101,7 @@ def check(a, values) :
 
          idx += i.get_length()
 
-a = androguard.AndroguardS( TEST_CASE )
 
-check( a, VALUES )
+for i in TESTS_CASES :
+   a = androguard.AndroguardS( i )
+   check( a, VALUES[i] )
