@@ -224,7 +224,8 @@ class Const(Instruction) :
     def __init__( self, args ) :
         print 'Const :', args
         super(Const, self).__init__(args)
-        self.value = int( args[1][1] )
+        val = ( ( 0xFFFF & args[2][1] ) << 16 ) | ( ( 0xFFFF & args[1][1] ) )
+        self.value = struct.unpack( 'f', struct.pack( 'i', val ) )[0]
         self.type = 'I'
         print '==>', self.value
 
@@ -242,7 +243,7 @@ class ConstHigh16(Instruction) :
     def __init__( self, args ) :
         print 'ConstHigh16 :', args
         super(ConstHigh16, self).__init__(args)
-        self.value = int( args[1][1] )
+        self.value = struct.unpack( 'f', struct.pack( 'i', args[1][1] ) )[0]
         self.type = 'F'
         print '==>', self.value
 
@@ -2170,7 +2171,7 @@ class DvMachine( ) :
 
 if __name__ == '__main__' :
 
-    TEST = 'examples/android/Test/bin/test.dex'
+    TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
     #TEST = 'examples/android/Test/bin/classes.dex'
     #TEST = 'examples/java/Demo1/orig/DES.class'
 
@@ -2179,7 +2180,7 @@ if __name__ == '__main__' :
 
     machine = DvMachine( a )
 
-    meth = 'test'
+    meth = 'testDouble'
     print
     print 'Selection de la methode %s.' % meth
     print
