@@ -225,7 +225,7 @@ class Const(Instruction) :
         print 'Const :', args
         super(Const, self).__init__(args)
         val = ( ( 0xFFFF & args[2][1] ) << 16 ) | ( ( 0xFFFF & args[1][1] ) )
-        self.value = struct.unpack( 'f', struct.pack( 'i', val ) )[0]
+        self.value = struct.unpack( 'f', struct.pack( 'L', val ) )[0]
         self.type = 'I'
         print '==>', self.value
 
@@ -302,7 +302,7 @@ class ConstWide(Instruction) :
         val = ( 0xFFFF & val[0][1] ) | ( ( 0xFFFF & val[1][1] ) << 16 ) | ( \
               ( 0xFFFF & val[2][1] ) << 32 ) | ( ( 0xFFFF & val[3][1] ) << 48 )
         self.type = 'D'
-        self.value = struct.unpack( 'd', struct.pack( 'q', val ) )[0]
+        self.value = struct.unpack( 'd', struct.pack( 'Q', val ) )[0]
         print '==>', self.value
 
     def getValue( self ) :
@@ -477,20 +477,33 @@ class IfNe(Instruction) :
 class IfLt(Instruction) :
     def __init__( self, args ) :
         print 'IfLt :', args
-        super(IfLt, self).__init__(args)
+        self.test = int( args[0][1] )
+        self.branch = int( args[1][1] )
+
+    def emulate( self, memory ) :
+        self.test = memory[self.test].getContent( )
+        # FIXME : creation de blocks (pile?)
+
+    def getValue( self ) :
+        # FIXME if / while / for...
+        return 'if( %s )' % self.test.getValue( )
+
+    def getReg( self ) :
+        print 'IfLt has no dest register'
+
+    def __str__( self ) :
+        return 'IfLt : ' + str( self.value )
 
 # if-ge vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfGe(Instruction) :
     def __init__( self, args ) :
         print 'IfGe :', args
-        #super(IfGe, self).__init__(args)
         self.firstTest = int( args[0][1] )
         self.secondTest = int( args[1][1] )
         self.branch = int( args[2][1] )
 
     def getReg( self ) :
         print 'IfGe has no dest register'
-        return None
 
     def __str__( self ) :
         return 'IfGe : ' + str( self.value )
@@ -509,8 +522,17 @@ class IfEqz(Instruction) :
 
 # if-nez vAA, +BBBB ( 8b, 16b )
 class IfNez(Instruction) :
-    pass
+    def __init__( self, args ) :
+        print 'IfNez :', args
+        self.test = int( args[0][1] )
+        self.branch = int( args[1][1] )
 
+    def getReg( self ) :
+        print 'IfNez has no dest register'
+
+    def __str__( self ) :
+        return 'IfNez : ' + str( self.value )
+        
 # if-ltz vAA, +BBBB ( 8b, 16b )
 class IfLtz(Instruction) :
     pass
@@ -753,18 +775,9 @@ class InvokeVirtual(Instruction) :
         memory['heap'] = self
         params = []
         for param in self.params :
-            # FIXME ? : Le parametre n'existe pas forcement avec invokeVirtual
-            # e.g : InvokeVirtual : [['v', 2], ['v', 0], ['v', 1], ['meth@', 5,
-            # 'Ljava/io/PrintStream;', '(D)', 'V', 'println']]
-            # ici v1 existe pas.
-            # ====> A cause des registres wide (== 2 registres)
-            par = memory.get( param )
-            if par :
-                print 'param : ', memory[param].getContent().getValue(), 'str :',
-                print str( memory[param].getContent().getValue())
-                params.append( memory[param].getContent( ) )
-            else :
-                print 'Error, register %d does not exist.' % param
+            print 'param : ', memory[param].getContent().getValue(), 'str :',
+            print str( memory[param].getContent().getValue())
+            params.append( memory[param].getContent( ) )
         self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
         ).getValue( ), self.methCalled, ', '.join( [ str( param.getValue( ) ) for
         param in params ] ) )
@@ -775,7 +788,6 @@ class InvokeVirtual(Instruction) :
 
     def getReg( self ) :
         print 'InvokeVirtual has no dest register.'
-        return None
 
     def __str__( self ) :
         return 'InvokeVirtual (' + self.returnType + ')' + self.methCalled +\
@@ -813,7 +825,6 @@ class InvokeDirect(Instruction) :
 
 #    def getReg( self ) :
 #        print 'InvokeDirect has no dest register.'
-#        return None
 
     def __str__( self ) :
         return 'InvokeDirect (' + self.returnType + ')' + self.methCalled + '(\
@@ -842,13 +853,9 @@ class InvokeVirtualRange(Instruction) :
         memory['heap'] = self
         params = []
         for param in self.params :
-            par = memory.get( param )
-            if par :
-                print 'param : ', memory[param].getContent().getValue(), 'str :',
-                print str( memory[param].getContent().getValue())
-                params.append( memory[param].getContent( ) )
-            else :
-                print 'Error, register %d does not exist.' % param
+            print 'param : ', memory[param].getContent().getValue(), 'str :',
+            print str( memory[param].getContent().getValue())
+            params.append( memory[param].getContent( ) )
         self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
         ).getValue( ), self.methCalled, ', '.join( [ str( param.getValue( ) ) for
         param in params ] ) )
@@ -859,7 +866,6 @@ class InvokeVirtualRange(Instruction) :
 
     def getReg( self ) :
         print 'InvokeVirtual has no dest register.'
-        return None
 
     def __str__( self ) :
         return 'InvokeVirtualRange (' + self.returnType + ')' + self.methCalled +\
@@ -1652,12 +1658,12 @@ class AddIntLit8(Instruction) :
         self.const = int( args[2][1] )
 
     def emulate( self, memory ) :
-        self.ins = '%s * %s' % ( memory[self.source].getContent( ).getValue( ),
-        self.const )
+        self.source = memory[self.source].getContent( )
+        self.ins = '%s + %s'
         print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.source.getValue( ), self.const )
 
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 class RSubIntLit8(Instruction) :
@@ -2174,6 +2180,7 @@ if __name__ == '__main__' :
     TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
     #TEST = 'examples/android/Test/bin/classes.dex'
     #TEST = 'examples/java/Demo1/orig/DES.class'
+    #TEST = 'examples/android/TC/bin/classes.dex'
 
     a = androguard.AndroguardS( TEST )
     #x = analysis.VM_BCA( a.get_vm( ) )

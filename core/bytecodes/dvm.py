@@ -2383,8 +2383,8 @@ class DBC :
       # 0x14 : [ "31i", "const",                      "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
       # const instruction, convert value into float
       elif self.op_value == 0x14 :
-         x = r[0][1] | r[1][1] << 16
-         self.formatted_operands.append( ("#f", unpack("f", pack("i", x))[0] ) )
+         x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1] ) << 16)
+         self.formatted_operands.append( ("#f", unpack("f", pack("L", x))[0] ) )
 
       # 0x15 : [ "21h", "const/high16",               "vAA, #+BBBB0000", "AA|op BBBB0000" ],
       elif self.op_value == 0x15 :
@@ -2396,14 +2396,14 @@ class DBC :
 
       # 0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
       elif self.op_value == 0x17 :
-         x = ( ( 0xFFFF & r[1][1] ) << 16 ) | ( ( 0xFFFF & r[0][1] ) )
+         x = ((0xFFFF & r[1][1]) << 16) | (0xFFFF & r[0][1])
          self.formatted_operands.append( ("#l", unpack( 'd', pack('d', x))[0] ) )
       
       # 0x18 : [ "51l", "const-wide",                 "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
       # convert value to double
       elif self.op_value == 0x18 :
          x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1]) << 16) | ((0xFFFF & r[2][1]) << 32) | ((0xFFFF & r[3][1]) << 48)
-         self.formatted_operands.append( ("#d", unpack( 'd', pack('q', x ) )[0]) )
+         self.formatted_operands.append( ("#d", unpack( 'd', pack('Q', x ) )[0]) )
 
       # 0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
       # convert value to double
