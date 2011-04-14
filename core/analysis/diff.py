@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+import hashlib
 
 from error import error
 from similarity import *
+
 
 # Lorg/t0t0/androguard/TC/TCMod1; ()V,T1
 #96 0x17e aget-object v4 , v6 , v8
@@ -56,7 +58,6 @@ class Method :
       self.mx = mx
       self.sim = sim
 
-
    def add_attribute(self, name, func) :
       buff = ""
 
@@ -67,8 +68,9 @@ class Method :
          buff += func( i )
 
       setattr(self, name, buff)
+      setattr(self, "sha256_" + name, hashlib.sha256( buff ).hexdigest())
       setattr(self, "entropy_" + name, self.sim.entropy( buff ))
-
+      
    def similarity(self, new_method, name_attribute) :
       x = None
       try :
@@ -93,29 +95,41 @@ class Method :
          #if e1 != e2 :
          print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
 
+   def getsha256(self, name_attribute) :
+      return getattr(self, "sha256_" + name_attribute)
+
    def show(self) :
       print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
 
 class Diff :
-   def __init__(self, vms) :
-      self.vms = vms
+   def __init__(self, vm1, vm2) :
+      self.vms = [ vm1, vm2 ]
       self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
-      self.sim.set_compress_type( SNAPPY_COMPRESS )
-      self.methods = {} 
+      self.sim.set_compress_type( XZ_COMPRESS )
+      self.methods = {}
+      self.hashsum = {}
+      
+      self.diffmethods = []
 
+      
       for i in self.vms :
          self.methods[ i ] = []
+         self.hashsum[ i ] = [] 
          for m in i.get_vm().get_methods() :
             m = Method( m, i.get_analysis().hmethods[ m ], self.sim ) 
             self.methods[ i ].append( m ) 
             m.add_attribute( "filter_buff_1", filter_ins )
+            self.hashsum[i].append( m.getsha256( "filter_buff_1" ) ) 
 
-      for i in self.methods :
-         for j in self.methods[i] :
-            for i1 in self.methods :
-               if i1 != i :
-                  for k in self.methods[i1] :
-                     j.similarity( k, "filter_buff_1" )
+      for j in self.methods[vm1] :
+         for i1 in self.methods :
+            if j.getsha256( "filter_buff_1" ) in self.hashsum[i1] :
+               continue
 
-      for j in self.methods[ self.vms[0] ] :
+            for k in self.methods[i1] :
+               j.similarity( k, "filter_buff_1" )
+               if j not in self.diffmethods :
+                  self.diffmethods.append(j)
+
+      for j in self.diffmethods :
          j.sort( "filter_buff_1", 3 )

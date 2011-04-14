@@ -41,7 +41,7 @@ def main(options, arguments) :
    a = androguard.Androguard( arguments )
    a.ianalyze()
 
-   d = diff.Diff( [ i[1] for i in a.get_bc() ] )
+   d = diff.Diff( *[ i[1] for i in a.get_bc() ] )
 
    if options.version != None :
       print "Androdiff version %s" % misc.VERSION

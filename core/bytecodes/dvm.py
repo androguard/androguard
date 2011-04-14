@@ -2411,8 +2411,11 @@ class DBC :
          self.formatted_operands.append( ("#d", unpack( 'd', pack('q', r[0][1]))[0]) )
      
       # Add* instructions
+      # 
+      # Invoke* instructions 
       if 0x90 <= self.op_value <= 0xaf or 0xd8 <= self.op_value <= 0xe2 \
-        or self.op_value == 0x08 or self.op_value == 0x02 :
+        or self.op_value == 0x08 or self.op_value == 0x02  \
+        or (self.op_value >= 0x6e and self.op_value <= 0x78) :
          l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Other instructions
@@ -2623,7 +2626,9 @@ class DCode :
             operands.pop(-1)
 
          operands.pop(1)
-         operands.pop(1)
+         va = operands.pop(1)
+         if values["B"] == 5 :
+            operands.append( va )
 
       elif op_value >= 0x74 and op_value <= 0x78 :
          NNNN = values["CCCC"] + values["AA"] + 1
