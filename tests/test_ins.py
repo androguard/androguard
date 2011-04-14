@@ -33,7 +33,8 @@ TESTS_CASES  = [ #'examples/android/TC/bin/classes.dex',
 VALUES = { 
             'examples/android/TestsAndroguard/bin/classes.dex' : {
                   "Ltests/androguard/TestInvoke; <init> ()V" : {
-                     0x0 : ("invoke-direct" ,[['v',1] , ['meth@', 3, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+                     0x0 : ("invoke-direct" , [['v',1] , ['meth@', 3, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+                     0xa : ("invoke-virtual", [['v',1], ['v',0] , ['meth@', 28, 'Ltests/androguard/TestInvoke;', '(I)', 'I', 'TestInvoke1']]),
                   },
                }, 
             #"Lorg/t0t0/androguard/TC/TCA; <init> ()V" : {
