@@ -8,8 +8,13 @@ public class TestActivity extends Activity {
 	public int value2;
 
 	public TestActivity() {
-		this.value = 100;
-		this.value2 = 200;
+		value = 100;
+		value2 = 200;
+	}
+	
+	public TestActivity( int value, int value2 ) {
+		this.value = value;
+		this.value2 = value2;
 	}
 
 	public int test_base(int _value, int _value2) {

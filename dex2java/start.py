@@ -766,6 +766,7 @@ class InvokeVirtual(Instruction) :
         print 'InvokeVirtual :', args
         super(InvokeVirtual, self).__init__(args)
         self.params = [ int( i[1] ) for i in args[1:-1] ]
+        print 'Parameters =', self.params
         self.type = args[-1][2]
         self.paramsType = args[-1][3]
         self.returnType = args[-1][4]
@@ -775,7 +776,7 @@ class InvokeVirtual(Instruction) :
         memory['heap'] = self
         params = []
         for param in self.params :
-            print 'param : ', memory[param].getContent().getValue(), 'str :',
+            print 'param : ', param, '=', memory[param].getContent().getValue(), 'str :',
             print str( memory[param].getContent().getValue())
             params.append( memory[param].getContent( ) )
         self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
@@ -795,7 +796,37 @@ class InvokeVirtual(Instruction) :
 
 # invoke-super {vD, vE, vF, vG, vA} ( 4b each )
 class InvokeSuper(Instruction) :
-    pass
+    def __init__( self, args ) :
+        print 'InvokeSuper :', args
+        super(InvokeSuper, self).__init__(args)
+        self.params = [ int( i[1] ) for i in args[1:-1] ]
+        self.type = args[-1][2]
+        self.paramsType = args[-1][3]
+        self.returnType = args[-1][4]
+        self.methCalled = args[-1][-1]
+
+    def emulate( self, memory ) :
+        memory['heap'] = self
+        params = []
+        for param in self.params :
+            print 'param : ', memory[param].getContent().getValue(), 'str :',
+            print str( memory[param].getContent().getValue())
+            params.append( memory[param].getContent( ) )
+        self.params = params
+        #self.base = memory[self.register].getContent( ) # <-- this
+        self.ins = 'super.%s( %s )'
+        print 'Ins :: %s' % self.ins
+
+    def getValue( self ) :
+        return self.ins % ( self.methCalled, ', '.join(
+            [ str( param.getValue( ) ) for param in self.params ] ) )
+
+    def getReg( self ) :
+        print 'InvokeSuper has no dest register.'
+
+    def __str__( self ) :
+        return 'InvokeSuper (' + self.returnType + ')' + self.methCalled +\
+        '(' + self.paramsType + str( self.params ) + ' )'
 
 # invoke-direct {vD, vE, vF, vG, vA} ( 4b each )
 class InvokeDirect(Instruction) :
@@ -809,19 +840,20 @@ class InvokeDirect(Instruction) :
         self.methCalled = args[-1][-1]
 
     def emulate( self, memory ) :
-        self.ins =  memory[self.register].getContent( )
+        self.base =  memory[self.register].getContent( )
         params = []
         for param in self.params :
             print 'param : ', memory[param].getContent().getValue(), 'str :',
             print str( memory[param].getContent().getValue())
             params.append( memory[ param ].getContent( ) )
         self.params = params
+        self.ins = '%s %s( %s )'
 #        self.ins = '%s %s( %s )' % ( self.ins, self.type, ', '.join( params ) )
 #        print 'Ins : %s' % self.ins
 
     def getValue( self ) :
-        return '%s %s( %s )' % ( self.ins.getValue( ), self.type, ', '.join(
-        [ str( param.getValue( ) ) for param in self.params ] ) )
+        return self.ins % ( self.base.getValue( ), self.type, ', '.join(
+            [ str( param.getValue( ) ) for param in self.params ] ) )
 
 #    def getReg( self ) :
 #        print 'InvokeDirect has no dest register.'
@@ -856,13 +888,14 @@ class InvokeVirtualRange(Instruction) :
             print 'param : ', memory[param].getContent().getValue(), 'str :',
             print str( memory[param].getContent().getValue())
             params.append( memory[param].getContent( ) )
-        self.ins = '%s.%s( %s )' % ( memory[self.register].getContent( \
-        ).getValue( ), self.methCalled, ', '.join( [ str( param.getValue( ) ) for
-        param in params ] ) )
+        self.params = params
+        self.ins = '%s.%s( %s )'
+        self.base = memory[self.register].getContent( )
         print 'Ins :: %s' % self.ins
 
     def getValue( self ) :
-        return self.ins
+        return self.ins % ( self.base.getValue( ), self.methCalled, ', '.join(
+            [ str( param.getValue( ) ) for param in self.params ] ) )
 
     def getReg( self ) :
         print 'InvokeVirtual has no dest register.'
@@ -887,17 +920,18 @@ class InvokeDirectRange(Instruction) :
         self.methCalled = args[-1][-1]
 
     def emulate( self, memory ) :
-        self.ins =  memory[self.register].getContent( )
+        self.base =  memory[self.register].getContent( )
         params = []
         for param in self.params :
             print 'param : ', memory[param].getContent().getValue(), 'str :',
             print str( memory[param].getContent().getValue())
             params.append( memory[ param ].getContent( ) )
         self.params = params
+        self.ins = '%s %s( %s )'
 
     def getValue( self ) :
-        return '%s %s( %s )' % ( self.ins.getValue( ), self.type, ', '.join(
-        [ str( param.getValue( ) ) for param in self.params ] ) )
+        return self.ins % ( self.base.getValue( ), self.type, ', '.join(
+            [ str( param.getValue( ) ) for param in self.params ] ) )
 
     def __str__( self ) :
         return 'InvokeDirectRange (' + self.returnType + ')' + self.methCalled + '(\
@@ -2075,7 +2109,8 @@ class Method( ) :
         self.memory[ self.this ] = Register( This( ), self.this )
         # FIXME : prendre en compte le cas method static
         for i in xrange( 1, self.nbparams ) :
-            self.memory[self.nbregisters - i] = Param( 'param%s' % i )
+            print 'i :', (self.this+i), 'param%s' % i, self.nbregisters
+            self.memory[self.this + i] = Param( 'param%s' % i )
 
         self.ins = []
         self.cur = 0
@@ -2111,8 +2146,8 @@ class Method( ) :
         proto = acc + self.type + ' ' + self.method.get_name( ) + '('
         if self.paramsType :
             proto += ', '.join( [ '%s %s' % ( i, j ) for ( i, j ) in zip(
-            self.paramsType, [self.memory[self.nbregisters - i].getValue( ) for
-            i in xrange( 1, self.nbparams ) ] ) ] )
+            self.paramsType, [self.memory[self.this+i].getContent( ).getValue( ) for i in
+            xrange( 1, self.nbparams ) ] ) ] )
         proto += ') {'
         print proto
         for i in self.ins :
@@ -2155,7 +2190,8 @@ class DvMachine( ) :
             self.methods[method.get_idx( )] = Method( method )
         print 'Methods added :'
         for name, meth in self.methods.iteritems( ) :
-            print '%s ( %s )' % ( name, meth.getName( ) )
+            print '%s ( %s, %s )' % (name, meth.method.get_class_name( ),
+            meth.getName( ) )
 
     def loadClass( self, cls = None ) :
         pass
@@ -2187,7 +2223,7 @@ if __name__ == '__main__' :
 
     machine = DvMachine( a )
 
-    meth = 'testDouble'
+    meth = 'TestInvoke7'
     print
     print 'Selection de la methode %s.' % meth
     print
