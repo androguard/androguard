@@ -11,7 +11,8 @@ import androguard, analysis
 #TEST  = 'examples/java/Demo1/orig/DES.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
 #TEST = 'examples/android/Test/bin/classes.dex'
-TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
+#TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
+TEST = 'examples/android/TC/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
 
 a = androguard.AndroguardS( TEST )
