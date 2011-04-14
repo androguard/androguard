@@ -2410,18 +2410,8 @@ class DBC :
       elif self.op_value == 0x19 :
          self.formatted_operands.append( ("#d", unpack( 'd', pack('q', r[0][1]))[0]) )
      
-      # Invoke* instructions
-      if self.op_value >= 0x6e and self.op_value <= 0x78 : 
-         off = v[0][1]
-         x = v[2:4]
-         x.reverse()
-         t = v[4:]
-         t.reverse()
-         x.extend( t )
-         l.extend( [ self._more_info(n[0], n[1]) for n in x[:off] ] )
-         l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
       # Add* instructions
-      elif 0x90 <= self.op_value <= 0xaf or 0xd8 <= self.op_value <= 0xe2 \
+      if 0x90 <= self.op_value <= 0xaf or 0xd8 <= self.op_value <= 0xe2 \
         or self.op_value == 0x08 or self.op_value == 0x02 :
          l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
          l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
@@ -2502,21 +2492,34 @@ class DCode :
       self.__bytecodes = []
 
       ushort = calcsize( '<H' )
-      
+
+#      print "HERE", size * ushort, len(self.__insn)
+
+      self.__all_bytes = []
+      for i in self.__insn :
+         self.__all_bytes.append( (ord(i) & 0b11110000) >> 4 )
+         self.__all_bytes.append( (ord(i) & 0b00001111) )
+              
       real_j = 0
       j = 0 
       while j < (size * ushort) :
+         #print "BYTES", self.__all_bytes
          # handle special instructions
          if real_j in self.__h_special_bytecodes :
+            #print "REAL_J === ", real_j
             special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
 
             self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
 
             del self.__h_special_bytecodes[ real_j ]
+            
             j += special_e.get_length()
          else :
+
             op_value = unpack( '<B', self.__insn[j] )[0]
-            
+#            print "OP_VALUE", ord(self.__insn[j]), DALVIK_OPCODES[ op_value ]
+#            print op_value
+
             if op_value in DALVIK_OPCODES :
                operands = []
                special = None
@@ -2525,29 +2528,37 @@ class DCode :
                   if len( DALVIK_OPCODES[ op_value ][3] ) == 0 :
                      bytecode.Exit( "opcode [ 0x%x:%s ] not yet supported" % (op_value ,DALVIK_OPCODES[ op_value ][1]) )
 
-                  operands, special = self._analyze_mnemonic( self.__insn[ j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ], DALVIK_OPCODES[ op_value ])
+                  operands, special, c_j = self._analyze_mnemonic( op_value, DALVIK_OPCODES[ op_value ])
 
                   if special != None :
                      self.__h_special_bytecodes[ special[0] + real_j ] = special[1] 
+               else :
+                  self.__all_bytes.pop(0)
+                  self.__all_bytes.pop(0)
+                  self.__all_bytes.pop(0)
+                  self.__all_bytes.pop(0)
+                  c_j = int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort
 
-               self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], op_value, operands, self.__insn[j : j + int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort ] ) )
+               self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], op_value, operands, self.__insn[j : j + c_j] ) )
 
-               j += ( int( DALVIK_OPCODES[ op_value ][0][0] ) * ushort)
+#               print "J === ", j, c_j 
+               j += c_j 
             else :
                bytecode.Exit( "invalid opcode [ 0x%x ]" % op_value )
 
          real_j = j / 2
 
-   def _analyze_mnemonic(self, buff_operands, mnemonic) :
+   def _analyze_mnemonic(self, op_value, mnemonic) :
+      values = {}
+      t_size = len(self.__all_bytes)
       operands = []
       t_ops = mnemonic[3].split(' ')
 
-#      print "la", mnemonic
-      l = []
-      for i in buff_operands :
-         l.append( (ord(i) & 0b11110000) >> 4 )
-         l.append( (ord(i) & 0b00001111) )
-              
+#      print "ANALYZE ", mnemonic, t_ops, self.__all_bytes
+
+      if op_value >= 0x6e and op_value <= 0x72 :
+         t_ops.pop( -1 )
+
       for i in t_ops :
          sub_ops = i.split('|')         
                   
@@ -2556,14 +2567,14 @@ class DCode :
          else :
             sub_ops = sub_ops[2:] + sub_ops[0:2]
 
-#         print sub_ops
+         #print "SUB_OPS", sub_ops, self.__all_bytes
          for sub_op in sub_ops :
             zero_count = string.count(sub_op, '0')
                      
             #print sub_op, "ZERO", zero_count
             if zero_count == len(sub_op) :
                for zero in range(0, zero_count) :
-                  l.pop(0)
+                  self.__all_bytes.pop(0)
                continue
 
             size = ((len(sub_op) - zero_count)  * 4)
@@ -2573,7 +2584,7 @@ class DCode :
             if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' : 
                signed = 1
             
-            #print mnemonic, repr(sub_op), signed
+#            print repr(sub_op), signed
             ttype = "op@"
 
             truc = False
@@ -2591,32 +2602,57 @@ class DCode :
                   ttype = "v"
 
 #            print "SIZE", size
-            val = self._extract( signed, l, size ) << (zero_count * 4)
+            val = self._extract( signed, size ) << (zero_count * 4)
    
             operands.append( [ttype, val] )
+            values[ sub_op ] = val
+#            print "VAL --> ", val, size
 
-            if len(l) == 0 :
-               break
+      if op_value >= 0x6e and op_value <= 0x72 :
+         i = [ "E", "D", "G", "F" ]
+         
+         n_operands = {}
+         for new_reg in i :
+            val = self._extract( 1, len(new_reg) * 4 )
+            n_operands[ new_reg ] = [ "v", val ]
+   
+         for i in sorted(n_operands) :
+            operands.append( n_operands[i] )
 
-      if len(mnemonic) == 5 :
-         return operands, (operands[2][1], mnemonic[4])
+         for i in range(0, 4 - values["B"]) :
+            operands.pop(-1)
+
+         operands.pop(1)
+         operands.pop(1)
+
+      elif op_value >= 0x74 and op_value <= 0x78 :
+         NNNN = values["CCCC"] + values["AA"] + 1
+
+         for i in range(values["CCCC"] + 1, NNNN - 1 ) :
+            operands.append( ["v", i ] )
+
+         operands.pop(1)
       
-      return operands, None
+      t_size = (t_size - len(self.__all_bytes)) / 2
+      if len(mnemonic) == 5 :
+         return operands, (operands[2][1], mnemonic[4]), t_size
 
-   def _extract(self, signed, l, size) :
+      return operands, None, t_size
+
+   def _extract(self, signed, size) :
       func = string.capitalize
 
       if signed == 1 :
          func = string.lower
          
       if size == 4 :
-         return l.pop(0)
+         return self.__all_bytes.pop(0)
       elif size == 8 :
-         return unpack('<%s' % func('B'), chr( (l.pop(0) << 4) + l.pop(0) ) )[0]
+         return unpack('<%s' % func('B'), chr( (self.__all_bytes.pop(0) << 4) + self.__all_bytes.pop(0) ) )[0]
       elif size == 16 :
-         return unpack('<%s' % func('H'), chr( (l.pop(0) << 4) + (l.pop(0)) ) + chr( (l.pop(0) << 4) + (l.pop(0)) ) )[0]
+         return unpack('<%s' % func('H'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
       elif size == 32 :
-         return unpack('<%s' % func('L'), chr( (l.pop(0) << 4) + (l.pop(0)) ) + chr( (l.pop(0) << 4) + (l.pop(0)) ) + chr( (l.pop(0) << 4) + (l.pop(0)) ) + chr( (l.pop(0) << 4) + (l.pop(0)) ) )[0]
+         return unpack('<%s' % func('L'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
       else :      
          bytecode.Exit( "invalid size [ 0x%x ]" % size )                                                                                                                                                                 
 
