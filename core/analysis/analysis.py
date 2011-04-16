@@ -1757,12 +1757,13 @@ class M_BCA :
          current_basic.push( i )
 
          # index is a branch instruction
-         if idx in h and here == False :
+         if idx in h : #and here == False :
             current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
             self.basic_blocks.push( current_basic )
 
          idx += i.get_length()
-    
+   
+
       if current_basic.ins == [] :
          self.basic_blocks.pop( -1 )
 
@@ -1771,6 +1772,7 @@ class M_BCA :
             i.set_childs( h[ i.end - i.ins[-1].get_length() ] )
          except KeyError :
             i.set_childs( [] )
+      
 
       for i in self.basic_blocks.get() :
          i.analyze()

@@ -13,7 +13,8 @@ OUTPUT = "./output/"
 #TEST  = 'examples/java/Demo1/orig/Util.class'
 #TEST = 'examples/android/Test/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
-TEST = "apks/DroidDream/tmp/classes.dex"
+#TEST = "apks/DroidDream/tmp/classes.dex"
+TEST = "./examples/android/TCDiff/bin/classes.dex"
 
 a = androguard.AndroguardS( TEST )
 x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
@@ -33,7 +34,7 @@ for method in a.get_methods() :
       #print x.tainted_packages.get_packages_by_bb( i )
 
 #   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_CLEAR)
-   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS)
+#   print x.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS)
 
 
 print ""

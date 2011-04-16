@@ -26,7 +26,6 @@ import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
-from subprocess import Popen, PIPE, STDOUT
 from xml.dom import minidom
 
 ######################################################## APK FORMAT ########################################################
@@ -649,6 +648,9 @@ class SparseSwitch :
    # FIXME : return correct raw
    def get_raw(self) :
       return self.format.get_raw()
+
+   def get_keys(self) :
+      return self.keys
 
    def get_targets(self) :
       return self.targets

@@ -7,8 +7,8 @@ sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
 
-TEST  = 'examples/java/test/orig/Test1.class'
-#TEST = 'examples/android/Test/bin/classes.dex'
+#TEST  = 'examples/java/test/orig/Test1.class'
+TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 a = androguard.AndroguardS( TEST )
 x = analysis.VM_BCA( a.get_vm() )
@@ -20,6 +20,6 @@ for method in a.get_methods() :
 
    idx = 0
    for i in bc.get() :
-      print "\t", "%x" % idx, i.get_name(), i.get_operands()
+      print "\t", "%x" % idx, i.get_name(), i.get_operands(), i.get_formatted_operands()
 
       idx += i.get_length()

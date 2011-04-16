@@ -91,7 +91,7 @@ def Dot(m, mx) :
          buff += "\"%s\" -> \"%s\" [color=\"%s\"];\n" % ( i.get_name(), j[-1].get_name(), val )
          if val == "red" :
             val = "green"
-    
+   
       idx = i.start
       label = ""
       for ins in i.ins :

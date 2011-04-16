@@ -1121,6 +1121,9 @@ class JBC :
             return self.__special_value[0]
       return self.__special_value
 
+   def get_formatted_operands(self) :
+      return []
+
    def adjust_r(self, pos, pos_modif, len_modif) :
       """Adjust the bytecode (if necessary (in this cas the bytecode is a branch bytecode)) when a bytecode has been removed"""
 #      print self.__op_name, pos, pos_modif, len_modif, self.__special_value, type(pos), type(pos_modif), type(len_modif), type(self.__special_value)

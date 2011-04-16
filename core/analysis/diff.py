@@ -43,14 +43,37 @@ from similarity import *
 #103 0x196 goto [+ -23]
 #104 0x198 new-instance v0 , [type@ 20 Lorg/t0t0/androguard/TC/TCA;]
 
-def filter_ins( ins ) :
+def filter_ins_1( ins ) :
    return "%s%s" % (ins.get_name(), ins.get_operands())
 
-FILTERS = [ 
-            ("FILTER_1", filter_ins),
+def filter_sim_1( m1, m2, sim, name_attribute ) :
+   e1 = getattr( m1, "entropy_" + name_attribute )
+   e2 = getattr( m2, "entropy_" + name_attribute )
 
-          ]
+   ncd = sim.ncd( getattr(m1, name_attribute), getattr(m2, name_attribute) )
 
+   return (max(e1, e2) - min(e1, e2)) + ncd
+
+class CheckSum :
+   def __init__(self, basic_block) :
+      self.basic_block = basic_block
+      self.buff = ""
+      for i in basic_block.ins : 
+         self.buff += i.get_name()
+
+def filter_checksum_1( basic_block ) :
+   return CheckSum( basic_block )
+
+#   raise("ooo")
+
+
+FILTER_NAME = "FILTER_NAME"
+FILTER_INS = "FILTER_INS"
+FILTER_SIM = "FILTER_SIM"
+FILTER_CHECKSUM = "FILTER_CHECKSUM"
+FILTERS = {
+               "FILTER_1" : { FILTER_INS : filter_ins_1, FILTER_SIM : filter_sim_1, FILTER_CHECKSUM : filter_checksum_1 },
+          }
 
 class Method :
    def __init__(self, m, mx, sim) :
@@ -58,20 +81,27 @@ class Method :
       self.mx = mx
       self.sim = sim
 
-   def add_attribute(self, name, func) :
+   def add_attribute(self, name, func_ins, func_bb) :
       buff = ""
+
+      bb = {}
 
       code = self.m.get_code()
       bc = code.get_bc()
      
       for i in bc.get() :
-         buff += func( i )
+         buff += func_ins( i )
+
+      for i in self.mx.basic_blocks.get() :
+         bb[ i.name ] = func_bb( i )
 
       setattr(self, name, buff)
+
+      setattr(self, "bb_" + name, bb)
       setattr(self, "sha256_" + name, hashlib.sha256( buff ).hexdigest())
       setattr(self, "entropy_" + name, self.sim.entropy( buff ))
       
-   def similarity(self, new_method, name_attribute) :
+   def similarity(self, new_method, func, name_attribute) :
       x = None
       try :
          x = getattr( self, "hash_" + name_attribute )
@@ -79,7 +109,7 @@ class Method :
          setattr( self, "hash_" + name_attribute, {} )
          x = getattr( self, "hash_" + name_attribute )
 
-      x[ new_method ] = self.sim.ncd( getattr(self, name_attribute), getattr(new_method, name_attribute) )
+      x[ new_method ] = func( self, new_method, self.sim, name_attribute )
 
    def sort(self, name_attribute, nb) :
       print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), getattr( self, "entropy_" + name_attribute )
@@ -89,11 +119,86 @@ class Method :
       z = sorted(x.iteritems(), key=lambda (k,v): (v,k))[ : nb ]
 
       for i in z :
-         e1 = getattr( self, "entropy_" + name_attribute )
-         e2 = getattr( i[0], "entropy_" + name_attribute )
+         print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
+         #e1 = getattr( self, "entropy_" + name_attribute )
+         #e2 = getattr( i[0], "entropy_" + name_attribute )
 
          #if e1 != e2 :
-         print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
+         #print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
+
+      setattr( self, "sort_" + name_attribute, z )
+
+   def checksort(self, name_attribute, method) :
+      z = getattr( self, "sort_" + name_attribute )
+      for i in z :
+         if method == i[0] :
+            return True
+
+      return False
+   
+   def diff(self, name_attribute):
+      self.sim.set_compress_type( ZLIB_COMPRESS )
+
+      z = getattr( self, "sort_" + name_attribute )
+      
+      bb1 = getattr( self, "bb_" + name_attribute )
+      
+      for b1 in bb1 :
+         print b1, "0x%x" % bb1[ b1 ].basic_block.end
+         for i in z :
+            bb2 = getattr( i[0], "bb_" + name_attribute )
+            b_z = {}
+            for b2 in bb2 :
+               e1 = self.sim.entropy( bb1[ b1 ].buff )
+               e2 = self.sim.entropy( bb2[ b2 ].buff )
+
+               m = max(e1, e2) - min(e2, e1)
+               b_z[ b2 ] = m #self.sim.ncd( bb1[ b1 ].buff, bb2[ b2 ].buff )
+            
+            print "\t", sorted(b_z.iteritems(), key=lambda (k,v): (v,k))[ : 2]
+
+      #h = [ i for i in self.mx.basic_blocks.get() ]
+#      for val in self.diff_4( self.m ) :
+#         print val
+#
+#      l = self.diff_4( self.m )
+#      for i in z :
+#         print "\t", self.diff_4( i[0].m, l )
+
+   def diff_4(self, m) :
+      code = m.get_code()
+      bc = code.get_bc()
+      
+      l = []
+      j = 0
+      buff = ""
+      for i in bc.get() :
+         if j != 0 and j % 4 == 0 :
+            yield self.sim.entropy( buff ), j
+            buff = ""
+
+         buff += i.get_name()
+         buff += "%s" % i.get_operands()
+
+         j += 1
+
+   def diff_5(self, m, ref) :
+      code = m.get_code()
+      bc = code.get_bc()
+
+      l = []
+      j = 0
+      buff = ""
+      for i in bc.get() :
+         if j != 0 and j % 4 == 0 :
+            l.append( self.sim.entropy( buff ) )
+            buff = ""
+
+         buff += i.get_name()
+         buff += "%s" % i.get_operands()
+
+         j += 1
+      return l
 
    def getsha256(self, name_attribute) :
       return getattr(self, "sha256_" + name_attribute)
@@ -101,35 +206,79 @@ class Method :
    def show(self) :
       print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
 
+BASE = "base"
+METHODS = "methods"
+HASHSUM = "hashsum" 
+DIFFMETHODS = "diffmethods"
+NEWMETHODS = "newmethods"
 class Diff :
    def __init__(self, vm1, vm2) :
       self.vms = [ vm1, vm2 ]
       self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
       self.sim.set_compress_type( XZ_COMPRESS )
-      self.methods = {}
-      self.hashsum = {}
-      
-      self.diffmethods = []
 
-      
+      self.filters = {}
+
+      for i in FILTERS :
+         self.filters[ i ] = {}
+         self.filters[ i ][ BASE ] = { FILTER_NAME : i }
+         self.filters[ i ][ BASE ].update( FILTERS[ i ] )
+         self.filters[ i ][ METHODS ] = {}
+         self.filters[ i ][ HASHSUM ] = {}
+         self.filters[ i ][ DIFFMETHODS ] = []
+         self.filters[ i ][ NEWMETHODS ] = []
+
       for i in self.vms :
-         self.methods[ i ] = []
-         self.hashsum[ i ] = [] 
          for m in i.get_vm().get_methods() :
             m = Method( m, i.get_analysis().hmethods[ m ], self.sim ) 
-            self.methods[ i ].append( m ) 
-            m.add_attribute( "filter_buff_1", filter_ins )
-            self.hashsum[i].append( m.getsha256( "filter_buff_1" ) ) 
 
-      for j in self.methods[vm1] :
-         for i1 in self.methods :
-            if j.getsha256( "filter_buff_1" ) in self.hashsum[i1] :
-               continue
+            for fil in self.filters :
+               if i not in self.filters[fil][METHODS] :
+                  self.filters[fil][METHODS][ i ] = []
+                  self.filters[fil][HASHSUM][ i ] = []
+        
+               self.filters[fil][METHODS][ i ].append( m )
 
-            for k in self.methods[i1] :
-               j.similarity( k, "filter_buff_1" )
-               if j not in self.diffmethods :
-                  self.diffmethods.append(j)
+               m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_INS], self.filters[fil][BASE][FILTER_CHECKSUM] )
+               
+               self.filters[fil][HASHSUM][i].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
 
-      for j in self.diffmethods :
-         j.sort( "filter_buff_1", 3 )
+      
+      # Check if some methods in the first file has been modified
+      for fil in self.filters :
+         for j in self.filters[fil][METHODS][vm1] :
+            for i1 in self.filters[fil][METHODS] :
+               if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) in self.filters[fil][HASHSUM][i1] :
+                  continue
+
+               for k in self.filters[fil][METHODS][i1] :
+                  j.similarity( k, self.filters[fil][BASE][FILTER_SIM], self.filters[fil][BASE][FILTER_NAME] )
+                  if j not in self.filters[fil][DIFFMETHODS] :
+                     self.filters[fil][DIFFMETHODS].append(j)
+      
+      print "DIFF METHODS"
+      for fil in self.filters :
+         for j in self.filters[fil][DIFFMETHODS] :
+            print j
+            j.sort( self.filters[fil][BASE][FILTER_NAME], 1 )
+            j.diff( self.filters[fil][BASE][FILTER_NAME] )
+
+      # Check if some methods in the second file are totally new !
+      for fil in self.filters :
+         for j in self.filters[fil][METHODS][vm2] :
+            for i1 in self.filters[fil][METHODS] :
+               if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) in self.filters[fil][HASHSUM][i1] :
+                  continue
+           
+               if j not in self.filters[fil][NEWMETHODS] :
+                  ok = True
+                  for diff_method in self.filters[fil][DIFFMETHODS] :
+                     if diff_method.checksort( self.filters[fil][BASE][FILTER_NAME], j ) :
+                        ok = False
+                        break
+                  if ok :
+                     self.filters[fil][NEWMETHODS].append( j )
+
+      print "NEW METHODS"
+      for fil in self.filters :
+         print "\t", self.filters[fil][NEWMETHODS]
