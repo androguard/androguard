@@ -20,7 +20,7 @@
 from struct import unpack, pack
 
 from misc import Color
-from error import warning
+from error import warning, error
 
 # Handle exit message
 def Exit( msg ):
@@ -78,7 +78,7 @@ def PrettyShow(idx, paths, nb, ins) :
       print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
    print
 
-def Dot(m, mx) :
+def method2dot( m, mx ) :
    buff = ""
    for i in mx.basic_blocks.get() :
       val = "green"
@@ -99,9 +99,36 @@ def Dot(m, mx) :
          idx += ins.get_length()
 
       buff +=  "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (i.get_name(), label)
-      
    return buff
 
+def method2format( output, _format="png", m = None, mx = None, raw = False ) :
+   try :
+      import pydot
+   except ImportError :
+      error("module pydot not found")
+   
+   buff = "digraph code {\n"
+   buff += "graph [bgcolor=white];\n"
+   buff += "node [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n"
+
+   if raw == False :
+      buff += method2dot( m, mx )
+   else :
+      buff += raw
+
+   buff += "}"
+
+   d = pydot.graph_from_dot_data( buff )
+
+   getattr(d, "write_" + _format)( output )
+
+def method2png( output, m = None, mx = None, raw = False ) :
+   buff = raw
+   if raw == False :
+      buff = method2dot( m, mx )
+
+   method2format( output, "png", m, mx, buff )
+   
 class SV : 
    """SV is used to handle more easily a value"""
    def __init__(self, size, buff) :

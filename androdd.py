@@ -23,16 +23,17 @@ import sys, os, cmd, threading, re
 from optparse import OptionParser
 
 import androguard, analysis, misc
-from bytecode import Dot
+from bytecode import method2dot, method2format
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'base directory to output all files', 'nargs' : 1 }
 
-option_2 = { 'name' : ('-d', '--dot'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_2 = { 'name' : ('-d', '--dot'), 'help' : 'write the method in dot format', 'action' : 'count' }
+option_3 = { 'name' : ('-f', '--format'), 'help' : 'write the method in specific format (png, ...)', 'nargs' : 1 }
 
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3]
+options = [option_0, option_1, option_2, option_3, option_4]
 
 def valid_class_name( class_name ):
    if class_name[-1] == ";" :
@@ -54,7 +55,7 @@ def create_directories( a, output ) :
       for class_name in vm.get_classes_names() :
          create_directory( valid_class_name( class_name ), output )
 
-def export_apps_to_dot( a, output ) :
+def export_apps_to_format( a, output, dot=None, _format=None ) :
    output_name = output
    if output_name[-1] != "/" :
       output_name = output_name + "/"
@@ -74,17 +75,17 @@ def export_apps_to_dot( a, output ) :
          descriptor = descriptor.replace("/", "_")
 
          filename = filename + method.get_name() + descriptor
+            
+            
+         buff = method2dot( method, x.hmethods[ method ] )
 
-         fd = open( filename + ".dot", "w")
-
-         fd.write("digraph code {\n")
-         fd.write("graph [bgcolor=white];\n")
-         fd.write("node [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n")
-
-         fd.write( Dot(method, x.hmethods[ method ]) )
-
-         fd.write("}\n")
-         fd.close()
+         if dot :
+            fd = open( filename + ".dot", "w")
+            fd.write( buff )
+            fd.close()
+         
+         if _format :
+            method2format( filename + "." + _format, _format, raw = buff )
 
 def main(options, arguments) :                    
    if options.input != None and options.output != None :
@@ -92,8 +93,8 @@ def main(options, arguments) :
       
       create_directories( a, options.output )
 
-      if options.dot != None :
-         export_apps_to_dot( a, options.output )
+      if options.dot != None or options.format != None :
+         export_apps_to_format( a, options.output, options.dot, options.format )
 
    elif options.version != None :
       print "Androdd version %s" % misc.VERSION

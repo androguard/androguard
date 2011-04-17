@@ -61,6 +61,8 @@ class CheckSum :
       for i in basic_block.ins : 
          self.buff += i.get_name()
 
+      self.hash = hashlib.sha256( self.buff ).hexdigest()
+
 def filter_checksum_1( basic_block ) :
    return CheckSum( basic_block )
 
@@ -85,6 +87,7 @@ class Method :
       buff = ""
 
       bb = {}
+      bbhash = {}
 
       code = self.m.get_code()
       bc = code.get_bc()
@@ -94,10 +97,12 @@ class Method :
 
       for i in self.mx.basic_blocks.get() :
          bb[ i.name ] = func_bb( i )
+         bbhash[ bb[ i.name ].hash ] = bb[ i.name ]
 
       setattr(self, name, buff)
 
       setattr(self, "bb_" + name, bb)
+      setattr(self, "bb_sha256_" + name, bbhash)
       setattr(self, "sha256_" + name, hashlib.sha256( buff ).hexdigest())
       setattr(self, "entropy_" + name, self.sim.entropy( buff ))
       
@@ -137,7 +142,7 @@ class Method :
       return False
    
    def diff(self, name_attribute):
-      self.sim.set_compress_type( ZLIB_COMPRESS )
+      self.sim.set_compress_type( XZ_COMPRESS )
 
       z = getattr( self, "sort_" + name_attribute )
       
@@ -148,13 +153,20 @@ class Method :
          for i in z :
             bb2 = getattr( i[0], "bb_" + name_attribute )
             b_z = {}
-            for b2 in bb2 :
-               e1 = self.sim.entropy( bb1[ b1 ].buff )
-               e2 = self.sim.entropy( bb2[ b2 ].buff )
 
-               m = max(e1, e2) - min(e2, e1)
-               b_z[ b2 ] = m #self.sim.ncd( bb1[ b1 ].buff, bb2[ b2 ].buff )
+            bb2hash = getattr( i[0], "bb_sha256_" + name_attribute )
             
+            if bb1[ b1 ].hash in bb2hash :
+               b_z[ bb2hash[ bb1[ b1 ].hash ].basic_block.name ] = 0.0
+
+            else :
+               for b2 in bb2 :
+                  #e1 = self.sim.entropy( bb1[ b1 ].buff )
+                  #e2 = self.sim.entropy( bb2[ b2 ].buff )
+               
+                  #m = max(e1, e2) - min(e2, e1)
+                  b_z[ b2 ] = self.sim.ncd( bb1[ b1 ].buff, bb2[ b2 ].buff )
+
             print "\t", sorted(b_z.iteritems(), key=lambda (k,v): (v,k))[ : 2]
 
       #h = [ i for i in self.mx.basic_blocks.get() ]
