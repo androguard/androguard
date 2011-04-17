@@ -1887,6 +1887,9 @@ class VM_BCA :
          self.hmethods[ i ] = x
          self.__nmethods[ i.get_name() ] = x
 
+   def get_method(self, method) :
+      return self.hmethods[ method ]
+
    # FIXME
    def get_like_field(self) :
       return [ random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ]),
