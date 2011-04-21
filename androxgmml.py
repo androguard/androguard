@@ -31,8 +31,7 @@ option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input', 'nargs' : 1 
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xgmml', 'nargs' : 1 }
 option_2 = { 'name' : ('-f', '--functions'), 'help' : 'include function calls', 'action' : 'count' }
 option_3 = { 'name' : ('-e', '--externals'), 'help' : 'include extern function calls', 'action' : 'count' }
-
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
 options = [option_0, option_1, option_2, option_3, option_4]
 

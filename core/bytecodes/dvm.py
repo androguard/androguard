@@ -169,6 +169,7 @@ class StringBlock :
       data = ""
       while length > 0 :
          offset += 2
+
          data += pack( "<B", self.getShort(self.m_strings, offset) )
          length -= 1
      
@@ -177,9 +178,9 @@ class StringBlock :
    def getShort(self, array, offset) :
       value = array[offset/4].get_value()
       if (offset%4)/2 == 0 :
-         return value & 0xFFFF
+         return value & 0xFF
       else :
-         return value >> 16
+         return (value >> 16) & 0xFF
 
 ATTRIBUTE_IX_NAMESPACE_URI = 0
 ATTRIBUTE_IX_NAME = 1 
@@ -750,7 +751,7 @@ DALVIK_OPCODES = {
                   0x22 : [ "21c", "new-instance",               "vAA, type@BBBB", "AA|op BBBB" ],
                   0x23 : [ "22c", "new-array",                  "vA, vB, type@CCCC", "B|A|op CCCC" ],
                   0x24 : [ "35c", "filled-new-array",           "vD, vE, vF, vG, vA, type@CCCC", "B|A|op CCCC G|F|E|D" ], 
-                  0x25 : [ "3rc", "filled-new-array/range",     "", ""      ],
+                  0x25 : [ "3rc", "filled-new-array/range",     "vB{vCCCC .. vNNNN}, type@BBBB", "AA|op BBBB CCCC" ],
                   0x26 : [ "31t", "fill-array-data",            "vAA, +BBBBBBBB ", "AA|op BBBBBBBB", FillArrayData ],
                   0x27 : [ "11x", "throw",                      "vAA", "B|A|op" ],
                   0x28 : [ "10t", "goto",                       "+AA", "AA|op"],
@@ -775,6 +776,16 @@ DALVIK_OPCODES = {
                   0x3b : [ "21t", "if-gez",                     "vAA, +BBBB", "AA|op BBBB" ],
                   0x3c : [ "21t", "if-gtz",                     "vAA, +BBBB", "AA|op BBBB" ],
                   0x3d : [ "21t", "if-lez",                     "vAA, +BBBB", "AA|op BBBB" ],
+
+                  # UNUSED OPCODES
+                  0x3e : [ "10x", "nop"                         ],
+                  0x3f : [ "10x", "nop"                         ],
+                  0x40 : [ "10x", "nop"                         ],
+                  0x41 : [ "10x", "nop"                         ],
+                  0x42 : [ "10x", "nop"                         ],
+                  0x43 : [ "10x", "nop"                         ],
+                  ###################
+
                   0x44 : [ "23x", "aget",                       "vAA, vBB, vCC", "AA|op CC|BB" ],
                   0x45 : [ "23x", "aget-wide",                  "vAA, vBB, vCC", "AA|op CC|BB" ],
                   0x46 : [ "23x", "aget-object",                "vAA, vBB, vCC", "AA|op CC|BB" ],
@@ -2359,6 +2370,8 @@ class DBC :
       self.op_name = op_name
       self.operands = operands
       self.formatted_operands = []
+      self.relative_operands = []
+
       self.raw_buff = raw_buff
 
       self.op_value = op_value
@@ -2411,7 +2424,14 @@ class DBC :
       # convert value to double
       elif self.op_value == 0x19 :
          self.formatted_operands.append( ("#d", unpack( 'd', pack('q', r[0][1]))[0]) )
-     
+   
+      # 0x26 fill-array-data
+      elif self.op_value == 0x26 :
+         self.relative_operands.append( r[0][1] * 2 )
+
+      elif self.op_value == 0x2b or self.op_value == 0x2c :
+         self.relative_operands.append( r[0][1] * 2 )
+
       # Add* instructions
       # 
       # Invoke* instructions 
@@ -2467,6 +2487,11 @@ class DBC :
       if self.formatted_operands != [] :
          for i in self.formatted_operands :
             l.append( "{" + str(i[1]) + "}" )
+            l.append(",")
+
+      if self.relative_operands != [] :
+         for i in self.relative_operands :
+            l.append("{" + "0x%x" % (i + pos) + "}")
             l.append(",")
 
       if l != [] :
@@ -2632,14 +2657,14 @@ class DCode :
          if values["B"] == 5 :
             operands.append( va )
 
-      elif op_value >= 0x74 and op_value <= 0x78 :
+      elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
          NNNN = values["CCCC"] + values["AA"] + 1
 
          for i in range(values["CCCC"] + 1, NNNN - 1 ) :
             operands.append( ["v", i ] )
 
          operands.pop(1)
-      
+     
       t_size = (t_size - len(self.__all_bytes)) / 2
       if len(mnemonic) == 5 :
          return operands, (operands[2][1], mnemonic[4]), t_size
@@ -2695,25 +2720,7 @@ class DCode :
          nb += 1
    
    def pretty_show(self, m_a) :
-      paths = []
-      for i in m_a.basic_blocks.get() :
-         val = 0 
-         if len(i.childs) > 1 :
-            val = 1
-         elif len(i.childs) == 1 :
-            val = 2
-
-         for j in i.childs :
-            paths.append( ( j[0], j[1], val ) )
-            if val == 1 :
-               val = 0
-
-      nb = 0
-      idx = 0
-      for i in self.__bytecodes :
-         bytecode.PrettyShow( idx, paths, nb, i )
-         idx += ( i.get_length() )
-         nb += 1
+      bytecode.PrettyShow( m_a.basic_blocks.gets() )
 
 class DalvikCode : 
    def __init__(self, buff, cm) :

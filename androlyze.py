@@ -40,6 +40,7 @@ option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'n
 option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
 
 option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
+
 option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
 
 option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more easily with objects', 'action' : 'count' }
@@ -48,9 +49,11 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
 
-option_7 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
+option_7 = { 'name' : ('-t', '--type_pretty'), 'help' : 'set the type of pretty print (0, 1) !', 'nargs' : 1 }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
+option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
+
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 
 def save_session(l, filename) :
    fd = open(filename, "w")
@@ -71,6 +74,9 @@ def main(options, arguments) :
    elif options.input != None :
       _a = AndroguardS( options.input )
       _x = None
+
+      if options.type_pretty != None :
+         bytecode.set_pretty_show( int( options.type_pretty ) )
 
       if options.display != None :
          if options.pretty != None :

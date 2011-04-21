@@ -22,6 +22,9 @@ from struct import unpack, pack
 from misc import Color
 from error import warning, error
 
+global PRETTY_SHOW
+PRETTY_SHOW = 0
+
 # Handle exit message
 def Exit( msg ):
    warning("Error : " + msg)
@@ -44,39 +47,133 @@ def _Print(name, arg) :
 
    print buff
 
-def PrettyShow(idx, paths, nb, ins) :
-   p = []
-   for j in paths :
-      way = Color.green
-      if j[2] == 1 :
-         way = Color.red
-      elif j[2] == 2 :
-         way = Color.blue
+def set_pretty_show( val ) :
+   global PRETTY_SHOW
+   PRETTY_SHOW = val
 
-      m_in = j[0]
-      m_ax = j[1]
-      if j[0] > j[1] :
-         m_in = j[1]
-         m_ax = j[0]
+def PrettyShow( basic_blocks ) :
+   if PRETTY_SHOW == 0 :
+      PrettyShow0( basic_blocks )
+   elif PRETTY_SHOW == 1 :
+      PrettyShow1( basic_blocks )
 
-      if idx >= m_in and idx <= m_ax :
-         if idx == j[0] :
-            p.append( j[1] )
-            print "o",
-         if idx == j[1] :
-            print "%s>%s" % (way, Color.normal),
+def PrettyShow0( basic_blocks ) :
+   paths = []
+   for i in basic_blocks :
+      val = 0 
+      if len(i.childs) > 1 :
+         val = 1
+      elif len(i.childs) == 1 :
+         val = 2
 
-         if idx != j[0] and idx != j[1] :
-            print "%s|%s" % (way, Color.normal),
-      else :
-         print " ",
+      for j in i.childs :
+         paths.append( ( j[0], j[1], val ) )
+         if val == 1 :
+            val = 0
 
-   print "%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
-   ins.show( idx )
+   nb = 0
+   idx = 0
+   for bb in basic_blocks :
+      for ins in bb.ins :
+         p = []
+         for j in paths :
+            way = Color.green
+            if j[2] == 1 :
+               way = Color.red
+            elif j[2] == 2 :
+               way = Color.blue
 
-   if p != [] :
-      print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
-   print
+            m_in = j[0]
+            m_ax = j[1]
+            if j[0] > j[1] :
+               m_in = j[1]
+               m_ax = j[0]
+
+            if idx >= m_in and idx <= m_ax :
+               if idx == j[0] :
+                  p.append( j[1] )
+                  print "o",
+               if idx == j[1] :
+                  print "%s>%s" % (way, Color.normal),
+
+               if idx != j[0] and idx != j[1] :
+                  print "%s|%s" % (way, Color.normal),
+            else :
+               print " ",
+
+         print "%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
+         ins.show( idx )
+
+         if p != [] :
+            print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
+         print
+         
+         idx += ( ins.get_length() )
+         nb += 1
+
+
+def PrettyShow1( basic_blocks ) :
+   idx = 0
+   nb = 0
+   for i in basic_blocks :
+      
+      path = []
+      for p in i.childs :
+         path.append( p[0] )
+
+      print "%s%s%s : " % (Color.purple, i.name, Color.normal)
+      for ins in i.ins :
+         print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal), 
+         ins.show( idx )
+         
+         if idx in path :
+            if len(i.childs) == 2 :
+               print "%s[ %s%s " % (Color.red, i.childs[0][2].name, Color.green),
+               print ' '.join("%s" % c[2].name for c in i.childs[1:]), "]%s" % Color.normal,
+            else :
+               print "%s[" % Color.blue, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
+         
+         idx += ins.get_length()
+         nb += 1
+
+         print
+      print
+
+def PrettyShow4( basic_blocks ) :
+   idx = 0
+   nb = 0
+   for i in basic_blocks :
+      
+      #path = []
+      #for p in i.childs :
+      #   path.append( p[0] )
+
+      print "%s%s%s : " % (Color.purple, i.name, Color.normal)
+      for ins in i.ins :
+         print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal), 
+       
+         try :
+            tag = getattr(ins, "tag")
+         except AttributeError :
+            tag = 0
+
+         if tag == 1 :
+            print "%s" % Color.green,
+         elif tag == 2 :
+            print "%s" % Color.red,
+
+         ins.show( idx )
+        
+
+
+         #if idx in path :
+         #   print "%s[" % Color.green, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
+         
+         idx += ins.get_length()
+         nb += 1
+
+         print
+      print
 
 def method2dot( m, mx ) :
    buff = ""
