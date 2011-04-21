@@ -1499,6 +1499,9 @@ class BasicBlocks :
       for i in self.bb :
          yield i
 
+   def gets(self) :
+      return self.bb
+
    def create_graph(self) :
       try :
          from networkx import DiGraph

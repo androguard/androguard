@@ -24,7 +24,7 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
-
+import bytecode
 
 TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 
@@ -49,4 +49,8 @@ for method in a.get_methods() :
    if key not in VALUES :
       continue
 
+   bytecode.set_pretty_show( 0 )
+   method.pretty_show( ax )
+
+   bytecode.set_pretty_show( 1 )
    method.pretty_show( ax )
