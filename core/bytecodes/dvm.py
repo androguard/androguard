@@ -148,7 +148,7 @@ class StringBlock :
       
       self.m_strings = []
       for i in range(0, size / 4) :
-         self.m_strings.append( SV( '<i', buff.read( 4 ) ) )
+         self.m_strings.append( SV( '=L', buff.read( 4 ) ) )
 
       if self.stylesOffset.get_value() != 0 :
          raise("ooo")
@@ -162,24 +162,21 @@ class StringBlock :
       if idx < 0 or self.m_stringOffsets == [] or idx >= len(self.m_stringOffsets) :
          return None
 
-      #print idx, self.m_stringOffsets[ idx ]
       offset = self.m_stringOffsets[ idx ].get_value()
       length = self.getShort(self.m_strings, offset)
 
-      from ctypes import c_byte
+      data = "" 
 
-      data = ""
       while length > 0 :
          offset += 2
-
-         data += pack( "=b", c_byte( self.getShort(self.m_strings, offset) ).value )
+         data += unichr( self.getShort(self.m_strings, offset) ) 
          length -= 1
-     
+  
       return data
 
    def getShort(self, array, offset) :
       value = array[offset/4].get_value()
-      if (offset%4)/2 == 0 :
+      if ((offset%4)/2) == 0 :
          return value & 0xFFFF
       else :
          return value >> 16
@@ -445,7 +442,7 @@ class AXMLPrinter :
       self.axml = AXMLParser( raw_buff )
       self.xmlns = False
 
-      self.buff = ""
+      self.buff = "" 
 
       while 1 :
          _type = self.axml.next()
@@ -485,7 +482,7 @@ class AXMLPrinter :
             raise("ooo")
 
    def getBuff(self) :
-      return self.buff
+      return self.buff.encode("utf-8")
 
    def getPrefix(self, prefix) :
       if prefix == None or len(prefix) == 0 :
