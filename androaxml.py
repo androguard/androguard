@@ -21,6 +21,7 @@
 import sys, hashlib, os
 from optparse import OptionParser
 from xml.dom import minidom
+import codecs
 
 PATH_INSTALL = "./"                                                                                                                                                                                                               
 sys.path.append(PATH_INSTALL + "./")
@@ -41,14 +42,13 @@ def main(options, arguments) :
          a = dvm.APK( options.input )
          buff = a.xml[ "AndroidManifest.xml" ].toprettyxml()
       elif ".xml" in options.input :
-         ap = dvm.AXMLPrinter( open(options.input, "r").read() )
-         #print ap.getBuff()
+         ap = dvm.AXMLPrinter( open(options.input, "rb").read() )
          buff = minidom.parseString( ap.getBuff() ).toprettyxml()         
       else :
          print "Unknown file type"
          return
 
-      fd = open(options.output, "w")
+      fd = codecs.open(options.output, "w", "utf-8")
       fd.write( buff )
       fd.close()
    elif options.version != None :
