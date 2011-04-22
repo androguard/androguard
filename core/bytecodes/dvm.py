@@ -148,7 +148,7 @@ class StringBlock :
       
       self.m_strings = []
       for i in range(0, size / 4) :
-         self.m_strings.append( SV( '<L', buff.read( 4 ) ) )
+         self.m_strings.append( SV( '<i', buff.read( 4 ) ) )
 
       if self.stylesOffset.get_value() != 0 :
          raise("ooo")
@@ -170,7 +170,7 @@ class StringBlock :
       while length > 0 :
          offset += 2
 
-         data += pack( "<B", self.getShort(self.m_strings, offset) )
+         data += pack( "=b", self.getShort(self.m_strings, offset) )
          length -= 1
      
       return data
@@ -178,9 +178,9 @@ class StringBlock :
    def getShort(self, array, offset) :
       value = array[offset/4].get_value()
       if (offset%4)/2 == 0 :
-         return value & 0xFF
+         return value & 0xFFFF
       else :
-         return (value >> 16) & 0xFF
+         return value >> 16
 
 ATTRIBUTE_IX_NAMESPACE_URI = 0
 ATTRIBUTE_IX_NAME = 1 
@@ -545,28 +545,28 @@ HEADER_NAMEDTUPLE = namedtuple( "HEADER_NAMEDTUPLE", "magic checksum signature f
                                                      "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
                                                      "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
                                                      "class_defs_size class_defs_off data_size data_off" )
-HEADER = [ '<QL20sLLLLLLLLLLLLLLLLLLLL', HEADER_NAMEDTUPLE ]
+HEADER = [ '=QL20sLLLLLLLLLLLLLLLLLLLL', HEADER_NAMEDTUPLE ]
 
 MAP_ITEM_NAMEDTUPLE = namedtuple("MAP_ITEM_NAMEDTUPLE", "type unused size offset")
-MAP_ITEM = [ '<HHLL', MAP_ITEM_NAMEDTUPLE ]
+MAP_ITEM = [ '=HHLL', MAP_ITEM_NAMEDTUPLE ]
 
 PROTO_ID_ITEM_NAMEDTUPLE = namedtuple("PROTO_ID_ITEM_NAMEDTUPLE", "shorty_idx return_type_idx parameters_off" )
-PROTO_ID_ITEM = [ '<LLL', PROTO_ID_ITEM_NAMEDTUPLE ]
+PROTO_ID_ITEM = [ '=LLL', PROTO_ID_ITEM_NAMEDTUPLE ]
 
 METHOD_ID_ITEM_NAMEDTUPLE = namedtuple("METHOD_ID_ITEM_NAMEDTUPLE", "class_idx proto_idx name_idx" )
-METHOD_ID_ITEM = [ '<HHL', METHOD_ID_ITEM_NAMEDTUPLE ]
+METHOD_ID_ITEM = [ '=HHL', METHOD_ID_ITEM_NAMEDTUPLE ]
 
 FIELD_ID_ITEM_NAMEDTUPLE = namedtuple("FIELD_ID_ITEM_NAMEDTUPLE", "class_idx type_idx name_idx")
-FIELD_ID_ITEM = [ '<HHL', FIELD_ID_ITEM_NAMEDTUPLE ]
+FIELD_ID_ITEM = [ '=HHL', FIELD_ID_ITEM_NAMEDTUPLE ]
 
 CLASS_DEF_ITEM_NAMEDTUPLE = namedtuple("CLASS_DEF_ITEM_NAMEDTUPLE", "class_idx access_flags superclass_idx interfaces_off source_file_idx annotations_off class_data_off static_values_off")
-CLASS_DEF_ITEM = [ '<LLLLLLLL', CLASS_DEF_ITEM_NAMEDTUPLE ]
+CLASS_DEF_ITEM = [ '=LLLLLLLL', CLASS_DEF_ITEM_NAMEDTUPLE ]
 
 TRY_ITEM_NAMEDTUPLE = namedtuple("TRY_ITEM_NAMEDTUPLE", "start_addr insn_count handler_off" )
-TRY_ITEM = [ '<LHH', TRY_ITEM_NAMEDTUPLE ]
+TRY_ITEM = [ '=LHH', TRY_ITEM_NAMEDTUPLE ]
 
 ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE = namedtuple("ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE", "class_annotations_off fields_size annotated_methods_size annotated_parameters_size")
-ANNOTATIONS_DIRECTORY_ITEM = [ '<LLLL', ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE ]
+ANNOTATIONS_DIRECTORY_ITEM = [ '=LLLL', ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE ]
 
 TYPE_MAP_ITEM = {
                   0x0    : "TYPE_HEADER_ITEM",
@@ -590,13 +590,13 @@ TYPE_MAP_ITEM = {
                 }
 
 SPARSE_SWITCH_NAMEDTUPLE = namedtuple("SPARSE_SWITCH_NAMEDTUPLE", "ident size")
-SPARSE_SWITCH = [ '<HH', SPARSE_SWITCH_NAMEDTUPLE ]
+SPARSE_SWITCH = [ '=HH', SPARSE_SWITCH_NAMEDTUPLE ]
 
 PACKED_SWITCH_NAMEDTUPLE = namedtuple("PACKED_SWITCH_NAMEDTUPLE", "ident size first_key")
-PACKED_SWITCH = [ '<HHL', PACKED_SWITCH_NAMEDTUPLE ]
+PACKED_SWITCH = [ '=HHL', PACKED_SWITCH_NAMEDTUPLE ]
 
 FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size") 
-FILL_ARRAY_DATA = [ '<HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
+FILL_ARRAY_DATA = [ '=HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
 
 class FillArrayData :
    def __init__(self, buff) :
@@ -639,11 +639,11 @@ class SparseSwitch :
 
       idx = calcsize(SPARSE_SWITCH[0])
       for i in range(0, self.format.get_value().size) :
-         self.keys.append( unpack('<L', buff[idx:idx+4])[0] )
+         self.keys.append( unpack('=L', buff[idx:idx+4])[0] )
          idx += 4
 
       for i in range(0, self.format.get_value().size) :
-         self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
+         self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
          idx += 4
    
    # FIXME : return correct raw
@@ -682,7 +682,7 @@ class PackedSwitch :
 
       idx = calcsize(PACKED_SWITCH[0])
       for i in range(0, self.format.get_value().size) :
-         self.targets.append( unpack('<L', buff[idx:idx+4])[0] )
+         self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
          idx += 4
 
    # FIXME : return correct raw
@@ -982,7 +982,7 @@ def readuleb128(buff) :
    return result
 
 def readsleb128(buff) :
-   result = unpack( '<b', buff.read(1) )[0]
+   result = unpack( '=b', buff.read(1) )[0]
 
    if result <= 0x7f :
       result = (result << 25) 
@@ -990,22 +990,22 @@ def readsleb128(buff) :
          result = (0x7fffffff & result) - 0x80000000
       result = result >> 25 
    else :
-      cur = unpack( '<b', buff.read(1) )[0]
+      cur = unpack( '=b', buff.read(1) )[0]
       result = (result & 0x7f) | ((cur & 0x7f) << 7)
       if cur <= 0x7f :
          result = (result << 18) >> 18
       else :
-         cur = unpack( '<b', buff.read(1) )[0]
+         cur = unpack( '=b', buff.read(1) )[0]
          result |= (cur & 0x7f) << 14
          if cur <= 0x7f :   
             result = (result << 11) >> 11
          else :
-            cur = unpack( '<b', buff.read(1) )[0]
+            cur = unpack( '=b', buff.read(1) )[0]
             result |= (cur & 0x7f) << 21
             if cur <= 0x7f :
                result = (result << 4) >> 4
             else :
-               cur = unpack( '<b', buff.read(1) )[0]
+               cur = unpack( '=b', buff.read(1) )[0]
                result |= cur << 28
 
    return result
@@ -1015,12 +1015,12 @@ def writeuleb128(value) :
 
    buff = ""
    while remaining > 0 :
-      buff += pack( "<B", ((value & 0x7f) | 0x80) )
+      buff += pack( "=B", ((value & 0x7f) | 0x80) )
 
       value = remaining
       remaining >>= 7
 
-   buff += pack( "<B", value & 0x7f )
+   buff += pack( "=B", value & 0x7f )
    return buff
 
 def writesleb128(value) :
@@ -1040,7 +1040,7 @@ def writesleb128(value) :
       if hasMore :
          tmp = 0x80
 
-      buff += pack( "<B", (value & 0x7f) | (tmp) )
+      buff += pack( "=B", (value & 0x7f) | (tmp) )
       value = remaining
       remaining >>= 7
 
@@ -1099,7 +1099,7 @@ class AnnotationOffItem :
    def __init__(self,  buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      self.annotation_off = SV( '<L', buff.read( 4 ) )
+      self.annotation_off = SV( '=L', buff.read( 4 ) )
 
    def show(self) :
      print "ANNOTATION_OFF_ITEM annotation_off=0x%x" % self.annotation_off.get_value()
@@ -1116,7 +1116,7 @@ class AnnotationSetItem :
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       self.annotation_off_item = []
 
-      self.size = SV( '<L', buff.read( 4 ) )
+      self.size = SV( '=L', buff.read( 4 ) )
       for i in range(0, self.size) :
          self.annotation_off_item.append( AnnotationOffItem(buff, cm) )
 
@@ -1147,8 +1147,8 @@ class FieldAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      self.field_idx = SV('<L', buff.read( 4 ) )
-      self.annotations_off = SV('<L', buff.read( 4 ) )
+      self.field_idx = SV('=L', buff.read( 4 ) )
+      self.annotations_off = SV('=L', buff.read( 4 ) )
 
    def show(self) :
       print "FIELD_ANNOTATION field_idx=0x%x annotations_off=0x%x" % (self.field_idx.get_value(), self.annotations_off.get_value())
@@ -1163,8 +1163,8 @@ class MethodAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      self.method_idx = SV('<L', buff.read( 4 ) )
-      self.annotations_off = SV('<L', buff.read( 4 ) )
+      self.method_idx = SV('=L', buff.read( 4 ) )
+      self.annotations_off = SV('=L', buff.read( 4 ) )
 
    def show(self) :
       print "METHOD_ANNOTATION method_idx=0x%x annotations_off=0x%x" % ( self.method_idx.get_value(), self.annotations_off.get_value())
@@ -1179,8 +1179,8 @@ class ParameterAnnotation :
    def __init__(self, buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      self.method_idx = SV('<L', buff.read( 4 ) )
-      self.annotations_off = SV('<L', buff.read( 4 ) )
+      self.method_idx = SV('=L', buff.read( 4 ) )
+      self.annotations_off = SV('=L', buff.read( 4 ) )
 
    def show(self) :
       print "PARAMETER_ANNOTATION method_idx=0x%x annotations_off=0x%x" % (self.method_idx.get_value(), self.annotations_off.get_value())
@@ -1241,7 +1241,7 @@ class TypeLItem :
    def __init__(self, buff, cm) :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-      self.type_idx = SV( '<H', buff.read( 2 ) )
+      self.type_idx = SV( '=H', buff.read( 2 ) )
 
    def show(self) :
       print "TYPE_LITEM", self.type_idx.get_value()
@@ -1265,7 +1265,7 @@ class TypeList :
       if offset % 4 != 0 :
          self.pad = buff.read( offset % 4 )
 
-      self.size = SV( '<L', buff.read( 4 ) )
+      self.size = SV( '=L', buff.read( 4 ) )
 
       self.list = []
       for i in range(0, self.size) :
@@ -1396,7 +1396,7 @@ class DebugInfoItem :
          self.__parameter_names.append( readuleb128( buff ) )
 
       self.__bytecodes = []
-      bcode = DBGBytecode( SV( '<B', buff.read(1) ) )
+      bcode = DBGBytecode( SV( '=B', buff.read(1) ) )
       self.__bytecodes.append( bcode )
 
       while bcode.get_op_value().get_value() != DBG_END_SEQUENCE :
@@ -1427,7 +1427,7 @@ class DebugInfoItem :
          else :
             bytecode.Exit( "unknown or not yet supported DBG bytecode 0x%x" % bcode_value ) 
    
-         bcode = DBGBytecode( SV( '<B', buff.read(1) ) )
+         bcode = DBGBytecode( SV( '=B', buff.read(1) ) )
          self.__bytecodes.append( bcode )
 
    def reload(self) :
@@ -1491,7 +1491,7 @@ class EncodedValue :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
-      self.val = SV('<B', buff.read( 1 ) )
+      self.val = SV('=B', buff.read( 1 ) )
       self.__value_arg = self.val.get_value() >> 5
       self.__value_type = self.val.get_value() & 0x1f
 
@@ -1575,7 +1575,7 @@ class AnnotationItem :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
-      self.visibility = SV( '<B', buff.read( 1 ) )  
+      self.visibility = SV( '=B', buff.read( 1 ) )  
       self.annotation = EncodedAnnotation(buff, cm)
 
    def reload(self) :
@@ -1657,7 +1657,7 @@ class StringIdItem :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
      
-      self.string_data_off = SV( '<L', buff.read( 4 ) )
+      self.string_data_off = SV( '=L', buff.read( 4 ) )
 
    def reload(self) :
       pass
@@ -1711,7 +1711,7 @@ class TypeItem :
       self.__CM = cm
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
-      self.format = SV( '<L', buff.read( 4 ) )
+      self.format = SV( '=L', buff.read( 4 ) )
       self._name = None
 
    def reload(self) :
@@ -2399,11 +2399,11 @@ class DBC :
       # const instruction, convert value into float
       elif self.op_value == 0x14 :
          x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1] ) << 16)
-         self.formatted_operands.append( ("#f", unpack("f", pack("L", x))[0] ) )
+         self.formatted_operands.append( ("#f", unpack("=f", pack("=L", x))[0] ) )
 
       # 0x15 : [ "21h", "const/high16",               "vAA, #+BBBB0000", "AA|op BBBB0000" ],
       elif self.op_value == 0x15 :
-         self.formatted_operands.append( ("#f", unpack( 'f', pack('i', r[0][1]))[0] ) )
+         self.formatted_operands.append( ("#f", unpack( '=f', pack('=i', r[0][1]))[0] ) )
 
       # 0x16 : [ "21s", "const-wide/16",              "vAA, #+BBBB", "AA|op BBBB" ],
       elif self.op_value == 0x16 :
@@ -2412,18 +2412,18 @@ class DBC :
       # 0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
       elif self.op_value == 0x17 :
          x = ((0xFFFF & r[1][1]) << 16) | (0xFFFF & r[0][1])
-         self.formatted_operands.append( ("#l", unpack( 'd', pack('d', x))[0] ) )
+         self.formatted_operands.append( ("#l", unpack( '=d', pack('=d', x))[0] ) )
       
       # 0x18 : [ "51l", "const-wide",                 "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
       # convert value to double
       elif self.op_value == 0x18 :
          x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1]) << 16) | ((0xFFFF & r[2][1]) << 32) | ((0xFFFF & r[3][1]) << 48)
-         self.formatted_operands.append( ("#d", unpack( 'd', pack('Q', x ) )[0]) )
+         self.formatted_operands.append( ("#d", unpack( '=d', pack('=Q', x ) )[0]) )
 
       # 0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
       # convert value to double
       elif self.op_value == 0x19 :
-         self.formatted_operands.append( ("#d", unpack( 'd', pack('q', r[0][1]))[0]) )
+         self.formatted_operands.append( ("#d", unpack( '=d', pack('=q', r[0][1]))[0]) )
    
       # 0x26 fill-array-data
       elif self.op_value == 0x26 :
@@ -2680,11 +2680,11 @@ class DCode :
       if size == 4 :
          return self.__all_bytes.pop(0)
       elif size == 8 :
-         return unpack('<%s' % func('B'), chr( (self.__all_bytes.pop(0) << 4) + self.__all_bytes.pop(0) ) )[0]
+         return unpack('=%s' % func('B'), chr( (self.__all_bytes.pop(0) << 4) + self.__all_bytes.pop(0) ) )[0]
       elif size == 16 :
-         return unpack('<%s' % func('H'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
+         return unpack('=%s' % func('H'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
       elif size == 32 :
-         return unpack('<%s' % func('L'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
+         return unpack('=%s' % func('L'), chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) + chr( (self.__all_bytes.pop(0) << 4) + (self.__all_bytes.pop(0)) ) )[0]
       else :      
          bytecode.Exit( "invalid size [ 0x%x ]" % size )                                                                                                                                                                 
 
@@ -2736,19 +2736,19 @@ class DalvikCode :
       
       self.__off = buff.get_idx()
 
-      self.registers_size = SV( '<H', buff.read( 2 ) )   
-      self.ins_size = SV( '<H', buff.read( 2 ) )
-      self.outs_size = SV( '<H', buff.read( 2 ) )
-      self.tries_size = SV( '<H', buff.read( 2 ) )
-      self.debug_info_off = SV( '<L', buff.read( 4 ) )
-      self.insns_size = SV( '<L', buff.read( 4 ) )
+      self.registers_size = SV( '=H', buff.read( 2 ) )   
+      self.ins_size = SV( '=H', buff.read( 2 ) )
+      self.outs_size = SV( '=H', buff.read( 2 ) )
+      self.tries_size = SV( '=H', buff.read( 2 ) )
+      self.debug_info_off = SV( '=L', buff.read( 4 ) )
+      self.insns_size = SV( '=L', buff.read( 4 ) )
 
-      ushort = calcsize( '<H' )
+      ushort = calcsize( '=H' )
 
       self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
       if (self.insns_size.get_value() % 2 == 1) :
-         self.__padding = SV( '<H', buff.read( 2 ) )
+         self.__padding = SV( '=H', buff.read( 2 ) )
 
       self.tries = []
       self.handlers = []
@@ -3087,7 +3087,7 @@ class MapList :
 
       self.__offset = self.__CM.add_offset( buff.get_idx(), self )
       
-      self.size = SV( '<L', buff.read( 4 ) )
+      self.size = SV( '=L', buff.read( 4 ) )
 
       self.map_item = []
       for i in range(0, self.size) :
