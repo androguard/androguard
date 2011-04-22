@@ -27,10 +27,24 @@ def hexdump(src, length=8, off=0):
       result.append( b"%04X   %-*s   %s" % (i+off, length*(digits + 1), hexa, text) )      
    return b'\n'.join(result)
 
-TESTS = [ "./examples/axml/AndroidManifest.xml",
+TESTS = [ #"./examples/axml/AndroidManifest.xml",
           "./examples/axml/AndroidManifest-Chinese.xml" ]
 
 for i in TESTS :
    ap = dvm.AXMLPrinter( open( i, "r").read() )
-   buff = minidom.parseString( ap.getBuff() ).toprettyxml()
 
+   s = unicode( ap.getBuff(), 'iso-8859-15',  errors='ignore' )
+
+   #s = s.encode("utf-8")
+
+   import codecs
+
+   out = codecs.open("res.xml", mode="w", encoding="utf-8")
+   #out = open("res.xml", "w")
+   #out.write( codecs.BOM_UTF8 )
+   out.write( s )
+   out.close()
+
+#print s
+#   buff = minidom.parseString( s ).toprettyxml()
+   #print "PASSED"

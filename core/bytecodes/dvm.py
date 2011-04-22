@@ -166,11 +166,13 @@ class StringBlock :
       offset = self.m_stringOffsets[ idx ].get_value()
       length = self.getShort(self.m_strings, offset)
 
+      from ctypes import c_byte
+
       data = ""
       while length > 0 :
          offset += 2
 
-         data += pack( "=b", self.getShort(self.m_strings, offset) )
+         data += pack( "=b", c_byte( self.getShort(self.m_strings, offset) ).value )
          length -= 1
      
       return data
