@@ -1348,23 +1348,7 @@ class JavaCode :
       """
          Display the code like a disassembler but with instructions' links
       """
-      paths = []
-      for i in m_a.basic_blocks.get() :
-         val = 0 
-         if len(i.childs) > 1 :
-            val = 1
-         elif len(i.childs) == 1 :
-            val = 2
-
-         for j in i.childs :
-            paths.append( ( j[0], j[1], val ) )
-            if val == 1 :
-               val = 0
-
-      nb = 0
-      for i in self.__bytecodes :
-         bytecode.PrettyShow( self.__maps[nb], paths, nb, i )
-         nb += 1
+      bytecode.PrettyShow( m_a.basic_blocks.gets() )
    
    def get_relative_idx(self, idx) :
       """

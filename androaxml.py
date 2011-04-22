@@ -42,6 +42,7 @@ def main(options, arguments) :
          buff = a.xml[ "AndroidManifest.xml" ].toprettyxml()
       elif ".xml" in options.input :
          ap = dvm.AXMLPrinter( open(options.input, "r").read() )
+         #print ap.getBuff()
          buff = minidom.parseString( ap.getBuff() ).toprettyxml()         
       else :
          print "Unknown file type"

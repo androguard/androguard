@@ -748,7 +748,7 @@ class HandleInt :
                   i.remove( method.get_class_name(), method.get_name(), method.get_descriptor(), p.get_bb().start + p.get_idx(), 1 )
                   
                   # Add protected data for next steps
-                  self.data[ method.get_class_name() ].append( [ len(self.data[ method.get_class_name() ]), pack('<L', p.get_value()), "INTEGER" ] )
+                  self.data[ method.get_class_name() ].append( [ len(self.data[ method.get_class_name() ]), pack('=L', p.get_value()), "INTEGER" ] )
 
    def get_data(self) :
       return self.data
