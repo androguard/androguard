@@ -24,26 +24,45 @@ from optparse import OptionParser
 
 import androguard, misc, diff
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-
+option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
-
-option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more easily with objects', 'action' : 'count' }
-
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+options = [option_0, option_1, option_2]
 
 def main(options, arguments) :  
-   a = androguard.Androguard( arguments )
-   a.ianalyze()
 
-   d = diff.Diff( *[ i[1] for i in a.get_bc() ] )
+   if options.input != None :
+      a = androguard.Androguard( options.input )
+      a.ianalyze()
 
-   if options.version != None :
+      vm1 = a.get_bc()[0][1].get_vm()
+      vmx1 = a.get_bc()[0][1].get_analysis()
+
+      vm2 = a.get_bc()[1][1].get_vm()
+      vmx2 = a.get_bc()[1][1].get_analysis()
+
+      d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS )
+
+      details = False
+      if options.display != None :
+         details = True
+
+      print "DIFF METHODS :"
+      diff_methods = d.get_diff_methods()
+      for i in diff_methods :
+         for elem in diff_methods[ i ] :
+            elem.show( i, details )
+            print
+      
+      print "NEW METHODS :"
+      new_methods = d.get_new_methods()
+      for i in new_methods :
+         for elem in new_methods[ i ] :
+            elem.show( i, details )
+            print
+
+   elif options.version != None :
       print "Androdiff version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     

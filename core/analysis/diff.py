@@ -23,29 +23,18 @@ from similarity import *
 
 import bytecode
 
-# Lorg/t0t0/androguard/TC/TCMod1; ()V,T1
-#96 0x17e aget-object v4 , v6 , v8
-#97 0x182 aget v5 , v8 , v8
-#98 0x186 add-int/lit8 v8 , v8 , [#+ 1]
-#99 0x18a add-int/2addr v7 , v8
-#100 0x18c iput v7 , v12 , [field@ 14 Lorg/t0t0/androguard/TC/TCMod1; I TC1]
-#101 0x190 add-int/lit8 v5 , v5 , [#+ 1]
-#102 0x194 goto [+ -18]
-#103 0x196 add-int/lit8 v4 , v4 , [#+ 1]
-#104 0x19a goto [+ -25]
+DEBUG = 0
 
-#96 0x17e aget-object v4 , v6 , v8
-#97 0x182 aget v5 , v8 , v8
-#98 0x186 add-int/2addr v7 , v8
-#99 0x188 iput v7 , v12 , [field@ 14 Lorg/t0t0/androguard/TC/TCMod1; I TC1]
-#100 0x18c add-int/lit8 v5 , v5 , [#+ 1]
-#101 0x190 goto [+ -16]
-#102 0x192 add-int/lit8 v4 , v4 , [#+ 1]
-#103 0x196 goto [+ -23]
-#104 0x198 new-instance v0 , [type@ 20 Lorg/t0t0/androguard/TC/TCA;]
+def filter_meth_1( m1 ) :
+   code = m1.get_code()
+   bc = code.get_bc()
+      
+   buff = "" #m1.get_class_name() + m1.get_name() + m1.get_descriptor()
 
-def filter_ins_1( ins ) :
-   return "%s%s" % (ins.get_name(), ins.get_operands())
+   for i in bc.get() :
+      buff += "%s" % i.get_name()
+   
+   return buff
 
 def filter_sim_1( m1, m2, sim, name_attribute ) :
    e1 = getattr( m1, "entropy_" + name_attribute )
@@ -95,16 +84,19 @@ def LCS(X, Y):
 def getDiff(C, X, Y, i, j, a, r):
      if i > 0 and j > 0 and X[i-1] == Y[j-1]:
          getDiff(C, X, Y, i-1, j-1, a, r)
-         print "DEBUG   " + "%02X" % ord(X[i-1])
+         if DEBUG :
+            print "DEBUG   " + "%02X" % ord(X[i-1])
      else:
          if j > 0 and (i == 0 or C[i][j-1] >= C[i-1][j]):
              getDiff(C, X, Y, i, j-1, a, r)
              a.append( (j-1, Y[j-1]) )
-             print "DEBUG + " + "%02X" % ord(Y[j-1])
+             if DEBUG :
+               print "DEBUG + " + "%02X" % ord(Y[j-1])
          elif i > 0 and (j == 0 or C[i][j-1] < C[i-1][j]):
              getDiff(C, X, Y, i-1, j, a, r)
              r.append( (i-1, X[i-1]) )
-             print "DEBUG - " + "%02X" % ord(X[i-1])
+             if DEBUG :
+               print "DEBUG - " + "%02X" % ord(X[i-1])
 
 def toString( bb, hS, rS ) :
    S = ""
@@ -124,11 +116,20 @@ def toString( bb, hS, rS ) :
 
    return S
 
+DIFF_INS_TAG = {
+                  "ORIG" : 0,
+                  "ADD" : 1,
+                  "REMOVE" : 2
+               }
+
 class DiffBB :
-   def __init__(self, bb1, bb2) :
+   def __init__(self, bb1, bb2, info) :
       self.bb1 = bb1
       self.bb2 = bb2
+      self.info = info
 
+      self.start = self.bb1.start
+      self.end = self.bb1.end
       self.name = self.bb1.name
 
       self.di = None
@@ -149,25 +150,74 @@ class DiffBB :
       for i in self.bb1.ins :
          ok = False
          if nb in off_add :
-            print nb, "ADD", off_add[ nb ][2].get_name(), off_add[ nb ][2].get_operands()
+            if DEBUG :
+               print nb, "ADD", off_add[ nb ][2].get_name(), off_add[ nb ][2].get_operands()
             self.ins.append( off_add[ nb ][2] )
-            setattr( off_add[ nb ][2], "tag", 1 )
+            setattr( off_add[ nb ][2], "diff_tag", DIFF_INS_TAG["ADD"] )
             del off_add[ nb ]
 
          if nb in off_rm :
-            print nb, "RM", off_rm[ nb ][2].get_name(), off_rm[ nb ][2].get_operands()
+            if DEBUG : 
+               print nb, "RM", off_rm[ nb ][2].get_name(), off_rm[ nb ][2].get_operands()
             self.ins.append( off_rm[ nb ][2] )
-            setattr( off_rm[ nb ][2], "tag", 2 )
+            setattr( off_rm[ nb ][2], "diff_tag", DIFF_INS_TAG["REMOVE"] )
             del off_rm[ nb ]
             ok = True
 
          if ok == False :
             self.ins.append( i ) 
-            print nb, i.get_name(), i.get_operands()
+            if DEBUG :
+               print nb, i.get_name(), i.get_operands()
 
-            setattr( i, "tag", 0 )
+            setattr( i, "diff_tag", DIFF_INS_TAG["ORIG"] )
 
          nb += 1
+
+      #print nb, off_add, off_rm
+
+      nbmax = nb
+      if off_add != {} :
+         nbmax = sorted(off_add)[-1]
+      if off_rm != {} :
+         nbmax = max(nbmax, sorted(off_rm)[-1])
+
+      while nb <= nbmax :
+         if nb in off_add :
+            if DEBUG :
+               print nb, "ADD", off_add[ nb ][2].get_name(), off_add[ nb ][2].get_operands()
+            self.ins.append( off_add[ nb ][2] )
+            setattr( off_add[ nb ][2], "diff_tag", DIFF_INS_TAG["ADD"] )
+            del off_add[ nb ]
+
+         if nb in off_rm :
+            if DEBUG : 
+               print nb, "RM", off_rm[ nb ][2].get_name(), off_rm[ nb ][2].get_operands()
+            self.ins.append( off_rm[ nb ][2] )
+            setattr( off_rm[ nb ][2], "diff_tag", DIFF_INS_TAG["REMOVE"] )
+            del off_rm[ nb ]
+            
+         nb += 1
+
+      #print off_add, off_rm
+
+   def set_childs(self, abb) :
+      setattr( self.bb1.ins[-1], "childs", self.bb1.childs )
+
+      for i in self.ins :
+         if i == self.bb2.ins[-1] :
+
+            childs = []
+            for c in self.bb2.childs :
+               if c[2].name in abb :
+                  if DEBUG :
+                     print "SET", c[2], abb[ c[2].name ]
+                  childs.append( (c[0], c[1], abb[ c[2].name ]) )
+               else :
+                  if DEBUG :
+                     print "SET ORIG", c
+                  childs.append( c )
+
+            setattr( i, "childs", childs )
 
    def show(self) :
       print "\tADD INSTRUCTIONS :"
@@ -182,6 +232,25 @@ class NewBB :
    def __init__(self, bb) :
       self.bb = bb
 
+      self.start = self.bb.start
+      self.end = self.bb.end
+      self.name = self.bb.name
+      self.ins = self.bb.ins
+
+   def set_childs(self, abb) :
+      childs = []
+      for c in self.bb.childs :
+         if c[2].name in abb :
+            if DEBUG :
+               print "SET", c[2], abb[ c[2].name ]
+            childs.append( (c[0], c[1], abb[ c[2].name ]) )
+         else :
+            if DEBUG :
+               print "SET ORIG", c
+            childs.append( c )
+
+      setattr( self, "childs", childs )
+
 class DiffINS :
    def __init__(self, add_ins, remove_ins) :
       self.add_ins = add_ins
@@ -195,11 +264,11 @@ def filter_diff_ins_1( dbb, sim, name_attribute ) :
    rS = {}
 
    X = toString( dbb.bb1, hS, rS )
-   print
    Y = toString( dbb.bb2, hS, rS )
 
-   print "DEBUG", repr(X), len(X)
-   print "DEBUG", repr(Y), len(Y)
+   if DEBUG :
+      print "DEBUG", repr(X), len(X)
+      print "DEBUG", repr(Y), len(Y)
 
    m = len(X)
    n = len(Y)
@@ -209,34 +278,46 @@ def filter_diff_ins_1( dbb, sim, name_attribute ) :
    r = []
 
    getDiff(C, X, Y, m, n, a, r)
-   print "DEBUG", a, r
+   if DEBUG :
+      print "DEBUG", a, r
 
-   print "DEBUG ADD"
+   if DEBUG :
+      print "DEBUG ADD"
    for i in a :
-      print "DEBUG \t", i[0], dbb.bb2.ins[ i[0] ].get_name(), dbb.bb2.ins[ i[0] ].get_operands()
+      if DEBUG :
+         print "DEBUG \t", i[0], dbb.bb2.ins[ i[0] ].get_name(), dbb.bb2.ins[ i[0] ].get_operands()
       final_add.append( (i[0], 0, dbb.bb2.ins[ i[0] ]) )
 
-   print "DEBUG REMOVE"
+   if DEBUG :
+      print "DEBUG REMOVE"
    for i in r :
-      print "DEBUG \t", i[0], dbb.bb1.ins[ i[0] ].get_name(), dbb.bb1.ins[ i[0] ].get_operands()
+      if DEBUG :
+         print "DEBUG \t", i[0], dbb.bb1.ins[ i[0] ].get_name(), dbb.bb1.ins[ i[0] ].get_operands()
       final_rm.append( (i[0], 0, dbb.bb1.ins[ i[0] ]) )
 
    dbb.diff_ins( DiffINS( final_add, final_rm ) )
 
 FILTER_NAME = "FILTER_NAME"
-FILTER_INS = "FILTER_INS"
+FILTER_METH = "FILTER_METH"
 FILTER_SIM = "FILTER_SIM"
 FILTER_CHECKSUM = "FILTER_CHECKSUM"
 FILTER_SIM_BB = "FILTER_SIM_BB"
 FILTER_DIFF_INS = "FILTER_DIFF_INS"
+
 FILTERS = {
-               "FILTER_1" : { FILTER_INS : filter_ins_1, 
+               "FILTER_1" : { FILTER_METH : filter_meth_1, 
                               FILTER_SIM : filter_sim_2, 
                               FILTER_SIM_BB : filter_sim_bb_1,
                               FILTER_DIFF_INS : filter_diff_ins_1,
                               FILTER_CHECKSUM : filter_checksum_1 
                             },
           }
+
+DIFF_BB_TAG = { 
+                  "ORIG" : 0,
+                  "DIFF" : 1,
+                  "NEW"  : 2
+              }
 
 class Method :
    def __init__(self, vm, vmx, m, sim) :
@@ -247,21 +328,23 @@ class Method :
 
       self.sim = sim
       
-
-   def add_attribute(self, name, func_ins, func_bb) :
-      buff = ""
-
+   #######
+   # Attribute :
+   #    Method <-> sorted Methods 
+   #
+   #    Method <-> Methods[0] :
+   #            
+   #
+   #
+   #
+   def add_attribute(self, name, func_meth, func_checksum_bb) :
       bb = {}
       bbhash = {}
 
-      code = self.m.get_code()
-      bc = code.get_bc()
-     
-      for i in bc.get() :
-         buff += func_ins( i )
+      buff = func_meth( self.m )
 
       for i in self.mx.basic_blocks.get() :
-         bb[ i.name ] = func_bb( i )
+         bb[ i.name ] = func_checksum_bb( i )
          
          try :
             bbhash[ bb[ i.name ].hash ].append( bb[ i.name ] )
@@ -286,62 +369,72 @@ class Method :
 
       x[ new_method ] = func( self, new_method, self.sim, name_attribute )
 
-   def sort(self, name_attribute, nb) :
-      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), getattr( self, "entropy_" + name_attribute )
-
+   def sort(self, name_attribute) :
       x = getattr( self, "hash_" + name_attribute )
 
-      z = sorted(x.iteritems(), key=lambda (k,v): (v,k))[ : nb ]
+      z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-      for i in z :
-         print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
-         #e1 = getattr( self, "entropy_" + name_attribute )
-         #e2 = getattr( i[0], "entropy_" + name_attribute )
+      #for i in z :
+      #   print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]
 
-         #if e1 != e2 :
-         #print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), getattr( i[0], "entropy_" + name_attribute ), i[1]
-
-      setattr( self, "sort_" + name_attribute, z )
+      setattr( self, "sort_" + name_attribute, z[:1] )
 
    def checksort(self, name_attribute, method) :
       z = getattr( self, "sort_" + name_attribute )
       for i in z :
          if method == i[0] :
             return True
-
       return False
-   
+  
    def diff(self, name_attribute, func_sim_bb, func_diff_ins):
       self.sim.set_compress_type( XZ_COMPRESS )
 
       z = getattr( self, "sort_" + name_attribute )
       bb1 = getattr( self, "bb_" + name_attribute )
-      
+     
+      ### Dict for diff basic blocks
+         ### vm1 basic block : vm2 basic blocks -> value (0.0 to 1.0)
       diff_bb = {}
+
+      ### List to get directly all diff basic blocks
       direct_diff_bb = []
+
+      ### Dict for new basic blocks
       new_bb = {}
+
+      ### Reverse Dict with matches diff basic blocks
+      associated_bb = {}
 
       for b1 in bb1 :
          diff_bb[ bb1[ b1 ] ] = {}
-         print b1, "0x%x" % bb1[ b1 ].basic_block.end
+         if DEBUG :
+            print "DEBUG", b1, "0x%x" % bb1[ b1 ].basic_block.end
          for i in z :
             bb2 = getattr( i[0], "bb_" + name_attribute )
             b_z = diff_bb[ bb1[ b1 ] ] 
 
             bb2hash = getattr( i[0], "bb_sha256_" + name_attribute )
-            
+      
+            # If b1 is in bb2 :
+               # we can have one or more identical basic blocks to b1, we must add them
             if bb1[ b1 ].hash in bb2hash :
                for equal_bb in bb2hash[ bb1[ b1 ].hash ] :
                   b_z[ equal_bb.basic_block.name ] = 0.0 
+
+            # If b1 is not in bb2 :
+               # we must check similarities between all bb2
             else :
                for b2 in bb2 :
                   b_z[ b2 ] = func_sim_bb( bb1[ b1 ], bb2[ b2 ], self.sim, name_attribute )
 
             sorted_bb = sorted(b_z.iteritems(), key=lambda (k,v): (v,k))
-            
-            print "\t", sorted_bb[:2]
+             
+            if DEBUG :
+               print "\tDEBUG", sorted_bb[:2]
 
             for new_diff in sorted_bb :
+               associated_bb[ new_diff[0] ] = bb1[ b1 ].basic_block
+
                if new_diff[1] == 0.0 :
                   direct_diff_bb.append( new_diff[0] )
           
@@ -361,10 +454,12 @@ class Method :
       nbb = {}
       # Add all different basic blocks 
       for d in diff_bb :
-         dbb[ d.basic_block.name ] = DiffBB( d.basic_block, diff_bb[ d ][0].basic_block )
+         dbb[ d.basic_block.name ] = DiffBB( d.basic_block, diff_bb[ d ][0].basic_block, diff_bb[ d ] )
+
       # Add all new basic blocks
       for n in new_bb :
          nbb[ new_bb[ n ].basic_block ] = NewBB( new_bb[ n ].basic_block )
+         del associated_bb[ n ] 
 
       setattr(self, "dbb_" + name_attribute, dbb)
       setattr(self, "nbb_" + name_attribute, nbb)
@@ -373,76 +468,75 @@ class Method :
       for d in dbb :
          func_diff_ins( dbb[d], self.sim, name_attribute )
 
+      # Set new childs for diff basic blocks
+         # The instructions will be tag with a new flag "childs"
+      for d in dbb :
+         dbb[ d ].set_childs( associated_bb )
+
+      # Set new childs for new basic blocks
+      for d in nbb :
+         nbb[ d ].set_childs( associated_bb )
+
+      # Create and tag all (orig/diff/new) basic blocks
+      self.create_bbs( name_attribute )
+
+   def create_bbs(self, name_attribute) :
+      dbb = getattr(self, "dbb_" + name_attribute)
+      nbb = getattr(self, "nbb_" + name_attribute)
+      
+      # For same block : 
+         # tag = 0
+      # For diff block :
+         # tag = 1
+      # For new block :
+         # tag = 2
+      l = []
+      for bb in self.mx.basic_blocks.get() :
+         if bb.name not in dbb :
+            # add the original basic block
+            setattr( bb, "bb_tag", DIFF_BB_TAG["ORIG"] )
+            l.append( bb )
+         else :
+            # add the diff basic block
+            setattr( dbb[ bb.name ], "bb_tag", DIFF_BB_TAG["DIFF"] )
+            l.append( dbb[ bb.name ] )
+
+      for i in nbb :
+         # add the new basic block
+         setattr( nbb[ i ], "bb_tag", DIFF_BB_TAG["NEW"] )
+         l.append( nbb[ i ] )
+
+      # Sorted basic blocks by addr (orig, new, diff)
+      l = sorted(l, key = lambda x : x.start)
+      setattr( self, "bbs_" + name_attribute, l ) 
+     
    def getsha256(self, name_attribute) :
       return getattr(self, "sha256_" + name_attribute)
 
-   def show(self, name_attribute) :
-      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
+   def show(self, name_attribute, details=False) :
+      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
+      print "with",
+
+      z = getattr( self, "sort_" + name_attribute )
+      for i in z :
+         print i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]
 
       dbb = getattr(self, "dbb_" + name_attribute)
       nbb = getattr(self, "nbb_" + name_attribute)
 
-      print "DIFF_BB"
+      print "\tDIFF BASIC BLOCKS :"
       for d in dbb :
-         print "\t", dbb[d].bb1.name, " --->", dbb[d].bb2.name
-         dbb[d].show()
+         print "\t\t", dbb[d].bb1.name, " --->", dbb[d].bb2.name, ":", dbb[d].info[1]
+         if details :
+            dbb[d].show()
 
-      print "NEW_BB", nbb
+      print "NEW BASIC BLOCKS :"
+      for b in nbb :
+         print "\t\t", nbb[b].name
 
-      paths = []
-      for i in self.mx.basic_blocks.get() :
-         val = 0 
-         if len(i.childs) > 1 :
-            val = 1
-         elif len(i.childs) == 1 :
-            val = 2
-
-         for j in i.childs :
-            paths.append( ( j[0], j[1], val ) )
-            if val == 1 :
-               val = 0
-
-      print paths
-
-      for d in dbb :
-         print dbb[d].bb2.childs
-
-      bytecode.PrettyShow3( self.mx.basic_blocks.get() )
-
-      raise("ooo")
-
-      l = []
-      for bb in self.mx.basic_blocks.get() :
-         if bb.name not in dbb :
-            l.append( bb )
-         else :
-            l.append( dbb[ bb.name ] )
-
-      bytecode.PrettyShow4( l )
-
-      raise("ooo")
-#      nb = 0
-#      idx = 0
-#      for bb in self.mx.basic_blocks.get() :
-#         if bb.name not in dbb :
-#            for i in bb.ins :
-#               bytecode.PrettyShow2( idx, nb, i, 0 )
-#               idx += ( i.get_length() )
-#               nb += 1
-#         else :
-#            for i in dbb[ bb.name ].ins :
-#               bytecode.PrettyShow2( idx, nb, i, i.tag )
-              
-#               if i.tag == 0 or i.tag == 2 :
-#                  idx += ( i.get_length() )
-#                  nb += 1
-
-      #nb = 0
-      #idx = 0
-      #for i in self.__bytecodes :
-      #   bytecode.PrettyShow( idx, paths, nb, i )                                                                                                                                                                                 
-      #   idx += ( i.get_length() )
-      #   nb += 1
+      if details :
+      # show diff !
+         bytecode.PrettyShow2( getattr(self, "bbs_" +name_attribute) )
 
 
 BASE = "base"
@@ -451,14 +545,16 @@ HASHSUM = "hashsum"
 DIFFMETHODS = "diffmethods"
 NEWMETHODS = "newmethods"
 class Diff :
-   def __init__(self, vm1, vm2) :
+   def __init__(self, vm1, vm2, F=FILTERS) :
       self.vms = [ vm1, vm2 ]
       self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
       self.sim.set_compress_type( XZ_COMPRESS )
 
-      self.filters = {}
+      self.F = FILTERS
 
-      for i in FILTERS :
+      self.filters = {}
+      
+      for i in F :
          self.filters[ i ] = {}
          self.filters[ i ][ BASE ] = { FILTER_NAME : i }
          self.filters[ i ][ BASE ].update( FILTERS[ i ] )
@@ -468,57 +564,75 @@ class Diff :
          self.filters[ i ][ NEWMETHODS ] = []
 
       for i in self.vms :
-         for m in i.get_vm().get_methods() :
-            m = Method( i.get_vm(), i.get_analysis(), m, self.sim ) 
+         for m in i[0].get_methods() :
+            m = Method( i[0], i[1], m, self.sim ) 
 
             for fil in self.filters :
-               if i not in self.filters[fil][METHODS] :
-                  self.filters[fil][METHODS][ i ] = []
-                  self.filters[fil][HASHSUM][ i ] = []
+               if i[0] not in self.filters[fil][METHODS] :
+                  self.filters[fil][METHODS][ i[0] ] = []
+                  self.filters[fil][HASHSUM][ i[0] ] = []
         
-               self.filters[fil][METHODS][ i ].append( m )
-
-               m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_INS], self.filters[fil][BASE][FILTER_CHECKSUM] )
-               
-               self.filters[fil][HASHSUM][i].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
-
+               self.filters[fil][METHODS][ i[0] ].append( m )
+               m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_METH], self.filters[fil][BASE][FILTER_CHECKSUM] )
+               self.filters[fil][HASHSUM][i[0]].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
       
       # Check if some methods in the first file has been modified
       for fil in self.filters :
-         for j in self.filters[fil][METHODS][vm1] :
+         for j in self.filters[fil][METHODS][vm1[0]] :
             for i1 in self.filters[fil][METHODS] :
-               if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) in self.filters[fil][HASHSUM][i1] :
-                  continue
+               if i1 != vm1[0] :
+                  # B1 not at 0.0 in BB2
+                  if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][i1] :
+                     for k in self.filters[fil][METHODS][i1] :
+                        # B2 not at 0.0 in BB1
+                        if k.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][vm1[0]] :
+                           j.similarity( k, self.filters[fil][BASE][FILTER_SIM], self.filters[fil][BASE][FILTER_NAME] )
+                           if j not in self.filters[fil][DIFFMETHODS] :
+                              self.filters[fil][DIFFMETHODS].append(j)
 
-               for k in self.filters[fil][METHODS][i1] :
-                  j.similarity( k, self.filters[fil][BASE][FILTER_SIM], self.filters[fil][BASE][FILTER_NAME] )
-                  if j not in self.filters[fil][DIFFMETHODS] :
-                     self.filters[fil][DIFFMETHODS].append(j)
-      
-      print "DIFF METHODS"
+#      print "DEBUG DIFF METHODS"
       for fil in self.filters :
          for j in self.filters[fil][DIFFMETHODS] :
-            print j
-            j.sort( self.filters[fil][BASE][FILTER_NAME], 1 )
+#            print "DEBUG", j, j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()
+            j.sort( self.filters[fil][BASE][FILTER_NAME] )
             j.diff( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_SIM_BB], self.filters[fil][BASE][FILTER_DIFF_INS] )
-            j.show( self.filters[fil][BASE][FILTER_NAME] )
+#            j.show( self.filters[fil][BASE][FILTER_NAME] )
 
       # Check if some methods in the second file are totally new !
       for fil in self.filters :
-         for j in self.filters[fil][METHODS][vm2] :
-            for i1 in self.filters[fil][METHODS] :
-               if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) in self.filters[fil][HASHSUM][i1] :
-                  continue
-           
-               if j not in self.filters[fil][NEWMETHODS] :
+         for j in self.filters[fil][METHODS][vm2[0]] :
+
+            # new methods can't be in diff methods
+            if j not in self.filters[fil][DIFFMETHODS] :
+               # new methods hashs can't be in first file
+               if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][vm1[0]] :
                   ok = True
+                  # new methods can't be compared to another one
                   for diff_method in self.filters[fil][DIFFMETHODS] :
+                     #print diff_method, "--->", j
                      if diff_method.checksort( self.filters[fil][BASE][FILTER_NAME], j ) :
                         ok = False
                         break
+
                   if ok :
                      self.filters[fil][NEWMETHODS].append( j )
+            
+#      print "DEBUG NEW METHODS"
+#      for fil in self.filters :
+#         print "\tDEBUG", self.filters[fil][NEWMETHODS]
+#         for method in self.filters[fil][NEWMETHODS] :
+#            print "DEBUG", method.m.get_class_name(), method.m.get_name(), method.m.get_descriptor()
 
-      print "NEW METHODS"
+   def get_diff_methods(self) :
+      return self.get_elem( DIFFMETHODS )
+
+   def get_new_methods(self) :
+      return self.get_elem( NEWMETHODS )
+      
+   def get_elem(self, attr) :
+      d = {}
       for fil in self.filters :
-         print "\t", self.filters[fil][NEWMETHODS]
+         d[ fil ] = [ x for x in self.filters[fil][attr] ]
+      return d
+   
+
