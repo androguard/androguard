@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="TC" default="help">
+<project name="TCDiff" default="help">
 
 <!-- The local.properties file is created and updated by the 'android'
      tool.

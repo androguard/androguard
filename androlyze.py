@@ -27,6 +27,7 @@ from bytecode import *
 from jvm import *
 from dvm import *
 from analysis import *
+from diff import *
 
 from misc import *
 

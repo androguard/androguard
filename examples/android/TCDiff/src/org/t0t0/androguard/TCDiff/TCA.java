@@ -1,4 +1,4 @@
-package org.t0t0.androguard.TC;                                                                                                                                                                                                   
+package org.t0t0.androguard.TCDiff;                                                                                                                                                                                                   
 
 public class TCA {
    public int TC1 = 30;
@@ -27,6 +27,10 @@ public class TCA {
    public void T1()
    {
       TCC c = new TCC();
+
+      if ((TC2 % 2) == 1) {
+         TC1 = 3;
+      }
 
       c.T1();
    }

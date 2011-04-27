@@ -117,16 +117,12 @@ def PrettyShow1( basic_blocks ) :
    nb = 0
    for i in basic_blocks :
       
-      path = []
-      for p in i.childs :
-         path.append( p[0] )
-
       print "%s%s%s : " % (Color.purple, i.name, Color.normal)
       for ins in i.ins :
          print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal), 
          ins.show( idx )
          
-         if idx in path :
+         if ins == i.ins[-1] and i.childs != [] :
             if len(i.childs) == 2 :
                print "%s[ %s%s " % (Color.red, i.childs[0][2].name, Color.green),
                print ' '.join("%s" % c[2].name for c in i.childs[1:]), "]%s" % Color.normal,
@@ -139,21 +135,22 @@ def PrettyShow1( basic_blocks ) :
          print
       print
 
-def PrettyShow4( basic_blocks ) :
+# Use to print diff basic blocks !
+def PrettyShow2( basic_blocks ) :
    idx = 0
    nb = 0
    for i in basic_blocks :
-      
-      #path = []
-      #for p in i.childs :
-      #   path.append( p[0] )
+      if i.bb_tag == 1 :
+         print "%sDIFF%s" % (Color.cyan, Color.normal),
+      elif i.bb_tag == 2 :
+         print "%sNEW%s" %(Color.cyan, Color.normal),
 
       print "%s%s%s : " % (Color.purple, i.name, Color.normal)
       for ins in i.ins :
          print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal), 
        
          try :
-            tag = getattr(ins, "tag")
+            tag = getattr(ins, "diff_tag")
          except AttributeError :
             tag = 0
 
@@ -164,12 +161,24 @@ def PrettyShow4( basic_blocks ) :
 
          ins.show( idx )
         
+         childs = None
+         try :
+            childs = getattr( ins, "childs" )
+         except AttributeError :
+            if ins == i.ins[-1] :
+               if i.childs != [] :
+                  childs = i.childs
 
+         if childs != None and childs != [] :
+            if len(childs) == 2 :
+               print "%s[ %s%s " % (Color.red, childs[0][2].name, Color.green),
+               print ' '.join("%s" % c[2].name for c in childs[1:]), "]%s" % Color.normal,
+            else :
+               print "%s[" % Color.blue, ' '.join("%s" % c[2].name for c in childs), "]%s" % Color.normal,
+      
+         if tag == 0 :
+            idx += ins.get_length()
 
-         #if idx in path :
-         #   print "%s[" % Color.green, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
-         
-         idx += ins.get_length()
          nb += 1
 
          print

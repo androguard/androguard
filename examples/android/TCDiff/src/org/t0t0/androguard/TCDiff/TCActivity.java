@@ -1,4 +1,4 @@
-package org.t0t0.androguard.TC;
+package org.t0t0.androguard.TCDiff;
 
 import android.app.Activity;
 import android.os.Bundle;

@@ -28,9 +28,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from optparse import OptionParser
 from xml.dom import minidom
 
-import IPython.ipapi                                                                                                                                                                                                              
-from IPython.Shell import IPShellEmbed
-
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
@@ -39,34 +36,29 @@ from androbasedb import *
 from misc import *
 
 option_0 = { 'name' : ('-c', '--config'), 'help' : 'config filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-i', '--input'), 'help' : 'input filename (APK, dex)', 'nargs' : 1 }
-option_2 = { 'name' : ('-s', '--shell'), 'help' : 'open a shell to interact more easily with objects', 'action' : 'count' }
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-option_4 = { 'name' : ('-d', '--directory'), 'help' : 'add all files (dex,apk) from a specific directory', 'nargs' : 1 }
-options = [option_0, option_1, option_2, option_3, option_4]
 
-def interact() :
-   ipshell = IPShellEmbed(banner="AndroDB version %s" % VERSION)
-   ipshell()
+option_1 = { 'name' : ('-s', '--set'), 'help' : 'set attribute of a specific raw (id attr type value)', 'nargs' : 4 }
+option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
-   if options.shell != None :
-      interact() 
-   
    if options.config == None :
       return
 
    dbname = configtodb( options.config )
    adb = AndroDB( dbname )
 
-   if options.directory != None :
-      for root, dirs, files in os.walk( options.directory ) :
-         if files != [] :
-            for f in files :
-               if ".apk" in f :
-                  adb.add_apk_raw( root + "/" + f ) 
-   elif options.input != None :
-      adb.add_apk_raw( options.input )
+   if options.set != None :
+      
+      v = options.set[1]
+      
+      d = { options.set[1] : options.set[3] }
+      if options.set[2] == "i" :
+         d = { options.set[1] : int(options.set[3]) }
+      else :
+         raise("ooo")
+
+      adb.set_apps_raw( int(options.set[0]), d )
 
 if __name__ == "__main__" :
    parser = OptionParser()

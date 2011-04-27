@@ -1,0 +1,13 @@
+<?xml version="1.0"?>                                                           
+<parent id="classification DB">
+
+   <db_type>postgresql</db_type>
+   <username>DEMO</username>
+   <password>TOTO</password>
+
+   <host>localhost</host>
+   <port>5555</port>
+
+   <dbname>android</dbname>
+
+</parent>

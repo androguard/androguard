@@ -1,4 +1,4 @@
-package org.t0t0.androguard.TC;                                                                                                                                                                                                   
+package org.t0t0.androguard.TCDiff;                                                                                                                                                                                                   
 
 public class TCB {
    public int TC1 = 1337;

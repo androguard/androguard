@@ -63,11 +63,17 @@ class APK :
    def get_files(self) :
       return self.zip.namelist()
 
+   def get_raw(self) :
+      return self.__raw
+
    def get_dex(self) :
       """
          Return the raw data of the classes dex file
       """
-      return self.zip.read("classes.dex")
+      try :
+         return self.zip.read("classes.dex")
+      except KeyError :
+         return ""
 
    def get_elements(self, tag_name, attribute) :
       """
