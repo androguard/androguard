@@ -28,9 +28,11 @@ public class TCA {
    {
       TCC c = new TCC();
 
+      // PATCH
       if ((TC2 % 2) == 1) {
          TC1 = 3;
       }
+      // END PATCH
 
       c.T1();
    }

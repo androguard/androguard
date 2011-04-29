@@ -114,6 +114,8 @@ class AppsRaw(Base) :
    hashraw = Column(String(512))
    hashdex = Column(String(512))
    information = Column(Integer)
+   version = Column(String(64))
+   description = Column(String(255))
 
    def __init__(self, original_name, raw_id, raw_type, hash_raw, hash_dex=None) :
       self.original_name = original_name

@@ -31,39 +31,8 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2]
 
 def main(options, arguments) :  
-
-   if options.input != None :
-      a = androguard.Androguard( options.input )
-      a.ianalyze()
-
-      vm1 = a.get_bc()[0][1].get_vm()
-      vmx1 = a.get_bc()[0][1].get_analysis()
-
-      vm2 = a.get_bc()[1][1].get_vm()
-      vmx2 = a.get_bc()[1][1].get_analysis()
-
-      d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS )
-
-      details = False
-      if options.display != None :
-         details = True
-
-      print "DIFF METHODS :"
-      diff_methods = d.get_diff_methods()
-      for i in diff_methods :
-         for elem in diff_methods[ i ] :
-            elem.show( i, details )
-            print
-      
-      print "NEW METHODS :"
-      new_methods = d.get_new_methods()
-      for i in new_methods :
-         for elem in new_methods[ i ] :
-            elem.show2( details )
-            print
-
-   elif options.version != None :
-      print "Androdiff version %s" % misc.VERSION
+   if options.version != None :
+      print "Androsim version %s" % misc.VERSION
 
 if __name__ == "__main__" :                                                     
    parser = OptionParser()

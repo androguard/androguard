@@ -56,6 +56,8 @@ def PrettyShow( basic_blocks ) :
       PrettyShow0( basic_blocks )
    elif PRETTY_SHOW == 1 :
       PrettyShow1( basic_blocks )
+   elif PRETTY_SHOW == 2 :
+      PrettyShow1bis( basic_blocks )
 
 def PrettyShow0( basic_blocks ) :
    paths = []
@@ -128,6 +130,25 @@ def PrettyShow1( basic_blocks ) :
                print ' '.join("%s" % c[2].name for c in i.childs[1:]), "]%s" % Color.normal,
             else :
                print "%s[" % Color.blue, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
+         
+         idx += ins.get_length()
+         nb += 1
+
+         print
+      print
+
+def PrettyShow1bis( basic_blocks ) :
+   idx = 0
+   nb = 0
+   for i in basic_blocks :
+      
+      print "%s : " % (i.name)
+      for ins in i.ins :
+         print "\t%d(%x)" % (nb, idx),
+         ins.show( idx )
+         
+         if ins == i.ins[-1] and i.childs != [] :
+               print "[", ' '.join("%s" % c[2].name for c in i.childs), "]",
          
          idx += ins.get_length()
          nb += 1

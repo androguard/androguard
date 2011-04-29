@@ -68,6 +68,10 @@ public class TCE {
       return 0x45;
    }
 
+   public int TCE_t4()
+   {
+      return 0x90;
+   }
 
    public void T1()
    {
