@@ -33,6 +33,10 @@ def filter_meth_1( m1 ) :
 
    for i in bc.get() :
       buff += "%s" % i.get_name()
+      if i.type_ins_tag == 0 :
+         for op in i.get_operands() :
+            if "#" in op[0] :
+               buff += "%s" % op
    
    return buff
 
@@ -104,8 +108,9 @@ def toString( bb, hS, rS ) :
    for i in bb.ins :
       ident = i.get_name()
       for op in i.get_operands() :
-         if "#" in op[0] :
-            ident += "%s" % op
+         if i.type_ins_tag == 0 :
+            if "#" in op[0] :
+               ident += "%s" % op
 
 #      print i.get_name(), i.get_operands()
       if ident not in hS :
@@ -538,6 +543,10 @@ class Method :
       # show diff !
          bytecode.PrettyShow2( getattr(self, "bbs_" +name_attribute) )
 
+   def show2(self, details=False) :
+      print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
+      if details :
+         bytecode.PrettyShow1( self.mx.basic_blocks.get() )
 
 BASE = "base"
 METHODS = "methods"
@@ -634,5 +643,3 @@ class Diff :
       for fil in self.filters :
          d[ fil ] = [ x for x in self.filters[fil][attr] ]
       return d
-   
-

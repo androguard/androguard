@@ -603,10 +603,13 @@ PACKED_SWITCH = [ '=HHL', PACKED_SWITCH_NAMEDTUPLE ]
 FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size") 
 FILL_ARRAY_DATA = [ '=HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
 
+NORMAL_DVM_INS = 0
+SPECIFIC_DVM_INS = 1
+
 class FillArrayData :
    def __init__(self, buff) :
       self.format = SVs( FILL_ARRAY_DATA[0], FILL_ARRAY_DATA[1], buff[ 0 : calcsize(FILL_ARRAY_DATA[0]) ] )
-      
+
       general_format = self.format.get_value()
       self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
@@ -2336,6 +2339,7 @@ class EncodedCatchHandlerList :
 class DBCSpe :
    def __init__(self, cm, op) :
       self.__CM = cm
+      self.type_ins_tag = SPECIFIC_DVM_INS
       self.op = op
 
    def _reload(self) :
@@ -2371,6 +2375,7 @@ class DBCSpe :
 class DBC :
    def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
       self.__CM = class_manager
+      self.type_ins_tag = NORMAL_DVM_INS
 
       self.op_name = op_name
       self.operands = operands

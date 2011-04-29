@@ -1784,7 +1784,7 @@ class M_BCA :
          for i in self.basic_blocks.get() :
             i.analyze_code()
 
-      self.basic_blocks.create_graph()
+      #self.basic_blocks.create_graph()
 
    def get_length(self) :
       return self.get_code().get_length()
