@@ -54,3 +54,6 @@ for method in a.get_methods() :
 
    bytecode.set_pretty_show( 1 )
    method.pretty_show( ax )
+
+   bytecode.method2dot( ax.get_method(method) )
+   #bytecode.method2png( "test.png", ax.get_method( method ) )

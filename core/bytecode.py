@@ -205,7 +205,7 @@ def PrettyShow2( basic_blocks ) :
          print
       print
 
-def method2dot( m, mx ) :
+def method2dot( mx ) :
    buff = ""
    for i in mx.basic_blocks.get() :
       val = "green"
@@ -228,7 +228,7 @@ def method2dot( m, mx ) :
       buff +=  "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (i.get_name(), label)
    return buff
 
-def method2format( output, _format="png", m = None, mx = None, raw = False ) :
+def method2format( output, _format="png", mx = None, raw = False ) :
    try :
       import pydot
    except ImportError :
@@ -239,7 +239,7 @@ def method2format( output, _format="png", m = None, mx = None, raw = False ) :
    buff += "node [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n"
 
    if raw == False :
-      buff += method2dot( m, mx )
+      buff += method2dot( mx )
    else :
       buff += raw
 
@@ -249,12 +249,12 @@ def method2format( output, _format="png", m = None, mx = None, raw = False ) :
 
    getattr(d, "write_" + _format)( output )
 
-def method2png( output, m = None, mx = None, raw = False ) :
+def method2png( output, mx = None, raw = False ) :
    buff = raw
    if raw == False :
-      buff = method2dot( m, mx )
+      buff = method2dot( mx )
 
-   method2format( output, "png", m, mx, buff )
+   method2format( output, "png", mx, buff )
    
 class SV : 
    """SV is used to handle more easily a value"""

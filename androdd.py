@@ -77,7 +77,7 @@ def export_apps_to_format( a, output, dot=None, _format=None ) :
          filename = filename + method.get_name() + descriptor
             
             
-         buff = method2dot( method, x.hmethods[ method ] )
+         buff = method2dot( x.get_method( method ) )
 
          if dot :
             fd = open( filename + ".dot", "w")

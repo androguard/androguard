@@ -643,3 +643,9 @@ class Diff :
       for fil in self.filters :
          d[ fil ] = [ x for x in self.filters[fil][attr] ]
       return d
+
+
+### SIM :
+   # DATA : string, constant (int, float ...), clinit
+   # CODE
+      # exceptions
