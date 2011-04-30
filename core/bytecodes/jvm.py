@@ -2596,6 +2596,8 @@ class ClassManager :
          return [ name, self.get_class( idx[0] ) ]
       elif name == "CONSTANT_Fieldref" :
          return [ name, self.get_field( idx[0] ) ]
+      elif name == "CONSTANT_Float" :
+         return [ name, self.get_item(idx[0]).get_format().get_value().bytes ]
 
       bytecode.Exit( "get_value not yet implemented for %s" % name )
 
