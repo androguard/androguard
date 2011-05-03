@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -20,7 +20,7 @@
 
 import sys, re
 
-PATH_INSTALL = "./"                                                                                                                                                                                                               
+PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
@@ -30,7 +30,7 @@ TESTS_CASES  = [ #'examples/android/TC/bin/classes.dex',
                  'examples/android/TestsAndroguard/bin/classes.dex',
                ]
 
-VALUES = { 
+VALUES = {
             'examples/android/TestsAndroguard/bin/classes.dex' : {
                   "Ltests/androguard/TestInvoke; <init> ()V" : {
                      0x0 : ("invoke-direct" , [['v',1] , ['meth@', 3, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
@@ -70,60 +70,60 @@ VALUES = {
                      0x4 : ("mul-int/2addr", [['v', 0], ['v', 4]]),
                      0x10 :  ("return", [['v', 0]]),
                   }
-               }, 
+               },
 }
 
 def test(got, expected):
-   if got == expected:
-      prefix = ' OK '
-   else:
-      prefix = '  X '
+    if got == expected:
+        prefix = ' OK '
+    else:
+        prefix = '  X '
 
-   print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 def getVal(i) :
-   op = i.get_operands()
+    op = i.get_operands()
 
-   if isinstance(op, int) :
-      return [ op ]
-   elif i.get_name() == "lookupswitch" :
-      x = []
+    if isinstance(op, int) :
+        return [ op ]
+    elif i.get_name() == "lookupswitch" :
+        x = []
 
-      x.append( i.get_operands().default )
-      for idx in range(0, i.get_operands().npairs) :
-         off = getattr(i.get_operands(), "offset%d" % idx)
-         x.append( off )
-      return x
-   
-   return [-1]
+        x.append( i.get_operands().default )
+        for idx in range(0, i.get_operands().npairs) :
+            off = getattr(i.get_operands(), "offset%d" % idx)
+            x.append( off )
+        return x
+
+    return [-1]
 
 def check(a, values) :
-   for method in a.get_methods() :
-      key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
-  
-      if key not in values :
-         continue
+    for method in a.get_methods() :
+        key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
-      print "CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
-      code = method.get_code()
-      bc = code.get_bc()
+        if key not in values :
+            continue
 
-      idx = 0
-      for i in bc.get() :
-         #print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
-         if idx in values[key] :
-            elem = values[key][idx]
-            
-            val1 = i.get_name() + "%s" % i.get_operands()
-            val2 = elem[0] + "%s" % elem[1]
-            
-            test(val1, val2)
-            
-            del values[key][idx]
+        print "CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
+        code = method.get_code()
+        bc = code.get_bc()
 
-         idx += i.get_length()
+        idx = 0
+        for i in bc.get() :
+            #print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
+            if idx in values[key] :
+                elem = values[key][idx]
+
+                val1 = i.get_name() + "%s" % i.get_operands()
+                val2 = elem[0] + "%s" % elem[1]
+
+                test(val1, val2)
+
+                del values[key][idx]
+
+            idx += i.get_length()
 
 
 for i in TESTS_CASES :
-   a = androguard.AndroguardS( i )
-   check( a, VALUES[i] )
+    a = androguard.AndroguardS( i )
+    check( a, VALUES[i] )

@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -27,7 +27,7 @@ class CheckSumMeth :
     def __init__(self, m1, sim) :
         code = m1.get_code()
         bc = code.get_bc()
-        
+
         buff = ""
 
         for i in bc.get() :
@@ -36,7 +36,7 @@ class CheckSumMeth :
                 for op in i.get_operands() :
                     if "#" in op[0] :
                         buff += "%s" % op
-    
+
         self.buff = buff
         self.entropy = sim.entropy( self.buff )
 
@@ -79,7 +79,7 @@ class CheckSumBB :
     def __init__(self, basic_block) :
         self.basic_block = basic_block
         self.buff = ""
-        for i in self.basic_block.ins : 
+        for i in self.basic_block.ins :
             self.buff += i.get_name()
 
         #self.hash = hashlib.sha256( self.buff + "%d%d" % (len(basic_block.childs), len(basic_block.fathers)) ).hexdigest()
@@ -95,31 +95,31 @@ def filter_checksum_bb_1( basic_block ) :
     return CheckSumBB( basic_block )
 
 def LCS(X, Y):
-      m = len(X)
-      n = len(Y)
-      # An (m+1) times (n+1) matrix
-      C = [[0] * (n+1) for i in range(m+1)]
-      for i in range(1, m+1):
-            for j in range(1, n+1):
-                 if X[i-1] == Y[j-1]: 
-                      C[i][j] = C[i-1][j-1] + 1
-                 else:
-                      C[i][j] = max(C[i][j-1], C[i-1][j])
-      return C
+    m = len(X)
+    n = len(Y)
+    # An (m+1) times (n+1) matrix
+    C = [[0] * (n+1) for i in range(m+1)]
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if X[i-1] == Y[j-1]:
+                C[i][j] = C[i-1][j-1] + 1
+            else:
+                C[i][j] = max(C[i][j-1], C[i-1][j])
+    return C
 
 def getDiff(C, X, Y, i, j, a, r):
-      if i > 0 and j > 0 and X[i-1] == Y[j-1]:
-            getDiff(C, X, Y, i-1, j-1, a, r)
-            debug(" " + "%02X" % ord(X[i-1]))
-      else:
-            if j > 0 and (i == 0 or C[i][j-1] >= C[i-1][j]):
-                 getDiff(C, X, Y, i, j-1, a, r)
-                 a.append( (j-1, Y[j-1]) )
-                 debug(" + " + "%02X" % ord(Y[j-1]))
-            elif i > 0 and (j == 0 or C[i][j-1] < C[i-1][j]):
-                 getDiff(C, X, Y, i-1, j, a, r)
-                 r.append( (i-1, X[i-1]) )
-                 debug(" - " + "%02X" % ord(X[i-1]))
+    if i > 0 and j > 0 and X[i-1] == Y[j-1]:
+        getDiff(C, X, Y, i-1, j-1, a, r)
+        debug(" " + "%02X" % ord(X[i-1]))
+    else:
+        if j > 0 and (i == 0 or C[i][j-1] >= C[i-1][j]):
+            getDiff(C, X, Y, i, j-1, a, r)
+            a.append( (j-1, Y[j-1]) )
+            debug(" + " + "%02X" % ord(Y[j-1]))
+        elif i > 0 and (j == 0 or C[i][j-1] < C[i-1][j]):
+            getDiff(C, X, Y, i-1, j, a, r)
+            r.append( (i-1, X[i-1]) )
+            debug(" - " + "%02X" % ord(X[i-1]))
 
 def toString( bb, hS, rS ) :
     S = ""
@@ -187,7 +187,7 @@ class DiffBB :
                 ok = True
 
             if ok == False :
-                self.ins.append( i ) 
+                self.ins.append( i )
                 debug("%d %s %s" % (nb, i.get_name(), i.get_operands()))
                 setattr( i, "diff_tag", DIFF_INS_TAG["ORIG"] )
 
@@ -213,7 +213,7 @@ class DiffBB :
                 self.ins.append( off_rm[ nb ][2] )
                 setattr( off_rm[ nb ][2], "diff_tag", DIFF_INS_TAG["REMOVE"] )
                 del off_rm[ nb ]
-                
+
             nb += 1
 
         #print off_add, off_rm
@@ -280,7 +280,7 @@ def filter_diff_ins_1( dbb, sim, name_attribute ) :
     X = toString( dbb.bb1, hS, rS )
     Y = toString( dbb.bb2, hS, rS )
 
-    
+
     debug("%s %d" % (repr(X), len(X)))
     debug("%s %d" % (repr(Y), len(Y)))
 
@@ -317,15 +317,15 @@ FILTER_CHECKSUM_VM = "FILTER_CHECKSUM_VM"
 FILTER_SIM_VM = "FILTER_SIM_VM"
 
 FILTERS = {
-                    "FILTER_1" : { FILTER_CHECKSUM_METH : filter_checksum_meth_1, 
-                                        FILTER_SIM_METH : filter_sim_meth_2, 
+                    "FILTER_1" : { FILTER_CHECKSUM_METH : filter_checksum_meth_1,
+                                        FILTER_SIM_METH : filter_sim_meth_2,
                                         FILTER_CHECKSUM_BB : filter_checksum_bb_1,
                                         FILTER_SIM_BB : filter_sim_bb_1,
                                         FILTER_DIFF_INS : filter_diff_ins_1,
                                      },
              }
 
-DIFF_BB_TAG = { 
+DIFF_BB_TAG = {
                         "ORIG" : 0,
                         "DIFF" : 1,
                         "NEW"  : 2
@@ -339,13 +339,13 @@ class Method :
         self.mx = vmx.get_method( m )
 
         self.sim = sim
-        
+
     #######
     # Attribute :
-    #    Method <-> sorted Methods 
+    #    Method <-> sorted Methods
     #
     #    Method <-> Methods[0] :
-    #               
+    #
     #
     #
     #
@@ -357,7 +357,7 @@ class Method :
 
         for i in self.mx.basic_blocks.get() :
             bb[ i.name ] = func_checksum_bb( i )
-            
+
             try :
                 bbhash[ bb[ i.name ].get_hash() ].append( bb[ i.name ] )
             except KeyError :
@@ -369,7 +369,7 @@ class Method :
         setattr(self, "bb_" + name, bb)
         setattr(self, "bb_sha256_" + name, bbhash)
         setattr(self, "sha256_" + name, hashlib.sha256( fm.get_buff() ).hexdigest())
-        
+
     def similarity(self, new_method, func_sim, name_attribute) :
         x = None
         try :
@@ -397,13 +397,13 @@ class Method :
             if method == i[0] :
                 return True
         return False
-  
+
     def diff(self, name_attribute, func_sim_bb, func_diff_ins):
         self.sim.set_compress_type( XZ_COMPRESS )
 
         z = getattr( self, "sort_" + name_attribute )
         bb1 = getattr( self, "bb_" + name_attribute )
-      
+
         ### Dict for diff basic blocks
             ### vm1 basic block : vm2 basic blocks -> value (0.0 to 1.0)
         diff_bb = {}
@@ -419,19 +419,19 @@ class Method :
 
         for b1 in bb1 :
             diff_bb[ bb1[ b1 ] ] = {}
-            
+
             debug("%s 0x%x" % (b1, bb1[ b1 ].basic_block.end))
             for i in z :
                 bb2 = getattr( i[0], "bb_" + name_attribute )
-                b_z = diff_bb[ bb1[ b1 ] ] 
+                b_z = diff_bb[ bb1[ b1 ] ]
 
                 bb2hash = getattr( i[0], "bb_sha256_" + name_attribute )
-        
+
                 # If b1 is in bb2 :
                     # we can have one or more identical basic blocks to b1, we must add them
                 if bb1[ b1 ].get_hash() in bb2hash :
                     for equal_bb in bb2hash[ bb1[ b1 ].get_hash() ] :
-                        b_z[ equal_bb.basic_block.name ] = 0.0 
+                        b_z[ equal_bb.basic_block.name ] = 0.0
 
                 # If b1 is not in bb2 :
                     # we must check similarities between all bb2
@@ -440,7 +440,7 @@ class Method :
                         b_z[ b2 ] = func_sim_bb( bb1[ b1 ], bb2[ b2 ], self.sim )
 
                 sorted_bb = sorted(b_z.iteritems(), key=lambda (k,v): (v,k))
-                 
+
                 debug("\t\t%s" %  sorted_bb[:2])
 
                 for new_diff in sorted_bb :
@@ -448,7 +448,7 @@ class Method :
 
                     if new_diff[1] == 0.0 :
                         direct_diff_bb.append( new_diff[0] )
-             
+
                 if sorted_bb[0][1] != 0.0 :
                     diff_bb[ bb1[ b1 ] ] = (bb2[ sorted_bb[0][0] ], sorted_bb[0][1])
                     direct_diff_bb.append( sorted_bb[0][0] )
@@ -463,18 +463,18 @@ class Method :
 
         dbb = {}
         nbb = {}
-        # Add all different basic blocks 
+        # Add all different basic blocks
         for d in diff_bb :
             dbb[ d.basic_block.name ] = DiffBB( d.basic_block, diff_bb[ d ][0].basic_block, diff_bb[ d ] )
 
         # Add all new basic blocks
         for n in new_bb :
             nbb[ new_bb[ n ].basic_block ] = NewBB( new_bb[ n ].basic_block )
-            del associated_bb[ n ] 
+            del associated_bb[ n ]
 
         setattr(self, "dbb_" + name_attribute, dbb)
         setattr(self, "nbb_" + name_attribute, nbb)
-      
+
         # Found diff instructions
         for d in dbb :
             func_diff_ins( dbb[d], self.sim, name_attribute )
@@ -494,8 +494,8 @@ class Method :
     def create_bbs(self, name_attribute) :
         dbb = getattr(self, "dbb_" + name_attribute)
         nbb = getattr(self, "nbb_" + name_attribute)
-        
-        # For same block : 
+
+        # For same block :
             # tag = 0
         # For diff block :
             # tag = 1
@@ -519,8 +519,8 @@ class Method :
 
         # Sorted basic blocks by addr (orig, new, diff)
         l = sorted(l, key = lambda x : x.start)
-        setattr( self, "bbs_" + name_attribute, l ) 
-      
+        setattr( self, "bbs_" + name_attribute, l )
+
     def getsha256(self, name_attribute) :
         return getattr(self, "sha256_" + name_attribute)
 
@@ -556,7 +556,7 @@ class Method :
 
 BASE = "base"
 METHODS = "methods"
-HASHSUM = "hashsum" 
+HASHSUM = "hashsum"
 DIFFMETHODS = "diffmethods"
 NEWMETHODS = "newmethods"
 class Diff :
@@ -566,11 +566,11 @@ class Diff :
         self.sim.set_compress_type( XZ_COMPRESS )
 
         #set_debug()
-        
+
         self.F = F
 
         self.filters = {}
-        
+
         for i in self.F :
             self.filters[ i ] = {}
             self.filters[ i ][ BASE ] = { FILTER_NAME : i }
@@ -582,17 +582,17 @@ class Diff :
 
         for i in self.vms :
             for m in i[0].get_methods() :
-                m = Method( i[0], i[1], m, self.sim ) 
+                m = Method( i[0], i[1], m, self.sim )
 
                 for fil in self.filters :
                     if i[0] not in self.filters[fil][METHODS] :
                         self.filters[fil][METHODS][ i[0] ] = []
                         self.filters[fil][HASHSUM][ i[0] ] = []
-          
+
                     self.filters[fil][METHODS][ i[0] ].append( m )
                     m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_CHECKSUM_METH], self.filters[fil][BASE][FILTER_CHECKSUM_BB] )
                     self.filters[fil][HASHSUM][i[0]].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
-        
+
         # Check if some methods in the first file has been modified
         for fil in self.filters :
             for j in self.filters[fil][METHODS][vm1[0]] :
@@ -633,7 +633,7 @@ class Diff :
 
                         if ok :
                             self.filters[fil][NEWMETHODS].append( j )
-                
+
 #       print "DEBUG NEW METHODS"
 #       for fil in self.filters :
 #           print "\tDEBUG", self.filters[fil][NEWMETHODS]
@@ -645,7 +645,7 @@ class Diff :
 
     def get_new_methods(self) :
         return self.get_elem( NEWMETHODS )
-        
+
     def get_elem(self, attr) :
         d = {}
         for fil in self.filters :
@@ -663,23 +663,23 @@ class CheckSumVM :
         pass
 
 def filter_checksum_vm_1( vm, name_attribute ):
-    return 
+    return
 
 def filter_sim_vm_1( vm, name_attribute ):
-    return 
+    return
 
 FILTERS_SIM = {
-                    "FILTER_SIM1" : { 
+                    "FILTER_SIM1" : {
                                              FILTER_CHECKSUM_VM : filter_checksum_vm_1,
                                              FILTER_SIM_VM : filter_sim_vm_1,
-                                             FILTER_CHECKSUM_METH : filter_checksum_meth_1, 
-                                             FILTER_SIM_METH : filter_sim_3, 
-                                             FILTER_CHECKSUM_BB : filter_checksum_bb_1 
+                                             FILTER_CHECKSUM_METH : filter_checksum_meth_1,
+                                             FILTER_SIM_METH : filter_sim_3,
+                                             FILTER_CHECKSUM_BB : filter_checksum_bb_1
                                          },
                     }
 
 ### SIM :
-    # DATA 
+    # DATA
         # string
         # constant (int, float ...)
         # clinit
@@ -698,12 +698,12 @@ class Sim :
         svm1 = ''.join( vm1[0].get_strings() )
         svm2 = ''.join( vm2[0].get_strings() )
 
-        print self.sim.ncd( svm1, svm2 ) 
+        print self.sim.ncd( svm1, svm2 )
 
         self.F = F
 
         self.filters = {}
-        
+
         for i in self.F :
             self.filters[ i ] = {}
             self.filters[ i ][ BASE ] = { FILTER_NAME : i }
@@ -715,17 +715,17 @@ class Sim :
 
         for i in self.vms :
             for m in i[0].get_methods() :
-                m = Method( i[0], i[1], m, self.sim ) 
+                m = Method( i[0], i[1], m, self.sim )
 
                 for fil in self.filters :
                     if i[0] not in self.filters[fil][METHODS] :
                         self.filters[fil][METHODS][ i[0] ] = []
                         self.filters[fil][HASHSUM][ i[0] ] = []
-          
+
                     self.filters[fil][METHODS][ i[0] ].append( m )
                     m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_CHECKSUM_METH], self.filters[fil][BASE][FILTER_CHECKSUM_BB] )
                     self.filters[fil][HASHSUM][i[0]].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
-        
+
         # Check if some methods in the first file has been modified
         for fil in self.filters :
             for j in self.filters[fil][METHODS][vm1[0]] :

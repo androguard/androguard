@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -57,66 +57,66 @@ option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissi
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 
 def save_session(l, filename) :
-   fd = open(filename, "w")
-   fd.write( dumps(l, -1) )
-   fd.close()
+    fd = open(filename, "w")
+    fd.write( dumps(l, -1) )
+    fd.close()
 
 def load_session(filename) :
-   return loads( open(filename, "r").read() ) 
+    return loads( open(filename, "r").read() )
 
 def interact() :
-   ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
-   ipshell()
+    ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
+    ipshell()
 
-def main(options, arguments) :                    
-   if options.shell != None :
-      interact()
-   
-   elif options.input != None :
-      _a = AndroguardS( options.input )
+def main(options, arguments) :
+    if options.shell != None :
+        interact()
 
-      if options.type_pretty != None :
-         bytecode.set_pretty_show( int( options.type_pretty ) )
+    elif options.input != None :
+        _a = AndroguardS( options.input )
 
-      if options.display != None :
-         if options.pretty != None :
-            _a.ianalyze()
-            _a.pretty_show()
-         else :
-            _a.show()
+        if options.type_pretty != None :
+            bytecode.set_pretty_show( int( options.type_pretty ) )
 
-      elif options.method != None :
-         for method in _a.get("method", options.method) :
+        if options.display != None :
             if options.pretty != None :
-               _a.ianalyze()
-               method.pretty_show( _a.get_analysis() )
+                _a.ianalyze()
+                _a.pretty_show()
             else :
-               method.show()
-      
-      elif options.field != None :
-         for field in _a.get("field", options.field) :
-            field.show()
-      
-      elif options.xpermissions != None :
-         _a.ianalyze()
-         perms_access = _a.get_analysis().tainted_packages.get_permissions( [] )
-         for perm in perms_access :
-            print "PERM : ", perm
-            for path in perms_access[ perm ] :
-               print "\t%s %s %s (@%s-0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                                path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
-                                                                path.get_class_name(), path.get_name(), path.get_descriptor())
+                _a.show()
 
-   elif options.version != None :
-      print "Androlyze version %s" % VERSION
+        elif options.method != None :
+            for method in _a.get("method", options.method) :
+                if options.pretty != None :
+                    _a.ianalyze()
+                    method.pretty_show( _a.get_analysis() )
+                else :
+                    method.show()
 
-if __name__ == "__main__" :                                                     
-   parser = OptionParser()
-   for option in options :
-      param = option['name']      
-      del option['name']      
-      parser.add_option(*param, **option)
+        elif options.field != None :
+            for field in _a.get("field", options.field) :
+                field.show()
 
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+        elif options.xpermissions != None :
+            _a.ianalyze()
+            perms_access = _a.get_analysis().tainted_packages.get_permissions( [] )
+            for perm in perms_access :
+                print "PERM : ", perm
+                for path in perms_access[ perm ] :
+                    print "\t%s %s %s (@%s-0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                                     path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                                     path.get_class_name(), path.get_name(), path.get_descriptor())
+
+    elif options.version != None :
+        print "Androlyze version %s" % VERSION
+
+if __name__ == "__main__" :
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
+
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

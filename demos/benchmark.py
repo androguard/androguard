@@ -1,4 +1,4 @@
-#!/usr/bin/env python                                                                                                                                                                                                             
+#!/usr/bin/env python
 
 import sys, os
 import cProfile
@@ -55,8 +55,8 @@ TEST = "./apks/"
 
 l = []
 for i in os.walk( TEST ) :
-   for j in i[2] :
-      l.append( i[0] + j )
+    for j in i[2] :
+        l.append( i[0] + j )
 
 print len(l), l
 

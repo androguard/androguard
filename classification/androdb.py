@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -22,13 +22,13 @@ import sys, hashlib, os
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, LargeBinary, MetaData, ForeignKey
-from sqlalchemy.orm import mapper, sessionmaker, backref, relationship 
+from sqlalchemy.orm import mapper, sessionmaker, backref, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 from optparse import OptionParser
 from xml.dom import minidom
 
-import IPython.ipapi                                                                                                                                                                                                              
+import IPython.ipapi
 from IPython.Shell import IPShellEmbed
 
 PATH_INSTALL = "./"
@@ -46,35 +46,35 @@ option_4 = { 'name' : ('-d', '--directory'), 'help' : 'add all files (dex,apk) f
 options = [option_0, option_1, option_2, option_3, option_4]
 
 def interact() :
-   ipshell = IPShellEmbed(banner="AndroDB version %s" % VERSION)
-   ipshell()
+    ipshell = IPShellEmbed(banner="AndroDB version %s" % VERSION)
+    ipshell()
 
 def main(options, arguments) :
-   if options.shell != None :
-      interact() 
-   
-   if options.config == None :
-      return
+    if options.shell != None :
+        interact()
 
-   dbname = configtodb( options.config )
-   adb = AndroDB( dbname )
+    if options.config == None :
+        return
 
-   if options.directory != None :
-      for root, dirs, files in os.walk( options.directory ) :
-         if files != [] :
-            for f in files :
-               if ".apk" in f :
-                  adb.add_apk_raw( root + "/" + f ) 
-   elif options.input != None :
-      adb.add_apk_raw( options.input )
+    dbname = configtodb( options.config )
+    adb = AndroDB( dbname )
+
+    if options.directory != None :
+        for root, dirs, files in os.walk( options.directory ) :
+            if files != [] :
+                for f in files :
+                    if ".apk" in f :
+                        adb.add_apk_raw( root + "/" + f )
+    elif options.input != None :
+        adb.add_apk_raw( options.input )
 
 if __name__ == "__main__" :
-   parser = OptionParser()
-   for option in options :
-      param = option['name']
-      del option['name']
-      parser.add_option(*param, **option)
-      
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)    
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
+
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

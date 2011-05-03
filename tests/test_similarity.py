@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -20,7 +20,7 @@
 
 import sys, itertools, time
 
-PATH_INSTALL = "./"                                                                                                                                                                                                               
+PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 sys.path.append(PATH_INSTALL + "./classification")
 
@@ -52,159 +52,159 @@ CONVERT_RESULT_TEST = { " OK " : 1,
 DEBUG = 0
 
 def test(got, expected, fcmp):
-   if fcmp(got, expected) :
-      prefix = ' OK '
-   else:
-      prefix = '  X '
+    if fcmp(got, expected) :
+        prefix = ' OK '
+    else:
+        prefix = '  X '
 
-   if DEBUG :
-      print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    if DEBUG :
+        print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
-   return CONVERT_RESULT_TEST[ prefix ]
+    return CONVERT_RESULT_TEST[ prefix ]
 
 # C(xx) = C(x)
 def test_Idempotency(n, x) :
-   s1 = n.compress(x + x)
-   s2 = n.compress(x)
+    s1 = n.compress(x + x)
+    s2 = n.compress(x)
 
-   return test( s1, s2, lambda x, y : x == y)
+    return test( s1, s2, lambda x, y : x == y)
 
 # C(x) <= C(xy)
 def test_Monotonicity(n, x, y) :
-   s1 = n.compress( x )
-   s2 = n.compress( x + y )
+    s1 = n.compress( x )
+    s2 = n.compress( x + y )
 
-   return test( s1, s2, lambda x, y : x <= y )
+    return test( s1, s2, lambda x, y : x <= y )
 
 # C(xy) = C(yx)
 def test_Symetry(n, x, y) :
-   s1 = n.compress( x + y )
-   s2 = n.compress( y + x )
+    s1 = n.compress( x + y )
+    s2 = n.compress( y + x )
 
-   return test( s1, s2, lambda x, y : x == y)
+    return test( s1, s2, lambda x, y : x == y)
 
 # C(xy) + C(z) <=  C(xz) + C(yz)
 def test_Distributivity(n, x, y, z) :
-   s1 = n.compress( x + y ) + n.compress( z )
-   s2 = n.compress( x + z ) + n.compress( y + z )
+    s1 = n.compress( x + y ) + n.compress( z )
+    s2 = n.compress( x + z ) + n.compress( y + z )
 
-   return test( s1, s2, lambda x, y : x <= y )
+    return test( s1, s2, lambda x, y : x <= y )
 
 def Idempotency( n, TESTS_TEXT ) :
-   print "Idempotency ",
-   j = 0
-   res = 0
-   t1 = time.clock()
+    print "Idempotency ",
+    j = 0
+    res = 0
+    t1 = time.clock()
 
-   for i in itertools.permutations( TESTS_TEXT, 1 ) :
-      res += test_Idempotency( n, i[0] )
-      j += 1
-   t2 = time.clock()
-   print "%fs" % (t2 - t1), res, "/", j
+    for i in itertools.permutations( TESTS_TEXT, 1 ) :
+        res += test_Idempotency( n, i[0] )
+        j += 1
+    t2 = time.clock()
+    print "%fs" % (t2 - t1), res, "/", j
 
 def Monotonicity( n, TESTS_TEXT ) :
-   print "Monotonicity ",
-   j = 0
-   res = 0
-   t1 = time.clock()
-   
-   for i in itertools.permutations( TESTS_TEXT, 2 ) :
-      res += test_Monotonicity( n, i[0], i[1] )
-      j += 1
-   
-   t2 = time.clock()
-   print "%fs" % (t2 - t1), res, "/", j
+    print "Monotonicity ",
+    j = 0
+    res = 0
+    t1 = time.clock()
+
+    for i in itertools.permutations( TESTS_TEXT, 2 ) :
+        res += test_Monotonicity( n, i[0], i[1] )
+        j += 1
+
+    t2 = time.clock()
+    print "%fs" % (t2 - t1), res, "/", j
 
 def Symetry( n, TESTS_TEXT ) :
-   print "Symetry ",
-   j = 0
-   res = 0
-   t1 = time.clock()
-   
-   for i in itertools.permutations( TESTS_TEXT, 2 ) :
-      res += test_Symetry( n, i[0], i[1] )
-      j += 1
-   
-   t2 = time.clock()
-   print "%fs" % (t2 - t1), res, "/", j
+    print "Symetry ",
+    j = 0
+    res = 0
+    t1 = time.clock()
 
-   
+    for i in itertools.permutations( TESTS_TEXT, 2 ) :
+        res += test_Symetry( n, i[0], i[1] )
+        j += 1
+
+    t2 = time.clock()
+    print "%fs" % (t2 - t1), res, "/", j
+
+
 def Distributivity( n, TESTS_TEXT ) :
-   print "Distributivity ",
-   j = 0
-   res = 0
-   t1 = time.clock()
-   
-   for i in itertools.permutations( TESTS_TEXT, 3 ) :
-      res += test_Distributivity( n, i[0], i[1], i[2] )
-      j += 1 
-   t2 = time.clock()
-   print "%fs" % (t2 - t1), res, "/", j
+    print "Distributivity ",
+    j = 0
+    res = 0
+    t1 = time.clock()
+
+    for i in itertools.permutations( TESTS_TEXT, 3 ) :
+        res += test_Distributivity( n, i[0], i[1], i[2] )
+        j += 1
+    t2 = time.clock()
+    print "%fs" % (t2 - t1), res, "/", j
 
 
 def TestNCDPermutations(n, ref, threshold) :
-   tres, nb, idx, t = benchmark(n.ncd, ref, threshold, lambda x, y : x <= y)
-   print "NCD Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
+    tres, nb, idx, t = benchmark(n.ncd, ref, threshold, lambda x, y : x <= y)
+    print "NCD Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
 
 def TestNCSPermutations(n, ref, threshold) :
-   tres, nb, idx, t = benchmark(n.ncs, ref, threshold, lambda x, y : x >= y)
-   print "NCS Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
+    tres, nb, idx, t = benchmark(n.ncs, ref, threshold, lambda x, y : x >= y)
+    print "NCS Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
 
 def TestCMIDPermutations(n, ref, threshold) :
-   tres, nb, idx, t = benchmark(n.cmid, ref, threshold, lambda x, y : x >= y)
-   print "CMID Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
+    tres, nb, idx, t = benchmark(n.cmid, ref, threshold, lambda x, y : x >= y)
+    print "CMID Permutation %f threshold=%f time=%fs for %d/%d" % ( tres, threshold, t, nb, idx )
 
 def TestNCD( n, tests, type_test ) :
-   TestSim("NCD", tests, type_test, n.ncd)
+    TestSim("NCD", tests, type_test, n.ncd)
 
 def TestNCS( n, tests, type_test ) :
-   TestSim("NCS", tests, type_test, n.ncs)
+    TestSim("NCS", tests, type_test, n.ncs)
 
 def TestCMID( n, tests, type_test ) :
-   TestSim("CMID", tests, type_test, n.cmid)
+    TestSim("CMID", tests, type_test, n.cmid)
 
 def TestSim(type_sim, tests, type_test, func) :
-   print type_sim, type_test
-   nb = 0
-   
-   print "\t",
-   t1 = time.clock()
-   for i in tests :
-      print "%d:%f" % (nb, func( i[0], i[1] )),
-      nb += 1
-   t2 = time.clock()
-   print "%fs" % (t2 - t1)
+    print type_sim, type_test
+    nb = 0
+
+    print "\t",
+    t1 = time.clock()
+    for i in tests :
+        print "%d:%f" % (nb, func( i[0], i[1] )),
+        nb += 1
+    t2 = time.clock()
+    print "%fs" % (t2 - t1)
 
 def benchmark(func, ref, threshold, fcmp) :
-   nb = 0
-   idx = 0
-   tres = 0.0
-   t1 = time.clock()
-   for i in itertools.permutations(ref) :
-      perm = ''.join(j for j in i)
-      res = func(ref, perm)
-      tres += res
-      if fcmp(res, threshold) :
-         nb += 1
-      idx += 1
-   t2 = time.clock()
+    nb = 0
+    idx = 0
+    tres = 0.0
+    t1 = time.clock()
+    for i in itertools.permutations(ref) :
+        perm = ''.join(j for j in i)
+        res = func(ref, perm)
+        tres += res
+        if fcmp(res, threshold) :
+            nb += 1
+        idx += 1
+    t2 = time.clock()
 
-   return tres/idx, nb, idx, t2 - t1
+    return tres/idx, nb, idx, t2 - t1
 
 def TestEntropy(n, tests, diff) :
-   nb = 0
-   t1 = time.clock()
-   for i in tests :
-      nb += test( n.entropy(i[0]), n.entropy(i[1]), lambda x, y : (max(x,y) - min(x,y)) <= diff )
-   t2 = time.clock()
-   print "* Entropy %fs %d/%d" % (t2 - t1, nb, len(tests))
+    nb = 0
+    t1 = time.clock()
+    for i in tests :
+        nb += test( n.entropy(i[0]), n.entropy(i[1]), lambda x, y : (max(x,y) - min(x,y)) <= diff )
+    t2 = time.clock()
+    print "* Entropy %fs %d/%d" % (t2 - t1, nb, len(tests))
 
 def TestProperties(n) :
-   # Properties
-   Idempotency( n, TESTS_RANDOM_SIGN )
-   Monotonicity( n, TESTS_RANDOM_SIGN )
-   Symetry( n, TESTS_RANDOM_SIGN )
-   Distributivity( n, TESTS_RANDOM_SIGN )
+    # Properties
+    Idempotency( n, TESTS_RANDOM_SIGN )
+    Monotonicity( n, TESTS_RANDOM_SIGN )
+    Symetry( n, TESTS_RANDOM_SIGN )
+    Distributivity( n, TESTS_RANDOM_SIGN )
 
 TESTS = { "ZLIB"        : ZLIB_COMPRESS,
           "BZ2"         : BZ2_COMPRESS,
@@ -215,41 +215,41 @@ TESTS = { "ZLIB"        : ZLIB_COMPRESS,
         }
 
 if __name__ == "__main__" :
-   try : 
-      import psyco
-      psyco.full()
-   except ImportError:
-      pass
+    try :
+        import psyco
+        psyco.full()
+    except ImportError:
+        pass
 
-   n = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
-      
-   TestEntropy( n, TESTS_CLOSED_SIGN, 0.04 )
-   TestEntropy( n, TESTS_DIFFERENT_SIGN, 0.8 )
+    n = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
 
-   for i in TESTS :
-      n.set_compress_type( TESTS[i] )
-      print "* ", i 
+    TestEntropy( n, TESTS_CLOSED_SIGN, 0.04 )
+    TestEntropy( n, TESTS_DIFFERENT_SIGN, 0.8 )
 
-      #TestProperties( n )
+    for i in TESTS :
+        n.set_compress_type( TESTS[i] )
+        print "* ", i
+
+        #TestProperties( n )
 
 
-      # Closed signature
-      TestNCD( n, TESTS_CLOSED_SIGN, "closed" )
-      TestNCS( n, TESTS_CLOSED_SIGN, "closed" )
-      TestCMID( n, TESTS_CLOSED_SIGN, "closed" )
+        # Closed signature
+        TestNCD( n, TESTS_CLOSED_SIGN, "closed" )
+        TestNCS( n, TESTS_CLOSED_SIGN, "closed" )
+        TestCMID( n, TESTS_CLOSED_SIGN, "closed" )
 
-      TestNCD( n, TESTS_DIFFERENT_SIGN, "different" )
-      # Permutations
-      #TestNCDPermutations( n, "Android", 0.2 )
-      #n.clear_caches()
+        TestNCD( n, TESTS_DIFFERENT_SIGN, "different" )
+        # Permutations
+        #TestNCDPermutations( n, "Android", 0.2 )
+        #n.clear_caches()
 
-      #TestNCSPermutations( n, "Androgu", 0.8 )
-      #n.clear_caches()
-      
-      #TestCMIDPermutations( n, "Androgu", 0.8 )
-      #n.clear_caches()
+        #TestNCSPermutations( n, "Androgu", 0.8 )
+        #n.clear_caches()
 
-      print
+        #TestCMIDPermutations( n, "Androgu", 0.8 )
+        #n.clear_caches()
+
+        print
 #      for j in range(1, 10) :
 #         n.set_level( j )
 #         print "level", j,
@@ -258,4 +258,4 @@ if __name__ == "__main__" :
 #         print "\t -->", n.ncd("FMMMF", "MMFF"),
 #         print "\t -->", n.ncd("FMMMF", "FMMMF")
 
-        # print "\t bench -->", benchmark(n, "androgu")
+          # print "\t bench -->", benchmark(n, "androgu")
