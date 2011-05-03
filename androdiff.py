@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -30,48 +30,48 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2]
 
-def main(options, arguments) :  
+def main(options, arguments) :
 
-   if options.input != None :
-      a = androguard.Androguard( options.input )
-      a.ianalyze()
+    if options.input != None :
+        a = androguard.Androguard( options.input )
+        a.ianalyze()
 
-      vm1 = a.get_bc()[0][1].get_vm()
-      vmx1 = a.get_bc()[0][1].get_analysis()
+        vm1 = a.get_bc()[0][1].get_vm()
+        vmx1 = a.get_bc()[0][1].get_analysis()
 
-      vm2 = a.get_bc()[1][1].get_vm()
-      vmx2 = a.get_bc()[1][1].get_analysis()
+        vm2 = a.get_bc()[1][1].get_vm()
+        vmx2 = a.get_bc()[1][1].get_analysis()
 
-      d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS )
+        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS )
 
-      details = False
-      if options.display != None :
-         details = True
+        details = False
+        if options.display != None :
+            details = True
 
-      print "DIFF METHODS :"
-      diff_methods = d.get_diff_methods()
-      for i in diff_methods :
-         for elem in diff_methods[ i ] :
-            elem.show( i, details )
-            print
-      
-      print "NEW METHODS :"
-      new_methods = d.get_new_methods()
-      for i in new_methods :
-         for elem in new_methods[ i ] :
-            elem.show2( details )
-            print
+        print "DIFF METHODS :"
+        diff_methods = d.get_diff_methods()
+        for i in diff_methods :
+            for elem in diff_methods[ i ] :
+                elem.show( i, details )
+                print
 
-   elif options.version != None :
-      print "Androdiff version %s" % misc.VERSION
+        print "NEW METHODS :"
+        new_methods = d.get_new_methods()
+        for i in new_methods :
+            for elem in new_methods[ i ] :
+                elem.show2( details )
+                print
 
-if __name__ == "__main__" :                                                     
-   parser = OptionParser()
-   for option in options :
-      param = option['name']      
-      del option['name']      
-      parser.add_option(*param, **option)
+    elif options.version != None :
+        print "Androdiff version %s" % misc.VERSION
 
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+if __name__ == "__main__" :
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
+
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

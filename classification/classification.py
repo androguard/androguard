@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -24,7 +24,7 @@ import numpy
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, LargeBinary, MetaData, ForeignKey
-from sqlalchemy.orm import mapper, sessionmaker, backref, relationship 
+from sqlalchemy.orm import mapper, sessionmaker, backref, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 PATH_INSTALL = "./"
@@ -34,49 +34,49 @@ import androguard, analysis, misc
 import ncd, androdb
 
 class Classification :
-   def __init__(self, dbname) :
-      self._adb = androdb.AndroDB( dbname )
+    def __init__(self, dbname) :
+        self._adb = androdb.AndroDB( dbname )
 
-      self._ncd = ncd.NCD( "./classification/libncd/libncd.so" )
-      self._ncd.set_compress_type( ncd.BZ2_COMPRESS )
+        self._ncd = ncd.NCD( "./classification/libncd/libncd.so" )
+        self._ncd.set_compress_type( ncd.BZ2_COMPRESS )
 
-   def classification1(self) :
-      print self._adb._session.query(androdb.Signature).count()
+    def classification1(self) :
+        print self._adb._session.query(androdb.Signature).count()
 
-      signatures = []
-      for row in self._adb._session.query(androdb.Signature).all():
-         #print "Signature -->", row.id, row.method_id, row.grammar, row.value
-         signatures.append( row.value )
+        signatures = []
+        for row in self._adb._session.query(androdb.Signature).all():
+            #print "Signature -->", row.id, row.method_id, row.grammar, row.value
+            signatures.append( row.value )
 
-      print "BEGIN NCD", len(signatures) * len(signatures)
-      
-      widgets = ['Classification NCD ...: ', misc.Percentage(), ' ', misc.Bar(marker=misc.RotatingMarker())]                                                                            
-      pbar = misc.ProgressBar(widgets=widgets, maxval=len(signatures) * len(signatures)).start()
-      
-      l = []
-      n = 0
-      idx = 0
-      for x in signatures :
-         pbar.update( n ) 
-         for y in signatures :
-            l.append( self._ncd.get( x, y ) )
+        print "BEGIN NCD", len(signatures) * len(signatures)
 
-         n = len(signatures) * idx
-         idx += 1
-      
-      pbar.finish()
-      print "END NCD"
-      a = numpy.array( l )
-      b = numpy.reshape( a, ( len(signatures), len(signatures) ) )
-      print b
+        widgets = ['Classification NCD ...: ', misc.Percentage(), ' ', misc.Bar(marker=misc.RotatingMarker())]
+        pbar = misc.ProgressBar(widgets=widgets, maxval=len(signatures) * len(signatures)).start()
+
+        l = []
+        n = 0
+        idx = 0
+        for x in signatures :
+            pbar.update( n )
+            for y in signatures :
+                l.append( self._ncd.get( x, y ) )
+
+            n = len(signatures) * idx
+            idx += 1
+
+        pbar.finish()
+        print "END NCD"
+        a = numpy.array( l )
+        b = numpy.reshape( a, ( len(signatures), len(signatures) ) )
+        print b
 
 
 if __name__ == "__main__" :
-   try :
-      import psyco
-      psyco.full()
-   except ImportError :
-      pass
+    try :
+        import psyco
+        psyco.full()
+    except ImportError :
+        pass
 
-   c = Classification( androdb.DBNAME )
-   c.classification1()
+    c = Classification( androdb.DBNAME )
+    c.classification1()

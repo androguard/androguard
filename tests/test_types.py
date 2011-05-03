@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -20,7 +20,7 @@
 
 import sys
 
-PATH_INSTALL = "./"                                                                                                                                                                                                               
+PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
@@ -150,31 +150,31 @@ VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
 }
 
 def test(got, expected):
-   if got == expected:
-      prefix = ' OK '
-   else:
-      prefix = '  X '
-   print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    if got == expected:
+        prefix = ' OK '
+    else:
+        prefix = '  X '
+    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 
 a = androguard.AndroguardS( TEST_CASE )
 
 for method in a.get_methods() :
-   key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
+    key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
-   if key not in VALUES :
-      continue
+    if key not in VALUES :
+        continue
 
-   print method.get_class_name(), method.get_name(), method.get_descriptor()
-   code = method.get_code()
-   bc = code.get_bc()
+    print method.get_class_name(), method.get_name(), method.get_descriptor()
+    code = method.get_code()
+    bc = code.get_bc()
 
-   idx = 0
-   for i in bc.get() :
-   #   print "\t", "%x" % idx, i.get_name(), i.get_operands()
-      if "const" in i.get_name() :
-         formatted_operands = i.get_formatted_operands()
-         for f in formatted_operands :
-            test( f[1], VALUES[ key ].pop(0) )
+    idx = 0
+    for i in bc.get() :
+    #   print "\t", "%x" % idx, i.get_name(), i.get_operands()
+        if "const" in i.get_name() :
+            formatted_operands = i.get_formatted_operands()
+            for f in formatted_operands :
+                test( f[1], VALUES[ key ].pop(0) )
 
-      idx += i.get_length()
+        idx += i.get_length()

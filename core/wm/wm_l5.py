@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -19,42 +19,42 @@
 import misc, hashlib, string, random
 
 def INIT() :
-   return WM_L5
+    return WM_L5
 
 class WM_L5 :
-   def __init__(self, _vm, _method, _analysis) :
-      self.__vm = _vm
-      self.__method = _method
-      self.__analysis = _analysis
+    def __init__(self, _vm, _method, _analysis) :
+        self.__vm = _vm
+        self.__method = _method
+        self.__analysis = _analysis
 
-      self.__context = {
-                           "L_X" : [],
-                       }
+        self.__context = {
+                             "L_X" : [],
+                         }
 
-   def get_name(self) :
-      return "WM_GRAPH"
+    def get_name(self) :
+        return "WM_GRAPH"
 
-   def run(self) :
-      pass
+    def run(self) :
+        pass
 
-   def challenge(self, external_wm) :
-      return self.__context[ "L_X" ]
+    def challenge(self, external_wm) :
+        return self.__context[ "L_X" ]
 
-   def get(self) :
-      for i in range(0, 30) :
-         self.__context[ "L_X" ].append( i )
+    def get(self) :
+        for i in range(0, 30) :
+            self.__context[ "L_X" ].append( i )
 
-      return self.__context[ "L_X" ]
+        return self.__context[ "L_X" ]
 
-   def set_context(self, values) :
-      for x in values :
-         self.__context[ x ] = values[ x ]
+    def set_context(self, values) :
+        for x in values :
+            self.__context[ x ] = values[ x ]
 
-   def get_context(self) :
-      return self.__context
+    def get_context(self) :
+        return self.__context
 
-   def get_export_context(self) :
-      return self.__context
+    def get_export_context(self) :
+        return self.__context
 
-   def get_import_context(self) :
-      return {}
+    def get_import_context(self) :
+        return {}

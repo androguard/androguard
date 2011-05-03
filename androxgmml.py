@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -22,7 +22,7 @@ from xml.sax.saxutils import escape, unescape
 import sys, hashlib, os
 from optparse import OptionParser
 
-PATH_INSTALL = "./"                                                                                                                                                                                                               
+PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis, misc
@@ -41,7 +41,7 @@ NODES_ID = {}
 EDGES_ID = {}
 
 NODE_GRAPHIC = {
-   "classic" : { 
+   "classic" : {
                  "h" : 20.0,
                  "w" : 20.0,
                  "type" : "ELLIPSE",
@@ -50,7 +50,7 @@ NODE_GRAPHIC = {
                  "outline" : "#000000",
                },
 
-   "extern" : { 
+   "extern" : {
                  "h" : 20.0,
                  "w" : 20.0,
                  "type" : "ELLIPSE",
@@ -60,7 +60,7 @@ NODE_GRAPHIC = {
                }
 }
 
-EDGE_GRAPHIC = { 
+EDGE_GRAPHIC = {
    "cfg" : {
                "width" : 2,
                "fill" : "#0000e1",
@@ -78,200 +78,200 @@ EDGE_GRAPHIC = {
 }
 
 def get_node_name(method, bb) :
-   return "%s-%s-%s" % ( method.get_class_name(), escape(bb.name), escape(method.get_descriptor()) )
+    return "%s-%s-%s" % ( method.get_class_name(), escape(bb.name), escape(method.get_descriptor()) )
 
 def export_xgmml_cfg(g, fd) :
-   method = g.get_method()
-   
-   name = method.get_name()
-   class_name = method.get_class_name()
-   descriptor = method.get_descriptor()
+    method = g.get_method()
 
-   if method.get_code() != None :
-      size_ins = method.get_code().get_length()
+    name = method.get_name()
+    class_name = method.get_class_name()
+    descriptor = method.get_descriptor()
 
-   for i in g.basic_blocks.get() :
-      fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), get_node_name(method, i)))
+    if method.get_code() != None :
+        size_ins = method.get_code().get_length()
 
-      fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(class_name)))
-      fd.write("<att type=\"string\" name=\"name\" value=\"%s\"/>\n" % (escape(name)))
-      fd.write("<att type=\"string\" name=\"descriptor\" value=\"%s\"/>\n" % (escape(descriptor)))
-      
-      fd.write("<att type=\"integer\" name=\"offset\" value=\"%d\"/>\n" % (i.start))
+    for i in g.basic_blocks.get() :
+        fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), get_node_name(method, i)))
 
-      cl = NODE_GRAPHIC["classic"]
-      width = cl["width"]
-      fill = cl["fill"]
-      
-      # No child ...
-      if i.childs == [] :
-         fill = "#87ceeb"
-      
-      if i.start == 0 :
-         fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\"/>\n" % (escape(name), i.get_ins()[-1].get_name()))
-         width = 3
-         fill = "#ff0000"
+        fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(class_name)))
+        fd.write("<att type=\"string\" name=\"name\" value=\"%s\"/>\n" % (escape(name)))
+        fd.write("<att type=\"string\" name=\"descriptor\" value=\"%s\"/>\n" % (escape(descriptor)))
 
-         METHODS_ID[ class_name + name + descriptor ] = len(NODES_ID)
-      else :
-         fd.write("<att type=\"string\" name=\"node.label\" value=\"0x%x\\n%s\"/>\n" % (i.start, i.get_ins()[-1].get_name()))
+        fd.write("<att type=\"integer\" name=\"offset\" value=\"%d\"/>\n" % (i.start))
 
-      size = 0
-      for tmp_ins in i.get_ins() :
-         size += (tmp_ins.get_length() / 2)
+        cl = NODE_GRAPHIC["classic"]
+        width = cl["width"]
+        fill = cl["fill"]
 
-      
-      h = ((size / float(size_ins)) * 20) + cl["h"]
+        # No child ...
+        if i.childs == [] :
+            fill = "#87ceeb"
 
-      fd.write("<graphics type=\"%s\" h=\"%.1f\" w=\"%.1f\" width=\"%d\" fill=\"%s\" outline=\"%s\">\n" % ( cl["type"], h, h, width, fill, cl["outline"]))
-      fd.write("</graphics>\n") 
+        if i.start == 0 :
+            fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\"/>\n" % (escape(name), i.get_ins()[-1].get_name()))
+            width = 3
+            fill = "#ff0000"
 
-      fd.write("</node>\n")
+            METHODS_ID[ class_name + name + descriptor ] = len(NODES_ID)
+        else :
+            fd.write("<att type=\"string\" name=\"node.label\" value=\"0x%x\\n%s\"/>\n" % (i.start, i.get_ins()[-1].get_name()))
 
-      NODES_ID[ class_name + i.name + descriptor ] = len(NODES_ID)
+        size = 0
+        for tmp_ins in i.get_ins() :
+            size += (tmp_ins.get_length() / 2)
 
-   for i in g.basic_blocks.get() :
-      for j in i.childs :
-         if j[-1] != None :
-            label = "%s (cfg) %s" % (get_node_name(method, i), get_node_name(method, j[-1]))
-            id = len(NODES_ID) + len(EDGES_ID)
-            fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, label, NODES_ID[ class_name + i.name + descriptor ], NODES_ID[ class_name + j[-1].name + descriptor ]) )
 
-            cl = EDGE_GRAPHIC["cfg"]
-            fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
-            fd.write("</graphics>\n")
+        h = ((size / float(size_ins)) * 20) + cl["h"]
 
-            fd.write("</edge>\n")
+        fd.write("<graphics type=\"%s\" h=\"%.1f\" w=\"%.1f\" width=\"%d\" fill=\"%s\" outline=\"%s\">\n" % ( cl["type"], h, h, width, fill, cl["outline"]))
+        fd.write("</graphics>\n")
 
-            EDGES_ID[ label ] = id
+        fd.write("</node>\n")
+
+        NODES_ID[ class_name + i.name + descriptor ] = len(NODES_ID)
+
+    for i in g.basic_blocks.get() :
+        for j in i.childs :
+            if j[-1] != None :
+                label = "%s (cfg) %s" % (get_node_name(method, i), get_node_name(method, j[-1]))
+                id = len(NODES_ID) + len(EDGES_ID)
+                fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, label, NODES_ID[ class_name + i.name + descriptor ], NODES_ID[ class_name + j[-1].name + descriptor ]) )
+
+                cl = EDGE_GRAPHIC["cfg"]
+                fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
+                fd.write("</graphics>\n")
+
+                fd.write("</edge>\n")
+
+                EDGES_ID[ label ] = id
 
 def export_xgmml_fcg(a, x, fd) :
-   classes = a.get_classes_names()
+    classes = a.get_classes_names()
 
-   # Methods flow graph
-   for m, _ in x.tainted_packages.get_packages() :
-      paths = m.get_methods()
-      for j in paths :
-         if j.get_method().get_class_name() in classes and m.get_info() in classes :
-            if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
-               t =  m.get_info() + j.get_name() + j.get_descriptor() 
-               if t not in METHODS_ID :
-                  continue
+    # Methods flow graph
+    for m, _ in x.tainted_packages.get_packages() :
+        paths = m.get_methods()
+        for j in paths :
+            if j.get_method().get_class_name() in classes and m.get_info() in classes :
+                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+                    t =  m.get_info() + j.get_name() + j.get_descriptor()
+                    if t not in METHODS_ID :
+                        continue
 
-               bb1 = x.hmethods[ j.get_method() ].basic_blocks.get_basic_block( j.get_idx() )
+                    bb1 = x.hmethods[ j.get_method() ].basic_blocks.get_basic_block( j.get_idx() )
 
-               node1 = get_node_name(j.get_method(), bb1) + "@0x%x" % j.get_idx()
-               node2 = "%s-%s-%s" % (m.get_info(), escape(j.get_name()), escape(j.get_descriptor()))
+                    node1 = get_node_name(j.get_method(), bb1) + "@0x%x" % j.get_idx()
+                    node2 = "%s-%s-%s" % (m.get_info(), escape(j.get_name()), escape(j.get_descriptor()))
 
-               label = "%s (fcg) %s" % (node1, node2)
+                    label = "%s (fcg) %s" % (node1, node2)
 
-               if label in EDGES_ID :
-                  continue
+                    if label in EDGES_ID :
+                        continue
 
-               id = len(NODES_ID) + len(EDGES_ID)
+                    id = len(NODES_ID) + len(EDGES_ID)
 
-               fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, 
-                                                                                          label, 
-                                                                                          NODES_ID[ j.get_method().get_class_name() + bb1.name + j.get_method().get_descriptor() ], 
-                                                                                          METHODS_ID[ m.get_info() + j.get_name() + j.get_descriptor() ]) )
+                    fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id,
+                                                                                               label,
+                                                                                               NODES_ID[ j.get_method().get_class_name() + bb1.name + j.get_method().get_descriptor() ],
+                                                                                               METHODS_ID[ m.get_info() + j.get_name() + j.get_descriptor() ]) )
 
-               cl = EDGE_GRAPHIC["fcg"]
-               fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
-               fd.write("</graphics>\n")
+                    cl = EDGE_GRAPHIC["fcg"]
+                    fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
+                    fd.write("</graphics>\n")
 
-               fd.write("</edge>\n")
-            
-               EDGES_ID[ label ] = id
+                    fd.write("</edge>\n")
+
+                    EDGES_ID[ label ] = id
 
 def export_xgmml_efcg(a, x, fd) :
-   classes = a.get_classes_names()
+    classes = a.get_classes_names()
 
-   # Methods flow graph
-   for m, _ in x.tainted_packages.get_packages() :
-      paths = m.get_methods()
-      for j in paths :
-         if j.get_method().get_class_name() in classes and m.get_info() not in classes :
-            if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
-               t =  m.get_info() + j.get_name() + j.get_descriptor() 
-               if t not in EXTERNAL_METHODS_ID :
-                  fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), escape(t)))
+    # Methods flow graph
+    for m, _ in x.tainted_packages.get_packages() :
+        paths = m.get_methods()
+        for j in paths :
+            if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+                    t =  m.get_info() + j.get_name() + j.get_descriptor()
+                    if t not in EXTERNAL_METHODS_ID :
+                        fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), escape(t)))
 
-                  fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(m.get_info())))
-                  fd.write("<att type=\"string\" name=\"name\" value=\"%s\"/>\n" % (escape(j.get_name())))
-                  fd.write("<att type=\"string\" name=\"descriptor\" value=\"%s\"/>\n" % (escape(j.get_descriptor())))
+                        fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(m.get_info())))
+                        fd.write("<att type=\"string\" name=\"name\" value=\"%s\"/>\n" % (escape(j.get_name())))
+                        fd.write("<att type=\"string\" name=\"descriptor\" value=\"%s\"/>\n" % (escape(j.get_descriptor())))
 
-                  cl = NODE_GRAPHIC["extern"]
-      
-                  fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\\n%s\"/>\n" % (escape(m.get_info()), escape(j.get_name()), escape(j.get_descriptor())))
+                        cl = NODE_GRAPHIC["extern"]
 
-                  fd.write("<graphics type=\"%s\" h=\"%.1f\" w=\"%.1f\" width=\"%d\" fill=\"%s\" outline=\"%s\">\n" % ( cl["type"], cl["h"], cl["h"], cl["width"], cl["fill"], cl["outline"]))
-                  fd.write("</graphics>\n") 
+                        fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\\n%s\"/>\n" % (escape(m.get_info()), escape(j.get_name()), escape(j.get_descriptor())))
 
-                  fd.write("</node>\n")
+                        fd.write("<graphics type=\"%s\" h=\"%.1f\" w=\"%.1f\" width=\"%d\" fill=\"%s\" outline=\"%s\">\n" % ( cl["type"], cl["h"], cl["h"], cl["width"], cl["fill"], cl["outline"]))
+                        fd.write("</graphics>\n")
 
-                  NODES_ID[ t ] = len(NODES_ID)
-                  EXTERNAL_METHODS_ID[ t ] = NODES_ID[ t ] 
-               
-               bb1 = x.hmethods[ j.get_method() ].basic_blocks.get_basic_block( j.get_idx() )
+                        fd.write("</node>\n")
 
-               node1 = get_node_name(j.get_method(), bb1) + "@0x%x" % j.get_idx()
-               node2 = "%s-%s-%s" % (m.get_info(), escape(j.get_name()), escape(j.get_descriptor()))
+                        NODES_ID[ t ] = len(NODES_ID)
+                        EXTERNAL_METHODS_ID[ t ] = NODES_ID[ t ]
 
-               label = "%s (efcg) %s" % (node1, node2)
+                    bb1 = x.hmethods[ j.get_method() ].basic_blocks.get_basic_block( j.get_idx() )
 
-               if label in EDGES_ID :
-                  continue
+                    node1 = get_node_name(j.get_method(), bb1) + "@0x%x" % j.get_idx()
+                    node2 = "%s-%s-%s" % (m.get_info(), escape(j.get_name()), escape(j.get_descriptor()))
 
-               id = len(NODES_ID) + len(EDGES_ID)
+                    label = "%s (efcg) %s" % (node1, node2)
 
-               fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, 
-                                                                                          label, 
-                                                                                          NODES_ID[ j.get_method().get_class_name() + bb1.name + j.get_method().get_descriptor() ], 
-                                                                                          EXTERNAL_METHODS_ID[ m.get_info() + j.get_name() + j.get_descriptor() ]) )
+                    if label in EDGES_ID :
+                        continue
 
-               cl = EDGE_GRAPHIC["efcg"]
-               fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
-               fd.write("</graphics>\n")
+                    id = len(NODES_ID) + len(EDGES_ID)
 
-               fd.write("</edge>\n")
-            
-               EDGES_ID[ label ] = id
+                    fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id,
+                                                                                               label,
+                                                                                               NODES_ID[ j.get_method().get_class_name() + bb1.name + j.get_method().get_descriptor() ],
+                                                                                               EXTERNAL_METHODS_ID[ m.get_info() + j.get_name() + j.get_descriptor() ]) )
+
+                    cl = EDGE_GRAPHIC["efcg"]
+                    fd.write("<graphics width=\"%d\" fill=\"%s\">\n" % (cl["width"], cl["fill"]) )
+                    fd.write("</graphics>\n")
+
+                    fd.write("</edge>\n")
+
+                    EDGES_ID[ label ] = id
 
 def export_apps_to_xgmml( input, output, fcg, efcg ) :
-   a = androguard.Androguard( [ input ] )
+    a = androguard.Androguard( [ input ] )
 
-   fd = open(output, "w")
-   fd.write("<?xml version='1.0'?>\n")
-   fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
+    fd = open(output, "w")
+    fd.write("<?xml version='1.0'?>\n")
+    fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
 
-   for vm in a.get_vms() :
-      x = analysis.VM_BCA( vm )
-      # CFG
-      for method in vm.get_methods() :
-         g = x.hmethods[ method ]
-         export_xgmml_cfg(g, fd)
+    for vm in a.get_vms() :
+        x = analysis.VM_BCA( vm )
+        # CFG
+        for method in vm.get_methods() :
+            g = x.hmethods[ method ]
+            export_xgmml_cfg(g, fd)
 
-      if fcg :
-         export_xgmml_fcg(vm, x, fd)
+        if fcg :
+            export_xgmml_fcg(vm, x, fd)
 
-      if efcg :
-         export_xgmml_efcg(vm, x, fd)
+        if efcg :
+            export_xgmml_efcg(vm, x, fd)
 
-   fd.write("</graph>")
-   fd.close()
+    fd.write("</graph>")
+    fd.close()
 
 def main(options, arguments) :
-   if options.input != None and options.output != None :
-      export_apps_to_xgmml( options.input, options.output, options.functions, options.externals )
+    if options.input != None and options.output != None :
+        export_apps_to_xgmml( options.input, options.output, options.functions, options.externals )
 
 if __name__ == "__main__" :
-   parser = OptionParser()
-   for option in options :
-      param = option['name']
-      del option['name']
-      parser.add_option(*param, **option)
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
 
-      
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)    
+
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

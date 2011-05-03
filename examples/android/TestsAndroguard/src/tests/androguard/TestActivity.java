@@ -1,7 +1,10 @@
 package tests.androguard;
 
+import java.io.PrintStream;
+
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.TextView;
 
 public class TestActivity extends Activity {
 	public int value;
@@ -248,11 +251,28 @@ public class TestActivity extends Activity {
 	public static void bla() {
 		System.out.println("k");
 	}
+	
+	public static void bla2(int i) {
+		new PrintStream(System.out).println("k"+i);
+	}
+	
+	public static void bla3(){
+		bla2(3);
+		TestIfs.IF(5);
+	}
 
-	public int pouet2() {
-		synchronized (this) {
-			System.out.println("test");
+	public synchronized int pouet2() {
+		int i = 0, j = 10;
+		System.out.println("test");
+		
+		while (i < j) {
+			try {
+				i = j++ / i;
+			} catch (RuntimeException re) {
+				i = 10;
+			}
 		}
+		this.value = i;
 		return 90;
 	}
 
@@ -264,6 +284,12 @@ public class TestActivity extends Activity {
 		System.out.println(" test_base(500, 3) " + this.test_base(500, 3));
 
 		return 0;
+	}
+	
+	public void anAccessFieldTest( ) {
+		TestArrays a = new TestArrays();
+		a.d = new byte[5];
+		a.d[2] = 'c';
 	}
 
 	/** Called when the activity is first created. */
