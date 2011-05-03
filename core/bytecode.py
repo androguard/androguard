@@ -206,6 +206,9 @@ def PrettyShow2( basic_blocks ) :
       print
 
 def method2dot( mx ) :
+   """
+
+   """
    buff = ""
    for i in mx.basic_blocks.get() :
       val = "green"
@@ -229,6 +232,9 @@ def method2dot( mx ) :
    return buff
 
 def method2format( output, _format="png", mx = None, raw = False ) :
+   """
+
+   """
    try :
       import pydot
    except ImportError :
@@ -250,6 +256,9 @@ def method2format( output, _format="png", mx = None, raw = False ) :
    getattr(d, "write_" + _format)( output )
 
 def method2png( output, mx = None, raw = False ) :
+   """
+
+   """
    buff = raw
    if raw == False :
       buff = method2dot( mx )

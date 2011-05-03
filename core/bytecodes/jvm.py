@@ -855,14 +855,14 @@ class MethodInfo :
 
    def show(self) :
       print "*" * 80
-      print self.format.get_value(), self.__CM.get_string( self.format.get_value().name_index ), self.__CM.get_string( self.format.get_value().descriptor_index )
+      print self.format.get_value(), self.get_class_name(), self.get_name(), self.get_descriptor()
       for i in self.__attributes :
          i.show()
       print "*" * 80
 
    def pretty_show(self, vm_a) :
       print "*" * 80
-      print self.format.get_value(), self.__CM.get_string( self.format.get_value().name_index ), self.__CM.get_string( self.format.get_value().descriptor_index )
+      print self.format.get_value(), self.get_class_name(), self.get_name(), self.get_descriptor()
       for i in self.__attributes :
          i.pretty_show(vm_a.hmethods[ self ])
       print "*" * 80
