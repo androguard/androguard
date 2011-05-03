@@ -74,23 +74,22 @@ def main(options, arguments) :
    
    elif options.input != None :
       _a = AndroguardS( options.input )
-      _x = None
 
       if options.type_pretty != None :
          bytecode.set_pretty_show( int( options.type_pretty ) )
 
       if options.display != None :
          if options.pretty != None :
-            _x = analysis.VM_BCA( _a.get_vm() )
-            _a.pretty_show( _x )
+            _a.ianalyze()
+            _a.pretty_show()
          else :
             _a.show()
 
       elif options.method != None :
          for method in _a.get("method", options.method) :
             if options.pretty != None :
-               _x = analysis.VM_BCA( _a.get_vm() )
-               method.pretty_show( _x )
+               _a.ianalyze()
+               method.pretty_show( _a.get_analysis() )
             else :
                method.show()
       
@@ -99,8 +98,8 @@ def main(options, arguments) :
             field.show()
       
       elif options.xpermissions != None :
-         _x = analysis.VM_BCA( _a.get_vm() )
-         perms_access = _x.tainted_packages.get_permissions( [] )
+         _a.ianalyze()
+         perms_access = _a.get_analysis().tainted_packages.get_permissions( [] )
          for perm in perms_access :
             print "PERM : ", perm
             for path in perms_access[ perm ] :

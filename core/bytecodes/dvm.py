@@ -2341,6 +2341,7 @@ class DBCSpe :
       self.__CM = cm
       self.type_ins_tag = SPECIFIC_DVM_INS
       self.op = op
+      self.op_name = self.op.get_name()
 
    def _reload(self) :
       pass

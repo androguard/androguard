@@ -206,6 +206,9 @@ class BC :
    def show(self) :
       self.__bc.show()
 
+   def pretty_show(self) :
+      self.__bc.pretty_show( self.__a )
+
    def save(self) :
       return self.__bc.save()
 
@@ -354,6 +357,13 @@ class Androguard :
       """
       for _, bc in self.__bc :
          bc.show()
+
+   def pretty_show(self) :
+      """
+         Display all files
+      """
+      for _, bc in self.__bc :
+         bc.pretty_show()
 
    def do(self, fileconf) :
       self.ianalyze()
