@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -19,68 +19,68 @@
 import random
 
 def INIT() :
-   return WM_L4
+    return WM_L4
 
 class WM_L4 :
-   def __init__(self, vm, method, analysis) :
-      self.__vm = vm
-      self.__method = method
-      self.__analysis = analysis
+    def __init__(self, vm, method, analysis) :
+        self.__vm = vm
+        self.__method = method
+        self.__analysis = analysis
 
-      self.__context = {  
-                           "L_X" : [],
-                           "OP_BIND" : {},
-                       }
+        self.__context = {
+                             "L_X" : [],
+                             "OP_BIND" : {},
+                         }
 
-   
-   def get_name(self) :
-      return "WM_OP"
 
-   def __init_context(self) :
-      self.__context[ "OP_BIND" ][ '&' ] = self.new_randint()
-      self.__context[ "OP_BIND" ][ '|' ] = self.new_randint()
-      self.__context[ "OP_BIND" ][ '-' ] = self.new_randint()
-      self.__context[ "OP_BIND" ][ '+' ] = self.new_randint()
-      self.__context[ "OP_BIND" ][ '^' ] = self.new_randint()
+    def get_name(self) :
+        return "WM_OP"
 
-   def run(self) :
-      x = self.__analysis.get(self.__method)
+    def __init_context(self) :
+        self.__context[ "OP_BIND" ][ '&' ] = self.new_randint()
+        self.__context[ "OP_BIND" ][ '|' ] = self.new_randint()
+        self.__context[ "OP_BIND" ][ '-' ] = self.new_randint()
+        self.__context[ "OP_BIND" ][ '+' ] = self.new_randint()
+        self.__context[ "OP_BIND" ][ '^' ] = self.new_randint()
 
-      if self.__context[ "OP_BIND" ] == {} :
-         self.__init_context()
+    def run(self) :
+        x = self.__analysis.get(self.__method)
 
-      for i in x.get_bb() :
-         v = 0
-         for j in i.get_ops() :
-            v = v + self.__context[ "OP_BIND" ][ j ]
-        
-         if v != 0 :
-            self.__context[ "L_X" ].append( v )
-      
-   def new_randint(self) :
-      x = random.randint(300, 1000)
-      
-      for i in self.__context[ "OP_BIND" ] :
-         if self.__context[ "OP_BIND" ][i] == x :
-            self.new_randint()
+        if self.__context[ "OP_BIND" ] == {} :
+            self.__init_context()
 
-      return x
+        for i in x.get_bb() :
+            v = 0
+            for j in i.get_ops() :
+                v = v + self.__context[ "OP_BIND" ][ j ]
 
-   def challenge(self, external_wm) :
-      return external_wm.get_context()["L_X"]
+            if v != 0 :
+                self.__context[ "L_X" ].append( v )
 
-   def get(self) :
-      return self.__context["L_X"]
-   
-   def set_context(self, values) :
-      for x in values :
-         self.__context[ x ] = values[ x ]
+    def new_randint(self) :
+        x = random.randint(300, 1000)
 
-   def get_context(self) :
-      return self.__context
+        for i in self.__context[ "OP_BIND" ] :
+            if self.__context[ "OP_BIND" ][i] == x :
+                self.new_randint()
 
-   def get_export_context(self) :
-      return { "OP_BIND" : self.__context["OP_BIND"] }
+        return x
 
-   def get_import_context(self) :
-      return { "OP_BIND" : self.__context["OP_BIND"] }
+    def challenge(self, external_wm) :
+        return external_wm.get_context()["L_X"]
+
+    def get(self) :
+        return self.__context["L_X"]
+
+    def set_context(self, values) :
+        for x in values :
+            self.__context[ x ] = values[ x ]
+
+    def get_context(self) :
+        return self.__context
+
+    def get_export_context(self) :
+        return { "OP_BIND" : self.__context["OP_BIND"] }
+
+    def get_import_context(self) :
+        return { "OP_BIND" : self.__context["OP_BIND"] }

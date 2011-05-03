@@ -3,7 +3,7 @@
 import random, string
 
 import sys
-PATH_INSTALL = "./"                                                                                                                                                                                                               
+PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard
@@ -50,17 +50,17 @@ _a.insert_string( "BLAAAA" )
 _a.insert_direct_method( "toto2", _b.get("method", "test5")[0] )
 
 for method in _a.get("method", "test_base") :
-   if method.with_descriptor( "(I)I" ) :
-      code = method.get_code()
+    if method.with_descriptor( "(I)I" ) :
+        code = method.get_code()
 
-      code.removes_at( [ 13, 14 ] ) 
+        code.removes_at( [ 13, 14 ] )
 
-      code.insert_at( 13, [ "aload_0" ] )
+        code.insert_at( 13, [ "aload_0" ] )
 
-      method_toto2 = _a.get("method", "toto2")[0]
-      code.insert_at( 14, [ "invokevirtual", "Test1", "toto2", method_toto2.get_descriptor() ] )
- 
-      method.show()
+        method_toto2 = _a.get("method", "toto2")[0]
+        code.insert_at( 14, [ "invokevirtual", "Test1", "toto2", method_toto2.get_descriptor() ] )
+
+        method.show()
 
 #for method in _a.get("method", "test1") :
 #   code = method.get_code()

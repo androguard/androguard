@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -27,16 +27,16 @@ PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1 }
 class Signature :
     def __init__(self, tainted_information) :
         self.__tainted = tainted_information
-        
+
         self._cached_fields = {}
         self._cached_packages = {}
-  
+
         # "L0:L1:L2"     [ "L0", "L1", "L2" ]
         # "L0:L1:L2"     [ { "L0" :}, "L1", "L2" ]
         # "L0:L1"        { "L0" : ["Landroid"] }
 
         self.levels = []
-              
+
         self.__grammars = {
                               0 : ( "_get_strings_a", "_get_fields_a", "_get_packages_a" ),
                               1 : ( "_get_strings_pa", "_get_fields_a", "_get_packages_a" ),
@@ -49,7 +49,7 @@ class Signature :
         for b in analysis_method.basic_blocks.get() :
             l.append( (b.start, "B") )
             l.append( (b.start, "[") )
-                
+
             internal = []
 
             if "return" in b.get_last().get_name() :
@@ -104,7 +104,7 @@ class Signature :
 
     def _get_packages_pa(self, analysis_method) :
         packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
-      
+
         if self._cached_packages == {} :
             for m_t, m in self.__tainted["packages"].get_packages() :
                 self._cached_packages[ m ] = m_t.get_paths_length()
@@ -130,7 +130,7 @@ class Signature :
 
     def _get_fields_a(self, analysis_method) :
         fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
-        
+
         l = []
 
         for f in fields_method :
@@ -147,7 +147,7 @@ class Signature :
             for path in packages_method[ m ] :
                 l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
         return l
-    
+
     def _get_packages_pa_1(self, analysis_method, include_packages) :
         packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
 
@@ -170,7 +170,7 @@ class Signature :
                     l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
 
         return l
-    
+
     def _get_packages_pa_2(self, analysis_method, include_packages) :
         packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
 

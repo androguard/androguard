@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -20,51 +20,51 @@ import misc
 import hashlib
 
 def INIT() :
-   return WM_L1
+    return WM_L1
 
 class WM_L1 :
-   def __init__(self, vm, method, analysis) :
-      self.__vm = vm
-      self.__method = method
-      self.__analysis = analysis
+    def __init__(self, vm, method, analysis) :
+        self.__vm = vm
+        self.__method = method
+        self.__analysis = analysis
 
-      self.__context = {
-                           "L_X" : [],
-                           "STRING" : "",
-                       }
+        self.__context = {
+                             "L_X" : [],
+                             "STRING" : "",
+                         }
 
-   def get_name(self) :
-      return "WM_STRING"
+    def get_name(self) :
+        return "WM_STRING"
 
-   def run(self) :
-      x = self.__analysis.get(self.__method)
+    def run(self) :
+        x = self.__analysis.get(self.__method)
 
-      self.__context[ "STRING" ] = x.get_ts()
+        self.__context[ "STRING" ] = x.get_ts()
 
-      self.__context[ "L_X" ].append( 
-                                       misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() ) 
-                                    )
+        self.__context[ "L_X" ].append(
+                                         misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() )
+                                      )
 
-   def challenge(self, external_wm) :
-      distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
+    def challenge(self, external_wm) :
+        distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
 
-      if distance <= 2 :
-         return self.__context[ "L_X" ]
+        if distance <= 2 :
+            return self.__context[ "L_X" ]
 
-      return []
+        return []
 
-   def get(self) :
-      return self.__context[ "L_X" ]
+    def get(self) :
+        return self.__context[ "L_X" ]
 
-   def set_context(self, values) :
-      for x in values :
-         self.__context[ x ] = values[ x ]
+    def set_context(self, values) :
+        for x in values :
+            self.__context[ x ] = values[ x ]
 
-   def get_context(self) :
-      return self.__context
+    def get_context(self) :
+        return self.__context
 
-   def get_export_context(self) :
-      return self.__context
+    def get_export_context(self) :
+        return self.__context
 
-   def get_import_context(self) :
-      return {}
+    def get_import_context(self) :
+        return {}

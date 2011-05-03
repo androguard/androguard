@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -22,7 +22,7 @@ import os, sys, re, string
 
 from dvm_permissions_unformatted import PERMISSIONS
 
-BASIC_TYPES = { 
+BASIC_TYPES = {
    "byte" : "B",
    "char" : "C",
    "double" : "D",
@@ -48,85 +48,85 @@ ADVANCED_TYPES = {
 }
 
 def translateDescParams( desc_params ) :
-   desc_params = desc_params.replace(" ", "")
-   buff = ""
+    desc_params = desc_params.replace(" ", "")
+    buff = ""
 
-   for elem in desc_params.split(",") :
-      if elem != "" :
+    for elem in desc_params.split(",") :
+        if elem != "" :
 
-         tab = ""
-         if "[" in elem : 
-            tab = "[" * string.count(elem, "[")
+            tab = ""
+            if "[" in elem :
+                tab = "[" * string.count(elem, "[")
 
-            elem = elem[ : tab.find("[") - 2 ]
+                elem = elem[ : tab.find("[") - 2 ]
 
-         if elem not in BASIC_TYPES :
-            buff += tab + "L" + elem.replace(".", "/") + ";"
-         else :
-            buff += tab + BASIC_TYPES[ elem ]
+            if elem not in BASIC_TYPES :
+                buff += tab + "L" + elem.replace(".", "/") + ";"
+            else :
+                buff += tab + BASIC_TYPES[ elem ]
 
-   return buff
+    return buff
 
 def translateDescReturn( desc_return ) :
-   buff = ""
-   for elem in desc_return.split(" ") :
+    buff = ""
+    for elem in desc_return.split(" ") :
 
-      tab = ""
-      if "[" in elem :
-         tab = "[" * string.count(elem, "[")
-         elem = elem[ : tab.find("[") - 2 ]
+        tab = ""
+        if "[" in elem :
+            tab = "[" * string.count(elem, "[")
+            elem = elem[ : tab.find("[") - 2 ]
 
-      if elem in BASIC_TYPES :
-         buff += tab + BASIC_TYPES[ elem ]
-      else :
-         if elem in ADVANCED_TYPES :
-            buff += tab + ADVANCED_TYPES[ elem ]
-            
-   return buff
+        if elem in BASIC_TYPES :
+            buff += tab + BASIC_TYPES[ elem ]
+        else :
+            if elem in ADVANCED_TYPES :
+                buff += tab + ADVANCED_TYPES[ elem ]
+
+    return buff
 
 def translateToCLASS( desc_params, desc_return ) :
-   print desc_params, desc_return,
+    print desc_params, desc_return,
 
-   buff = "(" + translateDescParams( desc_params[ desc_params.find("(") + 1 : -1 ] ) + ")" + translateDescReturn( desc_return )
-   print "----->", buff
+    buff = "(" + translateDescParams( desc_params[ desc_params.find("(") + 1 : -1 ] ) + ")" + translateDescReturn( desc_return )
+    print "----->", buff
 
-   return [ desc_params[ : desc_params.find("(") ], buff ]
+    return [ desc_params[ : desc_params.find("(") ], buff ]
 
 def translateToCLASS2( constant_name, desc_return ):
-   return [ constant_name, translateDescReturn( desc_return ) ]
+    return [ constant_name, translateDescReturn( desc_return ) ]
 
 for perm in PERMISSIONS :
-   for package in PERMISSIONS[perm] :
-      for element in PERMISSIONS[perm][package] :
-         if element[0] == "F" :
-            element.extend( translateToCLASS( element[1], element[2] ) )
-         elif element[0] == "C" :
-            element.extend( translateToCLASS2( element[1], element[2] ) )
+    for package in PERMISSIONS[perm] :
+        for element in PERMISSIONS[perm][package] :
+            if element[0] == "F" :
+                element.extend( translateToCLASS( element[1], element[2] ) )
+            elif element[0] == "C" :
+                element.extend( translateToCLASS2( element[1], element[2] ) )
 
 
 fd = open("../core/bytecodes/dvm_permissions.py", "w")
 
 fd.write("DVM_PERMISSIONS_BY_PERMISSION = {\n")
 
-for perm in PERMISSIONS : 
-   fd.write("\"%s\" : {\n" % perm)
+for perm in PERMISSIONS :
+    fd.write("\"%s\" : {\n" % perm)
 
-   for package in PERMISSIONS[perm] :
-      fd.write("\t\"L%s;\" : [\n" % package.replace(".", "/"))
-      
-      for element in PERMISSIONS[perm][package] :
-         fd.write("\t\t(\"%s\", \"%s\", \"%s\"),\n" % (element[0], element[-2], element[-1]) )
+    for package in PERMISSIONS[perm] :
+        fd.write("\t\"L%s;\" : [\n" % package.replace(".", "/"))
 
-      fd.write("\t],\n")
-   fd.write("},\n")
+        for element in PERMISSIONS[perm][package] :
+            fd.write("\t\t(\"%s\", \"%s\", \"%s\"),\n" % (element[0], element[-2], element[-1]) )
+
+        fd.write("\t],\n")
+    fd.write("},\n")
 fd.write("}\n\n")
 
 
 fd.write("DVM_PERMISSIONS_BY_ELEMENT = { \n")
-for perm in PERMISSIONS : 
-   for package in PERMISSIONS[perm] :
-      for element in PERMISSIONS[perm][package] :
-         fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(".", "/"), element[-2], element[-1], perm))
+for perm in PERMISSIONS :
+    for package in PERMISSIONS[perm] :
+        for element in PERMISSIONS[perm][package] :
+            fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(".", "/"), element[-2], element[-1], perm))
 fd.write("}\n")
 
 

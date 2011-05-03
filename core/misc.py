@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -36,31 +36,31 @@ class Color:
     invert = "\033[7m"
 
 def long2str(l):
-   """Convert an integer to a string."""   
-   if type(l) not in (types.IntType, types.LongType):   
-      raise ValueError, 'the input must be an integer'
-                             
-   if l < 0:   
-      raise ValueError, 'the input must be greater than 0'      
-   s = ''   
-   while l:         
-      s = s + chr(l & 255L)                                                      
-      l >>= 8
+    """Convert an integer to a string."""
+    if type(l) not in (types.IntType, types.LongType):
+        raise ValueError, 'the input must be an integer'
 
-   return s
+    if l < 0:
+        raise ValueError, 'the input must be greater than 0'
+    s = ''
+    while l:
+        s = s + chr(l & 255L)
+        l >>= 8
+
+    return s
 
 
 def str2long(s):
-   """Convert a string to a long integer."""             
-   if type(s) not in (types.StringType, types.UnicodeType):
-      raise ValueError, 'the input must be a string'
-      
-   l = 0L   
-   for i in s:         
-      l <<= 8           
-      l |= ord(i)
-      
-   return l
+    """Convert a string to a long integer."""
+    if type(s) not in (types.StringType, types.UnicodeType):
+        raise ValueError, 'the input must be a string'
+
+    l = 0L
+    for i in s:
+        l <<= 8
+        l |= ord(i)
+
+    return l
 
 def levenshtein(a,b):
     "Calculates the Levenshtein distance between a and b."
@@ -69,7 +69,7 @@ def levenshtein(a,b):
         # Make sure n <= m, to use O(min(n,m)) space
         a,b = b,a
         n,m = m,n
-        
+
     current = range(n+1)
     for i in range(1,m+1):
         previous, current = current, [i]+[0]*n
@@ -79,22 +79,22 @@ def levenshtein(a,b):
             if a[j-1] != b[i-1]:
                 change = change + 1
             current[j] = min(add, delete, change)
-            
+
     return current[n]
 
 # progressbar  - Text progressbar library for python.
 # Copyright (c) 2005 Nilton Volpato
-# 
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-# 
+#
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -339,4 +339,4 @@ class ProgressBar(object):
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
 
 def random_string() :
-   return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
+    return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )

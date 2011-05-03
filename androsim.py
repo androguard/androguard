@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -31,28 +31,28 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
-   if options.input != None :
-      a = androguard.Androguard( options.input )
-      a.ianalyze()
+    if options.input != None :
+        a = androguard.Androguard( options.input )
+        a.ianalyze()
 
-      vm1 = a.get_bc()[0][1].get_vm()
-      vmx1 = a.get_bc()[0][1].get_analysis()
+        vm1 = a.get_bc()[0][1].get_vm()
+        vmx1 = a.get_bc()[0][1].get_analysis()
 
-      vm2 = a.get_bc()[1][1].get_vm()
-      vmx2 = a.get_bc()[1][1].get_analysis()
+        vm2 = a.get_bc()[1][1].get_vm()
+        vmx2 = a.get_bc()[1][1].get_analysis()
 
-      diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
+        diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
 
-   elif options.version != None :
-      print "Androsim version %s" % misc.VERSION
+    elif options.version != None :
+        print "Androsim version %s" % misc.VERSION
 
-if __name__ == "__main__" :                                                     
-   parser = OptionParser()
-   for option in options :
-      param = option['name']      
-      del option['name']      
-      parser.add_option(*param, **option)
+if __name__ == "__main__" :
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
 
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

@@ -16,10 +16,10 @@ androguard.OBFU_Names( a, "Test1", ".", ".", androguard.OBFU_NAMES_METHODS )
 
 i = 0
 while i < len(TEST) :
-   _a = a.get("file", TEST[i])
-   
-   fd = open( TEST_OUTPUT[i], "w" )
-   fd.write( _a.save() )
-   fd.close()
+    _a = a.get("file", TEST[i])
 
-   i = i + 1
+    fd = open( TEST_OUTPUT[i], "w" )
+    fd.write( _a.save() )
+    fd.close()
+
+    i = i + 1

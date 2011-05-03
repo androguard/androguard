@@ -18,6 +18,5 @@ a.show()
 
 j = dvm.DalvikVMFormat( a.get_dex() )
 
-# SHOW CLASS (verbose) 
+# SHOW CLASS (verbose)
 #j.show()
-

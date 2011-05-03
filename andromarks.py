@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -33,27 +33,27 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_5]
 
-def main(options, arguments) :                    
-   if options.version != None :
-      print "Andromarks version %s" % misc.VERSION
+def main(options, arguments) :
+    if options.version != None :
+        print "Andromarks version %s" % misc.VERSION
 
-   elif options.directory != None and options.xml != None :
-      for root, dirs, files in os.walk( options.directory ) :
-         if files != [] :
-            for file in files :
-               if ".class" in file :
-                  print "FILE", file
-                  _b = androguard.AndroguardS(root + "/" + file)
-                  for class_name in _b.get_classes_names() :
-                     androguard.WMCheck( _b, class_name, options.xml )
+    elif options.directory != None and options.xml != None :
+        for root, dirs, files in os.walk( options.directory ) :
+            if files != [] :
+                for file in files :
+                    if ".class" in file :
+                        print "FILE", file
+                        _b = androguard.AndroguardS(root + "/" + file)
+                        for class_name in _b.get_classes_names() :
+                            androguard.WMCheck( _b, class_name, options.xml )
 
-if __name__ == "__main__" :                                                     
-   parser = OptionParser()
-   for option in options :
-      param = option['name']      
-      del option['name']      
-      parser.add_option(*param, **option)
+if __name__ == "__main__" :
+    parser = OptionParser()
+    for option in options :
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
 
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)
