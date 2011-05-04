@@ -238,7 +238,11 @@ if __name__ == "__main__" :
         TestNCS( n, TESTS_CLOSED_SIGN, "closed" )
         TestCMID( n, TESTS_CLOSED_SIGN, "closed" )
 
+        # Different signature
         TestNCD( n, TESTS_DIFFERENT_SIGN, "different" )
+        
+        
+        
         # Permutations
         #TestNCDPermutations( n, "Android", 0.2 )
         #n.clear_caches()
