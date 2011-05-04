@@ -18,7 +18,7 @@
 
 import hashlib
 
-from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
+from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
 
 #struct libsimilarity {
 #   void *orig;
@@ -28,6 +28,8 @@ from ctypes import cdll, c_float, c_uint, c_void_p, Structure, addressof, create
 
 #   unsigned int *corig;
 #   unsigned int *ccmp;
+#   
+#   float res;
 #};
 class LIBSIMILARITY_T(Structure) :
     _fields_ = [("orig", c_void_p),
@@ -37,6 +39,8 @@ class LIBSIMILARITY_T(Structure) :
 
                 ("corig", c_uint),
                 ("ccmp", c_uint),
+
+                ("res", c_float),
                ]
 
 ZLIB_COMPRESS =         0
@@ -50,9 +54,9 @@ class SIMILARITY :
         self._u = cdll.LoadLibrary( path )
 
         self._u.compress.restype = c_uint
-        self._u.ncd.restype = c_float
-        self._u.ncs.restype = c_float
-        self._u.cmid.restype = c_float
+        self._u.ncd.restype = c_int
+        self._u.ncs.restype = c_int
+        self._u.cmid.restype = c_int
         self._u.entropy.restype = c_float
 
         self._level = 9
@@ -104,12 +108,12 @@ class SIMILARITY :
         self.__libsim_t.corig = addressof( corig )
         self.__libsim_t.ccmp = addressof( ccmp )
 
-        res = func( self._level, addressof( self.__libsim_t ) )
+        ret = func( self._level, addressof( self.__libsim_t ) )
 
         self.add_in_caches(s1, corig)
         self.add_in_caches(s2, ccmp)
 
-        return res
+        return self.__libsim_t.res
 
     def ncd(self, s1, s2) :
         return self._sim( s1, s2, self._u.ncd )

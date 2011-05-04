@@ -19,7 +19,6 @@
 import re, random, string, cPickle
 
 from error import error
-from sign import Signature
 import jvm, dvm
 
 from dvm_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
@@ -1649,6 +1648,9 @@ class M_BCA :
     def get_ts(self) :
         return self.__TS.get_string()
 
+    def get_vm(self) :
+        return self.__vm
+
     def get_method(self) :
         return self.__method
 
@@ -1684,6 +1686,27 @@ class M_BCA :
                 for context in methods[method] :
                     print "\t\t\t |---|", context.details
 
+SIGNATURE_L0_0 = "L0_0"
+SIGNATURE_L0_1 = "L0_1"
+SIGNATURE_L0_2 = "L0_2"
+SIGNATURE_L0_3 = "L0_3"
+SIGNATURE_L0_4 = "L0_4" 
+SIGNATURE_L0_5 = "L0_5"
+SIGNATURE_L0_0_L1 = "L0_0:L1"
+SIGNATURE_L0_1_L1 = "L0_1:L1"
+SIGNATURE_L0_0_L2 = "L0_0:L2"
+SIGNATURE_L0_0_L3 = "L0_0:L3"
+
+SIGNATURES = {
+                SIGNATURE_L0_0 : { "type" : 0 },
+                SIGNATURE_L0_1 : { "type" : 1 },
+                SIGNATURE_L0_2 : { "type" : 2, "arguments" : ["Landroid"] },
+                SIGNATURE_L0_3 : { "type" : 2, "arguments" : ["java"] },
+                SIGNATURE_L0_4 : { "type" : 3, "arguments" : ["Landroid"] },
+                SIGNATURE_L0_5 : { "type" : 3, "arguments" : ["Ljava"] },
+            }
+
+from sign import Signature
 class VM_BCA :
     """
        This class analyses a class file or a dex file
@@ -1822,13 +1845,27 @@ class VM_BCA :
         for i in self.hmethods :
             yield self.hmethods[i]
 
-    def get_method_signature(self, method, grammar_type, options=[]) :
+    def get_method_signature(self, method, grammar_type="", options={}, predef_sign="") :
         """
            Return a specific signature for a specific method
 
            @rtype : string
         """
-        return self.signature.get_method( self.hmethods[ method ], grammar_type, options )
+        if predef_sign != "" :
+            g = ""
+            o = {} 
+
+            for i in predef_sign.split(":") :
+                if "_" in i :
+                    g += "L0:"
+                    o[ "L0" ] = SIGNATURES[ i ]
+                else :
+                    g += i
+                    g += ":" 
+            
+            return self.signature.get_method( self.get( method ), g[:-1], o )
+        else : 
+            return self.signature.get_method( self.get( method ), grammar_type, options )
 
     def get(self, method) :
         """

@@ -1,14 +1,33 @@
 #!/usr/bin/env python
 
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis
+from analysis import *
 
-#TEST_CASE  = 'examples/android/TC/bin/classes.dex'
-TEST_CASE = "apks/wat1.3.7.apk"
+TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+#TEST_CASE = "apks/wat1.3.7.apk"
 
 GRAMMAR_TYPE_ANONYMOUS = 0
 
@@ -51,11 +70,17 @@ for method in a.get_methods() :
     #   continue
 
     print method.get_class_name(), method.get_name(), method.get_descriptor()
-    print "1 : \t", x.get_method_signature(method, 0)
-    print "2 : \t", x.get_method_signature(method, 1)
-    print "3 : \t", x.get_method_signature(method, 2, ["Landroid"])
-    print "4 : \t", x.get_method_signature(method, 2, ["Ljava"])
-    print "5 : \t", x.get_method_signature(method, 3, ["Landroid"])
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_2).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_5).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L1).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L2).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L3).get_string()
+
+    print
 
 #   if key in VALUES :
 #      for i in VALUES[ key ] :

@@ -27,14 +27,16 @@ struct libsimilarity {
 
    unsigned int *corig;
    unsigned int *ccmp;
+
+   float res;
 };
 typedef struct libsimilarity libsimilarity_t;
 
 void set_compress_type(int);
 unsigned int compress(int, void *, unsigned int);
-float ncd(int, libsimilarity_t *);
-float ncs(int, libsimilarity_t *);
-float cmid(int, libsimilarity_t *);
+int ncd(int, libsimilarity_t *);
+int ncs(int, libsimilarity_t *);
+int cmid(int, libsimilarity_t *);
 float entropy(void *, unsigned int);
 
 #endif
