@@ -24,6 +24,11 @@ from analysis import *
 
 import bytecode
 
+######################### DIFF ###############################
+
+def filter_skip_meth_basic( m ) :
+    return False
+
 class CheckSumMeth :
     def __init__(self, m1, sim) :
         code = m1.get_code()
@@ -74,9 +79,17 @@ def filter_sim_meth_basic( m1, m2, sim, name_attribute ) :
 
     return (ncd1 + ncd2) / 2.0
 
+def filter_sort_meth_basic( x ) :
+    z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
+
+    if get_debug() :
+        for i in z :
+            debug("\t %s %s %s %f" %(i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]))
+    
+    return z[:1]
+
 def filter_sim_bb_basic( bb1, bb2, sim ) :
     ncd = sim.ncd( bb1.get_buff(), bb2.get_buff() )
-
     return ncd
 
 class CheckSumBB :
@@ -311,24 +324,6 @@ def filter_diff_ins_basic( dbb, sim, name_attribute ) :
 
     dbb.diff_ins( DiffINS( final_add, final_rm ) )
 
-FILTER_NAME =           "FILTER_NAME"
-FILTER_CHECKSUM_METH =  "FILTER_CHECKSUM_METH"
-FILTER_SIM_METH =       "FILTER_SIM_METH"
-FILTER_CHECKSUM_BB =    "FILTER_CHECKSUM_BB"
-FILTER_SIM_BB =         "FILTER_SIM_BB"
-FILTER_DIFF_INS =       "FILTER_DIFF_INS"
-FILTER_CHECKSUM_VM =    "FILTER_CHECKSUM_VM"
-FILTER_SIM_VM =         "FILTER_SIM_VM"
-FILTER_SKIP_METHOD =    "FILTER_SKIP_METHOD"
-
-FILTERS = {
-                    "FILTER_BASIC" : {  FILTER_CHECKSUM_METH : filter_checksum_meth_basic,
-                                        FILTER_SIM_METH : filter_sim_meth_basic,
-                                        FILTER_CHECKSUM_BB : filter_checksum_bb_basic,
-                                        FILTER_SIM_BB : filter_sim_bb_basic,
-                                        FILTER_DIFF_INS : filter_diff_ins_basic,
-                                      },
-          }
 
 DIFF_BB_TAG = {
                         "ORIG" : 0,
@@ -375,7 +370,7 @@ class Method :
         setattr(self, "bb_sha256_" + name, bbhash)
         setattr(self, "sha256_" + name, hashlib.sha256( fm.get_buff() ).hexdigest())
 
-    def similarity(self, new_method, func_sim, name_attribute) :
+    def similarity(self, name_attribute, new_method, func_sim) :
         x = None
         try :
             x = getattr( self, "hash_" + name_attribute )
@@ -385,16 +380,14 @@ class Method :
 
         x[ new_method ] = func_sim( self, new_method, self.sim, name_attribute )
 
-    def sort(self, name_attribute) :
+    def sort(self, name_attribute, func_sort) :
         x = getattr( self, "hash_" + name_attribute )
+        z = func_sort( x )
+        setattr( self, "sort_" + name_attribute, z )
 
-        z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
-
-        if get_debug() :
-            for i in z :
-                debug("\t %s %s %s %f" %(i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]))
-
-        setattr( self, "sort_" + name_attribute, z[:1] )
+        if z == [] :
+            return False
+        return True
 
     def checksort(self, name_attribute, method) :
         z = getattr( self, "sort_" + name_attribute )
@@ -405,12 +398,20 @@ class Method :
 
     def getfirstsort(self, name_attribute) :
         z = getattr( self, "sort_" + name_attribute )
+        if z == [] :
+            return 1.0
+
         return z[0][1]
 
     def diff(self, name_attribute, func_sim_bb, func_diff_ins):
         self.sim.set_compress_type( XZ_COMPRESS )
 
         z = getattr( self, "sort_" + name_attribute )
+        if z == [] :
+            setattr(self, "dbb_" + name_attribute, {})
+            setattr(self, "nbb_" + name_attribute, {})
+            return
+
         bb1 = getattr( self, "bb_" + name_attribute )
 
         ### Dict for diff basic blocks
@@ -550,7 +551,7 @@ class Method :
             if details :
                 dbb[d].show()
 
-        print "NEW BASIC BLOCKS :"
+        print "\tNEW BASIC BLOCKS :"
         for b in nbb :
             print "\t\t", nbb[b].name
 
@@ -563,24 +564,64 @@ class Method :
         if details :
             bytecode.PrettyShow1( self.mx.basic_blocks.get() )
 
-BASE        =       "base"
-METHODS     =       "methods"
-HASHSUM     =       "hashsum"
-DIFFMETHODS =       "diffmethods"
-NEWMETHODS  =       "newmethods"
-DIFFVMS     =       "diffvms"
-class Diff :
-    def __init__(self, vm1, vm2, F=FILTERS) :
+FILTER_NAME             =           "FILTER_NAME"               # filter attribute name
+FILTER_CHECKSUM_METH    =           "FILTER_CHECKSUM_METH"      # function to checksum a method
+FILTER_SIM_METH         =           "FILTER_SIM_METH"           # function to calculate the similarity between two methods
+FILTER_SORT_METH        =           "FILTER_SORT_METH"          # function to sort all diffing methods
+FILTER_SKIP_METH        =           "FILTER_SKIP_METH"          # function to skip methods
+FILTER_MARK_METH        =           "FILTER_MARK_METH"          # function to mark all diffing methods
+FILTER_MARK_VM          =           "FILTER_MARK_VM"            # function to mark vms
+FILTER_CHECKSUM_BB      =           "FILTER_CHECKSUM_BB"        # function to checksum a basic block
+FILTER_SIM_BB           =           "FILTER_SIM_BB"             # function to calculate the similarity between two basic blocks
+FILTER_DIFF_INS         =           "FILTER_DIFF_INS"           # function to diff two basic blocks
+FILTER_CHECKSUM_VM      =           "FILTER_CHECKSUM_VM"        # function to checksum a vm
+FILTER_SIM_VM           =           "FILTER_SIM_VM"             # function to calculate the similarity between two vms 
+
+FILTERS_DIFF = {
+                    "FILTER_BASIC" : {  FILTER_CHECKSUM_METH    : filter_checksum_meth_basic,
+                                        FILTER_SIM_METH         : filter_sim_meth_basic,
+                                        FILTER_SORT_METH        : filter_sort_meth_basic,
+                                        FILTER_SKIP_METH        : filter_skip_meth_basic,
+
+                                        FILTER_CHECKSUM_BB      : filter_checksum_bb_basic,
+                                        FILTER_SIM_BB           : filter_sim_bb_basic,
+                                        
+                                        FILTER_DIFF_INS         : filter_diff_ins_basic,
+                                      },
+               }
+
+BASE            =       "base"
+METHODS         =       "methods"
+HASHSUM         =       "hashsum"
+DIFFMETHODS     =       "diffmethods"
+NEWMETHODS      =       "newmethods"
+DELETEMETHODS   =       "deletemethods"
+MATCHMETHODS    =       "matchmethods"
+DIFFVMS         =       "diffvms"
+class Diff(object) :
+    def __init__(self, vm1, vm2, F=FILTERS_DIFF) :
+        #set_debug()
+        
         self.vms = [ vm1, vm2 ]
+        self.vm1 = vm1
+        self.vm2 = vm2
+
         self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
         self.sim.set_compress_type( XZ_COMPRESS )
 
-        #set_debug()
-
         self.F = F
-
         self.filters = {}
 
+
+        self._init_filters()
+        self._init_index_methods()
+        self._init_similarity()
+        self._init_sort_methods()
+        self._init_diff_methods()
+        self._init_new_methods()
+
+
+    def _init_filters(self) :
         for i in self.F :
             self.filters[ i ] = {}
             self.filters[ i ][ BASE ] = { FILTER_NAME : i }
@@ -589,12 +630,19 @@ class Diff :
             self.filters[ i ][ HASHSUM ] = {}
             self.filters[ i ][ DIFFMETHODS ] = []
             self.filters[ i ][ NEWMETHODS ] = []
+            self.filters[ i ][ DELETEMETHODS ] = []
+            self.filters[ i ][ MATCHMETHODS ] = []
 
+    def _init_index_methods(self) :
         for i in self.vms :
-            for m in i[0].get_methods() :
-                m = Method( i[0], i[1], m, self.sim )
+            for method in i[0].get_methods() :
+                m = Method( i[0], i[1], method, self.sim )
 
                 for fil in self.filters :
+                    # Skip the method ?
+                    if self.filters[fil][BASE][FILTER_SKIP_METH]( method ) :
+                        continue
+                    
                     if i[0] not in self.filters[fil][METHODS] :
                         self.filters[fil][METHODS][ i[0] ] = []
                         self.filters[fil][HASHSUM][ i[0] ] = []
@@ -603,36 +651,60 @@ class Diff :
                     m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_CHECKSUM_METH], self.filters[fil][BASE][FILTER_CHECKSUM_BB] )
                     self.filters[fil][HASHSUM][i[0]].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
 
+    def _init_similarity(self) :
         # Check if some methods in the first file has been modified
         for fil in self.filters :
-            for j in self.filters[fil][METHODS][vm1[0]] :
+            for j in self.filters[fil][METHODS][self.vm1[0]] :
                 for i1 in self.filters[fil][METHODS] :
-                    if i1 != vm1[0] :
+                    if i1 != self.vm1[0] :
                         # B1 not at 0.0 in BB2
                         if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][i1] :
                             for k in self.filters[fil][METHODS][i1] :
                                 # B2 not at 0.0 in BB1
-                                if k.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][vm1[0]] :
-                                    j.similarity( k, self.filters[fil][BASE][FILTER_SIM_METH], self.filters[fil][BASE][FILTER_NAME] )
+                                if k.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][self.vm1[0]] :
+                                    j.similarity( self.filters[fil][BASE][FILTER_NAME], k, self.filters[fil][BASE][FILTER_SIM_METH] )
                                     if j not in self.filters[fil][DIFFMETHODS] :
                                         self.filters[fil][DIFFMETHODS].append(j)
+                                # B2 matched perfectly
+                                else :
+                                    if k not in self.filters[fil][MATCHMETHODS] :
+                                        self.filters[fil][MATCHMETHODS].append( k )
+                        # B1 matched perfectly
+                        else :
+                            if j not in self.filters[fil][MATCHMETHODS] :
+                                self.filters[fil][MATCHMETHODS].append( j )
 
+    def _init_sort_methods(self) :
+#       print "DEBUG DIFF METHODS"
+        for fil in self.filters :
+            delete_methods = []
+            for j in self.filters[fil][DIFFMETHODS] :
+#               print "DEBUG", j, j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()
+                ret = j.sort( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_SORT_METH] )
+                if ret == False :
+                    delete_methods.append( j )
+
+            for j in delete_methods :
+                self.filters[ fil ][ DELETEMETHODS ].append( j )
+                pos = self.filters[ fil ][ DIFFMETHODS ].index( j )
+                self.filters[ fil ][ DIFFMETHODS ].remove( j )
+
+    def _init_diff_methods(self) :
 #       print "DEBUG DIFF METHODS"
         for fil in self.filters :
             for j in self.filters[fil][DIFFMETHODS] :
 #               print "DEBUG", j, j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()
-                j.sort( self.filters[fil][BASE][FILTER_NAME] )
                 j.diff( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_SIM_BB], self.filters[fil][BASE][FILTER_DIFF_INS] )
-#               j.show( self.filters[fil][BASE][FILTER_NAME] )
 
+    def _init_new_methods(self) :
         # Check if some methods in the second file are totally new !
         for fil in self.filters :
-            for j in self.filters[fil][METHODS][vm2[0]] :
+            for j in self.filters[fil][METHODS][self.vm2[0]] :
 
                 # new methods can't be in diff methods
                 if j not in self.filters[fil][DIFFMETHODS] :
                     # new methods hashs can't be in first file
-                    if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][vm1[0]] :
+                    if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][self.vm1[0]] :
                         ok = True
                         # new methods can't be compared to another one
                         for diff_method in self.filters[fil][DIFFMETHODS] :
@@ -649,6 +721,12 @@ class Diff :
 
     def get_new_methods(self) :
         return self.get_elem( NEWMETHODS )
+    
+    def get_delete_methods(self) :
+        return self.get_elem( DELETEMETHODS )
+
+    def get_match_methods(self) :
+        return self.get_elem( MATCHMETHODS )
 
     def get_elem(self, attr) :
         d = {}
@@ -656,9 +734,9 @@ class Diff :
             d[ fil ] = [ x for x in self.filters[fil][attr] ]
         return d
 
-#######################################################################################################
+######################### SIM ###############################
 
-def filter_sim_3( m1, m2, sim, name_attribute ) :
+def filter_sim_meth_sim( m1, m2, sim, name_attribute ) :
     mysign = SIGNATURE_L0_2
     s1 = m1.vmx.get_method_signature( m1.m, predef_sign=mysign ).get_string()
     s2 = m2.vmx.get_method_signature( m2.m, predef_sign=mysign ).get_string()
@@ -670,29 +748,49 @@ class CheckSumVM :
     def __init__(self, vm) :
         self.vm = vm
 
-def filter_checksum_vm_1( vm ):
+def filter_checksum_vm_sim( vm ):
     return CheckSumVM( vm )
 
-def filter_sim_vm_1( vm1, vm2, name_attribute, sim ):
+COEFF_SIM_VM = {
+        "STRING" : 1,
+        "CONSTANT_FLOAT" : 1,
+        "CLINIT" : 1
+}
+
+def filter_sim_vm_sim( vm1, vm2, name_attribute, sim ):
     svm1 = ''.join( vm1.vm[0].get_strings() )
     svm2 = ''.join( vm2.vm[0].get_strings() )
 
-    return sim.ncd( svm1, svm2 )
+    return { "STRING" : sim.ncd( svm1, svm2 ) }
 
-def filter_skip_method( m ) :
-    if m.get_code().get_length() < 100 :
+def filter_skip_meth_sim( m ) :
+    if m.get_code().get_length() < 50 :
         return True
 
     return False
 
+def filter_mark_vm( values ) :
+    return values.values()
+
+def filter_mark_meth( v ) :
+    if v >= 0.5 :
+        return 1.0
+
+    return v
+
 FILTERS_SIM = {
                     "FILTER_SIM" : {
-                                            FILTER_CHECKSUM_VM : filter_checksum_vm_1,
-                                            FILTER_SIM_VM : filter_sim_vm_1,
-                                            FILTER_CHECKSUM_METH : filter_checksum_meth_basic,
-                                            FILTER_SIM_METH : filter_sim_3,
-                                            FILTER_CHECKSUM_BB : filter_checksum_bb_basic,
-                                            FILTER_SKIP_METHOD : filter_skip_method,
+                                            FILTER_CHECKSUM_VM      : filter_checksum_vm_sim,
+                                            FILTER_SIM_VM           : filter_sim_vm_sim,
+                                            FILTER_MARK_VM          : filter_mark_vm,
+                                            
+                                            FILTER_CHECKSUM_METH    : filter_checksum_meth_basic,
+                                            FILTER_SIM_METH         : filter_sim_meth_sim,
+                                            FILTER_SORT_METH        : filter_sort_meth_basic,
+                                            FILTER_SKIP_METH        : filter_skip_meth_sim,
+                                            FILTER_MARK_METH        : filter_mark_meth,
+
+                                            FILTER_CHECKSUM_BB      : filter_checksum_bb_basic,
                                    },
                     }
 
@@ -706,77 +804,55 @@ FILTERS_SIM = {
         # exceptions
         # fill array data
         # Format
-class Sim :
+class Sim(Diff) :
     def __init__(self, vm1, vm2, F=FILTERS_SIM) :
-        self.vms = [ vm1, vm2 ]
-        
-
-        self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
-        self.sim.set_compress_type( XZ_COMPRESS )
-
         #set_debug()
+        self.marks = {} 
+        super(Sim, self).__init__(vm1, vm2, F)
 
-        self.F = F
+        self._init_diff_vms()
+        self._init_mark_methods()
 
-        self.filters = {}
-        self.scoring = {} 
+
+        print self.marks
+        for fil in self.marks :
+            s = 0.0
+            for i in self.marks[fil] :
+                s += (1.0 - i)
+            print "\t", (s/len(self.marks[fil])) * 100
+
+    def _init_filters(self) :
+        super(Sim, self)._init_filters()
 
         for i in self.F :
-            self.filters[ i ] = {}
-            self.filters[ i ][ BASE ] = { FILTER_NAME : i }
-            self.filters[ i ][ BASE ].update( self.F[ i ] )
-            self.filters[ i ][ METHODS ] = {}
-            self.filters[ i ][ HASHSUM ] = {}
-            self.filters[ i ][ DIFFMETHODS ] = []
-            self.filters[ i ][ NEWMETHODS ] = []
-            self.filters[ i ][ DIFFVMS ] = []
-            
-            self.scoring[ i ] = []
-
+            self.marks[ i ] = []
+    
+    def _init_diff_vms(self) :
         for fil in self.filters :
-            x1 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( vm1 ) 
-            x2 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( vm1 )
+            x1 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( self.vm1 ) 
+            x2 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( self.vm2 )
 
             val = self.filters[fil][BASE][FILTER_SIM_VM]( x1, x2, self.filters[fil][BASE][FILTER_NAME], self.sim )
-            self.scoring[fil].append( val )
+            self.marks[fil].extend( self.filters[fil][BASE][FILTER_MARK_VM]( val ) )
 
-        for i in self.vms :
-            for m in i[0].get_methods() :
-                # Skip the method ?
-                if self.filters[fil][BASE][FILTER_SKIP_METHOD]( m ) :
-                    continue
+    def _init_diff_methods(self) :
+        # we don't want to diff instructions of basic blocks
+        pass
 
-                m = Method( i[0], i[1], m, self.sim )
-
-                for fil in self.filters :
-                    if i[0] not in self.filters[fil][METHODS] :
-                        self.filters[fil][METHODS][ i[0] ] = []
-                        self.filters[fil][HASHSUM][ i[0] ] = []
-
-                    self.filters[fil][METHODS][ i[0] ].append( m )
-                    m.add_attribute( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_CHECKSUM_METH], self.filters[fil][BASE][FILTER_CHECKSUM_BB] )
-                    self.filters[fil][HASHSUM][i[0]].append( m.getsha256( self.filters[fil][BASE][FILTER_NAME] ) )
-
-        # Check if some methods in the first file has been modified
-        for fil in self.filters :
-            for j in self.filters[fil][METHODS][vm1[0]] :
-                for i1 in self.filters[fil][METHODS] :
-                    if i1 != vm1[0] :
-                        # B1 not at 0.0 in BB2
-                        if j.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][i1] :
-                            for k in self.filters[fil][METHODS][i1] :
-                                # B2 not at 0.0 in BB1
-                                if k.getsha256( self.filters[fil][BASE][FILTER_NAME] ) not in self.filters[fil][HASHSUM][vm1[0]] :
-                                    j.similarity( k, self.filters[fil][BASE][FILTER_SIM_METH], self.filters[fil][BASE][FILTER_NAME] )
-                                    if j not in self.filters[fil][DIFFMETHODS] :
-                                        self.filters[fil][DIFFMETHODS].append(j)
-
+    def _init_mark_methods(self) :
 #       print "DEBUG DIFF METHODS"
         for fil in self.filters :
+            # mark diff methods
             for j in self.filters[fil][DIFFMETHODS] :
                 debug("%s %s %s" % (j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()))
-                j.sort( self.filters[fil][BASE][FILTER_NAME] )
-                self.scoring[fil].append( j.getfirstsort( self.filters[fil][BASE][FILTER_NAME] ) )
+                
+                v = self.filters[fil][BASE][FILTER_MARK_METH]( j.getfirstsort( self.filters[fil][BASE][FILTER_NAME] ) )
+                self.marks[fil].append( v )
+
+            # mark match methods
+            for m in self.filters[ fil ][ MATCHMETHODS ] :
+                v = self.filters[fil][BASE][FILTER_MARK_METH]( 0.0 )
+                self.marks[fil].append( v )
 
         # Check if some methods in the second file are totally new !
         #for fil in self.filters :
@@ -792,6 +868,7 @@ class Sim :
         #                    #print diff_method, "--->", j
         #                    if diff_method.checksort( self.filters[fil][BASE][FILTER_NAME], j ) :
         #                        ok = False
+        
         #                        break
 
                         # It's a new method in VM2, compare them to VM1
@@ -809,13 +886,3 @@ class Sim :
                #print "DEBUG", method.m.get_class_name(), method.m.get_name(), method.m.get_descriptor()
         #       method.sort( self.filters[fil][BASE][FILTER_NAME] ) 
         #       self.scoring.append( method.getclosesort( self.filters[fil][BASE][FILTER_NAME] ) )
-
-        
-        print self.scoring
-        for fil in self.scoring :
-            print self.scoring[fil]
-            s = 0.0
-            for i in self.scoring[fil] :
-                s += (1.0 - i)
-            print "\t", (s/len(self.scoring[fil])) * 100
-

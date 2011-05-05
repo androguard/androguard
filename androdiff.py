@@ -42,8 +42,7 @@ def main(options, arguments) :
         vm2 = a.get_bc()[1][1].get_vm()
         vmx2 = a.get_bc()[1][1].get_analysis()
 
-        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS )
-
+        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS_DIFF )
         details = False
         if options.display != None :
             details = True
@@ -59,6 +58,13 @@ def main(options, arguments) :
         new_methods = d.get_new_methods()
         for i in new_methods :
             for elem in new_methods[ i ] :
+                elem.show2( details )
+                print
+
+        print "DELETE METHODS :"
+        del_methods = d.get_delete_methods()
+        for i in del_methods :
+            for elem in del_methods[ i ] :
                 elem.show2( details )
                 print
 
