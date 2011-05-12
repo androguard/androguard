@@ -26,7 +26,7 @@ import codecs
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, analysis, dvm
+import apk
 from misc import VERSION
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
@@ -39,10 +39,10 @@ def main(options, arguments) :
 
         buff = ""
         if ".apk" in options.input :
-            a = dvm.APK( options.input )
+            a = apk.APK( options.input )
             buff = a.xml[ "AndroidManifest.xml" ].toprettyxml()
         elif ".xml" in options.input :
-            ap = dvm.AXMLPrinter( open(options.input, "rb").read() )
+            ap = apk.AXMLPrinter( open(options.input, "rb").read() )
             buff = minidom.parseString( ap.getBuff() ).toprettyxml()
         else :
             print "Unknown file type"

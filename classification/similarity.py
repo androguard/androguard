@@ -58,6 +58,7 @@ class SIMILARITY :
         self._u.ncs.restype = c_int
         self._u.cmid.restype = c_int
         self._u.entropy.restype = c_float
+        self._u.levenshtein.restype = c_uint
 
         self._level = 9
 
@@ -128,6 +129,10 @@ class SIMILARITY :
         res = self._u.entropy( cast( s1, c_void_p ), len( s1 ) )
         return res
 
+    def levenshtein(self, s1, s2) :
+        res = self._u.levenshtein( cast( s1, c_void_p ), len( s1 ), cast( s2, c_void_p ), len( s2 ) )
+        return res
+    
     def set_compress_type(self, t):
         self._type = t
         self._u.set_compress_type(t)

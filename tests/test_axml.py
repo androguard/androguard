@@ -5,7 +5,7 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./core/")
 sys.path.append(PATH_INSTALL + "./core/bytecodes/")
 
-import dvm
+import apk
 
 from xml.dom import minidom
 
@@ -18,17 +18,21 @@ def test(got, expected):
     return (got == expected)
 
 TESTS = [ "./examples/axml/AndroidManifest.xml",
-          "./examples/axml/AndroidManifest-Chinese.xml" ]
+          "./examples/axml/AndroidManifest-Chinese.xml",
+  #        "./examples/axml/test.xml",
+          "./examples/axml/test1.xml",
+          "./examples/axml/test2.xml",
+          "./examples/axml/test3.xml" ]
 
 import codecs
 
 for i in TESTS :
     in1 = open( i, mode="rb" )
 
-    ap = dvm.AXMLPrinter( in1.read() )
+    ap = apk.AXMLPrinter( in1.read() )
     minidom.parseString( ap.getBuff() )
 
-    print "PASSED"
+    print "PASSED", i
     #out = codecs.open("res.xml", "w", "utf-8")
     #out.write( s )
     #out.close()

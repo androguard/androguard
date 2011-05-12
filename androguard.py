@@ -29,7 +29,7 @@ sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
 sys.path.append(PATH_INSTALL + "/classification")
 
-import bytecode, jvm, dvm, misc, analysis, opaque
+import bytecode, jvm, dvm, apk, misc, analysis, opaque
 from error import error
 
 VM_INT_AUTO = 0
@@ -254,7 +254,7 @@ class Androguard :
             elif ".dex" in i :
                 bc = dvm.DalvikVMFormat( self.__orig_raw[ i ] )
             elif ".apk" in i :
-                x = dvm.APK( i )
+                x = apk.APK( i )
                 bc = dvm.DalvikVMFormat( x.get_dex() )
             else :
                 raise( "Unknown bytecode" )
