@@ -21,14 +21,12 @@ import bytecode
 
 import misc
 from bytecode import SV, SVs
+from dvm_permissions import DVM_PERMISSIONS
 
 import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
 from struct import pack, unpack, calcsize
-
 from xml.dom import minidom
-
-from copy import deepcopy                                                                                                                                                                       
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip :
@@ -74,6 +72,8 @@ class APK :
         self.filename = filename
 
         self.xml = {}
+        self.package = ""
+        self.androidversion = {}
         self.permissions = []
 
         if raw == True :
@@ -86,20 +86,46 @@ class APK :
         try :
             import chilkat
             self.zip = ChilkatZip( chilkat.CkZip(), self.__raw )
-        except ImportError:
+        except ImportError :
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
 
         for i in self.zip.namelist() :
             if i == "AndroidManifest.xml" :
                 self.xml[i] = minidom.parseString( AXMLPrinter( self.zip.read( i ) ).getBuff() )
 
+                self.package = self.xml[i].documentElement.getAttribute( "package" )
+                self.androidversion["Code"] = self.xml[i].documentElement.getAttribute( "android:versionCode" )
+                self.androidversion["Name"] = self.xml[i].documentElement.getAttribute( "android:versionName")
+
                 for item in self.xml[i].getElementsByTagName('uses-permission') :
                     self.permissions.append( str( item.getAttribute("android:name") ) )
 
     def get_files(self) :
+        """
+            Return the files inside the APK
+        """
         return self.zip.namelist()
 
+    def get_files_types(self) :
+        """
+            Return the files inside the APK with their types (by using python-magic)
+        """
+        try : 
+            import magic
+        except ImportError :
+            return {}
+
+        l = {}
+        m = magic.Magic()
+        for i in self.get_files() :
+            l[ i ] = m.from_buffer( self.zip.read( i ) )
+
+        return l
+
     def get_raw(self) :
+        """ 
+            Return raw bytes of the APK
+        """
         return self.__raw
 
     def get_dex(self) :
@@ -121,26 +147,36 @@ class APK :
         l = []
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
-                l.append( str( item.getAttribute(attribute) ) )
+                value = item.getAttribute(attribute)
+                if value[0] == "." :
+                    value = self.package + value
+
+                l.append( str( value ) )
         return l
 
-    def get_activity(self) :
+    def get_activities(self) :
         """
             Return the android:name attribute of all activities
         """
         return self.get_elements("activity", "android:name")
 
-    def get_service(self) :
+    def get_services(self) :
         """
             Return the android:name attribute of all services
         """
         return self.get_elements("service", "android:name")
 
-    def get_receiver(self) :
+    def get_receivers(self) :
         """
             Return the android:name attribute of all receivers
         """
         return self.get_elements("receiver", "android:name")
+
+    def get_providers(self) :
+        """
+            Return the android:name attribute of all providers
+        """
+        return self.get_elements("provider", "android:name")
 
     def get_permissions(self) :
         """
@@ -148,12 +184,30 @@ class APK :
         """
         return self.permissions
 
+    def get_details_permissions(self) :
+        """
+            Return permissions with details
+        """
+        l = {}
+
+        for i in self.permissions :
+            perm = i
+            if "android.permission." in i :
+                perm = i[len("android.permission.") : ]
+
+            
+            l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
+
+        return l
+
     def show(self) :
-        print self.zip.namelist()
-        print self.get_permissions()
-        print self.get_activity()
-        print self.get_service()
-        print self.get_receiver()
+        print "FILES : ", self.get_files_types()
+
+        print "PERMISSIONS : ", self.get_details_permissions()
+        print "ACTIVITIES : ", self.get_activities()
+        print "SERVICES : ", self.get_services()
+        print "RECEIVERS : ", self.get_receivers()
+        print "PROVIDERS : ", self.get_providers()
 
 ######################################################## AXML FORMAT ########################################################
 # Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
