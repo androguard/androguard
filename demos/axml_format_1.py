@@ -7,8 +7,8 @@ sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
 
 from xml.dom import minidom
-import dvm
+import apk 
 
-ap = dvm.AXMLPrinter( open("apks/tmp/AndroidManifest.xml", "r").read() )
+ap = apk.AXMLPrinter( open("apks/tmp/AndroidManifest.xml", "r").read() )
 
 print minidom.parseString( ap.getBuff() ).toxml()

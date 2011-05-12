@@ -102,6 +102,11 @@ int ncd(int level, libsimilarity_t *n)
 
    //printf("ORIG = 0x%x SIZE_ORIG = 0x%x CMP = 0x%x SIZE_CMP = 0x%x 0x%x 0x%x\n", (unsigned int)(n->orig), n->size_orig, (unsigned int)(n->cmp), n->size_cmp, *(n->corig), *(n->ccmp));
 
+   if ((n->size_orig == 0) || (n->size_cmp == 0)) {
+        n->res = 1.0;
+        return -1;
+   }
+
    tmp_buff = alloc_buff( n->size_orig, n->size_cmp, &size_tmp_buff, &context );
 
    s1 = *(n->corig);
@@ -157,8 +162,15 @@ int ncd(int level, libsimilarity_t *n)
    }
 
    free_buff( tmp_buff, context );
-   
-   n->res = (float)(s3 - min) / max;
+  
+
+   n->res = (float)(abs(s3 - min)) / max;
+   if (n->res > 1.0) {
+       n->res = 1.0;
+   }
+
+   //printf("S3 = %d MIN = %d MAX = %d %f\n", s3, min, max, n->res);
+
    return 0;
 }
 
@@ -262,4 +274,60 @@ float entropy(void *orig, unsigned int size_orig)
    }
 
    return e;
+}
+
+#ifndef MIN
+# define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+unsigned int levenshtein(const u_int8_t *a, size_t alen, const u_int8_t *b, size_t blen)
+{
+	size_t tmplen, i, j;
+	const u_int8_t *tmp;
+	int *current, *previous, *tmpl, add, del, chg, r;
+
+	/* Swap to reduce worst-case memory requirement */
+	if (alen > blen) {
+		tmp = a;
+		a = b;
+		b = tmp;
+		tmplen = alen;
+		alen = blen;
+		blen = tmplen;
+	}
+
+	if (alen == 0)
+		return (blen);
+
+	if ((previous = calloc(alen + 1, sizeof(*previous))) == NULL)
+		return (-1);
+	if ((current = calloc(alen + 1, sizeof(*current))) == NULL) {
+		free(current);
+		return (-1);
+	}
+
+	for (i = 0; i < alen + 1; i++)
+		previous[i] = i;
+
+	for (i = 1; i < blen + 1; i++) {
+		if (i > 1) {
+			memset(previous, 0, (alen + 1) * sizeof(*previous));
+			tmpl = previous;
+			previous = current;
+			current = tmpl;
+		}
+		current[0] = i;
+		for (j = 1; j < alen + 1; j++) {
+			add = previous[j] + 1;
+			del = current[j - 1] + 1;
+			chg = previous[j - 1];
+			if (a[j - 1] != b[i - 1])
+				chg++;
+			current[j] = MIN(add, del);
+			current[j] = MIN(current[j], chg);
+		}
+	}
+	r = current[alen];
+	free(previous);
+	free(current);
+	return (r);
 }

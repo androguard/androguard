@@ -31,20 +31,26 @@ def filter_skip_meth_basic( m ) :
 
 class CheckSumMeth :
     def __init__(self, m1, sim) :
+        # FIXME
+        self.buff = ""
+        self.entropy = 0.0
+        
         code = m1.get_code()
-        bc = code.get_bc()
+        if code != None :
 
-        buff = ""
+            bc = code.get_bc()
 
-        for i in bc.get() :
-            buff += "%s" % i.get_name()
-            if i.type_ins_tag == 0 :
-                for op in i.get_operands() :
-                    if "#" in op[0] :
-                        buff += "%s" % op
+            buff = ""
 
-        self.buff = buff
-        self.entropy = sim.entropy( self.buff )
+            for i in bc.get() :
+                buff += "%s" % i.get_name()
+                if i.type_ins_tag == 0 :
+                    for op in i.get_operands() :
+                        if "#" in op[0] :
+                            buff += "%s" % op
+
+            self.buff = buff
+            self.entropy = sim.entropy( self.buff )
 
     def get_entropy(self) :
         return self.entropy
@@ -62,9 +68,7 @@ def filter_sim_meth_old( m1, m2, sim, name_attribute ) :
     e1 = a1.get_entropy()
     e2 = a2.get_entropy()
 
-    ncd = sim.ncd( a1.get_buff(), a2.get_buff() )
-
-    return (max(e1, e2) - min(e1, e2)) + ncd
+    return (max(e1, e2) - min(e1, e2)) 
 
 def filter_sim_meth_basic( m1, m2, sim, name_attribute ) :
     s1 = m1.vmx.get_method_signature( m1.m, predef_sign = SIGNATURE_L0_0 ).get_string()
@@ -84,7 +88,7 @@ def filter_sort_meth_basic( x ) :
 
     if get_debug() :
         for i in z :
-            debug("\t %s %s %s %f" %(i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]))
+            debug("\t %s %s %s %d %f" %(i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[0].m.get_length(), i[1]))
     
     return z[:1]
 
@@ -404,8 +408,6 @@ class Method :
         return z[0][1]
 
     def diff(self, name_attribute, func_sim_bb, func_diff_ins):
-        self.sim.set_compress_type( XZ_COMPRESS )
-
         z = getattr( self, "sort_" + name_attribute )
         if z == [] :
             setattr(self, "dbb_" + name_attribute, {})
@@ -600,14 +602,14 @@ MATCHMETHODS    =       "matchmethods"
 DIFFVMS         =       "diffvms"
 class Diff(object) :
     def __init__(self, vm1, vm2, F=FILTERS_DIFF) :
-        #set_debug()
+        set_debug()
         
         self.vms = [ vm1, vm2 ]
         self.vm1 = vm1
         self.vm2 = vm2
 
         self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
-        self.sim.set_compress_type( XZ_COMPRESS )
+        self.sim.set_compress_type( SNAPPY_COMPRESS )
 
         self.F = F
         self.filters = {}
@@ -655,6 +657,7 @@ class Diff(object) :
         # Check if some methods in the first file has been modified
         for fil in self.filters :
             for j in self.filters[fil][METHODS][self.vm1[0]] :
+                debug("SIM FOR %s %s %s" % (j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()))
                 for i1 in self.filters[fil][METHODS] :
                     if i1 != self.vm1[0] :
                         # B1 not at 0.0 in BB2
@@ -679,7 +682,7 @@ class Diff(object) :
         for fil in self.filters :
             delete_methods = []
             for j in self.filters[fil][DIFFMETHODS] :
-#               print "DEBUG", j, j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()
+                debug("%s %s %s %d" % (j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor(), j.m.get_length()))
                 ret = j.sort( self.filters[fil][BASE][FILTER_NAME], self.filters[fil][BASE][FILTER_SORT_METH] )
                 if ret == False :
                     delete_methods.append( j )
@@ -737,7 +740,7 @@ class Diff(object) :
 ######################### SIM ###############################
 
 def filter_sim_meth_sim( m1, m2, sim, name_attribute ) :
-    mysign = SIGNATURE_L0_2
+    mysign = SIGNATURE_L0_4
     s1 = m1.vmx.get_method_signature( m1.m, predef_sign=mysign ).get_string()
     s2 = m2.vmx.get_method_signature( m2.m, predef_sign=mysign ).get_string()
 
@@ -764,8 +767,10 @@ def filter_sim_vm_sim( vm1, vm2, name_attribute, sim ):
     return { "STRING" : sim.ncd( svm1, svm2 ) }
 
 def filter_skip_meth_sim( m ) :
-    if m.get_code().get_length() < 50 :
-        return True
+    code = m.get_code()
+    if code != None :
+        if code.get_length() < 100 :
+            return True
 
     return False
 
@@ -807,8 +812,11 @@ FILTERS_SIM = {
 class Sim(Diff) :
     def __init__(self, vm1, vm2, F=FILTERS_SIM) :
         #set_debug()
+        #vm1[0].get_len_methods(), vm2[0].get_len_methods()
         self.marks = {} 
         super(Sim, self).__init__(vm1, vm2, F)
+
+
 
         self._init_diff_vms()
         self._init_mark_methods()

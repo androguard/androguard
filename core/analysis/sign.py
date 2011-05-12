@@ -44,6 +44,7 @@ class Signature :
     def __init__(self, tainted_information) :
         self.__tainted = tainted_information
 
+        self._cached_signatures = {}
         self._cached_fields = {}
         self._cached_packages = {}
 
@@ -257,6 +258,10 @@ class Signature :
         return l
 
     def get_method(self, analysis_method, signature_type, signature_arguments={}) :
+        key = "%s-%s-%s" % (analysis_method, signature_type, signature_arguments)
+        if key in self._cached_signatures :
+            return self._cached_signatures[ key ]
+
         s = Sign()
 
         #print signature_type, signature_arguments
@@ -282,4 +287,5 @@ class Signature :
                     value = getattr( self, f )( analysis_method )
                 s.add( i, value )
 
+        self._cached_signatures[ key ] = s
         return s

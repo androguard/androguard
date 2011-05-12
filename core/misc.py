@@ -35,6 +35,11 @@ class Color:
     blink = "\033[5m"
     invert = "\033[7m"
 
+def long2int( l ) :
+    if l > 0x7fffffff :
+        l = (0x7fffffff & l) - 0x80000000
+    return l
+
 def long2str(l):
     """Convert an integer to a string."""
     if type(l) not in (types.IntType, types.LongType):
