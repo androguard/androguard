@@ -24,7 +24,8 @@ from xml.dom import minidom
 import codecs
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL + "./core/")
+sys.path.append(PATH_INSTALL + "./core/bytecodes")
 
 import apk
 from misc import VERSION
