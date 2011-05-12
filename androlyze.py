@@ -26,6 +26,7 @@ from androguard import *
 from bytecode import *
 from jvm import *
 from dvm import *
+from apk import *
 from analysis import *
 from diff import *
 
