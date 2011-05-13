@@ -32,6 +32,7 @@ DVM_PERMISSIONS = {
         "CHANGE_NETWORK_STATE" : "Allows applications to change network connectivity state.",
         "CHANGE_WIFI_MULTICAST_STATE" : "Allows applications to enter Wi-Fi Multicast mode.",
         "CHANGE_WIFI_STATE" : "Allows applications to change Wi-Fi connectivity state.",
+        "CHECK_LICENSE" : "Request the licensing permission in your application.",
         "CLEAR_APP_CACHE" : "Allows an application to clear the caches of all installed applications on the device.",
         "CLEAR_APP_USER_DATA" : "Allows an application to clear user data.",
         "CONTROL_LOCATION_UPDATES" : "Allows enabling/disabling location update notifications from the radio.",
