@@ -1911,7 +1911,7 @@ class RuntimeInvisibleParameterAnnotationsAttribute(RuntimeVisibleParameterAnnot
             i.show()
 
 class ParameterAnnotation :
-    def __init__(cm, buff) :
+    def __init__(self, cm, buff) :
         # u2 num_annotations;
         # annotation annotations[num_annotations];
         self.num_annotations = SV( '>H', buff.read(2) )
@@ -2213,11 +2213,6 @@ class SameFrame :
 
     def set_cm(self, cm) :
         pass
-
-    def show(self) :
-        print "#" * 60
-        bytecode._Print("\tSAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED", self.frame_type.get_value())
-        print "#" * 60
 
 class SameLocals1StackItemFrame :
     def __init__(self, class_manager, buff) :
@@ -3103,11 +3098,6 @@ class JVMFormat(bytecode._Bytecode) :
             @rtype : L{ClassManager}
         """
         return self.__CM
-
-    def get_strings(self) :
-        """
-        """
-        return []
 
     def set_used_field(self, old, new) :
         """

@@ -11,7 +11,7 @@ import androguard, analysis
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 a = androguard.AndroguardS( TEST )
-x = analysis.VM_BCA( a.get_vm() )
+x = analysis.VMAnalysis( a.get_vm() )
 
 for method in a.get_methods() :
     print method.get_class_name(), method.get_name(), method.get_descriptor()

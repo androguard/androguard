@@ -28,15 +28,19 @@ from collections import namedtuple
 from struct import pack, unpack, calcsize
 from xml.dom import minidom
 
+try :
+    import chilkat
+    ZIPMODULE = 0
+except ImportError :
+    ZIPMODULE = 1
+
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip :
-    def __init__(self, ckz, raw) :
-        import chilkat
-        
+    def __init__(self, raw) :
         self.files = []
-        self.zip = ckz
-        
-        # UNLOCK
+        self.zip = chilkat.CkZip()
+
+        # UNLOCK : change it with your valid key !
         self.zip.UnlockComponent( "testme" )
 
         self.zip.OpenFromMemory( raw, len(raw) )
@@ -45,16 +49,13 @@ class ChilkatZip :
         e = self.zip.FirstEntry()
         while e != None :
             e.get_FileName(filename)
-
             self.files.append( filename.getString() )
-
             e = e.NextEntry()
 
     def namelist(self) :
         return self.files
 
     def read(self, elem) :
-        import chilkat
         e = self.zip.GetEntryByName( elem )
         s = chilkat.CkByteData()
 
@@ -75,6 +76,7 @@ class APK :
         self.package = ""
         self.androidversion = {}
         self.permissions = []
+        self.validAPK = False
 
         if raw == True :
             self.__raw = filename
@@ -83,11 +85,13 @@ class APK :
             self.__raw = fd.read()
             fd.close()
 
-        try :
-            import chilkat
-            self.zip = ChilkatZip( chilkat.CkZip(), self.__raw )
-        except ImportError :
+        if ZIPMODULE == 0 :
+            self.zip = ChilkatZip( self.__raw )
+        else :
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
+
+        # CHECK if there is only one embedded file
+        #self._reload_apk()
 
         for i in self.zip.namelist() :
             if i == "AndroidManifest.xml" :
@@ -99,6 +103,44 @@ class APK :
 
                 for item in self.xml[i].getElementsByTagName('uses-permission') :
                     self.permissions.append( str( item.getAttribute("android:name") ) )
+
+                self.validAPK = True
+
+    def isValidAPK(self) :
+        return self.validAPK
+
+    #def _reload_apk(self) :
+    #    if len(files) == 1 :
+    #        if ".apk" in files[0] :
+    #            self.__raw = self.zip.read( files[0] )
+    #            if ZIPMODULE == 0 :
+    #                self.zip = ChilkatZip( self.__raw )
+    #            else :
+    #                self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
+
+    def get_filename(self) :
+        """
+            Return the filename of the APK
+        """
+        return self.filename
+
+    def get_package(self) :
+        """
+            Return the name of the package
+        """
+        return self.package
+
+    def get_androidversion_code(self) :
+        """
+            Return the android version code
+        """
+        return self.androidversion["Code"]
+
+    def get_androidversion_name(self) :
+        """
+            Return the android version name 
+        """
+        return self.androidversion["Name"]
 
     def get_files(self) :
         """
@@ -148,11 +190,28 @@ class APK :
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
                 value = item.getAttribute(attribute)
-                if value[0] == "." :
+                
+                if len(value) > 0 and value[0] == "." :
                     value = self.package + value
 
                 l.append( str( value ) )
         return l
+
+    def get_element(self, tag_name, attribute) :
+        """
+            Return element in xml files which match with the tag name and the specific attribute
+
+            @param tag_name : a string which specify the tag name
+            @param attribute : a string which specify the attribute
+        """
+        l = []
+        for i in self.xml :
+            for item in self.xml[i].getElementsByTagName(tag_name) :
+                value = item.getAttribute(attribute)
+
+                if len(value) > 0 :
+                    return value
+        return None
 
     def get_activities(self) :
         """
@@ -194,11 +253,31 @@ class APK :
             perm = i
             if "android.permission." in i :
                 perm = i[len("android.permission.") : ]
-
             
-            l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
+            try :
+                l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
+            except KeyError :
+                l[ i ] = "Unknown permission"
 
         return l
+
+    def get_min_sdk_version(self) :
+        """
+            Return the android:minSdkVersion attribute
+        """
+        return self.get_element( "uses-sdk", "android:minSdkVersion" )
+
+    def get_target_sdk_version(self) :
+        """
+            Return the android:targetSdkVersion attribute
+        """
+        return self.get_element( "uses-sdk", "android:targetSdkVersion" )
+
+    def get_libraries(self) :
+        """
+            Return the android:name attributes for libraries
+        """
+        return self.get_elements( "uses-library", "android:name" )
 
     def show(self) :
         print "FILES : ", self.get_files_types()

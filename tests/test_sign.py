@@ -27,7 +27,6 @@ import androguard, analysis
 from analysis import *
 
 TEST_CASE  = 'examples/android/TC/bin/classes.dex'
-#TEST_CASE = "apks/wat1.3.7.apk"
 
 GRAMMAR_TYPE_ANONYMOUS = 0
 
@@ -61,7 +60,7 @@ def test(got, expected):
 
 
 a = androguard.AndroguardS( TEST_CASE )
-x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
+x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 for method in a.get_methods() :
     key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()

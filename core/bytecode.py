@@ -478,3 +478,4 @@ def ExportVMToPython(vm) :
                 for j in f[i] :
                     name = "FIELD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
                     setattr( _class, name, j )
+

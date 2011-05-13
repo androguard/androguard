@@ -245,7 +245,7 @@ def export_apps_to_xgmml( input, output, fcg, efcg ) :
     fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
 
     for vm in a.get_vms() :
-        x = analysis.VM_BCA( vm )
+        x = analysis.VMAnalysis( vm )
         # CFG
         for method in vm.get_methods() :
             g = x.hmethods[ method ]

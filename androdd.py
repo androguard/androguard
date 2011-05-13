@@ -61,7 +61,7 @@ def export_apps_to_format( a, output, dot=None, _format=None ) :
         output_name = output_name + "/"
 
     for vm in a.get_vms() :
-        x = analysis.VM_BCA( vm )
+        x = analysis.VMAnalysis( vm )
         for method in vm.get_methods() :
             filename = output_name + valid_class_name( method.get_class_name() )
             if filename[-1] != "/" :
