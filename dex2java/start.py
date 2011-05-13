@@ -1,6 +1,5 @@
 import sys
 sys.path.append('./')
-
 import androguard
 import analysis
 import struct
@@ -18,7 +17,7 @@ class Instruction(object):
         return self.register
 
     def get_value(self):
-        return None
+        print 'get_value not implemented'
 
     def get_type(self):
         return 'no type defined'
@@ -135,6 +134,7 @@ class MoveResult(Instruction):
 
     def emulate(self, memory):
         self.value = memory['heap']
+        self.value = memory.get('heap')
         memory['heap'] = None
         print 'value ::', self.value
 
@@ -1238,8 +1238,19 @@ class IntToLong(Instruction):
 
 # int-to-float vA, vB ( 4b, 4b )
 class IntToFloat(Instruction):
-    pass
+    def __init__(self, args):
+        print 'IntToFloat :', args
+        super(IntToFloat, self).__init__(args)
+        self.source = int(args[1][1])
 
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return self.source.get_value()
+
+    def __str__(self):
+        return 'IntToFloat (%s)' % self.source.get_value()
 
 # int-to-double vA, vB ( 4b, 4b )
 class IntToDouble(Instruction):
@@ -1247,6 +1258,11 @@ class IntToDouble(Instruction):
         print 'IntToDouble :', args
         super(IntToDouble, self).__init__(args)
 
+    def emulate(self, memory):
+        self.register = memory[self.register].get_content()
+
+    def get_value(self):
+        return self.register.get_value()
 
 # long-to-int vA, vB ( 4b, 4b )
 class LongToInt(Instruction):
@@ -1940,7 +1956,19 @@ class UShrLong2Addr(Instruction):
 
 # add-float/2addr vA, vB ( 4b, 4b )
 class AddFloat2Addr(Instruction):
-    pass
+    def __init__(self, args):
+        print 'AddFloat2Addr :', args
+        super(AddFloat2Addr, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+        self.dest = memory[self.register].get_content()
+        self.ins = '%s + %s'
+        print 'Ins : %s' % self.ins
+
+    def get_value(self):
+        return self.ins % (self.dest.get_value(), self.source.get_value())
 
 
 # sub-float/2addr vA, vB ( 4b, 4b )
@@ -2055,6 +2083,9 @@ class AddIntLit8(Instruction):
 
     def get_value(self):
         return self.ins % (self.source.get_value(), self.const)
+
+    def __str__(self):
+        return 'AddIntLit8 (%s, %s)' % (self.source, self.const)
 
 
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
@@ -2695,10 +2726,14 @@ class DvMachine():
 
 if __name__ == '__main__':
 
-    TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
+    try:
+        TEST = open('examples/android/TestsAndroguard/bin/classes.dex')
+    except IOError:
+        TEST = open('../examples/android/TestsAndroguard/bin/classes.dex')
     #TEST = '/tmp/classes.dex'
+    TEST.close()
 
-    MACHINE = DvMachine(TEST)
+    MACHINE = DvMachine(TEST.name)
 
     from pprint import pprint
     print '==========================='
@@ -2706,17 +2741,24 @@ if __name__ == '__main__':
     pprint(MACHINE.classes)
     print '==========================='
 
-    #CLS = raw_input('Choose a class: ')
-    for CLS in MACHINE.classes:
-        CLS = MACHINE.get_class(CLS)
-        if CLS is None:
-            print '%s not found.' % CLS
-        else:
-            MACHINE.process_class(CLS)
+    CLS = raw_input('Choose a class: ')
+    CLS = MACHINE.get_class(CLS)
+    if CLS is None:
+        print '%s not found.' % CLS
+    else:
+        MACHINE.process_class(CLS)
+
+#    for CLS in MACHINE.classes:
+#        CLS = MACHINE.get_class(CLS)
+#        if CLS is None:
+#            print '%s not found.' % CLS
+#        else:
+#            MACHINE.process_class(CLS)
 
     print
     print 'Dump of code:'
     print '==========================='
-    for CLS in MACHINE.classes:
-        MACHINE.show_code(MACHINE.get_class(CLS))
-        print '==========================='
+#    for CLS in MACHINE.classes:
+#        MACHINE.show_code(MACHINE.get_class(CLS))
+#        print '==========================='
+    MACHINE.show_code(CLS)
