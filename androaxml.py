@@ -37,7 +37,6 @@ options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
     if options.input != None and options.output != None :
-
         buff = ""
         if ".apk" in options.input :
             a = apk.APK( options.input )

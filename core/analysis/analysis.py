@@ -1337,6 +1337,16 @@ class TaintedPackage :
         self.paths[ info[0] ].append( p )
         return p
 
+    def search_method(self, name, descriptor) :
+        l = []
+        m_name = re.compile(name)
+        m_descriptor = re.compile(descriptor)
+        
+        for path in self.paths[ TAINTED_PACKAGE_CALL ] :
+            if m_name.match( path.get_name() ) != None and m_descriptor.match( path.get_descriptor() ) != None :
+                l.append( path )
+        return l
+
     def get_method(self, name, descriptor) :
         l = []
         for path in self.paths[ TAINTED_PACKAGE_CALL ] :
@@ -1414,6 +1424,47 @@ class TaintedPackages :
     def get_packages(self) :
         for i in self.__packages :
             yield self.__packages[ i ], i
+
+    def get_internal_packages(self) :
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages() :
+            paths = m.get_methods()
+            for j in paths :
+                if j.get_method().get_class_name() in classes and m.get_info() in classes :
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                        l.append( j )
+        return l
+       
+    def get_external_packages(self) :
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages() :
+            paths = m.get_methods()
+            for j in paths :
+                if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                        l.append( j )
+        return l
+
+    def search_packages(self, package_name) :
+        ex = re.compile( package_name )
+    
+        l = []
+        for m, _ in self.get_packages() :
+            if ex.match( m.get_info() ) != None :
+                l.extend( m.get_methods() )
+        return l
+
+    def search_methods(self, class_name, name, descriptor) :
+        ex = re.compile( class_name )
+        l = []
+
+        for m, _ in self.get_packages() :
+            if ex.match( m.get_info() ) != None :
+                l.extend( m.search_method( name, descriptor ) )
+
+        return l
 
     def get_method(self, class_name, name, descriptor) :
         try :
