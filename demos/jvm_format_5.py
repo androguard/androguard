@@ -12,7 +12,7 @@ import jvm, analysis
 TEST = "./examples/java/test/orig/Test1.class"
 
 j = jvm.JVMFormat( open(TEST).read() )
-x = analysis.VM_BCA( j )
+x = analysis.VMAnalysis( j )
 
 # SHOW CLASS (verbose and pretty)
 #j.pretty_show( x )

@@ -13,7 +13,7 @@ TEST = "./examples/android/Test/bin/classes.dex"
 #TEST = "examples/android/Hello_Kitty/classes.dex"
 
 j = dvm.DalvikVMFormat( open(TEST).read() )
-x = analysis.VM_BCA( j )
+x = analysis.VMAnalysis( j )
 
 # SHOW CLASSES (verbose and pretty)
 #j.pretty_show( x )

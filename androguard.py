@@ -175,7 +175,7 @@ class BC :
         return self.__a
 
     def analyze(self) :
-        self.__a = analysis.VM_BCA( self.__bc, code_analysis=True )
+        self.__a = analysis.VMAnalysis( self.__bc, code_analysis=True )
 
     def _get(self, val, name) :
         l = []

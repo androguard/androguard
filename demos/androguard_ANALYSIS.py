@@ -17,7 +17,7 @@ OUTPUT = "./output/"
 TEST = "./examples/android/TCDiff/bin/classes.dex"
 
 a = androguard.AndroguardS( TEST )
-x = analysis.VM_BCA( a.get_vm(), code_analysis=True )
+x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 classes = a.get_vm().get_classes_names()
 

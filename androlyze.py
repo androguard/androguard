@@ -69,6 +69,16 @@ def interact() :
     ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
     ipshell()
 
+def AnalyzeAPK(filename, raw=False) :
+    a = APK(filename, raw)
+
+    d = DalvikVMFormat( a.get_dex() )
+    dx = VMAnalysis( d )
+
+    ExportVMToPython( d )
+
+    return a, d, dx
+
 def main(options, arguments) :
     if options.shell != None :
         interact()

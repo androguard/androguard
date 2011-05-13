@@ -17,7 +17,7 @@ import analysis
 TEST = "./geinimi/geinimi.apk"
 
 _a = AndroguardS( TEST )
-_x = analysis.VM_BCA( _a.get_vm() )
+_x = analysis.VMAnalysis( _a.get_vm() )
 
 #print _a.get_strings()
 
