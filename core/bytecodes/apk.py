@@ -251,13 +251,15 @@ class APK :
 
         for i in self.permissions :
             perm = i
-            if "android.permission." in i :
-                perm = i[len("android.permission.") : ]
+            pos = i.rfind(".")
+
+            if pos != -1 :
+                perm = i[pos+1:]
             
             try :
                 l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
             except KeyError :
-                l[ i ] = "Unknown permission"
+                l[ i ] = "Unknown permission from android reference"
 
         return l
 
