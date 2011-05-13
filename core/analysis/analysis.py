@@ -18,7 +18,7 @@
 
 import re, random, string, cPickle
 
-from error import error
+from error import error, warning
 import jvm, dvm
 
 from dvm_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
@@ -1516,7 +1516,7 @@ class BasicBlocks :
                 if j[2] != None :
                     self.G.add_edge( i.get_name(), j[2].get_name() )
 
-class M_BCA :
+class MethodAnalysis :
     """
        This class analyses in details a method of a class/dex file
 
@@ -1713,7 +1713,8 @@ SIGNATURES = {
             }
 
 from sign import Signature
-class VM_BCA :
+
+class VMAnalysis :
     """
        This class analyses a class file or a dex file
 
@@ -1740,7 +1741,7 @@ class VM_BCA :
         self.hmethods = {}
         self.__nmethods = {}
         for i in self.__vm.get_methods() :
-            x = M_BCA( self.__vm, i, self.tainted, code_analysis )
+            x = MethodAnalysis( self.__vm, i, self.tainted, code_analysis )
             self.methods.append( x )
             self.hmethods[ i ] = x
             self.__nmethods[ i.get_name() ] = x
@@ -1846,7 +1847,7 @@ class VM_BCA :
         """
            Return each analysis method
 
-           @rtype : L{M_BCA}
+           @rtype : L{MethodAnalysis}
         """
         for i in self.hmethods :
             yield self.hmethods[i]
@@ -1888,3 +1889,9 @@ class VM_BCA :
     # FIXME
     def get_ops(self, method) :
         return [ (i.get_method(), i.get_ops()) for i in self.l ]
+
+class VM_BCA(VMAnalysis) :
+    warning("VM_BCA is deprecated, please use VMAnalysis")
+
+class M_BCA(MethodAnalysis) :
+    warning("M_BCA is deprecated, please use MethodAnalysis")

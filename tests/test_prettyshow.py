@@ -41,7 +41,7 @@ def test(got, expected):
     print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 a = androguard.AndroguardS( TEST_CASE )
-ax = analysis.VM_BCA( a.get_vm() )
+ax = analysis.VMAnalysis( a.get_vm() )
 
 for method in a.get_methods() :
     key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()

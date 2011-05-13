@@ -16,7 +16,7 @@ TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 #TEST = 'examples/android/Hello_Kitty/classes.dex'
 
 a = androguard.AndroguardS( TEST )
-x = analysis.VM_BCA( a.get_vm() )
+x = analysis.VMAnalysis( a.get_vm() )
 
 
 # CFG
