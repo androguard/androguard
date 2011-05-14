@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, hashlib, os
+import sys
 from optparse import OptionParser
 from xml.dom import minidom
 import codecs
@@ -27,8 +27,7 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./core/")
 sys.path.append(PATH_INSTALL + "./core/bytecodes")
 
-import apk
-from misc import VERSION
+import apk, misc
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xml', 'nargs' : 1 }
@@ -52,7 +51,7 @@ def main(options, arguments) :
         fd.write( buff )
         fd.close()
     elif options.version != None :
-        print "Androaxml version %s" % VERSION
+        print "Androaxml version %s" % misc.ANDROAXML_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

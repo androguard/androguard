@@ -31,14 +31,14 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
 import androguard, analysis, misc
-import ncd, androdb
+import similarity, androdb
 
 class Classification :
     def __init__(self, dbname) :
         self._adb = androdb.AndroDB( dbname )
 
-        self._ncd = ncd.NCD( "./classification/libncd/libncd.so" )
-        self._ncd.set_compress_type( ncd.BZ2_COMPRESS )
+        self._ncd = similarity.SIMILARITY( "./classification/libncd/libncd.so" )
+        self._ncd.set_compress_type( similarity.BZ2_COMPRESS )
 
     def classification1(self) :
         print self._adb._session.query(androdb.Signature).count()
@@ -50,21 +50,21 @@ class Classification :
 
         print "BEGIN NCD", len(signatures) * len(signatures)
 
-        widgets = ['Classification NCD ...: ', misc.Percentage(), ' ', misc.Bar(marker=misc.RotatingMarker())]
-        pbar = misc.ProgressBar(widgets=widgets, maxval=len(signatures) * len(signatures)).start()
+        #widgets = ['Classification NCD ...: ', misc.Percentage(), ' ', misc.Bar(marker=misc.RotatingMarker())]
+        #pbar = misc.ProgressBar(widgets=widgets, maxval=len(signatures) * len(signatures)).start()
 
         l = []
         n = 0
         idx = 0
         for x in signatures :
-            pbar.update( n )
+            #pbar.update( n )
             for y in signatures :
                 l.append( self._ncd.get( x, y ) )
 
             n = len(signatures) * idx
             idx += 1
 
-        pbar.finish()
+        #pbar.finish()
         print "END NCD"
         a = numpy.array( l )
         b = numpy.reshape( a, ( len(signatures), len(signatures) ) )
@@ -78,5 +78,5 @@ if __name__ == "__main__" :
     except ImportError :
         pass
 
-    c = Classification( androdb.DBNAME )
+    c = Classification()
     c.classification1()

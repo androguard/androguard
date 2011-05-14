@@ -18,7 +18,7 @@
 
 from struct import pack, unpack, calcsize
 from collections import namedtuple
-import re, zipfile, StringIO
+import re, zipfile, StringIO, os
 
 import bytecode
 from bytecode import SV, SVs
@@ -1932,7 +1932,7 @@ class ParameterAnnotation :
 
 class AnnotationDefaultAttribute(BasicAttribute) :
     def __init__(self, cm, buff) :
-        super(AnnotationDefault, self).__init__()
+        super(AnnotationDefaultAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
 
