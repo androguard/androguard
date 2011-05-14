@@ -1676,6 +1676,7 @@ class ClassItem :
         self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
         self.format = SVs( CLASS_DEF_ITEM[0], CLASS_DEF_ITEM[1], buff.read( calcsize(CLASS_DEF_ITEM[0]) ) )
+        self._interfaces = None
         self._class_data_item = None
 
         self._name = None
@@ -1686,12 +1687,15 @@ class ClassItem :
         self._name = self.__CM.get_type( general_format.class_idx )
         self._sname = self.__CM.get_type( general_format.superclass_idx )
 
+        if general_format.interfaces_off != 0 :
+            self._interfaces = self.__CM.get_type_list( general_format.interfaces_off )
+
         if general_format.class_data_off != 0 :
             self._class_data_item = self.__CM.get_class_data_item( general_format.class_data_off )
             self._class_data_item.reload()
 
     def show(self) :
-        print "CLASS_ITEM", self._name, self._sname, self.format.get_value()
+        print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
 
     def get_name(self) :
         return self._name

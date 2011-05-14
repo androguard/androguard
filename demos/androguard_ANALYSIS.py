@@ -83,10 +83,11 @@ x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 classes = a.get_vm().get_classes_names()
 
-#display_CFG( a, x, classes )
-#display_PACKAGES( a, x, classes )
-#display_PACKAGES_IE( a, x, classes )
-#display_PACKAGES_II( a, x, classes )
+display_CFG( a, x, classes )
+display_PACKAGES( a, x, classes )
+display_PACKAGES_IE( a, x, classes )
+display_PACKAGES_II( a, x, classes )
+display_PERMISSION( a, x, classes )
 
 display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
 display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )

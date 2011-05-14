@@ -21,9 +21,8 @@ from subprocess import Popen, PIPE, STDOUT
 import os
 
 from error import log_loading, warning
-from misc import random_string
+import jvm, misc
 from analysis import TAINTED_PACKAGE_CREATE
-import jvm
 
 class GenerateMainCode :
     def __init__(self) :
@@ -75,7 +74,7 @@ class GenerateMainCode :
         _vm = self.__info_gc[ ident ][0]
         class_name = _vm.get_classes_names()[0]
 
-        name = random_string()
+        name = misc.random_string()
         _vm.insert_field( class_name, name, [ _access, _type ] )
 
         return [ name, _access, _type ]
@@ -442,10 +441,10 @@ class Protection(object) :
         self._generate_java_templates( self.java_lib, self.native_lib )
 
     def _generate_native_templates(self, native_lib) :
-        name = random_string()
+        name = misc.random_string()
         native_lib[ name ] = {}
 
-        native_lib[ name ]["F_INIT"] = [ 0, random_string(), "V", "()" ]
+        native_lib[ name ]["F_INIT"] = [ 0, misc.random_string(), "V", "()" ]
 
         buff = "#include <jni.h>\n"
 
@@ -456,7 +455,7 @@ class Protection(object) :
         native_lib[ name ]["RAW"] = buff
 
     def _generate_java_templates(self, java_lib, native_lib) :
-        name = random_string()
+        name = misc.random_string()
         java_lib[ name ] = {}
 
         java_lib[ name ]["C_INIT"] = name
@@ -586,7 +585,7 @@ class ProtectionClear(Protection) :
 
         lib = self.names_libs["MAIN"]
 
-        name = random_string()
+        name = misc.random_string()
         lib["METHODS"][name] = [ 0, name, "PUBLIC", "()", "V", "" ]
         buff =  "System.out.println(\"[AG][java] %s\");\n" % name
         buff += "Throwable t = new Throwable();\n"

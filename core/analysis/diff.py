@@ -374,6 +374,9 @@ class Method :
         setattr(self, "bb_sha256_" + name, bbhash)
         setattr(self, "sha256_" + name, hashlib.sha256( fm.get_buff() ).hexdigest())
 
+    def quick_similarity(self, name_attribute, new_method, func_sim) :
+        return func_sim( self, new_method, self.sim, name_attribute )
+    
     def similarity(self, name_attribute, new_method, func_sim) :
         x = None
         try :
@@ -400,7 +403,14 @@ class Method :
                 return True
         return False
 
-    def getfirstsort(self, name_attribute) :
+    def get_meth_first_sort(self, name_attribute) :
+        z = getattr( self, "sort_" + name_attribute )
+        if z == [] :
+            return 1.0
+
+        return z[0][0]
+
+    def get_value_first_sort(self, name_attribute) :
         z = getattr( self, "sort_" + name_attribute )
         if z == [] :
             return 1.0
@@ -778,7 +788,7 @@ def filter_mark_vm( values ) :
     return values.values()
 
 def filter_mark_meth( v ) :
-    if v >= 0.5 :
+    if v >= 0.2 :
         return 1.0
 
     return v
@@ -816,11 +826,8 @@ class Sim(Diff) :
         self.marks = {} 
         super(Sim, self).__init__(vm1, vm2, F)
 
-
-
         self._init_diff_vms()
         self._init_mark_methods()
-
 
         print self.marks
         for fil in self.marks :
@@ -836,6 +843,7 @@ class Sim(Diff) :
             self.marks[ i ] = []
     
     def _init_diff_vms(self) :
+        self.sim.set_compress_type( XZ_COMPRESS )
         for fil in self.filters :
             x1 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( self.vm1 ) 
             x2 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( self.vm2 )
@@ -848,13 +856,25 @@ class Sim(Diff) :
         pass
 
     def _init_mark_methods(self) :
-#       print "DEBUG DIFF METHODS"
+        # Change the compression to have a better result for a one <-> one comparison
+        self.sim.set_compress_type( XZ_COMPRESS )
+
         for fil in self.filters :
             # mark diff methods
             for j in self.filters[fil][DIFFMETHODS] :
                 debug("%s %s %s" % (j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()))
                 
-                v = self.filters[fil][BASE][FILTER_MARK_METH]( j.getfirstsort( self.filters[fil][BASE][FILTER_NAME] ) )
+                #v = self.filters[fil][BASE][FILTER_MARK_METH]( j.get_value_first_sort( self.filters[fil][BASE][FILTER_NAME] ) )
+                #print "V",  v
+               
+                # get the first method which match
+                k = j.get_meth_first_sort( self.filters[fil][BASE][FILTER_NAME] )
+               
+                # recalculate the similarity to have better percentage with a better algorithm
+                v = j.quick_similarity( self.filters[fil][BASE][FILTER_NAME], k, self.filters[fil][BASE][FILTER_SIM_METH] ) 
+
+                # filter the mark to eliminate totaly diff method
+                v = self.filters[fil][BASE][FILTER_MARK_METH]( v )
                 self.marks[fil].append( v )
 
             # mark match methods

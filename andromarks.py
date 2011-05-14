@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, cmd, threading, re
+import sys, os
 
 from optparse import OptionParser
 
@@ -35,7 +35,7 @@ options = [option_0, option_1, option_2, option_5]
 
 def main(options, arguments) :
     if options.version != None :
-        print "Andromarks version %s" % misc.VERSION
+        print "Andromarks version %s" % misc.ANDROMARKS_VERSION
 
     elif options.directory != None and options.xml != None :
         for root, dirs, files in os.walk( options.directory ) :

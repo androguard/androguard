@@ -33,7 +33,7 @@ from xml.dom import minidom
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, analysis, dvm
+import androguard, analysis, apk
 
 
 option_0 = { 'name' : ('-c', '--config'), 'help' : 'config filename', 'nargs' : 1 }
@@ -68,7 +68,7 @@ class Method :
         self.descriptor = method.get_descriptor()
 
 #      self.signatures.append( Signature( analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS, vm_analysis.get_method_signature(method, analysis.GRAMMAR_TYPE_PSEUDO_ANONYMOUS) ) )
-        self.signatures.append( Signature( analysis.GRAMMAR_TYPE_ANONYMOUS, vm_analysis.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS) ) )
+#        self.signatures.append( Signature( analysis.GRAMMAR_TYPE_ANONYMOUS, vm_analysis.get_method_signature(method, analysis.GRAMMAR_TYPE_ANONYMOUS) ) )
 
     def __repr__(self) :
         return "<Method('%s, %s, %s')>" % (self.class_name, self.name, self.descriptor)
@@ -178,7 +178,7 @@ class AndroDB :
     def add_apk_raw(self, filename) :
         print "Processing ....", filename
 
-        a = dvm.APK( filename )
+        a = apk.APK( filename )
         raw = a.get_raw()
         dex = a.get_dex()
 
