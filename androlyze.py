@@ -30,7 +30,7 @@ from apk import *
 from analysis import *
 from diff import *
 
-from misc import *
+import misc
 
 import IPython.ipapi
 from IPython.Shell import IPShellEmbed
@@ -66,7 +66,7 @@ def load_session(filename) :
     return loads( open(filename, "r").read() )
 
 def interact() :
-    ipshell = IPShellEmbed(banner="Androlyze version %s" % VERSION)
+    ipshell = IPShellEmbed(banner="Androlyze version %s" % misc.ANDROLYZE_VERSION)
     ipshell()
 
 def AnalyzeAPK(filename, raw=False) :
@@ -119,7 +119,7 @@ def main(options, arguments) :
                                                                      path.get_class_name(), path.get_name(), path.get_descriptor())
 
     elif options.version != None :
-        print "Androlyze version %s" % VERSION
+        print "Androlyze version %s" % misc.ANDROLYZE_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

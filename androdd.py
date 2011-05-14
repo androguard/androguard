@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, cmd, threading, re
+import sys, os
 
 from optparse import OptionParser
 
@@ -97,7 +97,7 @@ def main(options, arguments) :
             export_apps_to_format( a, options.output, options.dot, options.format )
 
     elif options.version != None :
-        print "Androdd version %s" % misc.VERSION
+        print "Androdd version %s" % misc.ANDRODD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

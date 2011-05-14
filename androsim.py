@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, cmd, threading, re
+import sys
 
 from optparse import OptionParser
 
@@ -44,7 +44,7 @@ def main(options, arguments) :
         diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
 
     elif options.version != None :
-        print "Androsim version %s" % misc.VERSION
+        print "Androsim version %s" % misc.ANDROSIM_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

@@ -133,8 +133,8 @@ class Signature :
 
         method = analysis_method.get_method()
         handlers = method.get_code().handlers
- #       for try_item in method.get_code().tries :
- #           print "w00t", try_item
+#       for try_item in method.get_code().tries :
+#           print "w00t", try_item
 
         for handler_catch_list in method.get_code().handlers :
             #print "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size
@@ -163,22 +163,6 @@ class Signature :
                 l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s) ) )
         return l
 
-    def _get_packages_pa(self, analysis_method) :
-        packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
-
-        if self._cached_packages == {} :
-            for m_t, m in self.__tainted["packages"].get_packages() :
-                self._cached_packages[ m ] = m_t.get_paths_length()
-            n = 0
-            for m in sorted( self._cached_packages ) :
-                self._cached_packages[ m ] = n
-                n += 1
-
-        l = []
-        for m in packages_method :
-            for path in packages_method[ m ] :
-                l.append( (path.get_bb().start + path.get_idx(), "P%d%s" % (self._cached_packages[ m ], TAINTED_PACKAGE[ path.get_access_flag() ]) ) )
-        return l
 
     def _get_strings_a(self, analysis_method) :
         l = []
