@@ -106,7 +106,7 @@ class APK :
 
                 self.validAPK = True
 
-    def isValidAPK(self) :
+    def is_valid_APK(self) :
         return self.validAPK
 
     #def _reload_apk(self) :
