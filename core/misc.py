@@ -80,3 +80,17 @@ def str2long(s):
 
 def random_string() :
     return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
+
+def is_android(real_filename) :
+    fd = open( real_filename, "r")
+    val = None
+
+    f_bytes = fd.read(3)
+
+    if f_bytes[0:2] == "PK" :
+        val = "APK"
+    elif f_bytes[0:3] == "dex" :
+        val = "DEX"
+
+    fd.close()
+    return val
