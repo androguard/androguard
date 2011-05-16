@@ -1036,8 +1036,24 @@ class EncodedValue :
 
         self.value = ""
 
-        if self.__value_type >= VALUE_SHORT and self.__value_type < VALUE_ARRAY :
-            self.value = buff.read( self.__value_arg + 1 )
+        #  TODO: parse floats/doubles correctly
+        if self.__value_type >= VALUE_SHORT and self.__value_type < VALUE_STRING :
+            self.value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        elif self.__value_type == VALUE_STRING :
+            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value = cm.get_string(id)
+        elif self.__value_type == VALUE_TYPE :
+            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value = cm.get_type(id)
+        elif self.__value_type == VALUE_FIELD :
+            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value = cm.get_field(id)
+        elif self.__value_type == VALUE_METHOD :
+            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value = cm.get_method(id)
+        elif self.__value_type == VALUE_ENUM :
+            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value = cm.get_field(id)
         elif self.__value_type == VALUE_ARRAY :
             self.value = EncodedArray( buff, cm )
         elif self.__value_type == VALUE_ANNOTATION :
@@ -1045,11 +1061,24 @@ class EncodedValue :
         elif self.__value_type == VALUE_BYTE :
             self.value = buff.read( 1 )
         elif self.__value_type == VALUE_NULL :
-            pass
+            self.value = None
         elif self.__value_type == VALUE_BOOLEAN :
+            if self.__value_arg:
+                self.value = True
+            else:
+                self.value = False
             pass
         else :
             bytecode.Exit( "Unknown value 0x%x" % self.__value_type )
+
+    def _getintvalue(self, buf):
+        ret = 0
+        shift = 0
+        for b in buf:
+            ret |= ord(b) << shift
+            shift += 8
+
+        return ret
 
     def show(self) :
         print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, repr(self.value)
@@ -1723,6 +1752,7 @@ class ClassItem :
         self.format = SVs( CLASS_DEF_ITEM[0], CLASS_DEF_ITEM[1], buff.read( calcsize(CLASS_DEF_ITEM[0]) ) )
         self._interfaces = None
         self._class_data_item = None
+        self._static_values = None
 
         self._name = None
         self._sname = None
@@ -1738,6 +1768,9 @@ class ClassItem :
         if general_format.class_data_off != 0 :
             self._class_data_item = self.__CM.get_class_data_item( general_format.class_data_off )
             self._class_data_item.reload()
+    
+        if general_format.static_values_off != 0 :
+            self._static_values = self.__CM.get_encoded_array_item ( general_format.static_values_off )
 
     def show(self) :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
@@ -2589,6 +2622,11 @@ class ClassManager :
                 return i
 
         bytecode.Exit( "unknown class data item @ 0x%x" % off )
+
+    def get_encoded_array_item(self, off) :
+        for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM" ] :
+            if i.get_off() == off :
+                return i
 
     def get_string(self, idx) :
         off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
