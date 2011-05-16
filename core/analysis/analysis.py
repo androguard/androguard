@@ -21,7 +21,7 @@ import re, random, string, cPickle
 from error import error, warning
 import jvm, dvm
 
-from dvm_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
+from api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
 class ContextField :
     def __init__(self, mode) :
