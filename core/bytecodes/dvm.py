@@ -636,6 +636,51 @@ class AnnotationSetItem :
     def get_off(self) :
         return self.__offset.off
 
+class AnnotationSetRefItem :
+    def __init__(self,  buff, cm) :
+        self.__CM = cm
+        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+        self.annotations_off = SV( '=L', buff.read( 4 ) )
+
+    def show(self) :
+        print "ANNOTATION_SET_REF_ITEM annotations_off=0x%x" % self.annotation_offs.get_value()
+
+    def get_obj(self) :
+        return []
+
+    def get_raw(self) :
+        return bytecode.Buff( self.__offset.off, self.annotations_off.get_value_buff() )
+
+class AnnotationSetRefList :
+    def __init__(self, buff, cm) :
+        self.__CM = cm
+        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+        self.list = []
+
+        self.size = SV( '=L', buff.read( 4 ) )
+        for i in range(0, self.size) :
+            self.list.append( AnnotationSetRefItem(buff, cm) )
+
+    def reload(self) :
+        pass
+
+    def show(self) :
+        print "ANNOTATION_SET_REF_LIST"
+        nb = 0
+        for i in self.list :
+            print nb,
+            i.show()
+            nb = nb + 1
+
+    def get_obj(self) :
+        return [ i for i in self.list ]
+
+    def get_raw(self) :
+        return [ bytecode.Buff(self.__offset.off, self.size.get_value_buff()) ] + [ i.get_raw() for i in self.list ]
+
+    def get_off(self) :
+        return self.__offset.off
+
 class FieldAnnotation :
     def __init__(self, buff, cm) :
         self.__CM = cm
@@ -2410,6 +2455,9 @@ class MapItem :
 
         elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ANNOTATIONS_DIRECTORY_ITEM" :
             self.item = [ AnnotationsDirectoryItem( buff, cm ) for i in range(0, general_format.size) ]
+        
+        elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ANNOTATION_SET_REF_LIST" :
+            self.item = [ AnnotationSetRefList( buff, cm ) for i in range(0, general_format.size) ]
 
         elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_TYPE_LIST" :
             self.item = [ TypeList( buff, cm ) for i in range(0, general_format.size) ]
@@ -2432,7 +2480,7 @@ class MapItem :
             pass # It's me I think !!!
 
         else :
-            bytecode.Exit( "Map item @ 0x%x(%d) is unknown" % (buff.get_idx(), buff.get_idx()) )
+            bytecode.Exit( "Map item %d @ 0x%x(%d) is unknown" % (general_format.type, buff.get_idx(), buff.get_idx()) )
 
     def reload(self) :
         if self.item != None :
