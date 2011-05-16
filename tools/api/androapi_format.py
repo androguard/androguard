@@ -21,6 +21,7 @@
 import os, sys, re, string
 
 from dvm_permissions_unformatted import PERMISSIONS
+from permissions_by_hand import PERMISSIONS_BY_HAND
 
 BASIC_TYPES = {
    "byte" : "B",
@@ -35,16 +36,18 @@ BASIC_TYPES = {
 }
 
 ADVANCED_TYPES = {
-   "String" : "Ljava/lang/String;",
-   "List" : "Ljava/util/List;",
-   "AccountManagerFuture" : "Landroid/accounts/AccountManagerFuture;",
-   "CellLocation" : "Landroid/telephony/CellLocation;",
-   "Uri" : "Landroid/net/Uri;",
-   "Cursor" : "Landroid/database/Cursor;",
-   "Set" : "Ljava/util/Set;",
-   "BluetoothServerSocket" : "Landroid/bluetooth/BluetoothServerSocket;",
-   "BluetoothSocket" : "Landroid/bluetooth/BluetoothSocket;",
-   "DownloadManager.Request" : "Landroid/app/DownloadManager/Request;",
+    "String" : "Ljava/lang/String;",
+    "List" : "Ljava/util/List;",
+    "AccountManagerFuture" : "Landroid/accounts/AccountManagerFuture;",
+    "CellLocation" : "Landroid/telephony/CellLocation;",
+    "Uri" : "Landroid/net/Uri;",
+    "Cursor" : "Landroid/database/Cursor;",
+    "Set" : "Ljava/util/Set;",
+    "BluetoothServerSocket" : "Landroid/bluetooth/BluetoothServerSocket;",
+    "BluetoothSocket" : "Landroid/bluetooth/BluetoothSocket;",
+    "DownloadManager.Request" : "Landroid/app/DownloadManager/Request;",
+    "PendingIntent" : "Landroid/app/PendingIntent;",
+    "SmsManager" : "Landroid/telephony/SmsManager;",
 }
 
 def translateDescParams( desc_params ) :
@@ -61,10 +64,14 @@ def translateDescParams( desc_params ) :
                 elem = elem[ : tab.find("[") - 2 ]
 
             if elem not in BASIC_TYPES :
-                buff += tab + "L" + elem.replace(".", "/") + ";"
+                if elem in ADVANCED_TYPES :
+                    buff += tab + ADVANCED_TYPES[ elem ] + " "
+                else :
+                    buff += tab + "L" + elem.replace(".", "/") + "; "
             else :
-                buff += tab + BASIC_TYPES[ elem ]
+                buff += tab + BASIC_TYPES[ elem ] + " "
 
+    buff = buff[:-1]
     return buff
 
 def translateDescReturn( desc_return ) :
@@ -77,11 +84,15 @@ def translateDescReturn( desc_return ) :
             elem = elem[ : tab.find("[") - 2 ]
 
         if elem in BASIC_TYPES :
-            buff += tab + BASIC_TYPES[ elem ]
+            buff += tab + BASIC_TYPES[ elem ] + " "
         else :
             if elem in ADVANCED_TYPES :
-                buff += tab + ADVANCED_TYPES[ elem ]
+                buff += tab + ADVANCED_TYPES[ elem ] + " "
+            else :
+                if "." in elem :
+                    buff += tab + "L" + elem.replace(".", "/") + "; "
 
+    buff = buff[:-1]
     return buff
 
 def translateToCLASS( desc_params, desc_return ) :
@@ -95,6 +106,8 @@ def translateToCLASS( desc_params, desc_return ) :
 def translateToCLASS2( constant_name, desc_return ):
     return [ constant_name, translateDescReturn( desc_return ) ]
 
+PERMISSIONS.update( PERMISSIONS_BY_HAND )
+
 for perm in PERMISSIONS :
     for package in PERMISSIONS[perm] :
         for element in PERMISSIONS[perm][package] :
@@ -103,8 +116,7 @@ for perm in PERMISSIONS :
             elif element[0] == "C" :
                 element.extend( translateToCLASS2( element[1], element[2] ) )
 
-
-fd = open("../core/bytecodes/dvm_permissions.py", "w")
+fd = open("./core/bytecodes/api_permissions.py", "w")
 
 fd.write("DVM_PERMISSIONS_BY_PERMISSION = {\n")
 
@@ -128,8 +140,6 @@ for perm in PERMISSIONS :
         for element in PERMISSIONS[perm][package] :
             fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(".", "/"), element[-2], element[-1], perm))
 fd.write("}\n")
-
-
 
 
 

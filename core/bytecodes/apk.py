@@ -18,7 +18,6 @@
 
 import bytecode
 
-
 import misc
 from bytecode import SV, SVs
 from dvm_permissions import DVM_PERMISSIONS
@@ -31,6 +30,8 @@ from xml.dom import minidom
 try :
     import chilkat
     ZIPMODULE = 0
+    # UNLOCK : change it with your valid key !
+    CHILKAT_KEY = "testme"
 except ImportError :
     ZIPMODULE = 1
 
@@ -40,8 +41,7 @@ class ChilkatZip :
         self.files = []
         self.zip = chilkat.CkZip()
 
-        # UNLOCK : change it with your valid key !
-        self.zip.UnlockComponent( "testme" )
+        self.zip.UnlockComponent( CHILKAT_KEY )
 
         self.zip.OpenFromMemory( raw, len(raw) )
 

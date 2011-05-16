@@ -97,10 +97,13 @@ EXPLOIT_APPLICATION = 2
 class Raw(Base) :
     __tablename__ = RAW_TABLE_NAME
     id = Column(Integer, primary_key=True)
-    raw = Column(LargeBinary)
+    pathraw = String(512)
+    #raw = Column(LargeBinary)
 
-    def __init__(self, raw) :
-        self.raw = raw
+    def __init__(self, pathraw) :
+        self.pathraw = pathraw
+        
+        # COPY REMOTE FILE or LOCAL FILE
 
 class AppsRaw(Base) :
     __tablename__ = APPS_RAW_TABLE_NAME
@@ -132,7 +135,7 @@ class AppsRaw(Base) :
             self.hashdex = hash_dex
 
     def __repr__(self) :
-        return "<Raw('%d-%s-%d-%s-%d')>" % (self.id, self.original_name, self.raw_type, self.hashraw, self.information)
+        return "<AppsRaw('%d-%s-%d-%s-%d')>" % (self.id, self.original_name, self.raw_type, self.hashraw, self.information)
 
 class APK :
     __tablename__ = APKS_TABLE_NAME
@@ -199,7 +202,7 @@ class AndroDB :
 
         print "ADD it !"
 
-        r = Raw( raw )
+        r = Raw( filename )
         self._session.add( r )
         self._session.commit()
 
