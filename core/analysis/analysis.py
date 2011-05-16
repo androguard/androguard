@@ -1463,8 +1463,16 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             if ex.match( m.get_info() ) != None :
                 l.extend( m.search_method( name, descriptor ) )
-
         return l
+
+    def search_crypto_packages(self) :
+        return self.search_packages( "Ljavax/crypto/" )
+
+    def search_telephony_packages(self) :
+        return self.search_packages( "Landroid/telephony/" )
+
+    def search_net_packages(self) :
+        return self.search_packages( "Landroid/net/" )
 
     def get_method(self, class_name, name, descriptor) :
         try :
@@ -1940,9 +1948,3 @@ class VMAnalysis :
     # FIXME
     def get_ops(self, method) :
         return [ (i.get_method(), i.get_ops()) for i in self.l ]
-
-class VM_BCA(VMAnalysis) :
-    warning("VM_BCA is deprecated, please use VMAnalysis")
-
-class M_BCA(MethodAnalysis) :
-    warning("M_BCA is deprecated, please use MethodAnalysis")

@@ -816,13 +816,14 @@ FILTERS_SIM = {
         # clinit
     # CODE
         # Instructions : module Diff
-        # exceptions
-        # fill array data
+        # Exceptions
+        # API
+        # CFG method
+        # Fill array data
         # Format
 class Sim(Diff) :
     def __init__(self, vm1, vm2, F=FILTERS_SIM) :
         #set_debug()
-        #vm1[0].get_len_methods(), vm2[0].get_len_methods()
         self.marks = {} 
         super(Sim, self).__init__(vm1, vm2, F)
 
@@ -864,18 +865,15 @@ class Sim(Diff) :
             for j in self.filters[fil][DIFFMETHODS] :
                 debug("%s %s %s" % (j.m.get_class_name(), j.m.get_name(), j.m.get_descriptor()))
                 
-                #v = self.filters[fil][BASE][FILTER_MARK_METH]( j.get_value_first_sort( self.filters[fil][BASE][FILTER_NAME] ) )
-                #print "V",  v
-               
                 # get the first method which match
                 k = j.get_meth_first_sort( self.filters[fil][BASE][FILTER_NAME] )
                
                 # recalculate the similarity to have better percentage with a better algorithm
-                v = j.quick_similarity( self.filters[fil][BASE][FILTER_NAME], k, self.filters[fil][BASE][FILTER_SIM_METH] ) 
+                v1 = j.quick_similarity( self.filters[fil][BASE][FILTER_NAME], k, self.filters[fil][BASE][FILTER_SIM_METH] ) 
 
                 # filter the mark to eliminate totaly diff method
-                v = self.filters[fil][BASE][FILTER_MARK_METH]( v )
-                self.marks[fil].append( v )
+                v2 = self.filters[fil][BASE][FILTER_MARK_METH]( v1 )
+                self.marks[fil].append( v2 )
 
             # mark match methods
             for m in self.filters[ fil ][ MATCHMETHODS ] :
