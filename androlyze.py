@@ -77,6 +77,8 @@ def AnalyzeAPK(filename, raw=False) :
 
     ExportVMToPython( d )
 
+    set_pretty_show( 1 )
+
     return a, d, dx
 
 def main(options, arguments) :

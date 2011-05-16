@@ -16,7 +16,7 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
     return (got == expected)
 
-TESTS = [ "./apks" ]
+TESTS = [ "./debug" ]
 
 for i in TESTS :
     for root, dirs, files in os.walk( i ) :
