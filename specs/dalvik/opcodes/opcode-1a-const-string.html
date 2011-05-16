@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>const-string</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>const-string</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move a reference to the string specified by the given index into the specified
+register. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1a 21c</td>
+  <td>const-string vAA, string@BBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> string index</td>
+</tr>
+<tr>
+  <td>1b 31c</td>
+  <td>const-string/jumbo vAA, string@BBBBBBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> string index</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    B must be a valid index into the string constant pool.
+  </li>     
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    A new java.lang.String object S is allocated on the heap and filled with the
+    contents of string pool entry B.
+  </li>
+  <li>
+    A reference to an internalized version of the new object is moved into
+    register vA, that is, the instruction behaves as if vA' = S.intern() was
+    called.
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+  <li>
+    If v(A+1) is the upper half of a register pair, v(A+1)' becomes undefined.
+  </li> 
+</ul>
+
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>filled-new-array/range</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>filled-new-array/range</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Construct an array of the given type and size, filling it with the supplied
+contents. Clarifications and restrictions are the same as filled-new-array,
+described above. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>25 3rc</td>
+  <td>filled-new-array/range {vCCCC .. vNNNN}, type@BBBB</td>
+  <td><code>A:</code> array size and argument word count (8 bits)<br/>
+    <code>B:</code> type index (16 bits)<br/>
+    <code>C:</code> first argument register (16 bits)<br/>
+    <code>N = A + C - 1</code></td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    vN must be a valid register index in the current stack frame (this means
+    everything below vN is valid, too).
+  </li>
+  <li>
+    For all values I in the interval [C .. N] the following must hold:
+    <ul>
+      <li>
+        vI must not be part of a register pair
+      </li>
+      <li>
+        If the array type is a simple type, vI must be a simple type, too.
+      </li>
+      <li>
+        If the array type is a reference type, vI must be a reference type, too.
+      </li>
+    </ul>
+  </li>
+  <li>
+    B must be a valid index into the type pool.
+  </li>
+  <li>
+    The type denoted by B must be an array type.
+  </li>
+  <li>
+    The element size of the type denoted by B must be no larger than 32 bits.
+  </li> 
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    An attempt is made to get a reference to the type T the name of which is
+    contained in type pool entry B.
+  </li>
+  <li>
+    If T has not been loaded and resolved before, it is being loaded and
+    resolved. All exceptions that are possible during class loading can occur at
+    this point.
+  </li>
+  <li>
+    An attempt is made to create a new instance J of type T and length vA. All
+    exceptions that are possible during instantiation can occur at this point.
+  </li>
+  <li>
+    The elements of R are filled according to the following rules:
+    <ul>
+      <li>
+        J[0] = vC
+      </li>
+      <li>
+        J[1] = v(C+1)
+      </li>
+      <li>
+        ...
+      </li>
+      <li>
+        J[vA] = vN 
+      </li>
+    </ul>
+  </li>
+  <li>
+    No reference to J is stored in any register. Instead, J can be accessed by a
+    move-result-object instruction immediately following this filled-new-array
+    instruction.
+  </li> 
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NegativeArraySizeException if vA < 0
+  </li>
+</ul>
+
+</body>
+</html>

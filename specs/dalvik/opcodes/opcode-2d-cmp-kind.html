@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>cmp&lt;kind&gt;</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>cmp&lt;kind&gt;</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Perform the indicated floating point or long comparison, storing 0 if the two
+arguments are equal, 1 if the second argument is larger, or -1 if the first
+argument is larger. The "bias" listed for the floating point operations
+indicates how NaN comparisons are treated: "Gt bias" instructions return 1 for
+NaN comparisons, and "lt bias" instructions return -1.
+</p>
+<p>
+For example, to check to see if floating point a < b, then it is advisable to
+use cmpg-float; a result of -1 indicates that the test was true, and the other
+values indicate it was false either due to a valid comparison or because one
+or the other values was NaN. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>2d..31 23x</td>
+  <td>cmp<i>kind</i> vAA, vBB, vCC<br/>
+    2d: cmpl-float <i>(lt bias)</i><br/>
+    2e: cmpg-float <i>(gt bias)</i><br/>
+    2f: cmpl-double <i>(lt bias)</i><br/>
+    30: cmpg-double <i>(gt bias)</i><br/>
+    31: cmp-long
+  </td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> first source register or pair<br/>
+    <code>C:</code> second source register or pair</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A, B and C must be valid register indices in the current stack frame.
+  </li>
+  <li>
+    For the two -float variants, both vB and vC must be of type float.
+  </li>
+  <li>
+    For the two -double variants, both vB and vC must be the lower part of a
+    register pair holding a double value.
+  </li>
+  <li>
+    For the -long variant, both both vB and vC must be the lower part of a
+    register pair holding a long value.
+  </li>
+</ul> 
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The values of registers vB and vC are compared. The result, which is stored
+    in vA, is one of the following three:
+    <ul>
+      <li>
+        If vB < vC, then vA'=-1.
+      </li>
+      <li>
+        If vB == vC, then vA'=0.
+      </li>
+      <li>
+        If vC > vC, then vA'=1.
+      </li>
+    </ul>
+  </li>
+  <li>
+    For the -float and -double variants, an addition "bias" specifies what
+    happens if one or both of the arguments are NaN:
+    <ul>
+      <li>
+        A "lt bias" results in vA'=-1.
+      </li>
+      <li>
+        A "gt bias" results in vA'=1.
+      </li>
+    </ul>
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+  <li>
+    If v(A+1) is the upper half of a register pair, v(A+1)' becomes undefined.
+  </li>
+</ul> 
+    
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

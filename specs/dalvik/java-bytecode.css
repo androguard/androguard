@@ -1,0 +1,54 @@
+@media print {
+    table {
+        font-size: 8pt;
+    }
+}
+
+@media screen {
+    table {
+        font-size: 10pt;
+    }
+}
+
+h1 { 
+    text-align: center;
+}
+
+table {
+    vertical-align: top;
+    border-collapse: collapse;
+    font-family: sans-serif;
+}
+
+td {
+    vertical-align: top;
+    background: #f8f8f8;
+    border-width: 0;
+}
+
+td.outer { 
+    width: 25%;
+    padding: 0;
+}
+
+td.outer table { 
+    width: 100%;
+}
+
+td.outer td { 
+    border-width: 0;
+    background: #f8f8f8;
+    padding: 1pt;
+    padding-left: 10pt;
+    padding-right: 2pt;
+}
+
+tr.d td { 
+    background: #dddddd;
+}
+
+td.outer td + td + td { 
+    font-family: monospace;
+    font-weight: bold;
+    padding-right: 5pt;
+}

@@ -1,0 +1,245 @@
+/*
+ * Copyright (C) 2009 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Dalvik instruction fragments, useful when porting mterp.
+ *
+ * Compile this and examine the output to see what your compiler generates.
+ * This can give you a head start on some of the more complicated operations.
+ *
+ * Example:
+ *   % gcc -c -O2 -save-temps -fverbose-asm porting-proto.c
+ *   % less porting-proto.s
+ */
+#include <stdint.h>
+
+typedef int8_t s1;
+typedef uint8_t u1;
+typedef int16_t s2;
+typedef uint16_t u2;
+typedef int32_t s4;
+typedef uint32_t u4;
+typedef int64_t s8;
+typedef uint64_t u8;
+
+s4 iadd32(s4 x, s4 y) { return x + y; }
+s8 iadd64(s8 x, s8 y) { return x + y; }
+float fadd32(float x, float y) { return x + y; }
+double fadd64(double x, double y) { return x + y; }
+
+s4 isub32(s4 x, s4 y) { return x - y; }
+s8 isub64(s8 x, s8 y) { return x - y; }
+float fsub32(float x, float y) { return x - y; }
+double fsub64(double x, double y) { return x - y; }
+
+s4 irsub32lit8(s4 x) { return 25 - x; }
+
+s4 imul32(s4 x, s4 y) { return x * y; }
+s8 imul64(s8 x, s8 y) { return x * y; }
+float fmul32(float x, float y) { return x * y; }
+double fmul64(double x, double y) { return x * y; }
+
+s4 idiv32(s4 x, s4 y) { return x / y; }
+s8 idiv64(s8 x, s8 y) { return x / y; }
+float fdiv32(float x, float y) { return x / y; }
+double fdiv64(double x, double y) { return x / y; }
+
+s4 irem32(s4 x, s4 y) { return x % y; }
+s8 irem64(s8 x, s8 y) { return x % y; }
+
+s4 iand32(s4 x, s4 y) { return x & y; }
+s8 iand64(s8 x, s8 y) { return x & y; }
+
+s4 ior32(s4 x, s4 y) { return x | y; }
+s8 ior64(s8 x, s8 y) { return x | y; }
+
+s4 ixor32(s4 x, s4 y) { return x ^ y; }
+s8 ixor64(s8 x, s8 y) { return x ^ y; }
+
+s4 iasl32(s4 x, s4 count) { return x << (count & 0x1f); }
+s8 iasl64(s8 x, s4 count) { return x << (count & 0x3f); }
+
+s4 iasr32(s4 x, s4 count) { return x >> (count & 0x1f); }
+s8 iasr64(s8 x, s4 count) { return x >> (count & 0x3f); }
+
+s4 ilsr32(s4 x, s4 count) { return ((u4)x) >> (count & 0x1f); } // unsigned
+s8 ilsr64(s8 x, s4 count) { return ((u8)x) >> (count & 0x3f); } // unsigned
+
+s4 ineg32(s4 x) { return -x; }
+s8 ineg64(s8 x) { return -x; }
+float fneg32(float x) { return -x; }
+double fneg64(double x) { return -x; }
+
+s4 inot32(s4 x) { return x ^ -1; }
+s8 inot64(s8 x) { return x ^ -1LL; }
+
+s4 float2int(float x) { return (s4) x; }
+double float2double(float x) { return (double) x; }
+s4 double2int(double x) { return (s4) x; }
+float double2float(double x) { return (float) x; }
+
+/*
+ * ARM lib doesn't clamp large values or NaN the way we want on these two.
+ * If the simple version isn't correct, use the long version.  (You can use
+ * dalvik/tests/041-narrowing to verify.)
+ */
+s8 float2long(float x) { return (s8) x; }
+s8 float2long_clamp(float x)
+{
+    static const float kMaxLong = (float)0x7fffffffffffffffULL;
+    static const float kMinLong = (float)0x8000000000000000ULL;
+
+    if (x >= kMaxLong) {
+        return 0x7fffffffffffffffULL;
+    } else if (x <= kMinLong) {
+        return 0x8000000000000000ULL;
+    } else if (x != x) {
+        return 0;
+    } else {
+        return (s8) x;
+    }
+}
+s8 double2long(double x) { return (s8) x; }
+s8 double2long_clamp(double x)
+{
+    static const double kMaxLong = (double)0x7fffffffffffffffULL;
+    static const double kMinLong = (double)0x8000000000000000ULL;
+
+    if (x >= kMaxLong) {
+        return 0x7fffffffffffffffULL;
+    } else if (x <= kMinLong) {
+        return 0x8000000000000000ULL;
+    } else if (x != x) {
+        return 0;
+    } else {
+        return (s8) x;
+    }
+}
+
+s1 int2byte(s4 x) { return (s1) x; }
+s2 int2short(s4 x) { return (s2) x; }
+u2 int2char(s4 x) { return (u2) x; }
+s8 int2long(s4 x) { return (s8) x; }
+float int2float(s4 x) { return (float) x; }
+double int2double(s4 x) { return (double) x; }
+
+s4 long2int(s8 x) { return (s4) x; }
+float long2float(s8 x) { return (float) x; }
+double long2double(s8 x) { return (double) x; }
+
+int cmpl_float(float x, float y)
+{
+    int result;
+
+    if (x == y)
+        result = 0;
+    else if (x > y)
+        result = 1;
+    else /* (x < y) or NaN */
+        result = -1;
+    return result;
+}
+
+int cmpg_float(float x, float y)
+{
+    int result;
+
+    if (x == y)
+        result = 0;
+    else if (x < y)
+        result = -1;
+    else /* (x > y) or NaN */
+        result = 1;
+    return result;
+}
+
+int cmpl_double(double x, double y)
+{
+    int result;
+
+    if (x == y)
+        result = 0;
+    else if (x > y)
+        result = 1;
+    else /* (x < y) or NaN */
+        result = -1;
+    return result;
+}
+
+int cmpg_double(double x, double y)
+{
+    int result;
+
+    if (x == y)
+        result = 0;
+    else if (x < y)
+        result = -1;
+    else /* (x > y) or NaN */
+        result = 1;
+    return result;
+}
+
+int cmp_long(s8 x, s8 y)
+{
+    int result;
+
+    if (x == y)
+        result = 0;
+    else if (x < y)
+        result = -1;
+    else /* (x > y) */
+        result = 1;
+    return result;
+}
+
+/* instruction decoding fragments */
+u1 unsignedAA(u2 x) { return x >> 8; }
+s1 signedAA(u2 x) { return (s4)(x << 16) >> 24; }
+s2 signedBB(u2 x) { return (s2) x; }
+u1 unsignedA(u2 x) { return (x >> 8) & 0x0f; }
+u1 unsignedB(u2 x) { return x >> 12; }
+
+/* some handy immediate constants when working with float/double */
+u4 const_43e00000(u4 highword) { return 0x43e00000; }
+u4 const_c3e00000(u4 highword) { return 0xc3e00000; }
+u4 const_ffc00000(u4 highword) { return 0xffc00000; }
+u4 const_41dfffff(u4 highword) { return 0x41dfffff; }
+u4 const_c1e00000(u4 highword) { return 0xc1e00000; }
+
+/*
+ * Test for some gcc-defined symbols.  If you're frequently switching
+ * between different cross-compiler architectures or CPU feature sets,
+ * this can help you keep track of which one you're compiling for.
+ */
+#ifdef __arm__
+# warning "found __arm__"
+#endif
+#ifdef __ARM_EABI__
+# warning "found __ARM_EABI__"
+#endif
+#ifdef __VFP_FP__
+# warning "found __VFP_FP__"    /* VFP-format doubles used; may not have VFP */
+#endif
+#if defined(__VFP_FP__) && !defined(__SOFTFP__)
+# warning "VFP in use"
+#endif
+#ifdef __ARM_ARCH_5TE__
+# warning "found __ARM_ARCH_5TE__"
+#endif
+#ifdef __ARM_ARCH_7A__
+# warning "found __ARM_ARCH_7A__"
+#endif
+

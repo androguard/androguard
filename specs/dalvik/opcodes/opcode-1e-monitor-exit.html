@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>monitor-exit</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>monitor-exit</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Release the monitor for the indicated object.
+</p>
+<p>
+Note: If this instruction needs to throw an exception, it must do so as if the
+pc has already advanced past the instruction. It may be useful to think of this
+as the instruction successfully executing (in a sense), and the exception
+getting thrown after the instruction but before the next one gets a chance to
+run. This definition makes it possible for a method to use a monitor cleanup
+catch-all (e.g., finally) block as the monitor cleanup for that block itself,
+as a way to handle the arbitrary exceptions that might get thrown due to the
+historical implementation of Thread.stop(), while still managing to have proper
+monitor hygiene. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1e 11x</td>
+  <td>monitor-exit vAA</td>
+  <td><code>A:</code> reference-bearing register (8 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index for the current stack frame.
+  </li>
+  <li>
+    Register vA must contain a reference to an object.
+  </li>
+</ul>
+ 
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    An attempt is made for the current thread to release the monitor of the
+    indicated object.
+  </li>
+  <li>
+    If the current thread is the owner, the following happens:
+    <ul>
+      <li>
+        The monitor's entry count is decreased by one.
+      </li>
+      <li>
+        If the entry count has reached zero, the monitor is released. Other
+        threads waiting for the same monitor have a chance to acquire it.
+      </li>
+    </ul>
+  </li>
+  <li>
+    Any exception that gets thrown by this instruction bears the PC of the
+    instruction following the monitor-exit. That is, from the point of view of
+    an exception handler it cannot be distinguished from the same type of
+    exception being thrown immediately after the monitor-exit instruction.
+  </li>
+</ul> 
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    NullPointerException is thrown if vA is null.
+  </li>
+  <li>
+    IllegalMonitorStateException is thrown if the current thread is not the
+    owner of that monitor.
+  </li>
+</ul>
+
+</body>
+</html>

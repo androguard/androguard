@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>move</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>move</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move the contents of one non-object register to another.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>01 12x</td>
+  <td>move vA, vB</td>
+  <td><code>A:</code> destination register (4 bits)<br/>
+    <code>B:</code> source register (4 bits)</td>
+</tr>
+<tr>
+  <td>02 22x</td>
+  <td>move/from16 vAA, vBBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> source register (16 bits)</td>
+</tr>
+<tr>
+  <td>03 32x</td>
+  <td>move/16 vAAAA, vBBBB</td>
+  <td><code>A:</code> destination register (16 bits)<br/>
+    <code>B:</code> source register (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    Both A and B must be valid register indices in the current stack frame.
+  </li>
+  <li>
+    Register vB must be defined.
+  </li>
+  <li>
+    Register vB must not contain a reference value.
+  </li>
+  <li>
+    Register vB must not be part of a register pair.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The value of register vB is moved to register vA, that is, vA' = vB.
+  </li>
+  <li>
+    If register v(A-1) is the first half of a register pair, register v(A-1)'
+    becomes undefined.
+  </li>
+  <li>
+    If register v(A+1) is the second half of a register pair, register v(A+1)'
+    becomes undefined.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+
+<title>Dalvik Libraries</title>
+    
+<link rel=stylesheet href="dex-format.css">
+<link href="prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="prettify.js"></script>
+
+<style>
+ul.code li {
+  font-family: monospace;
+}
+</style>
+
+</head>
+
+<body onload="prettyPrint()">
+
+<h1 class="title">Dalvik Libraries</h1>
+
+<p>The Dalvik Libraries, also known as the <i>Android core libraries</i>,
+implement general purpose APIs used by code written in the Java programming
+language. While the libraries themselves don't depend on Android, they do form
+the foundation of the Android framework. Android applications use the Dalvik
+libraries both directly and indirectly for data structures, networking,
+concurrency, I/O, and more.</p>
+
+<p>The Dalvik libraries break down into two categories:</p>
+
+<ul>
+    <li><a href="#vm-specific">Dalvik VM-specific libraries</a></li>
+    <li><a href="#interop">Java programming language interoperability
+        libraries</a></li>
+</ul>
+
+<p>Any system claiming to be Android-compatible must implement these libraries.
+Unless otherwise noted, both the signatures and the behavior of such a system
+need to conform to the Android 1.0 reference implementation. Both types of
+conformance will be checked by the upcoming Android Compatibility Test Suite
+(CTS).</p>
+
+<a name="vm-specific"/><h2>Dalvik VM-specific libraries</h2>
+
+<p>The VM-specific libraries enable requesting or modifying VM-specific
+information. Code that uses these classes is only portable across Dalvik-based
+systems. The VM-specific Dalvik packages include:</p>
+
+<ul class="code">
+  <li>dalvik.annotation</li>
+  <li>dalvik.bytecode</li>
+  <li>dalvik.system</li>
+</ul>
+
+<a name="interop"/><h2>Java programming language interoperability libraries</h2>
+
+<p>This category of library provides a familiar environment for programmers
+writing code in the Java programming language. Much of the implementation of
+this code comes from <a href="http://harmony.apache.org/">Apache Harmony</a>.
+Sometimes, we have to change the Harmony code to make it more suitable for the
+memory and CPU-constrained environments targeted by Dalvik. We delineate
+Dalvik-specific changes like so:
+
+<pre class="prettyprint">
+    private static final long serialVersionUID = 8683452581122892189L;
+
+// BEGIN android-added
+    /** zero-element array */
+    private static final Object[] emptyArray = new Object[0];
+// END android-added
+
+    private transient int firstIndex;
+</pre>
+
+<p>If you change existing Harmony code instead of just inserting new code, use
+<code>android-changed</code> instead of <code>android-added</code>. These
+markers help us keep track of our own changes when we pull down updates from
+Harmony.</p>
+
+<p>Packages in this category include:</p>
+
+<ul class="code">
+  <li>java.io</li>
+  <li>java.lang</li>
+  <li>java.lang.annotation</li>
+  <li>java.lang.ref</li>
+  <li>java.lang.reflect</li>
+  <li>java.math</li>
+  <li>java.net</li>
+  <li>java.nio</li>
+  <li>java.nio.channels</li>
+  <li>java.nio.channels.spi</li>
+  <li>java.nio.charset</li>
+  <li>java.nio.charset.spi</li>
+  <li>java.security</li>
+  <li>java.security.acl</li>
+  <li>java.security.cert</li>
+  <li>java.security.interfaces</li>
+  <li>java.security.spec</li>
+  <li>java.sql</li>
+  <li>java.text</li>
+  <li>java.util</li>
+  <li>java.util.concurrent</li>
+  <li>java.util.concurrent.atomic</li>
+  <li>java.util.concurrent.locks</li>
+  <li>java.util.jar</li>
+  <li>java.util.logging</li>
+  <li>java.util.prefs</li>
+  <li>java.util.regex</li>
+  <li>java.util.zip</li>
+  <li>javax.crypto</li>
+  <li>javax.crypto.interfaces</li>
+  <li>javax.crypto.spec</li>
+  <li>javax.net</li>
+  <li>javax.net.ssl</li>
+  <li>javax.security.auth</li>
+  <li>javax.security.auth.callback</li>
+  <li>javax.security.auth.login</li>
+  <li>javax.security.auth.x500</li>
+  <li>javax.security.cert</li>
+  <li>javax.sql</li>
+  <li>javax.xml</li>
+  <li>javax.xml.parsers</li>
+  <li>org.w3c.dom</li>
+  <li>org.xml.sax</li>
+  <li>org.xml.sax.ext</li>
+  <li>org.xml.sax.helpers</li>
+</ul>
+
+<p>We only provide the core functionality of <code>XMLParser</code> and
+<code>DocumentBuilder</code> in the XML packages. Some methods dealing with XML
+schema were left out because we don't provide the corresponding packages.</p>
+
+<p>In addition to the aforementioned packages, we plan to support the following
+packages some time in the future. We currently have an unfinished
+implementation of 2D drawing and image processing.</p>
+
+<ul class="code">
+  <li>java.awt</li>
+  <li>java.awt.color</li>
+  <li>java.awt.event</li>
+  <li>java.awt.font</li>
+  <li>java.awt.geom</li>
+  <li>java.awt.im</li>
+  <li>java.awt.im.spi</li>
+  <li>java.awt.image</li>
+  <li>java.awt.image.renderable</li>
+  <li>javax.imageio</li>
+  <li>javax.imageio.event</li>
+  <li>javax.imageio.metadata</li>
+  <li>javax.imageio.plugins.bmp</li>
+  <li>javax.imageio.plugins.jpeg</li>
+  <li>javax.imageio.spi</li>
+  <li>javax.imageio.stream</li>
+</ul>
+
+<p style="margin-top: 50px">Copyright &copy; 2008 The Android Open Source
+Project</p>
+
+</body>
+</html>
