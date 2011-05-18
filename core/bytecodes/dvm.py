@@ -207,25 +207,34 @@ class PackedSwitch :
         return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
 
 OPCODE_OP           = 0x01
+OPCODE_BB           = 0x01
+
 OPCODE_AA_OP        = 0x02
+OPCODE_CC_BB        = 0x02
+
 OPCODE_00           = 0x03
 OPCODE_B_A_OP       = 0x04
+
 OPCODE_CCCC         = 0x05
 OPCODE_BBBB         = 0x05
 OPCODE_AAAA         = 0x05
+
 OPCODE_SBBBB        = 0x06
 OPCODE_SAAAA        = 0x06
+OPCODE_SCCCC        = 0x06
+
 OPCODE_G_F_E_D      = 0x07
 OPCODE_SB_A_OP      = 0x08
-OPCODE_CC_BB        = 0x09
-OPCODE_SCCCC        = 0x0a
 OPCODE_SCC_BB       = 0x0b
-OPCODE_BB           = 0x0c
+
 OPCODE_SCC          = 0x0d
-OPCODE_SAA          = 0x0e
+OPCODE_SAA          = 0x0d
+
 OPCODE_SBBBB0000    = 0x0f
+
 OPCODE_SBBBBBBBB    = 0x10
 OPCODE_SAAAAAAAA    = 0x10
+
 OPCODE_00_OP        = 0x11
 OPCODE_BBBBBBBB     = 0x12
 
@@ -2118,6 +2127,22 @@ class DCode :
         self.__h_special_bytecodes = {}
         self.__bytecodes = []
 
+        self.__map_extract_values = {
+            OPCODE_B_A_OP   :   self.op_B_A_OP,
+            OPCODE_AA_OP    :   self.op_AA_OP,
+            OPCODE_00_OP    :   self.op_00_OP,
+            OPCODE_CCCC     :   self.op_CCCC,
+            OPCODE_SAAAA    :   self.op_SAAAA,
+            OPCODE_SB_A_OP  :   self.op_SB_A_OP,
+            OPCODE_SCC_BB   :   self.op_SCC_BB,
+            OPCODE_G_F_E_D  :   self.op_G_F_E_D,
+            OPCODE_OP       :   self.op_OP,
+            OPCODE_SCC      :   self.op_SCC,
+            OPCODE_SAAAAAAAA :  self.op_SAAAAAAAA,
+            OPCODE_BBBBBBBB :   self.op_BBBBBBBB,
+            OPCODE_00       :   self.op_00,
+        }
+
         self.__current_pos = 0
 
         ushort = calcsize( '<H' )
@@ -2158,60 +2183,58 @@ class DCode :
             real_j = j / 2
 
     def _extract_values(self, i) :
-        if i == OPCODE_B_A_OP :
-            i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-        
-        elif i == OPCODE_AA_OP or i == OPCODE_CC_BB :
-            i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
-        
-        elif i == OPCODE_00_OP :
-            i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xff])]
-        
-        elif i == OPCODE_CCCC or i == OPCODE_BBBB :
-            i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, [i16]]
-        
-        elif i == OPCODE_SAAAA or i == OPCODE_SBBBB or i == OPCODE_SCCCC :
-            i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, [i16]]
-        
-        elif i == OPCODE_SB_A_OP :
-            i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-        
-        elif i == OPCODE_SCC_BB :
-            i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
-        
-        elif i == OPCODE_G_F_E_D :
-            i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-            return [2, map(int, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-        
-        elif i == OPCODE_OP or i == OPCODE_BB :
-            i8 = unpack("=B", self.__insn[self.__current_pos:self.__current_pos+1])[0]
-            return [1, [i8]]
-        
-        elif i == OPCODE_SCC or i == OPCODE_SAA :
-            i8 = unpack("=b", self.__insn[self.__current_pos:self.__current_pos+1])[0]
-            return [1, [i8]]
-        
-        elif i == OPCODE_SBBBBBBBB or i == OPCODE_SAAAAAAAA :
-            i32 = unpack("=i", self.__insn[self.__current_pos:self.__current_pos+4])[0]
-            return [4, [i32]]
+        return self.__map_extract_values[ i ]()
 
-        elif i == OPCODE_BBBBBBBB :
-            i32 = unpack("=I", self.__insn[self.__current_pos:self.__current_pos+4])[0]
-            return [4, [i32]]
+    def op_B_A_OP(self) :
+        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
         
-        elif i == OPCODE_00 :
-            return [1, []]
+    def op_AA_OP(self) :
+        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+    
+    def op_00_OP(self) :
+        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xff])]
+    
+    def op_CCCC(self) :
+        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, [i16]]
+        
+    def op_SAAAA(self) :
+        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, [i16]]
+    
+    def op_SB_A_OP(self) :
+        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+        
+    def op_SCC_BB(self) :
+        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+        
+    def op_G_F_E_D(self) :
+        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
+        return [2, map(int, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+    
+    def op_OP(self) :
+        i8 = unpack("=B", self.__insn[self.__current_pos:self.__current_pos+1])[0]
+        return [1, [i8]]
+   
+    def op_SCC(self) :
+        i8 = unpack("=b", self.__insn[self.__current_pos:self.__current_pos+1])[0]
+        return [1, [i8]]
+        
+    def op_SAAAAAAAA(self) :
+        i32 = unpack("=i", self.__insn[self.__current_pos:self.__current_pos+4])[0]
+        return [4, [i32]]
 
-        else :
-            print i
-            raise("ooo")
+    def op_BBBBBBBB(self) :
+        i32 = unpack("=I", self.__insn[self.__current_pos:self.__current_pos+4])[0]
+        return [4, [i32]]
+       
+    def op_00(self) :
+        return [1, []]
 
     def _analyze_mnemonic(self, op_value, mnemonic) :
 #        print op_value, mnemonic, self.__current_pos
@@ -2254,101 +2277,6 @@ class DCode :
         if special :
             return operands, (operands[2][1], mnemonic[-1])
         return operands, None
-
-    def _analyze_mnemonic2(self, op_value, mnemonic) :
-        values = {}
-        t_size = len(self.__all_bytes)
-        operands = []
-        t_ops = mnemonic[3].split(' ')
-
-        #print "ANALYZE ", mnemonic, t_ops, self.__all_bytes
-
-        if op_value >= 0x6e and op_value <= 0x72 :
-            t_ops.pop( -1 )
-
-        for i in t_ops :
-            sub_ops = i.split('|')
-
-            if len(sub_ops[-1]) == 2 :
-                sub_ops = [ sub_ops[-1] ] + sub_ops[0:-1]
-            else :
-                sub_ops = sub_ops[2:] + sub_ops[0:2]
-
-            #print "SUB_OPS", sub_ops, self.__all_bytes
-            for sub_op in sub_ops :
-                zero_count = string.count(sub_op, '0')
-
-                #print sub_op, "ZERO", zero_count
-                if zero_count == len(sub_op) :
-                    for zero in range(0, zero_count) :
-                        self.__all_bytes.pop(0)
-                    continue
-
-                size = ((len(sub_op) - zero_count)  * 4)
-                signed = 0
-
-                pos_op = string.find(mnemonic[2], sub_op)
-                if pos_op != -1 and mnemonic[2][pos_op - 1] == '+' :
-                    signed = 1
-
-#               print repr(sub_op), signed
-                ttype = "op@"
-
-                truc = False
-                if pos_op != -1 :
-                    t_pos_op = pos_op
-
-                    while pos_op > 0 and mnemonic[2][pos_op] != ' ' :
-                        pos_op = pos_op - 1
-
-                    ttype = mnemonic[2][pos_op : t_pos_op].replace(' ', '')
-                    if "{" in ttype :
-                        ttype = ttype[ string.find(ttype, "{") + 1 : ]
-                else :
-                    if sub_op != "op" :
-                        ttype = "v"
-
-#               print "SIZE", size
-                val = self._extract( signed, size ) << (zero_count * 4)
-
-                operands.append( [ttype, val] )
-                values[ sub_op ] = val
-                #print "VAL --> ", val, size, mnemonic
-
-        if op_value >= 0x6e and op_value <= 0x72 :
-            i = [ "E", "D", "G", "F" ]
-
-            n_operands = {}
-            for new_reg in i :
-                val = self._extract( 1, len(new_reg) * 4 )
-                n_operands[ new_reg ] = [ "v", val ]
-
-            for i in sorted(n_operands) :
-                operands.append( n_operands[i] )
-
-            for i in range(0, 4 - values["B"]) :
-                operands.pop(-1)
-
-            operands.pop(1)
-            va = operands.pop(1)
-            if values["B"] == 5 :
-                operands.append( va )
-
-        elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
-            NNNN = values["CCCC"] + values["AA"] + 1
-
-            for i in range(values["CCCC"] + 1, NNNN - 1 ) :
-                operands.append( ["v", i ] )
-
-            operands.pop(1)
-
-        #print operands, mnemonic
-
-        t_size = (t_size - len(self.__all_bytes)) / 2
-        if len(mnemonic) == 5 :
-            return operands, (operands[2][1], mnemonic[4]), t_size
-
-        return operands, None, t_size
 
     def get(self) :
         return self.__bytecodes
@@ -2671,6 +2599,7 @@ class ClassManager :
         self.__strings_off = {}
 
         self.__cached_type_list = {}
+        self.__cached_proto = {}
 
     def add_offset(self, off, obj) :
         x = OffObj( off )
@@ -2736,7 +2665,15 @@ class ClassManager :
         return self.get_string( type )
 
     def get_proto(self, idx) :
-        proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
+        #proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
+        #return [ proto.get_params(), proto.get_return_type() ]
+        
+        try :
+            proto = self.__cached_proto[ idx ]
+        except KeyError :
+            proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
+            self.__cached_proto[ idx ] = proto
+        
         return [ proto.get_params(), proto.get_return_type() ]
 
     def get_field(self, idx, ref=False) :
