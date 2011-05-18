@@ -58,11 +58,11 @@
      If this is not done in place, override ${out.dex.input.absolute.dir}]
     <target name="-post-compile">
     </target>
--->
    <target name="-post-compile">                                                                                                                                 
       <echo>Running Androguard ...</echo>
       <exec executable="../../../ant/androguard_ant.py"> <arg value="${out.classes.absolute.dir}"/> <arg value="${basedir}/androguard.xml"/> </exec>
    </target>
+-->
 
 
     <!-- Execute the Android Setup task that will setup some properties
