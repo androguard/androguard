@@ -20,7 +20,6 @@ import re, random, string, cPickle
 
 from error import error, warning
 import jvm, dvm
-
 from api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
 class ContextField :
@@ -741,9 +740,9 @@ class JVMBasicBlock :
             ################### TAINTED PACKAGES ###################
             elif "new" in i.get_name() or "invoke" in i.get_name() or "getstatic" in i.get_name() :
                 if "new" in i.get_name() :
-                    self.__context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+                    self.__context.get_tainted_packages()._push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
                 else :
-                    self.__context.get_tainted_packages().push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
+                    self.__context.get_tainted_packages()._push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
             #########################################################
 
             ################### TAINTED INTEGERS ###################
@@ -1057,10 +1056,10 @@ class DVMBasicBlock :
                         break
 
                 method_info = self.__vm.get_class_manager().get_method( idx_meth )
-                self.__context.get_tainted_packages().push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
+                self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
             elif "new-instance" in i.get_name() :
                 type_info = self.__vm.get_class_manager().get_type( i.get_operands()[-1][1] )
-                self.__context.get_tainted_packages().push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+                self.__context.get_tainted_packages()._push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             elif "const-string" in i.get_name() :
                 string_name = self.__vm.get_class_manager().get_string( i.get_operands()[-1][1] )
                 self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
@@ -1338,6 +1337,13 @@ class TaintedPackage :
         return p
 
     def search_method(self, name, descriptor) :
+        """
+            @param name : a regexp for the name of the method
+            @param descriptor : a regexp for the descriptor of the method
+
+            @rtype : a list of called paths
+        """
+        ex = re.compile( class_name )
         l = []
         m_name = re.compile(name)
         m_descriptor = re.compile(descriptor)
@@ -1389,7 +1395,7 @@ class TaintedPackages :
         if name not in self.__packages :
             self.__packages[ name ] = TaintedPackage( name )
 
-    def push_info(self, class_name, info) :
+    def _push_info(self, class_name, info) :
         self._add_pkg( class_name )
         p = self.__packages[ class_name ].push( info )
 
@@ -1411,6 +1417,9 @@ class TaintedPackages :
             return {}
 
     def get_packages_by_bb(self, bb):
+        """
+            @rtype : return a list of packaged used in a basic block
+        """
         l = []
         for i in self.__packages :
             paths = self.__packages[i].gets()
@@ -1426,6 +1435,9 @@ class TaintedPackages :
             yield self.__packages[ i ], i
 
     def get_internal_packages(self) :
+        """
+            @rtype : return a list of the internal packages called in the application
+        """
         classes = self.__vm.get_classes_names()
         l = []
         for m, _ in self.get_packages() :
@@ -1437,6 +1449,9 @@ class TaintedPackages :
         return l
        
     def get_external_packages(self) :
+        """
+        @rtype : return a list of the external packages called in the application
+        """
         classes = self.__vm.get_classes_names()
         l = []
         for m, _ in self.get_packages() :
@@ -1448,6 +1463,11 @@ class TaintedPackages :
         return l
 
     def search_packages(self, package_name) :
+        """
+            @param package_name : a regexp for the name of the package
+        
+            @rtype : a list of called packages' paths
+        """
         ex = re.compile( package_name )
     
         l = []
@@ -1457,6 +1477,13 @@ class TaintedPackages :
         return l
 
     def search_methods(self, class_name, name, descriptor) :
+        """
+            @param class_name : a regexp for the class name of the method (the package)
+            @param name : a regexp for the name of the method
+            @param descriptor : a regexp for the descriptor of the method
+
+            @rtype : a list of called methods' paths
+        """
         ex = re.compile( class_name )
         l = []
 
@@ -1466,12 +1493,21 @@ class TaintedPackages :
         return l
 
     def search_crypto_packages(self) :
+        """
+            @rtype : a list of called crypto packages
+        """
         return self.search_packages( "Ljavax/crypto/" )
 
     def search_telephony_packages(self) :
+        """
+            @rtype : a list of called telephony packages
+        """
         return self.search_packages( "Landroid/telephony/" )
 
     def search_net_packages(self) :
+        """
+            @rtype : a list of called net packages 
+        """
         return self.search_packages( "Landroid/net/" )
 
     def get_method(self, class_name, name, descriptor) :
@@ -1480,7 +1516,12 @@ class TaintedPackages :
         except KeyError :
             return []
 
-    def get_permissions(self, permissions_needed):
+    def get_permissions(self, permissions_needed) :
+        """
+            @param permissions_needed : a list of restricted permissions to get ([] returns all permissions)
+            
+            @rtype : a dictionnary of permissions' paths
+        """
         permissions = {}
 
         pn = permissions_needed
@@ -1534,56 +1575,34 @@ class BasicBlocks :
         return self.__tainted["variables"]
 
     def get_random(self) :
+        """
+            @rtype : return a random basic block
+        """
         return self.bb[ random.randint(0, len(self.bb) - 1) ]
 
-    def export_dot(self, output) :
-        try :
-            from networkx import DiGraph
-            from networkx import draw_graphviz, write_dot
-        except ImportError :
-            error("module networkx not found")
-
-        G = DiGraph()
-
-        for i in self.bb :
-            name = i.get_name() + " " + i.get_last().get_name()
-            G.add_node( name )
-            for j in i.childs :
-                G.add_edge( name, j[2].get_name() + " " + j[2].get_last().get_name() )
-
-        draw_graphviz(G)
-        write_dot(G, output)
-
     def get(self) :
+        """
+            @rtype : return each basic block
+        """
         for i in self.bb :
             yield i
 
     def gets(self) :
+        """
+            @rtype : a list of basic blocks
+        """
         return self.bb
-
-    def create_graph(self) :
-        try :
-            from networkx import DiGraph
-        except ImportError :
-            error("module networkx not found")
-
-        self.G = DiGraph()
-
-        for i in self.bb :
-            self.G.add_node( i.get_name() )
-            for j in i.childs :
-                if j[2] != None :
-                    self.G.add_edge( i.get_name(), j[2].get_name() )
 
 class MethodAnalysis :
     """
        This class analyses in details a method of a class/dex file
-
-       @param _vm :  a virtual machine object
-       @param _method : a method object
-       @param tv : a tainted variables object
     """
     def __init__(self, _vm, _method, _tv, code_analysis=False) :
+        """
+            @param _vm :  a L{JVMFormat} or L{DalvikVMFormat} object
+            @param _method : a method object
+            @param tv : a dictionnary of tainted information
+        """
         self.__vm = _vm
         self.__method = _method
 
@@ -1668,9 +1687,10 @@ class MethodAnalysis :
             for i in self.basic_blocks.get() :
                 i.analyze_code()
 
-        #self.basic_blocks.create_graph()
-
     def get_length(self) :
+        """
+            @rtype : an integer which is the length of the code
+        """
         return self.get_code().get_length()
 
     def prev_free_block_offset(self, idx=0) :
@@ -1780,6 +1800,11 @@ class VMAnalysis :
        @param _vm : a virtual machine object
     """
     def __init__(self, _vm, code_analysis=False) :
+        """
+            @param _vm : a L{JVMFormat} or L{DalvikFormatVM}
+            @param code_analysis : True if you would like to do an advanced analyse of the code (e.g : to search free offset to insert codes
+        """
+
         self.__vm = _vm
 
         self.tainted_variables = TaintedVariables( self.__vm )
@@ -1806,6 +1831,12 @@ class VMAnalysis :
             self.__nmethods[ i.get_name() ] = x
 
     def get_method(self, method) :
+        """
+            Return an analysis method
+
+            @param method : a classical method object
+            @rtype : L{MethodAnalysis}
+        """
         return self.hmethods[ method ]
 
     # FIXME
@@ -1890,6 +1921,14 @@ class VMAnalysis :
         """
         return self.tainted_variables
 
+    def get_tainted_packages(self) :
+        """
+           Return the tainted packages
+
+           @rtype : L{TaintedPackages}
+        """
+        return self.tainted_packages
+
     def get_tainted_field(self, class_name, name, descriptor) :
         """
            Return a specific tainted field
@@ -1913,9 +1952,14 @@ class VMAnalysis :
 
     def get_method_signature(self, method, grammar_type="", options={}, predef_sign="") :
         """
-           Return a specific signature for a specific method
+            Return a specific signature for a specific method
+            
+            @param method : a reference to method from a vm class
+            @param grammar_type : the type of the signature
+            @param options : the options of the signature
+            @param predef_sign : used a predefined signature
 
-           @rtype : string
+            @rtype : L{Sign}
         """
         if predef_sign != "" :
             g = ""
@@ -1929,17 +1973,10 @@ class VMAnalysis :
                     g += i
                     g += ":" 
             
-            return self.signature.get_method( self.get( method ), g[:-1], o )
+            return self.signature.get_method( self.get_method( method ), g[:-1], o )
         else : 
-            return self.signature.get_method( self.get( method ), grammar_type, options )
+            return self.signature.get_method( self.get_method( method ), grammar_type, options )
 
-    def get(self, method) :
-        """
-           @param method : a reference to method from a vm class
-
-           @rtype :
-        """
-        return self.hmethods[ method ]
 
     # FIXME
     def get_op(self, op) :

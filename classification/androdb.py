@@ -65,8 +65,10 @@ def main(options, arguments) :
                 for f in files :
                     if ".apk" in f :
                         adb.add_apk_raw( root + "/" + f )
+                        # copy files
     elif options.input != None :
         adb.add_apk_raw( options.input )
+        # copy file
 
 if __name__ == "__main__" :
     parser = OptionParser()

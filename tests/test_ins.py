@@ -33,36 +33,36 @@ TESTS_CASES  = [ #'examples/android/TC/bin/classes.dex',
 VALUES = {
             'examples/android/TestsAndroguard/bin/classes.dex' : {
                   "Ltests/androguard/TestInvoke; <init> ()V" : {
-                     0x0 : ("invoke-direct" , [['v',1] , ['meth@', 3, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
-                     0xa : ("invoke-virtual", [['v',1], ['v',0] , ['meth@', 28, 'Ltests/androguard/TestInvoke;', '(I)', 'I', 'TestInvoke1']]),
+                     0x0 : ("invoke-direct" , [['v',1] , ['meth@', 4, 'Ljava/lang/Object;', '()', 'V', '<init>']]),
+                     0xa : ("invoke-virtual", [['v',1], ['v',0] , ['meth@', 49, 'Ltests/androguard/TestInvoke;', '(I)', 'I', 'TestInvoke1']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke1 (I)I" : {
-                     0x4 : ("invoke-virtual", [['v',1] , ['v',2] , ['v',0] , ['meth@', 29,'Ltests/androguard/TestInvoke;' ,'(I I)', 'I', 'TestInvoke2']]),
+                     0x4 : ("invoke-virtual", [['v',1] , ['v',2] , ['v',0] , ['meth@', 50,'Ltests/androguard/TestInvoke;' ,'(I I)', 'I', 'TestInvoke2']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke2 (I I)I" : {
-                     0x4 : ("invoke-virtual", [['v',1] , ['v',2] , ['v',3] , ['v',0] , ['meth@', 30, 'Ltests/androguard/TestInvoke;', '(I I I)', 'I', 'TestInvoke3']]),
+                     0x4 : ("invoke-virtual", [['v',1] , ['v',2] , ['v',3] , ['v',0] , ['meth@', 51, 'Ltests/androguard/TestInvoke;', '(I I I)', 'I', 'TestInvoke3']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke3 (I I I)I" : {
-                     0x4 : ("invoke-virtual", [['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 0], ['meth@', 31, 'Ltests/androguard/TestInvoke;', '(I I I I)', 'I', 'TestInvoke4']]),
+                     0x4 : ("invoke-virtual", [['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 0], ['meth@', 52, 'Ltests/androguard/TestInvoke;', '(I I I I)', 'I', 'TestInvoke4']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke4 (I I I I)I" : {
-                     0xe : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['meth@', 32, 'Ltests/androguard/TestInvoke;', '(I I I I I)', 'I', 'TestInvoke5']]),
+                     0xe : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['meth@', 53, 'Ltests/androguard/TestInvoke;', '(I I I I I)', 'I', 'TestInvoke5']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke5 (I I I I I)I" : {
-                     0x10 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['meth@', 33, 'Ltests/androguard/TestInvoke;', '(I I I I I I)', 'I', 'TestInvoke6']]),
+                     0x10 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['meth@', 54, 'Ltests/androguard/TestInvoke;', '(I I I I I I)', 'I', 'TestInvoke6']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke6 (I I I I I I)I" : {
-                     0x12 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['v', 7], ['meth@', 34, 'Ltests/androguard/TestInvoke;', '(I I I I I I I)', 'I', 'TestInvoke7']]),
+                     0x12 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['v', 7], ['meth@', 55, 'Ltests/androguard/TestInvoke;', '(I I I I I I I)', 'I', 'TestInvoke7']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke7 (I I I I I I I)I" : {
-                     0x16 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['v', 7], ['v', 8], ['meth@', 35, 'Ltests/androguard/TestInvoke;', '(I I I I I I I I)', 'I', 'TestInvoke8']]),
+                     0x16 : ("invoke-virtual/range", [['v', 0], ['v', 1], ['v', 2], ['v', 3], ['v', 4], ['v', 5], ['v', 6], ['v', 7], ['v', 8], ['meth@', 56, 'Ltests/androguard/TestInvoke;', '(I I I I I I I I)', 'I', 'TestInvoke8']]),
                   },
 
                   "Ltests/androguard/TestInvoke; TestInvoke8 (I I I I I I I I)I" : {
@@ -110,7 +110,7 @@ def check(a, values) :
 
         idx = 0
         for i in bc.get() :
-            #print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
+#            print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
             if idx in values[key] :
                 elem = values[key][idx]
 
@@ -127,3 +127,6 @@ def check(a, values) :
 for i in TESTS_CASES :
     a = androguard.AndroguardS( i )
     check( a, VALUES[i] )
+
+    x = analysis.VMAnalysis( a.get_vm() )
+    print x
