@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from struct import unpack, pack
 
 from misc import Color
@@ -352,13 +351,12 @@ class _Bytecode(object) :
     def __init__(self, buff) :
         try :
             pass
-            import psyco
-            psyco.full()
+            #import psyco
+            #psyco.full()
         except ImportError :
             warning("module psyco not found")
 
         self.__buff = buff
-
         self.__idx = 0
 
 
