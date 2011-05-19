@@ -78,7 +78,97 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="dvm.APK-class.html" class="summary-name">APK</a>
+        <a href="dvm.HEADER_NAMEDTUPLE-class.html" class="summary-name">HEADER_NAMEDTUPLE</a><br />
+      HEADER_NAMEDTUPLE(magic, checksum, signature, file_size, 
+        header_size, endian_tag, link_size, link_off, map_off, 
+        string_ids_size, string_ids_off, type_ids_size, type_ids_off, 
+        proto_ids_size, proto_ids_off, field_ids_size, field_ids_off, 
+        method_ids_size, method_ids_off, class_defs_size, class_defs_off, 
+        data_size, data_off)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.MAP_ITEM_NAMEDTUPLE-class.html" class="summary-name">MAP_ITEM_NAMEDTUPLE</a><br />
+      MAP_ITEM_NAMEDTUPLE(type, unused, size, offset)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.PROTO_ID_ITEM_NAMEDTUPLE-class.html" class="summary-name">PROTO_ID_ITEM_NAMEDTUPLE</a><br />
+      PROTO_ID_ITEM_NAMEDTUPLE(shorty_idx, return_type_idx, 
+        parameters_off)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.METHOD_ID_ITEM_NAMEDTUPLE-class.html" class="summary-name">METHOD_ID_ITEM_NAMEDTUPLE</a><br />
+      METHOD_ID_ITEM_NAMEDTUPLE(class_idx, proto_idx, name_idx)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.FIELD_ID_ITEM_NAMEDTUPLE-class.html" class="summary-name">FIELD_ID_ITEM_NAMEDTUPLE</a><br />
+      FIELD_ID_ITEM_NAMEDTUPLE(class_idx, type_idx, name_idx)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.CLASS_DEF_ITEM_NAMEDTUPLE-class.html" class="summary-name">CLASS_DEF_ITEM_NAMEDTUPLE</a><br />
+      CLASS_DEF_ITEM_NAMEDTUPLE(class_idx, access_flags, superclass_idx, 
+        interfaces_off, source_file_idx, annotations_off, class_data_off, 
+        static_values_off)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.TRY_ITEM_NAMEDTUPLE-class.html" class="summary-name">TRY_ITEM_NAMEDTUPLE</a><br />
+      TRY_ITEM_NAMEDTUPLE(start_addr, insn_count, handler_off)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE-class.html" class="summary-name">ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE</a><br />
+      ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE(class_annotations_off, 
+        fields_size, annotated_methods_size, annotated_parameters_size)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.SPARSE_SWITCH_NAMEDTUPLE-class.html" class="summary-name">SPARSE_SWITCH_NAMEDTUPLE</a><br />
+      SPARSE_SWITCH_NAMEDTUPLE(ident, size)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.PACKED_SWITCH_NAMEDTUPLE-class.html" class="summary-name">PACKED_SWITCH_NAMEDTUPLE</a><br />
+      PACKED_SWITCH_NAMEDTUPLE(ident, size, first_key)
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.FILL_ARRAY_DATA_NAMEDTUPLE-class.html" class="summary-name">FILL_ARRAY_DATA_NAMEDTUPLE</a><br />
+      FILL_ARRAY_DATA_NAMEDTUPLE(ident, element_width, size)
     </td>
   </tr>
 <tr>
@@ -121,6 +211,20 @@
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
         <a href="dvm.AnnotationSetItem-class.html" class="summary-name">AnnotationSetItem</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.AnnotationSetRefItem-class.html" class="summary-name">AnnotationSetRefItem</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm.AnnotationSetRefList-class.html" class="summary-name">AnnotationSetRefList</a>
     </td>
   </tr>
 <tr>
@@ -520,6 +624,24 @@
       
     </td>
   </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="determineNext"></a><span class="summary-sig-name">determineNext</span>(<span class="summary-sig-arg">i</span>,
+        <span class="summary-sig-arg">end</span>,
+        <span class="summary-sig-arg">m</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="dvm-pysrc.html#determineNext">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
 </table>
 <!-- ==================== VARIABLES ==================== -->
 <a name="section-Variables"></a>
@@ -542,13 +664,6 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="AAPT_PATH"></a><span class="summary-name">AAPT_PATH</span> = <code title="'./externals/android/8/aapt'"><code class="variable-quote">'</code><code class="variable-string">./externals/android/8/aapt</code><code class="variable-quote">'</code></code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
         <a name="DEX_FILE_MAGIC"></a><span class="summary-name">DEX_FILE_MAGIC</span> = <code title="'''dex
 035\x00'''"><code class="variable-quote">'</code><code class="variable-string">dex\n035\x00</code><code class="variable-quote">'</code></code>
     </td>
@@ -557,56 +672,56 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="HEADER"></a><span class="summary-name">HEADER</span> = <code title="['&lt;QL20sLLLLLLLLLLLLLLLLLLLL', &lt;class 'dvm.HEADER'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;QL20sLLLLLLLLLLLLLLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.HEADER'&gt;<code class="variable-group">]</code></code>
+        <a href="dvm-module.html#HEADER" class="summary-name">HEADER</a> = <code title="['=QL20sLLLLLLLLLLLLLLLLLLLL', &lt;class 'dvm.HEADER_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=QL20sLLLLLLLLLLLLLLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.HEADER_NAM<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="MAP_ITEM"></a><span class="summary-name">MAP_ITEM</span> = <code title="['&lt;HHLL', &lt;class 'dvm.MAP_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HHLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.MAP_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a name="MAP_ITEM"></a><span class="summary-name">MAP_ITEM</span> = <code title="['=HHLL', &lt;class 'dvm.MAP_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.MAP_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="PROTO_ID_ITEM"></a><span class="summary-name">PROTO_ID_ITEM</span> = <code title="['&lt;LLL', &lt;class 'dvm.PROTO_ID_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;LLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.PROTO_ID_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a name="PROTO_ID_ITEM"></a><span class="summary-name">PROTO_ID_ITEM</span> = <code title="['=LLL', &lt;class 'dvm.PROTO_ID_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.PROTO_ID_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="METHOD_ID_ITEM"></a><span class="summary-name">METHOD_ID_ITEM</span> = <code title="['&lt;HHL', &lt;class 'dvm.METHOD_ID_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.METHOD_ID_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a href="dvm-module.html#METHOD_ID_ITEM" class="summary-name">METHOD_ID_ITEM</a> = <code title="['=HHL', &lt;class 'dvm.METHOD_ID_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.METHOD_ID_ITEM_NAMEDTUPL<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="FIELD_ID_ITEM"></a><span class="summary-name">FIELD_ID_ITEM</span> = <code title="['&lt;HHL', &lt;class 'dvm.FILED_ID_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.FILED_ID_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a name="FIELD_ID_ITEM"></a><span class="summary-name">FIELD_ID_ITEM</span> = <code title="['=HHL', &lt;class 'dvm.FIELD_ID_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.FIELD_ID_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="CLASS_DEF_ITEM"></a><span class="summary-name">CLASS_DEF_ITEM</span> = <code title="['&lt;LLLLLLLL', &lt;class 'dvm.CLASS_DEF_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;LLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.CLASS_DEF_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a href="dvm-module.html#CLASS_DEF_ITEM" class="summary-name">CLASS_DEF_ITEM</a> = <code title="['=LLLLLLLL', &lt;class 'dvm.CLASS_DEF_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.CLASS_DEF_ITEM_NAME<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="TRY_ITEM"></a><span class="summary-name">TRY_ITEM</span> = <code title="['&lt;LHH', &lt;class 'dvm.TRY_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;LHH</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.TRY_ITEM'&gt;<code class="variable-group">]</code></code>
+        <a name="TRY_ITEM"></a><span class="summary-name">TRY_ITEM</span> = <code title="['=LHH', &lt;class 'dvm.TRY_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LHH</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.TRY_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="dvm-module.html#ANNOTATIONS_DIRECTORY_ITEM" class="summary-name">ANNOTATIONS_DIRECTORY_ITEM</a> = <code title="['&lt;LLLL', &lt;class 'dvm.ANNOTATIONS_DIRECTORY_ITEM'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;LLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.ANNOTATIONS<code class="variable-ellipsis">...</code></code>
+        <a href="dvm-module.html#ANNOTATIONS_DIRECTORY_ITEM" class="summary-name">ANNOTATIONS_DIRECTORY_ITEM</a> = <code title="['=LLLL', &lt;class 'dvm.ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.ANNOTATIONS<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -628,36 +743,204 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="SPARSE_SWITCH"></a><span class="summary-name">SPARSE_SWITCH</span> = <code title="['&lt;HH', &lt;class 'dvm.SPARSE_SWITCH'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HH</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.SPARSE_SWITCH'&gt;<code class="variable-group">]</code></code>
+        <a name="SPARSE_SWITCH"></a><span class="summary-name">SPARSE_SWITCH</span> = <code title="['=HH', &lt;class 'dvm.SPARSE_SWITCH_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HH</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.SPARSE_SWITCH_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="PACKED_SWITCH"></a><span class="summary-name">PACKED_SWITCH</span> = <code title="['&lt;HHL', &lt;class 'dvm.PACKED_SWITCH'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.PACKED_SWITCH'&gt;<code class="variable-group">]</code></code>
+        <a name="PACKED_SWITCH"></a><span class="summary-name">PACKED_SWITCH</span> = <code title="['=HHL', &lt;class 'dvm.PACKED_SWITCH_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.PACKED_SWITCH_NAMEDTUPLE'&gt;<code class="variable-group">]</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a name="FILL_ARRAY_DATA"></a><span class="summary-name">FILL_ARRAY_DATA</span> = <code title="['&lt;HHL', &lt;class 'dvm.FILL_ARRAY_DATA'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.FILL_ARRAY_DATA'&gt;<code class="variable-group">]</code></code>
+        <a href="dvm-module.html#FILL_ARRAY_DATA" class="summary-name">FILL_ARRAY_DATA</a> = <code title="['=HHL', &lt;class 'dvm.FILL_ARRAY_DATA_NAMEDTUPLE'&gt;]"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.FILL_ARRAY_DATA_NAMEDTU<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="dvm-module.html#DALVIK_OPCODES" class="summary-name">DALVIK_OPCODES</a> = <code title="{0: ['10x', 'nop'],
- 1: ['12x', 'move', 'vA, vB', 'B|A|op'],
- 2: ['22x', 'move/from16', 'vAA, vBBBB', 'AA|op BBBB'],
- 3: ['32x', 'move/16', 'vAAAA, vBBBB', '00|op AAAA BBBB'],
- 4: ['12x', 'move-wide', 'vA, vB', 'B|A|op'],
- 5: ['22x', 'move-wide/from16', 'vAA, vBBBB', 'AA|op BBBB'],
- 6: ['32x', 'move-wide/16', 'vAAAA, vBBBB', '00|op AAAA BBBB'],
- 7: ['12x', 'move-object', 'vA, vB', 'B|A|op'],
-..."><code class="variable-group">{</code>0<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">10x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">nop</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">, </code>1<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, v</code><code class="variable-ellipsis">...</code></code>
+        <a name="NORMAL_DVM_INS"></a><span class="summary-name">NORMAL_DVM_INS</span> = <code title="0">0</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="SPECIFIC_DVM_INS"></a><span class="summary-name">SPECIFIC_DVM_INS</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_OP"></a><span class="summary-name">OPCODE_OP</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_BB"></a><span class="summary-name">OPCODE_BB</span> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_AA_OP"></a><span class="summary-name">OPCODE_AA_OP</span> = <code title="2">2</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_CC_BB"></a><span class="summary-name">OPCODE_CC_BB</span> = <code title="2">2</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_00"></a><span class="summary-name">OPCODE_00</span> = <code title="3">3</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_B_A_OP"></a><span class="summary-name">OPCODE_B_A_OP</span> = <code title="4">4</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_CCCC"></a><span class="summary-name">OPCODE_CCCC</span> = <code title="5">5</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_BBBB"></a><span class="summary-name">OPCODE_BBBB</span> = <code title="5">5</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_AAAA"></a><span class="summary-name">OPCODE_AAAA</span> = <code title="5">5</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SBBBB"></a><span class="summary-name">OPCODE_SBBBB</span> = <code title="6">6</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SAAAA"></a><span class="summary-name">OPCODE_SAAAA</span> = <code title="6">6</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SCCCC"></a><span class="summary-name">OPCODE_SCCCC</span> = <code title="6">6</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_G_F_E_D"></a><span class="summary-name">OPCODE_G_F_E_D</span> = <code title="7">7</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SB_A_OP"></a><span class="summary-name">OPCODE_SB_A_OP</span> = <code title="8">8</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SCC_BB"></a><span class="summary-name">OPCODE_SCC_BB</span> = <code title="11">11</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SCC"></a><span class="summary-name">OPCODE_SCC</span> = <code title="13">13</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SAA"></a><span class="summary-name">OPCODE_SAA</span> = <code title="13">13</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SBBBB0000"></a><span class="summary-name">OPCODE_SBBBB0000</span> = <code title="15">15</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SBBBBBBBB"></a><span class="summary-name">OPCODE_SBBBBBBBB</span> = <code title="16">16</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_SAAAAAAAA"></a><span class="summary-name">OPCODE_SAAAAAAAA</span> = <code title="16">16</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_00_OP"></a><span class="summary-name">OPCODE_00_OP</span> = <code title="17">17</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="OPCODE_BBBBBBBB"></a><span class="summary-name">OPCODE_BBBBBBBB</span> = <code title="18">18</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="dvm-module.html#DALVIK_OPCODES" class="summary-name">DALVIK_OPCODES</a> = <code title="{0: ['10x', 'nop', 'op', [1, 3], {}],
+ 1: ['12x', 'move', 'vA, vB', [4], {}],
+ 2: ['22x', 'move/from16', 'vAA, vBBBB', [2, 5], {}],
+ 3: ['32x', 'move/16', 'vAAAA, vBBBB', [17, 5, 5], {}],
+ 4: ['12x', 'move-wide', 'vA, vB', [4], {}],
+ 5: ['22x', 'move-wide/from16', 'vAA, vBBBB', [2, 5], {}],
+ 6: ['32x', 'move-wide/16', 'vAAAA, vBBBB', [17, 5, 5], {}],
+ 7: ['12x', 'move-object', 'vA, vB', [4], {}],
+..."><code class="variable-group">{</code>0<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">10x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">nop</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">op</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>1<code class="variable-op">, </code>3<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">, </code>1<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12</code><code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -707,7 +990,7 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="dvm-module.html#BRANCH_DVM_OPCODES" class="summary-name">BRANCH_DVM_OPCODES</a> = <code title="['if.', 'goto', 'goto.', 'return', 'return.', 'packed.']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">if.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">retur</code><code class="variable-ellipsis">...</code></code>
+        <a href="dvm-module.html#BRANCH_DVM_OPCODES" class="summary-name">BRANCH_DVM_OPCODES</a> = <code title="['if.', 'goto', 'goto.', 'return', 'return.', 'packed.', 'sparse.']"><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">if.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">retur</code><code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -932,6 +1215,60 @@
   </td>
 </tr>
 </table>
+<a name="HEADER"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">HEADER</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=QL20sLLLLLLLLLLLLLLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.HEADER_NAMEDTUPLE'&gt;<code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="METHOD_ID_ITEM"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">METHOD_ID_ITEM</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.METHOD_ID_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="CLASS_DEF_ITEM"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">CLASS_DEF_ITEM</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LLLLLLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.CLASS_DEF_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="ANNOTATIONS_DIRECTORY_ITEM"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -944,7 +1281,7 @@
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">&lt;LLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.ANNOTATIONS_DIRECTORY_ITEM'&gt;<code class="variable-group">]</code>
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=LLLL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.ANNOTATIONS_DIRECTORY_ITEM_NAMEDTUPLE'&gt;<code class="variable-group">]</code>
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -976,6 +1313,24 @@
   </dl>
 </td></tr></table>
 </div>
+<a name="FILL_ARRAY_DATA"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">FILL_ARRAY_DATA</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">=HHL</code><code class="variable-quote">'</code><code class="variable-op">, </code>&lt;class 'dvm.FILL_ARRAY_DATA_NAMEDTUPLE'&gt;<code class="variable-group">]</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="DALVIK_OPCODES"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -988,14 +1343,14 @@
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-<code class="variable-group">{</code>0<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">10x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">nop</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 1<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">B|A|op</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 2<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">22x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move/from16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">AA|op BBBB</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 3<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">32x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move/16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAAAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">00|op AAAA BBBB</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 4<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">B|A|op</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 5<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">22x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide/from16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">AA|op BBBB</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 6<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">32x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide/16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAAAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">00|op AAAA BBBB</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
- 7<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-object</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">B|A|op</code><code class="variable-quote">'</code><code class="variable-group">]</code><code class="variable-op">,</code>
+<code class="variable-group">{</code>0<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">10x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">nop</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">op</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>1<code class="variable-op">, </code>3<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 1<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>4<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 2<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">22x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move/from16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>2<code class="variable-op">, </code>5<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 3<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">32x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move/16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAAAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>17<code class="variable-op">, </code>5<code class="variable-op">, </code>5<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 4<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>4<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 5<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">22x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide/from16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>2<code class="variable-op">, </code>5<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 6<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">32x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-wide/16</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vAAAA, vBBBB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>17<code class="variable-op">, </code>5<code class="variable-op">, </code>5<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
+ 7<code class="variable-op">: </code><code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">12x</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">move-object</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">vA, vB</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-group">[</code>4<code class="variable-group">]</code><code class="variable-op">, </code><code class="variable-group">{</code><code class="variable-group">}</code><code class="variable-group">]</code><code class="variable-op">,</code>
 <code class="variable-ellipsis">...</code>
 </pre></td></tr></table>
 </dd>
@@ -1040,7 +1395,7 @@
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">if.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">packed.</code><code class="variable-quote">'</code><code class="variable-group">]</code>
+<code class="variable-group">[</code><code class="variable-quote">'</code><code class="variable-string">if.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">goto.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">return.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">packed.</code><code class="variable-quote">'</code><code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">sparse.</code><code class="variable-quote">'</code><code class="variable-group">]</code>
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1075,7 +1430,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Jan  4 09:27:29 2011
+    Generated by Epydoc 3.0.1 on Wed May 18 15:57:02 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"
