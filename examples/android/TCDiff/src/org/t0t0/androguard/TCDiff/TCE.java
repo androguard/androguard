@@ -68,6 +68,7 @@ public class TCE {
       return 0x45;
    }
 
+   // NEW METHOD
    public int TCE_t4()
    {
       return 0x90;

@@ -93,6 +93,7 @@ def filter_sort_meth_basic( x ) :
     return z[:1]
 
 def filter_sim_bb_basic( bb1, bb2, sim ) :
+    sim.set_compress_type( XZ_COMPRESS )
     ncd = sim.ncd( bb1.get_buff(), bb2.get_buff() )
     return ncd
 
@@ -612,7 +613,7 @@ MATCHMETHODS    =       "matchmethods"
 DIFFVMS         =       "diffvms"
 class Diff(object) :
     def __init__(self, vm1, vm2, F=FILTERS_DIFF) :
-        set_debug()
+        #set_debug()
         
         self.vms = [ vm1, vm2 ]
         self.vm1 = vm1
