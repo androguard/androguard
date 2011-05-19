@@ -32,9 +32,9 @@ DEX_FILE_MAGIC = 'dex\n035\x00'
 
 
 HEADER_NAMEDTUPLE = namedtuple( "HEADER_NAMEDTUPLE", "magic checksum signature file_size header_size endian_tag link_size link_off " \
-                                                                      "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
-                                                                      "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
-                                                                      "class_defs_size class_defs_off data_size data_off" )
+                                                     "map_off string_ids_size string_ids_off type_ids_size type_ids_off proto_ids_size " \
+                                                     "proto_ids_off field_ids_size field_ids_off method_ids_size method_ids_off "\
+                                                     "class_defs_size class_defs_off data_size data_off" )
 HEADER = [ '=QL20sLLLLLLLLLLLLLLLLLLLL', HEADER_NAMEDTUPLE ]
 
 MAP_ITEM_NAMEDTUPLE = namedtuple("MAP_ITEM_NAMEDTUPLE", "type unused size offset")

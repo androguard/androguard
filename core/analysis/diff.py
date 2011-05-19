@@ -93,7 +93,6 @@ def filter_sort_meth_basic( x ) :
     return z[:1]
 
 def filter_sim_bb_basic( bb1, bb2, sim ) :
-    sim.set_compress_type( XZ_COMPRESS )
     ncd = sim.ncd( bb1.get_buff(), bb2.get_buff() )
     return ncd
 
@@ -704,6 +703,7 @@ class Diff(object) :
                 self.filters[ fil ][ DIFFMETHODS ].remove( j )
 
     def _init_diff_methods(self) :
+        self.sim.set_compress_type( XZ_COMPRESS )
 #       print "DEBUG DIFF METHODS"
         for fil in self.filters :
             for j in self.filters[fil][DIFFMETHODS] :
