@@ -695,34 +695,34 @@ class AXMLPrinter :
         if _type == TYPE_STRING :
             return self.axml.getAttributeValue( index )
 
-        if _type == TYPE_ATTRIBUTE :
+        elif _type == TYPE_ATTRIBUTE :
             return "?%s%08X" % (self.getPackage(_data), _data)
 
-        if _type == TYPE_REFERENCE :
+        elif _type == TYPE_REFERENCE :
             return "@%s%08X" % (self.getPackage(_data), _data)
 
         # WIP
-        if _type == TYPE_FLOAT :
+        elif _type == TYPE_FLOAT :
             return "%f" % unpack("=f", pack("=L", _data))[0] 
 
-        if _type == TYPE_INT_HEX :
+        elif _type == TYPE_INT_HEX :
             return "0x%08X" % _data
 
-        if _type == TYPE_INT_BOOLEAN :
+        elif _type == TYPE_INT_BOOLEAN :
             if _data == 0 :
                 return "false"
             return "true"
 
-        if _type == TYPE_DIMENSION :
+        elif _type == TYPE_DIMENSION :
             return "%f%s" % (self.complexToFloat(_data), DIMENSION_UNITS[_data & COMPLEX_UNIT_MASK])
 
-        if _type == TYPE_FRACTION :
+        elif _type == TYPE_FRACTION :
             return "%f%s" % (self.complexToFloat(_data), FRACTION_UNITS[_data & COMPLEX_UNIT_MASK])
 
-        if _type >= TYPE_FIRST_COLOR_INT and _type <= TYPE_LAST_COLOR_INT :
+        elif _type >= TYPE_FIRST_COLOR_INT and _type <= TYPE_LAST_COLOR_INT :
             return "#%08X" % _data
 
-        if _type >= TYPE_FIRST_INT and _type <= TYPE_LAST_INT :
+        elif _type >= TYPE_FIRST_INT and _type <= TYPE_LAST_INT :
             return "%d" % misc.long2int( _data )
 
         return "<0x%X, type 0x%02X>" % (_data, _type)

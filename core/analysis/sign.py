@@ -69,7 +69,6 @@ class Signature :
                         # instructions
 
 
-                        # 
                     }
 
         self._init_caches()
@@ -137,7 +136,11 @@ class Signature :
         buff = ""
 
         method = analysis_method.get_method()
-        handlers = method.get_code().handlers
+        code = method.get_code()
+        if code == None :
+            return buff
+
+        handlers = code.handlers
 #       for try_item in method.get_code().tries :
 #           print "w00t", try_item
 
