@@ -171,7 +171,7 @@ for method in a.get_methods() :
 
     idx = 0
     for i in bc.get() :
-    #   print "\t", "%x" % idx, i.get_name(), i.get_operands()
+        #print "\t", "%x" % idx, i.get_name(), i.get_operands()
         if "const" in i.get_name() :
             formatted_operands = i.get_formatted_operands()
             for f in formatted_operands :

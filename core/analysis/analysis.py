@@ -1343,7 +1343,6 @@ class TaintedPackage :
 
             @rtype : a list of called paths
         """
-        ex = re.compile( class_name )
         l = []
         m_name = re.compile(name)
         m_descriptor = re.compile(descriptor)
