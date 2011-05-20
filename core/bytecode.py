@@ -350,8 +350,9 @@ class Buff :
 class _Bytecode(object) :
     def __init__(self, buff) :
         try :
-            import psyco
-            psyco.full()
+            pass
+            #import psyco
+            #psyco.full()
         except ImportError :
             warning("module psyco not found")
 
