@@ -6,7 +6,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class TestActivity extends Activity {
+public abstract class TestActivity<T> extends Activity implements java.lang.Comparable<T> {
 	public int value;
 	public int value2;
 
@@ -119,7 +119,7 @@ public class TestActivity extends Activity {
 		return v;
 	}
 
-	public void test() {
+	public void test(int z, char y) {
 		int a = this.value * 2;
 		int b = 3;
 		int c = 4;
@@ -140,7 +140,9 @@ public class TestActivity extends Activity {
 		int r = a + b - c * d / e - f + g - h * i + j * k * l - m - n + o / p
 				* q;
 		System.out.println(" meh " + r);
-		this.test();
+		System.out.println(y);
+		y += 'a';
+		this.test(a, y);
 		this.test1(10);
 		pouet2();
 		this.pouet2();
@@ -246,6 +248,7 @@ public class TestActivity extends Activity {
 		int boom = -606384730;
 		float reboom = -123456790519087104f;
 		float gettype = boom + 2 + 3.5f;
+		System.out.println(gettype);
 	}
 
 	public static void bla() {
@@ -287,9 +290,10 @@ public class TestActivity extends Activity {
 	}
 	
 	public void anAccessFieldTest( ) {
-		TestArrays a = new TestArrays();
+		TestArr$ays a = new TestArr$ays();
 		a.d = new byte[5];
 		a.d[2] = 'c';
+		System.out.println("test :" + a.d[2]);
 	}
 
 	/** Called when the activity is first created. */

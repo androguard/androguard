@@ -1,6 +1,6 @@
 package tests.androguard;
 
-public class TestArrays {
+public class TestArr$ays {
 	
 	public static class InternField {
 		public static byte[] b;
@@ -9,15 +9,15 @@ public class TestArrays {
 	private byte[] b;
 	public byte[] d;
 	
-	public TestArrays( ) {
+	public TestArr$ays( ) {
 		b = new byte[5];
 	}
 	
-	public TestArrays( byte [] b ) {
+	public TestArr$ays( byte [] b ) {
 		this.b = b;
 	}
 	
-	public TestArrays( int i ) {
+	public TestArr$ays( int i ) {
 		byte [] a = { 1, 2, 3, 4, 5 };
 		b = a;
 	}
