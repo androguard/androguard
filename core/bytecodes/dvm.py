@@ -2133,6 +2133,73 @@ class DBC :
             return [ c, v, self.__CM.get_type(v) ]
         return [ c, v ]
 
+def op_B_A_OP(insn, current_pos) :
+    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+        
+def op_AA_OP(insn, current_pos) :
+    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+
+def op_00_OP(insn, current_pos) :
+    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xff])]
+    
+def op_CCCC(insn, current_pos) :
+    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
+    return [2, [i16]]
+        
+def op_SAAAA(insn, current_pos) :
+    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
+    return [2, [i16]]
+    
+def op_SB_A_OP(insn, current_pos) :
+    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+        
+def op_SCC_BB(insn, current_pos) :
+    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+        
+def op_G_F_E_D(insn, current_pos) :
+    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
+    return [2, map(int, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+    
+def op_OP(insn, current_pos) :
+    i8 = unpack("=B", insn[current_pos:current_pos+1])[0]
+    return [1, [i8]]
+   
+def op_SCC(insn, current_pos) :
+    i8 = unpack("=b", insn[current_pos:current_pos+1])[0]
+    return [1, [i8]]
+        
+def op_SAAAAAAAA(insn, current_pos) :
+    i32 = unpack("=i", insn[current_pos:current_pos+4])[0]
+    return [4, [i32]]
+
+def op_BBBBBBBB(insn, current_pos) :
+    i32 = unpack("=I", insn[current_pos:current_pos+4])[0]
+    return [4, [i32]]
+       
+def op_00(insn, current_pos) :
+    return [1, []]
+
+MAP_EXTRACT_VALUES = { 
+    OPCODE_B_A_OP   :   op_B_A_OP,
+    OPCODE_AA_OP    :   op_AA_OP,
+    OPCODE_00_OP    :   op_00_OP,
+    OPCODE_CCCC     :   op_CCCC,
+    OPCODE_SAAAA    :   op_SAAAA,
+    OPCODE_SB_A_OP  :   op_SB_A_OP,
+    OPCODE_SCC_BB   :   op_SCC_BB,
+    OPCODE_G_F_E_D  :   op_G_F_E_D,
+    OPCODE_OP       :   op_OP,
+    OPCODE_SCC      :   op_SCC,
+    OPCODE_SAAAAAAAA :  op_SAAAAAAAA,
+    OPCODE_BBBBBBBB :   op_BBBBBBBB,
+    OPCODE_00       :   op_00,
+}
+
 class DCode :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
@@ -2140,22 +2207,6 @@ class DCode :
 
         self.__h_special_bytecodes = {}
         self.__bytecodes = []
-
-        self.__map_extract_values = {
-            OPCODE_B_A_OP   :   self.op_B_A_OP,
-            OPCODE_AA_OP    :   self.op_AA_OP,
-            OPCODE_00_OP    :   self.op_00_OP,
-            OPCODE_CCCC     :   self.op_CCCC,
-            OPCODE_SAAAA    :   self.op_SAAAA,
-            OPCODE_SB_A_OP  :   self.op_SB_A_OP,
-            OPCODE_SCC_BB   :   self.op_SCC_BB,
-            OPCODE_G_F_E_D  :   self.op_G_F_E_D,
-            OPCODE_OP       :   self.op_OP,
-            OPCODE_SCC      :   self.op_SCC,
-            OPCODE_SAAAAAAAA :  self.op_SAAAAAAAA,
-            OPCODE_BBBBBBBB :   self.op_BBBBBBBB,
-            OPCODE_00       :   self.op_00,
-        }
 
         self.__current_pos = 0
 
@@ -2198,58 +2249,7 @@ class DCode :
             real_j = j / 2
 
     def _extract_values(self, i) :
-        return self.__map_extract_values[ i ]()
-
-    def op_B_A_OP(self) :
-        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-        
-    def op_AA_OP(self) :
-        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
-    
-    def op_00_OP(self) :
-        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xff])]
-    
-    def op_CCCC(self) :
-        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, [i16]]
-        
-    def op_SAAAA(self) :
-        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, [i16]]
-    
-    def op_SB_A_OP(self) :
-        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-        
-    def op_SCC_BB(self) :
-        i16 = unpack("=h", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
-        
-    def op_G_F_E_D(self) :
-        i16 = unpack("=H", self.__insn[self.__current_pos:self.__current_pos+2])[0]
-        return [2, map(int, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
-    
-    def op_OP(self) :
-        i8 = unpack("=B", self.__insn[self.__current_pos:self.__current_pos+1])[0]
-        return [1, [i8]]
-   
-    def op_SCC(self) :
-        i8 = unpack("=b", self.__insn[self.__current_pos:self.__current_pos+1])[0]
-        return [1, [i8]]
-        
-    def op_SAAAAAAAA(self) :
-        i32 = unpack("=i", self.__insn[self.__current_pos:self.__current_pos+4])[0]
-        return [4, [i32]]
-
-    def op_BBBBBBBB(self) :
-        i32 = unpack("=I", self.__insn[self.__current_pos:self.__current_pos+4])[0]
-        return [4, [i32]]
-       
-    def op_00(self) :
-        return [1, []]
+        return MAP_EXTRACT_VALUES[i]( self.__insn, self.__current_pos )
 
     def _analyze_mnemonic(self, op_value, mnemonic) :
 #        print op_value, mnemonic, self.__current_pos
