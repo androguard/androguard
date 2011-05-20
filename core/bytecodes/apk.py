@@ -19,12 +19,11 @@
 import bytecode
 
 import misc
-from bytecode import SV, SVs
+from bytecode import SV
 from dvm_permissions import DVM_PERMISSIONS
 
-import sys, re, types, string, zipfile, StringIO
-from collections import namedtuple
-from struct import pack, unpack, calcsize
+import zipfile, StringIO
+from struct import pack, unpack
 from xml.dom import minidom
 
 try :
