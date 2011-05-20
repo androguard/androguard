@@ -122,7 +122,7 @@ class FillArrayData :
 
     def get_length(self) :
         general_format = self.format.get_value()
-        return calcsize(FILL_ARRAY_DATA[0]) + ( general_format.size * general_format.element_width )
+        return ((general_format.size * general_format.element_width + 1) / 2 + 4) * 2
 
 class SparseSwitch :
     def __init__(self, buff) :
@@ -348,7 +348,7 @@ DALVIK_OPCODES = {
                         0x66 : [ "21c", "sget-short",                     "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
                         0x67 : [ "21c", "sput",                           "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
                         0x68 : [ "21c", "sput-wide",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x69 : [ "21c", "sput-object",                   "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "#+" } ],
+                        0x69 : [ "21c", "sput-object",                   "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
                         0x6a : [ "21c", "sput-boolean",                 "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
                         0x6b : [ "21c", "sput-byte",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
                         0x6c : [ "21c", "sput-char",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
@@ -467,6 +467,20 @@ DALVIK_OPCODES = {
                         0xe0 : [ "22s", "shl-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
                         0xe1 : [ "22s", "shr-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
                         0xe2 : [ "22s", "ushr-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        
+                        # UNUSED OPCODES
+                        0xe3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe4 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe5 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe6 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe7 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe8 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xe9 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xea : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xeb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xec : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xed : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        ###################
                       }
 
 MATH_DVM_OPCODES = { "add." : '+',
@@ -856,7 +870,7 @@ class TypeList :
         print "TYPE_LIST"
         nb = 0
         for i in self.list :
-            print nb, self.__offset.off + self.lend_pad,
+            print nb, self.__offset.off + self.len_pad,
             i.show()
             nb = nb + 1
 
@@ -2152,11 +2166,10 @@ class DCode :
         real_j = 0
         j = 0
         while j < (size * ushort) :
-            #print "BYTES", self.__all_bytes
             # handle special instructions
             if real_j in self.__h_special_bytecodes :
-#                print "REAL_J === ", real_j
                 special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
+
 
                 self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
 
@@ -2164,18 +2177,20 @@ class DCode :
 
                 self.__current_pos += special_e.get_length()
                 j = self.__current_pos
+                #print "REAL_J === ", real_j, special_e, j, self.__h_special_bytecodes
             else :
-
                 op_value = unpack( '=B', self.__insn[j] )[0]
 
                 if op_value in DALVIK_OPCODES :
+                    #print "BEFORE J === ", j, self.__current_pos 
                     operands, special = self._analyze_mnemonic( op_value, DALVIK_OPCODES[ op_value ])
 
                     if special != None :
                         self.__h_special_bytecodes[ special[0] + real_j ] = special[1]
 
                     self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], op_value, operands, self.__insn[ j : self.__current_pos ] ) ) 
-                    
+                   
+                    #print self.__current_pos, DALVIK_OPCODES[ op_value ], operands
                     #print "J === ", j, self.__current_pos 
                     j = self.__current_pos
                 else :
@@ -2678,7 +2693,7 @@ class ClassManager :
 
     def get_field(self, idx, ref=False) :
         field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
-
+        
         if ref == True :
             return field
 
