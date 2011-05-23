@@ -6,9 +6,11 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public abstract class TestActivity<T> extends Activity implements java.lang.Comparable<T> {
+public abstract class TestActivity<T> extends Activity implements java.lang.Comparable<T>, java.lang.CharSequence {
 	public int value;
 	public int value2;
+	private int test = 10;
+	private static final int test2 = 20;
 
 	public TestActivity() {
 		value = 100;
@@ -251,17 +253,18 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		System.out.println(gettype);
 	}
 
-	public static void bla() {
-		System.out.println("k");
+	public static void bla(float b) {
+		System.out.println("k" + b);
 	}
 	
-	public static void bla2(int i) {
+	public static void bla2(long i) {
 		new PrintStream(System.out).println("k"+i);
 	}
 	
-	public static void bla3(){
+	public static void bla3(TestIfs d){
 		bla2(3);
 		TestIfs.IF(5);
+		System.out.println(d.getClass());
 	}
 
 	public synchronized int pouet2() {
@@ -285,8 +288,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 
 	public int go() {
 		System.out.println(" test_base(500, 3) " + this.test_base(500, 3));
-
-		return 0;
+		return test + test2 + 10;
 	}
 	
 	public void anAccessFieldTest( ) {
