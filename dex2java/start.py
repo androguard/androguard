@@ -13,12 +13,14 @@ class This():
     def get_content(self):
         return self
 
+# FIXME: unused
     def set_field(self, field, value):
         if self.cls.fields.get(field) is None:
             Util.log('field %s does not exist. (value : %s).' % (field, value), 'error')
             return
         self.cls.fields[field] = value
 
+# FIXME: unused
     def get_field(self, field):
         res = self.cls.fields.get(field)
         if res is None:
@@ -65,6 +67,9 @@ class Register():
             Util.log('GET CONTENT -> USED TRUE', 'debug')
         return self.content
 
+    def get_content_dbg(self):
+        return self.content
+
     def dump(self, ins):
         Util.log('Register #%d Dump :' % self.num, 'debug')
         Util.log('---------------', 'debug')
@@ -105,44 +110,43 @@ class DvMethod():
         code = self.method.get_code()
 
         access = self.method.get_access()
-        self.access = []
-        for flag in Util.ACCESS_FLAGS_METHODS:
-            if flag & access:
-                self.access.append(flag)
-
+        self.access = [flag for flag in Util.ACCESS_FLAGS_METHODS if flag & access]
         desc = self.method.get_descriptor()
         self.type = Util.get_type(desc.split(')')[-1])
-        params = desc.split(')')[0][1:].split()
-        if params:
-            self.paramsType = [Util.get_type(param) for param in params]
-        else:
-            self.paramsType = None
+        self.paramsType = Util.get_params_type(desc)
 
         if code is None:
             self.nbregisters = 0
             self.nbparams = 0
             self.this = None
-            Util.log('CODE NONE :', self.name, self.method.get_class_name(), 'debug')
+            Util.log('CODE NONE : %s %s' % (self.name, self.method.get_class_name()), 'debug')
         else:
             self.nbregisters = code.registers_size.get_value()
-            self.nbparams = code.ins_size.get_value()
+            self.nbparams = len(self.paramsType)
             # 0x8 == Static case : this is not passed as a parameter
             if 0x8 in self.access:
                 self.this = None
-                for i in xrange(0, self.nbparams):
-                    num = self.nbregisters - (i + 1)
-                    self.memory[num] = Register(Param('param%s' % (i + 1), self.paramsType[i]), num)
-                    self.lparams.append(self.memory[num])
+                self._add_parameters(True)
             else:
-                self.this = self.nbregisters - self.nbparams
+                self.this = self.nbregisters - code.ins_size.get_value()
 #                print 'THIS ( %s ) : %d' % (self.method.get_name(), self.this)
                 self.memory[self.this] = Register(this, self.this)
-                for i in xrange(1, self.nbparams):
-                    num = self.this + i
-                    self.memory[num] = Register(Param('param%s' % i, self.paramsType[i - 1]), num)
-                    self.lparams.append(self.memory[num])
+                self._add_parameters()
         self.ins = []
         self.cur = 0
+
+    def _add_parameters(self, static=False):
+        sizereg = Util.get_next_register(self.paramsType)
+        for i in xrange(self.nbparams):
+            size = sizereg.next()
+            if static:
+                num = self.nbregisters - size
+            else:
+                num = self.this + size
+            self.memory[num] = Register(Param('param%s' % (i + 1), self.paramsType[i]), num)
+            if Util.get_type_size(self.paramsType[i]) == 2:
+                self.memory[num + 1] = self.memory[num]
+            self.lparams.append(self.memory[num].content)
 
     def process(self):
         if len(self.basic_blocks) < 1:
@@ -202,12 +206,16 @@ class DvMethod():
             newIns.set_dest_dump(self.ins)
             newIns.emulate(self.memory)
             regnum = newIns.get_reg()
-            if regnum is not None:
-                register = self.memory.get(regnum)
+            if regnum is None:
+                regnum = []
+            if len(regnum):
+                register = self.memory.get(regnum[0])
                 if register is None:
-                    self.memory[newIns.get_reg()] = Register(newIns, regnum)
+                    self.memory[regnum[0]] = Register(newIns, regnum[0])
                 else:
                     register.modify(newIns)
+                if len(regnum) == 2:
+                    self.memory[regnum[1]] = self.memory[regnum[0]]
             Util.log('---> newIns : %s, register : %s.' % (ins.get_name(), regnum), 'debug')
             heapaft = self.memory.get('heap')
             if heap is not None and heapaft is not None:
@@ -231,17 +239,16 @@ class DvMethod():
         acc = []
         for i in self.access:
             if i == 0x10000:
-                self.type = ''
+                self.type = None
             else:
                 acc.append(Util.ACCESS_FLAGS_METHODS.get(i))
-
         if self.type:
             proto = '%s %s %s(' % (' '.join(acc), self.type, self.name)
         else:
             proto = '%s %s(' % (' '.join(acc), self.name)
         if self.paramsType:
             proto += ', '.join(['%s %s' % (i, j.get_content().get_value()) for (i, j) in zip(
-            self.paramsType, self.lparams)])
+            [Util.get_type(param) for param in self.paramsType], self.lparams)])
         proto += ') {'
         Util.log(proto, 'debug')
         code.append(proto)
@@ -259,11 +266,11 @@ class DvMethod():
 class DvClass():
     def __init__(self, dvclass, bca):
         self.dvclass = dvclass
-        self.subclasses = {}
         self.bca = bca
+        self.subclasses = {}
+        self.code = []
         self.name = dvclass.get_name()[1:-1].split('/')[-1]
         self.package = dvclass.get_name().rsplit('/', 1)[0][1:].replace('/', '.')
-        self.code = []
         self.this = This(self)
         lmethods = [(method.get_idx(), DvMethod(bca.get_method(method), self.this))
                     for method in dvclass.get_methods()]
@@ -271,6 +278,9 @@ class DvClass():
         self.fields = {}
         for field in dvclass.get_fields():
             self.fields[field.get_name()] = field
+        self.access = []
+        self.prototype = None
+        self._get_prototype()
 
         Util.log('Class : %s' % self.name, 'log')
         Util.log('Methods added :', 'log')
@@ -278,6 +288,26 @@ class DvClass():
             Util.log('%s (%s, %s)' % (index, meth.method.get_class_name(),
                                    meth.name), 'log')
         Util.log('\n', 'log')
+
+
+    def _get_prototype(self):
+        access = self.dvclass.format.get_value().access_flags
+        access = [flag for flag in Util.ACCESS_FLAGS_CLASSES if flag & access]
+        for i in access:
+            self.access.append(Util.ACCESS_FLAGS_CLASSES.get(i))
+        self.prototype = '%s class %s' % (' '.join(self.access), self.name)
+        interfaces = self.dvclass._interfaces
+        superclass = self.dvclass._sname
+        if superclass is not None:
+            superclass = superclass[1:-1].replace('/', '.')
+            if superclass.split('.')[-1] == 'Object':
+                superclass = None
+            if superclass is not None:
+                self.prototype += ' extends %s' % superclass
+        if interfaces is not None:
+            interfaces = interfaces[1:-1].split(' ')
+            self.prototype += ' implements %s' % ', '.join(
+                            [n[1:-1].replace('/', '.') for n in interfaces])
 
     def add_subclass(self, innername, dvclass):
         self.subclasses[innername] = dvclass
@@ -292,21 +322,31 @@ class DvClass():
         self.code.append(method.process())
 
     def get_methods(self):
-        meths = self.methods
+        meths = copy.copy(self.methods)
         for cls in self.subclasses.values():
             meths.update(cls.get_methods())
         return meths
 
     def select_meth(self, nb):
-        self.code.append(self.methods[nb].process())
+        if nb in self.methods:
+            self.code.append(self.methods[nb].process())
+        else:
+            for cls in self.subclasses.values():
+                cls.select_meth(nb)
 
     def show_code(self):
+        Util.log('%s {' % self.prototype, 'log')
+        for cls in self.subclasses.values():
+            cls.show_code()
         for ins in self.code:
             Util.log(ins, 'log')
+        Util.log('}', 'log')
 
     def process(self):
+        Util.log('SUCLASSES : %s' % self.subclasses, 'debug')
         for cls in self.subclasses.values():
             cls.process()
+        Util.log('METHODS : %s' % self.methods, 'debug')
         for meth in self.methods:
             self.select_meth(meth)
 
@@ -314,9 +354,9 @@ class DvClass():
         return 'Class name : %s.' % self.name
 
     def __repr__(self):
-        if self.subclasses == []:
-            return 'Class instance, %s.' % self.name
-        return 'Class instance, %s.\n\t-- Subclasses %s' % (self.name, self.subclasses)
+        if self.subclasses == {}:
+            return 'Class(%s)' % self.name
+        return 'Class(%s)\n\t-- Subclasses %s' % (self.name, self.subclasses)
 
 
 class DvMachine():
@@ -352,13 +392,6 @@ class DvMachine():
             return
         cls.show_code()
 
-class wrap_stream(object):
-    def __init__(self):
-        self.val = ''
-    def write(self, s):
-        self.val += s
-    def __str__(self):
-        return ''.join(self.val)
 
 if __name__ == '__main__':
     try:
@@ -367,12 +400,14 @@ if __name__ == '__main__':
         TEST = open('../examples/android/TestsAndroguard/bin/classes.dex')
     TEST.close()
 
-    Util.DEBUG_LEVEL = 'debug'
+    #TEST = file('/tmp/classes.dex')
+
+    #Util.DEBUG_LEVEL = 'debug'
 
     MACHINE = DvMachine(TEST.name)
 
     from pprint import pprint
-    temp = wrap_stream()
+    temp = Util.wrap_stream()
     Util.log('===========================', 'log')
     Util.log('Classes :', 'log')
     pprint(MACHINE.classes, temp)
@@ -394,21 +429,21 @@ if __name__ == '__main__':
             MACHINE.show_code(MACHINE.get_class(CLS))
             Util.log('===========================', 'log')
     else:
-        CLS = MACHINE.get_class(CLS)
-        if CLS is None:
+        cls = MACHINE.get_class(CLS)
+        if cls is None:
             Util.log('%s not found.' % CLS, 'error')
         else:
             Util.log('======================', 'log')
-            temp = wrap_stream()
-            pprint(CLS.get_methods(), temp)
+            temp.clean()
+            pprint(cls.get_methods(), temp)
             Util.log(temp, 'log')
             Util.log('======================', 'log')
             METH = raw_input('Method: ')
             if METH == '*':
-                Util.log('CLASS = %s' % CLS, 'log')
-                MACHINE.process_class(CLS)
+                Util.log('CLASS = %s' % cls, 'log')
+                MACHINE.process_class(cls)
             else:
-                MACHINE.process_method(CLS, int(METH))
+                MACHINE.process_method(cls, int(METH))
             Util.log('\n\nDump of code:', 'log')
             Util.log('===========================', 'log')
-            MACHINE.show_code(CLS)
+            MACHINE.show_code(cls)
