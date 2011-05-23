@@ -54,6 +54,16 @@ ACCESS_FLAGS_METHODS = {
     0x20000: 'synchronized'  #'ACC_DECLARED_SYNCHRONIZED'
 }
 
+class wrap_stream(object):
+    def __init__(self):
+        self.val = ''
+    def write(self, s):
+        self.val += s
+    def clean(self):
+        self.val = ''
+    def __str__(self):
+        return ''.join(self.val)
+
 def merge_inner(clsdict):
     '''
     Merge the inner class(es) of a class :
@@ -76,9 +86,26 @@ def merge_inner(clsdict):
                     del clsdict[classname]
                     samelist = False
 
+TYPE_LEN = {
+    'J': 2,
+    'D': 2
+}
+
+def get_next_register(params):
+    '''
+    Return the number of the next register in a generator form.
+    '''
+    size = 0
+    for type in params:
+        size += TYPE_LEN.get(type, 1)
+        yield size
+
+def get_type_size(param):
+    return TYPE_LEN.get(param, 1)
+
 def get_type(atype, size=None):
     '''
-    Retrieve the type of a descriptor (e.g : (IC)V)
+    Retrieve the type of a descriptor (e.g : I)
     '''
     res = TYPE_DESCRIPTOR.get(atype)
     if res is None:
@@ -90,8 +117,17 @@ def get_type(atype, size=None):
             else:
                 res = '%s[%s]' % (get_type(atype[1:]), size)
         else:
-            print 'Unknown descriptor: "%s".' % atype
+            log('Unknown descriptor: "%s".' % atype, 'error')
     return res
+
+def get_params_type(descriptor):
+    '''
+    Return the parameters type of a descriptor (e.g (IC)V)
+    '''
+    params = descriptor.split(')')[0][1:].split()
+    if params:
+        return [param for param in params]
+    return []
 
 def get_new_var(atype):
     '''
@@ -110,7 +146,7 @@ DEBUG_LEVEL = 'log'
 
 def log(s, mode):
     def _log(s):
-        print 'LOG: %s' % s
+        print '%s' % s
     def _log_debug(s):
         print 'DEBUG: %s' % s
     def _log_error(s):
