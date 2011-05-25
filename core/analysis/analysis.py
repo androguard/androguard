@@ -1077,11 +1077,21 @@ TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 TAINTED_STRING = 2
 class Path :
-    def __init__(self, info) :
+    def __init__(self, info, info_obj=None) :
         self.access_flag = info[0]
         self.idx = info[1]
         self.bb = info[2]
         self.method = info[3]
+        self.info_obj = info_obj
+
+    def get_class_name(self) :
+        return self.info_obj.get_class_name()
+
+    def get_name(self) :
+        return self.info_obj.get_name()
+
+    def get_descriptor(self) :
+        return self.info_obj.get_descriptor()
 
     def get_access_flag(self) :
         return self.access_flag
@@ -1111,7 +1121,7 @@ class TaintedVariable :
         return self.var
 
     def push(self, info) :
-        p = Path( info )
+        p = Path( info, self.var )
         self.paths.append( p )
         return p
 
@@ -1119,6 +1129,9 @@ class TaintedVariable :
         for i in self.paths :
             if i.get_access_flag() in mode :
                 yield i
+
+    def get_all_paths(self) :
+        return self.paths
 
     def get_paths(self) :
         for i in self.paths :
@@ -1165,6 +1178,35 @@ class TaintedVariables :
             if i.get_class_name() == ref.get_class_name() and i.get_name() == ref.get_name() and i.get_descriptor() == ref.get_descriptor() :
                 return self.__vars[ TAINTED_FIELD ] [i]
         return None
+
+    # permission functions 
+
+    def get_permissions(self, permissions_needed) :
+        """
+            @param permissions_needed : a list of restricted permissions to get ([] returns all permissions)
+            
+            @rtype : a dictionnary of permissions' paths
+        """
+        permissions = {}
+
+        pn = permissions_needed
+        if permissions_needed == [] :
+            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+
+        classes = self.__vm.get_classes_names()
+
+        for f, f1 in self.get_fields() :
+            data = "%s-%s-%s" % (f1.get_class_name(), f1.get_name(), f1.get_descriptor())
+            
+            if data in DVM_PERMISSIONS_BY_ELEMENT :
+                if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn :
+                    try :
+                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( f.get_all_paths() )
+                    except KeyError :
+                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
+                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( f.get_all_paths() )
+
+        return permissions
 
     # global functions
 
@@ -1293,11 +1335,15 @@ TAINTED_PACKAGE = {
    TAINTED_PACKAGE_CALL : "M"
 }
 
-def show_PathP(paths) :
+
+def show_Path(paths) :
     for path in paths :
-        print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                      path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
-                                                      path.get_class_name(), path.get_name(), path.get_descriptor())
+        if isinstance(path, PathP) :
+            print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                          path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                          path.get_class_name(), path.get_name(), path.get_descriptor())
+        else :
+            print "%s %s %s ---> %s %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), (path.get_bb().start + path.get_idx() ) )
 
 class PathP(Path) :
     def __init__(self, info, class_name) :
@@ -1976,6 +2022,19 @@ class VMAnalysis :
         else : 
             return self.signature.get_method( self.get_method( method ), grammar_type, options )
 
+    def get_permissions(self, permissions_needed) :
+        """
+            @param permissions_needed : a list of restricted permissions to get ([] returns all permissions)
+            
+            @rtype : a dictionnary of permissions' paths
+        """
+        permissions = {}
+
+
+        permissions.update( self.tainted_packages.get_permissions( permissions_needed ) )
+        permissions.update( self.tainted_variables.get_permissions( permissions_needed ) )
+
+        return permissions
 
     # FIXME
     def get_op(self, op) :
