@@ -913,3 +913,65 @@ class Sim(Diff) :
                #print "DEBUG", method.m.get_class_name(), method.m.get_name(), method.m.get_descriptor()
         #       method.sort( self.filters[fil][BASE][FILTER_NAME] ) 
         #       self.scoring.append( method.getclosesort( self.filters[fil][BASE][FILTER_NAME] ) )
+
+######################### SIM with multiple files ###############################
+
+class Si : 
+    def __init__(self, name, val) :
+        self.name = name
+        self.val = val
+        self.vectors = []
+
+    def cmp(self, vectors) :
+        self.vectors = vectors
+
+def CMP(sim, x, y) :
+    return sim.ncd( x.val, y.val )
+
+import analysis
+import json
+import scipy.cluster.hierarchy
+
+class SimJson :
+    def __init__(self, vm1, filename) :
+        self.vm1 = vm1
+
+        print "Loading"
+        fd = open(filename, "r")
+        self.files = json.load( fd )
+        fd.close()
+
+        print "Checking ..."
+
+        SIGN = "L0_0"
+        L = []
+        M = []
+
+        self.sim = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
+        self.sim.set_compress_type( SNAPPY_COMPRESS )                                                                                                                                            
+
+        for i in self.files[1:] :
+            for j in i :
+                if j != "SourceFilename" :
+                    for key in i[j] :
+                        if len(i[j][key][SIGN]) > 10 :
+                            L.append( Si( j, i[j][key][SIGN] ) )
+                        #print i[j][SIGN]
+
+        print len(L) * len(vm1[0].get_methods())
+        for m in vm1[0].get_methods() :
+            s = vm1[1].get_method_signature( m, predef_sign = analysis.SIGNATURE_L0_0 )
+
+            i = Si( m, s.get_string() )
+            i.cmp( [ CMP(self.sim, i, j) for j in L ] )
+            M.append( i )
+
+        print M 
+
+        X = [ i.vectors for i in M ]
+
+        fd = open("toto.json", "w")
+        json.dump( X, fd )
+        fd.close()
+        #Z = scipy.cluster.hierarchy.linkage( X )
+        #scipy.cluster.hierarchy.dendrogram( Z )

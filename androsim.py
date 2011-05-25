@@ -25,10 +25,11 @@ from optparse import OptionParser
 import androguard, misc, diff
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-j', '--json'), 'help' : 'file : use json file', 'nargs' : 2 }
+option_2 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3]
 
 def main(options, arguments) :
     if options.input != None :
@@ -42,6 +43,15 @@ def main(options, arguments) :
         vmx2 = a.get_bc()[1][1].get_analysis()
 
         diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
+
+    elif options.json != None :
+        a = androguard.Androguard( [ options.json[0] ] )
+        a.ianalyze()
+       
+        vm1 = a.get_bc()[0][1].get_vm()
+        vmx1 = a.get_bc()[0][1].get_analysis()
+
+        diff.SimJson( [ vm1, vmx1 ], options.json[1] )
 
     elif options.version != None :
         print "Androsim version %s" % misc.ANDROSIM_VERSION

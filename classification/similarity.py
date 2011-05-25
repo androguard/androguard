@@ -18,6 +18,7 @@
 
 import hashlib
 
+import zlib
 from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
 
 #struct libsimilarity {
@@ -72,7 +73,16 @@ class SIMILARITY :
            XZ_COMPRESS : {},
            SNAPPY_COMPRESS : {},
         }
-
+        
+        self.__rcaches = {
+           ZLIB_COMPRESS : {},
+           BZ2_COMPRESS : {},
+           SMAZ_COMPRESS : {},
+           LZMA_COMPRESS : {},
+           XZ_COMPRESS : {},
+           SNAPPY_COMPRESS : {},
+        }
+        
         self.set_compress_type( ZLIB_COMPRESS )
 
     def set_level(self, level) :
@@ -80,14 +90,28 @@ class SIMILARITY :
 
     def get_in_caches(self, s) :
         try :
-            return self.__caches[ self._type ][ hashlib.md5( s ).hexdigest() ]
+            return self.__caches[ self._type ][ zlib.adler32( s ) ]
         except KeyError :
             return c_uint( 0 )
 
+    def get_in_rcaches(self, s1, s2) :
+        try :
+            return self.__rcaches[ self._type ][ zlib.adler32( s1 + s2 ) ]
+        except KeyError :
+            try :
+                return self.__rcaches[ self._type ][ zlib.adler32( s2 + s1 ) ]
+            except KeyError :
+                return -1
+
     def add_in_caches(self, s, v) :
-        h = hashlib.md5( s ).hexdigest()
+        h = zlib.adler32( s )
         if h not in self.__caches[ self._type ] :
             self.__caches[ self._type ][ h ] = v
+    
+    def add_in_rcaches(self, s, v) :
+        h = zlib.adler32( s )
+        if h not in self.__rcaches[ self._type ] :
+            self.__rcaches[ self._type ][ h ] = v
 
     def clear_caches(self) :
         for i in self.__caches :
@@ -98,6 +122,10 @@ class SIMILARITY :
         return res
 
     def _sim(self, s1, s2, func) :
+        end = self.get_in_rcaches( s1, s2 )
+        if end != -1 :
+            return end
+        
         self.__libsim_t.orig = cast( s1, c_void_p )
         self.__libsim_t.size_orig = len(s1)
 
@@ -106,6 +134,7 @@ class SIMILARITY :
 
         corig = self.get_in_caches(s1)
         ccmp = self.get_in_caches(s2)
+        
         self.__libsim_t.corig = addressof( corig )
         self.__libsim_t.ccmp = addressof( ccmp )
 
@@ -113,6 +142,7 @@ class SIMILARITY :
 
         self.add_in_caches(s1, corig)
         self.add_in_caches(s2, ccmp)
+        self.add_in_rcaches(s1+s2, self.__libsim_t.res)
 
         return self.__libsim_t.res
 
