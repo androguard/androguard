@@ -112,8 +112,9 @@ int ncd(int level, libsimilarity_t *n)
    s1 = *(n->corig);
    if (s1 == 0) {
       s1 = size_tmp_buff;
+      //printf("COMPRESS S1 ...\n");
       ret = generic_Compress(level, n->orig, n->size_orig, tmp_buff, &s1);
-      //printf("RET = %d AVAIL OUT %d\n", ret, s1);
+      //printf("S1 RET = %d AVAIL OUT %d\n", ret, s1);
       if (ret < 0) {
           free_buff( tmp_buff, context );
           return -1;
@@ -125,8 +126,9 @@ int ncd(int level, libsimilarity_t *n)
    s2 = *(n->ccmp);
    if (s2 == 0) {
       s2 = size_tmp_buff;
+      //printf("COMPRESS S2 ...\n");
       ret = generic_Compress(level, n->cmp, n->size_cmp, tmp_buff, &s2);
-      //printf("RET = %d AVAIL OUT %d\n", ret, s2);
+      //printf("S2 RET = %d AVAIL OUT %d\n", ret, s2);
       if (ret < 0) {
           free_buff( tmp_buff, context );
           return -1;
@@ -145,10 +147,11 @@ int ncd(int level, libsimilarity_t *n)
    memcpy(joinbuff+n->size_orig, n->cmp, n->size_cmp);
 
    s3 = size_tmp_buff;
+   //printf("COMPRESS S3 ...\n");
    ret = generic_Compress(level, joinbuff, size_join_buff, tmp_buff, &s3);
    free(joinbuff);
 
-   //printf("RET = %d %d AVAIL OUT %d\n", ret, size_join_buff, s3);
+   //printf("S3 RET = %d %d AVAIL OUT %d\n", ret, size_join_buff, s3);
    if (ret < 0) {
         free_buff( tmp_buff, context );
         return -1;

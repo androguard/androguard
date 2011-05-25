@@ -1,25 +1,7 @@
 DVM_PERMISSIONS_BY_PERMISSION = {
-"REBOOT" : {
-	"Landroid/os/RecoverySystem;" : [
-		("F", "installPackage", "(Landroid/content/Context; Ljava/io/File;)V"),
-		("F", "rebootWipeUserData", "(Landroid/content/Context;)V"),
-	],
-	"Landroid/content/Intent;" : [
-		("C", "IntentResolution", "Ljava/lang/String;"),
-		("C", "ACTION_REBOOT", "Ljava/lang/String;"),
-	],
-	"Landroid/os/PowerManager;" : [
-		("F", "reboot", "(Ljava/lang/String;)V"),
-	],
-},
 "RECORD_AUDIO" : {
 	"Landroid/net/sip/SipAudioCall;" : [
 		("F", "startAudio", "()V"),
-	],
-},
-"BIND_INPUT_METHOD" : {
-	"Landroid/view/inputmethod/InputMethod;" : [
-		("C", "SERVICE_INTERFACE", "Ljava/lang/String;"),
 	],
 },
 "DUMP" : {
@@ -42,32 +24,12 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "setTestProviderStatus", "(Ljava/lang/String; I Landroid/os/Bundle; J)V"),
 	],
 },
-"GLOBAL_SEARCH" : {
-	"Landroid/app/SearchManager;" : [
-		("C", "EXTRA_SELECT_QUERY", "Ljava/lang/String;"),
-		("C", "INTENT_ACTION_GLOBAL_SEARCH", "Ljava/lang/String;"),
-	],
-},
-"ACCOUNT_MANAGER" : {
+"USE_CREDENTIALS" : {
 	"Landroid/accounts/AccountManager;" : [
-		("C", "KEY_ACCOUNT_MANAGER_RESPONSE", "Ljava/lang/String;"),
-	],
-},
-"WAKE_LOCK" : {
-	"Landroid/net/sip/SipAudioCall;" : [
-		("F", "startAudio", "()V"),
-	],
-	"Landroid/media/MediaPlayer;" : [
-		("F", "setWakeMode", "(Landroid/content/Context; I)V"),
-	],
-	"Landroid/os/PowerManager;" : [
-		("C", "ACQUIRE_CAUSES_WAKEUP", "I"),
-		("C", "FULL_WAKE_LOCK", "I"),
-		("C", "ON_AFTER_RELEASE", "I"),
-		("C", "PARTIAL_WAKE_LOCK", "I"),
-		("C", "SCREEN_BRIGHT_WAKE_LOCK", "I"),
-		("C", "SCREEN_DIM_WAKE_LOCK", "I"),
-		("F", "newWakeLock", "(I Ljava/lang/String;)LPowerManager/WakeLock;"),
+		("F", "blockingGetAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; B)Ljava/lang/String;"),
+		("F", "getAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "getAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; B Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "invalidateAuthToken", "(Ljava/lang/String; Ljava/lang/String;)V"),
 	],
 },
 "SEND_SMS" : {
@@ -80,12 +42,6 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "getDefault", "()Landroid/telephony/SmsManager;"),
 		("F", "sendDataMessage", "(Ljava/lang/String; Ljava/lang/String; S [B Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V"),
 		("F", "sendTextMessage", "(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String; Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V"),
-	],
-},
-"GET_TASKS" : {
-	"Landroid/app/ActivityManager;" : [
-		("F", "getRecentTasks", "(I I)Ljava/util/List;"),
-		("F", "getRunningTasks", "(I)Ljava/util/List;"),
 	],
 },
 "VIBRATE" : {
@@ -119,11 +75,6 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "shouldVibrate", "(I)B"),
 	],
 },
-"REORDER_TASKS" : {
-	"Landroid/app/ActivityManager;" : [
-		("F", "moveTaskToFront", "(I I)V"),
-	],
-},
 "ACCESS_COARSE_LOCATION" : {
 	"Landroid/telephony/TelephonyManager;" : [
 		("F", "getCellLocation", "()Landroid/telephony/CellLocation;"),
@@ -140,25 +91,187 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("C", "ACTION_DEVICE_ADMIN_ENABLED", "Ljava/lang/String;"),
 	],
 },
-"GET_ACCOUNTS" : {
-	"Landroid/accounts/AccountManager;" : [
-		("F", "getAccounts", "()"),
-		("F", "getAccountsByType", "(Ljava/lang/String;)"),
-		("F", "getAccountsByTypeAndFeatures", "(Ljava/lang/String; [Ljava/lang/String; [Landroid/accounts/AccountManagerCallback<android/accounts/Account[; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "hasFeatures", "(Landroid/accounts/Account; [Ljava/lang/String; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+"READ_LOGS" : {
+	"Landroid/os/DropBoxManager;" : [
+		("C", "ACTION_DROPBOX_ENTRY_ADDED", "Ljava/lang/String;"),
+		("F", "getNextEntry", "(Ljava/lang/String; J)LDropBoxManager/Entry;"),
 	],
 },
-"READ_HISTORY_BOOKMARKS" : {
+"PROCESS_OUTGOING_CALLS" : {
+	"Landroid/content/Intent;" : [
+		("C", "ACTION_NEW_OUTGOING_CALL", "Ljava/lang/String;"),
+	],
+},
+"ACCESS_FINE_LOCATION" : {
+	"Landroid/telephony/TelephonyManager;" : [
+		("F", "getCellLocation", "()Landroid/telephony/CellLocation;"),
+	],
+	"Landroid/location/LocationManager;" : [
+		("C", "GPS_PROVIDER", "Ljava/lang/String;"),
+		("C", "NETWORK_PROVIDER", "Ljava/lang/String;"),
+		("C", "PASSIVE_PROVIDER", "Ljava/lang/String;"),
+		("F", "addGpsStatusListener", "(Landroid/location/GpsStatus/Listener;)B"),
+		("F", "addNmeaListener", "(Landroid/location/GpsStatus/NmeaListener;)B"),
+	],
+},
+"GLOBAL_SEARCH" : {
+	"Landroid/app/SearchManager;" : [
+		("C", "EXTRA_SELECT_QUERY", "Ljava/lang/String;"),
+		("C", "INTENT_ACTION_GLOBAL_SEARCH", "Ljava/lang/String;"),
+	],
+},
+"BROADCAST_STICKY" : {
+	"Landroid/content/Context;" : [
+		("F", "removeStickyBroadcast", "(Landroid/content/Intent;)V"),
+		("F", "sendStickyBroadcast", "(Landroid/content/Intent;)V"),
+	],
+	"Landroid/content/ContextWrapper;" : [
+		("F", "removeStickyBroadcast", "(Landroid/content/Intent;)V"),
+		("F", "sendStickyBroadcast", "(Landroid/content/Intent;)V"),
+	],
+},
+"BIND_WALLPAPER" : {
+	"Landroid/service/wallpaper/WallpaperService;" : [
+		("C", "SERVICE_INTERFACE", "Ljava/lang/String;"),
+	],
+},
+"KILL_BACKGROUND_PROCESSES" : {
+	"Landroid/app/ActivityManager;" : [
+		("F", "killBackgroundProcesses", "(Ljava/lang/String;)V"),
+	],
+},
+"SET_TIME_ZONE" : {
+	"Landroid/app/AlarmManager;" : [
+		("F", "setTimeZone", "(Ljava/lang/String;)V"),
+	],
+},
+"BLUETOOTH_ADMIN" : {
+	"Landroid/bluetooth/BluetoothAdapter;" : [
+		("F", "cancelDiscovery", "()B"),
+		("F", "disable", "()B"),
+		("F", "enable", "()B"),
+		("F", "setName", "(Ljava/lang/String;)B"),
+		("F", "startDiscovery", "()B"),
+	],
+},
+"STATUS_BAR" : {
+	"Landroid/view/View/OnSystemUiVisibilityChangeListener;" : [
+		("F", "onSystemUiVisibilityChange", "(I)V"),
+	],
+	"Landroid/view/View;" : [
+		("C", "STATUS_BAR_HIDDEN", "I"),
+		("C", "STATUS_BAR_VISIBLE", "I"),
+	],
+	"Landroid/view/WindowManager/LayoutParams;" : [
+		("C", "TYPE_STATUS_BAR", "I"),
+		("C", "TYPE_STATUS_BAR_PANEL", "I"),
+		("C", "systemUiVisibility", "I"),
+		("C", "type", "I"),
+	],
+},
+"CAMERA" : {
+	"Landroid/hardware/Camera/ErrorCallback;" : [
+		("F", "onError", "(I Landroid/hardware/Camera;)V"),
+	],
+	"Landroid/bluetooth/BluetoothClass/Device;" : [
+		("C", "AUDIO_VIDEO_VIDEO_CAMERA", "I"),
+	],
+	"Landroid/content/pm/PackageManager;" : [
+		("C", "FEATURE_CAMERA", "Ljava/lang/String;"),
+		("C", "FEATURE_CAMERA_AUTOFOCUS", "Ljava/lang/String;"),
+		("C", "FEATURE_CAMERA_FLASH", "Ljava/lang/String;"),
+		("C", "FEATURE_CAMERA_FRONT", "Ljava/lang/String;"),
+	],
+	"Landroid/view/KeyEvent;" : [
+		("C", "KEYCODE_CAMERA", "I"),
+	],
+	"Landroid/provider/MediaStore;" : [
+		("C", "INTENT_ACTION_STILL_IMAGE_CAMERA", "Ljava/lang/String;"),
+		("C", "INTENT_ACTION_VIDEO_CAMERA", "Ljava/lang/String;"),
+	],
+	"Landroid/hardware/Camera/CameraInfo;" : [
+		("C", "CAMERA_FACING_BACK", "I"),
+		("C", "CAMERA_FACING_FRONT", "I"),
+		("C", "facing", "I"),
+	],
+	"Landroid/provider/ContactsContract/StatusColumns;" : [
+		("C", "CAPABILITY_HAS_CAMERA", "I"),
+	],
+	"Landroid/hardware/Camera/Parameters;" : [
+		("F", "setRotation", "(I)V"),
+	],
+	"Landroid/media/MediaRecorder/VideoSource;" : [
+		("C", "CAMERA", "I"),
+	],
+	"Landroid/content/Intent;" : [
+		("C", "IntentResolution", "Ljava/lang/String;"),
+		("C", "ACTION_CAMERA_BUTTON", "Ljava/lang/String;"),
+	],
+	"Landroid/hardware/Camera;" : [
+		("C", "CAMERA_ERROR_SERVER_DIED", "I"),
+		("C", "CAMERA_ERROR_UNKNOWN", "I"),
+		("F", "setDisplayOrientation", "(I)V"),
+	],
+},
+"SET_WALLPAPER" : {
+	"Landroid/app/WallpaperManager;" : [
+		("F", "setBitmap", "(Landroid/graphics/Bitmap;)V"),
+	],
+},
+"WAKE_LOCK" : {
+	"Landroid/net/sip/SipAudioCall;" : [
+		("F", "startAudio", "()V"),
+	],
+	"Landroid/media/MediaPlayer;" : [
+		("F", "setWakeMode", "(Landroid/content/Context; I)V"),
+	],
+	"Landroid/os/PowerManager;" : [
+		("C", "ACQUIRE_CAUSES_WAKEUP", "I"),
+		("C", "FULL_WAKE_LOCK", "I"),
+		("C", "ON_AFTER_RELEASE", "I"),
+		("C", "PARTIAL_WAKE_LOCK", "I"),
+		("C", "SCREEN_BRIGHT_WAKE_LOCK", "I"),
+		("C", "SCREEN_DIM_WAKE_LOCK", "I"),
+		("F", "newWakeLock", "(I Ljava/lang/String;)LPowerManager/WakeLock;"),
+	],
+},
+"MANAGE_ACCOUNTS" : {
+	"Landroid/accounts/AccountManager;" : [
+		("F", "addAccount", "(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "clearPassword", "(Landroid/accounts/Account;)V"),
+		("F", "confirmCredentials", "(Landroid/accounts/Account; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "editProperties", "(Ljava/lang/String; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "getAuthTokenByFeatures", "(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/app/Activity; Landroid/os/Bundle; Landroid/os/Bundle; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "invalidateAuthToken", "(Ljava/lang/String; Ljava/lang/String;)V"),
+		("F", "removeAccount", "(Landroid/accounts/Account; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "updateCredentials", "(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+	],
+},
+"WRITE_HISTORY_BOOKMARKS" : {
 	"Landroid/provider/Browser;" : [
 		("C", "BOOKMARKS_URI", "Landroid/net/Uri;"),
 		("C", "SEARCHES_URI", "Landroid/net/Uri;"),
 		("F", "addSearchUrl", "(Landroid/content/ContentResolver; Ljava/lang/String;)V"),
-		("F", "canClearHistory", "(Landroid/content/ContentResolver;)B"),
-		("F", "getAllBookmarks", "(Landroid/content/ContentResolver;)Landroid/database/Cursor;"),
-		("F", "getAllVisitedUrls", "(Landroid/content/ContentResolver;)Landroid/database/Cursor;"),
-		("F", "requestAllIcons", "(Landroid/content/ContentResolver; Ljava/lang/String; Landroid/webkit/WebIconDatabase/IconListener;)V"),
+		("F", "clearHistory", "(Landroid/content/ContentResolver;)V"),
+		("F", "clearSearches", "(Landroid/content/ContentResolver;)V"),
+		("F", "deleteFromHistory", "(Landroid/content/ContentResolver; Ljava/lang/String;)V"),
+		("F", "deleteHistoryTimeFrame", "(Landroid/content/ContentResolver; J J)V"),
 		("F", "truncateHistory", "(Landroid/content/ContentResolver;)V"),
 		("F", "updateVisitedHistory", "(Landroid/content/ContentResolver; Ljava/lang/String; B)V"),
+	],
+},
+"RECEIVE_BOOT_COMPLETED" : {
+	"Landroid/content/Intent;" : [
+		("C", "ACTION_BOOT_COMPLETED", "Ljava/lang/String;"),
+	],
+},
+"SET_ALARM" : {
+	"Landroid/provider/AlarmClock;" : [
+		("C", "ACTION_SET_ALARM", "Ljava/lang/String;"),
+		("C", "EXTRA_HOUR", "Ljava/lang/String;"),
+		("C", "EXTRA_MESSAGE", "Ljava/lang/String;"),
+		("C", "EXTRA_MINUTES", "Ljava/lang/String;"),
+		("C", "EXTRA_SKIP_UI", "Ljava/lang/String;"),
 	],
 },
 "NFC" : {
@@ -284,12 +397,37 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "transceive", "([B)[B"),
 	],
 },
-"WRITE_EXTERNAL_STORAGE" : {
-	"Landroid/os/Build/VERSION_CODES;" : [
-		("C", "DONUT", "I"),
+"BIND_INPUT_METHOD" : {
+	"Landroid/view/inputmethod/InputMethod;" : [
+		("C", "SERVICE_INTERFACE", "Ljava/lang/String;"),
 	],
-	"Landroid/app/DownloadManager/Request;" : [
-		("F", "setDestinationUri", "(Landroid/net/Uri;)Landroid/app/DownloadManager/Request;"),
+},
+"FACTORY_TEST" : {
+	"Landroid/content/pm/ApplicationInfo;" : [
+		("C", "FLAG_FACTORY_TEST", "I"),
+		("C", "flags", "I"),
+	],
+	"Landroid/content/Intent;" : [
+		("C", "IntentResolution", "Ljava/lang/String;"),
+		("C", "ACTION_FACTORY_TEST", "Ljava/lang/String;"),
+	],
+},
+"ACCOUNT_MANAGER" : {
+	"Landroid/accounts/AccountManager;" : [
+		("C", "KEY_ACCOUNT_MANAGER_RESPONSE", "Ljava/lang/String;"),
+	],
+},
+"INTERNET" : {
+	"Landroid/drm/DrmErrorEvent;" : [
+		("C", "TYPE_NO_INTERNET_CONNECTION", "I"),
+	],
+},
+"GET_ACCOUNTS" : {
+	"Landroid/accounts/AccountManager;" : [
+		("F", "getAccounts", "()"),
+		("F", "getAccountsByType", "(Ljava/lang/String;)"),
+		("F", "getAccountsByTypeAndFeatures", "(Ljava/lang/String; [Ljava/lang/String; [Landroid/accounts/AccountManagerCallback<android/accounts/Account[; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+		("F", "hasFeatures", "(Landroid/accounts/Account; [Ljava/lang/String; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
 	],
 },
 "SET_TIME" : {
@@ -309,96 +447,36 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "setUserData", "(Landroid/accounts/Account; Ljava/lang/String; Ljava/lang/String;)V"),
 	],
 },
-"FACTORY_TEST" : {
-	"Landroid/content/pm/ApplicationInfo;" : [
-		("C", "FLAG_FACTORY_TEST", "I"),
-		("C", "flags", "I"),
-	],
-	"Landroid/content/Intent;" : [
-		("C", "IntentResolution", "Ljava/lang/String;"),
-		("C", "ACTION_FACTORY_TEST", "Ljava/lang/String;"),
+"GET_TASKS" : {
+	"Landroid/app/ActivityManager;" : [
+		("F", "getRecentTasks", "(I I)Ljava/util/List;"),
+		("F", "getRunningTasks", "(I)Ljava/util/List;"),
 	],
 },
-"PROCESS_OUTGOING_CALLS" : {
-	"Landroid/content/Intent;" : [
-		("C", "ACTION_NEW_OUTGOING_CALL", "Ljava/lang/String;"),
+"READ_CONTACTS" : {
+	"Landroid/provider/ContactsContract$CommonDataKinds$Phone;" : [
+		("C", "CONTENT_URI", "Landroid/net/Uri;"),
 	],
 },
-"READ_PHONE_STATE" : {
-	"Landroid/telephony/TelephonyManager;" : [
-		("C", "ACTION_PHONE_STATE_CHANGED", "Ljava/lang/String;"),
-		("F", "getDeviceId", "()Ljava/lang/String;"),
-		("F", "getDeviceSoftwareVersion", "()Ljava/lang/String;"),
-		("F", "getLine1Number", "()Ljava/lang/String;"),
-		("F", "getSimSerialNumber", "()Ljava/lang/String;"),
-		("F", "getSubscriberId", "()Ljava/lang/String;"),
-		("F", "getVoiceMailAlphaTag", "()Ljava/lang/String;"),
-		("F", "getVoiceMailNumber", "()Ljava/lang/String;"),
-	],
-	"Landroid/telephony/PhoneStateListener;" : [
-		("C", "LISTEN_CALL_FORWARDING_INDICATOR", "I"),
-		("C", "LISTEN_CALL_STATE", "I"),
-		("C", "LISTEN_DATA_ACTIVITY", "I"),
-		("C", "LISTEN_MESSAGE_WAITING_INDICATOR", "I"),
-		("C", "LISTEN_SIGNAL_STRENGTH", "I"),
-	],
+"WRITE_EXTERNAL_STORAGE" : {
 	"Landroid/os/Build/VERSION_CODES;" : [
 		("C", "DONUT", "I"),
 	],
-},
-"READ_LOGS" : {
-	"Landroid/os/DropBoxManager;" : [
-		("C", "ACTION_DROPBOX_ENTRY_ADDED", "Ljava/lang/String;"),
-		("F", "getNextEntry", "(Ljava/lang/String; J)LDropBoxManager/Entry;"),
+	"Landroid/app/DownloadManager/Request;" : [
+		("F", "setDestinationUri", "(Landroid/net/Uri;)Landroid/app/DownloadManager/Request;"),
 	],
 },
-"BROADCAST_STICKY" : {
-	"Landroid/content/Context;" : [
-		("F", "removeStickyBroadcast", "(Landroid/content/Intent;)V"),
-		("F", "sendStickyBroadcast", "(Landroid/content/Intent;)V"),
+"REBOOT" : {
+	"Landroid/os/RecoverySystem;" : [
+		("F", "installPackage", "(Landroid/content/Context; Ljava/io/File;)V"),
+		("F", "rebootWipeUserData", "(Landroid/content/Context;)V"),
 	],
-	"Landroid/content/ContextWrapper;" : [
-		("F", "removeStickyBroadcast", "(Landroid/content/Intent;)V"),
-		("F", "sendStickyBroadcast", "(Landroid/content/Intent;)V"),
+	"Landroid/content/Intent;" : [
+		("C", "IntentResolution", "Ljava/lang/String;"),
+		("C", "ACTION_REBOOT", "Ljava/lang/String;"),
 	],
-},
-"BIND_WALLPAPER" : {
-	"Landroid/service/wallpaper/WallpaperService;" : [
-		("C", "SERVICE_INTERFACE", "Ljava/lang/String;"),
-	],
-},
-"KILL_BACKGROUND_PROCESSES" : {
-	"Landroid/app/ActivityManager;" : [
-		("F", "killBackgroundProcesses", "(Ljava/lang/String;)V"),
-	],
-},
-"SET_TIME_ZONE" : {
-	"Landroid/app/AlarmManager;" : [
-		("F", "setTimeZone", "(Ljava/lang/String;)V"),
-	],
-},
-"BLUETOOTH_ADMIN" : {
-	"Landroid/bluetooth/BluetoothAdapter;" : [
-		("F", "cancelDiscovery", "()B"),
-		("F", "disable", "()B"),
-		("F", "enable", "()B"),
-		("F", "setName", "(Ljava/lang/String;)B"),
-		("F", "startDiscovery", "()B"),
-	],
-},
-"STATUS_BAR" : {
-	"Landroid/view/View/OnSystemUiVisibilityChangeListener;" : [
-		("F", "onSystemUiVisibilityChange", "(I)V"),
-	],
-	"Landroid/view/View;" : [
-		("C", "STATUS_BAR_HIDDEN", "I"),
-		("C", "STATUS_BAR_VISIBLE", "I"),
-	],
-	"Landroid/view/WindowManager/LayoutParams;" : [
-		("C", "TYPE_STATUS_BAR", "I"),
-		("C", "TYPE_STATUS_BAR_PANEL", "I"),
-		("C", "systemUiVisibility", "I"),
-		("C", "type", "I"),
+	"Landroid/os/PowerManager;" : [
+		("F", "reboot", "(Ljava/lang/String;)V"),
 	],
 },
 "BLUETOOTH" : {
@@ -498,74 +576,22 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "startAudio", "()V"),
 	],
 },
-"CAMERA" : {
-	"Landroid/hardware/Camera/ErrorCallback;" : [
-		("F", "onError", "(I Landroid/hardware/Camera;)V"),
-	],
-	"Landroid/bluetooth/BluetoothClass/Device;" : [
-		("C", "AUDIO_VIDEO_VIDEO_CAMERA", "I"),
-	],
-	"Landroid/content/pm/PackageManager;" : [
-		("C", "FEATURE_CAMERA", "Ljava/lang/String;"),
-		("C", "FEATURE_CAMERA_AUTOFOCUS", "Ljava/lang/String;"),
-		("C", "FEATURE_CAMERA_FLASH", "Ljava/lang/String;"),
-		("C", "FEATURE_CAMERA_FRONT", "Ljava/lang/String;"),
-	],
-	"Landroid/view/KeyEvent;" : [
-		("C", "KEYCODE_CAMERA", "I"),
-	],
-	"Landroid/provider/MediaStore;" : [
-		("C", "INTENT_ACTION_STILL_IMAGE_CAMERA", "Ljava/lang/String;"),
-		("C", "INTENT_ACTION_VIDEO_CAMERA", "Ljava/lang/String;"),
-	],
-	"Landroid/hardware/Camera/CameraInfo;" : [
-		("C", "CAMERA_FACING_BACK", "I"),
-		("C", "CAMERA_FACING_FRONT", "I"),
-		("C", "facing", "I"),
-	],
-	"Landroid/provider/ContactsContract/StatusColumns;" : [
-		("C", "CAPABILITY_HAS_CAMERA", "I"),
-	],
-	"Landroid/hardware/Camera/Parameters;" : [
-		("F", "setRotation", "(I)V"),
-	],
-	"Landroid/media/MediaRecorder/VideoSource;" : [
-		("C", "CAMERA", "I"),
-	],
-	"Landroid/content/Intent;" : [
-		("C", "IntentResolution", "Ljava/lang/String;"),
-		("C", "ACTION_CAMERA_BUTTON", "Ljava/lang/String;"),
-	],
-	"Landroid/hardware/Camera;" : [
-		("C", "CAMERA_ERROR_SERVER_DIED", "I"),
-		("C", "CAMERA_ERROR_UNKNOWN", "I"),
-		("F", "setDisplayOrientation", "(I)V"),
+"REORDER_TASKS" : {
+	"Landroid/app/ActivityManager;" : [
+		("F", "moveTaskToFront", "(I I)V"),
 	],
 },
-"SET_WALLPAPER" : {
-	"Landroid/content/Intent;" : [
-		("C", "IntentResolution", "Ljava/lang/String;"),
-		("C", "ACTION_SET_WALLPAPER", "Ljava/lang/String;"),
-	],
-	"Landroid/app/WallpaperManager;" : [
-		("C", "WALLPAPER_PREVIEW_META_DATA", "Ljava/lang/String;"),
-	],
-},
-"INTERNET" : {
-	"Landroid/drm/DrmErrorEvent;" : [
-		("C", "TYPE_NO_INTERNET_CONNECTION", "I"),
-	],
-},
-"ACCESS_FINE_LOCATION" : {
-	"Landroid/telephony/TelephonyManager;" : [
-		("F", "getCellLocation", "()Landroid/telephony/CellLocation;"),
-	],
-	"Landroid/location/LocationManager;" : [
-		("C", "GPS_PROVIDER", "Ljava/lang/String;"),
-		("C", "NETWORK_PROVIDER", "Ljava/lang/String;"),
-		("C", "PASSIVE_PROVIDER", "Ljava/lang/String;"),
-		("F", "addGpsStatusListener", "(Landroid/location/GpsStatus/Listener;)B"),
-		("F", "addNmeaListener", "(Landroid/location/GpsStatus/NmeaListener;)B"),
+"READ_HISTORY_BOOKMARKS" : {
+	"Landroid/provider/Browser;" : [
+		("C", "BOOKMARKS_URI", "Landroid/net/Uri;"),
+		("C", "SEARCHES_URI", "Landroid/net/Uri;"),
+		("F", "addSearchUrl", "(Landroid/content/ContentResolver; Ljava/lang/String;)V"),
+		("F", "canClearHistory", "(Landroid/content/ContentResolver;)B"),
+		("F", "getAllBookmarks", "(Landroid/content/ContentResolver;)Landroid/database/Cursor;"),
+		("F", "getAllVisitedUrls", "(Landroid/content/ContentResolver;)Landroid/database/Cursor;"),
+		("F", "requestAllIcons", "(Landroid/content/ContentResolver; Ljava/lang/String; Landroid/webkit/WebIconDatabase/IconListener;)V"),
+		("F", "truncateHistory", "(Landroid/content/ContentResolver;)V"),
+		("F", "updateVisitedHistory", "(Landroid/content/ContentResolver; Ljava/lang/String; B)V"),
 	],
 },
 "MODIFY_AUDIO_SETTINGS" : {
@@ -577,63 +603,32 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "stopBluetoothSco", "()V"),
 	],
 },
-"MANAGE_ACCOUNTS" : {
-	"Landroid/accounts/AccountManager;" : [
-		("F", "addAccount", "(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "clearPassword", "(Landroid/accounts/Account;)V"),
-		("F", "confirmCredentials", "(Landroid/accounts/Account; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "editProperties", "(Ljava/lang/String; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "getAuthTokenByFeatures", "(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/app/Activity; Landroid/os/Bundle; Landroid/os/Bundle; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "invalidateAuthToken", "(Ljava/lang/String; Ljava/lang/String;)V"),
-		("F", "removeAccount", "(Landroid/accounts/Account; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "updateCredentials", "(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
+"READ_PHONE_STATE" : {
+	"Landroid/telephony/TelephonyManager;" : [
+		("C", "ACTION_PHONE_STATE_CHANGED", "Ljava/lang/String;"),
+		("F", "getDeviceId", "()Ljava/lang/String;"),
+		("F", "getDeviceSoftwareVersion", "()Ljava/lang/String;"),
+		("F", "getLine1Number", "()Ljava/lang/String;"),
+		("F", "getSimSerialNumber", "()Ljava/lang/String;"),
+		("F", "getSubscriberId", "()Ljava/lang/String;"),
+		("F", "getVoiceMailAlphaTag", "()Ljava/lang/String;"),
+		("F", "getVoiceMailNumber", "()Ljava/lang/String;"),
 	],
-},
-"USE_CREDENTIALS" : {
-	"Landroid/accounts/AccountManager;" : [
-		("F", "blockingGetAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; B)Ljava/lang/String;"),
-		("F", "getAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "getAuthToken", "(Landroid/accounts/Account; Ljava/lang/String; B Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;"),
-		("F", "invalidateAuthToken", "(Ljava/lang/String; Ljava/lang/String;)V"),
+	"Landroid/telephony/PhoneStateListener;" : [
+		("C", "LISTEN_CALL_FORWARDING_INDICATOR", "I"),
+		("C", "LISTEN_CALL_STATE", "I"),
+		("C", "LISTEN_DATA_ACTIVITY", "I"),
+		("C", "LISTEN_MESSAGE_WAITING_INDICATOR", "I"),
+		("C", "LISTEN_SIGNAL_STRENGTH", "I"),
 	],
-},
-"WRITE_HISTORY_BOOKMARKS" : {
-	"Landroid/provider/Browser;" : [
-		("C", "BOOKMARKS_URI", "Landroid/net/Uri;"),
-		("C", "SEARCHES_URI", "Landroid/net/Uri;"),
-		("F", "addSearchUrl", "(Landroid/content/ContentResolver; Ljava/lang/String;)V"),
-		("F", "clearHistory", "(Landroid/content/ContentResolver;)V"),
-		("F", "clearSearches", "(Landroid/content/ContentResolver;)V"),
-		("F", "deleteFromHistory", "(Landroid/content/ContentResolver; Ljava/lang/String;)V"),
-		("F", "deleteHistoryTimeFrame", "(Landroid/content/ContentResolver; J J)V"),
-		("F", "truncateHistory", "(Landroid/content/ContentResolver;)V"),
-		("F", "updateVisitedHistory", "(Landroid/content/ContentResolver; Ljava/lang/String; B)V"),
-	],
-},
-"RECEIVE_BOOT_COMPLETED" : {
-	"Landroid/content/Intent;" : [
-		("C", "ACTION_BOOT_COMPLETED", "Ljava/lang/String;"),
-	],
-},
-"SET_ALARM" : {
-	"Landroid/provider/AlarmClock;" : [
-		("C", "ACTION_SET_ALARM", "Ljava/lang/String;"),
-		("C", "EXTRA_HOUR", "Ljava/lang/String;"),
-		("C", "EXTRA_MESSAGE", "Ljava/lang/String;"),
-		("C", "EXTRA_MINUTES", "Ljava/lang/String;"),
-		("C", "EXTRA_SKIP_UI", "Ljava/lang/String;"),
+	"Landroid/os/Build/VERSION_CODES;" : [
+		("C", "DONUT", "I"),
 	],
 },
 }
 
 DVM_PERMISSIONS_BY_ELEMENT = { 
-	"Landroid/os/RecoverySystem;-installPackage-(Landroid/content/Context; Ljava/io/File;)V" : "REBOOT",
-	"Landroid/os/RecoverySystem;-rebootWipeUserData-(Landroid/content/Context;)V" : "REBOOT",
-	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "REBOOT",
-	"Landroid/content/Intent;-ACTION_REBOOT-Ljava/lang/String;" : "REBOOT",
-	"Landroid/os/PowerManager;-reboot-(Ljava/lang/String;)V" : "REBOOT",
 	"Landroid/net/sip/SipAudioCall;-startAudio-()V" : "RECORD_AUDIO",
-	"Landroid/view/inputmethod/InputMethod;-SERVICE_INTERFACE-Ljava/lang/String;" : "BIND_INPUT_METHOD",
 	"Landroid/os/Debug;-dumpService-(Ljava/lang/String; Ljava/io/FileDescriptor; [Ljava/lang/String;)B" : "DUMP",
 	"Landroid/os/IBinder;-DUMP_TRANSACTION-I" : "DUMP",
 	"Landroid/location/LocationManager;-addTestProvider-(Ljava/lang/String; B B B B B B B I I)V" : "ACCESS_MOCK_LOCATION",
@@ -644,26 +639,16 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/location/LocationManager;-setTestProviderEnabled-(Ljava/lang/String; B)V" : "ACCESS_MOCK_LOCATION",
 	"Landroid/location/LocationManager;-setTestProviderLocation-(Ljava/lang/String; Landroid/location/Location;)V" : "ACCESS_MOCK_LOCATION",
 	"Landroid/location/LocationManager;-setTestProviderStatus-(Ljava/lang/String; I Landroid/os/Bundle; J)V" : "ACCESS_MOCK_LOCATION",
-	"Landroid/app/SearchManager;-EXTRA_SELECT_QUERY-Ljava/lang/String;" : "GLOBAL_SEARCH",
-	"Landroid/app/SearchManager;-INTENT_ACTION_GLOBAL_SEARCH-Ljava/lang/String;" : "GLOBAL_SEARCH",
-	"Landroid/accounts/AccountManager;-KEY_ACCOUNT_MANAGER_RESPONSE-Ljava/lang/String;" : "ACCOUNT_MANAGER",
-	"Landroid/net/sip/SipAudioCall;-startAudio-()V" : "WAKE_LOCK",
-	"Landroid/media/MediaPlayer;-setWakeMode-(Landroid/content/Context; I)V" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-ACQUIRE_CAUSES_WAKEUP-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-FULL_WAKE_LOCK-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-ON_AFTER_RELEASE-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-PARTIAL_WAKE_LOCK-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-SCREEN_BRIGHT_WAKE_LOCK-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-SCREEN_DIM_WAKE_LOCK-I" : "WAKE_LOCK",
-	"Landroid/os/PowerManager;-newWakeLock-(I Ljava/lang/String;)LPowerManager/WakeLock;" : "WAKE_LOCK",
+	"Landroid/accounts/AccountManager;-blockingGetAuthToken-(Landroid/accounts/Account; Ljava/lang/String; B)Ljava/lang/String;" : "USE_CREDENTIALS",
+	"Landroid/accounts/AccountManager;-getAuthToken-(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "USE_CREDENTIALS",
+	"Landroid/accounts/AccountManager;-getAuthToken-(Landroid/accounts/Account; Ljava/lang/String; B Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "USE_CREDENTIALS",
+	"Landroid/accounts/AccountManager;-invalidateAuthToken-(Ljava/lang/String; Ljava/lang/String;)V" : "USE_CREDENTIALS",
 	"Landroid/telephony/gsm/SmsManager;-getDefault-()Landroid/telephony/gsm/SmsManager;" : "SEND_SMS",
 	"Landroid/telephony/gsm/SmsManager;-sendDataMessage-(Ljava/lang/String; Ljava/lang/String; S [B Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V" : "SEND_SMS",
 	"Landroid/telephony/gsm/SmsManager;-sendTextMessage-(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String; Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V" : "SEND_SMS",
 	"Landroid/telephony/SmsManager;-getDefault-()Landroid/telephony/SmsManager;" : "SEND_SMS",
 	"Landroid/telephony/SmsManager;-sendDataMessage-(Ljava/lang/String; Ljava/lang/String; S [B Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V" : "SEND_SMS",
 	"Landroid/telephony/SmsManager;-sendTextMessage-(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String; Landroid/app/PendingIntent; Landroid/app/PendingIntent;)V" : "SEND_SMS",
-	"Landroid/app/ActivityManager;-getRecentTasks-(I I)Ljava/util/List;" : "GET_TASKS",
-	"Landroid/app/ActivityManager;-getRunningTasks-(I)Ljava/util/List;" : "GET_TASKS",
 	"Landroid/provider/Settings/System;-VIBRATE_ON-Ljava/lang/String;" : "VIBRATE",
 	"Landroid/app/Notification;-DEFAULT_VIBRATE-I" : "VIBRATE",
 	"Landroid/app/Notification;-defaults-I" : "VIBRATE",
@@ -685,24 +670,93 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/media/AudioManager;-setRingerMode-(I)V" : "VIBRATE",
 	"Landroid/media/AudioManager;-setVibrateSetting-(I I)V" : "VIBRATE",
 	"Landroid/media/AudioManager;-shouldVibrate-(I)B" : "VIBRATE",
-	"Landroid/app/ActivityManager;-moveTaskToFront-(I I)V" : "REORDER_TASKS",
 	"Landroid/telephony/TelephonyManager;-getCellLocation-()Landroid/telephony/CellLocation;" : "ACCESS_COARSE_LOCATION",
 	"Landroid/telephony/PhoneStateListener;-LISTEN_CELL_LOCATION-I" : "ACCESS_COARSE_LOCATION",
 	"Landroid/location/LocationManager;-NETWORK_PROVIDER-Ljava/lang/String;" : "ACCESS_COARSE_LOCATION",
 	"Landroid/app/admin/DeviceAdminReceiver;-ACTION_DEVICE_ADMIN_ENABLED-Ljava/lang/String;" : "BIND_DEVICE_ADMIN",
-	"Landroid/accounts/AccountManager;-getAccounts-()" : "GET_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-getAccountsByType-(Ljava/lang/String;)" : "GET_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-getAccountsByTypeAndFeatures-(Ljava/lang/String; [Ljava/lang/String; [Landroid/accounts/AccountManagerCallback<android/accounts/Account[; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "GET_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-hasFeatures-(Landroid/accounts/Account; [Ljava/lang/String; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "GET_ACCOUNTS",
-	"Landroid/provider/Browser;-BOOKMARKS_URI-Landroid/net/Uri;" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-SEARCHES_URI-Landroid/net/Uri;" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-addSearchUrl-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-canClearHistory-(Landroid/content/ContentResolver;)B" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-getAllBookmarks-(Landroid/content/ContentResolver;)Landroid/database/Cursor;" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-getAllVisitedUrls-(Landroid/content/ContentResolver;)Landroid/database/Cursor;" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-requestAllIcons-(Landroid/content/ContentResolver; Ljava/lang/String; Landroid/webkit/WebIconDatabase/IconListener;)V" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-truncateHistory-(Landroid/content/ContentResolver;)V" : "READ_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-updateVisitedHistory-(Landroid/content/ContentResolver; Ljava/lang/String; B)V" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/os/DropBoxManager;-ACTION_DROPBOX_ENTRY_ADDED-Ljava/lang/String;" : "READ_LOGS",
+	"Landroid/os/DropBoxManager;-getNextEntry-(Ljava/lang/String; J)LDropBoxManager/Entry;" : "READ_LOGS",
+	"Landroid/content/Intent;-ACTION_NEW_OUTGOING_CALL-Ljava/lang/String;" : "PROCESS_OUTGOING_CALLS",
+	"Landroid/telephony/TelephonyManager;-getCellLocation-()Landroid/telephony/CellLocation;" : "ACCESS_FINE_LOCATION",
+	"Landroid/location/LocationManager;-GPS_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
+	"Landroid/location/LocationManager;-NETWORK_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
+	"Landroid/location/LocationManager;-PASSIVE_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
+	"Landroid/location/LocationManager;-addGpsStatusListener-(Landroid/location/GpsStatus/Listener;)B" : "ACCESS_FINE_LOCATION",
+	"Landroid/location/LocationManager;-addNmeaListener-(Landroid/location/GpsStatus/NmeaListener;)B" : "ACCESS_FINE_LOCATION",
+	"Landroid/app/SearchManager;-EXTRA_SELECT_QUERY-Ljava/lang/String;" : "GLOBAL_SEARCH",
+	"Landroid/app/SearchManager;-INTENT_ACTION_GLOBAL_SEARCH-Ljava/lang/String;" : "GLOBAL_SEARCH",
+	"Landroid/content/Context;-removeStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
+	"Landroid/content/Context;-sendStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
+	"Landroid/content/ContextWrapper;-removeStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
+	"Landroid/content/ContextWrapper;-sendStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
+	"Landroid/service/wallpaper/WallpaperService;-SERVICE_INTERFACE-Ljava/lang/String;" : "BIND_WALLPAPER",
+	"Landroid/app/ActivityManager;-killBackgroundProcesses-(Ljava/lang/String;)V" : "KILL_BACKGROUND_PROCESSES",
+	"Landroid/app/AlarmManager;-setTimeZone-(Ljava/lang/String;)V" : "SET_TIME_ZONE",
+	"Landroid/bluetooth/BluetoothAdapter;-cancelDiscovery-()B" : "BLUETOOTH_ADMIN",
+	"Landroid/bluetooth/BluetoothAdapter;-disable-()B" : "BLUETOOTH_ADMIN",
+	"Landroid/bluetooth/BluetoothAdapter;-enable-()B" : "BLUETOOTH_ADMIN",
+	"Landroid/bluetooth/BluetoothAdapter;-setName-(Ljava/lang/String;)B" : "BLUETOOTH_ADMIN",
+	"Landroid/bluetooth/BluetoothAdapter;-startDiscovery-()B" : "BLUETOOTH_ADMIN",
+	"Landroid/view/View/OnSystemUiVisibilityChangeListener;-onSystemUiVisibilityChange-(I)V" : "STATUS_BAR",
+	"Landroid/view/View;-STATUS_BAR_HIDDEN-I" : "STATUS_BAR",
+	"Landroid/view/View;-STATUS_BAR_VISIBLE-I" : "STATUS_BAR",
+	"Landroid/view/WindowManager/LayoutParams;-TYPE_STATUS_BAR-I" : "STATUS_BAR",
+	"Landroid/view/WindowManager/LayoutParams;-TYPE_STATUS_BAR_PANEL-I" : "STATUS_BAR",
+	"Landroid/view/WindowManager/LayoutParams;-systemUiVisibility-I" : "STATUS_BAR",
+	"Landroid/view/WindowManager/LayoutParams;-type-I" : "STATUS_BAR",
+	"Landroid/hardware/Camera/ErrorCallback;-onError-(I Landroid/hardware/Camera;)V" : "CAMERA",
+	"Landroid/bluetooth/BluetoothClass/Device;-AUDIO_VIDEO_VIDEO_CAMERA-I" : "CAMERA",
+	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA-Ljava/lang/String;" : "CAMERA",
+	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_AUTOFOCUS-Ljava/lang/String;" : "CAMERA",
+	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_FLASH-Ljava/lang/String;" : "CAMERA",
+	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_FRONT-Ljava/lang/String;" : "CAMERA",
+	"Landroid/view/KeyEvent;-KEYCODE_CAMERA-I" : "CAMERA",
+	"Landroid/provider/MediaStore;-INTENT_ACTION_STILL_IMAGE_CAMERA-Ljava/lang/String;" : "CAMERA",
+	"Landroid/provider/MediaStore;-INTENT_ACTION_VIDEO_CAMERA-Ljava/lang/String;" : "CAMERA",
+	"Landroid/hardware/Camera/CameraInfo;-CAMERA_FACING_BACK-I" : "CAMERA",
+	"Landroid/hardware/Camera/CameraInfo;-CAMERA_FACING_FRONT-I" : "CAMERA",
+	"Landroid/hardware/Camera/CameraInfo;-facing-I" : "CAMERA",
+	"Landroid/provider/ContactsContract/StatusColumns;-CAPABILITY_HAS_CAMERA-I" : "CAMERA",
+	"Landroid/hardware/Camera/Parameters;-setRotation-(I)V" : "CAMERA",
+	"Landroid/media/MediaRecorder/VideoSource;-CAMERA-I" : "CAMERA",
+	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "CAMERA",
+	"Landroid/content/Intent;-ACTION_CAMERA_BUTTON-Ljava/lang/String;" : "CAMERA",
+	"Landroid/hardware/Camera;-CAMERA_ERROR_SERVER_DIED-I" : "CAMERA",
+	"Landroid/hardware/Camera;-CAMERA_ERROR_UNKNOWN-I" : "CAMERA",
+	"Landroid/hardware/Camera;-setDisplayOrientation-(I)V" : "CAMERA",
+	"Landroid/app/WallpaperManager;-setBitmap-(Landroid/graphics/Bitmap;)V" : "SET_WALLPAPER",
+	"Landroid/net/sip/SipAudioCall;-startAudio-()V" : "WAKE_LOCK",
+	"Landroid/media/MediaPlayer;-setWakeMode-(Landroid/content/Context; I)V" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-ACQUIRE_CAUSES_WAKEUP-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-FULL_WAKE_LOCK-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-ON_AFTER_RELEASE-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-PARTIAL_WAKE_LOCK-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-SCREEN_BRIGHT_WAKE_LOCK-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-SCREEN_DIM_WAKE_LOCK-I" : "WAKE_LOCK",
+	"Landroid/os/PowerManager;-newWakeLock-(I Ljava/lang/String;)LPowerManager/WakeLock;" : "WAKE_LOCK",
+	"Landroid/accounts/AccountManager;-addAccount-(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-clearPassword-(Landroid/accounts/Account;)V" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-confirmCredentials-(Landroid/accounts/Account; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-editProperties-(Ljava/lang/String; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-getAuthTokenByFeatures-(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/app/Activity; Landroid/os/Bundle; Landroid/os/Bundle; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-invalidateAuthToken-(Ljava/lang/String; Ljava/lang/String;)V" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-removeAccount-(Landroid/accounts/Account; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-updateCredentials-(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
+	"Landroid/provider/Browser;-BOOKMARKS_URI-Landroid/net/Uri;" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-SEARCHES_URI-Landroid/net/Uri;" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-addSearchUrl-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-clearHistory-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-clearSearches-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-deleteFromHistory-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-deleteHistoryTimeFrame-(Landroid/content/ContentResolver; J J)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-truncateHistory-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-updateVisitedHistory-(Landroid/content/ContentResolver; Ljava/lang/String; B)V" : "WRITE_HISTORY_BOOKMARKS",
+	"Landroid/content/Intent;-ACTION_BOOT_COMPLETED-Ljava/lang/String;" : "RECEIVE_BOOT_COMPLETED",
+	"Landroid/provider/AlarmClock;-ACTION_SET_ALARM-Ljava/lang/String;" : "SET_ALARM",
+	"Landroid/provider/AlarmClock;-EXTRA_HOUR-Ljava/lang/String;" : "SET_ALARM",
+	"Landroid/provider/AlarmClock;-EXTRA_MESSAGE-Ljava/lang/String;" : "SET_ALARM",
+	"Landroid/provider/AlarmClock;-EXTRA_MINUTES-Ljava/lang/String;" : "SET_ALARM",
+	"Landroid/provider/AlarmClock;-EXTRA_SKIP_UI-Ljava/lang/String;" : "SET_ALARM",
 	"Landroid/inputmethodservice/InputMethodService;-SoftInputView-I" : "NFC",
 	"Landroid/inputmethodservice/InputMethodService;-CandidatesView-I" : "NFC",
 	"Landroid/inputmethodservice/InputMethodService;-FullscreenMode-I" : "NFC",
@@ -786,8 +840,17 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/nfc/tech/IsoDep;-connect-()V" : "NFC",
 	"Landroid/nfc/tech/IsoDep;-setTimeout-(I)V" : "NFC",
 	"Landroid/nfc/tech/IsoDep;-transceive-([B)[B" : "NFC",
-	"Landroid/os/Build/VERSION_CODES;-DONUT-I" : "WRITE_EXTERNAL_STORAGE",
-	"Landroid/app/DownloadManager/Request;-setDestinationUri-(Landroid/net/Uri;)Landroid/app/DownloadManager/Request;" : "WRITE_EXTERNAL_STORAGE",
+	"Landroid/view/inputmethod/InputMethod;-SERVICE_INTERFACE-Ljava/lang/String;" : "BIND_INPUT_METHOD",
+	"Landroid/content/pm/ApplicationInfo;-FLAG_FACTORY_TEST-I" : "FACTORY_TEST",
+	"Landroid/content/pm/ApplicationInfo;-flags-I" : "FACTORY_TEST",
+	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "FACTORY_TEST",
+	"Landroid/content/Intent;-ACTION_FACTORY_TEST-Ljava/lang/String;" : "FACTORY_TEST",
+	"Landroid/accounts/AccountManager;-KEY_ACCOUNT_MANAGER_RESPONSE-Ljava/lang/String;" : "ACCOUNT_MANAGER",
+	"Landroid/drm/DrmErrorEvent;-TYPE_NO_INTERNET_CONNECTION-I" : "INTERNET",
+	"Landroid/accounts/AccountManager;-getAccounts-()" : "GET_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-getAccountsByType-(Ljava/lang/String;)" : "GET_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-getAccountsByTypeAndFeatures-(Ljava/lang/String; [Ljava/lang/String; [Landroid/accounts/AccountManagerCallback<android/accounts/Account[; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "GET_ACCOUNTS",
+	"Landroid/accounts/AccountManager;-hasFeatures-(Landroid/accounts/Account; [Ljava/lang/String; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "GET_ACCOUNTS",
 	"Landroid/app/AlarmManager;-setTime-(J)V" : "SET_TIME",
 	"Landroid/app/AlarmManager;-setTimeZone-(Ljava/lang/String;)V" : "SET_TIME",
 	"Landroid/accounts/AccountManager;-addAccountExplicitly-(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle;)B" : "AUTHENTICATE_ACCOUNTS",
@@ -797,46 +860,16 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/accounts/AccountManager;-setAuthToken-(Landroid/accounts/Account; Ljava/lang/String; Ljava/lang/String;)V" : "AUTHENTICATE_ACCOUNTS",
 	"Landroid/accounts/AccountManager;-setPassword-(Landroid/accounts/Account; Ljava/lang/String;)V" : "AUTHENTICATE_ACCOUNTS",
 	"Landroid/accounts/AccountManager;-setUserData-(Landroid/accounts/Account; Ljava/lang/String; Ljava/lang/String;)V" : "AUTHENTICATE_ACCOUNTS",
-	"Landroid/content/pm/ApplicationInfo;-FLAG_FACTORY_TEST-I" : "FACTORY_TEST",
-	"Landroid/content/pm/ApplicationInfo;-flags-I" : "FACTORY_TEST",
-	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "FACTORY_TEST",
-	"Landroid/content/Intent;-ACTION_FACTORY_TEST-Ljava/lang/String;" : "FACTORY_TEST",
-	"Landroid/content/Intent;-ACTION_NEW_OUTGOING_CALL-Ljava/lang/String;" : "PROCESS_OUTGOING_CALLS",
-	"Landroid/telephony/TelephonyManager;-ACTION_PHONE_STATE_CHANGED-Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getDeviceId-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getDeviceSoftwareVersion-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getLine1Number-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getSimSerialNumber-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getSubscriberId-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getVoiceMailAlphaTag-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/TelephonyManager;-getVoiceMailNumber-()Ljava/lang/String;" : "READ_PHONE_STATE",
-	"Landroid/telephony/PhoneStateListener;-LISTEN_CALL_FORWARDING_INDICATOR-I" : "READ_PHONE_STATE",
-	"Landroid/telephony/PhoneStateListener;-LISTEN_CALL_STATE-I" : "READ_PHONE_STATE",
-	"Landroid/telephony/PhoneStateListener;-LISTEN_DATA_ACTIVITY-I" : "READ_PHONE_STATE",
-	"Landroid/telephony/PhoneStateListener;-LISTEN_MESSAGE_WAITING_INDICATOR-I" : "READ_PHONE_STATE",
-	"Landroid/telephony/PhoneStateListener;-LISTEN_SIGNAL_STRENGTH-I" : "READ_PHONE_STATE",
-	"Landroid/os/Build/VERSION_CODES;-DONUT-I" : "READ_PHONE_STATE",
-	"Landroid/os/DropBoxManager;-ACTION_DROPBOX_ENTRY_ADDED-Ljava/lang/String;" : "READ_LOGS",
-	"Landroid/os/DropBoxManager;-getNextEntry-(Ljava/lang/String; J)LDropBoxManager/Entry;" : "READ_LOGS",
-	"Landroid/content/Context;-removeStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
-	"Landroid/content/Context;-sendStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
-	"Landroid/content/ContextWrapper;-removeStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
-	"Landroid/content/ContextWrapper;-sendStickyBroadcast-(Landroid/content/Intent;)V" : "BROADCAST_STICKY",
-	"Landroid/service/wallpaper/WallpaperService;-SERVICE_INTERFACE-Ljava/lang/String;" : "BIND_WALLPAPER",
-	"Landroid/app/ActivityManager;-killBackgroundProcesses-(Ljava/lang/String;)V" : "KILL_BACKGROUND_PROCESSES",
-	"Landroid/app/AlarmManager;-setTimeZone-(Ljava/lang/String;)V" : "SET_TIME_ZONE",
-	"Landroid/bluetooth/BluetoothAdapter;-cancelDiscovery-()B" : "BLUETOOTH_ADMIN",
-	"Landroid/bluetooth/BluetoothAdapter;-disable-()B" : "BLUETOOTH_ADMIN",
-	"Landroid/bluetooth/BluetoothAdapter;-enable-()B" : "BLUETOOTH_ADMIN",
-	"Landroid/bluetooth/BluetoothAdapter;-setName-(Ljava/lang/String;)B" : "BLUETOOTH_ADMIN",
-	"Landroid/bluetooth/BluetoothAdapter;-startDiscovery-()B" : "BLUETOOTH_ADMIN",
-	"Landroid/view/View/OnSystemUiVisibilityChangeListener;-onSystemUiVisibilityChange-(I)V" : "STATUS_BAR",
-	"Landroid/view/View;-STATUS_BAR_HIDDEN-I" : "STATUS_BAR",
-	"Landroid/view/View;-STATUS_BAR_VISIBLE-I" : "STATUS_BAR",
-	"Landroid/view/WindowManager/LayoutParams;-TYPE_STATUS_BAR-I" : "STATUS_BAR",
-	"Landroid/view/WindowManager/LayoutParams;-TYPE_STATUS_BAR_PANEL-I" : "STATUS_BAR",
-	"Landroid/view/WindowManager/LayoutParams;-systemUiVisibility-I" : "STATUS_BAR",
-	"Landroid/view/WindowManager/LayoutParams;-type-I" : "STATUS_BAR",
+	"Landroid/app/ActivityManager;-getRecentTasks-(I I)Ljava/util/List;" : "GET_TASKS",
+	"Landroid/app/ActivityManager;-getRunningTasks-(I)Ljava/util/List;" : "GET_TASKS",
+	"Landroid/provider/ContactsContract$CommonDataKinds$Phone;-CONTENT_URI-Landroid/net/Uri;" : "READ_CONTACTS",
+	"Landroid/os/Build/VERSION_CODES;-DONUT-I" : "WRITE_EXTERNAL_STORAGE",
+	"Landroid/app/DownloadManager/Request;-setDestinationUri-(Landroid/net/Uri;)Landroid/app/DownloadManager/Request;" : "WRITE_EXTERNAL_STORAGE",
+	"Landroid/os/RecoverySystem;-installPackage-(Landroid/content/Context; Ljava/io/File;)V" : "REBOOT",
+	"Landroid/os/RecoverySystem;-rebootWipeUserData-(Landroid/content/Context;)V" : "REBOOT",
+	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "REBOOT",
+	"Landroid/content/Intent;-ACTION_REBOOT-Ljava/lang/String;" : "REBOOT",
+	"Landroid/os/PowerManager;-reboot-(Ljava/lang/String;)V" : "REBOOT",
 	"Landroid/bluetooth/BluetoothAdapter;-ACTION_CONNECTION_STATE_CHANGED-Ljava/lang/String;" : "BLUETOOTH",
 	"Landroid/bluetooth/BluetoothAdapter;-ACTION_DISCOVERY_FINISHED-Ljava/lang/String;" : "BLUETOOTH",
 	"Landroid/bluetooth/BluetoothAdapter;-ACTION_DISCOVERY_STARTED-Ljava/lang/String;" : "BLUETOOTH",
@@ -904,64 +937,31 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/media/AudioManager;-ROUTE_BLUETOOTH_SCO-I" : "BLUETOOTH",
 	"Landroid/provider/Settings/Secure;-BLUETOOTH_ON-Ljava/lang/String;" : "BLUETOOTH",
 	"Landroid/net/sip/SipAudioCall;-startAudio-()V" : "ACCESS_WIFI_STATE",
-	"Landroid/hardware/Camera/ErrorCallback;-onError-(I Landroid/hardware/Camera;)V" : "CAMERA",
-	"Landroid/bluetooth/BluetoothClass/Device;-AUDIO_VIDEO_VIDEO_CAMERA-I" : "CAMERA",
-	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA-Ljava/lang/String;" : "CAMERA",
-	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_AUTOFOCUS-Ljava/lang/String;" : "CAMERA",
-	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_FLASH-Ljava/lang/String;" : "CAMERA",
-	"Landroid/content/pm/PackageManager;-FEATURE_CAMERA_FRONT-Ljava/lang/String;" : "CAMERA",
-	"Landroid/view/KeyEvent;-KEYCODE_CAMERA-I" : "CAMERA",
-	"Landroid/provider/MediaStore;-INTENT_ACTION_STILL_IMAGE_CAMERA-Ljava/lang/String;" : "CAMERA",
-	"Landroid/provider/MediaStore;-INTENT_ACTION_VIDEO_CAMERA-Ljava/lang/String;" : "CAMERA",
-	"Landroid/hardware/Camera/CameraInfo;-CAMERA_FACING_BACK-I" : "CAMERA",
-	"Landroid/hardware/Camera/CameraInfo;-CAMERA_FACING_FRONT-I" : "CAMERA",
-	"Landroid/hardware/Camera/CameraInfo;-facing-I" : "CAMERA",
-	"Landroid/provider/ContactsContract/StatusColumns;-CAPABILITY_HAS_CAMERA-I" : "CAMERA",
-	"Landroid/hardware/Camera/Parameters;-setRotation-(I)V" : "CAMERA",
-	"Landroid/media/MediaRecorder/VideoSource;-CAMERA-I" : "CAMERA",
-	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "CAMERA",
-	"Landroid/content/Intent;-ACTION_CAMERA_BUTTON-Ljava/lang/String;" : "CAMERA",
-	"Landroid/hardware/Camera;-CAMERA_ERROR_SERVER_DIED-I" : "CAMERA",
-	"Landroid/hardware/Camera;-CAMERA_ERROR_UNKNOWN-I" : "CAMERA",
-	"Landroid/hardware/Camera;-setDisplayOrientation-(I)V" : "CAMERA",
-	"Landroid/content/Intent;-IntentResolution-Ljava/lang/String;" : "SET_WALLPAPER",
-	"Landroid/content/Intent;-ACTION_SET_WALLPAPER-Ljava/lang/String;" : "SET_WALLPAPER",
-	"Landroid/app/WallpaperManager;-WALLPAPER_PREVIEW_META_DATA-Ljava/lang/String;" : "SET_WALLPAPER",
-	"Landroid/drm/DrmErrorEvent;-TYPE_NO_INTERNET_CONNECTION-I" : "INTERNET",
-	"Landroid/telephony/TelephonyManager;-getCellLocation-()Landroid/telephony/CellLocation;" : "ACCESS_FINE_LOCATION",
-	"Landroid/location/LocationManager;-GPS_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
-	"Landroid/location/LocationManager;-NETWORK_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
-	"Landroid/location/LocationManager;-PASSIVE_PROVIDER-Ljava/lang/String;" : "ACCESS_FINE_LOCATION",
-	"Landroid/location/LocationManager;-addGpsStatusListener-(Landroid/location/GpsStatus/Listener;)B" : "ACCESS_FINE_LOCATION",
-	"Landroid/location/LocationManager;-addNmeaListener-(Landroid/location/GpsStatus/NmeaListener;)B" : "ACCESS_FINE_LOCATION",
+	"Landroid/app/ActivityManager;-moveTaskToFront-(I I)V" : "REORDER_TASKS",
+	"Landroid/provider/Browser;-BOOKMARKS_URI-Landroid/net/Uri;" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-SEARCHES_URI-Landroid/net/Uri;" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-addSearchUrl-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-canClearHistory-(Landroid/content/ContentResolver;)B" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-getAllBookmarks-(Landroid/content/ContentResolver;)Landroid/database/Cursor;" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-getAllVisitedUrls-(Landroid/content/ContentResolver;)Landroid/database/Cursor;" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-requestAllIcons-(Landroid/content/ContentResolver; Ljava/lang/String; Landroid/webkit/WebIconDatabase/IconListener;)V" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-truncateHistory-(Landroid/content/ContentResolver;)V" : "READ_HISTORY_BOOKMARKS",
+	"Landroid/provider/Browser;-updateVisitedHistory-(Landroid/content/ContentResolver; Ljava/lang/String; B)V" : "READ_HISTORY_BOOKMARKS",
 	"Landroid/net/sip/SipAudioCall;-setSpeakerMode-(B)V" : "MODIFY_AUDIO_SETTINGS",
 	"Landroid/media/AudioManager;-startBluetoothSco-()V" : "MODIFY_AUDIO_SETTINGS",
 	"Landroid/media/AudioManager;-stopBluetoothSco-()V" : "MODIFY_AUDIO_SETTINGS",
-	"Landroid/accounts/AccountManager;-addAccount-(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-clearPassword-(Landroid/accounts/Account;)V" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-confirmCredentials-(Landroid/accounts/Account; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-editProperties-(Ljava/lang/String; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-getAuthTokenByFeatures-(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/String; Landroid/app/Activity; Landroid/os/Bundle; Landroid/os/Bundle; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-invalidateAuthToken-(Ljava/lang/String; Ljava/lang/String;)V" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-removeAccount-(Landroid/accounts/Account; Landroid/accounts/AccountManagerCallback<java/lang/Boolean>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-updateCredentials-(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "MANAGE_ACCOUNTS",
-	"Landroid/accounts/AccountManager;-blockingGetAuthToken-(Landroid/accounts/Account; Ljava/lang/String; B)Ljava/lang/String;" : "USE_CREDENTIALS",
-	"Landroid/accounts/AccountManager;-getAuthToken-(Landroid/accounts/Account; Ljava/lang/String; Landroid/os/Bundle; Landroid/app/Activity; Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "USE_CREDENTIALS",
-	"Landroid/accounts/AccountManager;-getAuthToken-(Landroid/accounts/Account; Ljava/lang/String; B Landroid/accounts/AccountManagerCallback<android/os/Bundle>; Landroid/os/Handler;)Landroid/accounts/AccountManagerFuture;" : "USE_CREDENTIALS",
-	"Landroid/accounts/AccountManager;-invalidateAuthToken-(Ljava/lang/String; Ljava/lang/String;)V" : "USE_CREDENTIALS",
-	"Landroid/provider/Browser;-BOOKMARKS_URI-Landroid/net/Uri;" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-SEARCHES_URI-Landroid/net/Uri;" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-addSearchUrl-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-clearHistory-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-clearSearches-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-deleteFromHistory-(Landroid/content/ContentResolver; Ljava/lang/String;)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-deleteHistoryTimeFrame-(Landroid/content/ContentResolver; J J)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-truncateHistory-(Landroid/content/ContentResolver;)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/provider/Browser;-updateVisitedHistory-(Landroid/content/ContentResolver; Ljava/lang/String; B)V" : "WRITE_HISTORY_BOOKMARKS",
-	"Landroid/content/Intent;-ACTION_BOOT_COMPLETED-Ljava/lang/String;" : "RECEIVE_BOOT_COMPLETED",
-	"Landroid/provider/AlarmClock;-ACTION_SET_ALARM-Ljava/lang/String;" : "SET_ALARM",
-	"Landroid/provider/AlarmClock;-EXTRA_HOUR-Ljava/lang/String;" : "SET_ALARM",
-	"Landroid/provider/AlarmClock;-EXTRA_MESSAGE-Ljava/lang/String;" : "SET_ALARM",
-	"Landroid/provider/AlarmClock;-EXTRA_MINUTES-Ljava/lang/String;" : "SET_ALARM",
-	"Landroid/provider/AlarmClock;-EXTRA_SKIP_UI-Ljava/lang/String;" : "SET_ALARM",
+	"Landroid/telephony/TelephonyManager;-ACTION_PHONE_STATE_CHANGED-Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getDeviceId-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getDeviceSoftwareVersion-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getLine1Number-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getSimSerialNumber-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getSubscriberId-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getVoiceMailAlphaTag-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/TelephonyManager;-getVoiceMailNumber-()Ljava/lang/String;" : "READ_PHONE_STATE",
+	"Landroid/telephony/PhoneStateListener;-LISTEN_CALL_FORWARDING_INDICATOR-I" : "READ_PHONE_STATE",
+	"Landroid/telephony/PhoneStateListener;-LISTEN_CALL_STATE-I" : "READ_PHONE_STATE",
+	"Landroid/telephony/PhoneStateListener;-LISTEN_DATA_ACTIVITY-I" : "READ_PHONE_STATE",
+	"Landroid/telephony/PhoneStateListener;-LISTEN_MESSAGE_WAITING_INDICATOR-I" : "READ_PHONE_STATE",
+	"Landroid/telephony/PhoneStateListener;-LISTEN_SIGNAL_STRENGTH-I" : "READ_PHONE_STATE",
+	"Landroid/os/Build/VERSION_CODES;-DONUT-I" : "READ_PHONE_STATE",
 }

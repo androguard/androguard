@@ -48,6 +48,8 @@ ADVANCED_TYPES = {
     "DownloadManager.Request" : "Landroid/app/DownloadManager/Request;",
     "PendingIntent" : "Landroid/app/PendingIntent;",
     "SmsManager" : "Landroid/telephony/SmsManager;",
+    "Bitmap" : "Landroid/graphics/Bitmap;",
+    "IBinder" : "Landroid/os/IBinder;",
 }
 
 def translateDescParams( desc_params ) :
