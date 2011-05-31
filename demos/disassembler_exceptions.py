@@ -37,14 +37,5 @@ for method in a.get_methods() :
 
         print ""
 
-    handlers = method.get_code().handlers
-    for try_item in method.get_code().tries :
-        print try_item
-
-
-    for handler_catch_list in method.get_code().handlers :
-        print "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size
-        for handler_catch in handler_catch_list.list :
-            print "\t\t HANDLER_CATCH SIZE ", handler_catch.size
-            for handler in handler_catch.handlers :
-                print "\t\t\t HANDLER", handler.type_idx, a.get_vm().get_class_manager().get_type( handler.type_idx ), handler.addr
+    for i in g.exceptions.gets() :
+        print i.start, i.end, i.exceptions

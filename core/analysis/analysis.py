@@ -761,6 +761,9 @@ class JVMBasicBlock :
             #########################################################
 
             idx += i.get_length()
+    
+    def set_exception(self, exception_analysis) :
+        pass
 
     # FIXME : create a recursive function to follow the cfg, because it does not work with obfuscator
     def analyze_code(self) :
@@ -995,6 +998,7 @@ class DVMBasicBlock :
         self.free_blocks_offsets = []
 
         self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
+        self.exception_analysis = None
 
     def get_method(self) :
         return self.__method
@@ -1066,6 +1070,9 @@ class DVMBasicBlock :
                 self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
 
             idx += i.get_length()
+
+    def set_exception(self, exception_analysis) :
+        self.exception_analysis = exception_analysis
 
     def analyze_code(self) :
         pass
@@ -1638,6 +1645,56 @@ class BasicBlocks :
         """
         return self.bb
 
+class ExceptionAnalysis :
+    def __init__(self, exception, bb) :
+        self.start = exception[0]
+        self.end = exception[1]
+
+        self.exceptions = exception[2:]
+
+        for i in self.exceptions :
+            i.append( bb.get_basic_block( i[1] ) )
+
+    def show_buff(self) :
+        buff = "%x:%x " % (self.start, self.end)
+
+        for i in self.exceptions :
+            buff += "(%s -> %x %s)" % (i[0], i[1], i[2].get_name())
+
+        return buff
+
+class Exceptions :
+    def __init__(self, _vm) :
+        self.__vm = _vm
+        self.exceptions = []
+
+    def add(self, exceptions, basic_blocks) :
+        for i in exceptions :
+            self.exceptions.append( ExceptionAnalysis( i, basic_blocks ) )
+
+    def get_exception(self, addr_start, addr_end) :
+        for i in self.exceptions :
+            if i.start >= addr_start and i.start <= addr_end :
+                return i
+
+            elif i.end >= addr_start and i.end <= addr_end :
+                return i
+
+            elif addr_start >= i.start and addr_start <= i.end :
+                return i
+
+            elif addr_end >= i.start and addr_end <= i.end :
+                return i
+
+        return None
+
+    def gets(self) :
+        return self.exceptions
+        
+    def get(self) :
+        for i in self.exceptions :
+            yield i
+
 class MethodAnalysis :
     """
        This class analyses in details a method of a class/dex file
@@ -1654,10 +1711,10 @@ class MethodAnalysis :
         self.__tainted = _tv
 
         BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : jvm.determineNext,
-               "TS" : JVM_TOSTRING }
+               "TS" : JVM_TOSTRING, "Dexception" : jvm.determineException }
         if self.__vm.get_type() == "DVM" :
             BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : dvm.determineNext,
-                   "TS" : DVM_TOSTRING }
+                   "TS" : DVM_TOSTRING, "Dexception" : dvm.determineException }
 
         self.__TS = ToString( BO[ "TS" ] )
 
@@ -1666,6 +1723,7 @@ class MethodAnalysis :
             BO["BasicOPCODES_H"].append( re.compile( i ) )
 
         self.basic_blocks = BasicBlocks( self.__vm, self.__tainted )
+        self.exceptions = Exceptions( self.__vm )
 
         code = self.__method.get_code()
         if code == None :
@@ -1690,7 +1748,8 @@ class MethodAnalysis :
 
             idx += i.get_length()
 
-    #   print self.__method.get_name(), sorted(l), h
+        #print self.__method.get_name(), l, h
+
         idx = 0
         for i in bc.get() :
             name = i.get_name()
@@ -1708,7 +1767,7 @@ class MethodAnalysis :
             current_basic.push( i )
 
             # index is a branch instruction
-            if idx in h : #and here == False :
+            if idx in h : 
                 current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
                 self.basic_blocks.push( current_basic )
 
@@ -1724,13 +1783,19 @@ class MethodAnalysis :
             except KeyError :
                 i.set_childs( [] )
 
+        # Create exceptions
+        self.exceptions.add( BO["Dexception"]( self.__vm, self.__method ), self.basic_blocks )
 
         for i in self.basic_blocks.get() :
+            # analyze each basic block
             i.analyze()
+            # setup exception by basic block
+            i.set_exception( self.exceptions.get_exception( i.start, i.end ) )
 
         if code_analysis == True :
             for i in self.basic_blocks.get() :
                 i.analyze_code()
+
 
     def get_length(self) :
         """
@@ -1753,7 +1818,6 @@ class MethodAnalysis :
 
     def random_free_block_offset(self) :
         b = self.basic_blocks.get_random()
-        x = b.random_free_block_offset()
         return x
 
     def next_free_block_offset(self, idx=0) :
@@ -2029,7 +2093,6 @@ class VMAnalysis :
             @rtype : a dictionnary of permissions' paths
         """
         permissions = {}
-
 
         permissions.update( self.tainted_packages.get_permissions( permissions_needed ) )
         permissions.update( self.tainted_variables.get_permissions( permissions_needed ) )

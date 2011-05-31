@@ -47,6 +47,9 @@ def _Print(name, arg) :
     print buff
 
 def set_pretty_show( val ) :
+    """
+        @param val : set value for the corresponding pretty print (0, 1, 2)
+    """
     global PRETTY_SHOW
     PRETTY_SHOW = val
 
@@ -57,6 +60,11 @@ def PrettyShow( basic_blocks ) :
         PrettyShow1( basic_blocks )
     elif PRETTY_SHOW == 2 :
         PrettyShow1bis( basic_blocks )
+
+def PrettyShowEx( exceptions ) :
+    print "Exceptions :"
+    for i in exceptions : 
+        print "\t", "%s%s%s" % (Color.cyan, i.show_buff(), Color.normal)
 
 def PrettyShow0( basic_blocks ) :
     paths = []
@@ -117,7 +125,6 @@ def PrettyShow1( basic_blocks ) :
     idx = 0
     nb = 0
     for i in basic_blocks :
-
         print "%s%s%s : " % (Color.purple, i.name, Color.normal)
         for ins in i.ins :
             print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
@@ -134,6 +141,10 @@ def PrettyShow1( basic_blocks ) :
             nb += 1
 
             print
+
+        if i.exception_analysis != None :
+            print "\t", "%s%s%s" % (Color.cyan, i.exception_analysis.show_buff(), Color.normal)
+
         print
 
 def PrettyShow1bis( basic_blocks ) :
@@ -206,7 +217,11 @@ def PrettyShow2( basic_blocks ) :
 
 def method2dot( mx ) :
     """
+        Export analysis method to dot format 
 
+        @param mx : MethodAnalysis object
+
+        @rtype : dot format buffer
     """
     buff = ""
     for i in mx.basic_blocks.get() :
@@ -232,7 +247,12 @@ def method2dot( mx ) :
 
 def method2format( output, _format="png", mx = None, raw = False ) :
     """
+        Export method to a specific file format
 
+        @param output : output filename
+        @param _format : format type (png, jpg ...) (default : png)
+        @param mx : specify the MethodAnalysis object
+        @param raw : use directly a dot raw buffer
     """
     try :
         import pydot
@@ -256,13 +276,31 @@ def method2format( output, _format="png", mx = None, raw = False ) :
 
 def method2png( output, mx = None, raw = False ) :
     """
+        Export method to a png file format
 
+        @param output : output filename
+        @param mx : specify the MethodAnalysis object
+        @param raw : use directly a dot raw buffer
     """
     buff = raw
     if raw == False :
         buff = method2dot( mx )
 
     method2format( output, "png", mx, buff )
+
+def method2jpg( output, mx = None, raw = False ) :
+    """
+        Export method to a jpg file format
+
+        @param output : output filename
+        @param mx : specify the MethodAnalysis object
+        @param raw : use directly a dot raw buffer
+    """
+    buff = raw
+    if raw == False :
+        buff = method2dot( mx )
+
+    method2format( output, "jpg", mx, buff )
 
 class SV :
     """SV is used to handle more easily a value"""
@@ -438,6 +476,11 @@ def FormatDescriptorToPython(input) :
 
 ####################### class/method/field export ########################
 def ExportVMToPython(vm) :
+    """
+        Export classes/methods/fields' names in the python namespace
+
+        @param vm : a VM object (DalvikVMFormat, JVMFormat)
+    """
     for _class in vm.get_classes() :
         ### Class
         name = "CLASS_" + FormatClassToPython( _class.get_name() )

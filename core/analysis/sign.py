@@ -137,20 +137,21 @@ class Signature :
 
         method = analysis_method.get_method()
         code = method.get_code()
-        if code == None :
+        if code == None or code.tries_size.get_value() <= 0 :
             return buff
 
         handlers = code.handlers
 #       for try_item in method.get_code().tries :
 #           print "w00t", try_item
 
-        for handler_catch_list in method.get_code().handlers :
-            #print "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size
-            for handler_catch in handler_catch_list.list :
-                #print "\t\t HANDLER_CATCH SIZE ", handler_catch.size
-                for handler in handler_catch.handlers :
-                    buff += analysis_method.get_vm().get_class_manager().get_type( handler.type_idx )
-                    #print "\t\t\t HANDLER", handler.type_idx, a.get_vm().get_class_manager().get_type( handler.type_idx ), handler.add
+        handler_catch_list = method.get_code().handlers
+
+        #print "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size
+        for handler_catch in handler_catch_list.list :
+            #print "\t\t HANDLER_CATCH SIZE ", handler_catch.size
+            for handler in handler_catch.handlers :
+                buff += analysis_method.get_vm().get_class_manager().get_type( handler.type_idx )
+                #print "\t\t\t HANDLER", handler.type_idx, a.get_vm().get_class_manager().get_type( handler.type_idx ), handler.add
         return buff
 
     def _get_strings_a1(self, analysis_method) :

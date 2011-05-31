@@ -42,8 +42,17 @@ def main(options, arguments) :
         vm2 = a.get_bc()[1][1].get_vm()
         vmx2 = a.get_bc()[1][1].get_analysis()
 
-        diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
+        dsim = diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
 
+        print dsim.get_marks()
+        print dsim.get_final_score()
+
+        print "DIFF METHODS :", [ len(i) for i in dsim.get_diff_methods().itervalues() ]
+        print "NEW METHODS :", [ len(i) for i in dsim.get_new_methods().itervalues() ]
+        print "MATCH METHODS :", [ len(i) for i in dsim.get_match_methods().itervalues() ]
+        print "DELETE METHODS :", [ len(i) for i in dsim.get_delete_methods().itervalues() ]
+
+    # Not yet usable
     elif options.json != None :
         a = androguard.Androguard( [ options.json[0] ] )
         a.ianalyze()

@@ -610,6 +610,53 @@ def determineNext(i, end, m) :
         return x
     return []
 
+def determineException(vm, m) :
+    # no exceptions !
+    if m.get_code().tries_size.get_value() <= 0 :
+        return []
+
+    h_off = {}
+
+    handler_catch_list = m.get_code().handlers
+    
+    for try_item in m.get_code().tries :
+        value = try_item.get_value()
+    #    print m.get_name(), try_item, (value.start_addr * 2) + (value.insn_count * 2)# - 1m.get_code().get_bc().get_next_addr( value.start_addr * 2, value.insn_count )
+        h_off[ value.handler_off + handler_catch_list.get_offset() ] = [ try_item ]
+
+    #print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
+    for handler_catch in handler_catch_list.list :
+    #    print m.get_name(), "\t\t HANDLER_CATCH SIZE ", handler_catch.size, handler_catch.get_offset()
+       
+        if handler_catch.get_offset() not in h_off :
+            continue
+
+        h_off[ handler_catch.get_offset() ].append( handler_catch )
+
+   #     if handler_catch.size <= 0 :
+   #         print m.get_name(), handler_catch.catch_all_addr
+
+   #     for handler in handler_catch.handlers :
+   #         print m.get_name(), "\t\t\t HANDLER", handler.type_idx, vm.get_class_manager().get_type( handler.type_idx ), handler.addr
+
+    exceptions = []
+    #print m.get_name(), h_off
+    for i in h_off :
+        value = h_off[ i ][0].get_value()
+        z = [ value.start_addr * 2, (value.start_addr * 2) + (value.insn_count * 2) - 1 ]
+
+        handler_catch = h_off[ i ][1]
+        if handler_catch.size <= 0 :
+            z.append( [ "any", handler_catch.catch_all_addr * 2 ] )
+
+        for handler in handler_catch.handlers :
+            z.append( [ vm.get_class_manager().get_type( handler.type_idx ), handler.addr * 2 ] )
+
+        exceptions.append( z )
+
+    #print m.get_name(), exceptions 
+    return exceptions
+
 class HeaderItem :
     def __init__(self, size, buff, cm) :
         self.__CM = cm
@@ -1910,7 +1957,8 @@ class EncodedTypeAddrPair :
         return writeuleb128( self.type_idx ) + writeuleb128( self.addr )
 
 class EncodedCatchHandler :
-    def __init__(self, buff) :
+    def __init__(self, buff, cm) :
+        self.__offset = cm.add_offset( buff.get_idx(), self ) 
         self.size = readsleb128( buff )
 
         self.handlers = []
@@ -1937,13 +1985,18 @@ class EncodedCatchHandler :
 
         return buff
 
+    def get_offset(self) :
+        return self.__offset.off
+
 class EncodedCatchHandlerList :
-    def __init__(self, buff) :
+    def __init__(self, buff, cm) :
+        self.__offset = cm.add_offset( buff.get_idx(), self ) 
+
         self.size = readuleb128( buff )
         self.list = []
 
         for i in range(0, self.size) :
-            self.list.append( EncodedCatchHandler(buff) )
+            self.list.append( EncodedCatchHandler(buff, cm) )
 
     def show(self) :
         print "ENCODED_CATCH_HANDLER_LIST size=0x%x" % self.size
@@ -1955,6 +2008,9 @@ class EncodedCatchHandlerList :
 
     def get_raw(self) :
         return writeuleb128( self.size ) + ''.join(i.get_raw() for i in self.list)
+
+    def get_offset(self) :
+        return self.__offset.off
 
 class DBCSpe :
     def __init__(self, cm, op) :
@@ -2306,9 +2362,8 @@ class DCode :
             if idx == off :
                 return i
             idx += i.get_length()
-
         return None
-
+    
     def reload(self) :
         for i in self.__bytecodes :
             i._reload()
@@ -2326,6 +2381,7 @@ class DCode :
 
     def pretty_show(self, m_a) :
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
+        bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
 class DalvikCode :
     def __init__(self, buff, cm) :
@@ -2356,13 +2412,13 @@ class DalvikCode :
             self.__padding = SV( '=H', buff.read( 2 ) )
 
         self.tries = []
-        self.handlers = []
+        self.handlers = None 
         if self.tries_size.get_value() > 0 :
             for i in range(0, self.tries_size.get_value()) :
                 try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
                 self.tries.append( try_item )
 
-            self.handlers.append( EncodedCatchHandlerList( buff ) )
+            self.handlers = EncodedCatchHandlerList( buff, self.__CM )
 
     def reload(self) :
         self._code.reload()
@@ -2386,8 +2442,7 @@ class DalvikCode :
         bytecode._Print("\tDEBUG_INFO_OFF", self.debug_info_off)
         bytecode._Print("\tINSNS_SIZE", self.insns_size)
 
-        for i in self.handlers :
-            i.show()
+        #self.handlers.show()
 
         print ""
 
@@ -2421,8 +2476,7 @@ class DalvikCode :
 
         if self.tries_size.get_value() > 0 :
             buff += ''.join(i.get_value_buff() for i in self.tries)
-            for i in self.handlers :
-                buff += i.get_raw()
+            buff += self.handlers.get_raw()
 
         return bytecode.Buff( self.__offset.off,
                                      buff )
