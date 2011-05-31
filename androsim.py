@@ -44,14 +44,14 @@ def main(options, arguments) :
 
         dsim = diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
 
-        print dsim.get_marks()
-        print dsim.get_final_score()
-
         print "DIFF METHODS :", [ len(i) for i in dsim.get_diff_methods().itervalues() ]
         print "NEW METHODS :", [ len(i) for i in dsim.get_new_methods().itervalues() ]
         print "MATCH METHODS :", [ len(i) for i in dsim.get_match_methods().itervalues() ]
         print "DELETE METHODS :", [ len(i) for i in dsim.get_delete_methods().itervalues() ]
 
+        print dsim.get_marks()
+        print dsim.get_final_score()
+    
     # Not yet usable
     elif options.json != None :
         a = androguard.Androguard( [ options.json[0] ] )

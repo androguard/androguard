@@ -62,9 +62,14 @@ def PrettyShow( basic_blocks ) :
         PrettyShow1bis( basic_blocks )
 
 def PrettyShowEx( exceptions ) :
-    print "Exceptions :"
-    for i in exceptions : 
-        print "\t", "%s%s%s" % (Color.cyan, i.show_buff(), Color.normal)
+    if len(exceptions) > 0 :
+        print "Exceptions :"
+        if PRETTY_SHOW == 0 :
+            for i in exceptions : 
+                print "\t", "%s" % (i.show_buff())
+        else :
+            for i in exceptions : 
+                print "\t", "%s%s%s" % (Color.cyan, i.show_buff(), Color.normal)
 
 def PrettyShow0( basic_blocks ) :
     paths = []
