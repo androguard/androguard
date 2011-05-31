@@ -30,7 +30,11 @@ try :
     import chilkat
     ZIPMODULE = 0
     # UNLOCK : change it with your valid key !
-    CHILKAT_KEY = "testme"
+    try : 
+        CHILKAT_KEY = open("key.txt", "rb").read()
+    except Exception :
+        CHILKAT_KEY = "testme"
+
 except ImportError :
     ZIPMODULE = 1
 
@@ -189,9 +193,12 @@ class APK :
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
                 value = item.getAttribute(attribute)
-                
-                if len(value) > 0 and value[0] == "." :
-                    value = self.package + value
+               
+                if len(value) > 0 :
+                    if value[0] == "." : 
+                        value = self.package + value
+                    elif value.find(".") == 0 :
+                        value = self.package + "." + value
 
                 l.append( str( value ) )
         return l
