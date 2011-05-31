@@ -344,15 +344,6 @@ class Method :
 
         self.sim = sim
 
-    #######
-    # Attribute :
-    #    Method <-> sorted Methods
-    #
-    #    Method <-> Methods[0] :
-    #
-    #
-    #
-    #
     def add_attribute(self, name, func_meth, func_checksum_bb) :
         bb = {}
         bbhash = {}
@@ -781,8 +772,8 @@ def filter_skip_meth_sim( m ) :
     if code != None :
         if code.get_length() < 100 :
             return True
-
-    return False
+        return False
+    return True
 
 def filter_mark_vm( values ) :
     return values.values()
@@ -817,7 +808,7 @@ FILTERS_SIM = {
     # CODE
         # CFG / Instructions : module Diff [OK]
         # Exceptions
-        # API
+        # API                              [OK]
         # CFG method
         # Fill array data
         # Format
