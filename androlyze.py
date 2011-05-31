@@ -81,6 +81,21 @@ def AnalyzeAPK(filename, raw=False) :
 
     return a, d, dx
 
+def AnalyzeDex(filename, raw=False) :
+    d = None
+    if raw == False :
+        d = DalvikVMFormat( open(filename, "rb").read() )
+    else :
+        d = DalvikVMFormat( raw )
+
+    dx = VMAnalysis( d )
+
+    ExportVMToPython( d )
+
+    set_pretty_show( 1 )
+
+    return d, dx
+
 def main(options, arguments) :
     if options.shell != None :
         interact()

@@ -481,6 +481,9 @@ def determineNext(i, end, m) :
         return x
     return []
 
+def determineException(vm, m) :                                                                                                                                                                  
+    return []
+
 def classToJclass(x) :
     return "L%s;" % x
 
@@ -1349,7 +1352,8 @@ class JavaCode :
             Display the code like a disassembler but with instructions' links
         """
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
-
+        bytecode.PrettyShowEx( m_a.exceptions.gets() )
+        
     def get_relative_idx(self, idx) :
         """
             Return the relative idx by given an offset in the code

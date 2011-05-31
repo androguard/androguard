@@ -624,7 +624,6 @@ class Diff(object) :
         self.F = F
         self.filters = {}
 
-
         self._init_filters()
         self._init_index_methods()
         self._init_similarity()
@@ -812,11 +811,11 @@ FILTERS_SIM = {
 
 ### SIM :
     # DATA
-        # string
+        # string                           [OK]
         # constant (int, float ...)
         # clinit
     # CODE
-        # Instructions : module Diff
+        # CFG / Instructions : module Diff [OK]
         # Exceptions
         # API
         # CFG method
@@ -825,25 +824,39 @@ FILTERS_SIM = {
 class Sim(Diff) :
     def __init__(self, vm1, vm2, F=FILTERS_SIM) :
         #set_debug()
+        self.vm_marks = {}
+        self.diff_methods_marks = {}
         self.marks = {} 
+        self.final_score = {}
         super(Sim, self).__init__(vm1, vm2, F)
 
         self._init_diff_vms()
         self._init_mark_methods()
+       
+        for fil in self.marks :
+            self.marks[fil].extend( self.vm_marks[fil] )
+            self.marks[fil].extend( self.diff_methods_marks[fil] )
 
-        print self.marks
         for fil in self.marks :
             s = 0.0
             for i in self.marks[fil] :
                 s += (1.0 - i)
-            print "\t", (s/len(self.marks[fil])) * 100
+            self.final_score[ fil ] = (s/len(self.marks[fil])) * 100
+
+    def get_marks(self) :
+        return self.marks
+
+    def get_final_score(self) :
+        return self.final_score
 
     def _init_filters(self) :
         super(Sim, self)._init_filters()
 
         for i in self.F :
             self.marks[ i ] = []
-    
+            self.vm_marks[ i ] = []
+            self.diff_methods_marks[ i ] = []
+
     def _init_diff_vms(self) :
         self.sim.set_compress_type( XZ_COMPRESS )
         for fil in self.filters :
@@ -851,14 +864,14 @@ class Sim(Diff) :
             x2 = self.filters[fil][BASE][FILTER_CHECKSUM_VM]( self.vm2 )
 
             val = self.filters[fil][BASE][FILTER_SIM_VM]( x1, x2, self.filters[fil][BASE][FILTER_NAME], self.sim )
-            self.marks[fil].extend( self.filters[fil][BASE][FILTER_MARK_VM]( val ) )
+            self.vm_marks[fil].extend( self.filters[fil][BASE][FILTER_MARK_VM]( val ) )
 
     def _init_diff_methods(self) :
         # we don't want to diff instructions of basic blocks
         pass
 
     def _init_mark_methods(self) :
-        # Change the compression to have a better result for a one <-> one comparison
+        # Change the compression to have a better result for a one <-> one comparaison in order to have a correct percentage
         self.sim.set_compress_type( XZ_COMPRESS )
 
         for fil in self.filters :
@@ -874,12 +887,12 @@ class Sim(Diff) :
 
                 # filter the mark to eliminate totaly diff method
                 v2 = self.filters[fil][BASE][FILTER_MARK_METH]( v1 )
-                self.marks[fil].append( v2 )
+                self.diff_methods_marks[fil].append( v2 )
 
             # mark match methods
             for m in self.filters[ fil ][ MATCHMETHODS ] :
                 v = self.filters[fil][BASE][FILTER_MARK_METH]( 0.0 )
-                self.marks[fil].append( v )
+                self.diff_methods_marks[fil].append( v )
 
         # Check if some methods in the second file are totally new !
         #for fil in self.filters :
@@ -914,7 +927,7 @@ class Sim(Diff) :
         #       method.sort( self.filters[fil][BASE][FILTER_NAME] ) 
         #       self.scoring.append( method.getclosesort( self.filters[fil][BASE][FILTER_NAME] ) )
 
-######################### SIM with multiple files ###############################
+######################### SIM with multiple files : FIXME ###############################
 
 class Si : 
     def __init__(self, name, val) :
