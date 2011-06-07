@@ -265,7 +265,7 @@ class APK :
             try :
                 l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
             except KeyError :
-                l[ i ] = "Unknown permission from android reference"
+                l[ i ] = [ "dangerous", "Unknown permission from android reference", "Unknown permission from android reference" ]
 
         return l
 
