@@ -170,7 +170,8 @@ def TestSim(type_sim, tests, type_test, func) :
     print "\t",
     t1 = time.clock()
     for i in tests :
-        print "%d:%f" % (nb, func( i[0], i[1] )),
+        val, _ = func( i[0], i[1] )
+        print "%d:%f" % (nb, val),
         nb += 1
     t2 = time.clock()
     print "%fs" % (t2 - t1)
@@ -195,7 +196,7 @@ def TestEntropy(n, tests, diff) :
     nb = 0
     t1 = time.clock()
     for i in tests :
-        nb += test( n.entropy(i[0]), n.entropy(i[1]), lambda x, y : (max(x,y) - min(x,y)) <= diff )
+        nb += test( n.entropy(i[0])[0], n.entropy(i[1])[0], lambda x, y : (max(x,y) - min(x,y)) <= diff )
     t2 = time.clock()
     print "* Entropy %fs %d/%d" % (t2 - t1, nb, len(tests))
 
