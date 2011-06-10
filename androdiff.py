@@ -23,15 +23,19 @@ import sys
 from optparse import OptionParser
 
 import androguard, misc, diff
+from cPickle import dumps
+
+from similarity import *
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_2 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific blocks (0 : orig, 1 : diff, 2 : new)', 'nargs' : 1 }
+option_3 = { 'name' : ('-p', '--pickle'), 'help' : 'output the diff in a file with pickle', 'nargs' : 1 }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3, option_4]
 
 def main(options, arguments) :
-
     if options.input != None :
         a = androguard.Androguard( options.input )
         a.ianalyze()
@@ -42,31 +46,45 @@ def main(options, arguments) :
         vm2 = a.get_bc()[1][1].get_vm()
         vmx2 = a.get_bc()[1][1].get_analysis()
 
-        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ], diff.FILTERS_DIFF )
+        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ] )
         details = False
         if options.display != None :
             details = True
 
+        print "DIFF METHODS :", len(d.get_diff_methods())
+        print "NEW METHODS :", len(d.get_new_methods())
+        print "MATCH METHODS :", len(d.get_match_methods())
+        print "DELETE METHODS :", len(d.get_delete_methods())
+
         print "DIFF METHODS :"
         diff_methods = d.get_diff_methods()
         for i in diff_methods :
-            for elem in diff_methods[ i ] :
-                elem.show( i, details )
-                print
+            exclude = options.exclude
+            if exclude == None :
+                exclude = []
+            else :
+                exclude = [ int(exclude) ]
+
+            i.show( details, exclude )
+            print
 
         print "NEW METHODS :"
         new_methods = d.get_new_methods()
         for i in new_methods :
-            for elem in new_methods[ i ] :
-                elem.show2( details )
-                print
+            i.show2( details )
+            print
 
         print "DELETE METHODS :"
         del_methods = d.get_delete_methods()
         for i in del_methods :
-            for elem in del_methods[ i ] :
-                elem.show2( details )
-                print
+            i.show2( details )
+            print
+
+        if options.pickle != None :
+            d.sim.raz()
+            fd = open(options.pickle, "w")
+            fd.write( dumps(d, -1) )
+            fd.close()
 
     elif options.version != None :
         print "Androdiff version %s" % misc.ANDRODIFF_VERSION

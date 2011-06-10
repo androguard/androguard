@@ -12,8 +12,8 @@ OUTPUT = "./output/"
 #TEST  = 'examples/java/Demo1/orig/DES.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
 #TEST = "apks/DroidDream/tmp/classes.dex"
-#TEST = "./examples/android/TCDiff/bin/classes.dex"
-TEST = "apks/iCalendar.apk"
+TEST = "./examples/android/TCDiff/bin/classes.dex"
+#TEST = "apks/iCalendar.apk"
 #TEST = "apks/adrd/5/8370959.dex"
 
 def display_CFG(a, x, classes) :
@@ -66,11 +66,11 @@ def display_PACKAGES_IE(a, x, classes) :
 
 def display_SEARCH_PACKAGES(a, x, classes, package_name) :
     print "Search package", package_name
-    analysis.show_PathP( x.tainted_packages.search_packages( package_name ) )
+    analysis.show_Path( x.tainted_packages.search_packages( package_name ) )
 
 def display_SEARCH_METHODS(a, x, classes, package_name, method_name, descriptor) :
     print "Search method", package_name, method_name, descriptor
-    analysis.show_PathP( x.tainted_packages.search_methods( package_name, method_name, descriptor) )
+    analysis.show_Path( x.tainted_packages.search_methods( package_name, method_name, descriptor) )
 
 def display_PERMISSION(a, x, classes) :
     # Show methods used by permission
@@ -78,6 +78,10 @@ def display_PERMISSION(a, x, classes) :
     for perm in perms_access :
         print "PERM : ", perm
         analysis.show_PathP( perms_access[ perm ] )
+
+def display_OBJECT_CREATED(a, x, class_name) :
+    print "Search object", class_name
+    analysis.show_Path( x.tainted_packages.search_objects( class_name ) )
 
 a = androguard.AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
@@ -93,3 +97,5 @@ display_PERMISSION( a, x, classes )
 display_SEARCH_PACKAGES( a, x, classes, "Landroid/telephony/" )
 display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
 display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )
+
+display_OBJECT_CREATED( a, x, "." )
