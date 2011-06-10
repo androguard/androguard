@@ -82,8 +82,14 @@ class SIMILARITY :
            XZ_COMPRESS : {},
            SNAPPY_COMPRESS : {},
         }
-        
+       
+        self.__ecaches = {}
+
         self.set_compress_type( ZLIB_COMPRESS )
+
+    def raz(self) :
+        del self._u
+        del self.__libsim_t
 
     def set_level(self, level) :
         self._level = level
@@ -101,31 +107,42 @@ class SIMILARITY :
             try :
                 return self.__rcaches[ self._type ][ zlib.adler32( s2 + s1 ) ]
             except KeyError :
-                return -1
+                return -1, -1
 
     def add_in_caches(self, s, v) :
         h = zlib.adler32( s )
         if h not in self.__caches[ self._type ] :
             self.__caches[ self._type ][ h ] = v
     
-    def add_in_rcaches(self, s, v) :
+    def add_in_rcaches(self, s, v, r) :
         h = zlib.adler32( s )
         if h not in self.__rcaches[ self._type ] :
-            self.__rcaches[ self._type ][ h ] = v
+            self.__rcaches[ self._type ][ h ] = (v, r)
 
     def clear_caches(self) :
         for i in self.__caches :
             self.__caches[i] = {}
+
+    def add_in_ecaches(self, s, v, r) :
+        h = zlib.adler32( s )
+        if h not in self.__ecaches :
+            self.__ecaches[ h ] = (v, r)
+    
+    def get_in_ecaches(self, s1) :
+        try :
+            return self.__ecaches[ zlib.adler32( s1 ) ]
+        except KeyError :
+            return -1, -1
 
     def compress(self, s1) :
         res = self._u.compress( self._level, cast( s1, c_void_p ), len( s1 ) )
         return res
 
     def _sim(self, s1, s2, func) :
-        end = self.get_in_rcaches( s1, s2 )
+        end, ret = self.get_in_rcaches( s1, s2 )
         if end != -1 :
-            return end
-        
+            return end, ret
+
         self.__libsim_t.orig = cast( s1, c_void_p )
         self.__libsim_t.size_orig = len(s1)
 
@@ -142,9 +159,9 @@ class SIMILARITY :
 
         self.add_in_caches(s1, corig)
         self.add_in_caches(s2, ccmp)
-        self.add_in_rcaches(s1+s2, self.__libsim_t.res)
+        self.add_in_rcaches(s1+s2, self.__libsim_t.res, ret)
 
-        return self.__libsim_t.res
+        return self.__libsim_t.res, ret
 
     def ncd(self, s1, s2) :
         return self._sim( s1, s2, self._u.ncd )
@@ -156,12 +173,18 @@ class SIMILARITY :
         return self._sim( s1, s2, self._u.cmid )
 
     def entropy(self, s1) :
+        end, ret = self.get_in_ecaches( s1 )
+        if end != -1 :
+            return end, ret
+
         res = self._u.entropy( cast( s1, c_void_p ), len( s1 ) )
-        return res
+        self.add_in_ecaches( s1, res, 0 )
+        
+        return res, 0
 
     def levenshtein(self, s1, s2) :
         res = self._u.levenshtein( cast( s1, c_void_p ), len( s1 ), cast( s2, c_void_p ), len( s2 ) )
-        return res
+        return res, 0
     
     def set_compress_type(self, t):
         self._type = t

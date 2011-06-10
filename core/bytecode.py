@@ -172,10 +172,13 @@ def PrettyShow1bis( basic_blocks ) :
         print
 
 # Use to print diff basic blocks !
-def PrettyShow2( basic_blocks ) :
+def PrettyShow2( basic_blocks, exclude_tags=[] ) :
     idx = 0
     nb = 0
     for i in basic_blocks :
+        if i.bb_tag in exclude_tags :
+            continue
+
         if i.bb_tag == 1 :
             print "%sDIFF%s" % (Color.cyan, Color.normal),
         elif i.bb_tag == 2 :
@@ -202,8 +205,7 @@ def PrettyShow2( basic_blocks ) :
                 childs = getattr( ins, "childs" )
             except AttributeError :
                 if ins == i.ins[-1] :
-                    if i.childs != [] :
-                        childs = i.childs
+                    childs = i.childs
 
             if childs != None and childs != [] :
                 if len(childs) == 2 :

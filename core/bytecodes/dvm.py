@@ -2018,6 +2018,10 @@ class DBCSpe :
         self.type_ins_tag = SPECIFIC_DVM_INS
         self.op = op
         self.op_name = self.op.get_name()
+        self.op_value = -1
+
+    def get_op_value(self) :
+        return self.op_value
 
     def _reload(self) :
         pass
@@ -2062,6 +2066,9 @@ class DBC :
         self.raw_buff = raw_buff
 
         self.op_value = op_value
+
+    def get_op_value(self) :
+        return self.op_value
 
     def _reload(self) :
         v = []
@@ -2178,7 +2185,7 @@ class DBC :
 
     def _more_info(self, c, v) :
         if "string@" == c :
-            return [ c, v, self.__CM.get_string(v) ]
+            return [ c, v, repr(self.__CM.get_string(v)) ]
         elif "meth@" == c :
             m = self.__CM.get_method(v)
             return [ c, v, m[0], m[1][0], m[1][1], m[2] ]

@@ -1346,9 +1346,15 @@ TAINTED_PACKAGE = {
 def show_Path(paths) :
     for path in paths :
         if isinstance(path, PathP) :
-            print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                          path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
-                                                          path.get_class_name(), path.get_name(), path.get_descriptor())
+            if path.get_access_flag() == TAINTED_PACKAGE_CALL :
+                print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                              path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                              path.get_class_name(), path.get_name(), path.get_descriptor())
+            else :
+                print "%s %s %s (@%s-0x%x)  ---> %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                        path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
+                                                        path.get_class_name())
+
         else :
             print "%s %s %s ---> %s %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), (path.get_bb().start + path.get_idx() ) )
 
@@ -1388,6 +1394,9 @@ class TaintedPackage :
         p = PathP( info, self.get_name() )
         self.paths[ info[0] ].append( p )
         return p
+
+    def get_objects_paths(self) :
+        return self.paths[ TAINTED_PACKAGE_CREATE ]
 
     def search_method(self, name, descriptor) :
         """
@@ -1542,6 +1551,21 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             if ex.match( m.get_info() ) != None :
                 l.extend( m.search_method( name, descriptor ) )
+        return l
+    
+    def search_objects(self, class_name) :
+        """
+            @param class_name : a regexp for the class name
+
+            @rtype : a list of created objects' paths
+        """
+        ex = re.compile( class_name )
+        l = []
+
+        for m, _ in self.get_packages() :
+            if ex.match( m.get_info() ) != None :
+                l.extend( m.get_objects_paths() )
+    
         return l
 
     def search_crypto_packages(self) :
