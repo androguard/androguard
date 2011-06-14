@@ -278,8 +278,8 @@ def method2format( output, _format="png", mx = None, raw = False ) :
     buff += "}"
 
     d = pydot.graph_from_dot_data( buff )
-
-    getattr(d, "write_" + _format)( output )
+    if d :
+        getattr(d, "write_" + _format)( output )
 
 def method2png( output, mx = None, raw = False ) :
     """
