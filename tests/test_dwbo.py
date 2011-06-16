@@ -8,7 +8,7 @@ sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
 
-import misc
+import androconf 
 from wm import DWBO, DWBOCheck
 
 def test(obc, secret, x) :
@@ -28,7 +28,7 @@ T = [
 ]
 
 ob = DWBO( SECRET, J1 )
-secret_long = misc.str2long(ob.get_secret())
+secret_long = androconf.str2long(ob.get_secret())
 print "%s %d --> threshold:%d y:%s" % ( ob.get_secret(), secret_long, ob.get_threshold(), ob.get_y() )
 
 obc = DWBOCheck( ob.get_y(), ob.get_threshold() )

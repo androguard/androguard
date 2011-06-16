@@ -22,7 +22,7 @@ import sys
 
 from optparse import OptionParser
 
-import androguard, misc, diff
+import androguard, androconf, diff
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-j', '--json'), 'help' : 'file : use json file', 'nargs' : 2 }
@@ -63,7 +63,7 @@ def main(options, arguments) :
         diff.SimJson( [ vm1, vmx1 ], options.json[1] )
 
     elif options.version != None :
-        print "Androsim version %s" % misc.ANDROSIM_VERSION
+        print "Androsim version %s" % androconf.ANDROSIM_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

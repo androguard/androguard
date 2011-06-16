@@ -18,7 +18,7 @@
 
 import random
 
-from error import error
+from androconf import error
 import jvm
 
 class Automaton :

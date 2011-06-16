@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from error import error
-
 # risks from AndroidManifest.xml :
     # Permissions : 
         # dangerous
@@ -117,8 +115,7 @@ AVERAGE_MALWARE_RISK        = "average"
 HIGH_MALWARE_RISK           = "high"
 UNACCEPTABLE_MALWARE_RISK   = "unacceptable"
 
-from error import error, warning, debug, set_debug, get_debug                                                                                                                                    
-
+from androconf import error, warning, debug, set_debug, get_debug
 
 def create_system() :
     try :

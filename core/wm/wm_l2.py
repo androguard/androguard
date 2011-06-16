@@ -18,8 +18,7 @@
 
 import hashlib, string, random
 
-from error import error
-import misc
+from androconf import error
 
 try :
     from networkx import DiGraph, all_pairs_dijkstra_path_length, simple_cycles

@@ -22,7 +22,7 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, wm, misc
+import androguard, wm, androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file to be check', 'nargs' : 1 }
 
@@ -35,7 +35,7 @@ options = [option_0, option_1, option_2, option_5]
 
 def main(options, arguments) :
     if options.version != None :
-        print "Andromarks version %s" % misc.ANDROMARKS_VERSION
+        print "Andromarks version %s" % androconf.ANDROMARKS_VERSION
 
     elif options.directory != None and options.xml != None :
         for root, dirs, files in os.walk( options.directory ) :

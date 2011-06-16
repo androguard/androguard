@@ -8,7 +8,7 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./core/")
 sys.path.append(PATH_INSTALL + "./core/bytecodes/")
 
-import apk, dvm, misc
+import apk, dvm, androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'input directory', 'nargs' : 1 }
 options = [option_0]
@@ -31,7 +31,7 @@ def main(options, arguments) :
                 real_filename += f
 
                 
-                file_type = misc.is_android( real_filename )
+                file_type = androconf.is_android( real_filename )
 
                 
                 if file_type != None : 

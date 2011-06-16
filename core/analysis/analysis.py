@@ -18,7 +18,7 @@
 
 import re, random, string, cPickle
 
-from error import error, warning
+from androconf import error, warning
 import jvm, dvm
 from api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 

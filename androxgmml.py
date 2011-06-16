@@ -25,7 +25,7 @@ from optparse import OptionParser
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, analysis, misc
+import androguard, analysis, androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xgmml', 'nargs' : 1 }
