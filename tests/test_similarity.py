@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, itertools, time
+import sys, itertools, time, os, random
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
@@ -67,80 +67,101 @@ def test_Idempotency(n, x) :
     s1 = n.compress(x + x)
     s2 = n.compress(x)
 
-    return test( s1, s2, lambda x, y : x == y)
+    return test( s1, s2, lambda x, y : x == y), s1, s2
 
 # C(x) <= C(xy)
 def test_Monotonicity(n, x, y) :
     s1 = n.compress( x )
     s2 = n.compress( x + y )
 
-    return test( s1, s2, lambda x, y : x <= y )
+    return test( s1, s2, lambda x, y : x <= y ), s1, s2
 
 # C(xy) = C(yx)
 def test_Symetry(n, x, y) :
     s1 = n.compress( x + y )
     s2 = n.compress( y + x )
 
-    return test( s1, s2, lambda x, y : x == y)
+    return test( s1, s2, lambda x, y : x == y), s1, s2
 
 # C(xy) + C(z) <=  C(xz) + C(yz)
 def test_Distributivity(n, x, y, z) :
     s1 = n.compress( x + y ) + n.compress( z )
     s2 = n.compress( x + z ) + n.compress( y + z )
 
-    return test( s1, s2, lambda x, y : x <= y )
+    return test( s1, s2, lambda x, y : x <= y ), s1, s2
 
+def print_timing(func):
+    def wrapper(*arg):
+        t1 = time.time()
+        res = func(*arg)
+        t2 = time.time()
+        print '-> %0.8f s' % ((t2-t1))
+        return res
+    return wrapper
+
+@print_timing
 def Idempotency( n, TESTS_TEXT ) :
     print "Idempotency ",
     j = 0
     res = 0
-    t1 = time.clock()
+    cc = 0
 
     for i in itertools.permutations( TESTS_TEXT, 1 ) :
-        res += test_Idempotency( n, i[0] )
+        r, c1, c2 = test_Idempotency( n, i[0] )
+        cc += c1
+        cc += c2
+        res += r
         j += 1
-    t2 = time.clock()
-    print "%fs" % (t2 - t1), res, "/", j
+    print res, "/", j, cc, 
 
+@print_timing
 def Monotonicity( n, TESTS_TEXT ) :
     print "Monotonicity ",
     j = 0
     res = 0
-    t1 = time.clock()
+    cc = 0
 
     for i in itertools.permutations( TESTS_TEXT, 2 ) :
-        res += test_Monotonicity( n, i[0], i[1] )
+        r, c1, c2 = test_Monotonicity( n, i[0], i[1] )
+        cc += c1
+        cc += c2
+        res += r
         j += 1
 
-    t2 = time.clock()
-    print "%fs" % (t2 - t1), res, "/", j
+    print res, "/", j, cc, 
 
+
+@print_timing
 def Symetry( n, TESTS_TEXT ) :
     print "Symetry ",
     j = 0
     res = 0
-    t1 = time.clock()
+    cc = 0
 
     for i in itertools.permutations( TESTS_TEXT, 2 ) :
-        res += test_Symetry( n, i[0], i[1] )
+        r, c1, c2 = test_Symetry( n, i[0], i[1] )
+        cc += c1
+        cc += c2
+        res += r
         j += 1
 
-    t2 = time.clock()
-    print "%fs" % (t2 - t1), res, "/", j
+    print res, "/", j, cc, 
 
-
+@print_timing
 def Distributivity( n, TESTS_TEXT ) :
     print "Distributivity ",
     j = 0
+    cc = 0
     res = 0
-    t1 = time.clock()
 
     for i in itertools.permutations( TESTS_TEXT, 3 ) :
-        res += test_Distributivity( n, i[0], i[1], i[2] )
+        r, c1, c2 = test_Distributivity( n, i[0], i[1], i[2] )
+        cc += c1
+        cc += c2
+        res += r
         j += 1
-    t2 = time.clock()
-    print "%fs" % (t2 - t1), res, "/", j
 
+    print res, "/", j, cc, 
 
 def TestNCDPermutations(n, ref, threshold) :
     tres, nb, idx, t = benchmark(n.ncd, ref, threshold, lambda x, y : x <= y)
@@ -200,12 +221,18 @@ def TestEntropy(n, tests, diff) :
     t2 = time.clock()
     print "* Entropy %fs %d/%d" % (t2 - t1, nb, len(tests))
 
-def TestProperties(n) :
+def TestProperties(n, data) :
     # Properties
-    Idempotency( n, TESTS_RANDOM_SIGN )
-    Monotonicity( n, TESTS_RANDOM_SIGN )
-    Symetry( n, TESTS_RANDOM_SIGN )
-    Distributivity( n, TESTS_RANDOM_SIGN )
+    Idempotency( n, data )
+    Monotonicity( n, data )
+    Symetry( n, data )
+    Distributivity( n, data )
+
+def RandomData() :
+    l = []
+    for i in range(0,9) :
+        l.append( os.urandom( random.randint(0, 100) ) )
+    return l
 
 TESTS = { "ZLIB"        : ZLIB_COMPRESS,
           "BZ2"         : BZ2_COMPRESS,
@@ -231,16 +258,17 @@ if __name__ == "__main__" :
         n.set_compress_type( TESTS[i] )
         print "* ", i
 
-        #TestProperties( n )
+        TestProperties( n, TESTS_RANDOM_SIGN )
+        #TestProperties( n, RandomData() )
 
 
         # Closed signature
-        TestNCD( n, TESTS_CLOSED_SIGN, "closed" )
-        TestNCS( n, TESTS_CLOSED_SIGN, "closed" )
-        TestCMID( n, TESTS_CLOSED_SIGN, "closed" )
+        #TestNCD( n, TESTS_CLOSED_SIGN, "closed" )
+        #TestNCS( n, TESTS_CLOSED_SIGN, "closed" )
+        #TestCMID( n, TESTS_CLOSED_SIGN, "closed" )
 
         # Different signature
-        TestNCD( n, TESTS_DIFFERENT_SIGN, "different" )
+        #TestNCD( n, TESTS_DIFFERENT_SIGN, "different" )
         
         
         
