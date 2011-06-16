@@ -22,7 +22,7 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, apk, risk, misc
+import androguard, apk, risk, androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
@@ -32,7 +32,7 @@ options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
     if options.input != None :
-        if misc.is_android( options.input ) == "APK" :
+        if androconf.is_android( options.input ) == "APK" :
             ri = risk.RiskIndicator()
             a = apk.APK( options.input )
             
@@ -48,7 +48,7 @@ def main(options, arguments) :
                         real_filename += "/"
                     real_filename += f
 
-                    if misc.is_android( real_filename ) == "APK"  :
+                    if androconf.is_android( real_filename ) == "APK"  :
                         try :
                             a = apk.APK( real_filename )
                             print real_filename, ri.with_apk( a )
@@ -56,7 +56,7 @@ def main(options, arguments) :
                             print e
 
     elif options.version != None :
-        print "Androrisk version %s" % misc.ANDRORISK_VERSION
+        print "Androrisk version %s" % androconf.ANDRORISK_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

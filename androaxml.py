@@ -27,7 +27,7 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./core/")
 sys.path.append(PATH_INSTALL + "./core/bytecodes")
 
-import apk, misc
+import apk, androconf
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xml', 'nargs' : 1 }
@@ -51,7 +51,7 @@ def main(options, arguments) :
         fd.write( buff )
         fd.close()
     elif options.version != None :
-        print "Androaxml version %s" % misc.ANDROAXML_VERSION
+        print "Androaxml version %s" % androconf.ANDROAXML_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

@@ -29,8 +29,8 @@ sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
 sys.path.append(PATH_INSTALL + "/classification")
 
-import bytecode, jvm, dvm, apk, misc, analysis, opaque
-from error import error
+import bytecode, jvm, dvm, apk, androconf, analysis, opaque
+from androconf import error
 
 VM_INT_AUTO = 0
 VM_INT_BASIC_MATH_FORMULA = 1

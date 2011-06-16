@@ -18,7 +18,7 @@
 
 import hashlib
 
-from error import error, warning, debug, set_debug, get_debug
+from androconf import error, warning, debug, set_debug, get_debug
 from similarity import *
 from analysis import *
 

@@ -18,8 +18,7 @@
 
 from struct import unpack, pack
 
-from misc import Color
-from error import warning, error
+from androconf import Color, warning, error
 
 global PRETTY_SHOW
 PRETTY_SHOW = 0
@@ -230,6 +229,8 @@ def method2dot( mx ) :
 
         @rtype : dot format buffer
     """
+
+    vm = mx.get_vm()
     buff = ""
     for i in mx.basic_blocks.get() :
         val = "green"
@@ -246,7 +247,7 @@ def method2dot( mx ) :
         idx = i.start
         label = ""
         for ins in i.ins :
-            label += "%x %s\l" % (idx, ins.show_buff(idx))
+            label += "%x %s\l" % (idx, vm.dotbuff(ins, idx))
             idx += ins.get_length()
 
         buff +=  "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (i.get_name(), label)

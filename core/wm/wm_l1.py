@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import misc
+import androconf 
 import hashlib
 
 def INIT() :
@@ -42,11 +42,11 @@ class WM_L1 :
         self.__context[ "STRING" ] = x.get_ts()
 
         self.__context[ "L_X" ].append(
-                                         misc.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() )
+                                         androconf.str2long( hashlib.md5( self.__context[ "STRING" ] ).hexdigest() )
                                       )
 
     def challenge(self, external_wm) :
-        distance = misc.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
+        distance = androconf.levenshtein( self.__context["STRING"], external_wm.get_context()["STRING"] )
 
         if distance <= 2 :
             return self.__context[ "L_X" ]

@@ -20,9 +20,9 @@ from struct import pack, unpack
 from subprocess import Popen, PIPE, STDOUT
 import os
 
-from error import log_loading, warning
-import jvm, misc
+from androconf import log_loading, warning, random_string
 from analysis import TAINTED_PACKAGE_CREATE
+import jvm
 
 class GenerateMainCode :
     def __init__(self) :
@@ -37,7 +37,7 @@ class GenerateMainCode :
         return self.__name
 
     def addVM(self, _vm, _analysis, objects_create) :
-        r = misc.random_string()
+        r = random_string()
         self.__info_gc[ r ] = ( _vm, _analysis )
 
         gc = GenerateCode( self, r, _vm, _analysis, objects_create )
@@ -74,7 +74,7 @@ class GenerateMainCode :
         _vm = self.__info_gc[ ident ][0]
         class_name = _vm.get_classes_names()[0]
 
-        name = misc.random_string()
+        name = random_string()
         _vm.insert_field( class_name, name, [ _access, _type ] )
 
         return [ name, _access, _type ]
@@ -172,9 +172,9 @@ class GenerateMainCode :
 
         for i in l :
             if isinstance(i, list) :
-                z.append( "%s %s%s" % (i[0], misc.random_string(), ''.join(j for j in i[1])) )
+                z.append( "%s %s%s" % (i[0], random_string(), ''.join(j for j in i[1])) )
             else :
-                z.append( "%s %s" % (i, misc.random_string()) )
+                z.append( "%s %s" % (i, random_string()) )
 
         return ', '.join(i for i in z)
 
@@ -441,10 +441,10 @@ class Protection(object) :
         self._generate_java_templates( self.java_lib, self.native_lib )
 
     def _generate_native_templates(self, native_lib) :
-        name = misc.random_string()
+        name = random_string()
         native_lib[ name ] = {}
 
-        native_lib[ name ]["F_INIT"] = [ 0, misc.random_string(), "V", "()" ]
+        native_lib[ name ]["F_INIT"] = [ 0, random_string(), "V", "()" ]
 
         buff = "#include <jni.h>\n"
 
@@ -455,7 +455,7 @@ class Protection(object) :
         native_lib[ name ]["RAW"] = buff
 
     def _generate_java_templates(self, java_lib, native_lib) :
-        name = misc.random_string()
+        name = random_string()
         java_lib[ name ] = {}
 
         java_lib[ name ]["C_INIT"] = name
@@ -585,7 +585,7 @@ class ProtectionClear(Protection) :
 
         lib = self.names_libs["MAIN"]
 
-        name = misc.random_string()
+        name = random_string()
         lib["METHODS"][name] = [ 0, name, "PUBLIC", "()", "V", "" ]
         buff =  "System.out.println(\"[AG][java] %s\");\n" % name
         buff += "Throwable t = new Throwable();\n"
