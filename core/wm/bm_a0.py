@@ -18,7 +18,7 @@
 
 import hashlib
 
-import misc
+import androconf 
 from wm import WM_CLASS, WM_METHOD
 import analysis as _analysis
 
@@ -45,7 +45,7 @@ class BM_A0 :
         for i in self.__context[ "SIGNATURES" ] :
             if len(i) > 10 :
                 self.__context[ "L_X" ].append(
-                                                 misc.str2long( hashlib.md5( i ).hexdigest() )
+                                                 androconf.str2long( hashlib.md5( i ).hexdigest() )
                                               )
 
     def challenge(self, external_wm) :
@@ -88,7 +88,7 @@ class BM_A1 :
         for i in self.__context[ "SIGNATURES" ] :
             if len(i) > 10 :
                 self.__context[ "L_X" ].append(
-                                                 misc.str2long( hashlib.md5( i ).hexdigest() )
+                                                 androconf.str2long( hashlib.md5( i ).hexdigest() )
                                               )
 
     def challenge(self, external_wm) :

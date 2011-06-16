@@ -1,8 +1,7 @@
 import os, sys, hashlib, random, math, types, itertools, hashlib, cPickle, base64, string, threading
 from xml.sax.saxutils import escape, unescape
 
-from error import log_loading, warning
-import misc
+from androconf import log_loading, warning, long2str, str2long
 
 WM_CLASS = 0
 WM_METHOD = 1
@@ -191,7 +190,7 @@ class WMCheck :
 
                 for sol in sols :
                     if sol > 0 :
-                        s = misc.long2str(long(sol))[::-1]
+                        s = long2str(long(sol))[::-1]
                         if "TOTO" in s :
                             print repr(s),
             print
@@ -218,7 +217,7 @@ class WMCheck :
                     print len(sols), "--",
                     for sol in sols :
                         if sol > 0 :
-                            s = misc.long2str(long(sol))[::-1]
+                            s = long2str(long(sol))[::-1]
                             if "TOTO" in s :
                                 print repr(s),
                 print
@@ -252,7 +251,7 @@ class ShamirSecretScheme :
         self.__secret = secret
         self.__hash = hashlib.sha256(self.__secret).hexdigest()
 
-        self.__secret_long = misc.str2long(self.__secret)
+        self.__secret_long = str2long(self.__secret)
         self.__hash_long = hashlib.sha256(str(self.__secret_long)).hexdigest()
 
         self.__pieces = pieces

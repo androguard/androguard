@@ -22,7 +22,7 @@ import sys, os, cmd, threading, re, atexit
 
 from optparse import OptionParser
 
-import androguard, misc, jvm
+import androguard, androconf, jvm
 
 # External Libraries
 
@@ -135,7 +135,7 @@ def main(options, arguments) :
         AndroDump( apd )
 
     elif options.version != None :
-        print "Androdump version %s" % misc.ANDRODUMP_VERSION
+        print "Androdump version %s" % androconf.ANDRODUMP_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

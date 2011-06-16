@@ -22,7 +22,7 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, analysis, misc
+import androguard, analysis, androconf 
 from bytecode import method2dot, method2format
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
@@ -97,7 +97,7 @@ def main(options, arguments) :
             export_apps_to_format( a, options.output, options.dot, options.format )
 
     elif options.version != None :
-        print "Androdd version %s" % misc.ANDRODD_VERSION
+        print "Androdd version %s" % androconf.ANDRODD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

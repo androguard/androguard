@@ -18,7 +18,7 @@
 
 import bytecode
 
-import misc
+import androconf
 from bytecode import SV
 from dvm_permissions import DVM_PERMISSIONS
 
@@ -729,7 +729,7 @@ class AXMLPrinter :
             return "#%08X" % _data
 
         elif _type >= TYPE_FIRST_INT and _type <= TYPE_LAST_INT :
-            return "%d" % misc.long2int( _data )
+            return "%d" % androconf.long2int( _data )
 
         return "<0x%X, type 0x%02X>" % (_data, _type)
 

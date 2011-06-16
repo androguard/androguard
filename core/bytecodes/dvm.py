@@ -18,7 +18,6 @@
 
 import bytecode
 
-import misc
 from bytecode import SV, SVs
 
 import sys, re, types, string, zipfile, StringIO
@@ -502,6 +501,11 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
 BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed.",  "sparse." ]
+
+def dot_buff(ins, idx) :
+    if ins.get_op_value() == 0x1a or ins.get_op_value() == 0x1b :
+        return ins.show_buff(idx).replace('"', '\\"')
+    return ins.show_buff(idx)
 
 def readuleb128(buff) :
     result = ord( buff.read(1) )
@@ -2850,6 +2854,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
             @rtype: string
         """
         return self._get_raw()
+
+    def dotbuff(self, ins, idx) :
+        return dot_buff(ins, idx)
 
     def pretty_show(self, vm_a) :
         self.map_list.pretty_show(vm_a)

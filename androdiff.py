@@ -22,7 +22,7 @@ import sys
 
 from optparse import OptionParser
 
-import androguard, misc, diff
+import androguard, androconf, diff
 from cPickle import dumps
 
 from similarity import *
@@ -87,7 +87,7 @@ def main(options, arguments) :
             fd.close()
 
     elif options.version != None :
-        print "Androdiff version %s" % misc.ANDRODIFF_VERSION
+        print "Androdiff version %s" % androconf.ANDRODIFF_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()
