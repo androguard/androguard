@@ -32,11 +32,20 @@ struct libsimilarity {
 };
 typedef struct libsimilarity libsimilarity_t;
 
+#ifdef __cplusplus
+extern "C" {                                                                                                                                                                                     
+    float entropy(void *, unsigned int);
+    void set_compress_type(int);
+    int ncd(int, libsimilarity_t *);
+}
+#else
 void set_compress_type(int);
 unsigned int compress(int, void *, unsigned int);
 int ncd(int, libsimilarity_t *);
 int ncs(int, libsimilarity_t *);
 int cmid(int, libsimilarity_t *);
 float entropy(void *, unsigned int);
+#endif
+
 
 #endif

@@ -168,7 +168,7 @@ def create_system() :
     in4 = fuzzy.Adjective.Adjective(in4_set)
     input_Money_Risk.adjectives[LOW_RISK] = in4
 
-    in5_set = fuzzy.set.Polygon.Polygon([(5.0, 0.0), (6.0, 1.0), (30.0, 1.0)])
+    in5_set = fuzzy.set.Polygon.Polygon([(4.0, 0.0), (6.0, 1.0), (30.0, 1.0)])
     in5 = fuzzy.Adjective.Adjective(in5_set)
     input_Money_Risk.adjectives[HIGH_RISK] = in5
 
@@ -205,13 +205,13 @@ def create_system() :
 
     # Output variables
     output_malware_risk = fuzzy.OutputVariable.OutputVariable(
-                            defuzzify=fuzzy.defuzzify.COGS.COGS(), #failsafe=0.0),  
+                            defuzzify=fuzzy.defuzzify.COGS.COGS(),
                             description="malware risk",
                             min=0.0,max=100.0,
                         )
     output_malware_risk.adjectives[NULL_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(0.0))
     output_malware_risk.adjectives[AVERAGE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(20.0))
-    output_malware_risk.adjectives[HIGH_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(60.0))
+    output_malware_risk.adjectives[HIGH_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(80.0))
     output_malware_risk.adjectives[UNACCEPTABLE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(100.0))
 
     system.variables["output_malware_risk"] = output_malware_risk
@@ -225,7 +225,7 @@ def create_system() :
      
     #RULE 2 : IF input_Dangerous_Risk IS Moyen THEN output_risk_malware IS Moyen;
     rule2 = fuzzy.Rule.Rule(
-                adjective=[system.variables["output_malware_risk"].adjectives[AVERAGE_RISK]],
+                adjective=[system.variables["output_malware_risk"].adjectives[AVERAGE_MALWARE_RISK]],
                 operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[AVERAGE_RISK] )
     )
      
@@ -240,21 +240,15 @@ def create_system() :
     #RULE 4 : IF input_Dangerous_Risk IS Faible AND input_Binary_Risk IS Eleve THEN output_risk_malware IS Eleve;
     rule4 = fuzzy.Rule.Rule(
                 adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                operator=fuzzy.operator.Compound.Compound(
-                    fuzzy.norm.Min.Min(),
-                    fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[LOW_RISK] ),
-                    fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] ) )
+                operator = fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] )
     )
-     
-    #RULE 5 : IF input_Dangerous_Risk IS Moyen AND input_Binary_Risk IS Eleve THEN output_risk_malware IS Eleve;
+    
+    #RULE 5 : IF input_Money_Risk IS Eleve THEN output_risk_malware IS Inacceptable;
     rule5 = fuzzy.Rule.Rule(
-                adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                operator=fuzzy.operator.Compound.Compound(
-                    fuzzy.norm.Min.Min(),
-                    fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[AVERAGE_RISK] ),
-                    fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] ) )
+                adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
+                operator=fuzzy.operator.Input.Input( system.variables["input_Money_Risk"].adjectives[HIGH_RISK] )
     )
-     
+    
     #RULE 6 : IF input_Dangerous_Risk IS Eleve AND input_Binary_Risk IS Eleve THEN output_risk_malware IS Inacceptable;
     rule6 = fuzzy.Rule.Rule(
                 adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
@@ -264,14 +258,9 @@ def create_system() :
                     fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] ) )
     )
 
-    #RULE 7 : IF input_Money_Risk IS Eleve THEN output_risk_malware IS Inacceptable;
+
+    #RULE 7 : IF input_Internet_Risk IS Faible AND input_Privacy_Risk IS Eleve THEN output_risk_malware IS Eleve;
     rule7 = fuzzy.Rule.Rule(
-                adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
-                operator=fuzzy.operator.Input.Input( system.variables["input_Money_Risk"].adjectives[HIGH_RISK] )
-    )
-    
-    #RULE 8 : IF input_Internet_Risk IS Faible AND input_Privacy_Risk IS Eleve THEN output_risk_malware IS Eleve;
-    rule8 = fuzzy.Rule.Rule(
                 adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
                 operator=fuzzy.operator.Compound.Compound(
                     fuzzy.norm.Min.Min(),
@@ -279,8 +268,8 @@ def create_system() :
                     fuzzy.operator.Input.Input( system.variables["input_Privacy_Risk"].adjectives[HIGH_RISK] ) )
     )
     
-    #RULE 9 : IF input_Internet_Risk IS Eleve AND input_Privacy_Risk IS Eleve THEN output_risk_malware IS Inacceptable;
-    rule9 = fuzzy.Rule.Rule(
+    #RULE 8 : IF input_Internet_Risk IS Eleve AND input_Privacy_Risk IS Eleve THEN output_risk_malware IS Inacceptable;
+    rule8 = fuzzy.Rule.Rule(
                 adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
                 operator=fuzzy.operator.Compound.Compound(
                     fuzzy.norm.Min.Min(),
@@ -296,7 +285,6 @@ def create_system() :
     system.rules["r6"] = rule6
     system.rules["r7"] = rule7
     system.rules["r8"] = rule8
-    system.rules["r9"] = rule9
 
     return system
 
@@ -390,7 +378,7 @@ class RiskIndicator :
         input_val['input_Binary_Risk'] = risks[ BINARY_RISK ]
         input_val['input_Internet_Risk'] = risks[ INTERNET_RISK ]
 
-        #print input_val,
+#        print input_val,
 
         SYSTEM.calculate(input=input_val, output = output_values)
 
