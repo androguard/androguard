@@ -257,7 +257,12 @@ class Androguard :
                 x = apk.APK( i )
                 bc = dvm.DalvikVMFormat( x.get_dex() )
             else :
-                raise( "Unknown bytecode" )
+                if androconf.is_android( i ) == "APK" :
+                    x = apk.APK( i )
+                    bc = dvm.DalvikVMFormat( x.get_dex() )
+                    
+                else :
+                    raise( "Unknown bytecode" )
 
             if isinstance(bc, list) :
                 for j in bc :
