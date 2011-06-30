@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/geinimi/632e3c9be2bc616bf2ca2908194cf8f5cf8bbdcf865262f0bbce59380e5c0466" }, { "NAME" : "Geinimi", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/dseffects/MonkeyJump2/jump2/h;", "MN" : "onCreate", "D" : "(Landroid/os/Bundle;)V" } ], "FORMULA" : "0" } ]

@@ -26,7 +26,8 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, analysis
 from analysis import *
 
-TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+#TEST_CASE  = 'examples/android/TC/bin/classes.dex'
+TEST_CASE  = 'apks/DroidDream/tmp/classes.dex'
 
 GRAMMAR_TYPE_ANONYMOUS = 0
 
@@ -69,15 +70,15 @@ for method in a.get_methods() :
     #   continue
 
     print method.get_class_name(), method.get_name(), method.get_descriptor()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
     print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_2).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_5).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L1).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L2).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L3).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_5).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L1).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L2).get_string()
+    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L3).get_string()
 
     print
 

@@ -22,41 +22,25 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, apk, risk, androconf 
+import androguard, androconf, apk, dvm, msign
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
+option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_2 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3]
 
 def main(options, arguments) :
     if options.input != None :
-        if androconf.is_android( options.input ) == "APK" :
-            ri = risk.RiskIndicator()
-            a = apk.APK( options.input )
-            
-            print options.input, ri.with_apk( a )
-
-    elif options.directory != None :
-        ri = risk.RiskIndicator()
-        for root, dirs, files in os.walk( options.directory, followlinks=True ) :
-            if files != [] :
-                for f in files :
-                    real_filename = root
-                    if real_filename[-1] != "/" :
-                        real_filename += "/"
-                    real_filename += f
-
-                    if androconf.is_android( real_filename ) == "APK"  :
-                        try :
-                            a = apk.APK( real_filename )
-                            print ri.with_apk(a), real_filename#, ri.with_apk( a )
-                        except Exception, e :
-                            print e
+        s = msign.CSignature()
+        ret = s.add_apk( open(options.input, "rb").read() )
+       
+        if options.output != None :
+            s.add_indb( ret, options.output )
 
     elif options.version != None :
-        print "Androrisk version %s" % androconf.ANDRORISK_VERSION
+        print "Androcsign version %s" % androconf.ANDROCSIGN_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

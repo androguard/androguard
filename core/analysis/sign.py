@@ -65,13 +65,27 @@ class Signature :
                         
                         # fill array data
                         "L3" : [ "_get_fill_array_data" ],
-
-                        # instructions
-
-
                     }
 
         self._init_caches()
+
+    def _get_hex(self, analysis_method) :
+        code = analysis_method.get_method().get_code()
+        if code == None :
+            return ""
+        
+        from diff import clean_name_instruction, static_operand_instruction
+
+        buff = ""
+        for i in code.get_bc().get() :
+            buff += clean_name_instruction( i )
+            buff += static_operand_instruction( i )
+
+        #raw = code.get_bc().get_raw()
+        #buff = ""
+        #for i in raw :
+        #    buff += "%02x" % ord(i)
+        return buff
 
     def _get_bb(self, analysis_method, functions, options) :
         l = []
@@ -202,6 +216,10 @@ class Signature :
                 l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
         return l
 
+    def _get_packages(self, analysis_method, include_packages) :
+        l = self._get_packages_pa_1( analysis_method, include_packages )
+        return "".join([ i[1] for i in l ])
+
     def _get_packages_pa_1(self, analysis_method, include_packages) :
         packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
 
@@ -269,10 +287,18 @@ class Signature :
 
                 value = self._get_bb( analysis_method, _type, _arguments ) 
                 s.add( i, ''.join(i[1] for i in value))
-            
-            elif i == "L1" :
-                for f in self.levels[ i ] : 
-                   value = getattr( self, f )( analysis_method )
+          
+            elif i == "L4" :
+                try :
+                    _arguments = signature_arguments[ i ][ "arguments" ]
+                except KeyError :
+                    _arguments = []
+
+                value = self._get_packages( analysis_method, _arguments )
+                s.add( i , value )
+
+            elif i == "hex" :
+                value = self._get_hex( analysis_method )
                 s.add( i, value )
 
             else :

@@ -23,7 +23,6 @@ import re, zipfile, StringIO, os
 import bytecode
 from bytecode import SV, SVs
 
-import jvm_generate
 
 ######################################################## JAR FORMAT ########################################################
 class JAR :
@@ -3419,6 +3418,7 @@ class JVMFormat(bytecode._Bytecode) :
         return self._get_raw()
 
     def get_generator(self) :
+        import jvm_generate
         return jvm_generate.JVMGenerate
 
     def get_INTEGER_INSTRUCTIONS(self) :
