@@ -1537,6 +1537,25 @@ class TaintedPackages :
                 l.extend( m.get_methods() )
         return l
 
+    def search_unique_packages(self, package_name) :
+        """
+            @param package_name : a regexp for the name of the package
+        
+        """
+        ex = re.compile( package_name )
+    
+        l = []
+        d = {} 
+        for m, _ in self.get_packages() :
+            if ex.match( m.get_info() ) != None :
+                for path in m.get_methods() :
+                    try :
+                        d[ path.get_class_name() + path.get_name() + path.get_descriptor() ] += 1
+                    except KeyError :
+                        d[ path.get_class_name() + path.get_name() + path.get_descriptor() ] = 0
+                        l.append( [ path.get_class_name(), path.get_name(), path.get_descriptor() ] )
+        return l, d
+
     def search_methods(self, class_name, name, descriptor) :
         """
             @param class_name : a regexp for the class name of the method (the package)
@@ -1913,6 +1932,7 @@ SIGNATURE_L0_4_L1 = "L0_4:L1"
 SIGNATURE_L0_5_L1 = "L0_5:L1"
 SIGNATURE_L0_0_L2 = "L0_0:L2"
 SIGNATURE_L0_0_L3 = "L0_0:L3"
+SIGNATURE_HEX = "hex"
 
 SIGNATURES = {
                 SIGNATURE_L0_0 : { "type" : 0 },
@@ -1922,6 +1942,7 @@ SIGNATURES = {
                 SIGNATURE_L0_4 : { "type" : 2, "arguments" : ["Landroid", "Ljava"] },
                 SIGNATURE_L0_5 : { "type" : 3, "arguments" : ["Landroid"] },
                 SIGNATURE_L0_6 : { "type" : 3, "arguments" : ["Ljava"] },
+                SIGNATURE_HEX : {},
             }
 
 from sign import Signature

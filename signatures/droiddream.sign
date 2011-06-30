@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/DroidDream/Magic Hypnotic Spiral.apk" }, { "NAME" : "DroidDream", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/android/root/Setting;", "MN" : "postUrl", "D" : "(Ljava/lang/String; Landroid/content/Context;)V" } ], "FORMULA" : "1||0" } ]

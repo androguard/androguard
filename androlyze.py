@@ -81,6 +81,15 @@ def AnalyzeAPK(filename, raw=False) :
 
     return a, d, dx
 
+def sort_length_method(vm) :
+    l = []
+    for m in vm.get_methods() :
+        code = m.get_code()
+        if code != None :
+            l.append( (code.get_length(), (m.get_class_name(), m.get_name(), m.get_descriptor()) ) )
+    l.sort(reverse=True)
+    return l
+
 def AnalyzeDex(filename, raw=False) :
     d = None
     if raw == False :
