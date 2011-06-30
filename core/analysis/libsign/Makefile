@@ -19,21 +19,25 @@ LIBNAME = libsign
 OBJ	= $(SRC:.c=.o)
 AHO_OBJ = ac_heap.o ac_list.o aho_corasick.o
 WUMANBER_OBJ = #WuManber.o 
+CLUSTER_OBJ = cluster.o
 
 #.SILENT:
 
-all :   AHO $(OBJ) LIBSIGN
+all :   AHO CLUSTER $(OBJ) LIBSIGN
 
 AHO :
 		$(CC) -c ac_heap.c
 		$(CC) -c ac_list.c
 		$(CC) -c aho_corasick.c
 
+CLUSTER :
+		$(CC) -c cluster.c
+
 WUMANBER :
 		$(CCP) WuManber.cpp
 
 LIBSIGN :
-	$(CCP) -o $(LIBNAME).so $(OBJ) $(AHO_OBJ) $(WUMANBER_OBJ) $(EXT_SIMILARITY) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS)
+	$(CCP) -o $(LIBNAME).so $(OBJ) $(AHO_OBJ) $(WUMANBER_OBJ) $(CLUSTER_OBJ) $(EXT_SIMILARITY) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS)
 
 clean :
 	$(RM) *.o $(LIBNAME).so

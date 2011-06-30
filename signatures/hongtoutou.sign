@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/adrd/1/Dandelion(HongTouTou)(ADRD).apk" }, { "NAME" : "Hongtoutou", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/xxx/yyy/BBBB;", "MN" : "Go", "D" : "()V" } ], "FORMULA" : "0" } ]
