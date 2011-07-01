@@ -25,11 +25,10 @@ from optparse import OptionParser
 import androguard, androconf, apk, dvm, msign
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
+option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3]
+options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
     if options.input != None :

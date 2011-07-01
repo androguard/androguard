@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/kungfu2/ef3b26c804757509600b42e806eaf3b6aa8cfcdf.apk" }, { "NAME" : "DroidKungfu2", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/tutusw/onekeyvpn/OpenVpnSettings;", "MN" : "execInstall", "D" : "()V" } ], "FORMULA" : "0" } ]

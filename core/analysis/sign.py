@@ -20,8 +20,9 @@ from androconf import error
 
 from analysis import TAINTED_PACKAGE_CREATE, TAINTED_PACKAGE_CALL
 
+TAINTED_PACKAGE_INTERNAL_CALL = 2
 FIELD_ACCESS = { "R" : 0, "W" : 1 }
-PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1 }
+PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1, TAINTED_PACKAGE_INTERNAL_CALL : 2 }
 class Sign : 
     def __init__(self) :
         self.levels = {} 
@@ -225,6 +226,8 @@ class Signature :
 
         l = []
 
+        classes_names = analysis_method.get_vm().get_classes_names()
+
         for m in packages_method :
             for path in packages_method[ m ] :
                 present = False
@@ -233,14 +236,19 @@ class Signature :
                         present = True
                         break
 
-                if present == False :
-                    continue
-
                 if path.get_access_flag() == 1 :
-                    l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                    if path.get_class_name() in classes_names :
+                        l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ 2 ]) ) )
+                    else :
+                        if present == True :
+                            l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                        else :
+                            l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                 else :
-                    l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
-
+                    if present == True :
+                        l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
+                    else :
+                        l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
         return l
 
     def _get_packages_pa_2(self, analysis_method, include_packages) :
