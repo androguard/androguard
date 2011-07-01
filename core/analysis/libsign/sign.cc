@@ -82,8 +82,10 @@ class Msign {
         float threshold_value;
         int cluster_npass;
         int cluster_ncols;
+        char cluster_dist;
+        char cluster_method;
         double *cluster_weight;
-
+        
         ac_index *aho;
         sparse_hash_map<Signature *, float> entropies_hashmap_mpsm;
         sparse_hash_map<Signature *, float> entropies_hashmap_sign_ncd;
@@ -98,11 +100,14 @@ class Msign {
             threshold_value = 0.2;
             cluster_npass = 1;
             cluster_ncols = 0;
+            cluster_dist = 'e';
+            cluster_method = 'm';
+
             cluster_weight = NULL;
 
             aho = ac_index_new();
             set_compress_type( TYPE_SNAPPY );
- 
+            
             dt.log = 0;
             dt.cmp = 0;
             dt.elem = 0;
@@ -149,6 +154,27 @@ class Msign {
 
             return 0;
         }
+
+        int set_dist(char c) {
+            cluster_dist = c;
+            
+            if (dt.log) {
+                printf("DIST = %c\n", cluster_dist);
+            }
+
+            return 0;
+        }
+
+        int set_method(char c) {
+            cluster_method = c;
+            
+            if (dt.log) {
+                printf("METHOD = %c\n", cluster_method);
+            }
+            
+            return 0;
+        }
+
 
         void set_threshold(float value) {
             threshold_value = value;
@@ -260,9 +286,7 @@ class Msign {
                 i += 1;
             }
 
-            int nclusters = (int)sqrt( nrows );
-            char dist = 'e';
-            char method = 'a';
+            int nclusters = (int)sqrt( nrows ); // + entropies_hashmap_sign_ncd.size();
             int* clusterid = (int *)malloc(nrows*sizeof(int));
             int transpose = 0;
             int ifound = 0;
@@ -274,7 +298,7 @@ class Msign {
             }
             
             dt.nbclusters = nclusters;
-            kcluster(nclusters, nrows, cluster_ncols, data, mask, cluster_weight, transpose, cluster_npass, method, dist, clusterid, &error, &ifound);
+            kcluster(nclusters, nrows, cluster_ncols, data, mask, cluster_weight, transpose, cluster_npass, cluster_method, cluster_dist, clusterid, &error, &ifound);
 
             if (dt.log) {
                 printf ("Solution found %d times; within-cluster sum of distances is %f\n", ifound, error);
@@ -602,6 +626,14 @@ extern "C" void set_npass(Msign &s, int value) {
 
 extern "C" int set_weight(Msign &s, double *w, int size) {
     return s.set_weight( w, size );
+}
+
+extern "C" int set_dist(Msign &s, char c ) {
+    return s.set_dist( c );
+}
+
+extern "C" int set_method(Msign &s, char c ) {
+    return s.set_method( c );
 }
 
 /* MPSM */

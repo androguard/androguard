@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/kungfu/droidkungfu.apk" }, { "NAME" : "DroidKungfu", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/google/ssearch/SearchService;", "MN" : "getPermission2", "D" : "()V" } ], "FORMULA" : "0" } ]
