@@ -63,6 +63,8 @@ def main(options, arguments) :
                             a = apk.APK( real_filename )
                             if a.is_valid_APK() :
                                 s.check_apk( a )
+                            else :
+                                print "INVALID"
                         except Exception, e :
                             print "ERROR"
                     elif ret_type == "DEX" :
