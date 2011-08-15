@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+# This file is part of Androguard.
+#
+# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys, itertools, time, os, random
+from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast, POINTER, pointer
+from struct import pack, unpack, calcsize                                                                                                                                                        
+
+PATH_INSTALL = "../../../"
+sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL + "./core")
+sys.path.append(PATH_INSTALL + "./core/bytecodes")
+sys.path.append(PATH_INSTALL + "./core/analysis")
+
+import apk, dvm, analysis, msign
+
+def add(lib, dvm, _s) :
+    return lib.add( dvm, cast(_s, c_void_p) , len(_s) )
+
+if __name__ == "__main__" :
+    u = cdll.LoadLibrary( "./libdvm.so")
+    #u = cdll.LoadLibrary( "./core/bytecodes/libdvm/libdvm.so")
+    #u.add_sign.restype = c_int
+    #u.entropy.restype = c_float
+
+    new_dvm = u.init()
+
+
+    a = apk.APK( PATH_INSTALL + "examples/android/TestsAndroguard/bin/TestsAndroguard.apk" )
+
+    d = dvm.DalvikVMFormat( a.get_dex(), engine=[".so", u, new_dvm] )
+    #d = dvm.DalvikVMFormat( a.get_dex() ) 
+    print d
+
+#    vm = add( u, new_dvm, a.get_dex() )
+
+    sys.exit(0)
+
+    vmx = analysis.VMAnalysis( vm )

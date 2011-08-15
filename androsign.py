@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -59,14 +59,14 @@ def main(options, arguments) :
                     ret_type = androconf.is_android( real_filename )
                     if ret_type == "APK"  :
                         print real_filename, "--->",
-                        try : 
-                            a = apk.APK( real_filename )
-                            if a.is_valid_APK() :
-                                s.check_apk( a )
-                            else :
-                                print "INVALID"
-                        except Exception, e :
-                            print "ERROR"
+                        #try : 
+                        a = apk.APK( real_filename )
+                        if a.is_valid_APK() :
+                            s.check_apk( a )
+                        else :
+                            print "INVALID"
+                        #except Exception, e :
+                        #    print "ERROR", e 
                     elif ret_type == "DEX" :
                         try :
                             print real_filename, "--->",

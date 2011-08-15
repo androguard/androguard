@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -197,8 +197,12 @@ class APK :
                 if len(value) > 0 :
                     if value[0] == "." : 
                         value = self.package + value
-                    elif value.find(".") == 0 :
-                        value = self.package + "." + value
+                    else :
+                        v_dot = value.find(".")
+                        if v_dot == 0 :
+                            value = self.package + "." + value
+                        elif v_dot == -1 :
+                            value = self.package + "." + value
 
                 l.append( str( value ) )
         return l

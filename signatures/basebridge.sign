@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "./apks/BaseBridge/QQ_tencent.qqgame.lord_24_1.1.apk" }, { "NAME" : "BaseBridge", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Ln;", "MN" : "handleMessage", "D" : "(Landroid/os/Message;)V" } ], "FORMULA" : "0" } ]
