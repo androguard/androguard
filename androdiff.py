@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -67,6 +67,11 @@ def main(options, arguments) :
 
             i.show( details, exclude )
             print
+
+        print "MATCH METHODS :"
+        new_methods = d.get_match_methods()
+        for i in new_methods :
+            i.show2( details )
 
         print "NEW METHODS :"
         new_methods = d.get_new_methods()
