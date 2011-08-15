@@ -1,7 +1,7 @@
 /* 
  This file is part of Androguard.
 
- Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+ Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
  All rights reserved.
 
  Androguard is free software: you can redistribute it and/or modify

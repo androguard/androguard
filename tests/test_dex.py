@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.6
 
-import sys, os
+import sys, os, time
 from xml.dom import minidom
 from optparse import OptionParser
 
@@ -21,6 +21,20 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
     return (got == expected)
 
+def print_timing(func):
+    def wrapper(*arg):
+        t1 = time.time()
+        res = func(*arg)
+        t2 = time.time()
+        print '-> %0.8f s' % ((t2-t1)), 
+        return res
+    return wrapper
+
+@print_timing
+def open_dex(raw) :
+    d = dvm.DalvikVMFormat( raw )
+    return d
+
 def main(options, arguments) :
     for root, dirs, files in os.walk( options.input ) :
         if files != [] :
@@ -33,7 +47,6 @@ def main(options, arguments) :
                 
                 file_type = androconf.is_android( real_filename )
 
-                
                 if file_type != None : 
                     try : 
                         if file_type == "APK" :
@@ -47,7 +60,7 @@ def main(options, arguments) :
                         elif file_type == "DEX" :
                             raw = open(real_filename, "rb").read()
 
-                        d = dvm.DalvikVMFormat( raw )
+                        d = open_dex( raw )
                         print "PASSED", real_filename, file_type
                     except Exception, e :
                         print "FAILED", real_filename, file_type

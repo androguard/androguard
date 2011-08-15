@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -563,7 +563,12 @@ class Method :
             bytecode.PrettyShow2( self.bbs, exclude )
 
     def show2(self, details=False) :
-        print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor()
+        print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
+        if self.m.get_code() == None :
+            print 0
+        else :
+            print self.m.get_code().get_length()
+
         if details :
             bytecode.PrettyShow1( self.mx.basic_blocks.get() )
 

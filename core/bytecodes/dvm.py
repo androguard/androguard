@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>
+# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -25,6 +25,8 @@ from collections import namedtuple
 from struct import pack, unpack, calcsize
 
 from xml.dom import minidom
+
+from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast, POINTER, pointer
 
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
@@ -357,6 +359,9 @@ DALVIK_OPCODES = {
                         0x70 : [ "35c", "invoke-direct",                  "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ], 
                         0x71 : [ "35c", "invoke-static",            "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
                         0x72 : [ "35c", "invoke-interface",           "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
+                        
+                        0x73 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        
                         0x74 : [ "3rc", "invoke-virtual/range",      "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
                         0x75 : [ "3rc", "invoke-super/range",           "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
                         0x76 : [ "3rc", "invoke-direct/range",        "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
@@ -2202,15 +2207,15 @@ class DBC :
 
 def op_B_A_OP(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+    return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
         
 def op_AA_OP(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+    return [2, [i16 & 0xff, (i16 >> 8) & 0xff]]
 
 def op_00_OP(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xff])]
+    return [2, [i16 & 0xff]]
     
 def op_CCCC(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
@@ -2222,15 +2227,15 @@ def op_SAAAA(insn, current_pos) :
     
 def op_SB_A_OP(insn, current_pos) :
     i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+    return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
         
 def op_SCC_BB(insn, current_pos) :
     i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xff, (i16 >> 8) & 0xff])]
+    return [2, [i16 & 0xff, (i16 >> 8) & 0xff]]
         
 def op_G_F_E_D(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, map(int, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf])]
+    return [2, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
     
 def op_OP(insn, current_pos) :
     i8 = unpack("=B", insn[current_pos:current_pos+1])[0]
@@ -2267,6 +2272,17 @@ MAP_EXTRACT_VALUES = {
     OPCODE_00       :   op_00,
 }
 
+class DCodeNatif :
+    def __init__(self, class_manager, size, buff) :
+        self.__CM = class_manager
+        self.__insn = buff
+
+        name, lib, dvm = self.__CM.get_all_engine()
+        lib.new_code( dvm, cast(self.__insn, c_void_p) , len(self.__insn) )
+
+    def reload(self) :                                                                                                                                                                           
+        pass
+
 class DCode :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
@@ -2279,15 +2295,12 @@ class DCode :
 
         ushort = calcsize( '<H' )
 
-        #print "HERE", len(self.__insn), repr(self.__insn), size * ushort
-
         real_j = 0
         j = 0
         while j < (size * ushort) :
             # handle special instructions
             if real_j in self.__h_special_bytecodes :
                 special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
-
 
                 self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
 
@@ -2301,7 +2314,9 @@ class DCode :
 
                 if op_value in DALVIK_OPCODES :
                     #print "BEFORE J === ", j, self.__current_pos 
+#                    operands, special = self._analyze_mnemonic2( op_value, DALVIK_OPCODES[ op_value ] ) 
                     operands, special = self._analyze_mnemonic( op_value, DALVIK_OPCODES[ op_value ])
+#                    print operands, special, DALVIK_OPCODES[ op_value ]
 
                     if special != None :
                         self.__h_special_bytecodes[ special[0] + real_j ] = special[1]
@@ -2318,27 +2333,30 @@ class DCode :
     def _extract_values(self, i) :
         return MAP_EXTRACT_VALUES[i]( self.__insn, self.__current_pos )
 
-    def _analyze_mnemonic(self, op_value, mnemonic) :
-#        print op_value, mnemonic, self.__current_pos
+    def _analyze_mnemonic2(self, op_value, mnemonic) :
+        t1 = time.time()
+
+        name, lib, dvm = self.__CM.get_all_engine()
+        lib.add_code( dvm, cast(self.__insn, c_void_p) , len(self.__insn), self.__current_pos )
+        t2 = time.time()
+        self.__current_pos += self.__CM.exchange_tab[0]
+        operands = [ ["v", i] for i in self.__CM.exchange_tab[1:self.__CM.len_tab.value] ]
+
+
         special = False
         if len(mnemonic) == 6 :
             special = True
 
-        operands = []
-        for i in mnemonic[3] :
-            r = self._extract_values(i) 
-#            print "R", r
+        #print operands
 
-            self.__current_pos += r[0]
-            operands.extend( r[1] )
-#            print operands
+        operands[0][0] = "OP" 
+        if mnemonic[4] != {} :
+            for i in range(1, len(operands)) :
+                if i in mnemonic[4] :
+                    operands[i][0] = mnemonic[4][i]
 
-        operands[0] = [ "OP", operands[0] ]
-        for i in range(1, len(operands)) :
-            if i in mnemonic[4] :
-                operands[i] = [ mnemonic[4][i], operands[i] ]
-            else :
-                operands[i] = [ 'v', operands[i] ]
+        t3 = time.time()
+#        print operands
 
         # SPECIFIC OPCODES
         if op_value >= 0x6e and op_value <= 0x72 :
@@ -2356,6 +2374,51 @@ class DCode :
             operands.append( operands.pop(2) )
             operands.pop(1)
 
+        #print operands, mnemonic
+
+        t4 = time.time()
+
+        print '-> %0.8f %0.8f %0.8f' % ((t2-t1, t3-t2, t4-t3))
+
+        if special :
+            return operands, (operands[2][1], mnemonic[-1])
+        return operands, None
+    
+    def _analyze_mnemonic(self, op_value, mnemonic) :
+        special = False
+        if len(mnemonic) == 6 :
+            special = True
+
+        operands = []
+        for i in mnemonic[3] :
+            r = self._extract_values(i) 
+
+            self.__current_pos += r[0]
+            operands.extend( [ [ "v", j ] for j in r[1] ] )
+
+        operands[0][0] = "OP" 
+        if mnemonic[4] != {} :
+            for i in range(1, len(operands)) :
+                if i in mnemonic[4] :
+                    operands[i][0] = mnemonic[4][i]
+
+        # SPECIFIC OPCODES
+        if op_value >= 0x6e and op_value <= 0x72 :
+            if operands[2][1] == 5 :
+                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]    
+            else :
+                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]]
+
+        elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
+            NNNN = operands[3][1] + operands[1][1] + 1
+
+            for i in range(operands[3][1] + 1, NNNN - 1) :
+                operands.append( ["v", i ] )
+
+            operands.append( operands.pop(2) )
+            operands.pop(1)
+
+        # SPECIAL OPCODES
         if special :
             return operands, (operands[2][1], mnemonic[-1])
         return operands, None
@@ -2417,7 +2480,10 @@ class DalvikCode :
 
         ushort = calcsize( '=H' )
 
-        self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+        if self.__CM.get_engine() == ".so" :
+            self._code = DCodeNatif( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+        else :
+            self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
         if (self.insns_size.get_value() % 2 == 1) :
             self.__padding = SV( '=H', buff.read( 2 ) )
@@ -2671,7 +2737,14 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self) :
+    def __init__(self, engine=["python"]) :
+        self.engine = engine
+
+        if engine[0] == ".so" :
+            self.exchange_tab = (c_int * 255)()
+            self.len_tab = c_int()
+            engine[1].setup_exchange_buffer( engine[2], cast(self.exchange_tab, POINTER(c_int)), addressof( self.len_tab ) )
+
         self.__manage_item = {}
         self.__manage_item_off = []
         self.__offsets = {}
@@ -2680,6 +2753,12 @@ class ClassManager :
 
         self.__cached_type_list = {}
         self.__cached_proto = {}
+
+    def get_engine(self) :
+        return self.engine[0]
+
+    def get_all_engine(self) :
+        return self.engine
 
     def add_offset(self, off, obj) :
         x = OffObj( off )
@@ -2775,11 +2854,11 @@ class ClassManager :
         return idx
 
 class MapList :
-    def __init__(self, off, buff) :
-        self.__CM = ClassManager()
+    def __init__(self, cm, off, buff) :
+        self.CM = cm
         buff.set_idx( off )
 
-        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+        self.__offset = self.CM.add_offset( buff.get_idx(), self )
 
         self.size = SV( '=L', buff.read( 4 ) )
 
@@ -2787,12 +2866,12 @@ class MapList :
         for i in range(0, self.size) :
             idx = buff.get_idx()
 
-            mi = MapItem( buff, self.__CM )
+            mi = MapItem( buff, self.CM )
             self.map_item.append( mi )
 
             buff.set_idx( idx + mi.get_length() )
 
-            self.__CM.add_type_item( TYPE_MAP_ITEM[ mi.get_type() ], mi.get_item() )
+            self.CM.add_type_item( TYPE_MAP_ITEM[ mi.get_type() ], mi.get_item() )
 
         for i in self.map_item :
             i.reload()
@@ -2820,22 +2899,16 @@ class MapList :
                  [ x.get_raw() for x in self.map_item ]
 
     def get_class_manager(self) :
-        return self.__CM
-
-class Data :
-    def __init__(self, buff) :
-        pass
+        return self.CM
 
 class DalvikVMFormat(bytecode._Bytecode) :
-    def __init__(self, buff) :
+    def __init__(self, buff, engine=["python"]) :
         super(DalvikVMFormat, self).__init__( buff )
+        
+        self.CM = ClassManager( engine )
 
-        self.load_class()
-
-    def load_class(self) :
         self.__header = HeaderItem( 0, self, ClassManager() )
-
-        self.map_list = MapList( self.__header.get_value().map_off, self )
+        self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
 
         self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
         self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
