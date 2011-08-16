@@ -2064,7 +2064,7 @@ class DBCSpe :
 
 class DBC :
     def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
-        self.__CM = class_manager
+        self.CM = class_manager
         self.type_ins_tag = NORMAL_DVM_INS
 
         self.op_name = op_name
@@ -2194,15 +2194,15 @@ class DBC :
 
     def _more_info(self, c, v) :
         if "string@" == c :
-            return [ c, v, repr(self.__CM.get_string(v)) ]
+            return [ c, v, repr(self.CM.get_string(v)) ]
         elif "meth@" == c :
-            m = self.__CM.get_method(v)
+            m = self.CM.get_method(v)
             return [ c, v, m[0], m[1][0], m[1][1], m[2] ]
         elif "field@" == c :
-            f = self.__CM.get_field(v)
+            f = self.CM.get_field(v)
             return [ c, v, f[0], f[1], f[2] ]
         elif "type@" == c :
-            return [ c, v, self.__CM.get_type(v) ]
+            return [ c, v, self.CM.get_type(v) ]
         return [ c, v ]
 
 def op_B_A_OP(insn, current_pos) :
@@ -2272,44 +2272,72 @@ MAP_EXTRACT_VALUES = {
     OPCODE_00       :   op_00,
 }
 
+import json
+
 class OPERANDS_NATIF_T(Structure) :
     pass
 OPERANDS_NATIF_T._fields_ = [ ("value", c_int),
                               ("next", POINTER(OPERANDS_NATIF_T)),
                             ]
 
-class DBCNatif :
+class DBCNatif(DBC) :
     def __init__(self, class_manager, ref) :
-        self.__CM = class_manager
+        self.CM = class_manager
         self.__internal_ref = ref
 
+        self.op_value = self.CM.get_all_engine()[1].get_opvalue( self.__internal_ref )
         self.op_name = None
         self.operands = None
+        self.formatted_operands = []
+        self.relative_operands = []
 
     def get_name(self) :
         if self.op_name == None :
-            self.op_name = DALVIK_OPCODES[ self.__CM.get_all_engine()[1].get_opvalue( self.__internal_ref ) ][1]
+            self.op_name = DALVIK_OPCODES[ self.op_value ][1]
         return self.op_name
 
     def get_operands(self) :
         if self.operands == None :
-            self.operands = []
-            values = self.__CM.get_all_engine()[1].get_operands( self.__internal_ref )
+            self.operands = json.loads( '[[["v", 0], ["v", 0], ["type@", 782, "[Ljava/lang/Class;"]]]' )
+           #self.CM.get_all_engine()[1].get_operands2( self.__internal_ref ) ) 
+        return self.operands
+
+    def get_operands2(self) :
+        if self.operands == None :
+            self.operands = [ ["OP", self.op_value] ]
+            values = self.CM.get_all_engine()[1].get_operands( self.__internal_ref )
 
             if values != 0 :
                 ivalues = cast(values, POINTER(OPERANDS_NATIF_T)).contents
+                j = 1 
+
                 while True :
                     self.operands.append( [ 'v', ivalues.value ] )
+                    #print "iciii", j, ivalues.value
+                    if not ((self.op_value >= 0x6e and self.op_value <= 0x72) or (self.op_value >= 0x74 and self.op_value <= 0x78) or self.op_value == 0x25) :
+                        if DALVIK_OPCODES[ self.op_value ][4] != {} :
+                            if j in DALVIK_OPCODES[ self.op_value ][4] :
+                                self.operands[-1][0] = DALVIK_OPCODES[ self.op_value ][4][j]
                     #print ivalues.value
                     try :
                         ivalues = ivalues.next[0]
                     except ValueError :
                         break
 
+                    j += 1
+        
+            if self.op_value >= 0x6e and self.op_value <= 0x72 :
+                self.operands[-1][0] = "meth@"
+            elif self.op_value >= 0x74 and self.op_value <= 0x78 :
+                self.operands[-1][0] = "meth@"
+            elif self.op_value == 0x25 :
+                self.operands[-1][0] = "type@"
+
+            self._reload()
         return self.operands
 
     def get_length(self) :
-        return self.__CM.get_all_engine()[1].get_length( self.__internal_ref )
+        return self.CM.get_all_engine()[1].get_length( self.__internal_ref )
 
 class DCodeNatif :
     def __init__(self, class_manager, size, buff) :
@@ -2327,13 +2355,9 @@ class DCodeNatif :
 
     def get(self) :
         if self.__bytecodes == [] :
-            print self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )
-
-
             for i in range(0, self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )) :
                 dbc_ref = self.__internal_lib_ref.get_bytecode_at( self.__internal_lib_code_ref, i )
                 self.__bytecodes.append( DBCNatif( self.__CM, dbc_ref ) )
-
         return self.__bytecodes
 
 class DCode :
@@ -2419,6 +2443,7 @@ class DCode :
                 operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]]
 
         elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
+
             NNNN = operands[3][1] + operands[1][1] + 1
 
             for i in range(operands[3][1] + 1, NNNN - 1) :

@@ -486,7 +486,7 @@ vector<unsigned long> *_00_OP_SAAAA(Buff *b) {
 vector<unsigned long> *B_A_OP_SCCCC(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
-    unsigned short si16;
+    signed short si16;
 
     v->push_back( 4 );
 
@@ -668,26 +668,78 @@ void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigne
     unsigned long meth = (*v)[3];
     vector<unsigned long>::iterator it;
 
-    //printf("NB = %d %d\n", nb_arg, meth);
+    /*
+    printf("NB = %d %d\n", nb_arg, meth);
+    for(int ii=0; ii < v->size(); ii++) {
+        printf("%d ", (*v)[ii]);
+    }                    
+    printf("\n");
+    */
 
     if (nb_arg == 5) {
         unsigned long op_1 = (*v)[1];
         //operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]
-        it=v->begin()+5;
-        v->insert( v->begin()+1, it, it+5+nb_arg );
-        v->erase( v->begin()+nb_arg+1, v->end() );
+        it=v->begin()+4;
+        v->insert( v->begin()+1, it, it+4+nb_arg );
+        v->erase( v->begin()+nb_arg, v->end() );
 
         v->push_back( op_1 );
         v->push_back( meth );
+/*
+        printf("OP1 = %d\n", op_1);
+        for(int ii=0; ii < v->size(); ii++) {
+            printf("%d ", (*v)[ii]);
+        }                    
+        printf("\n");
+        
+        exit(0);
+*/
     }
     else {
         // operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]];
-        it=v->begin()+5;
-        v->insert( v->begin()+1, it, it+5+nb_arg ); 
+        it=v->begin()+4;
+        v->insert( v->begin()+1, it, it+4+nb_arg ); 
         v->erase( v->begin()+nb_arg+1, v->end() );
     
         v->push_back( meth );
     }
+}
+
+void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+    unsigned long nb_arg = (*v)[1];
+    unsigned long meth = (*v)[2];
+    vector<unsigned long>::iterator it;
+    
+/*    printf("NB = %d %d\n", nb_arg, meth);
+    for(int ii=0; ii < v->size(); ii++) {
+        printf("%d ", (*v)[ii]);
+    }
+    printf("\n");
+*/
+
+/*            NNNN = operands[3][1] + operands[1][1] + 1
+
+            for i in range(operands[3][1] + 1, NNNN - 1) :
+                operands.append( ["v", i ] )
+
+            operands.append( operands.pop(2) )
+            operands.pop(1)
+*/
+
+    unsigned long NNNN = (*v)[3] + (*v)[1] + 1;
+
+    for(int ii = (*v)[3]+1; ii < NNNN - 1; ii++) {
+        v->push_back( ii );
+    //    printf("II = %d\n", ii);
+    }
+
+    v->push_back( meth );
+    v->erase( v->begin()+1, v->begin()+3 );
+
+    /*for(int ii=0; ii < v->size(); ii++) {
+        printf("%d ", (*v)[ii]);
+    }
+    printf("\n");*/
 }
 
 typedef struct fillarraydata {
@@ -697,8 +749,9 @@ typedef struct fillarraydata {
 } fillarraydata_t;
 
 void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
-    unsigned long value = (*v)[3] + b->get_current_idx();
+    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
 
+//    printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[3], value);
     if (*min_data > value) {
         *min_data = value;
     }
@@ -715,7 +768,7 @@ typedef struct sparseswitch {
 void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
 //    printf("SPARSESWITCH\n"); fflush(stdout);
 
-    unsigned long value = (*v)[3] + b->get_current_idx();
+    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
 
     if (*min_data > value) {
         *min_data = value;
@@ -734,8 +787,9 @@ typedef struct packedswitch {
 void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
 //    printf("PACKEDSWITCH\n"); fflush(stdout);
 
-    unsigned long value = (*v)[3] + b->get_current_idx();
+    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
 
+    //printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[3], value);
     if (*min_data > value) {
         *min_data = value;
     }
@@ -759,12 +813,14 @@ class DBC {
         unsigned char op_value;
         size_t op_length;
         vector<unsigned long> *voperands;
+        LOperands_t *lo;
 
     public :
         DBC(unsigned char value, vector<unsigned long> *v, size_t length) {
             op_value = value;
             voperands = v;
             op_length = length;
+            lo = NULL;
         }
 
         int get_opvalue() {
@@ -774,6 +830,10 @@ class DBC {
         LOperands_t *get_operands() {
             if (voperands->size() == 1) {
                 return NULL;
+            }
+
+            if (lo != NULL) {
+                return lo;
             }
 
             LOperands_t *lo = (LOperands_t *)malloc( sizeof(LOperands_t) );
@@ -833,8 +893,8 @@ class DCode {
 
                 v = (*parsebytecodes)[ op_value ]( b );
                 
-                /*
-                printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
+                
+                /*printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
                 for(int ii=0; ii < v->size(); ii++) {
                     printf("%d ", (*v)[ii]);
                 }                    
@@ -854,7 +914,7 @@ class DCode {
                 } else if (op_value >= 0x6e && op_value <= 0x72) {
                     (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
                 } else if ((op_value >= 0x74 && op_value <= 0x78) || op_value == 0x25) {
-                    //(*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
                 }
 
                 /*
@@ -1097,11 +1157,11 @@ class DVM {
        
             bytecodes[ 0x73 ] = &OP_00;
             
-            bytecodes[ 0x74 ] = &AA_OP_BBBB_CCCC;
-            bytecodes[ 0x75 ] = &AA_OP_BBBB_CCCC;
-            bytecodes[ 0x76 ] = &AA_OP_BBBB_CCCC;
-            bytecodes[ 0x77 ] = &AA_OP_BBBB_CCCC;
-            bytecodes[ 0x78 ] = &AA_OP_BBBB_CCCC;
+            bytecodes[ 0x74 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x74 ] = &INVOKERANGE;
+            bytecodes[ 0x75 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x75 ] = &INVOKERANGE;
+            bytecodes[ 0x76 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x76 ] = &INVOKERANGE;
+            bytecodes[ 0x77 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x77 ] = &INVOKERANGE;
+            bytecodes[ 0x78 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x78 ] = &INVOKERANGE;
 
             bytecodes[ 0x7b ] = &B_A_OP;
             bytecodes[ 0x7c ] = &B_A_OP;
@@ -1289,5 +1349,8 @@ extern "C" LOperands_t *get_operands(DBC *d) {
     return d->get_operands();
 }
 
+extern "C" const char *get_operands2(DBC *d) {
+    return "[['v', 0], ['v', 0], ['type@', 782, '[Ljava/lang/Class;']]";
+}
 
 #endif
