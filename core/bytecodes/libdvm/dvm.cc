@@ -129,6 +129,10 @@ class Buff {
             return (bdata + (bcurrent_idx - len));
         }
         
+        const char *readat(size_t pos, size_t len) {
+            return (bdata + (pos));
+        }
+
         const char *read_false(size_t len) {
             return (bdata + (bcurrent_idx));
         }
@@ -300,22 +304,6 @@ class MapList : public Basic {
         }
 };
 
-// 0x5b : [ "22c", "iput-object",          "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-// 0x5b : OPCODE_B_A_OP, OPCODE_CCCC 
-
-//OPCODE_B_A_OP   :   op_B_A_OP,
-//OPCODE_CCCC     :   op_CCCC,
-
-/*
-def op_B_A_OP(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
-        
-def op_CCCC(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16]]
-*/        
-
 vector<unsigned long> *B_A_OP_CCCC(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
@@ -323,12 +311,14 @@ vector<unsigned long> *B_A_OP_CCCC(Buff *b) {
 
     v->push_back( 4 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)i16 );
 
     return v;
@@ -340,15 +330,18 @@ vector<unsigned long> *B_A_OP_CCCC_G_F_E_D(Buff *b) {
 
     v->push_back( 6 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)i16 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xf) );
 
     v->push_back( (unsigned long)((i16 >> 4) & 0xf) );
@@ -364,7 +357,8 @@ vector<unsigned long> *OP_00(Buff *b) {
 
     v->push_back( 2 );
     
-    memcpy( &i8, b->read( 1 ), 1 );
+    i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
+    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
     b->read(1);
@@ -377,13 +371,15 @@ vector<unsigned long> *AA_OP_SBBBB(Buff *b) {
     unsigned short i16;
 
     v->push_back( 4 );
-    
-    memcpy( &i16, b->read( 2 ), 2 );
+   
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     signed short si16;
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     return v;
@@ -391,14 +387,15 @@ vector<unsigned long> *AA_OP_SBBBB(Buff *b) {
 
 vector<unsigned long> *SB_A_OP(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
-    signed short i16;
+    signed short si16;
 
     v->push_back( 2 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
+    v->push_back( (unsigned long)(si16 & 0xff) );
+    v->push_back( (unsigned long)((si16 >> 8) & 0xf) );
+    v->push_back( (unsigned long)((si16 >> 12) & 0xf) );
 
     return v;
 }
@@ -409,7 +406,8 @@ vector<unsigned long> *AA_OP(Buff *b) {
 
     v->push_back( 2 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
@@ -421,12 +419,14 @@ vector<unsigned long> *AA_OP_BBBB(Buff *b) {
     unsigned short i16;
 
     v->push_back( 4 );
-    
-    memcpy( &i16, b->read( 2 ), 2 );
+   
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
     return v;
@@ -435,14 +435,16 @@ vector<unsigned long> *AA_OP_BBBB(Buff *b) {
 vector<unsigned long> *OP_SAA(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned char i8;
+    signed char si8;
 
     v->push_back( 2 );
     
-    memcpy( &i8, b->read( 1 ), 1 );
+    i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
+    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
-    signed char si8;
-    memcpy( &si8, b->read( 1 ), 1 );
+    si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
+    //memcpy( &si8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(si8) );
 
     return v;
@@ -454,7 +456,8 @@ vector<unsigned long> *B_A_OP(Buff *b) {
 
     v->push_back( 2 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
@@ -465,14 +468,16 @@ vector<unsigned long> *B_A_OP(Buff *b) {
 vector<unsigned long> *_00_OP_SAAAA(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
+    signed short si16;
 
     v->push_back( 4 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
 
-    signed short si16;
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     return v;
@@ -481,17 +486,19 @@ vector<unsigned long> *_00_OP_SAAAA(Buff *b) {
 vector<unsigned long> *B_A_OP_SCCCC(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
+    unsigned short si16;
 
     v->push_back( 4 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
-    unsigned short si16;
 
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)si16 );
 
     return v;
@@ -503,11 +510,13 @@ vector<unsigned long> *AA_OP_CC_BB(Buff *b) {
 
     v->push_back( 4 );
     
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
@@ -522,14 +531,17 @@ vector<unsigned long> *AA_OP_BB_SCC(Buff *b) {
 
     v->push_back( 4 );
     
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    memcpy( &i8, b->read( 1 ), 1 );
+    i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
+    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
-    memcpy( &si8, b->read( 1 ), 1 );
+    si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
+    //memcpy( &si8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(si8) );
 
     return v;
@@ -538,16 +550,18 @@ vector<unsigned long> *AA_OP_BB_SCC(Buff *b) {
 vector<unsigned long> *AA_OP_SBBBBBBBB(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
-    signed int i32;
+    signed int si32;
 
     v->push_back( 6 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    memcpy( &i32, b->read( 4 ), 4 );
-    v->push_back( (unsigned long)(i32) );
+    si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->read(4))) );
+    //memcpy( &si32, b->read( 4 ), 4 );
+    v->push_back( (unsigned long)(si32) );
 
     return v;
 }
@@ -557,15 +571,18 @@ vector<unsigned long> *AA_OP_BBBB_CCCC(Buff *b) {
     unsigned short i16;
 
     v->push_back( 6 );
-    
-    memcpy( &i16, b->read( 2 ), 2 );
+
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
     return v;
@@ -574,18 +591,21 @@ vector<unsigned long> *AA_OP_BBBB_CCCC(Buff *b) {
 vector<unsigned long> *AA_OP_SBBBB_SBBBB(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
+    signed short si16;
 
     v->push_back( 6 );
     
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    signed short si16;
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
-    
-    memcpy( &si16, b->read( 2 ), 2 );
+   
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     return v;
@@ -594,24 +614,29 @@ vector<unsigned long> *AA_OP_SBBBB_SBBBB(Buff *b) {
 vector<unsigned long> *AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b) {
     vector<unsigned long> *v = new vector<unsigned long>;
     unsigned short i16;
+    signed short si16;
 
     v->push_back( 10 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    signed short si16;
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
     
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    memcpy( &si16, b->read( 2 ), 2 );
+    si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     return v;
@@ -623,13 +648,16 @@ vector<unsigned long> *_00_OP_AAAA_BBBB(Buff *b) {
 
     v->push_back( 6 );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
-    memcpy( &i16, b->read( 2 ), 2 );
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
     return v;
@@ -671,12 +699,48 @@ typedef struct fillarraydata {
 void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
     unsigned long value = (*v)[3] + b->get_current_idx();
 
-    //printf("ADD %d %d\n", (*v)[3], value);
+    if (*min_data > value) {
+        *min_data = value;
+    }
+
+    d->push_back( 0 );
+    d->push_back( value );
+}
+
+typedef struct sparseswitch {
+    unsigned short ident;
+    unsigned short size;
+} sparseswitch_t;
+
+void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+//    printf("SPARSESWITCH\n"); fflush(stdout);
+
+    unsigned long value = (*v)[3] + b->get_current_idx();
 
     if (*min_data > value) {
         *min_data = value;
     }
 
+    d->push_back( 1 );
+    d->push_back( value );
+}
+
+typedef struct packedswitch {
+    unsigned short ident;
+    unsigned short size;
+    unsigned long first_key;
+} packedswitch_t;
+
+void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+//    printf("PACKEDSWITCH\n"); fflush(stdout);
+
+    unsigned long value = (*v)[3] + b->get_current_idx();
+
+    if (*min_data > value) {
+        *min_data = value;
+    }
+
+    d->push_back( 2 );
     d->push_back( value );
 }
 
@@ -685,16 +749,78 @@ void DEFAULT(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsign
 
 }
 
+typedef struct LOperands {
+    unsigned long value;
+    struct LOperands *next;
+} LOperands_t;
+
+class DBC {
+    public :
+        unsigned char op_value;
+        size_t op_length;
+        vector<unsigned long> *voperands;
+
+    public :
+        DBC(unsigned char value, vector<unsigned long> *v, size_t length) {
+            op_value = value;
+            voperands = v;
+            op_length = length;
+        }
+
+        int get_opvalue() {
+            return op_value;
+        }
+
+        LOperands_t *get_operands() {
+            if (voperands->size() == 1) {
+                return NULL;
+            }
+
+            LOperands_t *lo = (LOperands_t *)malloc( sizeof(LOperands_t) );
+            LOperands_t *nlo;
+
+            nlo = lo;
+            for(int ii=1; ii < voperands->size(); ii++) {
+                nlo->value = (*voperands)[ii];
+                
+                if (ii+1 == voperands->size())
+                    break;
+
+                nlo->next = (LOperands_t *)malloc( sizeof(LOperands_t) );
+                nlo = nlo->next;
+            }
+
+            
+            nlo->next = NULL;
+            return lo;
+        }
+
+        size_t get_length() {
+            return op_length;
+        }
+};
+
+class DBCSpe {
+
+    
+};
+
 class DCode {
+    public :
+        vector<DBC *> bytecodes;
+        vector<DBCSpe *> bytecodes_spe;
+
     public :
         DCode() {
 
         }
 
-        DCode(sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> *bytecodes, 
+        DCode(sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> *parsebytecodes, 
               sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes, 
               Buff *b) {
             unsigned char op_value;
+            unsigned long size;
+
             vector<unsigned long> *v;
             vector<unsigned long> *datas;
             unsigned long min_data = b->get_end();
@@ -704,30 +830,38 @@ class DCode {
             while (b->empty() == false) {
                 memcpy( &op_value, b->read_false( 1 ), 1 );
             
-                //printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
-                v = (*bytecodes)[ op_value ]( b );
 
-                //for(int ii=0; ii < v->size(); ii++) {
-                //    printf("%d ", (*v)[ii]);
-                //}                    
-                //printf("\n");
+                v = (*parsebytecodes)[ op_value ]( b );
+                
+                /*
+                printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
+                for(int ii=0; ii < v->size(); ii++) {
+                    printf("%d ", (*v)[ii]);
+                }                    
+                printf("\n");
+                */
 
-                //unsigned long size = (*v)[0];
+                size = (*v)[0];
 
                 v->erase(v->begin(), v->begin()+1);
 
                 if (op_value != (*v)[0]) { }
 
-                if (op_value >= 0x6e && op_value <= 0x72) {
-                }
-                else if ((op_value >= 0x74 && op_value <= 0x78) || op_value == 0x25) {
+                if (op_value == 0x26) {
+                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                } else if (op_value >= 0x2b && op_value <= 0x2c) {
+                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                } else if (op_value >= 0x6e && op_value <= 0x72) {
+                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                } else if ((op_value >= 0x74 && op_value <= 0x78) || op_value == 0x25) {
+                    //(*postbytecodes)[ op_value ]( b, v, datas, &min_data );
                 }
 
+                /*
                 if (postbytecodes->count( op_value ) == 0) {
                     DEFAULT( b, v, datas, &min_data );
-                } else {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
-                }
+                } 
+                */
 
                 /*
                 for(int ii=0; ii < v->size(); ii++) {
@@ -737,6 +871,9 @@ class DCode {
 
                 printf("END %d\n", b->get_current_idx());
                 */
+
+                bytecodes.push_back( new DBC(op_value, v, size) );
+
                 if (b->get_current_idx() >= min_data) {
                     break;
                 }
@@ -746,22 +883,47 @@ class DCode {
                 //printf("LAAAAA\n");
                 //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
 
-                for(int ii=0; ii < datas->size(); ii++) {
-                    //printf("%d ", (*datas)[ii]);
+                for(int ii=0; ii < datas->size(); ii+=2) {
+                    //printf("SPECIFIC %d\n", (*datas)[ii]);
 
-                    fillarraydata_t fadt;
+                    if ((*datas)[ii] == 0) {
+                        fillarraydata_t fadt;
 
-                    memcpy( &fadt, b->read( sizeof(fillarraydata_t) ), sizeof(fillarraydata_t) );
-                    //printf("%d %d %d\n", fadt.ident, fadt.element_width, fadt.size);
-                    //FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size")
-                    //FILL_ARRAY_DATA = [ '=HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
+                        memcpy( &fadt, b->readat( (*datas)[ii+1], sizeof(fillarraydata_t) ), sizeof(fillarraydata_t) );
+                        //printf("%d %d %d\n", fadt.ident, fadt.element_width, fadt.size);
+                        //FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size")
+                        //FILL_ARRAY_DATA = [ '=HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
 
-                    b->read( fadt.size * fadt.element_width ); 
+                        b->readat( (*datas)[ii+1] + sizeof(fillarraydata_t), fadt.size * fadt.element_width ); 
+                    } else if ((*datas)[ii] == 1) {
+                        sparseswitch_t sst;
+
+                        memcpy( &sst, b->readat( (*datas)[ii+1], sizeof(sparseswitch_t) ), sizeof(sparseswitch_t) );
+
+                        b->readat( (*datas)[ii+1] + sizeof(sparseswitch_t), sst.size * 4 * 2 );
+                    } else if ((*datas)[ii] == 2) {
+                        packedswitch_t pst;
+
+                        memcpy( &pst, b->readat( (*datas)[ii+1], sizeof(packedswitch_t) ), sizeof(packedswitch_t) );
+                        
+                        b->readat( (*datas)[ii+1] + sizeof(packedswitch_t), pst.size * 4 );
+                    } else {
+                        printf("OOOOPS\n"); fflush(stdout);
+                        exit(0);
+                    }
                 }                    
                 //printf("\n");
 
                 //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
             }
+        }
+
+        int size() {
+            return bytecodes.size() + bytecodes_spe.size();
+        }
+
+        DBC *get_bytecode_at(int i) {
+            return bytecodes[ i ];
         }
 
         void get_code(sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> *bytecodes, Buff *b, unsigned long *values, size_t *values_len) {
@@ -857,9 +1019,9 @@ class DVM {
             
             bytecodes[ 0x29 ] = &_00_OP_SAAAA;
 
-            bytecodes[ 0x2b ] = &AA_OP_SBBBBBBBB;
-            bytecodes[ 0x2c ] = &AA_OP_SBBBBBBBB;
-            
+            bytecodes[ 0x2b ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x2b ] = &PACKEDSWITCH;
+            bytecodes[ 0x2c ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x2c ] = &SPARSESWITCH;
+
             bytecodes[ 0x2d ] = &AA_OP_CC_BB;
             bytecodes[ 0x2e ] = &AA_OP_CC_BB;
             bytecodes[ 0x2f ] = &AA_OP_CC_BB;
@@ -927,11 +1089,11 @@ class DVM {
             bytecodes[ 0x6c ] = &AA_OP_BBBB;
             bytecodes[ 0x6d ] = &AA_OP_BBBB;
 
-            bytecodes[ 0x6e ] = &B_A_OP_CCCC_G_F_E_D;
-            bytecodes[ 0x6f ] = &B_A_OP_CCCC_G_F_E_D;
+            bytecodes[ 0x6e ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6e ] = &INVOKE;
+            bytecodes[ 0x6f ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6f ] = &INVOKE;
             bytecodes[ 0x70 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x70 ] = &INVOKE;
-            bytecodes[ 0x71 ] = &B_A_OP_CCCC_G_F_E_D;
-            bytecodes[ 0x72 ] = &B_A_OP_CCCC_G_F_E_D;
+            bytecodes[ 0x71 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x71 ] = &INVOKE;
+            bytecodes[ 0x72 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x72 ] = &INVOKE;
        
             bytecodes[ 0x73 ] = &OP_00;
             
@@ -1078,11 +1240,11 @@ class DVM {
             d.get_code( &bytecodes, &b, exchange_buffer, len_exchange_buffer );
         }
 
-        int new_code(const char *data, size_t data_len) {
+        DCode *new_code(const char *data, size_t data_len) {
             Buff b = Buff( data, data_len );
-            DCode d = DCode( &bytecodes, &postbytecodes, &b );
+            DCode *d = new DCode( &bytecodes, &postbytecodes, &b );
 
-
+            return d;
         }
 };
 
@@ -1102,8 +1264,30 @@ extern "C" int add_code(DVM &d, const char *data, size_t data_len, size_t curren
    return d.add_code( data, data_len, current_pos );
 }
 
-extern "C" int new_code(DVM &d, const char *data, size_t data_len) {
+extern "C" DCode *new_code(DVM &d, const char *data, size_t data_len) {
    return d.new_code( data, data_len );
 }
+
+
+extern "C" int get_nb_bytecodes(DCode *d) {
+    return d->size();
+}
+
+extern "C" DBC *get_bytecode_at(DCode *d, int i) {
+    return d->get_bytecode_at( i );
+}
+
+extern "C" int get_opvalue(DBC *d) {
+    return d->get_opvalue();
+}
+
+extern "C" int get_length(DBC *d) {
+    return d->get_length();
+}
+
+extern "C" LOperands_t *get_operands(DBC *d) {
+    return d->get_operands();
+}
+
 
 #endif

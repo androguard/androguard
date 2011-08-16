@@ -2272,16 +2272,69 @@ MAP_EXTRACT_VALUES = {
     OPCODE_00       :   op_00,
 }
 
+class OPERANDS_NATIF_T(Structure) :
+    pass
+OPERANDS_NATIF_T._fields_ = [ ("value", c_int),
+                              ("next", POINTER(OPERANDS_NATIF_T)),
+                            ]
+
+class DBCNatif :
+    def __init__(self, class_manager, ref) :
+        self.__CM = class_manager
+        self.__internal_ref = ref
+
+        self.op_name = None
+        self.operands = None
+
+    def get_name(self) :
+        if self.op_name == None :
+            self.op_name = DALVIK_OPCODES[ self.__CM.get_all_engine()[1].get_opvalue( self.__internal_ref ) ][1]
+        return self.op_name
+
+    def get_operands(self) :
+        if self.operands == None :
+            self.operands = []
+            values = self.__CM.get_all_engine()[1].get_operands( self.__internal_ref )
+
+            if values != 0 :
+                ivalues = cast(values, POINTER(OPERANDS_NATIF_T)).contents
+                while True :
+                    self.operands.append( [ 'v', ivalues.value ] )
+                    #print ivalues.value
+                    try :
+                        ivalues = ivalues.next[0]
+                    except ValueError :
+                        break
+
+        return self.operands
+
+    def get_length(self) :
+        return self.__CM.get_all_engine()[1].get_length( self.__internal_ref )
+
 class DCodeNatif :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
         self.__insn = buff
 
-        name, lib, dvm = self.__CM.get_all_engine()
-        lib.new_code( dvm, cast(self.__insn, c_void_p) , len(self.__insn) )
+        self.__bytecodes = []
+
+        self.__internal_lib_name, self.__internal_lib_ref, self.__internal_lib_dvm_ref = self.__CM.get_all_engine()
+        self.__internal_lib_code_ref = self.__internal_lib_ref.new_code( self.__internal_lib_dvm_ref, cast(self.__insn, c_void_p), len(self.__insn) )
+        
 
     def reload(self) :                                                                                                                                                                           
         pass
+
+    def get(self) :
+        if self.__bytecodes == [] :
+            print self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )
+
+
+            for i in range(0, self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )) :
+                dbc_ref = self.__internal_lib_ref.get_bytecode_at( self.__internal_lib_code_ref, i )
+                self.__bytecodes.append( DBCNatif( self.__CM, dbc_ref ) )
+
+        return self.__bytecodes
 
 class DCode :
     def __init__(self, class_manager, size, buff) :
