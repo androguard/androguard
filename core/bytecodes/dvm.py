@@ -26,8 +26,6 @@ from struct import pack, unpack, calcsize
 
 from xml.dom import minidom
 
-from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast, POINTER, pointer
-
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
 
@@ -267,7 +265,7 @@ DALVIK_OPCODES = {
                         0x18 : [ "51l", "const-wide",                     "vAA, #+BBBBBBBBBBBBBBBB", [ OPCODE_AA_OP, OPCODE_SBBBB, OPCODE_SBBBB, OPCODE_SBBBB, OPCODE_SBBBB ], { 2 : "#+", 3 : "#+", 4 : "#+", 5 : "#+" } ],
                         0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "#+" } ],
                         0x1a : [ "21c", "const-string",             "vAA, string@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "string@" } ],
-                        0x1b : [ "31c", "const-string/jumbo",           "vAA, string@BBBBBBBB", [ OPCODE_AA_OP, OPCODE_BBBBBBBB ], { 2 : "#+" } ],
+                        0x1b : [ "31c", "const-string/jumbo",           "vAA, string@BBBBBBBB", [ OPCODE_AA_OP, OPCODE_BBBBBBBB ], { 2 : "string@" } ],
                         0x1c : [ "21c", "const-class",                   "vAA, type@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "type@" } ],
                         0x1d : [ "11x", "monitor-enter",             "vAA", [ OPCODE_AA_OP ], {} ],
                         0x1e : [ "11x", "monitor-exit",              "vAA", [ OPCODE_AA_OP ], {} ],
@@ -461,16 +459,16 @@ DALVIK_OPCODES = {
                         0xd6 : [ "22s", "or-int/lit16",                 "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
                         0xd7 : [ "22s", "xor-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
                         0xd8 : [ "22b", "add-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xd9 : [ "22s", "rsub-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xda : [ "22s", "mul-int/lit8",             "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdb : [ "22s", "div-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdc : [ "22s", "rem-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdd : [ "22s", "and-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xde : [ "22s", "or-int/lit8",                   "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdf : [ "22s", "xor-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe0 : [ "22s", "shl-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe1 : [ "22s", "shr-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe2 : [ "22s", "ushr-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xd9 : [ "22b", "rsub-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xda : [ "22b", "mul-int/lit8",             "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xdb : [ "22b", "div-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xdc : [ "22b", "rem-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xdd : [ "22b", "and-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xde : [ "22b", "or-int/lit8",                   "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xdf : [ "22b", "xor-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xe0 : [ "22b", "shl-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xe1 : [ "22b", "shr-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
+                        0xe2 : [ "22b", "ushr-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
                         
                         # UNUSED OPCODES
                         0xe3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
@@ -2272,13 +2270,11 @@ MAP_EXTRACT_VALUES = {
     OPCODE_00       :   op_00,
 }
 
-import json
-
-class OPERANDS_NATIF_T(Structure) :
-    pass
-OPERANDS_NATIF_T._fields_ = [ ("value", c_int),
-                              ("next", POINTER(OPERANDS_NATIF_T)),
-                            ]
+#class OPERANDS_NATIF_T(Structure) :
+#    pass
+#OPERANDS_NATIF_T._fields_ = [ ("value", c_int),
+#                              ("next", POINTER(OPERANDS_NATIF_T)),
+#                            ]
 
 class DBCNatif(DBC) :
     def __init__(self, class_manager, ref) :
@@ -2298,7 +2294,7 @@ class DBCNatif(DBC) :
 
     def get_operands(self) :
         if self.operands == None :
-            self.operands = json.loads( '[[["v", 0], ["v", 0], ["type@", 782, "[Ljava/lang/Class;"]]]' )
+            self.operands = [] 
            #self.CM.get_all_engine()[1].get_operands2( self.__internal_ref ) ) 
         return self.operands
 
@@ -2346,18 +2342,20 @@ class DCodeNatif :
 
         self.__bytecodes = []
 
-        self.__internal_lib_name, self.__internal_lib_ref, self.__internal_lib_dvm_ref = self.__CM.get_all_engine()
-        self.__internal_lib_code_ref = self.__internal_lib_ref.new_code( self.__internal_lib_dvm_ref, cast(self.__insn, c_void_p), len(self.__insn) )
-        
+        self.__internal_dcode = self.__CM.get_all_engine()[1].new_code( self.__insn )
 
     def reload(self) :                                                                                                                                                                           
         pass
 
     def get(self) :
         if self.__bytecodes == [] :
-            for i in range(0, self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )) :
-                dbc_ref = self.__internal_lib_ref.get_bytecode_at( self.__internal_lib_code_ref, i )
-                self.__bytecodes.append( DBCNatif( self.__CM, dbc_ref ) )
+            print self.__internal_dcode.get_nb_bytecodes()
+
+            self.__bytecodes = self.__internal_dcode.get_bytecodes()
+
+        #    for i in range(0, self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )) :
+        #        dbc_ref = self.__internal_lib_ref.get_bytecode_at( self.__internal_lib_code_ref, i )
+        #        self.__bytecodes.append( DBCNatif( self.__CM, dbc_ref ) )
         return self.__bytecodes
 
 class DCode :
@@ -2558,7 +2556,7 @@ class DalvikCode :
 
         ushort = calcsize( '=H' )
 
-        if self.__CM.get_engine() == ".so" :
+        if self.__CM.get_engine() == "native" :
             self._code = DCodeNatif( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
         else :
             self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
@@ -2818,11 +2816,6 @@ class ClassManager :
     def __init__(self, engine=["python"]) :
         self.engine = engine
 
-        if engine[0] == ".so" :
-            self.exchange_tab = (c_int * 255)()
-            self.len_tab = c_int()
-            engine[1].setup_exchange_buffer( engine[2], cast(self.exchange_tab, POINTER(c_int)), addressof( self.len_tab ) )
-
         self.__manage_item = {}
         self.__manage_item_off = []
         self.__offsets = {}
@@ -2985,7 +2978,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         
         self.CM = ClassManager( engine )
 
-        self.__header = HeaderItem( 0, self, ClassManager() )
+        self.__header = HeaderItem( 0, self, ClassManager( engine ) )
         self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
 
         self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )

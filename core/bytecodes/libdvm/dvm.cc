@@ -17,6 +17,8 @@
  You should have received a copy of the GNU Lesser General Public License
  along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <Python.h>
+
 #ifdef __cplusplus
 
 #include <iostream>
@@ -304,12 +306,9 @@ class MapList : public Basic {
         }
 };
 
-vector<unsigned long> *B_A_OP_CCCC(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long B_A_OP_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     unsigned short *si16;
-
-    v->push_back( 4 );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
@@ -321,14 +320,43 @@ vector<unsigned long> *B_A_OP_CCCC(Buff *b) {
     //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)i16 );
 
-    return v;
+    return 4;
 }
 
-vector<unsigned long> *B_A_OP_CCCC_G_F_E_D(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
-    unsigned short i16;
+const unsigned long OPVALUE = 0;
+const unsigned long REGISTER = 1;
+const unsigned long FIELD = 2;
+const unsigned long METHOD = 3;
+const unsigned long TYPE = 4;
+const unsigned long INTEGER = 5;
+const unsigned long STRING = 6;
 
-    v->push_back( 6 );
+unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = B_A_OP_CCCC( b, v, vdesc );
+
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    (*vdesc)[3] = FIELD;
+
+    return size;
+}
+
+unsigned long B_A_OP_CCCC_3_TYPE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = B_A_OP_CCCC( b, v, vdesc );
+
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    (*vdesc)[3] = TYPE;
+
+    return size;
+}
+
+unsigned long B_A_OP_CCCC_G_F_E_D(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
@@ -348,183 +376,197 @@ vector<unsigned long> *B_A_OP_CCCC_G_F_E_D(Buff *b) {
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
-    return v;
+    return 6;
 }
 
-vector<unsigned long> *OP_00(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long OP_00(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned char i8;
 
-    v->push_back( 2 );
-    
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
     b->read(1);
 
-    return v;
+    vdesc->push_back( OPVALUE );
+
+    return 2;
 }
 
-vector<unsigned long> *AA_OP_SBBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 4 );
-   
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     signed short si16;
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+
+    return 4;
 }
 
-vector<unsigned long> *SB_A_OP(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long SB_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     signed short si16;
 
-    v->push_back( 2 );
-
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16 & 0xff) );
     v->push_back( (unsigned long)((si16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((si16 >> 12) & 0xf) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+
+    return 2;
 }
 
-vector<unsigned long> *AA_OP(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 2 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    
+    return 2;
 }
 
-vector<unsigned long> *AA_OP_BBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 4 );
-   
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    return 4;
 }
 
-vector<unsigned long> *OP_SAA(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_BBBB_2_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+
+    (*vdesc)[2] = FIELD;
+
+    return size;
+}
+
+unsigned long AA_OP_BBBB_2_TYPE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+
+    (*vdesc)[2] = TYPE;
+    
+    return size;
+}
+
+unsigned long AA_OP_BBBB_2_STRING(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+
+    (*vdesc)[2] = STRING;
+    
+    return size;
+}
+
+unsigned long OP_SAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned char i8;
     signed char si8;
 
-    v->push_back( 2 );
-    
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
     si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
-    //memcpy( &si8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(si8) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( INTEGER );
+    
+    return 2;
 }
 
-vector<unsigned long> *B_A_OP(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long B_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 2 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( REGISTER );
+
+    return 2;
 }
 
-vector<unsigned long> *_00_OP_SAAAA(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long _00_OP_SAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed short si16;
 
-    v->push_back( 4 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( INTEGER );
+    
+    return 4;
 }
 
-vector<unsigned long> *B_A_OP_SCCCC(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long B_A_OP_SCCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed short si16;
 
-    v->push_back( 4 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
     v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
 
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)si16 );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+    
+    return 4;
 }
 
-vector<unsigned long> *AA_OP_CC_BB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_CC_BB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 4 );
-    
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( REGISTER );
+
+    return 4;
 }
 
-vector<unsigned long> *AA_OP_BB_SCC(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_BB_SCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     unsigned char i8;
     char si8;
@@ -532,138 +574,125 @@ vector<unsigned long> *AA_OP_BB_SCC(Buff *b) {
     v->push_back( 4 );
     
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    //memcpy( &i8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(i8) );
 
     si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
-    //memcpy( &si8, b->read( 1 ), 1 );
     v->push_back( (unsigned long)(si8) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+
+    return 4;
 }
 
-vector<unsigned long> *AA_OP_SBBBBBBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_SBBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed int si32;
 
-    v->push_back( 6 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->read(4))) );
-    //memcpy( &si32, b->read( 4 ), 4 );
     v->push_back( (unsigned long)(si32) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+    
+    return 6;
 }
 
-vector<unsigned long> *AA_OP_BBBB_CCCC(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_BBBB_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 6 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
-    return v;
+    return 6;
 }
 
-vector<unsigned long> *AA_OP_SBBBB_SBBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed short si16;
 
-    v->push_back( 6 );
-    
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
    
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+    vdesc->push_back( INTEGER );
+    
+    return 6;
 }
 
-vector<unsigned long> *AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed short si16;
 
-    v->push_back( 10 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
     
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &si16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(si16) );
 
-    return v;
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( REGISTER );
+    vdesc->push_back( INTEGER );
+    vdesc->push_back( INTEGER );
+    vdesc->push_back( INTEGER );
+    vdesc->push_back( INTEGER );
+
+    return 10;
 }
 
-vector<unsigned long> *_00_OP_AAAA_BBBB(Buff *b) {
-    vector<unsigned long> *v = new vector<unsigned long>;
+unsigned long _00_OP_AAAA_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
-    v->push_back( 6 );
-
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16 & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    //memcpy( &i16, b->read( 2 ), 2 );
     v->push_back( (unsigned long)(i16) );
 
-    return v;
+    return 6;
 }
 
-void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
     unsigned long nb_arg = (*v)[2];
     unsigned long meth = (*v)[3];
     vector<unsigned long>::iterator it;
@@ -703,43 +732,34 @@ void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigne
     
         v->push_back( meth );
     }
+
+
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    (*vdesc)[ vdesc->size() - 1 ] = METHOD;
 }
 
-void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
     unsigned long nb_arg = (*v)[1];
     unsigned long meth = (*v)[2];
     vector<unsigned long>::iterator it;
-    
-/*    printf("NB = %d %d\n", nb_arg, meth);
-    for(int ii=0; ii < v->size(); ii++) {
-        printf("%d ", (*v)[ii]);
-    }
-    printf("\n");
-*/
-
-/*            NNNN = operands[3][1] + operands[1][1] + 1
-
-            for i in range(operands[3][1] + 1, NNNN - 1) :
-                operands.append( ["v", i ] )
-
-            operands.append( operands.pop(2) )
-            operands.pop(1)
-*/
 
     unsigned long NNNN = (*v)[3] + (*v)[1] + 1;
 
     for(int ii = (*v)[3]+1; ii < NNNN - 1; ii++) {
         v->push_back( ii );
-    //    printf("II = %d\n", ii);
     }
 
     v->push_back( meth );
     v->erase( v->begin()+1, v->begin()+3 );
 
-    /*for(int ii=0; ii < v->size(); ii++) {
-        printf("%d ", (*v)[ii]);
-    }
-    printf("\n");*/
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    (*vdesc)[ vdesc->size() - 1 ] = METHOD;
 }
 
 typedef struct fillarraydata {
@@ -748,8 +768,8 @@ typedef struct fillarraydata {
     unsigned long size;
 } fillarraydata_t;
 
-void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
-    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
+void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
 //    printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[3], value);
     if (*min_data > value) {
@@ -765,10 +785,10 @@ typedef struct sparseswitch {
     unsigned short size;
 } sparseswitch_t;
 
-void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
 //    printf("SPARSESWITCH\n"); fflush(stdout);
 
-    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
+    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
     if (*min_data > value) {
         *min_data = value;
@@ -784,12 +804,12 @@ typedef struct packedswitch {
     unsigned long first_key;
 } packedswitch_t;
 
-void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
 //    printf("PACKEDSWITCH\n"); fflush(stdout);
 
-    unsigned long value = ((*v)[3] * 2) + b->get_current_idx() - 6;
+    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
-    //printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[3], value);
+    //printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[2], value);
     if (*min_data > value) {
         *min_data = value;
     }
@@ -799,7 +819,7 @@ void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, u
 }
 
 
-void DEFAULT(Buff *b, vector<unsigned long> *v, vector<unsigned long> *d, unsigned long *min_data) {
+void DEFAULT(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
 
 }
 
@@ -875,8 +895,8 @@ class DCode {
 
         }
 
-        DCode(sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> *parsebytecodes, 
-              sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes, 
+        DCode(sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes, 
+              sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes, 
               Buff *b) {
             unsigned char op_value;
             unsigned long size;
@@ -888,33 +908,29 @@ class DCode {
             datas = new vector<unsigned long>;
 
             while (b->empty() == false) {
-                memcpy( &op_value, b->read_false( 1 ), 1 );
-            
+                op_value = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read_false(1))) );
 
-                v = (*parsebytecodes)[ op_value ]( b );
-                
-                
-                /*printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
-                for(int ii=0; ii < v->size(); ii++) {
-                    printf("%d ", (*v)[ii]);
-                }                    
-                printf("\n");
-                */
-
-                size = (*v)[0];
-
-                v->erase(v->begin(), v->begin()+1);
+                vector<unsigned long> *v = new vector<unsigned long>;
+                vector<unsigned long> *vdesc = new vector<unsigned long>;
+                size = (*parsebytecodes)[ op_value ]( b, v, vdesc );
 
                 if (op_value != (*v)[0]) { }
 
+                /*
+                if (postbytecodes->count( op_value ) == 0) {
+                    DEFAULT( b, v );
+                } else {
+                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                }*/
+                
                 if (op_value == 0x26) {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
                 } else if (op_value >= 0x2b && op_value <= 0x2c) {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
                 } else if (op_value >= 0x6e && op_value <= 0x72) {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
                 } else if ((op_value >= 0x74 && op_value <= 0x78) || op_value == 0x25) {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
+                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
                 }
 
                 /*
@@ -933,18 +949,32 @@ class DCode {
                 */
 
                 bytecodes.push_back( new DBC(op_value, v, size) );
+                
+                /*printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
+                for(int ii=0; ii < v->size(); ii++) {
+                    printf("%d ", (*v)[ii]);
+                }                    
+                printf(" : "); 
+                for(int ii=0; ii < vdesc->size(); ii++) {
+                    printf("%d ", (*vdesc)[ii]);
+                }                    
+                printf("\n");
+                */
+
+                if (vdesc->size() == 0) { exit(0); };
 
                 if (b->get_current_idx() >= min_data) {
                     break;
                 }
             }
 
+
             if (b->empty() == false) {
                 //printf("LAAAAA\n");
                 //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
 
                 for(int ii=0; ii < datas->size(); ii+=2) {
-                    //printf("SPECIFIC %d\n", (*datas)[ii]);
+                //printf("SPECIFIC %d %d\n", (*datas)[ii], (*datas)[ii+1]);
 
                     if ((*datas)[ii] == 0) {
                         fillarraydata_t fadt;
@@ -973,7 +1003,6 @@ class DCode {
                     }
                 }                    
                 //printf("\n");
-
                 //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
             }
         }
@@ -986,8 +1015,10 @@ class DCode {
             return bytecodes[ i ];
         }
 
-        void get_code(sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> *bytecodes, Buff *b, unsigned long *values, size_t *values_len) {
+        void get_code(sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
+                      Buff *b, unsigned long *values, size_t *values_len) {
             //op_value = unpack( '=B', self.__insn[j] )[0]
+            /*
             unsigned char op_value;
             memcpy( &op_value, b->read_false( 1 ), 1 );
 
@@ -1001,19 +1032,16 @@ class DCode {
             }
 
             //printf("\n");
-            *values_len = v->size();
+            *values_len = v->size();*/
         }
 };
 
 class DVM {
     public :
         debug_t dt;
-        sparse_hash_map<int, vector<unsigned long>*(*)(Buff *)> bytecodes;
-        sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes; 
+        sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> bytecodes;
+        sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes; 
         
-        
-        unsigned long *exchange_buffer;
-        size_t *len_exchange_buffer;
         DCode d;
         Buff b;
     public :
@@ -1046,7 +1074,6 @@ class DVM {
             bytecodes[ 0x10 ] = &AA_OP;
             bytecodes[ 0x11 ] = &AA_OP;
             bytecodes[ 0x12 ] = &SB_A_OP;
-           
 
             bytecodes[ 0x13 ] = &AA_OP_SBBBB;
             bytecodes[ 0x14 ] = &AA_OP_SBBBB_SBBBB;
@@ -1058,7 +1085,7 @@ class DVM {
 
             bytecodes[ 0x19 ] = &AA_OP_SBBBB;
             
-            bytecodes[ 0x1a ] = &AA_OP_BBBB;
+            bytecodes[ 0x1a ] = &AA_OP_BBBB_2_STRING;
             bytecodes[ 0x1c ] = &AA_OP_BBBB;
             
             bytecodes[ 0x1d ] = &AA_OP;
@@ -1066,11 +1093,11 @@ class DVM {
             
             bytecodes[ 0x1f ] = &AA_OP_BBBB;
 
-            bytecodes[ 0x20 ] = &B_A_OP_CCCC;
+            bytecodes[ 0x20 ] = &B_A_OP_CCCC_3_TYPE;
             bytecodes[ 0x21 ] = &B_A_OP;
-            bytecodes[ 0x22 ] = &AA_OP_BBBB;
+            bytecodes[ 0x22 ] = &AA_OP_BBBB_2_TYPE;
 
-            bytecodes[ 0x23 ] = &B_A_OP_CCCC;
+            bytecodes[ 0x23 ] = &B_A_OP_CCCC_3_TYPE;
           
             bytecodes[ 0x26 ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x26 ] = &FILLARRAYDATA;
 
@@ -1119,35 +1146,35 @@ class DVM {
             bytecodes[ 0x50 ] = &AA_OP_CC_BB;
             bytecodes[ 0x51 ] = &AA_OP_CC_BB;
 
-            bytecodes[ 0x52 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x53 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x54 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x55 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x56 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x57 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x58 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x59 ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5a ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5b ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5c ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5d ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5e ] = &B_A_OP_CCCC;
-            bytecodes[ 0x5f ] = &B_A_OP_CCCC;
+            bytecodes[ 0x52 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x53 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x54 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x55 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x56 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x57 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x58 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x59 ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5a ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5b ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5c ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5d ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5e ] = &B_A_OP_CCCC_3_FIELD;
+            bytecodes[ 0x5f ] = &B_A_OP_CCCC_3_FIELD;
             
-            bytecodes[ 0x60 ] = &AA_OP_BBBB;
-            bytecodes[ 0x61 ] = &AA_OP_BBBB;
-            bytecodes[ 0x62 ] = &AA_OP_BBBB;
-            bytecodes[ 0x63 ] = &AA_OP_BBBB;
-            bytecodes[ 0x64 ] = &AA_OP_BBBB;
-            bytecodes[ 0x65 ] = &AA_OP_BBBB;
-            bytecodes[ 0x66 ] = &AA_OP_BBBB;
-            bytecodes[ 0x67 ] = &AA_OP_BBBB;
-            bytecodes[ 0x68 ] = &AA_OP_BBBB;
-            bytecodes[ 0x69 ] = &AA_OP_BBBB;
-            bytecodes[ 0x6a ] = &AA_OP_BBBB;
-            bytecodes[ 0x6b ] = &AA_OP_BBBB;
-            bytecodes[ 0x6c ] = &AA_OP_BBBB;
-            bytecodes[ 0x6d ] = &AA_OP_BBBB;
+            bytecodes[ 0x60 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x61 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x62 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x63 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x64 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x65 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x66 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x67 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x68 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x69 ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x6a ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x6b ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x6c ] = &AA_OP_BBBB_2_FIELD;
+            bytecodes[ 0x6d ] = &AA_OP_BBBB_2_FIELD;
 
             bytecodes[ 0x6e ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6e ] = &INVOKE;
             bytecodes[ 0x6f ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6f ] = &INVOKE;
@@ -1276,13 +1303,6 @@ class DVM {
 
         }
 
-        int setup_exchange_buffer(unsigned long *values, size_t *values_len) {
-            exchange_buffer = values;
-            len_exchange_buffer = values_len;
-
-            return 0;
-        }
-
         int add(const char *data, size_t data_len) {
             Buff b = Buff( data, data_len );
             
@@ -1290,14 +1310,6 @@ class DVM {
             MapList m = MapList( &b );
 
             return 0;   
-        }
-
-        int add_code(const char *data, size_t data_len, size_t current_pos) {
-            //hexdump( (void *)data, data_len );
-
-
-            b.setup( data, data_len, current_pos );
-            d.get_code( &bytecodes, &b, exchange_buffer, len_exchange_buffer );
         }
 
         DCode *new_code(const char *data, size_t data_len) {
@@ -1314,14 +1326,6 @@ extern "C" DVM *init() {
 
 extern "C" int add(DVM &d, const char *data, size_t data_len) {
    return d.add( data, data_len );
-}
-
-extern "C" int setup_exchange_buffer(DVM &d, unsigned long *values, size_t *values_len) {
-    return d.setup_exchange_buffer( values, values_len );
-}
-
-extern "C" int add_code(DVM &d, const char *data, size_t data_len, size_t current_pos) {
-   return d.add_code( data, data_len, current_pos );
 }
 
 extern "C" DCode *new_code(DVM &d, const char *data, size_t data_len) {
@@ -1349,8 +1353,277 @@ extern "C" LOperands_t *get_operands(DBC *d) {
     return d->get_operands();
 }
 
-extern "C" const char *get_operands2(DBC *d) {
-    return "[['v', 0], ['v', 0], ['type@', 782, '[Ljava/lang/Class;']]";
+typedef struct {
+    PyObject_HEAD;
+    DVM *dparent;
+    DCode *d;
+} dvm_DCodeObject;
+
+static void
+DCode_dealloc(dvm_DCodeObject* self)
+{
+    cout<<"Called dcode dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DCode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DCodeObject *self;
+
+    self = (dvm_DCodeObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
+{
+    const char *code;
+    size_t code_len;
+
+    if (self != NULL) {
+        cout<<"Called dcode init\n"; 
+        
+        int ok = PyArg_ParseTuple( args, "s#", &code, &code_len);
+        if(!ok) return -1;
+    
+
+        self->d = self->dparent->new_code( code, code_len );
+    }
+
+    return 0;
+}
+
+static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
+{
+    cout<<"Called get_nb_bytecodes()\n"; 
+
+    return Py_BuildValue("i", self->d->size());
+}
+
+static PyMethodDef DCode_methods[] = {
+    {"get_nb_bytecodes",  (PyCFunction)DCode_get_nb_bytecodes, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DCodeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DCode",             /*tp_name*/
+    sizeof(dvm_DCodeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DCode_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DCode objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DCode_methods,             /* tp_methods */
+    NULL, //Noddy_members,             /* tp_members */
+    NULL, //Noddy_getseters,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DCode_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DCode_new,                 /* tp_new */
+};
+
+typedef struct {
+    PyObject_HEAD;
+    DVM *d;
+} dvm_DVMObject;
+
+static void
+DVM_dealloc(dvm_DVMObject* self)
+{
+    cout<<"Called dvm dealloc\n";
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DVM_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DVMObject *self;
+
+    self = (dvm_DVMObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DVM_init(dvm_DVMObject *self, PyObject *args, PyObject *kwds)
+{
+    if (self != NULL)
+        self->d = new DVM();
+    
+    return 0;
+}
+
+static PyObject *DVM_new_code(dvm_DVMObject *self, PyObject* args)
+{
+    cout<<"Called new code()\n"; 
+
+    PyObject *nc = DCode_new(&dvm_DCodeType, NULL, NULL);
+ 
+    dvm_DCodeObject *dnc = (dvm_DCodeObject *)nc;
+
+    dnc->dparent = self->d;
+    DCode_init( (dvm_DCodeObject *)nc, args, NULL );
+   
+    Py_INCREF( nc );
+
+    return nc;
+}
+
+static PyMethodDef DVM_methods[] = {
+    {"new_code",  (PyCFunction)DVM_new_code, METH_VARARGS, "new code" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DVMType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DVM",             /*tp_name*/
+    sizeof(dvm_DVMObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DVM_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DVM objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DVM_methods,             /* tp_methods */
+    NULL, //Noddy_members,             /* tp_members */
+    NULL, //Noddy_getseters,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DVM_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DVM_new,                 /* tp_new */
+};
+
+static PyMethodDef dvm_methods[] = {
+    {NULL}  /* Sentinel */
+};
+
+/*
+static void PyDelDVM(void *ptr)
+{
+    cout<<"Called PyDelDVM()\n"; 
+    DVM *d = static_cast<DVM *>(ptr);
+    delete d;
+    return;
+}
+
+static void PyDelDCode(void *ptr)
+{
+    cout<<"Called PyDelDCode()\n"; 
+    DCode *d = static_cast<DCode *>(ptr);
+    delete d;
+    return;
+}
+
+PyObject *python_new_DVM(PyObject *, PyObject* args) {
+    DVM *d = new DVM();
+
+    return PyCObject_FromVoidPtr( d, PyDelDVM);
+}
+
+PyObject *python_new_code(PyObject *, PyObject* args)
+{
+    cout<<"Called new code()\n"; 
+    PyObject *pydvm = NULL;
+    const char *code;
+    size_t code_len;
+
+    int ok = PyArg_ParseTuple( args, "Os#", &pydvm, &code, &code_len);
+    if(!ok) return NULL;
+
+    void * temp = PyCObject_AsVoidPtr(pydvm);
+
+    DVM *d = static_cast<DVM *>(temp);
+
+    DCode *nc = d->new_code( code, code_len );
+
+    return PyCObject_FromVoidPtr( nc, PyDelDCode );
+}
+
+static PyMethodDef DVMNativeMethods[] = {
+    {"DVM",  python_new_DVM, METH_VARARGS, "Create new Dalvik Virtual Machine module." },
+    {"new_code",  python_new_code, METH_VARARGS, "new code" },
+    {NULL, NULL, 0, NULL}        
+};*/
+
+extern "C" PyMODINIT_FUNC initdvmnative(void) {
+    PyObject *m;
+
+    dvm_DVMType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DVMType) < 0)
+        return;
+
+    dvm_DCodeType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DCodeType) < 0)
+        return;
+
+    m = Py_InitModule3("dvmnative", dvm_methods, "Example module that creates an extension type.");
+
+    Py_INCREF(&dvm_DVMType);
+    PyModule_AddObject(m, "DVM", (PyObject *)&dvm_DVMType);
+    
+    Py_INCREF(&dvm_DCodeType);
+    PyModule_AddObject(m, "DCode", (PyObject *)&dvm_DCodeType);
+    
+    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
+    //Py_INCREF(SpamError);
+    //PyModule_AddObject(m, "error", SpamError);
 }
 
 #endif
