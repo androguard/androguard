@@ -1,19 +1,18 @@
 SRC	= 	dvm.cc
 
 LDFLAGS = 
-CFLAGS  += 	-Wall       
+CFLAGS  += 	-I/usr/include/python2.6/       
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
 
 CCP		= g++
-CC		= gcc
 
-LIBNAME = libdvm
+LIBNAME = dvmnative
 
-OBJ	= $(SRC:.c=.o)
+OBJ	= $(SRC:.cc=.o)
 
-#.SILENT:
+.SILENT:
 
 all :   $(OBJ) LIBDVM
 
@@ -23,6 +22,6 @@ LIBDVM :
 clean :
 	$(RM) *.o $(LIBNAME).so
 
-%.o   : %.c
-	echo " CC $@"
+%.o   : %.cc
+	echo " CCP $@"
 	$(CCP) $(CFLAGS) -c -o $@ $<
