@@ -40,13 +40,15 @@ if __name__ == "__main__" :
 
 #    new_dvm = u.init()
 
-    a = apk.APK( PATH_INSTALL + "examples/android/TestsAndroguard/bin/TestsAndroguard.apk" )
+#    a = apk.APK( PATH_INSTALL + "examples/android/TestsAndroguard/bin/TestsAndroguard.apk" )
 #    a = apk.APK( PATH_INSTALL + "apks/drweb-600-android-beta.apk" )
-#    a = apk.APK( PATH_INSTALL + "debug/062d5e38dc4618a8b1c6bf3587dc2016a3a3db146aea0d82cc227a18ca21ad13")
+    a = apk.APK( PATH_INSTALL + "debug/062d5e38dc4618a8b1c6bf3587dc2016a3a3db146aea0d82cc227a18ca21ad13")
 
     d = dvm.DalvikVMFormat( a.get_dex(), engine=["native", dvmnative.DVM()] )
 #    d = dvm.DalvikVMFormat( a.get_dex() ) 
     print d
+
+    sys.exit(0)
 
     for method in d.get_methods() :
         print method.get_class_name(), method.get_name(), method.get_descriptor()
@@ -60,7 +62,7 @@ if __name__ == "__main__" :
         idx = 0
         for i in bc.get() :
             #print "\t", "%x" % idx, i.get_name(), i.get_operands()#, i.get_formatted_operands()
-            print "\t", "%x" % idx, i.get_op_value(), i.get_name(), i.get_operands()#, i.get_formatted_operands()
+            print "\t", "%x" % idx, i.get_op_value(), i.get_name(), i.get_operands(), i.get_formatted_operands()
             idx += i.get_length()
 
 #    vm = add( u, new_dvm, a.get_dex() )

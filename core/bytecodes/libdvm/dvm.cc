@@ -323,14 +323,14 @@ unsigned long B_A_OP_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned lon
     return 4;
 }
 
-const unsigned long OPVALUE = 0;
-const unsigned long REGISTER = 1;
-const unsigned long FIELD = 2;
-const unsigned long METHOD = 3;
-const unsigned long TYPE = 4;
-const unsigned long INTEGER = 5;
-const unsigned long STRING = 6;
-const unsigned long INTEGER_BRANCH = 7;
+#define OPVALUE 0
+#define REGISTER 1
+#define FIELD 2
+#define METHOD 3
+#define TYPE 4
+#define INTEGER 5
+#define STRING 6
+#define INTEGER_BRANCH 7
 
 unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned long size = B_A_OP_CCCC( b, v, vdesc );
@@ -485,6 +485,32 @@ unsigned long AA_OP_BBBB_2_STRING(Buff *b, vector<unsigned long> *v, vector<unsi
 
     (*vdesc)[2] = STRING;
     
+    return size;
+}
+
+unsigned long AA_OP_BBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned short i16;
+    unsigned int i32;
+
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    v->push_back( (unsigned long)(i16 & 0xff) );
+    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+
+    i32 = *( reinterpret_cast<unsigned int *>( const_cast<char *>(b->read(4))) );
+    v->push_back( (unsigned long)(i32) );
+
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( REGISTER );
+
+    return 6;
+}
+
+unsigned long AA_OP_BBBBBBBB_2_STRING(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = AA_OP_BBBBBBBB(b, v, vdesc);
+
+    (*vdesc)[2] = STRING;
+
     return size;
 }
 
@@ -752,35 +778,17 @@ void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vec
     unsigned long meth = (*v)[3];
     vector<unsigned long>::iterator it;
 
-    /*
-    printf("NB = %d %d\n", nb_arg, meth);
-    for(int ii=0; ii < v->size(); ii++) {
-        printf("%d ", (*v)[ii]);
-    }                    
-    printf("\n");
-    */
-
     if (nb_arg == 5) {
         unsigned long op_1 = (*v)[1];
-        //operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]
+        
         it=v->begin()+4;
         v->insert( v->begin()+1, it, it+4+nb_arg );
         v->erase( v->begin()+nb_arg, v->end() );
 
         v->push_back( op_1 );
         v->push_back( meth );
-/*
-        printf("OP1 = %d\n", op_1);
-        for(int ii=0; ii < v->size(); ii++) {
-            printf("%d ", (*v)[ii]);
-        }                    
-        printf("\n");
-        
-        exit(0);
-*/
     }
     else {
-        // operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]];
         it=v->begin()+4;
         v->insert( v->begin()+1, it, it+4+nb_arg ); 
         v->erase( v->begin()+nb_arg+1, v->end() );
@@ -794,6 +802,11 @@ void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vec
         vdesc->push_back( REGISTER );
 
     (*vdesc)[ vdesc->size() - 1 ] = METHOD;
+}
+
+void FILLEDNEWARRAY(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+    INVOKE(b, v, vdesc, d, min_data);
+    (*vdesc)[ vdesc->size() - 1 ] = TYPE;
 }
 
 void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
@@ -815,6 +828,11 @@ void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc
         vdesc->push_back( REGISTER );
 
     (*vdesc)[ vdesc->size() - 1 ] = METHOD;
+}
+
+void FILLEDNEWARRAYRANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+    INVOKERANGE(b, v, vdesc, d, min_data);
+    (*vdesc)[ vdesc->size() - 1 ] = TYPE;
 }
 
 typedef struct fillarraydata {
@@ -884,11 +902,6 @@ void DEFAULT(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, ve
 
 }
 
-typedef struct LOperands {
-    unsigned long value;
-    struct LOperands *next;
-} LOperands_t;
-
 class DBC {
     public :
         unsigned char op_value;
@@ -896,7 +909,6 @@ class DBC {
         size_t op_length;
         vector<unsigned long> *voperands;
         vector<unsigned long> *vdescoperands;
-        LOperands_t *lo;
 
     public :
         DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector<unsigned long> *vdesc, size_t length) {
@@ -905,39 +917,10 @@ class DBC {
             voperands = v;
             vdescoperands = vdesc;
             op_length = length;
-            lo = NULL;
         }
 
         int get_opvalue() {
             return op_value;
-        }
-
-        LOperands_t *get_operands() {
-            if (voperands->size() == 1) {
-                return NULL;
-            }
-
-            if (lo != NULL) {
-                return lo;
-            }
-
-            LOperands_t *lo = (LOperands_t *)malloc( sizeof(LOperands_t) );
-            LOperands_t *nlo;
-
-            nlo = lo;
-            for(int ii=1; ii < voperands->size(); ii++) {
-                nlo->value = (*voperands)[ii];
-                
-                if (ii+1 == voperands->size())
-                    break;
-
-                nlo->next = (LOperands_t *)malloc( sizeof(LOperands_t) );
-                nlo = nlo->next;
-            }
-
-            
-            nlo->next = NULL;
-            return lo;
         }
 
         const char *get_opname() {
@@ -949,9 +932,104 @@ class DBC {
         }
 };
 
-class DBCSpe {
+class DBCSpe {  
+    public :
+        virtual const char *get_opname()=0;
+        virtual size_t get_length()=0;
+        virtual size_t get_type()=0;
+};
 
-    
+class FillArrayData : public DBCSpe {
+    public : 
+        fillarraydata_t fadt;
+        char *data;
+        size_t data_size;
+    public :
+        FillArrayData(Buff *b, unsigned long off) {
+            memcpy( &fadt, b->readat( off, sizeof(fillarraydata_t) ), sizeof(fillarraydata_t) );
+            
+            data_size = fadt.size * fadt.element_width;
+            data = (char *)malloc( data_size );
+            memcpy(data, b->readat( off + sizeof(fillarraydata_t), data_size ), data_size);
+        }
+
+        const char *get_opname() {
+            return "FILL-ARRAY-DATA";
+        }
+        
+        size_t get_length() {
+            return ((fadt.size * fadt.element_width + 1) / 2 + 4) * 2;
+        }
+
+        size_t get_type() {
+            return 0;
+        }
+};
+
+class SparseSwitch : public DBCSpe {
+    public : 
+        sparseswitch_t sst;
+        vector<int> keys;
+        vector<int> targets;
+
+    public :
+        SparseSwitch(Buff *b, unsigned long off) {
+            memcpy( &sst, b->readat( off, sizeof(sparseswitch_t) ), sizeof(sparseswitch_t) );
+       
+            int idx = off + sizeof(sparseswitch_t);
+            for(int ii=0; ii < sst.size * 4; ii+=4, idx+=4) {
+                int si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->readat( idx, 4 ))) );
+                keys.push_back( si32 );
+            }
+            
+            for(int ii=0; ii < sst.size * 4; ii+=4, idx+=4) {
+                int si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->readat( idx, 4 ))) );
+                targets.push_back( si32 );
+            }
+        }
+
+        const char *get_opname() {
+            return "SPARSE-SWITCH";
+        }
+        
+        size_t get_length() {
+            return sizeof(sparseswitch_t) + sst.size * 4;
+        }
+        
+        size_t get_type() {
+            return 1;
+        }
+};
+
+class PackedSwitch : public DBCSpe {
+    public : 
+        packedswitch_t pst;
+        vector<int> targets;
+
+    public :
+        PackedSwitch(Buff *b, unsigned long off) {
+            memcpy( &pst, b->readat( off, sizeof(packedswitch_t) ), sizeof(packedswitch_t) );
+
+            int idx = off + sizeof(packedswitch_t) ;
+            for(int ii=0; ii < pst.size; ii+=1) {
+                int si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->readat( idx, 4 ))) );
+                targets.push_back( si32 );
+
+                idx += 4;
+            }
+        }
+
+        const char *get_opname() {
+            return "PACKED-SWITCH";
+        }
+        
+        size_t get_length() {
+            return sizeof(packedswitch_t) + pst.size * 4;
+        }
+        
+        size_t get_type() {
+            return 2;
+        }
 };
 
 class DCode {
@@ -964,8 +1042,8 @@ class DCode {
 
         }
 
-        DCode(sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes, 
-              sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes, 
+        DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
+              vector<void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes,
               vector<const char *> *bytecodes_names,
               Buff *b) {
             unsigned char op_value;
@@ -984,39 +1062,8 @@ class DCode {
                 vector<unsigned long> *vdesc = new vector<unsigned long>;
                 size = (*parsebytecodes)[ op_value ]( b, v, vdesc );
 
-                if (op_value != (*v)[0]) { }
-
-                /*
-                if (postbytecodes->count( op_value ) == 0) {
-                    DEFAULT( b, v );
-                } else {
-                    (*postbytecodes)[ op_value ]( b, v, datas, &min_data );
-                }*/
-                
-                if (op_value == 0x26) {
+                if ((*postbytecodes)[ op_value ] != NULL)
                     (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
-                } else if (op_value >= 0x2b && op_value <= 0x2c) {
-                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
-                } else if (op_value >= 0x6e && op_value <= 0x72) {
-                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
-                } else if ((op_value >= 0x74 && op_value <= 0x78) || op_value == 0x25) {
-                    (*postbytecodes)[ op_value ]( b, v, vdesc, datas, &min_data );
-                }
-
-                /*
-                if (postbytecodes->count( op_value ) == 0) {
-                    DEFAULT( b, v, datas, &min_data );
-                } 
-                */
-
-                /*
-                for(int ii=0; ii < v->size(); ii++) {
-                    printf("%d ", (*v)[ii]);
-                }                    
-                printf("\n");
-
-                printf("END %d\n", b->get_current_idx());
-                */
 
                 bytecodes.push_back( new DBC(op_value, (*bytecodes_names)[ op_value ], v, vdesc, size) );
                 
@@ -1036,38 +1083,16 @@ class DCode {
                 }
             }
 
-
             if (b->empty() == false) {
-                //printf("LAAAAA\n");
-                //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
-
                 for(int ii=0; ii < datas->size(); ii+=2) {
                 //printf("SPECIFIC %d %d\n", (*datas)[ii], (*datas)[ii+1]);
 
                     if ((*datas)[ii] == 0) {
-                        fillarraydata_t fadt;
-
-                        memcpy( &fadt, b->readat( (*datas)[ii+1], sizeof(fillarraydata_t) ), sizeof(fillarraydata_t) );
-                        //printf("%d %d %d\n", fadt.ident, fadt.element_width, fadt.size);
-                        //FILL_ARRAY_DATA_NAMEDTUPLE = namedtuple("FILL_ARRAY_DATA_NAMEDTUPLE", "ident element_width size")
-                        //FILL_ARRAY_DATA = [ '=HHL', FILL_ARRAY_DATA_NAMEDTUPLE ]
-
-                        b->readat( (*datas)[ii+1] + sizeof(fillarraydata_t), fadt.size * fadt.element_width ); 
+                        bytecodes_spe.push_back( new FillArrayData( b, (*datas)[ii+1] ) );
                     } else if ((*datas)[ii] == 1) {
-                        sparseswitch_t sst;
-
-                        memcpy( &sst, b->readat( (*datas)[ii+1], sizeof(sparseswitch_t) ), sizeof(sparseswitch_t) );
-
-                        b->readat( (*datas)[ii+1] + sizeof(sparseswitch_t), sst.size * 4 * 2 );
+                        bytecodes_spe.push_back( new SparseSwitch( b, (*datas)[ii+1] ) );
                     } else if ((*datas)[ii] == 2) {
-                        packedswitch_t pst;
-
-                        memcpy( &pst, b->readat( (*datas)[ii+1], sizeof(packedswitch_t) ), sizeof(packedswitch_t) );
-                        
-                        b->readat( (*datas)[ii+1] + sizeof(packedswitch_t), pst.size * 4 );
-                    } else {
-                        printf("OOOOPS\n"); fflush(stdout);
-                        exit(0);
+                        bytecodes_spe.push_back( new PackedSwitch( b, (*datas)[ii+1] ) );
                     }
                 }                    
                 //printf("\n");
@@ -1082,33 +1107,13 @@ class DCode {
         DBC *get_bytecode_at(int i) {
             return bytecodes[ i ];
         }
-
-        void get_code(sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
-                      Buff *b, unsigned long *values, size_t *values_len) {
-            //op_value = unpack( '=B', self.__insn[j] )[0]
-            /*
-            unsigned char op_value;
-            memcpy( &op_value, b->read_false( 1 ), 1 );
-
-            //printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
-
-            vector<unsigned long> *v = (*bytecodes)[ op_value ]( b );
-
-            for(int ii=0; ii < v->size(); ii++) {
-                //printf("%d ", (*v)[ii]);
-                values[ ii ] = (*v)[ii];
-            }
-
-            //printf("\n");
-            *values_len = v->size();*/
-        }
 };
 
 class DVM {
     public :
         debug_t dt;
-        sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> bytecodes;
-        sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes; 
+        vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> bytecodes;
+        vector<void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes;
 
         vector<const char *> bytecodes_names;
 
@@ -1119,6 +1124,13 @@ class DVM {
             for (int ii=0; ii < 0xff; ii++)
                 bytecodes_names.push_back( NULL );
 
+            for (int ii=0; ii < 0xff; ii++)
+                bytecodes.push_back( NULL );
+
+            for (int ii=0; ii < 0xff; ii++)
+                postbytecodes.push_back( NULL );
+
+            bytecodes_names[ 0x0 ] = "nop";
             bytecodes_names[ 0x0 ] = "nop";
             bytecodes_names[ 0x1 ] = "move";
             bytecodes_names[ 0x2 ] = "move/from16";
@@ -1240,6 +1252,8 @@ class DVM {
             bytecodes_names[ 0x76 ] = "invoke-direct/range";
             bytecodes_names[ 0x77 ] = "invoke-static/range";
             bytecodes_names[ 0x78 ] = "invoke-interface/range";
+            bytecodes_names[ 0x79 ] = "nop";
+            bytecodes_names[ 0x7a ] = "nop";
             bytecodes_names[ 0x7b ] = "neg-int";
             bytecodes_names[ 0x7c ] = "not-int";
             bytecodes_names[ 0x7d ] = "neg-long";
@@ -1355,6 +1369,24 @@ class DVM {
             bytecodes_names[ 0xeb ] = "nop";
             bytecodes_names[ 0xec ] = "nop";
             bytecodes_names[ 0xed ] = "nop";
+            bytecodes_names[ 0xee ] = "nop";
+            bytecodes_names[ 0xef ] = "nop";
+            bytecodes_names[ 0xf0 ] = "nop";
+            bytecodes_names[ 0xf1 ] = "nop";
+            bytecodes_names[ 0xf2 ] = "nop";
+            bytecodes_names[ 0xf3 ] = "nop";
+            bytecodes_names[ 0xf4 ] = "nop";
+            bytecodes_names[ 0xf5 ] = "nop";
+            bytecodes_names[ 0xf6 ] = "nop";
+            bytecodes_names[ 0xf7 ] = "nop";
+            bytecodes_names[ 0xf8 ] = "nop";
+            bytecodes_names[ 0xf9 ] = "nop";
+            bytecodes_names[ 0xfa ] = "nop";
+            bytecodes_names[ 0xfb ] = "nop";
+            bytecodes_names[ 0xfc ] = "nop";
+            bytecodes_names[ 0xfd ] = "nop";
+            bytecodes_names[ 0xfe ] = "nop";
+            bytecodes_names[ 0xff ] = "nop";
 
             bytecodes[ 0x0 ] = &OP_00; 
 
@@ -1371,6 +1403,8 @@ class DVM {
             
             bytecodes[ 0x7 ] = &B_A_OP; 
             bytecodes[ 0x8 ] = &AA_OP_BBBB;
+
+            bytecodes[ 0x9 ] = &_00_OP_AAAA_BBBB;
 
             bytecodes[ 0xa ] = &AA_OP;
             bytecodes[ 0xb ] = &AA_OP;
@@ -1396,6 +1430,7 @@ class DVM {
             bytecodes[ 0x19 ] = &AA_OP_SBBBB;
             
             bytecodes[ 0x1a ] = &AA_OP_BBBB_2_STRING;
+            bytecodes[ 0x1b ] = &AA_OP_BBBBBBBB_2_STRING; 
             bytecodes[ 0x1c ] = &AA_OP_BBBB_2_TYPE;
             
             bytecodes[ 0x1d ] = &AA_OP;
@@ -1408,7 +1443,10 @@ class DVM {
             bytecodes[ 0x22 ] = &AA_OP_BBBB_2_TYPE;
 
             bytecodes[ 0x23 ] = &B_A_OP_CCCC_3_TYPE;
-          
+ 
+            bytecodes[ 0x24 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x24 ] = &FILLEDNEWARRAY;
+            bytecodes[ 0x25 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x25 ] = &FILLEDNEWARRAYRANGE;
+
             bytecodes[ 0x26 ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x26 ] = &FILLARRAYDATA;
 
             bytecodes[ 0x27 ] = &B_A_OP;
@@ -1440,7 +1478,12 @@ class DVM {
             bytecodes[ 0x3c ] = &AA_OP_SBBBB_BRANCH;
             bytecodes[ 0x3d ] = &AA_OP_SBBBB_BRANCH;
 
+            bytecodes[ 0x3e ] = &OP_00;
+            bytecodes[ 0x3f ] = &OP_00;
             bytecodes[ 0x40 ] = &OP_00;
+            bytecodes[ 0x41 ] = &OP_00;
+            bytecodes[ 0x42 ] = &OP_00;
+            bytecodes[ 0x43 ] = &OP_00;
             
             bytecodes[ 0x44 ] = &AA_OP_CC_BB;
             bytecodes[ 0x45 ] = &AA_OP_CC_BB;
@@ -1489,7 +1532,7 @@ class DVM {
 
             bytecodes[ 0x6e ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6e ] = &INVOKE;
             bytecodes[ 0x6f ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6f ] = &INVOKE;
-            bytecodes[ 0x70 ] = &B_A_OP_CCCC_G_F_E_D; bytecodes_names[ 0x70 ] = "invoke-direct"; postbytecodes[ 0x70 ] = &INVOKE;
+            bytecodes[ 0x70 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x70 ] = &INVOKE;
             bytecodes[ 0x71 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x71 ] = &INVOKE;
             bytecodes[ 0x72 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x72 ] = &INVOKE;
        
@@ -1500,6 +1543,9 @@ class DVM {
             bytecodes[ 0x76 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x76 ] = &INVOKERANGE;
             bytecodes[ 0x77 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x77 ] = &INVOKERANGE;
             bytecodes[ 0x78 ] = &AA_OP_BBBB_CCCC; postbytecodes[ 0x78 ] = &INVOKERANGE;
+            
+            bytecodes[ 0x79 ] = &OP_00;
+            bytecodes[ 0x7a ] = &OP_00;
 
             bytecodes[ 0x7b ] = &B_A_OP;
             bytecodes[ 0x7c ] = &B_A_OP;
@@ -1610,8 +1656,35 @@ class DVM {
             bytecodes[ 0xe1 ] = &AA_OP_BB_SCC;
             bytecodes[ 0xe2 ] = &AA_OP_BB_SCC;
 
+            bytecodes[ 0xe3 ] = &OP_00;
+            bytecodes[ 0xe4 ] = &OP_00;
+            bytecodes[ 0xe5 ] = &OP_00;
+            bytecodes[ 0xe6 ] = &OP_00;
+            bytecodes[ 0xe7 ] = &OP_00;
             bytecodes[ 0xe8 ] = &OP_00;
-
+            bytecodes[ 0xe9 ] = &OP_00;
+            bytecodes[ 0xea ] = &OP_00;
+            bytecodes[ 0xeb ] = &OP_00;
+            bytecodes[ 0xec ] = &OP_00;
+            bytecodes[ 0xed ] = &OP_00;
+            bytecodes[ 0xee ] = &OP_00;
+            bytecodes[ 0xef ] = &OP_00;
+            bytecodes[ 0xf0 ] = &OP_00;
+            bytecodes[ 0xf1 ] = &OP_00;
+            bytecodes[ 0xf2 ] = &OP_00;
+            bytecodes[ 0xf3 ] = &OP_00;
+            bytecodes[ 0xf4 ] = &OP_00;
+            bytecodes[ 0xf5 ] = &OP_00;
+            bytecodes[ 0xf6 ] = &OP_00;
+            bytecodes[ 0xf7 ] = &OP_00;
+            bytecodes[ 0xf8 ] = &OP_00;
+            bytecodes[ 0xf9 ] = &OP_00;
+            bytecodes[ 0xfa ] = &OP_00;
+            bytecodes[ 0xfb ] = &OP_00;
+            bytecodes[ 0xfc ] = &OP_00;
+            bytecodes[ 0xfd ] = &OP_00;
+            bytecodes[ 0xfe ] = &OP_00;
+            bytecodes[ 0xff ] = &OP_00;
         }
 
         int add(const char *data, size_t data_len) {
@@ -1660,14 +1733,9 @@ extern "C" int get_length(DBC *d) {
     return d->get_length();
 }
 
-extern "C" LOperands_t *get_operands(DBC *d) {
-    return d->get_operands();
-}
-
 /* PYTHON BINDING */
 typedef struct {
     PyObject_HEAD;
-    DVM *dparent;
     DBC *d;
 } dvm_DBCObject;
 
@@ -1695,15 +1763,6 @@ static PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
 {
-    const char *code;
-    size_t code_len;
-
-    if (self != NULL) {
-        //cout<<"Called dbc init\n"; 
-        
-        //self->d = self->dparent->new_code( code, code_len );
-    }
-
     return 0;
 }
 
@@ -1725,14 +1784,6 @@ static PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args)
 static PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
 {
     PyObject *operands = PyList_New( 0 );
-
-const unsigned long OPVALUE = 0;
-const unsigned long REGISTER = 1;
-const unsigned long FIELD = 2;
-const unsigned long METHOD = 3;
-const unsigned long TYPE = 4;
-const unsigned long INTEGER = 5;
-const unsigned long STRING = 6;
 
     for(int ii=1; ii < self->d->voperands->size(); ii++) {
         PyObject *ioperands = PyList_New( 0 );
@@ -1813,6 +1864,165 @@ static PyTypeObject dvm_DBCType = {
 
 typedef struct {
     PyObject_HEAD;
+    DBCSpe *d;
+} dvm_DBCSpeObject;
+
+static void
+DBCSpe_dealloc(dvm_DBCSpeObject* self)
+{
+    cout<<"Called dbcspe dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DBCSpe_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DBCSpeObject *self;
+
+    self = (dvm_DBCSpeObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DBCSpe_init(dvm_DBCSpeObject *self, PyObject *args, PyObject *kwds)
+{
+    return 0;
+}
+
+static PyObject *DBCSpe_get_opvalue(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", -1);
+}
+
+static PyObject *DBCSpe_get_name(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return PyString_FromString( self->d->get_opname() );
+}
+
+static PyObject *DBCSpe_get_operands(dvm_DBCSpeObject *self, PyObject* args)
+{
+    if (self->d->get_type() == 0) {
+        FillArrayData *fad = reinterpret_cast<FillArrayData *>( self->d );
+        return PyString_FromStringAndSize( fad->data, fad->data_size );
+    } else if (self->d->get_type() == 1) {
+        SparseSwitch *ss = reinterpret_cast<SparseSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        
+        PyObject *ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->keys.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ss->keys[ii] ) );
+        PyList_Append( operands, ioperands );
+      
+        ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->targets.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ss->targets[ii] ) );
+        PyList_Append( operands, ioperands );
+
+        return operands;
+    } else if (self->d->get_type() == 2) {
+        PackedSwitch *ps = reinterpret_cast<PackedSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        PyList_Append( operands, PyInt_FromLong( ps->pst.first_key ) );
+      
+        PyObject *ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ps->targets.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ps->targets[ii] ) );
+        PyList_Append( operands, ioperands );
+
+        return operands;
+    }
+
+    return NULL; 
+}
+
+static PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args)
+{
+    if (self->d->get_type() == 1) {
+        SparseSwitch *ss = reinterpret_cast<SparseSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->targets.size(); ii++)
+            PyList_Append( operands, PyInt_FromLong( ss->targets[ii] ) );
+
+        return operands;
+    } else if (self->d->get_type() == 2) {
+        PackedSwitch *ps = reinterpret_cast<PackedSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        for (int ii = 0; ii < ps->targets.size(); ii++)
+            PyList_Append( operands, PyInt_FromLong( ps->targets[ii] ) );
+
+        return operands;
+    }
+
+    return NULL; 
+}
+
+static PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_length());
+}
+
+static PyMethodDef DBCSpe_methods[] = {
+    {"get_name",  (PyCFunction)DBCSpe_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_op_value",  (PyCFunction)DBCSpe_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBCSpe_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {"get_targets",  (PyCFunction)DBCSpe_get_targets, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBCSpe_get_length, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCSpeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBCSpe",             /*tp_name*/
+    sizeof(dvm_DBCSpeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBCSpe_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBCSpe_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBCSpe_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBCSpe_new,                 /* tp_new */
+};
+
+typedef struct {
+    PyObject_HEAD;
     DVM *dparent;
     DCode *d;
 } dvm_DCodeObject;
@@ -1866,8 +2076,6 @@ static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
 
 static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 {
-    //cout<<"Called get_bytecodes()\n"; 
-
     PyObject *bytecodes_list = PyList_New( 0 );
 
     for (int ii=0; ii < self->d->bytecodes.size(); ii++) {
@@ -1880,8 +2088,24 @@ static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 
         PyList_Append( bytecodes_list, nc );
     }
+    
+    return bytecodes_list;
+}
 
-    //Py_DECREF( bytecodes_list );
+static PyObject *DCode_get_bytecodes_spe(dvm_DCodeObject *self, PyObject* args)
+{
+    PyObject *bytecodes_list = PyList_New( 0 );
+    
+    for (int ii=0; ii < self->d->bytecodes_spe.size(); ii++) {
+        PyObject *nc = DBCSpe_new(&dvm_DBCSpeType, NULL, NULL);
+        dvm_DBCSpeObject *dc = (dvm_DBCSpeObject *)nc;
+
+        dc->d = self->d->bytecodes_spe[ii];
+
+        Py_INCREF( nc );
+
+        PyList_Append( bytecodes_list, nc );
+    }
 
     return bytecodes_list;
 }
@@ -1889,6 +2113,7 @@ static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 static PyMethodDef DCode_methods[] = {
     {"get_nb_bytecodes",  (PyCFunction)DCode_get_nb_bytecodes, METH_NOARGS, "get nb bytecodes" },
     {"get_bytecodes",  (PyCFunction)DCode_get_bytecodes, METH_NOARGS, "get nb bytecodes" },
+    {"get_bytecodes_spe",  (PyCFunction)DCode_get_bytecodes_spe, METH_NOARGS, "get nb bytecodes" },
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -1942,7 +2167,7 @@ typedef struct {
 static void
 DVM_dealloc(dvm_DVMObject* self)
 {
-    cout<<"Called dvm dealloc\n";
+    //cout<<"Called dvm dealloc\n";
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -2050,6 +2275,10 @@ extern "C" PyMODINIT_FUNC initdvmnative(void) {
     if (PyType_Ready(&dvm_DBCType) < 0)
         return;
 
+    dvm_DBCSpeType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DBCSpeType) < 0)
+        return;
+    
     m = Py_InitModule3("dvmnative", dvm_methods, "Example module that creates an extension type.");
 
     Py_INCREF(&dvm_DVMType);
@@ -2060,6 +2289,9 @@ extern "C" PyMODINIT_FUNC initdvmnative(void) {
     
     Py_INCREF(&dvm_DBCType);
     PyModule_AddObject(m, "DBC", (PyObject *)&dvm_DBCType);
+    
+    Py_INCREF(&dvm_DBCSpeType);
+    PyModule_AddObject(m, "DBCSpe", (PyObject *)&dvm_DBCSpeType);
 }
 
 #endif

@@ -141,7 +141,7 @@ class Signature :
         buff = ""
         for b in analysis_method.basic_blocks.get() :
             for i in b.ins :
-                if i.op_name == "FILL-ARRAY-DATA" :
+                if i.get_name() == "FILL-ARRAY-DATA" :
                     buff_tmp = i.get_operands()
                     for j in range(0, len(buff_tmp)) :
                         buff += "\\x%02x" % ord( buff_tmp[j] )
