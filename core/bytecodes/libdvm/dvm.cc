@@ -330,6 +330,7 @@ const unsigned long METHOD = 3;
 const unsigned long TYPE = 4;
 const unsigned long INTEGER = 5;
 const unsigned long STRING = 6;
+const unsigned long INTEGER_BRANCH = 7;
 
 unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned long size = B_A_OP_CCCC( b, v, vdesc );
@@ -408,6 +409,14 @@ unsigned long AA_OP_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned lon
     vdesc->push_back( INTEGER );
 
     return 4;
+}
+
+unsigned long AA_OP_SBBBB_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = AA_OP_SBBBB(b, v, vdesc);
+
+    (*vdesc)[2] = INTEGER_BRANCH;
+
+    return size;
 }
 
 unsigned long SB_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
@@ -495,6 +504,14 @@ unsigned long OP_SAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *v
     return 2;
 }
 
+unsigned long OP_SAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = OP_SAA(b, v, vdesc);
+
+    (*vdesc)[ 1 ] = INTEGER_BRANCH;
+
+    return size;
+}
+
 unsigned long B_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
 
@@ -526,6 +543,38 @@ unsigned long _00_OP_SAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     return 4;
 }
 
+unsigned long _00_OP_SAAAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = _00_OP_SAAAA(b, v, vdesc);
+
+    (*vdesc)[ 1 ] = INTEGER_BRANCH;
+
+    return size;
+}
+
+unsigned long _00_OP_SAAAAAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned short i16;
+    signed int si32;
+
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    v->push_back( (unsigned long)(i16 & 0xff) );
+
+    si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->read(4))) );
+    v->push_back( (unsigned long)(si32) );
+
+    vdesc->push_back( OPVALUE );
+    vdesc->push_back( INTEGER );
+
+    return 6;
+}
+
+unsigned long _00_OP_SAAAAAAAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = _00_OP_SAAAAAAAA(b, v, vdesc);
+
+    (*vdesc)[ 1 ] = INTEGER_BRANCH;
+
+    return size;
+}
+
 unsigned long B_A_OP_SCCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned short i16;
     signed short si16;
@@ -545,6 +594,14 @@ unsigned long B_A_OP_SCCCC(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     vdesc->push_back( INTEGER );
     
     return 4;
+}
+
+unsigned long B_A_OP_SCCCC_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned long size = B_A_OP_SCCCC(b, v, vdesc);
+    
+    (*vdesc)[3] = INTEGER_BRANCH;
+
+    return size;
 }
 
 unsigned long AA_OP_CC_BB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
@@ -776,6 +833,8 @@ void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vde
 
     d->push_back( 0 );
     d->push_back( value );
+    
+    (*vdesc)[2] = INTEGER_BRANCH;
 }
 
 typedef struct sparseswitch {
@@ -794,6 +853,8 @@ void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdes
 
     d->push_back( 1 );
     d->push_back( value );
+
+    (*vdesc)[2] = INTEGER_BRANCH;
 }
 
 typedef struct packedswitch {
@@ -814,6 +875,8 @@ void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdes
 
     d->push_back( 2 );
     d->push_back( value );
+    
+    (*vdesc)[2] = INTEGER_BRANCH;
 }
 
 
@@ -1333,12 +1396,12 @@ class DVM {
             bytecodes[ 0x19 ] = &AA_OP_SBBBB;
             
             bytecodes[ 0x1a ] = &AA_OP_BBBB_2_STRING;
-            bytecodes[ 0x1c ] = &AA_OP_BBBB;
+            bytecodes[ 0x1c ] = &AA_OP_BBBB_2_TYPE;
             
             bytecodes[ 0x1d ] = &AA_OP;
             bytecodes[ 0x1e ] = &AA_OP;
             
-            bytecodes[ 0x1f ] = &AA_OP_BBBB;
+            bytecodes[ 0x1f ] = &AA_OP_BBBB_2_TYPE;
 
             bytecodes[ 0x20 ] = &B_A_OP_CCCC_3_TYPE;
             bytecodes[ 0x21 ] = &B_A_OP;
@@ -1349,9 +1412,10 @@ class DVM {
             bytecodes[ 0x26 ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x26 ] = &FILLARRAYDATA;
 
             bytecodes[ 0x27 ] = &B_A_OP;
-            bytecodes[ 0x28 ] = &OP_SAA;
             
-            bytecodes[ 0x29 ] = &_00_OP_SAAAA;
+            bytecodes[ 0x28 ] = &OP_SAA_BRANCH;
+            bytecodes[ 0x29 ] = &_00_OP_SAAAA_BRANCH;
+            bytecodes[ 0x2a ] = &_00_OP_SAAAAAAAA_BRANCH;
 
             bytecodes[ 0x2b ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x2b ] = &PACKEDSWITCH;
             bytecodes[ 0x2c ] = &AA_OP_SBBBBBBBB; postbytecodes[ 0x2c ] = &SPARSESWITCH;
@@ -1362,19 +1426,19 @@ class DVM {
             bytecodes[ 0x30 ] = &AA_OP_CC_BB;
             bytecodes[ 0x31 ] = &AA_OP_CC_BB;
 
-            bytecodes[ 0x32 ] = &B_A_OP_SCCCC;  
-            bytecodes[ 0x33 ] = &B_A_OP_SCCCC;  
-            bytecodes[ 0x34 ] = &B_A_OP_SCCCC;  
-            bytecodes[ 0x35 ] = &B_A_OP_SCCCC;  
-            bytecodes[ 0x36 ] = &B_A_OP_SCCCC;  
-            bytecodes[ 0x37 ] = &B_A_OP_SCCCC;  
+            bytecodes[ 0x32 ] = &B_A_OP_SCCCC_BRANCH;  
+            bytecodes[ 0x33 ] = &B_A_OP_SCCCC_BRANCH;  
+            bytecodes[ 0x34 ] = &B_A_OP_SCCCC_BRANCH;  
+            bytecodes[ 0x35 ] = &B_A_OP_SCCCC_BRANCH;  
+            bytecodes[ 0x36 ] = &B_A_OP_SCCCC_BRANCH;  
+            bytecodes[ 0x37 ] = &B_A_OP_SCCCC_BRANCH;  
 
-            bytecodes[ 0x38 ] = &AA_OP_SBBBB;
-            bytecodes[ 0x39 ] = &AA_OP_SBBBB;
-            bytecodes[ 0x3a ] = &AA_OP_SBBBB;
-            bytecodes[ 0x3b ] = &AA_OP_SBBBB;
-            bytecodes[ 0x3c ] = &AA_OP_SBBBB;
-            bytecodes[ 0x3d ] = &AA_OP_SBBBB;
+            bytecodes[ 0x38 ] = &AA_OP_SBBBB_BRANCH;
+            bytecodes[ 0x39 ] = &AA_OP_SBBBB_BRANCH;
+            bytecodes[ 0x3a ] = &AA_OP_SBBBB_BRANCH;
+            bytecodes[ 0x3b ] = &AA_OP_SBBBB_BRANCH;
+            bytecodes[ 0x3c ] = &AA_OP_SBBBB_BRANCH;
+            bytecodes[ 0x3d ] = &AA_OP_SBBBB_BRANCH;
 
             bytecodes[ 0x40 ] = &OP_00;
             
@@ -1635,7 +1699,7 @@ DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
     size_t code_len;
 
     if (self != NULL) {
-        cout<<"Called dbc init\n"; 
+        //cout<<"Called dbc init\n"; 
         
         //self->d = self->dparent->new_code( code, code_len );
     }
@@ -1676,13 +1740,15 @@ const unsigned long STRING = 6;
         if ((*self->d->vdescoperands)[ii] == FIELD) {
             PyList_Append( ioperands, PyString_FromString( "field@" ) );
         } else if ((*self->d->vdescoperands)[ii] == METHOD) {
-            PyList_Append( ioperands, PyString_FromString( "method@" ) );
+            PyList_Append( ioperands, PyString_FromString( "meth@" ) );
         } else if ((*self->d->vdescoperands)[ii] == TYPE) {
             PyList_Append( ioperands, PyString_FromString( "type@" ) );
         } else if ((*self->d->vdescoperands)[ii] == INTEGER) {
-            PyList_Append( ioperands, PyString_FromString( "+" ) );
+            PyList_Append( ioperands, PyString_FromString( "#+" ) );
         } else if ((*self->d->vdescoperands)[ii] == STRING) {
             PyList_Append( ioperands, PyString_FromString( "string@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == INTEGER_BRANCH) {
+            PyList_Append( ioperands, PyString_FromString( "+" ) );
         } else {
             PyList_Append( ioperands, PyString_FromString( "v" ) );
         }
@@ -1779,7 +1845,7 @@ DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
     size_t code_len;
 
     if (self != NULL) {
-        cout<<"Called dcode init\n"; 
+        //cout<<"Called dcode init\n"; 
         
         int ok = PyArg_ParseTuple( args, "s#", &code, &code_len);
         if(!ok) return -1;
@@ -1793,14 +1859,14 @@ DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
 
 static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
 {
-    cout<<"Called get_nb_bytecodes()\n"; 
+    //cout<<"Called get_nb_bytecodes()\n"; 
 
     return Py_BuildValue("i", self->d->size());
 }
 
 static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 {
-    cout<<"Called get_bytecodes()\n"; 
+    //cout<<"Called get_bytecodes()\n"; 
 
     PyObject *bytecodes_list = PyList_New( 0 );
 
@@ -1904,7 +1970,7 @@ DVM_init(dvm_DVMObject *self, PyObject *args, PyObject *kwds)
 
 static PyObject *DVM_new_code(dvm_DVMObject *self, PyObject* args)
 {
-    cout<<"Called new code()\n"; 
+    //cout<<"Called new code()\n"; 
 
     PyObject *nc = DCode_new(&dvm_DCodeType, NULL, NULL);
  
@@ -1968,54 +2034,6 @@ static PyTypeObject dvm_DVMType = {
 static PyMethodDef dvm_methods[] = {
     {NULL}  /* Sentinel */
 };
-
-/*
-static void PyDelDVM(void *ptr)
-{
-    cout<<"Called PyDelDVM()\n"; 
-    DVM *d = static_cast<DVM *>(ptr);
-    delete d;
-    return;
-}
-
-static void PyDelDCode(void *ptr)
-{
-    cout<<"Called PyDelDCode()\n"; 
-    DCode *d = static_cast<DCode *>(ptr);
-    delete d;
-    return;
-}
-
-PyObject *python_new_DVM(PyObject *, PyObject* args) {
-    DVM *d = new DVM();
-
-    return PyCObject_FromVoidPtr( d, PyDelDVM);
-}
-
-PyObject *python_new_code(PyObject *, PyObject* args)
-{
-    cout<<"Called new code()\n"; 
-    PyObject *pydvm = NULL;
-    const char *code;
-    size_t code_len;
-
-    int ok = PyArg_ParseTuple( args, "Os#", &pydvm, &code, &code_len);
-    if(!ok) return NULL;
-
-    void * temp = PyCObject_AsVoidPtr(pydvm);
-
-    DVM *d = static_cast<DVM *>(temp);
-
-    DCode *nc = d->new_code( code, code_len );
-
-    return PyCObject_FromVoidPtr( nc, PyDelDCode );
-}
-
-static PyMethodDef DVMNativeMethods[] = {
-    {"DVM",  python_new_DVM, METH_VARARGS, "Create new Dalvik Virtual Machine module." },
-    {"new_code",  python_new_code, METH_VARARGS, "new code" },
-    {NULL, NULL, 0, NULL}        
-};*/
 
 extern "C" PyMODINIT_FUNC initdvmnative(void) {
     PyObject *m;
