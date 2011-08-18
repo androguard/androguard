@@ -22,6 +22,7 @@ PATH_INSTALL = "./"
 
 sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
+sys.path.append(PATH_INSTALL + "/core/bytecodes/libdvm")
 sys.path.append(PATH_INSTALL + "/core/predicates")
 sys.path.append(PATH_INSTALL + "/core/analysis")
 sys.path.append(PATH_INSTALL + "/core/vm")

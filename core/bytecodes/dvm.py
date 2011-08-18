@@ -97,6 +97,9 @@ class FillArrayData :
         general_format = self.format.get_value()
         self.data = buff[ calcsize(FILL_ARRAY_DATA[0]) : calcsize(FILL_ARRAY_DATA[0]) + (general_format.size * general_format.element_width ) ]
 
+    def get_op_value(self) :
+        return -1
+
     def get_raw(self) :
         return self.format.get_raw() + self.data
 
@@ -138,6 +141,9 @@ class SparseSwitch :
             self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
             idx += 4
 
+    def get_op_value(self) :
+        return -1
+
     # FIXME : return correct raw
     def get_raw(self) :
         return self.format.get_raw()
@@ -176,6 +182,9 @@ class PackedSwitch :
         for i in range(0, self.format.get_value().size) :
             self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
             idx += 4
+
+    def get_op_value(self) :
+        return -1
 
     # FIXME : return correct raw
     def get_raw(self) :
@@ -365,6 +374,10 @@ DALVIK_OPCODES = {
                         0x76 : [ "3rc", "invoke-direct/range",        "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
                         0x77 : [ "3rc", "invoke-static/range",        "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
                         0x78 : [ "3rc", "invoke-interface/range",     "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
+                        
+                        0x79 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0x7a : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        
                         0x7b : [ "12x", "neg-int",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
                         0x7c : [ "12x", "not-int",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
                         0x7d : [ "12x", "neg-long",                      "vA, vB", [ OPCODE_B_A_OP ], {} ],
@@ -482,6 +495,24 @@ DALVIK_OPCODES = {
                         0xeb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xec : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xed : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xee : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xef : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf0 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf1 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf2 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf4 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf5 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf6 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf7 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf8 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xf9 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xfa : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xfb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xfc : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xfd : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xfe : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xff : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         ###################
                       }
 
@@ -2028,7 +2059,7 @@ class DBCSpe :
         self.op_value = -1
 
     def get_op_value(self) :
-        return self.op_value
+        return self.op.get_op_value()
 
     def _reload(self) :
         pass
@@ -2270,72 +2301,15 @@ MAP_EXTRACT_VALUES = {
     OPCODE_00       :   op_00,
 }
 
-#class OPERANDS_NATIF_T(Structure) :
-#    pass
-#OPERANDS_NATIF_T._fields_ = [ ("value", c_int),
-#                              ("next", POINTER(OPERANDS_NATIF_T)),
-#                            ]
-
-class DBCNatif(DBC) :
-    def __init__(self, class_manager, ref) :
-        self.CM = class_manager
-        self.__internal_ref = ref
-
-        self.op_value = self.CM.get_all_engine()[1].get_opvalue( self.__internal_ref )
-        self.op_name = None
-        self.operands = None
-        self.formatted_operands = []
-        self.relative_operands = []
-
-    def get_name(self) :
-        if self.op_name == None :
-            self.op_name = DALVIK_OPCODES[ self.op_value ][1]
-        return self.op_name
-
-    def get_operands(self) :
-        if self.operands == None :
-            self.operands = [] 
-           #self.CM.get_all_engine()[1].get_operands2( self.__internal_ref ) ) 
-        return self.operands
-
-    def get_operands2(self) :
-        if self.operands == None :
-            self.operands = [ ["OP", self.op_value] ]
-            values = self.CM.get_all_engine()[1].get_operands( self.__internal_ref )
-
-            if values != 0 :
-                ivalues = cast(values, POINTER(OPERANDS_NATIF_T)).contents
-                j = 1 
-
-                while True :
-                    self.operands.append( [ 'v', ivalues.value ] )
-                    #print "iciii", j, ivalues.value
-                    if not ((self.op_value >= 0x6e and self.op_value <= 0x72) or (self.op_value >= 0x74 and self.op_value <= 0x78) or self.op_value == 0x25) :
-                        if DALVIK_OPCODES[ self.op_value ][4] != {} :
-                            if j in DALVIK_OPCODES[ self.op_value ][4] :
-                                self.operands[-1][0] = DALVIK_OPCODES[ self.op_value ][4][j]
-                    #print ivalues.value
-                    try :
-                        ivalues = ivalues.next[0]
-                    except ValueError :
-                        break
-
-                    j += 1
+class DBCSpeNative(DBCSpe) :
+    def __init__(self, class_manager, value) :
+        self.CM = class_manager        
+        self.__internal_dbcspe = value
+        self.op = value
         
-            if self.op_value >= 0x6e and self.op_value <= 0x72 :
-                self.operands[-1][0] = "meth@"
-            elif self.op_value >= 0x74 and self.op_value <= 0x78 :
-                self.operands[-1][0] = "meth@"
-            elif self.op_value == 0x25 :
-                self.operands[-1][0] = "type@"
+        self.type_ins_tag = SPECIFIC_DVM_INS
 
-            self._reload()
-        return self.operands
-
-    def get_length(self) :
-        return self.CM.get_all_engine()[1].get_length( self.__internal_ref )
-
-class DBCNatif2(DBC) :
+class DBCNative(DBC) :
     def __init__(self, class_manager, value) :
         self.CM = class_manager
         
@@ -2346,6 +2320,8 @@ class DBCNatif2(DBC) :
         self.operands = None
         self.formatted_operands = []
         self.relative_operands = []
+
+        self.type_ins_tag = NORMAL_DVM_INS
 
     def get_length(self) :
         return self.__internal_dbc.get_length()
@@ -2362,7 +2338,7 @@ class DBCNatif2(DBC) :
         self._reload()
         return self.operands
 
-class DCodeNatif :
+class DCodeNative :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
         self.__insn = buff
@@ -2374,9 +2350,19 @@ class DCodeNatif :
     def reload(self) :                                                                                                                                                                           
         pass
 
+    def get_ins_off(self, off) :
+        idx = 0
+
+        for i in self.__bytecodes :
+            if idx == off :
+                return i
+            idx += i.get_length()
+        return None
+    
     def get(self) :
         if self.__bytecodes == [] :
-            self.__bytecodes = [ DBCNatif2( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
+            self.__bytecodes = [ DBCNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
+            self.__bytecodes.extend( [ DBCSpeNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes_spe() ] )
         return self.__bytecodes
 
 class DCode :
@@ -2500,7 +2486,7 @@ class DCode :
                     operands[i][0] = mnemonic[4][i]
 
         # SPECIFIC OPCODES
-        if op_value >= 0x6e and op_value <= 0x72 :
+        if (op_value >= 0x6e and op_value <= 0x72) or op_value == 0x24 :
             if operands[2][1] == 5 :
                 operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]    
             else :
@@ -2578,7 +2564,7 @@ class DalvikCode :
         ushort = calcsize( '=H' )
 
         if self.__CM.get_engine() == "native" :
-            self._code = DCodeNatif( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+            self._code = DCodeNative( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
         else :
             self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
