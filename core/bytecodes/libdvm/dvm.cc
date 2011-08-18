@@ -571,8 +571,6 @@ unsigned long AA_OP_BB_SCC(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     unsigned char i8;
     char si8;
 
-    v->push_back( 4 );
-    
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     v->push_back( (unsigned long)(i16 & 0xff) );
     v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
@@ -831,14 +829,18 @@ typedef struct LOperands {
 class DBC {
     public :
         unsigned char op_value;
+        const char *op_name;
         size_t op_length;
         vector<unsigned long> *voperands;
+        vector<unsigned long> *vdescoperands;
         LOperands_t *lo;
 
     public :
-        DBC(unsigned char value, vector<unsigned long> *v, size_t length) {
+        DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector<unsigned long> *vdesc, size_t length) {
             op_value = value;
+            op_name = name;
             voperands = v;
+            vdescoperands = vdesc;
             op_length = length;
             lo = NULL;
         }
@@ -875,6 +877,10 @@ class DBC {
             return lo;
         }
 
+        const char *get_opname() {
+            return op_name;
+        }
+
         size_t get_length() {
             return op_length;
         }
@@ -897,6 +903,7 @@ class DCode {
 
         DCode(sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes, 
               sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes, 
+              vector<const char *> *bytecodes_names,
               Buff *b) {
             unsigned char op_value;
             unsigned long size;
@@ -948,7 +955,7 @@ class DCode {
                 printf("END %d\n", b->get_current_idx());
                 */
 
-                bytecodes.push_back( new DBC(op_value, v, size) );
+                bytecodes.push_back( new DBC(op_value, (*bytecodes_names)[ op_value ], v, vdesc, size) );
                 
                 /*printf("OP_VALUE %x ---> ", op_value); fflush(stdout);
                 for(int ii=0; ii < v->size(); ii++) {
@@ -960,8 +967,6 @@ class DCode {
                 }                    
                 printf("\n");
                 */
-
-                if (vdesc->size() == 0) { exit(0); };
 
                 if (b->get_current_idx() >= min_data) {
                     break;
@@ -1041,25 +1046,267 @@ class DVM {
         debug_t dt;
         sparse_hash_map<int, unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> bytecodes;
         sparse_hash_map<int, void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes; 
-        
+
+        vector<const char *> bytecodes_names;
+
         DCode d;
         Buff b;
     public :
         DVM() {
-            bytecodes[ 0x0 ] = &OP_00;
+            for (int ii=0; ii < 0xff; ii++)
+                bytecodes_names.push_back( NULL );
 
-            bytecodes[ 0x1 ] = &B_A_OP;
+            bytecodes_names[ 0x0 ] = "nop";
+            bytecodes_names[ 0x1 ] = "move";
+            bytecodes_names[ 0x2 ] = "move/from16";
+            bytecodes_names[ 0x3 ] = "move/16";
+            bytecodes_names[ 0x4 ] = "move-wide";
+            bytecodes_names[ 0x5 ] = "move-wide/from16";
+            bytecodes_names[ 0x6 ] = "move-wide/16";
+            bytecodes_names[ 0x7 ] = "move-object";
+            bytecodes_names[ 0x8 ] = "move-object/from16";
+            bytecodes_names[ 0x9 ] = "move-object/16";
+            bytecodes_names[ 0xa ] = "move-result";
+            bytecodes_names[ 0xb ] = "move-result-wide";
+            bytecodes_names[ 0xc ] = "move-result-object";
+            bytecodes_names[ 0xd ] = "move-exception";
+            bytecodes_names[ 0xe ] = "return-void";
+            bytecodes_names[ 0xf ] = "return";
+            bytecodes_names[ 0x10 ] = "return-wide";
+            bytecodes_names[ 0x11 ] = "return-object";
+            bytecodes_names[ 0x12 ] = "const/4";
+            bytecodes_names[ 0x13 ] = "const/16";
+            bytecodes_names[ 0x14 ] = "const";
+            bytecodes_names[ 0x15 ] = "const/high16";
+            bytecodes_names[ 0x16 ] = "const-wide/16";
+            bytecodes_names[ 0x17 ] = "const-wide/32";
+            bytecodes_names[ 0x18 ] = "const-wide";
+            bytecodes_names[ 0x19 ] = "const-wide/high16";
+            bytecodes_names[ 0x1a ] = "const-string";
+            bytecodes_names[ 0x1b ] = "const-string/jumbo";
+            bytecodes_names[ 0x1c ] = "const-class";
+            bytecodes_names[ 0x1d ] = "monitor-enter";
+            bytecodes_names[ 0x1e ] = "monitor-exit";
+            bytecodes_names[ 0x1f ] = "check-cast";
+            bytecodes_names[ 0x20 ] = "instance-of";
+            bytecodes_names[ 0x21 ] = "array-length";
+            bytecodes_names[ 0x22 ] = "new-instance";
+            bytecodes_names[ 0x23 ] = "new-array";
+            bytecodes_names[ 0x24 ] = "filled-new-array";
+            bytecodes_names[ 0x25 ] = "filled-new-array/range";
+            bytecodes_names[ 0x26 ] = "fill-array-data";
+            bytecodes_names[ 0x27 ] = "throw";
+            bytecodes_names[ 0x28 ] = "goto";
+            bytecodes_names[ 0x29 ] = "goto/16";
+            bytecodes_names[ 0x2a ] = "goto/32";
+            bytecodes_names[ 0x2b ] = "packed-switch";
+            bytecodes_names[ 0x2c ] = "sparse-switch";
+            bytecodes_names[ 0x2d ] = "cmpl-float";
+            bytecodes_names[ 0x2e ] = "cmpg-float";
+            bytecodes_names[ 0x2f ] = "cmpl-double";
+            bytecodes_names[ 0x30 ] = "cmpg-double";
+            bytecodes_names[ 0x31 ] = "cmp-long";
+            bytecodes_names[ 0x32 ] = "if-eq";
+            bytecodes_names[ 0x33 ] = "if-ne";
+            bytecodes_names[ 0x34 ] = "if-lt";
+            bytecodes_names[ 0x35 ] = "if-ge";
+            bytecodes_names[ 0x36 ] = "if-gt";
+            bytecodes_names[ 0x37 ] = "if-le";
+            bytecodes_names[ 0x38 ] = "if-eqz";
+            bytecodes_names[ 0x39 ] = "if-nez";
+            bytecodes_names[ 0x3a ] = "if-ltz";
+            bytecodes_names[ 0x3b ] = "if-gez";
+            bytecodes_names[ 0x3c ] = "if-gtz";
+            bytecodes_names[ 0x3d ] = "if-lez";
+            bytecodes_names[ 0x3e ] = "nop";
+            bytecodes_names[ 0x3f ] = "nop";
+            bytecodes_names[ 0x40 ] = "nop";
+            bytecodes_names[ 0x41 ] = "nop";
+            bytecodes_names[ 0x42 ] = "nop";
+            bytecodes_names[ 0x43 ] = "nop";
+            bytecodes_names[ 0x44 ] = "aget";
+            bytecodes_names[ 0x45 ] = "aget-wide";
+            bytecodes_names[ 0x46 ] = "aget-object";
+            bytecodes_names[ 0x47 ] = "aget-boolean";
+            bytecodes_names[ 0x48 ] = "aget-byte";
+            bytecodes_names[ 0x49 ] = "aget-char";
+            bytecodes_names[ 0x4a ] = "aget-short";
+            bytecodes_names[ 0x4b ] = "aput";
+            bytecodes_names[ 0x4c ] = "aput-wide";
+            bytecodes_names[ 0x4d ] = "aput-object";
+            bytecodes_names[ 0x4e ] = "aput-boolean";
+            bytecodes_names[ 0x4f ] = "aput-byte";
+            bytecodes_names[ 0x50 ] = "aput-char";
+            bytecodes_names[ 0x51 ] = "aput-short";
+            bytecodes_names[ 0x52 ] = "iget";
+            bytecodes_names[ 0x53 ] = "iget-wide";
+            bytecodes_names[ 0x54 ] = "iget-object";
+            bytecodes_names[ 0x55 ] = "iget-boolean";
+            bytecodes_names[ 0x56 ] = "iget-byte";
+            bytecodes_names[ 0x57 ] = "iget-char";
+            bytecodes_names[ 0x58 ] = "iget-short";
+            bytecodes_names[ 0x59 ] = "iput";
+            bytecodes_names[ 0x5a ] = "iput-wide";
+            bytecodes_names[ 0x5b ] = "iput-object";
+            bytecodes_names[ 0x5c ] = "iput-boolean";
+            bytecodes_names[ 0x5d ] = "iput-byte";
+            bytecodes_names[ 0x5e ] = "iput-char";
+            bytecodes_names[ 0x5f ] = "iput-short";
+            bytecodes_names[ 0x60 ] = "sget";
+            bytecodes_names[ 0x61 ] = "sget-wide";
+            bytecodes_names[ 0x62 ] = "sget-object";
+            bytecodes_names[ 0x63 ] = "sget-boolean";
+            bytecodes_names[ 0x64 ] = "sget-byte";
+            bytecodes_names[ 0x65 ] = "sget-char";
+            bytecodes_names[ 0x66 ] = "sget-short";
+            bytecodes_names[ 0x67 ] = "sput";
+            bytecodes_names[ 0x68 ] = "sput-wide";
+            bytecodes_names[ 0x69 ] = "sput-object";
+            bytecodes_names[ 0x6a ] = "sput-boolean";
+            bytecodes_names[ 0x6b ] = "sput-byte";
+            bytecodes_names[ 0x6c ] = "sput-char";
+            bytecodes_names[ 0x6d ] = "sput-short";
+            bytecodes_names[ 0x6e ] = "invoke-virtual";
+            bytecodes_names[ 0x6f ] = "invoke-super";
+            bytecodes_names[ 0x70 ] = "invoke-direct";
+            bytecodes_names[ 0x71 ] = "invoke-static";
+            bytecodes_names[ 0x72 ] = "invoke-interface";
+            bytecodes_names[ 0x73 ] = "nop";
+            bytecodes_names[ 0x74 ] = "invoke-virtual/range";
+            bytecodes_names[ 0x75 ] = "invoke-super/range";
+            bytecodes_names[ 0x76 ] = "invoke-direct/range";
+            bytecodes_names[ 0x77 ] = "invoke-static/range";
+            bytecodes_names[ 0x78 ] = "invoke-interface/range";
+            bytecodes_names[ 0x7b ] = "neg-int";
+            bytecodes_names[ 0x7c ] = "not-int";
+            bytecodes_names[ 0x7d ] = "neg-long";
+            bytecodes_names[ 0x7e ] = "not-long";
+            bytecodes_names[ 0x7f ] = "neg-float";
+            bytecodes_names[ 0x80 ] = "neg-double";
+            bytecodes_names[ 0x81 ] = "int-to-long";
+            bytecodes_names[ 0x82 ] = "int-to-float";
+            bytecodes_names[ 0x83 ] = "int-to-double";
+            bytecodes_names[ 0x84 ] = "long-to-int";
+            bytecodes_names[ 0x85 ] = "long-to-float";
+            bytecodes_names[ 0x86 ] = "long-to-double";
+            bytecodes_names[ 0x87 ] = "float-to-int";
+            bytecodes_names[ 0x88 ] = "float-to-long";
+            bytecodes_names[ 0x89 ] = "float-to-double";
+            bytecodes_names[ 0x8a ] = "double-to-int";
+            bytecodes_names[ 0x8b ] = "double-to-long";
+            bytecodes_names[ 0x8c ] = "double-to-float";
+            bytecodes_names[ 0x8d ] = "int-to-byte";
+            bytecodes_names[ 0x8e ] = "int-to-char";
+            bytecodes_names[ 0x8f ] = "int-to-short";
+            bytecodes_names[ 0x90 ] = "add-int";
+            bytecodes_names[ 0x91 ] = "sub-int";
+            bytecodes_names[ 0x92 ] = "mul-int";
+            bytecodes_names[ 0x93 ] = "div-int";
+            bytecodes_names[ 0x94 ] = "rem-int";
+            bytecodes_names[ 0x95 ] = "and-int";
+            bytecodes_names[ 0x96 ] = "or-int";
+            bytecodes_names[ 0x97 ] = "xor-int";
+            bytecodes_names[ 0x98 ] = "shl-int";
+            bytecodes_names[ 0x99 ] = "shr-int";
+            bytecodes_names[ 0x9a ] = "ushr-int";
+            bytecodes_names[ 0x9b ] = "add-long";
+            bytecodes_names[ 0x9c ] = "sub-long";
+            bytecodes_names[ 0x9d ] = "mul-long";
+            bytecodes_names[ 0x9e ] = "div-long";
+            bytecodes_names[ 0x9f ] = "rem-long";
+            bytecodes_names[ 0xa0 ] = "and-long";
+            bytecodes_names[ 0xa1 ] = "or-long";
+            bytecodes_names[ 0xa2 ] = "xor-long";
+            bytecodes_names[ 0xa3 ] = "shl-long";
+            bytecodes_names[ 0xa4 ] = "shr-long";
+            bytecodes_names[ 0xa5 ] = "ushr-long";
+            bytecodes_names[ 0xa6 ] = "add-float";
+            bytecodes_names[ 0xa7 ] = "sub-float";
+            bytecodes_names[ 0xa8 ] = "mul-float";
+            bytecodes_names[ 0xa9 ] = "div-float";
+            bytecodes_names[ 0xaa ] = "rem-float";
+            bytecodes_names[ 0xab ] = "add-double";
+            bytecodes_names[ 0xac ] = "sub-double";
+            bytecodes_names[ 0xad ] = "mul-double";
+            bytecodes_names[ 0xae ] = "div-double";
+            bytecodes_names[ 0xaf ] = "rem-double";
+            bytecodes_names[ 0xb0 ] = "add-int/2addr";
+            bytecodes_names[ 0xb1 ] = "sub-int/2addr";
+            bytecodes_names[ 0xb2 ] = "mul-int/2addr";
+            bytecodes_names[ 0xb3 ] = "div-int/2addr";
+            bytecodes_names[ 0xb4 ] = "rem-int/2addr";
+            bytecodes_names[ 0xb5 ] = "and-int/2addr";
+            bytecodes_names[ 0xb6 ] = "or-int/2addr";
+            bytecodes_names[ 0xb7 ] = "xor-int/2addr";
+            bytecodes_names[ 0xb8 ] = "shl-int/2addr";
+            bytecodes_names[ 0xb9 ] = "shr-int/2addr";
+            bytecodes_names[ 0xba ] = "ushr-int/2addr";
+            bytecodes_names[ 0xbb ] = "add-long/2addr";
+            bytecodes_names[ 0xbc ] = "sub-long/2addr";
+            bytecodes_names[ 0xbd ] = "mul-long/2addr";
+            bytecodes_names[ 0xbe ] = "div-long/2addr";
+            bytecodes_names[ 0xbf ] = "rem-long/2addr";
+            bytecodes_names[ 0xc0 ] = "and-long/2addr";
+            bytecodes_names[ 0xc1 ] = "or-long/2addr";
+            bytecodes_names[ 0xc2 ] = "xor-long/2addr";
+            bytecodes_names[ 0xc3 ] = "shl-long/2addr";
+            bytecodes_names[ 0xc4 ] = "shr-long/2addr";
+            bytecodes_names[ 0xc5 ] = "ushr-long/2addr";
+            bytecodes_names[ 0xc6 ] = "add-float/2addr";
+            bytecodes_names[ 0xc7 ] = "sub-float/2addr";
+            bytecodes_names[ 0xc8 ] = "mul-float/2addr";
+            bytecodes_names[ 0xc9 ] = "div-float/2addr";
+            bytecodes_names[ 0xca ] = "rem-float/2addr";
+            bytecodes_names[ 0xcb ] = "add-double/2addr";
+            bytecodes_names[ 0xcc ] = "sub-double/2addr";
+            bytecodes_names[ 0xcd ] = "mul-double/2addr";
+            bytecodes_names[ 0xce ] = "div-double/2addr";
+            bytecodes_names[ 0xcf ] = "rem-double/2addr";
+            bytecodes_names[ 0xd0 ] = "add-int/lit16";
+            bytecodes_names[ 0xd1 ] = "rsub-int";
+            bytecodes_names[ 0xd2 ] = "mul-int/lit16";
+            bytecodes_names[ 0xd3 ] = "div-int/lit16";
+            bytecodes_names[ 0xd4 ] = "rem-int/lit16";
+            bytecodes_names[ 0xd5 ] = "and-int/lit16";
+            bytecodes_names[ 0xd6 ] = "or-int/lit16";
+            bytecodes_names[ 0xd7 ] = "xor-int/lit16";
+            bytecodes_names[ 0xd8 ] = "add-int/lit8";
+            bytecodes_names[ 0xd9 ] = "rsub-int/lit8";
+            bytecodes_names[ 0xda ] = "mul-int/lit8";
+            bytecodes_names[ 0xdb ] = "div-int/lit8";
+            bytecodes_names[ 0xdc ] = "rem-int/lit8";
+            bytecodes_names[ 0xdd ] = "and-int/lit8";
+            bytecodes_names[ 0xde ] = "or-int/lit8";
+            bytecodes_names[ 0xdf ] = "xor-int/lit8";
+            bytecodes_names[ 0xe0 ] = "shl-int/lit8";
+            bytecodes_names[ 0xe1 ] = "shr-int/lit8";
+            bytecodes_names[ 0xe2 ] = "ushr-int/lit8";
+            bytecodes_names[ 0xe3 ] = "nop";
+            bytecodes_names[ 0xe4 ] = "nop";
+            bytecodes_names[ 0xe5 ] = "nop";
+            bytecodes_names[ 0xe6 ] = "nop";
+            bytecodes_names[ 0xe7 ] = "nop";
+            bytecodes_names[ 0xe8 ] = "nop";
+            bytecodes_names[ 0xe9 ] = "nop";
+            bytecodes_names[ 0xea ] = "nop";
+            bytecodes_names[ 0xeb ] = "nop";
+            bytecodes_names[ 0xec ] = "nop";
+            bytecodes_names[ 0xed ] = "nop";
 
-            bytecodes[ 0x2 ] = &AA_OP_BBBB;
-            
-            bytecodes[ 0x3 ] = &_00_OP_AAAA_BBBB;
+            bytecodes[ 0x0 ] = &OP_00; 
 
-            bytecodes[ 0x4 ] = &B_A_OP;
-            bytecodes[ 0x5 ] = &AA_OP_BBBB;
+            bytecodes[ 0x1 ] = &B_A_OP; 
+
+            bytecodes[ 0x2 ] = &AA_OP_BBBB; 
             
-            bytecodes[ 0x6 ] = &_00_OP_AAAA_BBBB;
+            bytecodes[ 0x3 ] = &_00_OP_AAAA_BBBB; 
+
+            bytecodes[ 0x4 ] = &B_A_OP; 
+            bytecodes[ 0x5 ] = &AA_OP_BBBB; 
             
-            bytecodes[ 0x7 ] = &B_A_OP;
+            bytecodes[ 0x6 ] = &_00_OP_AAAA_BBBB; 
+            
+            bytecodes[ 0x7 ] = &B_A_OP; 
             bytecodes[ 0x8 ] = &AA_OP_BBBB;
 
             bytecodes[ 0xa ] = &AA_OP;
@@ -1178,7 +1425,7 @@ class DVM {
 
             bytecodes[ 0x6e ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6e ] = &INVOKE;
             bytecodes[ 0x6f ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x6f ] = &INVOKE;
-            bytecodes[ 0x70 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x70 ] = &INVOKE;
+            bytecodes[ 0x70 ] = &B_A_OP_CCCC_G_F_E_D; bytecodes_names[ 0x70 ] = "invoke-direct"; postbytecodes[ 0x70 ] = &INVOKE;
             bytecodes[ 0x71 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x71 ] = &INVOKE;
             bytecodes[ 0x72 ] = &B_A_OP_CCCC_G_F_E_D; postbytecodes[ 0x72 ] = &INVOKE;
        
@@ -1314,7 +1561,7 @@ class DVM {
 
         DCode *new_code(const char *data, size_t data_len) {
             Buff b = Buff( data, data_len );
-            DCode *d = new DCode( &bytecodes, &postbytecodes, &b );
+            DCode *d = new DCode( &bytecodes, &postbytecodes, &bytecodes_names, &b );
 
             return d;
         }
@@ -1352,6 +1599,151 @@ extern "C" int get_length(DBC *d) {
 extern "C" LOperands_t *get_operands(DBC *d) {
     return d->get_operands();
 }
+
+/* PYTHON BINDING */
+typedef struct {
+    PyObject_HEAD;
+    DVM *dparent;
+    DBC *d;
+} dvm_DBCObject;
+
+static void
+DBC_dealloc(dvm_DBCObject* self)
+{
+    cout<<"Called dbc dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DBCObject *self;
+
+    self = (dvm_DBCObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
+{
+    const char *code;
+    size_t code_len;
+
+    if (self != NULL) {
+        cout<<"Called dbc init\n"; 
+        
+        //self->d = self->dparent->new_code( code, code_len );
+    }
+
+    return 0;
+}
+
+static PyObject *DBC_get_opvalue(dvm_DBCObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_opvalue());
+}
+
+static PyObject *DBC_get_length(dvm_DBCObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_length());
+}
+
+static PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args)
+{
+    return PyString_FromString( self->d->get_opname() );
+}
+
+static PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
+{
+    PyObject *operands = PyList_New( 0 );
+
+const unsigned long OPVALUE = 0;
+const unsigned long REGISTER = 1;
+const unsigned long FIELD = 2;
+const unsigned long METHOD = 3;
+const unsigned long TYPE = 4;
+const unsigned long INTEGER = 5;
+const unsigned long STRING = 6;
+
+    for(int ii=1; ii < self->d->voperands->size(); ii++) {
+        PyObject *ioperands = PyList_New( 0 );
+
+        if ((*self->d->vdescoperands)[ii] == FIELD) {
+            PyList_Append( ioperands, PyString_FromString( "field@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == METHOD) {
+            PyList_Append( ioperands, PyString_FromString( "method@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == TYPE) {
+            PyList_Append( ioperands, PyString_FromString( "type@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == INTEGER) {
+            PyList_Append( ioperands, PyString_FromString( "+" ) );
+        } else if ((*self->d->vdescoperands)[ii] == STRING) {
+            PyList_Append( ioperands, PyString_FromString( "string@" ) );
+        } else {
+            PyList_Append( ioperands, PyString_FromString( "v" ) );
+        }
+        
+        PyList_Append( ioperands, PyInt_FromLong( (*self->d->voperands)[ii] ) );
+        
+        PyList_Append( operands, ioperands );
+    }
+
+    return operands;
+}
+
+static PyMethodDef DBC_methods[] = {
+    {"get_op_value",  (PyCFunction)DBC_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBC_get_length, METH_NOARGS, "get nb bytecodes" },
+    {"get_name",  (PyCFunction)DBC_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBC_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBC",             /*tp_name*/
+    sizeof(dvm_DBCObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBC_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBC_methods,             /* tp_methods */
+    NULL, //Noddy_members,             /* tp_members */
+    NULL, //Noddy_getseters,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBC_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBC_new,                 /* tp_new */
+};
 
 typedef struct {
     PyObject_HEAD;
@@ -1406,8 +1798,31 @@ static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
     return Py_BuildValue("i", self->d->size());
 }
 
+static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
+{
+    cout<<"Called get_bytecodes()\n"; 
+
+    PyObject *bytecodes_list = PyList_New( 0 );
+
+    for (int ii=0; ii < self->d->bytecodes.size(); ii++) {
+        PyObject *nc = DBC_new(&dvm_DBCType, NULL, NULL);
+        dvm_DBCObject *dc = (dvm_DBCObject *)nc;
+
+        dc->d = self->d->bytecodes[ii];
+
+        Py_INCREF( nc );
+
+        PyList_Append( bytecodes_list, nc );
+    }
+
+    //Py_DECREF( bytecodes_list );
+
+    return bytecodes_list;
+}
+
 static PyMethodDef DCode_methods[] = {
     {"get_nb_bytecodes",  (PyCFunction)DCode_get_nb_bytecodes, METH_NOARGS, "get nb bytecodes" },
+    {"get_bytecodes",  (PyCFunction)DCode_get_bytecodes, METH_NOARGS, "get nb bytecodes" },
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -1613,6 +2028,10 @@ extern "C" PyMODINIT_FUNC initdvmnative(void) {
     if (PyType_Ready(&dvm_DCodeType) < 0)
         return;
 
+    dvm_DBCType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DBCType) < 0)
+        return;
+
     m = Py_InitModule3("dvmnative", dvm_methods, "Example module that creates an extension type.");
 
     Py_INCREF(&dvm_DVMType);
@@ -1620,6 +2039,9 @@ extern "C" PyMODINIT_FUNC initdvmnative(void) {
     
     Py_INCREF(&dvm_DCodeType);
     PyModule_AddObject(m, "DCode", (PyObject *)&dvm_DCodeType);
+    
+    Py_INCREF(&dvm_DBCType);
+    PyModule_AddObject(m, "DBC", (PyObject *)&dvm_DBCType);
     
     //SpamError = PyErr_NewException("spam.error", NULL, NULL);
     //Py_INCREF(SpamError);

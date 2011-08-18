@@ -59,7 +59,8 @@ if __name__ == "__main__" :
     
         idx = 0
         for i in bc.get() :
-            print "\t", "%x" % idx, i.get_name(), i.get_operands()#, i.get_formatted_operands()
+            #print "\t", "%x" % idx, i.get_name(), i.get_operands()#, i.get_formatted_operands()
+            print "\t", "%x" % idx, i.get_op_value(), i.get_name(), i.get_operands()#, i.get_formatted_operands()
             idx += i.get_length()
 
 #    vm = add( u, new_dvm, a.get_dex() )
