@@ -2335,6 +2335,33 @@ class DBCNatif(DBC) :
     def get_length(self) :
         return self.CM.get_all_engine()[1].get_length( self.__internal_ref )
 
+class DBCNatif2(DBC) :
+    def __init__(self, class_manager, value) :
+        self.CM = class_manager
+        
+        self.__internal_dbc = value
+
+        self.op_value = self.__internal_dbc.get_op_value()
+        self.op_name = None
+        self.operands = None
+        self.formatted_operands = []
+        self.relative_operands = []
+
+    def get_length(self) :
+        return self.__internal_dbc.get_length()
+
+    def get_op_value(self) :
+        return self.__internal_dbc.get_op_value()
+
+    def get_name(self) :
+        return self.__internal_dbc.get_name()
+
+    def get_operands(self) :
+        self.operands = self.__internal_dbc.get_operands()
+        self.operands.insert( 0, [ "OP", self.op_value ] )
+        self._reload()
+        return self.operands
+
 class DCodeNatif :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
@@ -2349,7 +2376,7 @@ class DCodeNatif :
 
     def get(self) :
         if self.__bytecodes == [] :
-            self.__bytecodes = self.__internal_dcode.get_bytecodes()
+            self.__bytecodes = [ DBCNatif2( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
         return self.__bytecodes
 
 class DCode :
