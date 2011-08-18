@@ -1799,8 +1799,8 @@ static PyTypeObject dvm_DBCType = {
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
     DBC_methods,             /* tp_methods */
-    NULL, //Noddy_members,             /* tp_members */
-    NULL, //Noddy_getseters,           /* tp_getset */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
@@ -1922,8 +1922,8 @@ static PyTypeObject dvm_DCodeType = {
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
     DCode_methods,             /* tp_methods */
-    NULL, //Noddy_members,             /* tp_members */
-    NULL, //Noddy_getseters,           /* tp_getset */
+    NULL,             /* tp_members */
+    NULL,            /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
@@ -2019,8 +2019,8 @@ static PyTypeObject dvm_DVMType = {
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
     DVM_methods,             /* tp_methods */
-    NULL, //Noddy_members,             /* tp_members */
-    NULL, //Noddy_getseters,           /* tp_getset */
+    NULL,              /* tp_members */
+    NULL,            /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
@@ -2060,10 +2060,6 @@ extern "C" PyMODINIT_FUNC initdvmnative(void) {
     
     Py_INCREF(&dvm_DBCType);
     PyModule_AddObject(m, "DBC", (PyObject *)&dvm_DBCType);
-    
-    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
-    //Py_INCREF(SpamError);
-    //PyModule_AddObject(m, "error", SpamError);
 }
 
 #endif
