@@ -2349,13 +2349,7 @@ class DCodeNatif :
 
     def get(self) :
         if self.__bytecodes == [] :
-            print self.__internal_dcode.get_nb_bytecodes()
-
             self.__bytecodes = self.__internal_dcode.get_bytecodes()
-
-        #    for i in range(0, self.__internal_lib_ref.get_nb_bytecodes( self.__internal_lib_code_ref )) :
-        #        dbc_ref = self.__internal_lib_ref.get_bytecode_at( self.__internal_lib_code_ref, i )
-        #        self.__bytecodes.append( DBCNatif( self.__CM, dbc_ref ) )
         return self.__bytecodes
 
 class DCode :
