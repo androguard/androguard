@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "./apks/smssend/2/pornoplayer.apk" }, { "NAME" : "SMSSend", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lorg/me/androidapplication1/MoviePlayer;", "MN" : "onCreate", "D" : "(Landroid/os/Bundle;)V" } ], "FORMULA" : "0" } ]

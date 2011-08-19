@@ -357,6 +357,8 @@ class Method :
         self.vmx = vmx
         self.mx = vmx.get_method( m )
 
+        self.sort_h = []
+
         self.sim = sim
         self.hash = {}
 
@@ -568,6 +570,9 @@ class Method :
             print 0
         else :
             print self.m.get_code().get_length()
+
+        for i in self.sort_h :
+            print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]
 
         if details :
             bytecode.PrettyShow1( self.mx.basic_blocks.get() )

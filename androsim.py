@@ -53,6 +53,11 @@ def main(options, arguments) :
         print dsim.get_final_score()
 
         if options.display :
+            print "DIFF METHODS :"
+            diff_methods = dsim.get_diff_methods()
+            for i in diff_methods :
+                i.show2()
+            
             print "MATCH METHODS :"
             new_methods = dsim.get_match_methods()
             for i in new_methods :
@@ -62,13 +67,11 @@ def main(options, arguments) :
             new_methods = dsim.get_new_methods()
             for i in new_methods :
                 i.show2()
-                print
 
             print "DELETE METHODS :"
             del_methods = dsim.get_delete_methods()
             for i in del_methods :
                 i.show2()
-                print
 
     # Not yet usable
     elif options.json != None :
