@@ -71,7 +71,7 @@ def main(options, arguments) :
         print "MATCH METHODS :"
         new_methods = d.get_match_methods()
         for i in new_methods :
-            i.show2( details )
+            i.show2( False )
 
         print "NEW METHODS :"
         new_methods = d.get_new_methods()
