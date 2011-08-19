@@ -1043,29 +1043,28 @@ class DVMBasicBlock :
                 c[2].set_fathers( ( c[1], c[0], self ) )
 
     def analyze(self) :
+        class_manager = self.__vm.get_class_manager()
         idx = 0
         for i in self.ins :
-            if i.get_name() in DVM_FIELDS_ACCESS :
+            op_value = i.get_op_value()
+
+            #if i.get_name() in DVM_FIELDS_ACCESS :
+            if (op_value >= 0x52 and op_value <= 0x6d) :
                 o = i.get_operands()
                 desc = self.__vm.get_class_manager().get_field(o[-1][1], True)
-                if desc == None :
-                    raise("oo")
-
                 self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
-            elif "invoke" in i.get_name() :
-                idx_meth = 0
-                for op in i.get_operands() :
-                    if op[0] == "meth@" :
-                        idx_meth = op[1]
-                        break
-
-                method_info = self.__vm.get_class_manager().get_method( idx_meth )
+            #elif "invoke" in i.get_name() :
+            elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
+                idx_meth = i.get_operands()[-1][1]
+                method_info = class_manager.get_method( idx_meth )
                 self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
-            elif "new-instance" in i.get_name() :
-                type_info = self.__vm.get_class_manager().get_type( i.get_operands()[-1][1] )
+            #elif "new-instance" in i.get_name() :
+            elif op_value == 0x22 :
+                type_info = class_manager.get_type( i.get_operands()[-1][1] )
                 self.__context.get_tainted_packages()._push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
-            elif "const-string" in i.get_name() :
-                string_name = self.__vm.get_class_manager().get_string( i.get_operands()[-1][1] )
+            #elif "const-string" in i.get_name() :
+            elif (op_value >= 0x1a and op_value <= 0x1b) :
+                string_name = class_manager.get_string( i.get_operands()[-1][1] )
                 self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
                 self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
 
