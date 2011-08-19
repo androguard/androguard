@@ -22,16 +22,12 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include <google/sparse_hash_map>
 #include <hash_map>
 #include <string>
 #include <vector>
 
-//#include "dvm_header.pb.h"
-
 using namespace __gnu_cxx;
 using namespace std;
-using google::sparse_hash_map;      // namespace where class lives by default
 using std::cout;
 using std::endl;
 
@@ -993,7 +989,7 @@ class SparseSwitch : public DBCSpe {
         }
         
         size_t get_length() {
-            return sizeof(sparseswitch_t) + sst.size * 4;
+            return sizeof(sparseswitch_t) + (sst.size * 4) * 2;
         }
         
         size_t get_type() {

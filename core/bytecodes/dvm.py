@@ -640,6 +640,7 @@ def determineNext(i, end, m) :
 
         code = m.get_code().get_bc()
         off = i.get_operands()[-1][1] * 2
+        
         data = code.get_ins_off( off + end )
 
         for target in data.get_targets() :
@@ -2098,8 +2099,8 @@ class DBC :
 
         self.op_name = op_name
         self.operands = operands
-        self.formatted_operands = []
-        self.relative_operands = []
+        self.formatted_operands = None
+        self.relative_operands = None
 
         self.raw_buff = raw_buff
 
@@ -2109,65 +2110,22 @@ class DBC :
         return self.op_value
 
     def _reload(self) :
-        v = []
-        r = []
-        l = []
+        self.operands.pop(0)
 
-        for i in self.operands[1:] :
-            if i[0] == "v" :
-                v.append( i )
-            else :
-                r.append( i )
+        if self.operands == [] :
+            return
 
-        # 0x12 : [ "11n", "const/4",                          "vA, #+B", "B|A|op" ],
-        if self.op_value == 0x12 :
-            self.formatted_operands.append( ("#l", r[0][1]) )
-
-        # 0x13 : [ "21s", "const/16",                        "vAA, #+BBBB", "AA|op BBBB" ],
-        elif self.op_value == 0x13 :
-            self.formatted_operands.append( ("#l", r[0][1]) )
-
-        # 0x14 : [ "31i", "const",                           "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
-        # const instruction, convert value into float
-        elif self.op_value == 0x14 :
-            x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1] ) << 16)
-            self.formatted_operands.append( ("#f", unpack("=f", pack("=L", x))[0] ) )
-
-        # 0x15 : [ "21h", "const/high16",                   "vAA, #+BBBB0000", "AA|op BBBB0000" ],
-        elif self.op_value == 0x15 :
-            self.formatted_operands.append( ("#f", unpack( '=f', pack('=i', r[0][1]))[0] ) )
-
-        # 0x16 : [ "21s", "const-wide/16",                "vAA, #+BBBB", "AA|op BBBB" ],
-        elif self.op_value == 0x16 :
-            self.formatted_operands.append( ("#l", r[0][1]) )
-
-        # 0x17 : [ "31i", "const-wide/32",                "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
-        elif self.op_value == 0x17 :
-            x = ((0xFFFF & r[1][1]) << 16) | (0xFFFF & r[0][1])
-            self.formatted_operands.append( ("#l", unpack( '=d', pack('=d', x))[0] ) )
-
-        # 0x18 : [ "51l", "const-wide",                   "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
-        # convert value to double
-        elif self.op_value == 0x18 :
-            x = (0xFFFF & r[0][1]) | ((0xFFFF & r[1][1]) << 16) | ((0xFFFF & r[2][1]) << 32) | ((0xFFFF & r[3][1]) << 48)
-            self.formatted_operands.append( ("#d", unpack( '=d', pack('=Q', x ) )[0]) )
-
-        # 0x19 : [ "21h", "const-wide/high16",           "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
-        # convert value to double
-        elif self.op_value == 0x19 :
-            self.formatted_operands.append( ("#d", unpack( '=d', pack('=q', r[0][1]))[0]) )
-
-        # 0x26 fill-array-data
-        elif self.op_value == 0x26 :
-            self.relative_operands.append( r[0][1] * 2 )
-
-        elif self.op_value == 0x2b or self.op_value == 0x2c :
-            self.relative_operands.append( r[0][1] * 2 )
-
-        l.extend( [ self._more_info(n[0], n[1]) for n in v ] )
-        l.extend( [ self._more_info(n[0], n[1]) for n in r ] )
-
-        self.operands = l
+        last = self.operands[-1][0]
+        if "string@" == last :
+            self.operands[-1] = [ last, self.operands[-1][1], repr(self.CM.get_string( self.operands[-1][1] )) ] 
+        elif "meth@" == last :
+            m = self.CM.get_method( self.operands[-1][1] )
+            self.operands[-1] = [ last, self.operands[-1][1], m[0], m[1][0], m[1][1], m[2] ]
+        elif "field@" == last :
+            f = self.CM.get_field( self.operands[-1][1] )
+            self.operands[-1] = [ last, self.operands[-1][1], f[0], f[1], f[2] ]
+        elif "type@" == last :
+            self.operands[-1] = [ last, self.operands[-1][1], self.CM.get_type( self.operands[-1][1] ) ]
 
     def get_length(self) :
         """Return the length of the instruction"""
@@ -2176,9 +2134,64 @@ class DBC :
     def get_name(self) :
         """Return the name of the bytecode"""
         return self.op_name
+    
+    def get_relative_operands(self) :
+        """Return the relative operands"""
+        if self.relative_operands == None :
+            self.relative_operands = []
+        
+            # 0x26 fill-array-data
+            if self.op_value == 0x26 :
+                self.relative_operands.append( self.operands[1][1] * 2 )
+
+            elif self.op_value == 0x2b or self.op_value == 0x2c :
+                self.relative_operands.append( self.operands[1][1] * 2 )
+
+        return self.relative_operands
 
     def get_formatted_operands(self) :
         """Return the formatted operands"""
+        if self.formatted_operands == None :
+            self.formatted_operands = []
+        
+            # 0x12 : [ "11n", "const/4",                          "vA, #+B", "B|A|op" ],
+            if self.op_value == 0x12 :
+                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+
+            # 0x13 : [ "21s", "const/16",                        "vAA, #+BBBB", "AA|op BBBB" ],
+            elif self.op_value == 0x13 :
+                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+
+            # 0x14 : [ "31i", "const",                           "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
+            # const instruction, convert value into float
+            elif self.op_value == 0x14 :
+                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1] ) << 16)
+                self.formatted_operands.append( ("#f", unpack("=f", pack("=L", x))[0] ) )
+
+            # 0x15 : [ "21h", "const/high16",                   "vAA, #+BBBB0000", "AA|op BBBB0000" ],
+            elif self.op_value == 0x15 :
+                self.formatted_operands.append( ("#f", unpack( '=f', pack('=i', self.operands[1][1]))[0] ) )
+
+            # 0x16 : [ "21s", "const-wide/16",                "vAA, #+BBBB", "AA|op BBBB" ],
+            elif self.op_value == 0x16 :
+                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+
+            # 0x17 : [ "31i", "const-wide/32",                "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
+            elif self.op_value == 0x17 :
+                x = ((0xFFFF & self.operands[2][1]) << 16) | (0xFFFF & self.operands[1][1])
+                self.formatted_operands.append( ("#l", unpack( '=d', pack('=d', x))[0] ) )
+
+            # 0x18 : [ "51l", "const-wide",                   "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
+            # convert value to double
+            elif self.op_value == 0x18 :
+                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1]) << 16) | ((0xFFFF & self.operands[3][1]) << 32) | ((0xFFFF & self.operands[4][1]) << 48)
+                self.formatted_operands.append( ("#d", unpack( '=d', pack('=Q', x ) )[0]) )
+
+            # 0x19 : [ "21h", "const-wide/high16",           "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
+            # convert value to double
+            elif self.op_value == 0x19 :
+                self.formatted_operands.append( ("#d", unpack( '=d', pack('=q', self.operands[1][1]))[0]) )
+
         return self.formatted_operands
 
     def get_operands(self) :
@@ -2198,20 +2211,23 @@ class DBC :
         buff = self.op_name + " "
 
         l = []
-        for i in self.operands :
+        operands = self.get_operands()
+        for i in operands :
             if i[0] != "v" :
                 l.append( "[" + ' '.join( str(j) for j in i ) + "]" )
             else :
                 l.append( ''.join( str(j) for j in i ) )
             l.append( "," )
 
-        if self.formatted_operands != [] :
-            for i in self.formatted_operands :
+        formatted_operands = self.get_formatted_operands()
+        if formatted_operands != [] :
+            for i in formatted_operands :
                 l.append( "{" + str(i[1]) + "}" )
                 l.append(",")
 
-        if self.relative_operands != [] :
-            for i in self.relative_operands :
+        relative_operands = self.get_relative_operands()
+        if relative_operands != [] :
+            for i in relative_operands :
                 l.append("{" + "0x%x" % (i + pos) + "}")
                 l.append(",")
 
@@ -2304,10 +2320,23 @@ MAP_EXTRACT_VALUES = {
 class DBCSpeNative(DBCSpe) :
     def __init__(self, class_manager, value) :
         self.CM = class_manager        
-        self.__internal_dbcspe = value
         self.op = value
-        
+        self.targets = None
+
         self.type_ins_tag = SPECIFIC_DVM_INS
+        self.op_name = self.op.get_name()
+        self.op_length = self.op.get_length()
+
+    def get_targets(self) :
+        if self.targets == None :
+            self.targets = self.op.get_targets()
+        return self.targets
+
+    def get_length(self) :
+        return self.op_length
+
+    def get_name(self) :
+        return self.op_name
 
 class DBCNative(DBC) :
     def __init__(self, class_manager, value) :
@@ -2316,26 +2345,29 @@ class DBCNative(DBC) :
         self.__internal_dbc = value
 
         self.op_value = self.__internal_dbc.get_op_value()
-        self.op_name = None
+        self.op_length = self.__internal_dbc.get_length()
+        self.op_name = self.__internal_dbc.get_name()
+
         self.operands = None
-        self.formatted_operands = []
-        self.relative_operands = []
+        self.formatted_operands = None
+        self.relative_operands = None
 
         self.type_ins_tag = NORMAL_DVM_INS
 
     def get_length(self) :
-        return self.__internal_dbc.get_length()
+        return self.op_length
 
     def get_op_value(self) :
-        return self.__internal_dbc.get_op_value()
+        return self.op_value
 
     def get_name(self) :
-        return self.__internal_dbc.get_name()
+        return self.op_name
 
     def get_operands(self) :
-        self.operands = self.__internal_dbc.get_operands()
-        self.operands.insert( 0, [ "OP", self.op_value ] )
-        self._reload()
+        if self.operands == None :
+            self.operands = self.__internal_dbc.get_operands()
+            self.operands.insert( 0, [ "OP", self.op_value ] )
+            self._reload()
         return self.operands
 
 class DCodeNative :
@@ -2343,16 +2375,15 @@ class DCodeNative :
         self.__CM = class_manager
         self.__insn = buff
 
-        self.__bytecodes = []
-
+        self.__bytecodes = None
         self.__internal_dcode = self.__CM.get_all_engine()[1].new_code( self.__insn )
 
     def reload(self) :                                                                                                                                                                           
-        pass
+        self.__bytecodes = [ DBCNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
+        self.__bytecodes.extend( [ DBCSpeNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes_spe() ] )
 
     def get_ins_off(self, off) :
         idx = 0
-
         for i in self.__bytecodes :
             if idx == off :
                 return i
@@ -2360,10 +2391,22 @@ class DCodeNative :
         return None
     
     def get(self) :
-        if self.__bytecodes == [] :
-            self.__bytecodes = [ DBCNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
-            self.__bytecodes.extend( [ DBCSpeNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes_spe() ] )
         return self.__bytecodes
+    
+    def show(self) :
+        nb = 0
+        idx = 0
+        for i in self.__bytecodes :
+            print nb, "0x%x" % idx,
+            i.show(nb)
+            print
+
+            idx += i.get_length()
+            nb += 1
+
+    def pretty_show(self, m_a) :
+        bytecode.PrettyShow( m_a.basic_blocks.gets() )
+        bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
 class DCode :
     def __init__(self, class_manager, size, buff) :
@@ -2415,58 +2458,6 @@ class DCode :
     def _extract_values(self, i) :
         return MAP_EXTRACT_VALUES[i]( self.__insn, self.__current_pos )
 
-    def _analyze_mnemonic2(self, op_value, mnemonic) :
-        t1 = time.time()
-
-        name, lib, dvm = self.__CM.get_all_engine()
-        lib.add_code( dvm, cast(self.__insn, c_void_p) , len(self.__insn), self.__current_pos )
-        t2 = time.time()
-        self.__current_pos += self.__CM.exchange_tab[0]
-        operands = [ ["v", i] for i in self.__CM.exchange_tab[1:self.__CM.len_tab.value] ]
-
-
-        special = False
-        if len(mnemonic) == 6 :
-            special = True
-
-        #print operands
-
-        operands[0][0] = "OP" 
-        if mnemonic[4] != {} :
-            for i in range(1, len(operands)) :
-                if i in mnemonic[4] :
-                    operands[i][0] = mnemonic[4][i]
-
-        t3 = time.time()
-#        print operands
-
-        # SPECIFIC OPCODES
-        if op_value >= 0x6e and op_value <= 0x72 :
-            if operands[2][1] == 5 :
-                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]    
-            else :
-                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]]
-
-        elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
-
-            NNNN = operands[3][1] + operands[1][1] + 1
-
-            for i in range(operands[3][1] + 1, NNNN - 1) :
-                operands.append( ["v", i ] )
-
-            operands.append( operands.pop(2) )
-            operands.pop(1)
-
-        #print operands, mnemonic
-
-        t4 = time.time()
-
-        print '-> %0.8f %0.8f %0.8f' % ((t2-t1, t3-t2, t4-t3))
-
-        if special :
-            return operands, (operands[2][1], mnemonic[-1])
-        return operands, None
-    
     def _analyze_mnemonic(self, op_value, mnemonic) :
         special = False
         if len(mnemonic) == 6 :
@@ -2820,7 +2811,7 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self, engine=["python"]) :
+    def __init__(self, engine=["automatic"]) :
         self.engine = engine
 
         self.__manage_item = {}
@@ -2831,6 +2822,14 @@ class ClassManager :
 
         self.__cached_type_list = {}
         self.__cached_proto = {}
+
+        if self.engine[0] == "automatic" :
+            try : 
+                import dvmnative
+                self.engine[0] = "native"
+                self.engine.append( dvmnative.DVM() )
+            except ImportError :
+                self.engine[0] = "python"
 
     def get_engine(self) :
         return self.engine[0]
@@ -2980,12 +2979,12 @@ class MapList :
         return self.CM
 
 class DalvikVMFormat(bytecode._Bytecode) :
-    def __init__(self, buff, engine=["python"]) :
+    def __init__(self, buff, engine=["automatic"]) :
         super(DalvikVMFormat, self).__init__( buff )
         
         self.CM = ClassManager( engine )
 
-        self.__header = HeaderItem( 0, self, ClassManager( engine ) )
+        self.__header = HeaderItem( 0, self, ClassManager( ["python"] ) )
         self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
 
         self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
