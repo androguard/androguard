@@ -40,6 +40,8 @@ def main(options, arguments) :
         s = msign.MSignature( options.database )
 
         ret_type = androconf.is_android( options.input ) 
+        
+        print options.input, "--->",
         if ret_type == "APK" :
             a = apk.APK( options.input )
             if a.is_valid_APK() :
