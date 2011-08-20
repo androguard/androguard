@@ -1,1 +1,0 @@
-[ { "SAMPLE" : "apks/BaseBridge/InsideBaseBridge/anserverb" }, { "NAME" : "InsideBaseBridge", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lc;", "MN" : "a", "D" : "(Landroid/content/Context; Landroid/content/Intent;)Z" } ], "FORMULA" : "0" } ]

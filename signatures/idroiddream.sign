@@ -1,1 +1,0 @@
-[ { "SAMPLE" : "apks/DroidDream/InsideDroidDream/InsideDroidDream.apk" }, { "NAME" : "InsideDroidDream", "SIGNATURE" : [ { "TYPE" : "SIM", "STYPE" : 0, "CN" : "Lcom/android/providers/downloadsmanager/c;", "MN" : "handleMessage", "D" : "(Landroid/os/Message;)V" } ], "FORMULA" : "0" } ]

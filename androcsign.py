@@ -26,9 +26,10 @@ import androguard, androconf, apk, dvm, msign
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_2 = { 'name' : ('-l', '--list'), 'help' : 'list malwares in database', 'nargs' : 1 }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3]
 
 def main(options, arguments) :
     if options.input != None :
@@ -37,6 +38,10 @@ def main(options, arguments) :
        
         if options.output != None :
             s.add_indb( ret, options.output )
+
+    elif options.list != None :
+        s = msign.CSignature()
+        s.list_indb( options.list )
 
     elif options.version != None :
         print "Androcsign version %s" % androconf.ANDROCSIGN_VERSION
