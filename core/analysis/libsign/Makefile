@@ -1,7 +1,7 @@
-SRC	= 	sign.c
+SRC	= 	sign.cc
 
 LDFLAGS =	-lm -lbz2 -lz -llzma -lsnappy
-CFLAGS  += 	-Wall       
+CFLAGS  += 	-Wall -I/usr/include/python2.6/
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
@@ -16,7 +16,7 @@ CC		= gcc
 
 LIBNAME = libsign
 
-OBJ	= $(SRC:.c=.o)
+OBJ	= $(SRC:.cc=.o)
 AHO_OBJ = ac_heap.o ac_list.o aho_corasick.o
 WUMANBER_OBJ = #WuManber.o 
 CLUSTER_OBJ = cluster.o
@@ -42,6 +42,6 @@ LIBSIGN :
 clean :
 	$(RM) *.o $(LIBNAME).so
 
-%.o   : %.c
+%.o   : %.cc
 	echo " CC $@"
 	$(CCP) $(CFLAGS) -c -o $@ $<

@@ -27,18 +27,19 @@ import dvmnative
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-b', '--database'), 'help' : 'databese : use this database', 'nargs' : 1 }
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_2 = { 'name' : ('-b', '--database'), 'help' : 'database : use this database', 'nargs' : 1 }
+option_3 = { 'name' : ('-c', '--config'), 'help' : 'configuration', 'nargs' : 1 }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3]
+options = [option_0, option_1, option_2, option_3, option_4]
 
 def main(options, arguments) :
-    if options.database == None :
+    if options.database == None or options.config == None :
         return
 
+    s = msign.MSignature( options.database, options.config )
+    
     if options.input != None :
-        s = msign.MSignature( options.database )
-
         ret_type = androconf.is_android( options.input ) 
         
         print options.input, "--->",
@@ -50,7 +51,6 @@ def main(options, arguments) :
             vm = dvm.DalvikVMFormat( open(options.input, "rb").read() ) 
             s.check_dex( open(options.input, "rb").read() )
     elif options.directory != None :
-        s = msign.MSignature( options.database )
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :
                 for f in files :
@@ -75,7 +75,7 @@ def main(options, arguments) :
                             print real_filename, "--->",
                             s.check_dex( open(real_filename, "rb").read() )
                         except Exception, e : 
-                            print "ERROR"
+                            print "ERROR", e
 
     elif options.version != None :
         print "Androsign version %s" % androconf.ANDROSIGN_VERSION

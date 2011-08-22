@@ -2338,6 +2338,28 @@ class DBCSpeNative(DBCSpe) :
     def get_name(self) :
         return self.op_name
 
+    def show_buff(self, pos) :
+        buff = self.op_name + " "
+
+        if self.op_name == "FILL-ARRAY-DATA" :
+            op = self.op.get_operands()
+            for i in range(0, len(op)) :
+                buff += "\\x%02x" % ord( op[i] )
+        elif self.op_name == "PACKED-SWITCH" :
+            op = self.op.get_operands()
+
+            buff += "%x:" % op[0]
+            for i in op[1] :
+                buff += " %x" % i
+        elif self.op_name == "SPARSE-SWITCH" :
+            op = self.op.get_operands()
+            for i in range(0, len(op[0])) :
+                buff += "%x:%x " % (op[0][i], op[1][i])
+        return buff
+
+    def show(self, pos) :
+        print self.show_buff( pos ),
+
 class DBCNative(DBC) :
     def __init__(self, class_manager, value) :
         self.CM = class_manager

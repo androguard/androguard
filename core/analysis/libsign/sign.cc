@@ -17,6 +17,9 @@
  You should have received a copy of the GNU Lesser General Public License
  along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include <Python.h>
+
 #ifdef __cplusplus
 
 #include "../../../classification/libsimilarity/similarity.h"
@@ -51,7 +54,10 @@ class Signature {
         unsigned int type;
         float entropy;
         string value;
-        entropies_t *ets;
+        vector<double> *ets;
+        //entropies_t *ets;
+
+        unsigned int link;
 };
 
 struct resultcheck {
@@ -90,9 +96,14 @@ class Msign {
         sparse_hash_map<Signature *, float> entropies_hashmap_mpsm;
         sparse_hash_map<Signature *, float> entropies_hashmap_sign_ncd;
         sparse_hash_map<Signature *, float> entropies_hashmap_elem;
+
         sparse_hash_map<string, float> ncd_hashmap;
         sparse_hash_map<string, int> compress_hashmap;
 
+        sparse_hash_map<int, int> link_signatures;
+        sparse_hash_map<int, int> old_signatures;
+
+        vector<resultcheck_t *> vector_results;
 
         debug_t dt;
     public :
@@ -178,13 +189,17 @@ class Msign {
 
         void set_threshold(float value) {
             threshold_value = value;
+            
+            if (dt.log) {
+                printf("THRESHOLD = %f\n", value);
+            }
         }
 
         void set_npass(int value) {
             cluster_npass = value;
         }
 
-        int add_sign(unsigned int id, unsigned int type, const char *input, size_t input_size, entropies_t *ets) {
+        int add_sign(unsigned int id, unsigned int type, unsigned int id_link, unsigned int value_link, const char *input, size_t input_size, vector<double> *ets) {
             if (type == NCD_SIGNATURE || type == MPSM_SIGNATURE) {
                 Signature *s1 = new Signature();
 
@@ -192,21 +207,16 @@ class Msign {
                 s1->type = 0;
                 s1->value = string(input, input_size);
                 s1->entropy = entropy( (void *)input, input_size );
-                s1->ets = (entropies_t *) malloc( sizeof(entropies_t) );
-                    
-                entropies_t *e = ets;
-                entropies_t *e1 = s1->ets;
-                while( e != NULL ) {
-                    e1->value = e->value;
+                s1->ets = ets; 
+                s1->link = id_link;
 
-                    if (e->next != NULL) {
-                        e1->next = (entropies_t *) malloc( sizeof(entropies_t) );
-                        e1 = e1->next;
-                    } else {
-                        e1->next = NULL;
-                    }
-                    e = e->next;
+                link_signatures[ id_link ] = value_link;
+                old_signatures[ id_link ] = value_link;
+
+                if (dt.log) {
+                    cout << "ADD SIGN " << s1->id << " " << s1->type << " " << s1->link <<  " " << value_link << "\n";
                 }
+    
 
                 if (type == NCD_SIGNATURE) {
                     entropies_hashmap_sign_ncd[ s1 ] = s1->entropy;
@@ -223,7 +233,7 @@ class Msign {
             return -1;
         }
 
-        int check(resultcheck_t *rt) {
+        int check() {
             int ret = -1;
 
             /* Fix Aho Corasick algorithm */
@@ -237,7 +247,6 @@ class Msign {
           
             sparse_hash_map<int, Signature *> cluster_id_hashmap;
 
-            int j = 0;
             int i = 0;
             for (i = 0; i < nrows; i++)
             { 
@@ -252,14 +261,9 @@ class Msign {
 
             i = 0;
             for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_sign_ncd.begin(); it != entropies_hashmap_sign_ncd.end(); ++it) {
-                
-                entropies_t *e = it->first->ets; j = 0;
-                while( e != NULL ) {
-                    data[ i ][ j ] = (double)e->value;
-                    mask[ i ][ j ] = 1;
-                    
-                    e = e->next;
-                    j += 1;
+                for(int ii = 0; ii < it->first->ets->size(); ii++) {
+                    data[ i ][ ii ] = (double)(*it->first->ets)[ ii ];
+                    mask[ i ][ ii ] = 1;
                 }
 
                 cluster_id_hashmap[ i ] = it->first;
@@ -272,14 +276,9 @@ class Msign {
             }
 
             for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_elem.begin(); it != entropies_hashmap_elem.end(); ++it) {
-                
-                entropies_t *e = it->first->ets; j = 0;
-                while( e != NULL ) {
-                    data[ i ][ j ] = (double)e->value;
-                    mask[ i ][ j ] = 1;
-                    
-                    e = e->next;
-                    j += 1;
+                for(int ii = 0; ii < it->first->ets->size(); ii++) {
+                    data[ i ][ ii ] = (double)(*it->first->ets)[ ii ];
+                    mask[ i ][ ii ] = 1;
                 }
 
                 cluster_id_hashmap[ i ] = it->first;
@@ -364,8 +363,7 @@ class Msign {
                 printf("CLUSTER SIZE = %d\n", SScluster.size());
             }
 
-            int ii;
-            for(ii=0; ii < SScluster.size(); ii++) {
+            for(int ii=0; ii < SScluster.size(); ii++) {
                 vector<Signature *> SSsign;
                 vector<Signature *> SSelem;
                 for (i = 0; i < nrows; i++) {
@@ -382,9 +380,8 @@ class Msign {
                     printf("CLUSTER %d SIGN %d ELEM %d\n", SScluster[ii], SSsign.size(), SSelem.size());
                 }
 
-                int jj;
-                for(jj=0; jj < SSelem.size(); jj++) {
-                    ret = check_elem_ncd( SSsign, SSelem[ jj ], rt );
+                for(int jj=0; jj < SSelem.size(); jj++) {
+                    ret = check_elem_ncd( SSsign, SSelem[ jj ] );
                     if (ret == 0) {
                         break;
                     }
@@ -416,6 +413,18 @@ class Msign {
             sign_clusters.clear(); 
             SScluster.clear();
 
+
+            /*resultcheck_t *tmp = rt;
+            for(int ii = 0; ii < vector_results.size(); ii++) {
+                tmp->id = vector_results[ ii ]->id;
+                tmp->value = vector_results[ ii ]->value;
+
+                tmp->next = (resultcheck_t *)malloc(sizeof(resultcheck_t));
+                tmp = tmp->next;
+            }
+            tmp->next = NULL;
+            */
+
             return ret;
         }
 
@@ -428,20 +437,23 @@ class Msign {
 
             /* RAZ elements */
             for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_elem.begin(); it != entropies_hashmap_elem.end(); ++it) {                                    
-                /* RAZ entropies */
-                entropies_t *e = it->first->ets;
-                entropies_t *next = e;
-                while( e != NULL ) {
-                    next = e->next;
-                    free(e);
-                    e = next;
-                }
+                it->first->ets->clear();
+                delete it->first->ets;
 
                 /* RAZ element */
                 delete it->first;
             }
+
             entropies_hashmap_elem.clear();
-            
+            for (sparse_hash_map<int, int>::const_iterator it = link_signatures.begin(); it != link_signatures.end(); ++it) {                                    
+                 link_signatures[ it->first ] = old_signatures[ it->first ];
+            }
+
+            for (int ii=0; ii < vector_results.size(); ii++) {
+                free( vector_results[ ii ] );
+            }
+            vector_results.clear();
+
             return 0;
         }
 
@@ -486,7 +498,7 @@ class Msign {
             return l1.res;
         }
 
-        int add_elem(unsigned int id, const char *input, size_t input_size, entropies_t *ets) {
+        int add_elem(unsigned int id, const char *input, size_t input_size, vector<double> *ets) {
             float elem_entropy = entropy( (void *)input, input_size );
 
             Signature *s1 = new Signature();
@@ -494,38 +506,12 @@ class Msign {
             s1->type = 1;
             s1->value = string(input, input_size);
             s1->entropy = elem_entropy;
-            s1->ets = (entropies_t *) malloc( sizeof(entropies_t) );
-
-            entropies_t *e = ets;
-            entropies_t *e1 = s1->ets;
-            while( e != NULL ) {
-                e1->value = e->value;
-
-                if (e->next != NULL) {
-                    e1->next = (entropies_t *) malloc( sizeof(entropies_t) );
-                    e1 = e1->next;
-                } else {
-                    e1->next = NULL;
-                }
-
-                e = e->next;
-            }
+            s1->ets = ets;
 
             entropies_hashmap_elem[ s1 ] = s1->entropy;
             dt.elem += 1;
 
             return 0;
-            /*
-            if (signature_type == NCD_SIGNATURE) {
-                return check_elem_ncd(SS, input, input_size, rct);
-            } else if (signature_type == MPSM_SIGNATURE) {
-                return check_elem_mpsm(input, input_size, rct);
-            }
-
-            rct->id = 0;
-            rct->value = 1.0;
-            rct->next = NULL;
-            return -1;*/
         }
 
 
@@ -571,7 +557,7 @@ class Msign {
             return 0;
         }
 
-        int check_elem_ncd(vector <Signature *> SS, Signature *s1, resultcheck_t *rct) {
+        int check_elem_ncd(vector <Signature *> SS, Signature *s1) {
             float current_value;
             float min = 1.0;
             unsigned int id;
@@ -579,8 +565,10 @@ class Msign {
             int ii, pos_ii;
             for(ii=0; ii < SS.size(); ii++) {
                 current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
-                //printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
-                //cout << "\t" << s1->value << " VS " << SS[ ii ]->value << "\n";
+                /*
+                cout << "\t" << s1->value << " VS " << SS[ ii ]->value << " ";
+                printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
+                */
                 if (current_value < min) {
                     min = current_value;
                     id = SS[ ii ]->id;
@@ -588,67 +576,383 @@ class Msign {
                 }
             }
 
-            if (min <= threshold_value){
-                rct->id = id;
-                rct->value = min;
-                rct->next = NULL;
-                return 0;
+            if (min <= threshold_value) {
+                add_result( id, min );
+
+                link_signatures[ SS[ pos_ii ]->link ] --;
+                if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
+                    return 0;
+                }
             }
 
             return -1;
         }
+
+        void add_result(unsigned int id, float value) {
+            resultcheck_t *t = (resultcheck_t *)malloc( sizeof(resultcheck_t) );
+            t->id = id;
+            t->value = value;
+
+            vector_results.push_back( t );
+        }
 };
 
-extern "C" Msign *init() {
-    return new Msign();
+/* PYTHON BINDING */
+typedef struct {
+    PyObject_HEAD;
+    Msign *s;
+} sign_MsignObject;
+
+static void
+Msign_dealloc(sign_MsignObject* self)
+{
+    cout<<"Called msign dealloc\n";
+
+    delete self->s;
+    self->ob_type->tp_free((PyObject*)self);
 }
 
-extern "C" int check(Msign &s, resultcheck_t *rt) {
-    return s.check( rt );
+static PyObject *Msign_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    sign_MsignObject *self;
+
+    self = (sign_MsignObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->s = NULL;
+    }
+
+    return (PyObject *)self;
 }
 
-extern "C" int raz(Msign &s) {
-    return s.raz();
+static int
+Msign_init(sign_MsignObject *self, PyObject *args, PyObject *kwds)
+{
+    if (self != NULL) 
+        self->s = new Msign();
+
+    return 0;
 }
 
-extern "C" int get_debug(Msign &s, debug_t *dt) {
-    return s.get_debug( dt );
+static PyObject *Msign_set_threshold(sign_MsignObject *self, PyObject *args)
+{
+    double threshold;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "d", &threshold);
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_threshold( threshold );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
 }
 
-extern "C" int set_debug_log(Msign &s, int value) {
-    return s.set_debug_log( value );
+static PyObject *Msign_set_dist(sign_MsignObject *self, PyObject *args)
+{
+    char dist;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "c", &dist);
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_dist( dist );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
 }
 
-/* cluster */
-extern "C" void set_npass(Msign &s, int value) {
-    s.set_npass( value );
+static PyObject *Msign_set_method(sign_MsignObject *self, PyObject *args)
+{
+    char method;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "c", &method);
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_method( method );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
 }
 
-extern "C" int set_weight(Msign &s, double *w, int size) {
-    return s.set_weight( w, size );
+static PyObject *Msign_set_weight(sign_MsignObject *self, PyObject *args)
+{
+    PyObject *weight_list;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "O", &weight_list);
+        if(!ok) return PyInt_FromLong(-1);
+   
+        if ( !PyList_Check( weight_list ) ) {
+
+            return PyInt_FromLong(-1);
+        }
+
+        int list_size = PyList_Size( weight_list );
+        double *datas = (double *)malloc( list_size * sizeof( double ) );
+
+        for(int i=0; i<list_size; i++) {
+            PyObject * pyvalue = 0;
+
+            pyvalue = PyList_GetItem(weight_list, i);
+            double value = PyFloat_AsDouble( pyvalue );
+
+            datas[ i ] = value;
+        }
+
+        self->s->set_weight( datas, list_size );
+
+        free( datas );
+        return PyInt_FromLong(0);
+     }
+
+    return PyInt_FromLong(-1);
 }
 
-extern "C" int set_dist(Msign &s, char c ) {
-    return s.set_dist( c );
+static PyObject *Msign_set_npass(sign_MsignObject *self, PyObject *args)
+{
+    int npass;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "i", &npass );
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_npass( npass );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
 }
 
-extern "C" int set_method(Msign &s, char c ) {
-    return s.set_method( c );
+static PyObject *Msign_add_sign(sign_MsignObject *self, PyObject *args)
+{
+    unsigned int id, type, id_link, value_link;
+    char *input; size_t input_size;
+
+    PyObject *ets_list;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "iiiis#O", &id, &type, &id_link, &value_link, &input, &input_size, &ets_list );
+        if(!ok) return PyInt_FromLong(-1);
+ 
+        if ( !PyList_Check( ets_list ) ) {
+            return PyInt_FromLong(-1);
+        }
+
+        vector<double> *ets_vector = new vector<double>;
+
+        int list_size = PyList_Size( ets_list );
+        for(int i=0; i<list_size; i++) {
+            PyObject * pyvalue = 0;
+
+            pyvalue = PyList_GetItem(ets_list, i);
+            double value = PyFloat_AsDouble( pyvalue );
+
+            ets_vector->push_back( value );
+        }
+
+        self->s->add_sign( id, type, id_link, value_link, input, input_size, ets_vector );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
 }
 
-/* MPSM */
+static PyObject *Msign_add_elem(sign_MsignObject *self, PyObject *args)
+{
+    unsigned int id;
+    char *input; size_t input_size;
 
-/* NCD */
-extern "C" void set_threshold(Msign &s, float value) {
-    s.set_threshold( value );
+    PyObject *ets_list;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "is#O", &id, &input, &input_size, &ets_list );
+        if(!ok) return PyInt_FromLong(-1);
+ 
+        if ( !PyList_Check( ets_list ) ) {
+            return PyInt_FromLong(-1);
+        }
+
+        vector<double> *ets_vector = new vector<double>;
+
+        int list_size = PyList_Size( ets_list );
+        for(int i=0; i<list_size; i++) {
+            PyObject * pyvalue = 0;
+
+            pyvalue = PyList_GetItem(ets_list, i);
+            double value = PyFloat_AsDouble( pyvalue );
+
+            ets_vector->push_back( value );
+        }
+
+        self->s->add_elem( id, input, input_size, ets_vector );
+        return PyInt_FromLong(0);
+    }
+    
+    return PyInt_FromLong(-1);
 }
 
-extern "C" int add_sign(Msign &s, unsigned int id, unsigned int type, const char *input, size_t input_size, entropies_t *ets) {
-    return s.add_sign( id, type, input, input_size, ets );
+static PyObject *Msign_check(sign_MsignObject *self, PyObject *args)
+{
+    PyObject *check_list = PyList_New( 0 );
+    
+    if (self != NULL) {
+        
+        int ret = self->s->check();
+
+        PyList_Append( check_list, PyInt_FromLong( ret ) );
+
+        for(int ii = 0; ii < self->s->vector_results.size(); ii++) {
+            PyObject *icheck_list = PyList_New( 0 );
+
+            PyList_Append( icheck_list, PyInt_FromLong( self->s->vector_results[ ii ]->id ) );
+            PyList_Append( icheck_list, PyFloat_FromDouble( self->s->vector_results[ ii ]->value ) );
+
+            PyList_Append( check_list, icheck_list );
+        }
+
+        return check_list;
+    }
+
+    return check_list;
 }
 
-extern "C" int add_elem(Msign &s, unsigned int id, const char *input, size_t input_size, entropies_t *ets) {
-    return s.add_elem( id, input, input_size, ets );
+static PyObject *Msign_get_debug(sign_MsignObject *self, PyObject *args)
+{
+    PyObject *debug = PyList_New( 0 );
+
+    if (self != NULL) {
+        PyList_Append( debug, PyLong_FromLong( self->s->dt.cmp ) );
+        PyList_Append( debug, PyLong_FromLong( self->s->dt.elem ) );
+        PyList_Append( debug, PyLong_FromLong( self->s->dt.nbclusters ) );
+        PyList_Append( debug, PyLong_FromLong( self->s->dt.nbcmpclusters ) );
+    }
+
+    return debug;
+}
+
+static PyObject *Msign_raz(sign_MsignObject *self, PyObject *args)
+{
+    if (self != NULL) {
+        self->s->raz();
+
+        return PyInt_FromLong( 0 );
+    }
+
+    return PyInt_FromLong( -1 );
+}
+
+static PyObject *Msign_set_debug_log(sign_MsignObject *self, PyObject *args)
+{
+    int value;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "i", &value);
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_debug_log( value );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
+}
+
+static PyMethodDef Msign_methods[] = {
+    {"set_threshold",  (PyCFunction)Msign_set_threshold, METH_VARARGS, "set threshold" },
+    {"set_dist",  (PyCFunction)Msign_set_dist, METH_VARARGS, "set dist" },
+    {"set_method",  (PyCFunction)Msign_set_method, METH_VARARGS, "set method" },
+    {"set_weight",  (PyCFunction)Msign_set_weight, METH_VARARGS, "set weight" },
+    {"set_npass",  (PyCFunction)Msign_set_npass, METH_VARARGS, "set npass" },
+    {"set_debug_log",  (PyCFunction)Msign_set_debug_log, METH_VARARGS, "set debug log" },
+    {"add_sign",  (PyCFunction)Msign_add_sign, METH_VARARGS, "add sign" },
+    {"add_elem",  (PyCFunction)Msign_add_elem, METH_VARARGS, "add elem" },
+    {"check",  (PyCFunction)Msign_check, METH_VARARGS, "check" },
+    {"get_debug",  (PyCFunction)Msign_get_debug, METH_VARARGS, "get debug" },
+    {"raz",  (PyCFunction)Msign_raz, METH_NOARGS, "raz" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject sign_MsignType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "sign.Msign",             /*tp_name*/
+    sizeof(sign_MsignObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)Msign_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "Msign objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    Msign_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)Msign_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    Msign_new,                 /* tp_new */
+};
+
+PyObject *entropy(PyObject *self, PyObject* args)
+{
+    char *input; size_t input_size;
+
+    int ok = PyArg_ParseTuple( args, "s#", &input, &input_size );
+    if(!ok) return PyInt_FromLong(-1);
+
+    double value = entropy( input, input_size );
+   
+    return PyFloat_FromDouble( value );
+}
+
+static PyMethodDef sign_methods[] = {
+    {"entropy",  (PyCFunction)entropy, METH_VARARGS, "entropy" },
+    {NULL}  /* Sentinel */
+};
+
+extern "C" PyMODINIT_FUNC initlibsign(void) {
+    PyObject *m;
+
+    sign_MsignType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&sign_MsignType) < 0)
+        return;
+
+    m = Py_InitModule3("libsign", sign_methods, "Example module that creates an extension type.");
+
+    Py_INCREF(&sign_MsignType);
+    PyModule_AddObject(m, "Msign", (PyObject *)&sign_MsignType);
 }
 
 #endif
