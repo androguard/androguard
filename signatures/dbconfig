@@ -1,0 +1,1 @@
+{ "SIMILARITY" : { "METHOD_THRESHOLD" : 0.3 }, "CLUSTER" : { "DISTANCE" : "e", "METHOD" : "m", "WEIGHTS" : [ 2.0, 1.2, 0.5, 0.1, 0.6 ] } }
