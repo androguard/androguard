@@ -184,6 +184,11 @@ def TestNCS( n, tests, type_test ) :
 def TestCMID( n, tests, type_test ) :
     TestSim("CMID", tests, type_test, n.cmid)
 
+def TestCMID2( n ) :
+    x = "HI WORLD"
+    y = "B[I]B[RF1]B[F0S]B[IF1]B[]B[]B[S]B[SS]B[RF0]B[]B[SP0I]B[GP1]B[SP0IP0F0P1]B[GS]B[F1]B[RP0]B[IF0P1S]B[P1]"
+    print n.cmid( x, y )
+
 def TestSim(type_sim, tests, type_test, func) :
     print type_sim, type_test
     nb = 0

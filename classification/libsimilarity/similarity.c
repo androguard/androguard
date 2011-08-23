@@ -211,7 +211,7 @@ int cmid(int level, libsimilarity_t *n)
 
    s2 = *(n->ccmp);
    if (s2 == 0) {
-      s1 = size_tmp_buff;
+      s2 = size_tmp_buff;
       ret = generic_Compress(level, n->cmp, n->size_cmp, tmp_buff, &s2);
       //printf("RET = %d AVAIL OUT %d\n", ret, s2);
       if (ret < 0) {

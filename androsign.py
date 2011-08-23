@@ -42,7 +42,7 @@ def main(options, arguments) :
     if options.input != None :
         ret_type = androconf.is_android( options.input ) 
         
-        print options.input, "--->",
+        print os.path.basename(options.input), ":",
         if ret_type == "APK" :
             a = apk.APK( options.input )
             if a.is_valid_APK() :
@@ -61,7 +61,7 @@ def main(options, arguments) :
 
                     ret_type = androconf.is_android( real_filename )
                     if ret_type == "APK"  :
-                        print real_filename, "--->",
+                        print os.path.basename( real_filename ), ":",
                         #try : 
                         a = apk.APK( real_filename )
                         if a.is_valid_APK() :
