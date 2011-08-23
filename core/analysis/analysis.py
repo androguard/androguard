@@ -1713,19 +1713,13 @@ class Exceptions :
     def add(self, exceptions, basic_blocks) :
         for i in exceptions :
             self.exceptions.append( ExceptionAnalysis( i, basic_blocks ) )
-
+        
     def get_exception(self, addr_start, addr_end) :
         for i in self.exceptions :
-            if i.start >= addr_start and i.start <= addr_end :
+            if i.start >= addr_start and i.end <= addr_end :
                 return i
 
-            elif i.end >= addr_start and i.end <= addr_end :
-                return i
-
-            elif addr_start >= i.start and addr_start <= i.end :
-                return i
-
-            elif addr_end >= i.start and addr_end <= i.end :
+            elif addr_end <= i.end and addr_start >= i.start :
                 return i
 
         return None
@@ -1790,8 +1784,10 @@ class MethodAnalysis :
 
             idx += i.get_length()
 
-        #print self.__method.get_name(), l, h
-
+        excepts = BO["Dexception"]( self.__vm, self.__method )
+        for i in excepts:
+            l.extend([i[0]])
+                              
         idx = 0
         for i in bc.get() :
             name = i.get_name()
@@ -1826,7 +1822,8 @@ class MethodAnalysis :
                 i.set_childs( [] )
 
         # Create exceptions
-        self.exceptions.add( BO["Dexception"]( self.__vm, self.__method ), self.basic_blocks )
+        #self.exceptions.add( BO["Dexception"]( self.__vm, self.__method ), self.basic_blocks )
+        self.exceptions.add(excepts, self.basic_blocks)
 
         for i in self.basic_blocks.get() :
             # analyze each basic block

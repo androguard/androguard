@@ -606,8 +606,7 @@ typedef struct {
 static void
 Msign_dealloc(sign_MsignObject* self)
 {
-    cout<<"Called msign dealloc\n";
-
+    //cout<<"Called msign dealloc\n";
     delete self->s;
     self->ob_type->tp_free((PyObject*)self);
 }
