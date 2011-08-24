@@ -34,9 +34,9 @@ options = [option_0, option_1, option_2, option_3]
 def main(options, arguments) :
     if options.input != None :
         s = msign.CSignature()
-        ret = s.add_apk( open(options.input, "rb").read() )
-       
-        if options.output != None :
+        
+        ret = s.add_file( open( options.input, "rb" ).read() )
+        if ret != None and options.output != None :
             s.add_indb( ret, options.output )
 
     elif options.list != None :
