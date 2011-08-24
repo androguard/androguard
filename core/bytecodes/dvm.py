@@ -1674,8 +1674,11 @@ class EncodedField :
         self._name = name[2]
         self._proto = ''.join(i for i in name[1])
 
-    def get_access(self) :
+    def get_access_flags(self) :
         return self.access_flags
+
+    def get_access(self) :
+        return self.get_access_flags()
 
     def get_class_name(self) :
         return self._class_name
@@ -1736,8 +1739,11 @@ class EncodedMethod :
         if self._code != None :
             self._code.pretty_show( vm_a.hmethods[ self ] )
 
-    def get_access(self) :
+    def get_access_flags(self) :
         return self.access_flags
+
+    def get_access(self) :
+        return self.get_access_flags()
 
     def get_length(self) :
         if self._code != None :
@@ -1909,6 +1915,9 @@ class ClassItem :
     def show(self) :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
 
+    def get_class_data(self) :
+        return self._class_data_item
+
     def get_name(self) :
         return self._name
 
@@ -1927,6 +1936,30 @@ class ClassItem :
 
     def get_obj(self) :
         return []
+
+    def get_class_idx(self) :
+        return self.format.get_value().class_idx
+
+    def get_access_flags(self) :
+        return self.format.get_value().access_flags
+
+    def get_superclass_idx(self) :
+        return self.format.get_value().superclass_idx
+
+    def get_interfaces_off(self) :
+        return self.format.get_value().interfaces_off
+
+    def get_source_file_idx(self) :
+        return self.format.get_value().source_file_idx
+
+    def get_annotations_off(self): 
+        return self.format.get_value().annotations_off
+
+    def get_class_data_off(self) :
+        return self.format.get_value().class_data_off
+
+    def get_static_values_off(self) :
+        return self.format.get_value().static_values_off
 
     def get_raw(self) :
         return [ bytecode.Buff( self.__offset.off, self.format.get_value_buff() ) ]
