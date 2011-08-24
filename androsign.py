@@ -48,7 +48,6 @@ def main(options, arguments) :
             if a.is_valid_APK() :
                 s.check_apk( a )
         elif ret_type == "DEX" :
-            vm = dvm.DalvikVMFormat( open(options.input, "rb").read() ) 
             s.check_dex( open(options.input, "rb").read() )
     elif options.directory != None :
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :

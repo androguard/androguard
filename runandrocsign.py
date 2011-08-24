@@ -29,7 +29,7 @@ option_1 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1]
 
-LIST = [ "droiddream.sign", "droiddream_included.sign", "droiddream_light.sign", "nickyspy.sign" ]
+LIST = [ "droiddream.sign", "droiddream_included.sign", "droiddream_light.sign", "nickyspy.sign", "dogowar.sign" ]
 
 def main(options, arguments) :
     if options.version != None :
@@ -38,11 +38,10 @@ def main(options, arguments) :
 
     s = msign.CSignature()
     for i in LIST :
-        ret = s.add_apk( open("signatures/" + i, "rb").read() )        
+        ret = s.add_file( open("signatures/" + i, "rb").read() )        
 
         if options.output != None :
             s.add_indb( ret, options.output )
-
 
 if __name__ == "__main__" :
     parser = OptionParser()
