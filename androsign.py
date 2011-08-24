@@ -71,7 +71,7 @@ def main(options, arguments) :
                         #    print "ERROR", e 
                     elif ret_type == "DEX" :
                         try :
-                            print real_filename, "--->",
+                            print os.path.basename( real_filename ), "--->",
                             s.check_dex( open(real_filename, "rb").read() )
                         except Exception, e : 
                             print "ERROR", e
