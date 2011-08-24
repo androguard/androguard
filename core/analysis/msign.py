@@ -360,7 +360,6 @@ class CSignature :
                 z = []
                 if j["TYPE"] == "METHSIM" :
                     z.append( METHSIM )
-                   
                     m = vm.get_method_descriptor( j["CN"], j["MN"], j["D"] )
                     if m == None :
                         raise("ooo")
@@ -433,7 +432,10 @@ class CSignature :
         fd.close()
 
         for i in buff :
-            print i, buff[i]
+            print i, 
+            for j in buff[i][0] :
+                print j[0], j[2:],
+            print
 
     def add_indb(self, signatures, output) :
         fd = open(output, "a+")

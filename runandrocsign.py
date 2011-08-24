@@ -29,7 +29,16 @@ option_1 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1]
 
-LIST = [ "droiddream.sign", "droiddream_included.sign", "droiddream_light.sign", "nickyspy.sign", "dogowar.sign" ]
+LIST = [ 
+            "droiddream.sign", 
+            "droiddream_included.sign", 
+            "droiddream_light.sign", 
+            "nickyspy.sign", 
+            "dogowar.sign", 
+            "geinimi.sign",
+            "droidkungfu.sign",
+            "droidkungfu2.sign"
+]
 
 def main(options, arguments) :
     if options.version != None :
