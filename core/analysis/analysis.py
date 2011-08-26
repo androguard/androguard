@@ -1476,6 +1476,9 @@ class TaintedPackages :
         except KeyError :
             return {}
 
+    def get_package(self, name) :
+        return self.__packages[ name ]
+
     def get_packages_by_bb(self, bb):
         """
             @rtype : return a list of packaged used in a basic block
@@ -1493,6 +1496,16 @@ class TaintedPackages :
     def get_packages(self) :
         for i in self.__packages :
             yield self.__packages[ i ], i
+    
+    def get_internal_packages_from_package(self, package) :
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages() :
+            paths = m.get_methods()
+            for j in paths :
+                if j.get_method().get_class_name() == package and j.get_class_name() in classes :
+                    l.append( j )
+        return l
 
     def get_internal_packages(self) :
         """
