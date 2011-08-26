@@ -1,1 +1,1 @@
-{ "METHSIM" : { "THRESHOLD" : 0.3, "DISTANCE" : "e", "METHOD" : "m", "WEIGHTS" : [ 2.0, 1.2, 0.5, 0.1, 0.6 ] }, "CLASSSIM" : { "THRESHOLD" : 0.3, "DISTANCE" : "e", "METHOD" : "m", "WEIGHTS" : [ 2.0, 1.2, 0.5, 0.1, 0.6 ] } }
+{ "METHSIM" : { "THRESHOLD" : 0.3, "DISTANCE" : "e", "METHOD" : "m", "WEIGHTS" : [ 2.0, 1.2, 0.5, 0.1, 0.6 ] }, "CLASSSIM" : { "THRESHOLD" : 0.2, "DISTANCE" : "e", "METHOD" : "m", "WEIGHTS" : [ 2.0, 1.2, 0.5, 0.1, 0.6 ] } }
