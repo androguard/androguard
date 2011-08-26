@@ -28,7 +28,7 @@ import dvmnative
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
 option_2 = { 'name' : ('-b', '--database'), 'help' : 'database : use this database', 'nargs' : 1 }
-option_3 = { 'name' : ('-c', '--config'), 'help' : 'configuration', 'nargs' : 1 }
+option_3 = { 'name' : ('-c', '--config'), 'help' : 'use this configuration', 'nargs' : 1 }
 option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
 options = [option_0, option_1, option_2, option_3, option_4]
