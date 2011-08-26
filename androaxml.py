@@ -37,7 +37,9 @@ options = [option_0, option_1, option_2]
 def main(options, arguments) :
     if options.input != None and options.output != None :
         buff = ""
-        if ".apk" in options.input :
+
+        ret_type = androconf.is_android( options.input )
+        if ret_type == "APK" :
             a = apk.APK( options.input )
             buff = a.xml[ "AndroidManifest.xml" ].toprettyxml()
         elif ".xml" in options.input :

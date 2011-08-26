@@ -61,7 +61,7 @@ class ChilkatZip :
     def read(self, elem) :
         e = self.zip.GetEntryByName( elem )
         s = chilkat.CkByteData()
-
+        
         e.Inflate( s )
         return s.getBytes()
 
@@ -87,6 +87,7 @@ class APK :
             fd = open( filename, "rb" )
             self.__raw = fd.read()
             fd.close()
+
 
         if ZIPMODULE == 0 :
             self.zip = ChilkatZip( self.__raw )
