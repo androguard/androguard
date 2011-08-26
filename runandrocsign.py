@@ -36,8 +36,10 @@ LIST = [
             "nickyspy.sign", 
             "dogowar.sign", 
             "geinimi.sign",
+            "golddream.sign",
             "droidkungfu.sign",
-            "droidkungfu2.sign"
+            "droidkungfu2.sign",
+            "wat.sign",
 ]
 
 def main(options, arguments) :
