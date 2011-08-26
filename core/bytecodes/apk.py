@@ -744,3 +744,17 @@ class AXMLPrinter :
         if id >> 24 == 1 :
             return "android:"
         return ""
+
+def apk2png(a, vmx) :
+    for i in a.get_services() :
+        print i, bytecode.FormatClassToJava( i )
+
+    
+    p = vmx.tainted_packages.get_internal_packages_from_package( bytecode.FormatClassToJava( i ) )
+    for j in p :
+        if j.get_method().get_name() != "onCreate" :
+            continue
+
+        print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
+                                                                                                        j.get_bb().start + j.get_idx(), \
+                                                                                                        j.get_class_name(), j.get_name(), j.get_descriptor())

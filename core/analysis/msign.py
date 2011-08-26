@@ -315,8 +315,11 @@ class MSignature :
            
             current_sign[ self.__rsigns[ i[0] ] ] = ev.replace( str( m_sign[1][i[0]] ), "True" )
 
+        
         for i in l :
             ev = current_sign[ self.__rsigns[ i[0] ] ]
+            ev = ev.replace("1", "False")
+
             if (eval(ev) == True) :
                 return self.__signs[ self.__rsigns[ i[0] ] ][0]
         
@@ -364,6 +367,8 @@ class CSignature :
                     if m == None :
                         raise("ooo")
                     
+                    #print m.get_length()
+
                     z_tmp = create_entropies( vmx, m )
                     z_tmp[0] = base64.b64encode( z_tmp[0] )
                     z.extend( z_tmp )
