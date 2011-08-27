@@ -330,9 +330,8 @@ def create_entropies(vmx, m) :
           libsign.entropy( vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE ).get_string() ),
           libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
           libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
-          #libsign.entropy( vmx.get_method_signature(m, "L4", { "arguments" : ["Ljava"] } ).get_string() ),
           libsign.entropy( vmx.get_method_signature(m, "hex" ).get_string() ),
-          libsign.entropy( vmx.get_method_signature(m, "L3" ).get_string() ),
+          libsign.entropy( vmx.get_method_signature(m, "L2" ).get_string() ),
         ]
 
     return l
