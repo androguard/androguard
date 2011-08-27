@@ -26,31 +26,7 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, analysis
 from analysis import *
 
-#TEST_CASE  = 'examples/android/TC/bin/classes.dex'
-TEST_CASE  = 'apks/DroidDream/tmp/classes.dex'
-
-GRAMMAR_TYPE_ANONYMOUS = 0
-
-VALUES = { "Lorg/t0t0/androguard/TC/R$attr; <init> ()V" : {
-               GRAMMAR_TYPE_ANONYMOUS : "BPMR",
-           },
-
-           "Lorg/t0t0/androguard/TC/R$drawable; <init> ()V" : {
-              GRAMMAR_TYPE_ANONYMOUS : "BPMR",
-           },
-
-           "Lorg/t0t0/androguard/TC/R$layout; <init> ()V" : {
-              GRAMMAR_TYPE_ANONYMOUS : "BPMR",
-           },
-
-           "Lorg/t0t0/androguard/TC/R$string; <init> ()V" : {
-              GRAMMAR_TYPE_ANONYMOUS : "BPMR",
-           },
-
-           "Lorg/t0t0/androguard/TC/TCMod1; T1 ()V" : {
-              GRAMMAR_TYPE_ANONYMOUS : "BBBFRIFWBFRGPCPMSPMFRSPMPMPMPMFRPCPMSPMSPMPMPMPMBBIBFRGPCPMSPMSPMPMPMPMFRFWFRPCPMSPMFRSPMPMPMPMBBIBBFRIFWBGBFRGPCPMSPMFRSPMPMPMPMFRPCPMSPMSPMPMPMPMFRPCPMSPMSPMPMPMPMBFRFWBFRIPCPMSPMFRSPMPMPMPMBR",
-           }
-}
+TEST_CASE  = "examples/android/TestsAndroguard/bin/classes.dex"
 
 def test(got, expected):
     if got == expected:
@@ -64,15 +40,13 @@ a = androguard.AndroguardS( TEST_CASE )
 x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 for method in a.get_methods() :
-    key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
-
-    #if key not in VALUES :
-    #   continue
-
     print method.get_class_name(), method.get_name(), method.get_descriptor()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
     print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_2).get_string()
+    print "-> : \t", x.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string()
+    print "-> : \t", x.get_method_signature(method, "L2" ).get_string() 
+
     #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
     #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
     #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_5).get_string()
@@ -81,7 +55,3 @@ for method in a.get_methods() :
     #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L3).get_string()
 
     print
-
-#   if key in VALUES :
-#      for i in VALUES[ key ] :
-#         test( VALUES[ key ][i], x.get_method_signature(method, i) )
