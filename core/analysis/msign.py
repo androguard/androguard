@@ -46,6 +46,8 @@ class SignSim :
         self.sim_type = sim_type
 
         self.debug = False
+        self.minimum_signature = None
+
         #self.sign.set_debug_log( 1 )
 
     def set_debug(self) :
@@ -60,6 +62,12 @@ class SignSim :
         self.sign.set_weight( buff["WEIGHTS"] )
 
     def load_sign(self, unique_id, unique_idlink, i, ssign, j , nb) :
+        if self.minimum_signature == None :
+            self.minimum_signature = len(ssign[1])
+
+        if self.minimum_signature > len(ssign[1]) :
+            self.minimum_signature = len(ssign[1])
+        
         self.sign.add_sign_sim( unique_id, 
                                 unique_idlink,
                                 j,
@@ -78,8 +86,12 @@ class SignSim :
             print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
             print ssign[ 1 : ], 
 
+    def fix(self) :
+        self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.1)
+
     def add_elem_sim(self, uniqueid, s1, entropies) :
-        return self.sign.add_elem_sim( uniqueid, s1, entropies )
+        if self.minimum_signature < len(s1) :
+            return self.sign.add_elem_sim( uniqueid, s1, entropies )
 
     def add_elem_string(self, uniqueid, s1) :
         return self.sign.add_elem_string( uniqueid, s1 )
@@ -120,6 +132,9 @@ class MSignature :
     def load(self) :
         self.load_config( open(self.dbconfig, "r").read() )
         self.load_sign( open(self.dbname, "r").read() )
+
+        self.meth_sim.fix()
+        self.class_sim.fix()
 
     def set_debug(self) :
         self.debug = True
@@ -227,14 +242,18 @@ class MSignature :
 
     def __check(self) :
         l_meth = self.meth_sim.check_sim() 
-        l_class = self.class_sim.check_sim()
         #l_classhash = self.class_hash.check_string()
 
         l = []
         l.extend( l_meth[1:] )
-        l.extend( l_class[1:] )
 
-        return l_meth[0] and l_class[0], l
+        ret = l_meth[0]
+        if l_meth[0] == -1 :
+            l_class = self.class_sim.check_sim()
+            l.extend( l_class[1:] )
+            ret = ret and l_class[0]
+
+        return ret, l
 
     def _check(self, buff) :
         if self.debug :
@@ -253,7 +272,7 @@ class MSignature :
             uniqueid = self._create_id( method.get_class_name() + method.get_name() + method.get_descriptor() )
             entropies = create_entropies(vmx, method)
             ret = self.meth_sim.add_elem_sim( uniqueid, entropies[0], entropies[1:] )
-
+            
         for c in vm.get_classes() :
             value = ""
             value_entropy = 0.0
