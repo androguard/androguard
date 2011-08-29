@@ -45,7 +45,11 @@ class SignSim :
         self.sign = libsign.Msign()
         self.sim_type = sim_type
 
+        self.debug = False
         #self.sign.set_debug_log( 1 )
+
+    def set_debug(self) :
+        self.debug = True
 
     def load_config(self, buff) :
         self.sign.set_threshold( buff["THRESHOLD"] )
@@ -61,21 +65,18 @@ class SignSim :
                                 j,
                                 str(base64.b64decode(ssign[1])), 
                                 ssign[ 2 : ] )
-                    
-        print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
-        print ssign[ 2 : ], 
+        
+        if self.debug :
+            print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
+            print ssign[ 2 : ], 
     
     def load_sign_string(self, unique_id, unique_idlink, i, ssign, j , nb) :
         self.sign.add_sign_string( unique_id, 
                                    ssign[1] );
 
-        #                          unique_idlink,
-        #                        j,
-        #                        str(base64.b64decode(ssign[1])), 
-        #                        ssign[ 2 : ] )
-                    
-        print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
-        print ssign[ 1 : ], 
+        if self.debug :
+            print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
+            print ssign[ 1 : ], 
 
     def add_elem_sim(self, uniqueid, s1, entropies) :
         return self.sign.add_elem_sim( uniqueid, s1, entropies )
@@ -111,10 +112,20 @@ class MSignature :
 
         #self.pca = PCA(n_components=2)
         #self.X = []
-        
-        self.load_config( open(dbconfig, "r").read() )
-        self.load_sign( open(dbname, "r").read() )
+       
+        self.dbname = dbname
+        self.dbconfig = dbconfig
+        self.debug = False
+       
+    def load(self) :
+        self.load_config( open(self.dbconfig, "r").read() )
+        self.load_sign( open(self.dbname, "r").read() )
 
+    def set_debug(self) :
+        self.debug = True
+        self.meth_sim.set_debug()
+        self.class_sim.set_debug()
+        
     def load_config(self, buff) :
         buff = json.loads( buff )
 
@@ -137,7 +148,8 @@ class MSignature :
         nb_meth_sim = 0
         nb_class_sim = 0
         for i in buff :
-            print "%s (%s)" % (i, buff[i][1])
+            if self.debug :
+                print "%s (%s)" % (i, buff[i][1])
 
             j = buff[i][0]
 
@@ -157,10 +169,12 @@ class MSignature :
                     c_nb_class_sim += 1
 
             for ssign in j :
-                print "\t--->",
+                if self.debug :
+                    print "\t--->",
                 # METHSIM
                 if ssign[0] == METHSIM :
-                    print "METHSIM",
+                    if self.debug :
+                        print "METHSIM",
                     uniqueid = self._create_id( "%s-%d" % (i, nb) )
                     self.meth_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_meth_sim, nb )
 
@@ -168,9 +182,11 @@ class MSignature :
                     self.__rsigns[ uniqueid ] = len(self.__signs) - 1
                     nb += 1 
                     nb_meth_sim += 1
-                    print
+                    if self.debug :
+                        print
                 elif ssign[0] == CLASSSIM : 
-                    print "CLASSSIM",
+                    if self.debug :
+                        print "CLASSSIM",
                     uniqueid = self._create_id( "%s-%d" % (i, nb) )
                     self.class_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_class_sim, nb )
 
@@ -178,7 +194,8 @@ class MSignature :
                     self.__rsigns[ uniqueid ] = len(self.__signs) - 1
                     nb += 1 
                     nb_class_sim += 1
-                    print
+                    if self.debug :
+                        print
                 #elif ssign[0] == CLASSHASH :
                 #    print "CLASSHASH",
                 #
@@ -192,13 +209,16 @@ class MSignature :
             current_sign.append( ccurrent_sign )
             current_sign.append( buff[i][-1] )
 
-        print
+        if self.debug :
+            print
         self.meth_sim.set_npass( nb_meth_sim )
         self.class_sim.set_npass( nb_class_sim )
 
     def check_apk(self, apk) :
-        print "loading apk..",
-        sys.stdout.flush()
+        if self.debug :
+            print "loading apk..",
+            sys.stdout.flush()
+        
         classes_dex = apk.get_dex()
         return self._check( classes_dex )
     
@@ -217,14 +237,16 @@ class MSignature :
         return l_meth[0] and l_class[0], l
 
     def _check(self, buff) :
-        print "loading dex..",
-        sys.stdout.flush()
+        if self.debug :
+            print "loading dex..",
+            sys.stdout.flush()
         
         vm = dvm.DalvikVMFormat( buff )
         vmx = VMAnalysis( vm )
 
-        print "check ...",
-        sys.stdout.flush()
+        if self.debug :
+            print "check ...",
+            sys.stdout.flush()
        
         # Add methods for METHSIM
         for method in vm.get_methods() :
@@ -288,17 +310,23 @@ class MSignature :
         #pl.show()
 
         ret, l = self.__check()
-        dt = self.meth_sim.get_debug()
-        dt1 = self.class_sim.get_debug()
 
-        print "C:%d CC:%d CMP:%d EL:%d" % (dt[2], dt[3], dt[0], dt[1]),
-        print "C:%d CC:%d CMP:%d EL:%d" % (dt1[2], dt1[3], dt1[0], dt1[1]),
+        if self.debug :
+            dt = self.meth_sim.get_debug()
+            dt1 = self.class_sim.get_debug()
+            print "C:%d CC:%d CMP:%d EL:%d" % (dt[2], dt[3], dt[0], dt[1]),
+            print "C:%d CC:%d CMP:%d EL:%d" % (dt1[2], dt1[3], dt1[0], dt1[1]),
         
-        print ret, l, "---->", self.__eval( l )
+            #print ret, l, "---->",
+        
+        ret = self.__eval( l )
+
         #print "---->", self.__eval( l )
 
         self.meth_sim.raz()
         self.class_sim.raz()
+
+        return ret, l
 
     def __eval(self, l) :
         current_sign = {} 
