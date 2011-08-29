@@ -546,9 +546,8 @@ class Msign {
                 result = (ac_result*) result_item->item;
                 
                 Signature *s1 = (Signature *)(result->object);
-                cout << "START " << result->start << " END " << result->end << " " << s1->id << " " << s1->value << "\n";
-
-                exit(0);
+                //cout << "START " << result->start << " END " << result->end << " " << s1->id << " " << s1->value << "\n";
+                //exit(0);
 
 /*                r->id = s1->id;
                 r->value = 0;

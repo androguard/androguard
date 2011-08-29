@@ -23,22 +23,31 @@ import sys, os
 from optparse import OptionParser
 
 import androguard, androconf, apk, dvm, msign
-import dvmnative
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
 option_2 = { 'name' : ('-b', '--database'), 'help' : 'database : use this database', 'nargs' : 1 }
 option_3 = { 'name' : ('-c', '--config'), 'help' : 'use this configuration', 'nargs' : 1 }
-option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_4 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information', 'action' : 'count' }
 
 options = [option_0, option_1, option_2, option_3, option_4]
+
+def display(ret, debug) :
+    print "---->", ret[0],
+    if debug :
+        print ret[1],
+    print
 
 def main(options, arguments) :
     if options.database == None or options.config == None :
         return
 
     s = msign.MSignature( options.database, options.config )
+    if options.verbose :
+        s.set_debug()
     
+    s.load()
+
     if options.input != None :
         ret_type = androconf.is_android( options.input ) 
         
@@ -46,7 +55,7 @@ def main(options, arguments) :
         if ret_type == "APK" :
             a = apk.APK( options.input )
             if a.is_valid_APK() :
-                s.check_apk( a )
+                display( s.check_apk( a ), options.verbose )
             else :
                 print "INVALID"
         elif ret_type == "DEX" :
@@ -65,13 +74,13 @@ def main(options, arguments) :
                         print os.path.basename( real_filename ), ":",
                         a = apk.APK( real_filename )
                         if a.is_valid_APK() :
-                            s.check_apk( a )
+                            display( s.check_apk( a ), options.verbose )
                         else :
                             print "INVALID APK"
                     elif ret_type == "DEX" :
                         try :
-                            print os.path.basename( real_filename ), "--->",
-                            s.check_dex( open(real_filename, "rb").read() )
+                            print os.path.basename( real_filename ), ":",
+                            display( s.check_dex( open(real_filename, "rb").read() ), options.verbose )
                         except Exception, e : 
                             print "ERROR", e
 
