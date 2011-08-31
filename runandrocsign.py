@@ -36,6 +36,7 @@ LIST = [
             "nickyspy.sign", 
             "dogowar.sign", 
             "geinimi.sign",
+            "gingermaster.sign",
             "golddream.sign",
             "droidkungfu.sign",
             "droidkungfu2.sign",
