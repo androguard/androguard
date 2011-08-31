@@ -38,6 +38,7 @@ TESTS = {
     "./apks/mixe/03fbe528af4e8d17aef4b8db67f96f2905a7f52e0342826aeb3ec21b16dfc283" : "DroidKungfu2",
     "./apks/mixe/76e91e1f9cc3422c333e51b65bb98dd50d00f1f45a15d2008807b06c125e651a" : "NickySpy",
     "./apks/mixe/c687e2f0b4992bd368df0c24b76943c99ac3eb9e4e8c13422ebf1a872a06070a" : "Geinimi",
+    "./apks/mixe/35bda16e09b2e789602f07c08e0ba2c45393a62c6e52aa081b5b45e2e766edcb" : "GingerMaster",
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,

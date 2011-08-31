@@ -594,7 +594,7 @@ FILTERS_DIFF_BASIC = {
     FILTER_CHECKSUM_METH    : filter_checksum_meth_basic,
     FILTER_SIM_METH         : filter_sim_meth_basic,
     FILTER_SORT_METH        : filter_sort_meth_basic,
-    FILTER_SORT_VALUE       : 0.6,
+    FILTER_SORT_VALUE       : 0.8,
     FILTER_SKIP_METH        : filter_skip_meth_basic,
 
     FILTER_CHECKSUM_BB      : filter_checksum_bb_basic,
