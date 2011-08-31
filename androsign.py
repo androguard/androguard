@@ -59,7 +59,7 @@ def main(options, arguments) :
             else :
                 print "INVALID"
         elif ret_type == "DEX" :
-            s.check_dex( open(options.input, "rb").read() )
+            display( s.check_dex( open(options.input, "rb").read() ), options.verbose )
     elif options.directory != None :
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :

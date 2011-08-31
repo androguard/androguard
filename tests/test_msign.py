@@ -39,6 +39,9 @@ TESTS = {
     "./apks/mixe/76e91e1f9cc3422c333e51b65bb98dd50d00f1f45a15d2008807b06c125e651a" : "NickySpy",
     "./apks/mixe/c687e2f0b4992bd368df0c24b76943c99ac3eb9e4e8c13422ebf1a872a06070a" : "Geinimi",
     "./apks/mixe/35bda16e09b2e789602f07c08e0ba2c45393a62c6e52aa081b5b45e2e766edcb" : "GingerMaster",
+    "./apks/mixe/1dd0ccbb47e46144a5e68afc619098730f561741618d89200ac9c06c460bf6e4" : "Plankton",
+    "./apks/mixe/c8518d4d64a84099abfadc25eb1516957898326546b8e4bfb88066912a06dd56" : "Plankton.B",
+    "./apks/mixe/7f0aaf040b475085713b09221c914a971792e1810b0666003bf38ac9a9b013e6" : "Plankton.C",
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,
