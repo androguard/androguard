@@ -1,1 +1,1 @@
-[ { "SAMPLE" : "./apks/malwares/BaseBridge/QQ_tencent.qqgame.lord_24_1.1.apk" }, { "BASE" : "AndroidOS", "NAME" : "BaseBridge", "SIGNATURE" : [ { "TYPE" : "METHSIM", "CN" : "Ln;", "MN" : "handleMessage", "D" : "(Landroid/os/Message;)V" } ], "BF" : "0" } ]
+[ { "SAMPLE" : "././apks/malwares/BaseBridge/07e1349dfc31e9e6251a2920521e453f71ce296352861902b99734a8a7b7f554" }, { "BASE" : "AndroidOS", "NAME" : "BaseBridge", "SIGNATURE" : [ { "TYPE" : "METHSIM", "CN" : "La;", "MN" : "a", "D" : "(Landroid/content/Context; Ljava/lang/String; I I)V" } ], "BF" : "0" } ]

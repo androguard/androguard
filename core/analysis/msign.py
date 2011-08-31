@@ -87,7 +87,8 @@ class SignSim :
             print ssign[ 1 : ], 
 
     def fix(self) :
-        self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.3)
+        if self.minimum_signature != None :
+            self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.3)
 
     def add_elem_sim(self, uniqueid, s1, entropies) :
         if self.minimum_signature < len(s1) :

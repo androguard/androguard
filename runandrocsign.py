@@ -41,6 +41,9 @@ LIST = [
             "droidkungfu.sign",
             "droidkungfu2.sign",
             "wat.sign",
+            "plankton.sign",
+            "plankton.b.sign",
+            "plankton.c.sign",
 ]
 
 def main(options, arguments) :
