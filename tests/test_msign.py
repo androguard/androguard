@@ -43,6 +43,7 @@ TESTS = {
     "./apks/mixe/c8518d4d64a84099abfadc25eb1516957898326546b8e4bfb88066912a06dd56" : "Plankton.B",
     "./apks/mixe/7f0aaf040b475085713b09221c914a971792e1810b0666003bf38ac9a9b013e6" : "Plankton.C",
     "./apks/mixe/e5b775383f7a16d96f55701d72a8c87ca27e991d600cb4254bb47dfef556fd18" : "Crusewind",
+    "./apks/mixe/7a21caba58a033a696265d2f1a9c421a84293cbba19ed890be3cc26ac584b021" : "YZHCSMS",
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,
