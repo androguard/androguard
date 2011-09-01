@@ -45,6 +45,7 @@ LIST = [
             "plankton.b.sign",
             "plankton.c.sign",
             "crusewind.sign",
+            "yzhcsms.sign",
 ]
 
 def main(options, arguments) :
