@@ -536,6 +536,28 @@ BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
 BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed.",  "sparse." ]
 
+def clean_name_instruction( instruction ) :
+    op_value = instruction.get_op_value()
+    
+    # goto range
+    if op_value >= 0x28 and op_value <= 0x2a :
+        return "goto"
+
+    return instruction.get_name()
+
+def static_operand_instruction( instruction ) :
+    buff = ""
+    for op in instruction.get_operands() :
+        if instruction.type_ins_tag == 0 :
+            if "#" in op[0] :
+                buff += "%s" % op
+    
+    if instruction.get_name() == "const-string" :
+        buff += instruction.get_operands()[1][-1]
+    #print instruction.get_operands()
+
+    return buff
+
 def dot_buff(ins, idx) :
     if ins.get_op_value() == 0x1a or ins.get_op_value() == 0x1b :
         return ins.show_buff(idx).replace('"', '\\"')
