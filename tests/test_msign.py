@@ -44,6 +44,7 @@ TESTS = {
     "./apks/mixe/7f0aaf040b475085713b09221c914a971792e1810b0666003bf38ac9a9b013e6" : "Plankton.C",
     "./apks/mixe/e5b775383f7a16d96f55701d72a8c87ca27e991d600cb4254bb47dfef556fd18" : "Crusewind",
     "./apks/mixe/7a21caba58a033a696265d2f1a9c421a84293cbba19ed890be3cc26ac584b021" : "YZHCSMS",
+    "./apks/mixe/f6239ba0487ffcf4d09255dba781440d2600d3c509e66018e6a5724912df34a9" : "Zitmo",
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,
