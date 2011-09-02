@@ -22,31 +22,10 @@ from androconf import error, warning, debug, set_debug, get_debug
 from similarity import *
 from analysis import *
 
+import dvm
 import bytecode
 
 ######################### DIFF ###############################
-
-def clean_name_instruction( instruction ) :
-    op_value = instruction.get_op_value()
-    
-    # goto range
-    if op_value >= 0x28 and op_value <= 0x2a :
-        return "goto"
-
-    return instruction.get_name()
-
-def static_operand_instruction( instruction ) :
-    buff = ""
-    for op in instruction.get_operands() :
-        if instruction.type_ins_tag == 0 :
-            if "#" in op[0] :
-                buff += "%s" % op
-    
-    if instruction.get_name() == "const-string" :
-        buff += instruction.get_operands()[1][-1]
-    #print instruction.get_operands()
-
-    return buff
 
 def filter_skip_meth_basic( m ) :
     return False
@@ -61,8 +40,8 @@ class CheckSumMeth :
             bc = code.get_bc()
 
             for i in bc.get() :
-                self.buff += clean_name_instruction( i )
-                self.buff += static_operand_instruction( i )
+                self.buff += dvm.clean_name_instruction( i )
+                self.buff += dvm.static_operand_instruction( i )
 
             self.entropy = sim.entropy( self.buff )
 
@@ -118,8 +97,8 @@ class CheckSumBB :
         self.basic_block = basic_block
         self.buff = ""
         for i in self.basic_block.ins :
-            self.buff += clean_name_instruction( i )
-            self.buff += static_operand_instruction( i )
+            self.buff += dvm.clean_name_instruction( i )
+            self.buff += dvm.static_operand_instruction( i )
 
         #self.hash = hashlib.sha256( self.buff + "%d%d" % (len(basic_block.childs), len(basic_block.fathers)) ).hexdigest()
         self.hash = hashlib.sha256( self.buff ).hexdigest()
@@ -164,8 +143,8 @@ def toString( bb, hS, rS ) :
     S = ""
 
     for i in bb.ins :
-        ident = clean_name_instruction( i )
-        ident += static_operand_instruction( i )
+        ident = dvm.clean_name_instruction( i )
+        ident += dvm.static_operand_instruction( i )
 
 #       print i.get_name(), i.get_operands()
         if ident not in hS :

@@ -54,7 +54,8 @@ class SignSim :
         self.debug = True
 
     def load_config(self, buff) :
-        self.sign.set_threshold( buff["THRESHOLD"] )
+        self.sign.set_threshold_low( buff["THRESHOLD_LOW"] )
+        self.sign.set_threshold_high( buff["THRESHOLD_HIGH"] )
 
         self.sign.set_dist( str(buff["DISTANCE"]) )
         self.sign.set_method( str(buff["METHOD"]) )
@@ -265,13 +266,15 @@ class MSignature :
         vmx = VMAnalysis( vm )
 
         if self.debug :
-            print "check ...",
+            print "check 1 ",
             sys.stdout.flush()
        
         # Add methods for METHSIM
         for method in vm.get_methods() :
             uniqueid = self._create_id( method.get_class_name() + method.get_name() + method.get_descriptor() )
             entropies = create_entropies(vmx, method)
+            #print method.get_class_name(), method.get_name(), method.get_descriptor(), uniqueid
+
             ret = self.meth_sim.add_elem_sim( uniqueid, entropies[0], entropies[1:] )
             
         for c in vm.get_classes() :
@@ -328,6 +331,11 @@ class MSignature :
         #pl.title('PCA of dataset')
         #pl.savefig('totocluster')
         #pl.show()
+        
+        if self.debug :
+            print "2",
+            sys.stdout.flush()
+       
 
         ret, l = self.__check()
 

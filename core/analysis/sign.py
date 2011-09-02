@@ -19,6 +19,7 @@
 from androconf import error
 
 from analysis import TAINTED_PACKAGE_CREATE, TAINTED_PACKAGE_CALL
+import dvm
 
 TAINTED_PACKAGE_INTERNAL_CALL = 2
 FIELD_ACCESS = { "R" : 0, "W" : 1 }
@@ -75,12 +76,10 @@ class Signature :
         if code == None :
             return ""
         
-        from diff import clean_name_instruction, static_operand_instruction
-
         buff = ""
         for i in code.get_bc().get() :
-            buff += clean_name_instruction( i )
-            buff += static_operand_instruction( i )
+            buff += dvm.clean_name_instruction( i )
+            buff += dvm.static_operand_instruction( i )
 
         #raw = code.get_bc().get_raw()
         #buff = ""

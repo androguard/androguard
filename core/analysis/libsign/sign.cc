@@ -82,7 +82,8 @@ typedef struct debug debug_t;
 
 class Msign {
     public :
-        float threshold_value;
+        float threshold_value_low;
+        float threshold_value_high;
         int cluster_npass;
         int cluster_ncols;
         char cluster_dist;
@@ -106,7 +107,8 @@ class Msign {
         debug_t dt;
     public :
         Msign() {
-            threshold_value = 0.2;
+            threshold_value_low = 0.2;
+            threshold_value_high = 0.3;
             cluster_npass = 1;
             cluster_ncols = 0;
             cluster_dist = 'e';
@@ -185,11 +187,19 @@ class Msign {
         }
 
 
-        void set_threshold(float value) {
-            threshold_value = value;
+        void set_threshold_low(float value) {
+            threshold_value_low = value;
             
             if (dt.log) {
-                printf("THRESHOLD = %f\n", value);
+                printf("THRESHOLD LOW = %f\n", value);
+            }
+        }
+        
+        void set_threshold_high(float value) {
+            threshold_value_high = value;
+            
+            if (dt.log) {
+                printf("THRESHOLD HIGH = %f\n", value);
             }
         }
 
@@ -575,10 +585,10 @@ class Msign {
             int ii, pos_ii;
             for(ii=0; ii < SS.size(); ii++) {
                 current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
-                /*
-                cout << "\t" << s1->value << " VS " << SS[ ii ]->value << " ";
-                printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
-                */
+                
+               // cout << "\t" << s1->value << " VS " << SS[ ii ]->value << " ";
+               // printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
+               
                 if (current_value < min) {
                     min = current_value;
                     id = SS[ ii ]->id;
@@ -586,12 +596,26 @@ class Msign {
                 }
             }
 
-            if (min <= threshold_value) {
+            if (min <= threshold_value_low) {
                 add_result( id, min );
-
+                
                 link_signatures[ SS[ pos_ii ]->link ] --;
                 if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
-                    return 0;
+                    return 0;                            
+                }
+            }
+            else if (min <= threshold_value_high) {
+                set_compress_type( TYPE_BZ2 );                                                                                                                                           
+                current_value = sign_ncd( s1->value, SS[ pos_ii ]->value, 1 );
+                set_compress_type( TYPE_SNAPPY );                                                                                                                                           
+
+                if (current_value <= threshold_value_low) {
+                    add_result( id, min );
+
+                    link_signatures[ SS[ pos_ii ]->link ] --;
+                    if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
+                        return 0;
+                    }
                 }
             }
 
@@ -642,7 +666,7 @@ Msign_init(sign_MsignObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyObject *Msign_set_threshold(sign_MsignObject *self, PyObject *args)
+static PyObject *Msign_set_threshold_low(sign_MsignObject *self, PyObject *args)
 {
     double threshold;
 
@@ -651,7 +675,23 @@ static PyObject *Msign_set_threshold(sign_MsignObject *self, PyObject *args)
         int ok = PyArg_ParseTuple( args, "d", &threshold);
         if(!ok) return PyInt_FromLong(-1);
     
-        self->s->set_threshold( threshold );
+        self->s->set_threshold_low( threshold );
+        return PyInt_FromLong(0);
+    }
+
+    return PyInt_FromLong(-1);
+}
+
+static PyObject *Msign_set_threshold_high(sign_MsignObject *self, PyObject *args)
+{
+    double threshold;
+
+    if (self != NULL) {
+        
+        int ok = PyArg_ParseTuple( args, "d", &threshold);
+        if(!ok) return PyInt_FromLong(-1);
+    
+        self->s->set_threshold_high( threshold );
         return PyInt_FromLong(0);
     }
 
@@ -936,7 +976,8 @@ static PyObject *Msign_set_debug_log(sign_MsignObject *self, PyObject *args)
 }
 
 static PyMethodDef Msign_methods[] = {
-    {"set_threshold",  (PyCFunction)Msign_set_threshold, METH_VARARGS, "set threshold" },
+    {"set_threshold_low",  (PyCFunction)Msign_set_threshold_low, METH_VARARGS, "set threshold low" },
+    {"set_threshold_high",  (PyCFunction)Msign_set_threshold_high, METH_VARARGS, "set threshold high" },
     {"set_dist",  (PyCFunction)Msign_set_dist, METH_VARARGS, "set dist" },
     {"set_method",  (PyCFunction)Msign_set_method, METH_VARARGS, "set method" },
     {"set_weight",  (PyCFunction)Msign_set_weight, METH_VARARGS, "set weight" },
