@@ -55,6 +55,7 @@ class Signature {
         size_t input_size;
 
         unsigned int link;
+        unsigned int used;
 };
 
 struct resultcheck {
@@ -216,6 +217,7 @@ class Msign {
             s1->entropy = entropy( (void *)input, input_size );
             s1->ets = ets; 
             s1->link = id_link;
+            s1->used = 1;
 
             link_signatures[ id_link ] = value_link;
             old_signatures[ id_link ] = value_link;
@@ -457,8 +459,12 @@ class Msign {
                 /* RAZ element */
                 delete it->first;
             }
-
             entropies_hashmap_elem.clear();
+            
+            for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_sign_ncd.begin(); it != entropies_hashmap_sign_ncd.end(); ++it) {
+                it->first->used = 1;
+            }
+
             for (sparse_hash_map<int, int>::const_iterator it = link_signatures.begin(); it != link_signatures.end(); ++it) {                                    
                  link_signatures[ it->first ] = old_signatures[ it->first ];
             }
@@ -584,6 +590,9 @@ class Msign {
 
             int ii, pos_ii;
             for(ii=0; ii < SS.size(); ii++) {
+                if (SS[ ii ]->used == 0)
+                    continue;
+
                 current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
                 
                // cout << "\t" << s1->value << " VS " << SS[ ii ]->value << " ";
@@ -598,6 +607,7 @@ class Msign {
 
             if (min <= threshold_value_low) {
                 add_result( id, min );
+                SS[ pos_ii ]->used = 0;
                 
                 link_signatures[ SS[ pos_ii ]->link ] --;
                 if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
@@ -611,6 +621,7 @@ class Msign {
 
                 if (current_value <= threshold_value_low) {
                     add_result( id, min );
+                    SS[ pos_ii ]->used = 0;
 
                     link_signatures[ SS[ pos_ii ]->link ] --;
                     if (link_signatures[ SS[ pos_ii ]->link ] == 0) {

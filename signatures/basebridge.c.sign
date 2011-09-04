@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/malwares/BaseBridge/_com.keji.unclear_1_1.0.apk" }, { "BASE" : "AndroidOS", "NAME" : "BaseBridge.C", "SIGNATURE" : [ { "TYPE" : "METHSIM", "CN" : "Lcom/keji/unclear/service/Mrun;", "MN" : "a", "D" : "()V" } ], "BF" : "0" } ]
