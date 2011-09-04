@@ -30,6 +30,9 @@ option_1 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1]
 
 LIST = [ 
+            "basebridge.sign",
+            "basebridge.b.sign",
+            "basebridge.c.sign",
             "droiddream.sign", 
             "droiddream_included.sign", 
             "droiddream_light.sign", 
@@ -44,6 +47,7 @@ LIST = [
             "plankton.sign",
             "plankton.b.sign",
             "plankton.c.sign",
+            "roguesppush.sign",
             "crusewind.sign",
             "yzhcsms.sign",
             "zitmo.sign",
