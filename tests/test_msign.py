@@ -45,13 +45,21 @@ TESTS = {
     "./apks/mixe/e5b775383f7a16d96f55701d72a8c87ca27e991d600cb4254bb47dfef556fd18" : "Crusewind",
     "./apks/mixe/7a21caba58a033a696265d2f1a9c421a84293cbba19ed890be3cc26ac584b021" : "YZHCSMS",
     "./apks/mixe/f6239ba0487ffcf4d09255dba781440d2600d3c509e66018e6a5724912df34a9" : "Zitmo",
+    "./apks/mixe/77cd811c6bdb8111a98bbb6986d3f17d72c38a78bed33ac18f8938e980783d42" : "RogueSPPush",
+    "./apks/mixe/ad785708e2f23c48dc8b3b088cedef5afc97759d5dc92103125a599657fca7fa" : "BaseBridge",
+    "./apks/mixe/0d479abe853fcdc8bdb07023f13df79922fcea78b960391ec2a0c1722c2a4ac5" : "BaseBridge.B",
+    "./apks/mixe/0d479abe853fcdc8bdb07023f13df79922fcea78b960391ec2a0c1722c2a4ac5" : "BaseBridge.B",
+    "./apks/mixe/2681b0ea19336bad9a6ef2ceddd505f9dd4d0a58f967c72fea198a9bc05ec43c" : "BaseBridge.C",
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,
     "./apks/mixe/com.rovio.angrybirdsseasons-1.apk" : None,
+    "./apks/mixe/com.google.android.apps.reader-1.apk" : None,
+    "./apks/mixe/gtalksms-debug.apk" : None,
+    "./apks/mixe/pes2011.apk" : None,
 }
 
-DATABASE = "./signatures/dbandroguard"
+DATABASE = "./signatures/dbandroguard_test"
 DBCONFIG = "./signatures/dbconfig"
 
 def test(got, expected):

@@ -266,7 +266,7 @@ class MSignature :
         vmx = VMAnalysis( vm )
 
         if self.debug :
-            print "check 1 ",
+            print "check 1",
             sys.stdout.flush()
        
         # Add methods for METHSIM
