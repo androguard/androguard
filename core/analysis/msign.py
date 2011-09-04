@@ -39,6 +39,7 @@ METHSIM = 0
 CLASSSIM = 1
 METHHASH = 2
 CLASSHASH = 3
+BINHASH = 4
 
 class SignSim :
     def __init__(self, sim_type) :
@@ -123,6 +124,7 @@ class MSignature :
         self.meth_sim = SignSim("METHSIM") 
         self.class_sim = SignSim("CLASSSIM")
         #self.class_hash = SignSim("CLASSHASH")
+        #self.bin_hash = SignHash("BINHASH")
 
         #self.pca = PCA(n_components=2)
         #self.X = []
@@ -242,41 +244,40 @@ class MSignature :
     def check_dex(self, buff) :
         return self._check( buff )
 
-    def __check(self) :
-        l_meth = self.meth_sim.check_sim() 
-        #l_classhash = self.class_hash.check_string()
-
-        l = []
-        l.extend( l_meth[1:] )
-
-        ret = l_meth[0]
-        if l_meth[0] == -1 :
-            l_class = self.class_sim.check_sim()
-            l.extend( l_class[1:] )
-            ret = ret and l_class[0]
-
-        return ret, l
-
-    def _check(self, buff) :
+    def __check_meths(self) :
         if self.debug :
-            print "loading dex..",
+            print "S",
             sys.stdout.flush()
         
-        vm = dvm.DalvikVMFormat( buff )
-        vmx = VMAnalysis( vm )
+        l_meth = self.meth_sim.check_sim() 
+        return l_meth[0], l_meth[1:]
 
+    def __load_meths(self, vm, vmx) :
         if self.debug :
-            print "check 1",
+            print "M",
             sys.stdout.flush()
-       
+        
         # Add methods for METHSIM
         for method in vm.get_methods() :
             uniqueid = self._create_id( method.get_class_name() + method.get_name() + method.get_descriptor() )
             entropies = create_entropies(vmx, method)
-            #print method.get_class_name(), method.get_name(), method.get_descriptor(), uniqueid
 
             ret = self.meth_sim.add_elem_sim( uniqueid, entropies[0], entropies[1:] )
-            
+
+    def __check_classes(self) :
+        if self.debug :
+            print "S",
+            sys.stdout.flush()
+        
+        l_class = self.class_sim.check_sim() 
+        return l_class[0], l_class[1:]
+
+    def __load_classes(self, vm, vmx) :
+        if self.debug :
+            print "C",
+            sys.stdout.flush()
+        
+        # Add classes for CLASSSIM
         for c in vm.get_classes() :
             value = ""
             value_entropy = 0.0
@@ -317,7 +318,14 @@ class MSignature :
                                                                   hex_entropy/nb_methods,
                                                                   exception_entropy/nb_methods ] )
        
-            #uniqueid = self._create_id( buff )
+    def _check(self, buff) :
+        if self.debug :
+            print "loading dex..",
+            sys.stdout.flush()
+        
+        vm = dvm.DalvikVMFormat( buff )
+        vmx = VMAnalysis( vm )
+
             #ret = self.class_hash.add_elem_string( uniqueid, hashlib.sha256( buff ).hexdigest() )
 
         #X_r = self.pca.fit(self.X).transform(self.X)
@@ -331,13 +339,15 @@ class MSignature :
         #pl.title('PCA of dataset')
         #pl.savefig('totocluster')
         #pl.show()
-        
-        if self.debug :
-            print "2",
-            sys.stdout.flush()
        
-
-        ret, l = self.__check()
+        # check methods with similarity
+        self.__load_meths(vm, vmx)
+        ret, l = self.__check_meths()
+        # ret == -1, methods similarity failed -> check classes
+        if ret == -1 :
+            self.__load_classes(vm, vmx)
+            ret, l1 = self.__check_classes()
+            l.extend( l1 )
 
         if self.debug :
             dt = self.meth_sim.get_debug()
@@ -345,16 +355,14 @@ class MSignature :
             print "C:%d CC:%d CMP:%d EL:%d" % (dt[2], dt[3], dt[0], dt[1]),
             print "C:%d CC:%d CMP:%d EL:%d" % (dt1[2], dt1[3], dt1[0], dt1[1]),
         
-            #print ret, l, "---->",
-        
         ret = self.__eval( l )
 
-        #print "---->", self.__eval( l )
+        self.__raz()
+        return ret, l
 
+    def __raz(self) :
         self.meth_sim.raz()
         self.class_sim.raz()
-
-        return ret, l
 
     def __eval(self, l) :
         current_sign = {} 
@@ -470,6 +478,8 @@ class CSignature :
                                         java_entropy/nb_methods, 
                                         hex_entropy/nb_methods, 
                                         exception_entropy/nb_methods ] )
+                elif j["TYPE"] == "BINHASH" :
+                    pass
                 #elif j["TYPE"] == "MPSM" :
                 #    z.append( 1 )
                 #    z.append( j["STYPE"] )
