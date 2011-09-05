@@ -42,9 +42,8 @@ CLASSHASH = 3
 BINHASH = 4
 
 class SignSim :
-    def __init__(self, sim_type) :
+    def __init__(self) :
         self.sign = libsign.Msign()
-        self.sim_type = sim_type
 
         self.debug = False
         self.minimum_signature = None
@@ -80,24 +79,13 @@ class SignSim :
             print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
             print ssign[ 2 : ], 
     
-    def load_sign_string(self, unique_id, unique_idlink, i, ssign, j , nb) :
-        self.sign.add_sign_string( unique_id, 
-                                   ssign[1] );
-
-        if self.debug :
-            print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
-            print ssign[ 1 : ], 
-
     def fix(self) :
         if self.minimum_signature != None :
             self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.3)
 
-    def add_elem_sim(self, uniqueid, s1, entropies) :
+    def add_elem(self, uniqueid, s1, entropies) :
         if self.minimum_signature < len(s1) :
             return self.sign.add_elem_sim( uniqueid, s1, entropies )
-
-    def add_elem_string(self, uniqueid, s1) :
-        return self.sign.add_elem_string( uniqueid, s1 )
 
     def set_npass(self, npass) :
         self.sign.set_npass( npass )
@@ -108,8 +96,39 @@ class SignSim :
     def check_sim(self) :
         return self.sign.check_sim()
 
-    def check_string(self) :
-        return self.sign.check_string()
+    def raz(self) :
+        self.sign.raz()
+
+class SignHash :
+    def __init__(self) :
+        self.sign = libsign.Msign()
+
+        self.debug = False
+        self.minimum_signature = None
+
+        #self.sign.set_debug_log( 1 )
+
+    def set_debug(self) :
+        self.debug = True
+
+    def fix(self) :
+        self.sign.fix()
+
+    def load_sign(self, unique_id, unique_idlink, i, ssign, j , nb) :
+        self.sign.add_sign_string( unique_id,
+                                   unique_idlink,
+                                   j,
+                                   str(base64.b64decode(ssign[1]))
+                                  )
+                                  
+        if self.debug :
+            print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
+
+    def check(self, buff) :
+        return self.sign.check_string( buff )
+
+    def raz_results(self) :
+        self.sign.raz_results()
 
     def raz(self) :
         self.sign.raz()
@@ -121,10 +140,9 @@ class MSignature :
         self.__ids = {}
         self.__lids = {}
         
-        self.meth_sim = SignSim("METHSIM") 
-        self.class_sim = SignSim("CLASSSIM")
-        #self.class_hash = SignSim("CLASSHASH")
-        #self.bin_hash = SignHash("BINHASH")
+        self.meth_sim = SignSim()
+        self.class_sim = SignSim()
+        self.bin_hash = SignHash()
 
         #self.pca = PCA(n_components=2)
         #self.X = []
@@ -139,11 +157,13 @@ class MSignature :
 
         self.meth_sim.fix()
         self.class_sim.fix()
+        self.bin_hash.fix()
 
     def set_debug(self) :
         self.debug = True
         self.meth_sim.set_debug()
         self.class_sim.set_debug()
+        self.bin_hash.set_debug()
         
     def load_config(self, buff) :
         buff = json.loads( buff )
@@ -151,9 +171,9 @@ class MSignature :
         self.meth_sim.load_config( buff["METHSIM"] )
         self.class_sim.load_config( buff["CLASSSIM"] )
 
-    def _create_id(self, i) :
+    def _create_id(self) :
         v = len(self.__ids)
-        self.__ids[ v ] = i
+        self.__ids[ v ] = 1 
         return v
     
     def _create_id_link(self) :
@@ -181,11 +201,14 @@ class MSignature :
 
             c_nb_meth_sim = 0
             c_nb_class_sim = 0
+            c_nb_bin_hash = 0
             for ssign in j :
                 if ssign[0] == METHSIM :
                     c_nb_meth_sim += 1
                 elif ssign[0] == CLASSSIM :
                     c_nb_class_sim += 1
+                elif ssign[0] == BINHASH :
+                    c_nb_bin_hash += 1
 
             for ssign in j :
                 if self.debug :
@@ -194,7 +217,7 @@ class MSignature :
                 if ssign[0] == METHSIM :
                     if self.debug :
                         print "METHSIM",
-                    uniqueid = self._create_id( "%s-%d" % (i, nb) )
+                    uniqueid = self._create_id()
                     self.meth_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_meth_sim, nb )
 
                     ccurrent_sign[ uniqueid ] = nb
@@ -206,7 +229,7 @@ class MSignature :
                 elif ssign[0] == CLASSSIM : 
                     if self.debug :
                         print "CLASSSIM",
-                    uniqueid = self._create_id( "%s-%d" % (i, nb) )
+                    uniqueid = self._create_id()
                     self.class_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_class_sim, nb )
 
                     ccurrent_sign[ uniqueid ] = nb
@@ -215,6 +238,19 @@ class MSignature :
                     nb_class_sim += 1
                     if self.debug :
                         print
+                elif ssign[0] == BINHASH :
+                    if self.debug :
+                        print "BINHASH",
+                    uniqueid = self._create_id()
+                    self.bin_hash.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_bin_hash, nb )
+
+                    ccurrent_sign[ uniqueid ] = nb
+                    self.__rsigns[ uniqueid ] = len(self.__signs) - 1
+                    nb += 1
+                    if self.debug :
+                        print
+
+                    #raise("ooo")
                 #elif ssign[0] == CLASSHASH :
                 #    print "CLASSHASH",
                 #
@@ -230,6 +266,7 @@ class MSignature :
 
         if self.debug :
             print
+
         self.meth_sim.set_npass( nb_meth_sim )
         self.class_sim.set_npass( nb_class_sim )
 
@@ -239,10 +276,31 @@ class MSignature :
             sys.stdout.flush()
         
         classes_dex = apk.get_dex()
-        return self._check( classes_dex )
-    
+        ret, l = self._check_dalvik( classes_dex )
+
+        if ret == None :
+            return self._check_bin( apk )
+
+        return ret, l
+
+    def _check_bin(self, apk) :
+        if self.debug :
+            print "B",
+            sys.stdout.flush()
+        
+        files = apk.get_files_types()
+        for i in files :
+            if "ELF" in files[ i ] :
+                l_bin_hash = self.bin_hash.check( apk.get_file( i ) )
+                self.bin_hash.raz_results()
+
+                ret = l_bin_hash[0]
+                if ret == 0 :
+                    return self.__eval( l_bin_hash[1:] ), l_bin_hash[1:]
+        return None, []
+
     def check_dex(self, buff) :
-        return self._check( buff )
+        return self._check_dalvik( buff )
 
     def __check_meths(self) :
         if self.debug :
@@ -259,17 +317,17 @@ class MSignature :
         
         # Add methods for METHSIM
         for method in vm.get_methods() :
-            uniqueid = self._create_id( method.get_class_name() + method.get_name() + method.get_descriptor() )
+            uniqueid = self._create_id()
             entropies = create_entropies(vmx, method)
 
-            ret = self.meth_sim.add_elem_sim( uniqueid, entropies[0], entropies[1:] )
+            ret = self.meth_sim.add_elem( uniqueid, entropies[0], entropies[1:] )
 
     def __check_classes(self) :
         if self.debug :
             print "S",
             sys.stdout.flush()
         
-        l_class = self.class_sim.check_sim() 
+        l_class = self.class_sim.check_sim()
         return l_class[0], l_class[1:]
 
     def __load_classes(self, vm, vmx) :
@@ -311,14 +369,14 @@ class MSignature :
             #    buff += "%d%s" % (f.get_access_flags(), f.get_descriptor())
 
             if nb_methods != 0 :
-                uniqueid = self._create_id( m.get_class_name() )
-                ret = self.class_sim.add_elem_sim( uniqueid, value, [ value_entropy/nb_methods, 
+                uniqueid = self._create_id()
+                ret = self.class_sim.add_elem( uniqueid, value, [ value_entropy/nb_methods, 
                                                                   android_entropy/nb_methods, 
                                                                   java_entropy/nb_methods, 
                                                                   hex_entropy/nb_methods,
                                                                   exception_entropy/nb_methods ] )
        
-    def _check(self, buff) :
+    def _check_dalvik(self, buff) :
         if self.debug :
             print "loading dex..",
             sys.stdout.flush()
@@ -357,12 +415,9 @@ class MSignature :
         
         ret = self.__eval( l )
 
-        self.__raz()
-        return ret, l
-
-    def __raz(self) :
         self.meth_sim.raz()
         self.class_sim.raz()
+        return ret, l
 
     def __eval(self, l) :
         current_sign = {} 
@@ -411,11 +466,14 @@ class CSignature :
             classes_dex = a.get_dex()
         elif ret_type == "DEX" :
             classes_dex = open( rules[0]["SAMPLE"], "rb" ).read()
+        elif ret_type == "ELF" :
+            elf_file = open( rules[0]["SAMPLE"], "rb" ).read()
         else :
             return None
 
-        vm = dvm.DalvikVMFormat( classes_dex )
-        vmx = VMAnalysis( vm )
+        if ret_type == "APK" or ret_type == "DEX" :
+            vm = dvm.DalvikVMFormat( classes_dex )
+            vmx = VMAnalysis( vm )
 
         for i in rules[1:] :
             x = { i["NAME"] : [] }
@@ -479,7 +537,8 @@ class CSignature :
                                         hex_entropy/nb_methods, 
                                         exception_entropy/nb_methods ] )
                 elif j["TYPE"] == "BINHASH" :
-                    pass
+                    z.append( BINHASH )
+                    z.extend( [ base64.b64encode(elf_file[j["START"]:j["END"]]) ] )
                 #elif j["TYPE"] == "MPSM" :
                 #    z.append( 1 )
                 #    z.append( j["STYPE"] )
