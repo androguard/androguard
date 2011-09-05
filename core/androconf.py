@@ -85,12 +85,14 @@ def is_android(real_filename) :
     fd = open( real_filename, "r")
     val = None
 
-    f_bytes = fd.read(3)
+    f_bytes = fd.read(7)
 
     if f_bytes[0:2] == "PK" :
         val = "APK"
     elif f_bytes[0:3] == "dex" :
         val = "DEX"
+    elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
+        val = "ELF"
 
     fd.close()
     return val

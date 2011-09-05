@@ -51,6 +51,9 @@ LIST = [
             "crusewind.sign",
             "yzhcsms.sign",
             "zitmo.sign",
+
+            "rageagainstthecage_exploit.sign",
+            "exploid_exploit.sign"
 ]
 
 def main(options, arguments) :
