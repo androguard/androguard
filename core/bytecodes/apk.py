@@ -174,14 +174,20 @@ class APK :
         """
         return self.__raw
 
+    def get_file(self, filename) :
+        """
+            Return the raw data of the specified filename
+        """
+        try :
+            return self.zip.read( filename )
+        except KeyError :
+            return ""
+
     def get_dex(self) :
         """
             Return the raw data of the classes dex file
         """
-        try :
-            return self.zip.read("classes.dex")
-        except KeyError :
-            return ""
+        return self.get_file( "classes.dex" )
 
     def get_elements(self, tag_name, attribute) :
         """
