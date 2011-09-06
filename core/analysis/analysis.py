@@ -1341,7 +1341,6 @@ TAINTED_PACKAGE = {
    TAINTED_PACKAGE_CALL : "M"
 }
 
-
 def show_Path(paths) :
     for path in paths :
         if isinstance(path, PathP) :
@@ -1444,6 +1443,13 @@ class TaintedPackage :
             else :
                 for path in self.paths[ _type ] :
                     print "\t\t => %s@%x in %s" % (path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+
+def show_Permissions( dx ) :
+    p = dx.get_permissions( [] )
+
+    for i in p :
+        print i, ":"
+        show_Path( p[i] )
 
 class TaintedPackages :
     def __init__(self, _vm) :

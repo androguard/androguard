@@ -136,7 +136,7 @@ def main(options, arguments) :
 
         elif options.xpermissions != None :
             _a.ianalyze()
-            perms_access = _a.get_analysis().tainted_packages.get_permissions( [] )
+            perms_access = _a.get_analysis().get_permissions( [] )
             for perm in perms_access :
                 print "PERM : ", perm
                 for path in perms_access[ perm ] :
