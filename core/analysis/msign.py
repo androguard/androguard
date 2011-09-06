@@ -63,25 +63,26 @@ class SignSim :
         self.sign.set_weight( buff["WEIGHTS"] )
 
     def load_sign(self, unique_id, unique_idlink, i, ssign, j , nb) :
+        signature = str(base64.b64decode(ssign[1]))
         if self.minimum_signature == None :
-            self.minimum_signature = len(ssign[1])
+            self.minimum_signature = len(signature)
 
-        if self.minimum_signature > len(ssign[1]) :
-            self.minimum_signature = len(ssign[1])
+        if self.minimum_signature > len(signature) :
+            self.minimum_signature = len(signature)
         
         self.sign.add_sign_sim( unique_id, 
                                 unique_idlink,
                                 j,
-                                str(base64.b64decode(ssign[1])), 
+                                signature, 
                                 ssign[ 2 : ] )
         
         if self.debug :
-            print "L:%d I:%d N:%d J:%d" % (unique_idlink, unique_id, nb, j),
+            print "L:%d I:%d N:%d J:%d %d" % (unique_idlink, unique_id, nb, j, len(signature)),
             print ssign[ 2 : ], 
     
     def fix(self) :
         if self.minimum_signature != None :
-            self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.3)
+            self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.5)
 
     def add_elem(self, uniqueid, s1, entropies) :
         if self.minimum_signature < len(s1) :
