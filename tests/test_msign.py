@@ -50,6 +50,12 @@ TESTS = {
     "./apks/mixe/0d479abe853fcdc8bdb07023f13df79922fcea78b960391ec2a0c1722c2a4ac5" : "BaseBridge.B",
     "./apks/mixe/0d479abe853fcdc8bdb07023f13df79922fcea78b960391ec2a0c1722c2a4ac5" : "BaseBridge.B",
     "./apks/mixe/2681b0ea19336bad9a6ef2ceddd505f9dd4d0a58f967c72fea198a9bc05ec43c" : "BaseBridge.C",
+    "./apks/mixe/4ae1c0faa06ee4dfb6c96b6537d027e90c870d7d3ddcfd5fcde680be9dc51c69" : "Hongtoutou",
+    "./apks/mixe/b6ff9b61b61abe11a3eba507421a7b5467e7d277ac7801f24fee39bbe5cfaa36" : "SMSHider",
+    "./apks/mixe/d5155a2d2f27a1cefb8f005707be1e27a7601888428500aa1665c38a1f2f56f2" : "Lovetrap",
+
+    # exploits
+
 
     # safe applications ?:)
     "./apks/mixe/zimperlich.apk" : None,
