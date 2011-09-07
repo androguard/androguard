@@ -2207,6 +2207,9 @@ class DBC :
     def get_formatted_operands(self) :
         """Return the formatted operands"""
         if self.formatted_operands == None :
+            # get operands if we use native module
+            self.get_operands()
+
             self.formatted_operands = []
         
             # 0x12 : [ "11n", "const/4",                          "vA, #+B", "B|A|op" ],
@@ -2225,7 +2228,7 @@ class DBC :
 
             # 0x15 : [ "21h", "const/high16",                   "vAA, #+BBBB0000", "AA|op BBBB0000" ],
             elif self.op_value == 0x15 :
-                self.formatted_operands.append( ("#f", unpack( '=f', pack('=i', self.operands[1][1]))[0] ) )
+                self.formatted_operands.append( ("#f", unpack( '=f', '\x00\x00' + pack('=h', self.operands[1][1]))[0] ) )
 
             # 0x16 : [ "21s", "const-wide/16",                "vAA, #+BBBB", "AA|op BBBB" ],
             elif self.op_value == 0x16 :
@@ -2245,7 +2248,7 @@ class DBC :
             # 0x19 : [ "21h", "const-wide/high16",           "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
             # convert value to double
             elif self.op_value == 0x19 :
-                self.formatted_operands.append( ("#d", unpack( '=d', pack('=q', self.operands[1][1]))[0]) )
+                self.formatted_operands.append( ("#d", unpack( '=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', self.operands[1][1]))[0]) )
 
         return self.formatted_operands
 

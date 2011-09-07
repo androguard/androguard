@@ -48,7 +48,7 @@ VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
 }
 
 VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
-        -5,
+        -5.0,
         -4,
         -3,
         -2,
@@ -175,6 +175,7 @@ for method in a.get_methods() :
         if "const" in i.get_name() :
             formatted_operands = i.get_formatted_operands()
             for f in formatted_operands :
+#                print i.get_name(), i.get_operands(), i.get_formatted_operands()
                 test( f[1], VALUES[ key ].pop(0) )
 
         idx += i.get_length()
