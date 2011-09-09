@@ -54,6 +54,7 @@ LIST = [
             "crusewind.sign",
             "yzhcsms.sign",
             "zitmo.sign",
+            "zsone.sign",
 
             "rageagainstthecage_exploit.sign",
             "exploid_exploit.sign"
