@@ -36,6 +36,7 @@ LIST = [
             "droiddream.sign", 
             "droiddream_included.sign", 
             "droiddream_light.sign", 
+            "droiddeluxe.sign", 
             "nickyspy.sign", 
             "dogowar.sign", 
             "geinimi.sign",
