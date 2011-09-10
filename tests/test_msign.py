@@ -54,6 +54,7 @@ TESTS = {
     "./apks/mixe/b6ff9b61b61abe11a3eba507421a7b5467e7d277ac7801f24fee39bbe5cfaa36" : "SMSHider",
     "./apks/mixe/d5155a2d2f27a1cefb8f005707be1e27a7601888428500aa1665c38a1f2f56f2" : "Lovetrap",
     "./apks/mixe/9ae7270cbd1a2cd562bd10885804329e39a97b8a47cbebbde388bf364a003f05" : "Zsone",
+    "./apks/mixe/a80aafb874038fe66ab1cdd17430aa74c90f0544b17de03d24c0594e5ae9465e" : "DroidDeluxe",
 
     # exploits
 
@@ -84,6 +85,7 @@ for i in TESTS :
     ret_type = androconf.is_android( i )
     if ret_type == "APK"  :
         print os.path.basename( i ), ":",
+        sys.stdout.flush()
         a = apk.APK( i )
         if a.is_valid_APK() :
             test( s.check_apk( a )[0], TESTS[i] )
@@ -92,6 +94,7 @@ for i in TESTS :
     elif ret_type == "DEX" :
         try :
             print os.path.basename( i ), ":",
+            sys.stdout.flush()
             test( s.check_dex( open(i, "rb").read() )[0], TESTS[i] )
         except Exception, e :
             print "ERROR", e
