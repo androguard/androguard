@@ -55,6 +55,7 @@ TESTS = {
     "./apks/mixe/d5155a2d2f27a1cefb8f005707be1e27a7601888428500aa1665c38a1f2f56f2" : "Lovetrap",
     "./apks/mixe/9ae7270cbd1a2cd562bd10885804329e39a97b8a47cbebbde388bf364a003f05" : "Zsone",
     "./apks/mixe/a80aafb874038fe66ab1cdd17430aa74c90f0544b17de03d24c0594e5ae9465e" : "DroidDeluxe",
+    "./apks/mixe/c5b38031ff0ca16d155a4bad40eb53ce99d3b89ff6ebb8958303aea35896ee68" : "GGTracker",
 
     # exploits
 

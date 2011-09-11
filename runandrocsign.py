@@ -41,6 +41,7 @@ LIST = [
             "dogowar.sign", 
             "geinimi.sign",
             "gingermaster.sign",
+            "ggtracker.sign",
             "golddream.sign",
             "lovetrap.sign",
             "hongtoutou.sign",
