@@ -25,11 +25,13 @@ from optparse import OptionParser
 import androguard, androconf, apk, dvm, msign
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
-option_2 = { 'name' : ('-l', '--list'), 'help' : 'list malwares in database', 'nargs' : 1 }
-option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-r', '--remove'), 'help' : 'remote the signature', 'nargs' : 1 }
+option_2 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
+option_3 = { 'name' : ('-l', '--list'), 'help' : 'list signatures in database', 'nargs' : 1 }
+option_4 = { 'name' : ('-c', '--check'), 'help' : 'check signatures in database', 'nargs' : 1 }
+option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3]
+options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 def main(options, arguments) :
     if options.input != None :
@@ -42,6 +44,14 @@ def main(options, arguments) :
     elif options.list != None :
         s = msign.CSignature()
         s.list_indb( options.list )
+
+    elif options.remove != None :
+        s = msign.CSignature()
+        s.remove_indb( options.remove, options.output )
+
+    elif options.check != None :
+        s = msign.CSignature()
+        s.check_db( options.check )
 
     elif options.version != None :
         print "Androcsign version %s" % androconf.ANDROCSIGN_VERSION
