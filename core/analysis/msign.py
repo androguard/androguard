@@ -18,12 +18,13 @@
 
 from ctypes import cdll, c_char, c_float, c_int, c_uint, c_ulong, c_double, c_void_p, Structure, addressof, create_string_buffer, cast, POINTER, pointer
 from array import array
-import json, sys, base64, hashlib
+import json, sys, base64, hashlib, re
 
 import dvm, apk, androconf
 from analysis import *
 
 import libsign
+import similarity
 
 NCD_SIGNATURE   = 0
 MPSM_SIGNATURE  = 1
@@ -280,7 +281,8 @@ class MSignature :
         ret, l = self._check_dalvik( classes_dex )
 
         if ret == None :
-            return self._check_bin( apk )
+            ret, l1 = self._check_bin( apk )
+            l.extend( l1 )
 
         return ret, l
 
@@ -435,10 +437,9 @@ class MSignature :
            
             current_sign[ self.__rsigns[ i[0] ] ] = ev.replace( str( m_sign[1][i[0]] ), "True" )
 
-        
         for i in l :
             ev = current_sign[ self.__rsigns[ i[0] ] ]
-            ev = ev.replace("1", "False")
+            ev = re.sub("[0-9]", "False", ev)
 
             if (eval(ev) == True) :
                 return self.__signs[ self.__rsigns[ i[0] ] ][0]
@@ -531,6 +532,7 @@ class CSignature :
 
                                 nb_methods += 1
 
+                            print value
                             z.extend( [ base64.b64encode(value), 
                                         value_entropy/nb_methods, 
                                         android_entropy/nb_methods, 
@@ -566,6 +568,60 @@ class CSignature :
             for j in buff[i][0] :
                 print j[0], j[2:],
             print
+
+    def check_db(self, output) :
+        ids = {}
+        meth_sim = []
+        class_sim = []
+
+        fd = open(output, "r")
+        buff = json.loads( fd.read() )
+        fd.close()
+        
+        for i in buff :
+            nb = 0
+            for ssign in  buff[i][0] :
+                if ssign[0] == METHSIM :
+                    ids[ base64.b64decode( ssign[1] ) ] = (i, nb)
+                    meth_sim.append( base64.b64decode( ssign[1] ) )
+                elif ssign[0] == CLASSSIM :
+                    ids[ base64.b64decode( ssign[1] ) ] = (i, nb)
+                    class_sim.append( base64.b64decode( ssign[1] ) )
+                nb += 1
+
+        s = similarity.SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
+        s.set_compress_type( similarity.SNAPPY_COMPRESS )
+
+        self.__check_db( s, ids, meth_sim )
+        self.__check_db( s, ids, class_sim )
+
+    def __check_db(self, s, ids, elem_sim) :
+        problems = {}
+        for i in elem_sim :
+            for j in elem_sim :
+                if i != j :
+                    ret = s.ncd( i, j )[0]
+                    if ret < 0.3 :
+                        ids_cmp = ids[ i ] + ids[ j ]
+                        if ids_cmp not in problems :
+                            s.set_compress_type( similarity.XZ_COMPRESS )
+                            ret = s.ncd( i, j )[0]
+                            s.set_compress_type( similarity.SNAPPY_COMPRESS )
+                            print "[-] ", ids[ i ], ids[ j ], ret
+                            
+                            problems[ ids_cmp ] = 0
+                            problems[ ids[ j ] + ids[ i ] ] = 0
+
+    def remove_indb(self, signature, output) :
+        fd = open(output, "r")
+        buff = json.loads( fd.read() )
+        fd.close()
+
+        del buff[signature]
+
+        fd = open(output, "w")
+        fd.write( json.dumps( buff ) )
+        fd.close()
 
     def add_indb(self, signatures, output) :
         fd = open(output, "a+")

@@ -645,7 +645,7 @@ class Msign {
                 set_compress_type( TYPE_SNAPPY );                                                                                                                                           
 
                 if (current_value <= threshold_value_low) {
-                    add_result( id, min );
+                    add_result( id, current_value );
                     SS[ pos_ii ]->used = 0;
 
                     link_signatures[ SS[ pos_ii ]->link ] --;
