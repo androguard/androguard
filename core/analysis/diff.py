@@ -522,6 +522,11 @@ class Method :
     def getsha256(self) :
         return self.sha256
 
+    def get_length(self) :
+        if self.m.get_code() == None :
+            return 0
+        return self.m.get_code().get_length()
+
     def show(self, details=False, exclude=[]) :
         print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
         print "with",
@@ -545,10 +550,7 @@ class Method :
 
     def show2(self, details=False) :
         print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
-        if self.m.get_code() == None :
-            print 0
-        else :
-            print self.m.get_code().get_length()
+        print self.get_length()
 
         for i in self.sort_h :
             print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]

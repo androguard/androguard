@@ -56,6 +56,10 @@ TESTS = {
     "./apks/mixe/9ae7270cbd1a2cd562bd10885804329e39a97b8a47cbebbde388bf364a003f05" : "Zsone",
     "./apks/mixe/a80aafb874038fe66ab1cdd17430aa74c90f0544b17de03d24c0594e5ae9465e" : "DroidDeluxe",
     "./apks/mixe/c5b38031ff0ca16d155a4bad40eb53ce99d3b89ff6ebb8958303aea35896ee68" : "GGTracker",
+    "./apks/mixe/e042fb40e7159886d195637086c75e0edd486fc1d34e693b0e8dd86c5cafaea9" : "Pjapps",
+    "./apks/mixe/24adad503ae6e8a1ec95a625a3a78d3b71711063bb39c11c1a07a51f652d232e" : "Pjapps.B",
+    "./apks/mixe/aabe5b64af5e841e02392865dc10dcd2df499ec644839227020999b3ee9a87ec" : "Pjapps.C",
+    "./apks/mixe/89b5226b0483c01cc662cb1f7958b78a65e2da1a88947e792416b2d139fcbdba" : "HippoSMS",
 
     # exploits
 
@@ -68,7 +72,7 @@ TESTS = {
     "./apks/mixe/pes2011.apk" : None,
 }
 
-DATABASE = "./signatures/dbandroguard_test"
+DATABASE = "./signatures/dbandroguard"
 DBCONFIG = "./signatures/dbconfig"
 
 def test(got, expected):
