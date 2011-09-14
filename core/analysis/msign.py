@@ -26,10 +26,8 @@ from analysis import *
 import libsign
 import similarity
 
-NCD_SIGNATURE   = 0
-MPSM_SIGNATURE  = 1
-
-DEFAULT_SIGNATURE = SIGNATURE_L0_2
+#DEFAULT_SIGNATURE = SIGNATURE_L0_2
+DEFAULT_SIGNATURE = SIGNATURE_L0_4
 
 ############### 
 #from scikits.learn.decomposition import PCA
@@ -322,8 +320,8 @@ class MSignature :
         for method in vm.get_methods() :
             uniqueid = self._create_id()
             entropies = create_entropies(vmx, method)
-
             ret = self.meth_sim.add_elem( uniqueid, entropies[0], entropies[1:] )
+            del entropies
 
     def __check_classes(self) :
         if self.debug :
@@ -378,7 +376,8 @@ class MSignature :
                                                                   java_entropy/nb_methods, 
                                                                   hex_entropy/nb_methods,
                                                                   exception_entropy/nb_methods ] )
-       
+            del value
+
     def _check_dalvik(self, buff) :
         if self.debug :
             print "loading dex..",
@@ -387,20 +386,6 @@ class MSignature :
         vm = dvm.DalvikVMFormat( buff )
         vmx = VMAnalysis( vm )
 
-            #ret = self.class_hash.add_elem_string( uniqueid, hashlib.sha256( buff ).hexdigest() )
-
-        #X_r = self.pca.fit(self.X).transform(self.X)
-        #sys.argv = [ "toto.py" ]
-        #pl.figure()
-        #for i in X_r :
-        #    pl.scatter( i[0], i[1] )
-        #for c, i, target_name in zip("rgb", [0, 1, 2], target_names):
-        #    pl.scatter(X_r[y == i, 0], X_r[y == i, 1], c=c, label=target_name)
-        #pl.legend()
-        #pl.title('PCA of dataset')
-        #pl.savefig('totocluster')
-        #pl.show()
-       
         # check methods with similarity
         self.__load_meths(vm, vmx)
         ret, l = self.__check_meths()
@@ -420,6 +405,9 @@ class MSignature :
 
         self.meth_sim.raz()
         self.class_sim.raz()
+
+        del vm, vmx
+
         return ret, l
 
     def __eval(self, l) :
