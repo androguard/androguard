@@ -57,6 +57,8 @@ LIST = [
             "pjapps.c.sign",
             "roguesppush.sign",
             "smshider.sign",
+            "sndapps.sign",
+            "spitmo.sign",
             "crusewind.sign",
             "yzhcsms.sign",
             "zitmo.sign",

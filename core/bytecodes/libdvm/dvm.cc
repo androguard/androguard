@@ -915,6 +915,14 @@ class DBC {
             op_length = length;
         }
 
+        ~DBC() {
+            voperands->clear();
+            vdescoperands->clear();
+
+            delete voperands;
+            delete vdescoperands;
+        }
+
         int get_opvalue() {
             return op_value;
         }
@@ -947,6 +955,10 @@ class FillArrayData : public DBCSpe {
             data_size = fadt.size * fadt.element_width;
             data = (char *)malloc( data_size );
             memcpy(data, b->readat( off + sizeof(fillarraydata_t), data_size ), data_size);
+        }
+
+        ~FillArrayData() {
+            free(data);
         }
 
         const char *get_opname() {
@@ -984,6 +996,11 @@ class SparseSwitch : public DBCSpe {
             }
         }
 
+        ~SparseSwitch() {
+            keys.clear();
+            targets.clear();
+        }
+
         const char *get_opname() {
             return "SPARSE-SWITCH";
         }
@@ -1015,6 +1032,10 @@ class PackedSwitch : public DBCSpe {
             }
         }
 
+        ~PackedSwitch() {
+            targets.clear();
+        }
+
         const char *get_opname() {
             return "PACKED-SWITCH";
         }
@@ -1035,7 +1056,19 @@ class DCode {
 
     public :
         DCode() {
+    
+        }
+        
+        ~DCode() {
+            for(int ii=0; ii < bytecodes.size(); ii++) {
+                delete bytecodes[ ii ];
+            }
+            bytecodes.clear();
 
+            for(int ii=0; ii < bytecodes_spe.size(); ii++) {
+                delete bytecodes_spe[ ii ];
+            }
+            bytecodes_spe.clear();
         }
 
         DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
@@ -1094,6 +1127,9 @@ class DCode {
                 //printf("\n");
                 //cout << "la" << b->get_end() << " " << b->get_current_idx() << "\n";
             }
+
+            datas->clear();
+            delete datas;
         }
 
         int size() {
@@ -1738,7 +1774,7 @@ typedef struct {
 static void
 DBC_dealloc(dvm_DBCObject* self)
 {
-    cout<<"Called dbc dealloc\n";
+    //cout<<"Called dbc dealloc\n";
 
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
@@ -1866,7 +1902,7 @@ typedef struct {
 static void
 DBCSpe_dealloc(dvm_DBCSpeObject* self)
 {
-    cout<<"Called dbcspe dealloc\n";
+    //cout<<"Called dbcspe dealloc\n";
 
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
@@ -2026,7 +2062,7 @@ typedef struct {
 static void
 DCode_dealloc(dvm_DCodeObject* self)
 {
-    cout<<"Called dcode dealloc\n";
+    //cout<<"Called dcode dealloc\n";
 
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
@@ -2164,6 +2200,7 @@ static void
 DVM_dealloc(dvm_DVMObject* self)
 {
     //cout<<"Called dvm dealloc\n";
+
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -2200,7 +2237,7 @@ static PyObject *DVM_new_code(dvm_DVMObject *self, PyObject* args)
     dnc->dparent = self->d;
     DCode_init( (dvm_DCodeObject *)nc, args, NULL );
    
-    Py_INCREF( nc );
+    //Py_INCREF( nc );
 
     return nc;
 }

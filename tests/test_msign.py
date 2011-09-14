@@ -60,6 +60,8 @@ TESTS = {
     "./apks/mixe/24adad503ae6e8a1ec95a625a3a78d3b71711063bb39c11c1a07a51f652d232e" : "Pjapps.B",
     "./apks/mixe/aabe5b64af5e841e02392865dc10dcd2df499ec644839227020999b3ee9a87ec" : "Pjapps.C",
     "./apks/mixe/89b5226b0483c01cc662cb1f7958b78a65e2da1a88947e792416b2d139fcbdba" : "HippoSMS",
+    "./apks/mixe/a4dc19c6c1c6d2c6befa1f56d63114a2a9b04b5c0c6a0dd9fbdc335ea5c54f3d" : "SndApps",
+    "./apks/mixe/ba1aa326ca5b79e79feba9bbfe85f238b63c317d9329f1f7c28d54fe905353b9" : "Spitmo",
 
     # exploits
 
