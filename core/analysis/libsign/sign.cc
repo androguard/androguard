@@ -43,6 +43,8 @@ using std::endl;
 #define CLASSSIM_SIGNATURE 1
 #define STRING_SIGNATURE 2
 
+#define CACHE_ELEM 10000
+
 class Signature {
     public :
         unsigned int id;
@@ -484,7 +486,13 @@ class Msign {
             }
             vector_results.clear();
 
-//            ac_index_free(aho, decref_result_object);
+            if (ncd_hashmap.size() > CACHE_ELEM) {
+                ncd_hashmap.clear();
+            }
+
+            if (compress_hashmap.size() > CACHE_ELEM) {
+                compress_hashmap.clear();
+            }
 
             return 0;
         }
