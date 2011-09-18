@@ -593,7 +593,14 @@ DELETEMETHODS   =       "deletemethods"
 MATCHMETHODS    =       "matchmethods"
 DIFFVMS         =       "diffvms"
 class Diff(object) :
+    """Find the differences between two applications
+    """
     def __init__(self, vm1, vm2, F=FILTERS_DIFF_BASIC) :
+        """
+            @param vm1 : the first dalvik/java virtual machine format object
+            @param vm2 : the second dalvik/java virtual machine format object
+            @param F : the filtering dictionnary
+        """
         #set_debug()
         
         self.vms = [ vm1, vm2 ]
@@ -712,15 +719,27 @@ class Diff(object) :
                         self.filters[NEWMETHODS].append( j )
 
     def get_diff_methods(self) :
+        """ Return the similar methods
+            @rtype : a list of L{Method}
+        """
         return self.get_elem( DIFFMETHODS )
 
     def get_new_methods(self) :
+        """ Return the new methods
+            @rtype : a list of L{Method}
+        """
         return self.get_elem( NEWMETHODS )
     
     def get_delete_methods(self) :
+        """ Return the deleted methods
+            @rtype : a list of L{Method}
+        """
         return self.get_elem( DELETEMETHODS )
 
     def get_match_methods(self) :
+        """ Return the identical methods
+            @rtype : a list of L{Method}
+        """
         return self.get_elem( MATCHMETHODS )
 
     def get_elem(self, attr) :
@@ -813,6 +832,8 @@ FILTERS_SIM = {
         # Fill array data
         # Format
 class Sim(Diff) :
+    """Find the similarities between two applications
+    """
     def __init__(self, vm1, vm2, F=FILTERS_SIM) :
         #set_debug()
         self.vm_marks = []
@@ -833,9 +854,17 @@ class Sim(Diff) :
         self.final_score = (s/len(self.marks)) * 100
 
     def get_marks(self) :
+        """ Return the marks for all elements
+
+            @rtype : a L{List} of marks
+        """
         return self.marks
 
     def get_final_score(self) :
+        """ Return the final score of the similarity
+
+            @rtype : a float value
+        """
         return self.final_score
 
     def _init_diff_vms(self) :
