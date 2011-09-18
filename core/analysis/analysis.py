@@ -1648,7 +1648,11 @@ class TaintedPackages :
             for j in paths :
                 if j.get_method().get_class_name() in classes and m.get_info() not in classes :
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL :
-                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
+                        tmp = j.get_descriptor()
+                        tmp = tmp[ : tmp.rfind(")") + 1 ]
+                        #data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
+                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), tmp)
+
                         if data in DVM_PERMISSIONS_BY_ELEMENT :
                             if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn :
                                 try :

@@ -81,8 +81,14 @@ def str2long(s):
 def random_string() :
     return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
 
-def is_android(real_filename) :
-    fd = open( real_filename, "r")
+def is_android(filename) :
+    """Return the type of the file
+
+        @param filename : the filename
+        @rtype : "APK", "DEX", "ELF", None 
+    """
+
+    fd = open( filename, "r")
     val = None
 
     f_bytes = fd.read(7)

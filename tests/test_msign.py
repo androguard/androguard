@@ -85,23 +85,27 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 
-s = msign.MSignature( DATABASE, DBCONFIG )
-s.load()
+def check(db, dbconf, TESTS) :
+    s = msign.MSignature( db, dbconf )
+    s.load()
 
-for i in TESTS :
-    ret_type = androconf.is_android( i )
-    if ret_type == "APK"  :
-        print os.path.basename( i ), ":",
-        sys.stdout.flush()
-        a = apk.APK( i )
-        if a.is_valid_APK() :
-            test( s.check_apk( a )[0], TESTS[i] )
-        else :
-            print "INVALID APK"
-    elif ret_type == "DEX" :
-        try :
+    for i in TESTS :
+        ret_type = androconf.is_android( i )
+        if ret_type == "APK"  :
             print os.path.basename( i ), ":",
             sys.stdout.flush()
-            test( s.check_dex( open(i, "rb").read() )[0], TESTS[i] )
-        except Exception, e :
-            print "ERROR", e
+            a = apk.APK( i )
+            if a.is_valid_APK() :
+                test( s.check_apk( a )[0], TESTS[i] )
+            else :
+                print "INVALID APK"
+        elif ret_type == "DEX" :
+            try :
+                print os.path.basename( i ), ":",
+                sys.stdout.flush()
+                test( s.check_dex( open(i, "rb").read() )[0], TESTS[i] )
+            except Exception, e :
+                print "ERROR", e
+
+if __name__ == "__main__":
+    check( DATABASE, DBCONFIG, TESTS )
