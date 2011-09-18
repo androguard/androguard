@@ -2061,6 +2061,12 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "exec", "(Ljava/lang/String; [Ljava/lang/String; Ljava/io/File;)"),
 	],
 },
+"UPDATE_DEVICE_STATS			
+" : {
+	"Lcom/android/internal/app/IUsageStats$Stub$Proxy;" : [
+		("F", "noteLaunchTime", "(LComponentName;)"),
+	],
+},
 "BLUETOOTH" : {
 	"Landroid/os/Process;" : [
 		("C", "BLUETOOTH_GID", "I"),
@@ -3941,6 +3947,8 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Ljava/lang/Runtime;-exec-([Ljava/lang/String; [Ljava/lang/String; Ljava/io/File;)" : "READ_LOGS",
 	"Ljava/lang/Runtime;-exec-(Ljava/lang/String; [Ljava/lang/String;)" : "READ_LOGS",
 	"Ljava/lang/Runtime;-exec-(Ljava/lang/String; [Ljava/lang/String; Ljava/io/File;)" : "READ_LOGS",
+	"Lcom/android/internal/app/IUsageStats$Stub$Proxy;-noteLaunchTime-(LComponentName;)" : "UPDATE_DEVICE_STATS			
+",
 	"Landroid/os/Process;-BLUETOOTH_GID-I" : "BLUETOOTH",
 	"Landroid/bluetooth/BluetoothA2dp;-ACTION_CONNECTION_STATE_CHANGED-Ljava/lang/String;" : "BLUETOOTH",
 	"Landroid/bluetooth/BluetoothA2dp;-ACTION_PLAYING_STATE_CHANGED-Ljava/lang/String;" : "BLUETOOTH",
