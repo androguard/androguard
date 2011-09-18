@@ -58,7 +58,7 @@ class SignSim :
 
         self.sign.set_dist( str(buff["DISTANCE"]) )
         self.sign.set_method( str(buff["METHOD"]) )
-        # L0_2, Android, Java, Hex, Exception
+        # L0_4, Android, Java, Hex, Exception
         self.sign.set_weight( buff["WEIGHTS"] )
 
     def load_sign(self, unique_id, unique_idlink, i, ssign, j , nb) :
