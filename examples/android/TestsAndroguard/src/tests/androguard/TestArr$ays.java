@@ -22,21 +22,21 @@ public class TestArr$ays {
 		b = a;
 	}
 	
-	public void emptyArrayByte( ) {
+	public void testEmptyArrayByte( ) {
 		byte [] b = new byte[5];
 		InternField.b = b;
 	}
 	
-	public void fullArrayByte( ) {
+	public void testFullArrayByte( ) {
 		byte[] b = { 1, 2, 4, 39, 20 };
 		this.b = b;
 	}
 	
-	public void modifArrayByte( ) {
+	public void testModifArrayByte( ) {
 		b[2000000] = 2;
 	}
 	
-	public void instanceInternArrayByte( ){
+	public void testInstanceInternArrayByte( ){
 		InternField f = new InternField();
 		f.b = new byte[5];
 		f.b[2] = 40;

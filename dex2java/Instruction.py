@@ -1,6 +1,6 @@
 import struct
 import Util
-
+import copy
 
 def get_invoke_params(params, params_type, memory):
     res = []
@@ -11,22 +11,91 @@ def get_invoke_params(params, params_type, memory):
         i += Util.get_type_size(params_type[i])
     return res
 
+
+class Var():
+    def __init__(self, name, type, size, content):
+        self.name = name
+        self.type = type
+        self.size = size
+        self.content = content
+        self.used = False
+        self.param = False
+    
+    def get_content(self):
+        self.used = True
+        return self.content
+
+    def get_type(self):
+        return self.type
+
+    def get_value(self):
+        if self.content:
+            return self.content.get_value()
+        return self.name
+
+    def dump(self):
+        if self.content.get_value().startswith('ret'):
+            return self.content.get_value() + ';'
+        return '%s = %s;' % (self.name, self.content.get_value())
+
+    def decl(self):
+        return '%s %s' % (self.type, self.name)
+     
+    def __repr__(self):
+        if self.content:
+            return '%s %s %s' % (self.type, self.name, self.content)
+        return '%s %s' % (self.type, self.name)
+
+    def __deepcopy__(self, dic=None):
+        d = dic.get(self, None)
+        if d is None:
+            r = Var(self.name, self.type, self.size)
+            dic[self] = r
+            return r
+        return d
+
+class Variable():
+    def __init__(self):
+        self.nbVars = {}
+        self.vars = []
+
+    def newVar(self, type, content=None):
+        n = self.nbVars.setdefault(type, 1)
+        self.nbVars[type] += 1
+        size = Util.get_type_size(type)
+        _type = Util.get_type(type)
+        if _type:
+            type = _type.split('.')[-1]
+        if type.endswith('[]'):
+            name = '%sArray%d' % (type.strip('[]'), n)
+        else:
+            name = '%sVar%d' % (type, n)
+        var = Var(name, type, size, content)
+        self.vars.append(var)
+        return var
+
+    def startBlock(self):
+        self.varscopy = copy.deepcopy(self.nbVars)
+
+    def endBlock(self):
+        self.nbVars = self.varscopy
+
 class Instruction(object):
     def __init__(self, args):
         self.args = args
         self.register = args[0][1]
 
-    def set_dest_dump(self, ins):
-        self.dump = ins
+#    def set_dest_dump(self, ins):
+#        self.dump = ins
 
     def get_reg(self):
         return [self.register]
 
     def get_value(self):
-        return '(get_value not implemented)'
+        return '(get_value not implemented) %s' % self
 
     def get_type(self):
-        return '(no type defined)'
+        return '(no type defined) %s' % self
 
     def emulate(self, memory):
         Util.log('emulation not implemented for this instruction.', 'debug')
@@ -55,6 +124,9 @@ class Move(Instruction):
         self.source = memory[self.source].get_content()
         Util.log('value : %s' % (self.source), 'debug')
 
+    def get_type(self):
+        return self.source.get_type()
+
     def get_value(self):
         return self.source.get_value()
 
@@ -69,6 +141,9 @@ class MoveFrom16(Instruction):
     def emulate(self, memory):
         self.value = memory[self.source].get_content()
         Util.log('value : %s' % self.value, 'debug')
+
+    def get_type(self):
+        return self.value.get_type()
 
     def get_value(self):
         return self.value.get_value()
@@ -107,6 +182,9 @@ class MoveObject(Instruction):
         self.value = memory[self.source].get_content()
         Util.log('value : %s' % self.value, 'debug')
 
+    def get_type(self):
+        return self.value.get_type()
+
     def get_value(self):
         return self.value.get_value()
 
@@ -121,6 +199,9 @@ class MoveObjectFrom16(Instruction):
     def emulate(self, memory):
         self.value = memory[self.source].get_content()
         Util.log('value : %s' % self.value, 'debug')
+
+    def get_type(self):
+        return self.value.get_type()
 
     def get_value(self):
         return self.value.get_value()
@@ -138,10 +219,13 @@ class MoveResult(Instruction):
         super(MoveResult, self).__init__(args)
 
     def emulate(self, memory):
-        self.value = memory['heap']
+#        self.value = memory['heap']
         self.value = memory.get('heap')
         memory['heap'] = None
         Util.log('value :: %s' % self.value, 'debug')
+
+    def get_type(self):
+        return self.value.get_type()
 
     def get_value(self):
         if self.value:
@@ -167,6 +251,9 @@ class MoveResultObject(Instruction):
         memory['heap'] = None
         Util.log('value :: %s' % self.value, 'debug')
 
+    def get_type(self):
+        return self.value.get_type()
+
     def get_value(self):
         if self.value is not None:
             return self.value.get_value()
@@ -191,11 +278,15 @@ class ReturnVoid(Instruction):
         Util.log('ReturnVoid has no dest register', 'debug')
 
     def emulate(self, memory):
-        heap = memory.get('heap')
-        if heap:
-            self.dump.append(heap.get_value())
-            memory['heap'] = None
-        self.dump.append('return')
+        pass
+#        heap = memory.get('heap')
+#        if heap:
+#            self.dump.append(heap.get_value())
+#            memory['heap'] = None
+#        self.dump.append('return')
+
+    def get_type(self):
+        return 'V'
 
     def __str__(self):
         return 'Return'
@@ -211,9 +302,15 @@ class Return(Instruction):
         Util.log('Return has no dest register', 'debug')
 
     def emulate(self, memory):
-        self.returnValue = memory[self.returnRegister]
-        ins = 'return %s' % self.returnValue.get_content().get_value()
-        self.dump.append(ins)
+        self.returnValue = memory[self.returnRegister].get_content()
+        self.ins = 'return %s' % self.returnValue.name#get_value()
+#        self.dump.append(ins)
+
+    def get_type(self):
+        return self.returnValue.get_type()
+
+    def get_value(self):
+        return self.ins
 
     def __str__(self):
         return 'Return (%s)' % str(self.returnValue)
@@ -226,7 +323,26 @@ class ReturnWide(Instruction):
 
 # return-object vAA ( 8b )
 class ReturnObject(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('ReturnObject : %s' % args, 'debug')
+        self.returnRegister = args[0][1]
+
+    def get_reg(self):
+        Util.log('ReturnObject has no dest register', 'debug')
+
+    def emulate(self, memory):
+        self.returnValue = memory[self.returnRegister].get_content()
+        self.ins = 'return %s' % self.returnValue.get_value()
+        #self.dump.append(self.ins)
+
+    def get_type(self):
+        return self.returnValue.get_type()
+
+    def get_value(self):
+        return self.ins
+
+    def __str__(self):
+        return 'ReturnObject (%s)' % str(self.returnValue)
 
 
 # const/4 vA, #+B ( 4b, 4b )
@@ -403,11 +519,15 @@ class ConstString(Instruction):
     def __init__(self, args):
         Util.log('ConstString : %s' % args, 'debug')
         super(ConstString, self).__init__(args)
-        self.value = '"%s"' % args[1][2]
+        self.value = '%s' % args[1][2]
         Util.log('==> %s' % self.value, 'debug')
 
     def get_value(self):
         return self.value
+
+    def get_type(self):
+        #FIXME
+        return 'String'
 
     def __str__(self):
         return self.value
@@ -425,8 +545,19 @@ class ConstClass(Instruction):
 
 # monitor-enter vAA ( 8b )
 class MonitorEnter(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('MonitorEnter : %s' % args, 'debug')
+        self.sync = args[0][1]
 
+    def emulate(self, memory):
+        self.sync = memory[self.sync].get_content()
+        self.ins = 'synchronized( %s )'
+
+    def get_reg(self):
+        Util.log('MonitorEnter has no dest register', 'debug')
+
+    def get_value(self):
+        return self.ins % self.sync.get_value()
 
 # monitor-exit vAA ( 8b )
 class MonitorExit(Instruction):
@@ -435,8 +566,19 @@ class MonitorExit(Instruction):
 
 # check-cast vAA ( 8b )
 class CheckCast(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('CheckCast: %s' % args, 'debug')
+        self.type = args[0][1]
 
+    def emulate(self, memory):
+        self.type = memory[self.type].get_content().get_type()
+
+    def get_type(self):
+        print "type :", self.type
+        return self.type
+
+    def get_reg(self):
+        Util.log('CheckCast has no dest register', 'debug')
 
 # instance-of vA, vB ( 4b, 4b )
 class InstanceOf(Instruction):
@@ -445,7 +587,17 @@ class InstanceOf(Instruction):
 
 # array-length vA, vB ( 4b, 4b )
 class ArrayLength(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('ArrayLength: %s' % args, 'debug')
+        super(ArrayLength, self).__init__(args)
+        self.src = args[1][1]
+
+    def emulate(self, memory):
+        self.src = memory[self.src].get_content()
+        self.ins = '%s.length'
+
+    def get_value(self):
+        return self.ins % self.src.get_value()
 
 
 # new-instance vAA ( 8b )
@@ -535,7 +687,11 @@ class Goto32(Instruction):
 class PackedSwitch(Instruction):
     def __init__(self, args):
         Util.log('PackedSwitch : %s' % args, 'debug')
-        #super(PackedSwitch, self).__init__(args)
+        super(PackedSwitch, self).__init__(args)
+
+#    def emulate(self, memory):
+#        self.switch = memory[self.register].get_content()
+#        self.dump.append('switch( %s )' % self.switch.get_value())
 
     def get_reg(self):
         Util.log('PackedSwitch has no dest register.', 'debug')
@@ -563,8 +719,19 @@ class CmplDouble(Instruction):
 
 # cmpg-double ( 8b, 8b, 8b )
 class CmpgDouble(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('CmpgDouble : %s' % args, 'debug')
+        super(CmpgDouble, self).__init__(args)
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
 
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def __str__(self):
+        return 'CmpgDouble (%s > %s ?)' % (self.first.get_value(),
+        self.second.get_value())
 
 # cmp-long ( 8b, 8b, 8b )
 class CmpLong(Instruction):
@@ -573,73 +740,149 @@ class CmpLong(Instruction):
 
 # if-eq vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfEq(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfEq : %s' % args, 'debug')
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
+        self.branch = int(args[2][1])
+        self.type = 'Z'
+
+    def get_reg(self):
+        Util.log('IfEq has no dest register', 'debug')
+
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfEq (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 
 # if-ne vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfNe(Instruction):
     def __init__(self, args):
         Util.log('IfNe : %s' % args, 'debug')
-        self.test = int(args[0][1])
-        self.branch = int(args[1][1])
-
-    def emulate(self, memory):
-        self.test = memory[self.test].get_content()
-
-    def get_value(self):
-        return '%s' % self.test.get_value
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
+        self.branch = int(args[2][1])
+        self.type = 'Z'
 
     def get_reg(self):
         Util.log('IfNe has no dest register', 'debug')
 
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def get_value(self):
+        return '%s != %s' % (self.first.get_value(), self.second.get_value())
+
     def __str__(self):
-        return 'IfNe...'
+        return 'IfNe (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 
 # if-lt vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfLt(Instruction):
     def __init__(self, args):
         Util.log('IfLt : %s' % args, 'debug')
-        self.test = int(args[0][1])
-        self.branch = int(args[1][1])
-
-    def emulate(self, memory):
-        self.test = memory[self.test].get_content()
-
-    def get_value(self):
-        return '%s' % self.test.get_value()
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
+        self.branch = int(args[2][1])
+        self.type = 'Z'
 
     def get_reg(self):
         Util.log('IfLt has no dest register', 'debug')
+    
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
 
     def __str__(self):
-        return 'IfLt...'
+        return 'IfLt (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 
 # if-ge vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfGe(Instruction):
     def __init__(self, args):
         Util.log('IfGe : %s' % args, 'debug')
-        self.firstTest = int(args[0][1])
-        self.secondTest = int(args[1][1])
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
         self.branch = int(args[2][1])
+        self.type = 'Z'
 
     def get_reg(self):
         Util.log('IfGe has no dest register', 'debug')
 
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
+
     def __str__(self):
-        return 'IfGe...'
+        return 'IfGe (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 
 # if-gt vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfGt(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfGt : %s' % args, 'debug')
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
+        self.branch = int(args[2][1])
+        self.type = 'Z'
+
+    def get_reg(self):
+        Util.log('IfGt has no dest register', 'debug')
+
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfGt (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 
 # if-le vA, vB, +CCCC ( 4b, 4b, 16b )
 class IfLe(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfLe : %s' % args, 'debug')
+        self.first = int(args[0][1])
+        self.second = int(args[1][1])
+        self.branch = int(args[2][1])
+        self.type = 'Z'
 
+    def get_reg(self):
+        Util.log('IfLe has no dest register', 'debug')
+
+    def emulate(self, memory):
+        self.first = memory[self.first].get_content()
+        self.second = memory[self.second].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfLe (%s, %s) : %s' % (self.first.get_value(),
+        self.second.get_value(), self.branch)
 
 # if-eqz vAA, +BBBB ( 8b, 16b )
 class IfEqz(Instruction):
@@ -652,42 +895,106 @@ class IfNez(Instruction):
         Util.log('IfNez : %s' % args, 'debug')
         self.test = int(args[0][1])
         self.branch = int(args[1][1])
+        self.type = 'Z'
 
     def get_reg(self):
         Util.log('IfNez has no dest register', 'debug')
 
+    def emulate(self, memory):
+        self.test = memory[self.test].get_content()
+
+    def get_type(self):
+        return self.type
+
     def __str__(self):
-        return 'IfNez...'
+        return 'IfNez (%s) : %s' % (self.test.get_value(), self.branch)
 
 
 # if-ltz vAA, +BBBB ( 8b, 16b )
 class IfLtz(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfLtz : %s' % args, 'debug')
+        self.test = int(args[0][1])
+        self.branch = int(args[1][1])
+        self.type = 'Z'
+
+    def get_reg(self):
+        Util.log('IfLtz has no dest register', 'debug')
+    
+    def emulate(self, memory):
+        self.test = memory[self.test].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfLtz (%s) : %s' % (self.test.get_value(), self.branch)
 
 
 # if-gez vAA, +BBBB ( 8b, 16b )
 class IfGez(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfGez : %s' % args, 'debug')
+        self.test = int(args[0][1])
+        self.branch = int(args[1][1])
+        self.type = 'Z'
+
+    def get_reg(self):
+        Util.log('IfGez has no dest register', 'debug')
+    
+    def emulate(self, memory):
+        self.test = memory[self.test].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfGez (%s) : %s' % (self.test.get_value(), self.branch)
 
 
 # if-gtz vAA, +BBBB ( 8b, 16b )
 class IfGtz(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IfGtz : %s' % args, 'debug')
+        self.test = int(args[0][1])
+        self.branch = int(args[1][1])
+        self.type = 'Z'
+
+    def get_reg(self):
+        Util.log('IfGtz has no dest register', 'debug')
+    
+    def emulate(self, memory):
+        self.test = memory[self.test].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def __str__(self):
+        return 'IfGtz (%s) : %s' % (self.test.get_value(), self.branch)
 
 
 # if-lez vAA, +BBBB (8b, 16b )
 class IfLez(Instruction):
     def __init__(self, args):
         Util.log('IfLez : %s' % args, 'debug')
-        #super(IfLez, self).__init__(args)
         self.test = int(args[0][1])
         self.branch = int(args[1][1])
+        self.type = 'Z'
 
     def get_reg(self):
         Util.log('IfLez has no dest register', 'debug')
 
+    def emulate(self, memory):
+        self.test = memory[self.test].get_content()
+
+    def get_type(self):
+        return self.type
+
+    def get_value(self):
+        return '%s <= 0' % self.test.get_value()
+
     def __str__(self):
-        return 'IfLez...'
+        return 'IfLez (%s) : %s' % (self.test.get_value(), self.branch)
 
 
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
@@ -873,15 +1180,18 @@ class IPut(Instruction):
         self.src = int(args[0][1])
         self.dest = int(args[1][1])
         self.location = args[2][2]  # [1:-1].replace( '/', '.' )
-        self.type = args[2][3][1:-1].replace('/', '.')
+        self.type = args[2][3] #.replace('/', '.')
         self.name = args[2][4]
 
     def emulate(self, memory):
         self.src = memory[self.src].get_content()
         self.dest = memory[self.dest].get_content()
         # FIXME ?
-        self.dump.append('%s.%s = %s' % (self.dest.get_value(), self.name,
-        self.src.get_value()))
+#        self.dump.append('%s.%s = %s' % (self.dest.get_value(), self.name,
+#        self.src.get_value()))
+
+    def get_type(self):
+        return self.type
 
     def get_reg(self):
         Util.log('IPut has no dest register.', 'debug')
@@ -899,15 +1209,18 @@ class IPutObject(Instruction):
         self.src = int(args[0][1])
         self.dest = int(args[1][1])
         self.location = args[2][2]
-        self.type = args[2][3][1:-1].replace('/', '.')
+        self.type = args[2][3] #[1:-1].replace('/', '.')
         self.name = args[2][4]
 
     def emulate(self, memory):
         self.src = memory[self.src].get_content()
         self.dest = memory[self.dest].get_content()
         # FIXME ?
-        self.dump.append('%s.%s = %s' % (self.dest.get_value(), self.name,
-        self.src.get_value()))
+#        self.dump.append('%s.%s = %s' % (self.dest.get_value(), self.name,
+#        self.src.get_value()))
+
+    def get_type(self):
+        return self.type
 
     def get_reg(self):
         Util.log('IPutObject has no dest register.', 'debug')
@@ -953,7 +1266,7 @@ class SGetObject(Instruction):
             self.location = location.split('/')[-1]
         else:
             self.location = location.replace('/', '.')
-        self.type = args[1][3][1:-1].replace('/', '.')
+        self.type = args[1][3] #[1:-1].replace('/', '.')
         self.name = args[1][4]
 
     def get_type(self):
@@ -1255,7 +1568,21 @@ class InvokeInterfaceRange(Instruction):
 
 # neg-int vA, vB ( 4b, 4b )
 class NegInt(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('NegInt : %s' % args, 'debug')
+        super(NegInt, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+        self.ins = '-(%s)'
+        Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
+
+    def get_value(self):
+        return self.ins % (self.source.get_value())
 
 
 # not-int vA, vB ( 4b, 4b )
@@ -1285,7 +1612,16 @@ class NegDouble(Instruction):
 
 # int-to-long vA, vB ( 4b, 4b )
 class IntToLong(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IntToLong : %s' % args, 'debug')
+        super(IntToLong, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((long) %s)' % self.source.get_value()
 
 
 # int-to-float vA, vB ( 4b, 4b )
@@ -1299,10 +1635,8 @@ class IntToFloat(Instruction):
         self.source = memory[self.source].get_content()
 
     def get_value(self):
-        return self.source.get_value()
+        return '((float) %s)' % self.source.get_value()
 
-    def __str__(self):
-        return 'IntToFloat (%s)' % self.source.get_value()
 
 # int-to-double vA, vB ( 4b, 4b )
 class IntToDouble(Instruction):
@@ -1315,31 +1649,76 @@ class IntToDouble(Instruction):
         self.source = memory[self.source].get_content()
 
     def get_value(self):
-        return self.source.get_value()
+        return '((double) %s)' % self.source.get_value()
 
 # long-to-int vA, vB ( 4b, 4b )
 class LongToInt(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('LongToInt : %s' % args, 'debug')
+        super(LongToInt, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((int) %s)' % self.source.get_value()
 
 
 # long-to-float vA, vB ( 4b, 4b )
 class LongToFloat(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('LongToFloat : %s' % args, 'debug')
+        super(LongToFloat, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((float) %s)' % self.source.get_value()
 
 
 # long-to-double vA, vB ( 4b, 4b )
 class LongToDouble(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('LongToDouble : %s' % args, 'debug')
+        super(LongToDouble, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((double) %s)' % self.source.get_value()
 
 
 # float-to-int vA, vB ( 4b, 4b )
 class FloatToInt(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('FloatToInt : %s' % args, 'debug')
+        super(FloatToInt, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((int) %s)' % self.source.get_value()
 
 
 # float-to-long vA, vB ( 4b, 4b )
 class FloatToLong(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('FloatToLong : %s' % args, 'debug')
+        super(FloatToLong, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((long) %s)' % self.source.get_value()
 
 
 # float-to-double vA, vB ( 4b, 4b )
@@ -1347,41 +1726,83 @@ class FloatToDouble(Instruction):
     def __init__(self, args):
         Util.log('FloatToDouble : %s' % args, 'debug')
         super(FloatToDouble, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((double) %s)' % self.source.get_value()
 
 
 # double-to-int vA, vB ( 4b, 4b )
 class DoubleToInt(Instruction):
-    pass
+    def __init__(self, args):
+        super(DoubleToInt, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((int) %s)' % self.source.get_value()
 
 
 # double-to-long vA, vB ( 4b, 4b )
 class DoubleToLong(Instruction):
+    def __init__(self, args):
+        Util.log('DoubleToLong : %s' % args, 'debug')
+        super(DoubleToLong, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((long) %s)' % self.source.get_value()
     pass
 
 
 # double-to-float vA, vB ( 4b, 4b )
 class DoubleToFloat(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('DoubleToFloat : %s' % args, 'debug')
+        super(DoubleToFloat, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((float) %s)' % self.source.get_value()
 
 
 # int-to-byte vA, vB ( 4b, 4b )
 class IntToByte(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('IntToByte : %s' % args, 'debug')
+        super(IntToByte, self).__init__(args)
+        self.source = int(args[1][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+
+    def get_value(self):
+        return '((byte) %s)' % self.source.get_value()
 
 
 # int-to-char vA, vB ( 4b, 4b )
 class IntToChar(Instruction):
     def __init__(self, args):
-        Util.log('IntToChar %s' % args, 'debug')
+        Util.log('IntToChar : %s' % args, 'debug')
         super(IntToChar, self).__init__(args)
         self.source = int(args[1][1])
 
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
-        self.ins = '(char) (%s)'
 
     def get_value(self):
-        return self.ins % self.source.get_value()
+        return '((char) %s)' % self.source.get_value()
 
 
 # int-to-short vA, vB ( 4b, 4b )
@@ -1400,20 +1821,14 @@ class AddInt(Instruction):
     def emulate(self, memory):
         self.source1 = memory[self.source1].get_content()
         self.source2 = memory[self.source2].get_content()
-#        try :
-#            source1 = int(self.source1.get_value())
-#            source2 = int(self.source2.get_value())
-#            self.ins = '%s' % (source1 + source2)
-#        except :
-#            self.ins = '%s + %s'
-        self.ins = '%s + %s'
+        self.ins = '(%s + %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
 
+    def get_type(self):
+        return 'I'
+
     def get_value(self):
-#        if self.ins.isdigit():
-#            return self.ins
-        return '%s + %s' % (self.source1.get_value(), self.source2.get_value())
-        #  [ self.source1, self.source2 ]
+        return self.ins % (self.source1.get_value(), self.source2.get_value())
 
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
@@ -1427,18 +1842,13 @@ class SubInt(Instruction):
     def emulate(self, memory):
         self.source1 = memory[self.source1].get_content()
         self.source2 = memory[self.source2].get_content()
-#        try :
-#            source1 = int(self.source1.get_value())
-#            source2 = int(self.source2.get_value())
-#            self.ins = '%s' % (source1 - source2)
-#        except :
-#            self.ins = '%s - %s'
-        self.ins = '%s - %s'
+        self.ins = '(%s - %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
 
+    def get_type(self):
+        return 'I'
+
     def get_value(self):
-#        if self.ins.isdigit():
-#            return self.ins
         return self.ins % (self.source1.get_value(), self.source2.get_value())
 
 
@@ -1453,18 +1863,13 @@ class MulInt(Instruction):
     def emulate(self, memory):
         self.source1 = memory[self.source1].get_content()
         self.source2 = memory[self.source2].get_content()
-#        try :
-#            source1 = int(self.source1.get_value())
-#            source2 = int(self.source2.get_value())
-#            self.ins = '%s' % (source1 * source2)
-#        except :
-#            self.ins = '%s * %s'
-        self.ins = '%s * %s'
+        self.ins = '(%s * %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
 
+    def get_type(self):
+        return 'I'
+
     def get_value(self):
-#        if self.ins.isdigit():
-#            return self.ins
         return self.ins % (self.source1.get_value(), self.source2.get_value())
 
 
@@ -1479,18 +1884,13 @@ class DivInt(Instruction):
     def emulate(self, memory):
         self.source1 = memory[self.source1].get_content()
         self.source2 = memory[self.source2].get_content()
-#        try :
-#            source1 = int(self.source1.get_value())
-#            source2 = int(self.source2.get_value())
-#            self.ins = '%s' % (source1 / float(source2))
-#        except :
-#            self.ins = '%s / %s'
-        self.ins = '%s / %s'
+        self.ins = '(%s / %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
 
+    def get_type(self):
+        return 'I'
+
     def get_value(self):
-#        if self.ins.isdigit():
-#            return self.ins
         return self.ins % (self.source1.get_value(), self.source2.get_value())
 
 
@@ -1648,15 +2048,14 @@ class AddInt2Addr(Instruction):
         self.source = int(args[1][1])
 
     def emulate(self, memory):
-    #self.ins = '%s + %s' % (memory[self.register].get_content_dbg().get_value(),
-    #memory[self.source].get_content_dbg().get_value() )
-    #print 'Ins : %s' % self.ins
         self.op1 = memory[self.register].get_content()
         self.op2 = memory[self.source].get_content()
-        self.ins = '%s + %s'
+        self.ins = '(%s + %s)'
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
-        #return self.ins
         return '%s + %s' % (self.op1.get_value(), self.op2.get_value())
 
 
@@ -1670,8 +2069,11 @@ class SubInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s - %s'
+        self.ins = '(%s - %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1687,8 +2089,11 @@ class MulInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s * %s'
+        self.ins = '(%s * %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1704,8 +2109,11 @@ class DivInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s / %s'
+        self.ins = '(%s / %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1721,8 +2129,11 @@ class RemInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s %% %s'
+        self.ins = '(%s %% %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1738,8 +2149,11 @@ class AndInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s & %s'
+        self.ins = '(%s & %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1755,8 +2169,11 @@ class OrInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s | %s'
+        self.ins = '(%s | %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1772,8 +2189,11 @@ class XorInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s ^ %s'
+        self.ins = '(%s ^ %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1789,8 +2209,11 @@ class ShlInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s << ( %s & 0x1f )'
+        self.ins = '(%s << ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1806,8 +2229,11 @@ class ShrInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s >> ( %s & 0x1f )'
+        self.ins = '(%s >> ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1823,8 +2249,11 @@ class UShrInt2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s >> ( %s & 0x1f )'
+        self.ins = '(%s >> ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1840,8 +2269,11 @@ class AddLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s + %s'
+        self.ins = '(%s + %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1857,8 +2289,11 @@ class SubLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s - %s'
+        self.ins = '(%s - %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1874,8 +2309,11 @@ class MulLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s * %s'
+        self.ins = '(%s * %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1891,8 +2329,11 @@ class DivLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s / %s'
+        self.ins = '(%s / %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1908,8 +2349,11 @@ class RemLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s %% %s'
+        self.ins = '(%s %% %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1925,8 +2369,11 @@ class AndLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s & %s'
+        self.ins = '(%s & %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1942,8 +2389,11 @@ class OrLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s | %s'
+        self.ins = '(%s | %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1959,8 +2409,11 @@ class XorLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s ^ %s'
+        self.ins = '(%s ^ %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1976,8 +2429,11 @@ class ShlLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s << ( %s & 0x1f )'
+        self.ins = '(%s << ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -1993,8 +2449,11 @@ class ShrLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s >> ( %s & 0x1f )'
+        self.ins = '(%s >> ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -2010,8 +2469,11 @@ class UShrLong2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s >> ( %s & 0x1f )'
+        self.ins = '(%s >> ( %s & 0x1f ))'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'J'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -2027,8 +2489,11 @@ class AddFloat2Addr(Instruction):
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
         self.dest = memory[self.register].get_content()
-        self.ins = '%s + %s'
+        self.ins = '(%s + %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'F'
 
     def get_value(self):
         return self.ins % (self.dest.get_value(), self.source.get_value())
@@ -2098,9 +2563,12 @@ class MulIntLit16(Instruction):
         self.const = int(args[2][1])
 
     def emulate(self, memory):
-        self.ins = '%s * %s' % (memory[self.source].get_content().get_value(),
+        self.ins = '(%s * %s)' % (memory[self.source].get_content().get_value(),
         self.const)
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins
@@ -2141,8 +2609,11 @@ class AddIntLit8(Instruction):
 
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
-        self.ins = '%s + %s'
+        self.ins = '(%s + %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.source.get_value(), self.const)
@@ -2166,21 +2637,57 @@ class MulIntLit8(Instruction):
 
     def emulate(self, memory):
         self.source = memory[self.source].get_content()
-        self.ins = '%s * %s'
+        self.ins = '(%s * %s)'
         Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
+
+    def get_value(self):
+        return self.ins % (self.source.get_value(), self.const)
+
+    def __str__(self):
+        return 'MulIntLit8 (%s, %s)' % (self.source, self.const)
+
+
+# div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
+class DivIntLit8(Instruction):
+    def __init__(self, args):
+        Util.log('DivIntLit8 : %s' % args, 'debug')
+        super(DivIntLit8, self).__init__(args)
+        self.source = int(args[1][1])
+        self.const = int(args[2][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+        self.ins = '(%s / %s)'
+        Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
 
     def get_value(self):
         return self.ins % (self.source.get_value(), self.const)
 
 
-# div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-class DivIntLit8(Instruction):
-    pass
-
-
 # rem-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 class RemIntLit8(Instruction):
-    pass
+    def __init__(self, args):
+        Util.log('RemIntLit8 : %s' % args, 'debug')
+        super(RemIntLit8, self).__init__(args)
+        self.source = int(args[1][1])
+        self.const = int(args[2][1])
+
+    def emulate(self, memory):
+        self.source = memory[self.source].get_content()
+        self.ins = '(%s %% %s)'
+        Util.log('Ins : %s' % self.ins, 'debug')
+
+    def get_type(self):
+        return 'I'
+
+    def get_value(self):
+        return self.ins % (self.source.get_value(), self.const)
 
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
@@ -2255,8 +2762,8 @@ INSTRUCTION_SET = {
     'fill-array-data'       : FillArrayData,
     'throw'                 : Throw,
     'goto'                  : Goto,
-    'goto/16'               : Goto16,
-    'goto/32'               : Goto32,
+    'goto/16'               : Goto,#16,
+    'goto/32'               : Goto,#32,
     'packed-switch'         : PackedSwitch,
     'sparse-switch'         : SparseSwitch,
     'cmpl-float'            : CmplFloat,

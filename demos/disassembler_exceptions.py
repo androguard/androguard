@@ -38,4 +38,4 @@ for method in a.get_methods() :
         print ""
 
     for i in g.exceptions.gets() :
-        print i.start, i.end, i.exceptions
+        print '%x %x %s' % (i.start, i.end, i.exceptions)

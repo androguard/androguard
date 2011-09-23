@@ -54,6 +54,20 @@ ACCESS_FLAGS_METHODS = {
     0x20000: 'synchronized'  #'ACC_DECLARED_SYNCHRONIZED'
 }
 
+TYPE_LEN = {
+    'J': 2,
+    'D': 2
+}
+
+DEBUG_MODES = {
+    'off' : -1,
+    'error' : 0,
+    'log' : 1,
+    'debug' : 2
+}
+
+DEBUG_LEVEL = 'log'
+
 class wrap_stream(object):
     def __init__(self):
         self.val = ''
@@ -71,6 +85,7 @@ def merge_inner(clsdict):
        ==> class A { class foo{...} class bar{...} ... }
     '''
     samelist = False
+    done = {}
     while not samelist:
         samelist = True
         classlist = clsdict.keys()
@@ -80,16 +95,21 @@ def merge_inner(clsdict):
                 parts_name = ['$'.join(parts_name[:-1]), parts_name[-1]]
             if len(parts_name) > 1:
                 mainclass, innerclass = parts_name
+                innerclass = innerclass[:-1] # remove ';' of the name
                 mainclass += ';'
                 if mainclass in clsdict:
                     clsdict[mainclass].add_subclass(innerclass, clsdict[classname])
+                    clsdict[classname].name = innerclass
+                    done[classname] = clsdict[classname]
                     del clsdict[classname]
                     samelist = False
-
-TYPE_LEN = {
-    'J': 2,
-    'D': 2
-}
+                elif mainclass in done:
+                    cls = done[mainclass]
+                    cls.add_subclass(innerclass, clsdict[classname]) 
+                    clsdict[classname].name = innerclass
+                    done[classname] = done[mainclass]
+                    del clsdict[classname]
+                    samelist = False
 
 def get_next_register(params):
     '''
@@ -101,6 +121,9 @@ def get_next_register(params):
         yield size
 
 def get_type_size(param):
+    '''
+    Return the number of register needed by the type @param
+    '''
     return TYPE_LEN.get(param, 1)
 
 def get_type(atype, size=None):
@@ -136,14 +159,6 @@ def get_new_var(atype):
     for n in count(0):
         yield '%s var%s' % (atype, n)
 
-DEBUG_MODES = {
-    'error' : 0,
-    'log' : 1,
-    'debug' : 2
-}
-
-DEBUG_LEVEL = 'log'
-
 def log(s, mode):
     def _log(s):
         print '%s' % s
@@ -153,7 +168,7 @@ def log(s, mode):
         print 'ERROR: %s' % s
     if mode is None:
         return
-    mode = DEBUG_MODES[mode]
+    mode = DEBUG_MODES.get(mode)
     if mode <= DEBUG_MODES[DEBUG_LEVEL]:
         if mode == DEBUG_MODES['log']:
             _log(s)

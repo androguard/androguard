@@ -1,9 +1,8 @@
 package tests.androguard;
 
-
 public class TestExceptions {
 	
-	public int Test1( int a )
+	public int testException1( int a )
 	{
 		try {
 			a = 5 / 0;
@@ -13,7 +12,7 @@ public class TestExceptions {
 		return a;
 	}
 	
-	public static int Test2( int a, int b ) throws ArrayIndexOutOfBoundsException
+	public static int testException2( int a, int b ) throws ArrayIndexOutOfBoundsException
 	{
 		int [] t = new int[b];
 		
@@ -28,7 +27,7 @@ public class TestExceptions {
 		return a + t[0];
 	}
 	
-	public int Test3( int a, int[] t )
+	public int testException3( int a, int[] t )
 	{
 		int result = 0;
 		
@@ -49,21 +48,99 @@ public class TestExceptions {
 		return result;
 	}
 	
-	public static void tests( String [] z )
+	public int testException4( int a ) 
 	{
-		System.out.println( "Result test1 : " + new TestExceptions().Test1( 10 ) );
+		int res = 15;
+		
+		res += a;
+		
+		try {
+			Runtime b = Runtime.getRuntime();
+			b.notifyAll();
+		} catch( RuntimeException e ) {
+			System.out.println("runtime " + e.getMessage());
+		}
+		
+		try {
+			Runtime c = Runtime.getRuntime();
+			c.wait();
+		}
+		catch (RuntimeException e) {
+			System.out.println("runtime " + e.getMessage());
+		}
+		catch (Exception e) {
+			System.out.println("exception e " + e.getMessage());
+		}
+		
+		try {
+			res /= a;
+		} catch (Exception e) {	
+			System.out.println("exception e " + e.getMessage());
+		}
+		
+		System.out.println("end");
+		return res;
+		
+	}
+	
+	public static void testTry1(int b)
+	{
+		int a = 15;
+		try {
+			if ( b % 2 == 0)
+			{
+				a = a / b;
+				if ( a - 3 == 4 )
+					System.out.println("lll");
+			}
+			else {
+				a = a * b;
+				System.out.println("ppp");
+			}
+		} catch(ArithmeticException e){
+			System.out.println("oupla");
+		}
+	}
+	
+	public static void testCatch1(int b)
+	{
+		int a = 15;
+		try {
+			if ( b % 2 == 0 )
+			{
+				a = a / b;
+				if ( a - 3 == 4 )
+					System.out.println("mmm");
+			} else {
+				a = a * b;
+				System.out.println("qqq");
+			}
+		} catch(ArithmeticException e)
+		{
+			if ( a == 12 )
+				System.out.println("test");
+			else {
+				b += 3 * a;
+				System.out.println("test2 " + b);
+			}
+		}
+	}
+	
+	public static void testExceptions( String [] z )
+	{
+		System.out.println( "Result test1 : " + new TestExceptions().testException1( 10 ) );
 		
 		System.out.println( "=================================" );
 		try {
-			System.out.println( "Result test2 : " + Test2( 5, 10 ) );
+			System.out.println( "Result test2 : " + testException2( 5, 10 ) );
 		} catch (ArrayIndexOutOfBoundsException e) {
-			System.out.println( "Result test2 : " + Test2( 5, 9 ) );
+			System.out.println( "Result test2 : " + testException2( 5, 9 ) );
 		}
 		
 		System.out.println( "=================================" );
 		int [] t = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		System.out.println( "Result test3 : " + new TestExceptions().Test3( 8, t ) );
-		System.out.println( "Result test3 : " + new TestExceptions().Test3( 9, t ) );
-		System.out.println( "Result test3 : " + new TestExceptions().Test3( 7, t ) );
+		System.out.println( "Result test3 : " + new TestExceptions().testException3( 8, t ) );
+		System.out.println( "Result test3 : " + new TestExceptions().testException3( 9, t ) );
+		System.out.println( "Result test3 : " + new TestExceptions().testException3( 7, t ) );
 	}
 }
