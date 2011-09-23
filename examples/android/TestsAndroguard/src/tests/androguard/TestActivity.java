@@ -11,6 +11,12 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 	public int value2;
 	private int test = 10;
 	private static final int test2 = 20;
+	public int test3 = 30;
+	public int tab[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	static {
+		int t = 5;
+		System.out.println("foobar");
+	}
 
 	public TestActivity() {
 		value = 100;
@@ -20,6 +26,13 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 	public TestActivity( int value, int value2 ) {
 		this.value = value;
 		this.value2 = value2;
+	}
+	
+	public TestActivity( double value, double value2 )
+	{
+		this.test = 5;
+		this.value = (int)value;
+		this.value2 = (int)value2;
 	}
 
 	public int test_base(int _value, int _value2) {
@@ -38,7 +51,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		double z = 5;
 		double cd = 6;
 		float g = 4.20f;
-
+		
 		double useless = g * c + b - y + d;
 
 		System.out.println("VALUE = " + this.value + " VALUE 2 = "
@@ -94,9 +107,8 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 				continue;
 			}
 			if (i == 0)
-				break;
+				return j;
 		}
-		return j;
 	}
 
 	public int foo2(int i, int j) {
@@ -121,7 +133,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		return v;
 	}
 
-	public void test(int z, char y) {
+	public void testVars(int z, char y) {
 		int a = this.value * 2;
 		int b = 3;
 		int c = 4;
@@ -144,7 +156,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		System.out.println(" meh " + r);
 		System.out.println(y);
 		y += 'a';
-		this.test(a, y);
+		this.testVars(a, y);
 		this.test1(10);
 		pouet2();
 		this.pouet2();
@@ -253,19 +265,31 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		System.out.println(gettype);
 	}
 
-	public static void bla(float b) {
+	public static void testCall1(float b) {
 		System.out.println("k" + b);
 	}
 	
-	public static void bla2(long i) {
+	public static void testCall2(long i) {
 		new PrintStream(System.out).println("k"+i);
 	}
 	
-	public static void bla3(TestIfs d){
-		bla2(3);
-		TestIfs.IF(5);
+	public static void testCalls(TestIfs d){
+		testCall2(3);
+		TestIfs.testIF(5);
 		System.out.println(d.getClass());
 	}
+	
+	public static void testLoop( double a )
+	{
+		while( a < 10 ) {
+			System.out.println(a);
+			a *= 2;
+		}
+	}
+	
+    public void testVarArgs(int p, long[] p2, String ... p3){
+    	
+    }
 
 	public synchronized int pouet2() {
 		int i = 0, j = 10;
@@ -290,8 +314,8 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		System.out.println(" test_base(500, 3) " + this.test_base(500, 3));
 		return test + test2 + 10;
 	}
-	
-	public void anAccessFieldTest( ) {
+
+	public void testAccessField( ) {
 		TestArr$ays a = new TestArr$ays();
 		a.d = new byte[5];
 		a.d[2] = 'c';
