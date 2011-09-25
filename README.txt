@@ -8,40 +8,68 @@
 
 1 -] About
 
-Androguard is primarily a tool written in full python to play with :
-   - .class (JVM) format
-   - .dex (DalvikVM) format
+Androguard (Android Guard) is primarily a tool written in full python to 
+play with :
+    - .class (JavaVM)
+    - .dex (DalvikVM)
+    - APK
+    - JAR
+    - Android's binary xml
+
+Androguard has the following features :
+    - Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full 
+      Python objects,
+    - Native support of DEX code in a c++ library,
+    - Access to the static analysis of your code (basic blocks, 
+      instructions, permissions (with database from 
+      http://www.android-permissions.org/) ...) and create your own static
+      analysis tool,
+    - Check if an android application is present in a database (malwares, 
+      goodwares ?),
+    - Open source database of android malwares,
+    - Diffing of android applications,
+    - Measure the efficiency of obfuscators (proguard, ...),
+    - Determine if your application has been pirated (rip-off indicator),
+    - Risk indicator of malicious application,
+    - Reverse engineering of applications (goodwares, malwares),
+    - Transform Android's binary xml (like AndroidManifest.xml) into 
+      classic xml,
+    - Visualize your application into cytoscape (by using xgmml format), 
+      or PNG/DOT output,
+    - Patch JVM classes, add native library dependencies,
+    - Dump the jvm process to find classes into memory,
+    - Add a watermark into your application (in progress),
+    - Classify android apks (in progress),
+    - Protect your application against thefts on android market (in 
+      progress),
+    - ...
 
 So, you can analyze, display, modify and save your apps easily and 
-statically by creating your own software (by using the API), or by using 
-the tool (androlyze) in command line.
+statically by creating your own software (by using the API), or by
+using the tool (androlyze) in command line. This tool is useful 
+when you would like to do reverse engineering on a specific 
+application (e.g : malware).
 
-Moreover, we are trying to obfuscate your apps by using new techniques,
-but you must now that obfuscation is a difficult problem, and you can't
-hide something into your software in a 'secure manner'. But we can try to
-block as possible evil guys to steal a part of your apps, and resell them
-into the market.
+The second part of the tool is to do new tools to get differences 
+between two android/java applications, or to find similarities 
+in different applications (e.g : to check if a part or entire 
+application has been stolen).
 
-We are trying to implement dynamic and metamorphism Virtual Machines. For 
-example, we can obfuscate classical variable affections with mathematical 
-formulas, and integers constants. But the research in this domain is in 
-progress and we will publish more information and codes.
+And for now, you can check if an android application is present 
+in a database (like a malware).
 
-You have also the possibility to apply control flow modification, and to
-change the name of fields, methods in your apps with random string.
-
-Of course, it's possible to integrate the 'androguard' program into the 
-development cycle, for example, directly into ANT (after the java 
-compilation, and just before the convertion into .dex format, see USAGE).
-
-This tool has been designed for Android apps, but if you have read this
-section, you have seen that we support JVM format, so you can used
-this tool with classical Java apps.
+This tool has been designed for Android apps, but if you have read 
+this section, you have seen that we support JVM format, so you can
+used this tool with classical Java apps.
 
 If you are interesting to develop and to work on this youth project, you 
 can contact me (see the top of this README for my e-mail).
 
 2 -] Usage
+
+You need to follow the following information to install dependencies
+for androguard :
+    http://code.google.com/p/androguard/wiki/Installation
 
 All objects can be access directly, and most of the time, there is 
 a field called "format" which contained the raw fields which can 
@@ -78,7 +106,6 @@ see the directory 'doc'
 
 http://code.google.com/p/androguard/wiki/Instructions
 
-
 2.2 --] Demos
 
 see the source codes in the directory 'demos'
@@ -86,106 +113,6 @@ see the source codes in the directory 'demos'
 2.3 --] Tools 
 
 http://code.google.com/p/androguard/wiki/Usage
-
-2.3.1 --] Androlyze 
-
-You can used the command line to display and filter information. But it's better to use the shell :
-
-./androlyze.py -s
-Welcome to Androlyze ALPHA 0-update1
->>> j = JVMFormat( open("./VM.class").read() )
->>> j.show()
-
-# Get specific methods
->>> x = j.get_method("<init>")[0]
->>> x.show()
-
-# Change name
->>> x.set_name("toto")
-
-# Save it
->>> fd = open("VM2.class", "w")
->>> fd.write(j.save())
->>> fd.close()
-
-2.3.2 --] Androxgmml
-
-http://androguard.blogspot.com/2011/02/android-apps-visualization.html
-
-You can used it to transform an apk/jar/class/dex files format into an xgmml graph which represent the control flow graph or the functions call.
-
-$ ./androxgmml.py -h
-Usage: androxgmml.py [options]
-
-Options:
--h, --help            show this help message and exit
--i INPUT, --input=INPUT 
-                     filename input
--o OUTPUT, --output=OUTPUT
-                     filename output of the xgmml
--f, --functions       include function calls
--e, --externals       include extern function calls
--v, --version         version of the API
-
-./androxgmml.py -i myapp.jar -o output.xgmml
-./androxgmml.py -i myapp.apk -o output.xgmml
-./androxgmml.py -i myclass.class -o output.xgmml
-./androxgmml.py -i mydex.dex -o output.xgmml
-
-# with functions call :
-./androxgmml.py -i myapp.jar -f -o output.xgmml
-
-# with external function calls
-./androxgmml.py -i myapp.jar -e -o output.xgmml
-
-# with both
-./androxgmml.py -i myapp.jar -e -f -o output.xgmml
-
-2.3.3 --] Androaxml
-
-http://androguard.blogspot.com/2011/03/androids-binary-xml.html
-
-You can used it to transform Android's binary XML (eg: AndroidManifest?.xml) into classic xml (human readable ;)).
-
-$ ./androaxml.py -h
-Usage: androaxml.py [options]
-
-Options:
--h, --help            show this help message and exit
--i INPUT, --input=INPUT
-                     filename input (APK or android's binary xml)
--o OUTPUT, --output=OUTPUT
-                     filename output of the xml
--v, --version         version of the API
-
-
-$ ./androaxml.py -i yourfile.apk -o output.xml
-$ ./androaxml.py -i AndroidManifest.xml -o output.xml
-
-2.3.4 --] Androdump
-
-http://androguard.blogspot.com/2010/11/androdump-dump-your-jvm.htm
-
-$ ./androdump.py -h
-Usage: androdump.py [options]
-
-Options:
--h, --help            show this help message and exit
--i INPUT, --input=INPUT 
-                      pid
--v, --version         version of the API
-
-pouik@camelot:~/androguard$ ps aux |grep java
-   pouik 21008 0.1 0.5 673840 10688 pts/5 Sl+ 10:28 0:02 java Test2
-   pouik 21548 0.0 0.0 3060 812 pts/2 S+ 11:00 0:00 grep java
-pouik@camelot:~/androguard$ ./androdump.py -i 21008
-   HEADER 0x6f990000-0x6fee0000 (rw-p)
-
-   Test2 ()V
-   Test2 get_x ()I
-   Test2 main ([Ljava/lang/String;)V
-   Test2bis ()V
-   Test2bis get_T ()Ljava/lang/String;
 
 2.4 --] Disassembler 
 
@@ -195,16 +122,25 @@ http://code.google.com/p/androguard/wiki/Disassembler
 
 http://code.google.com/p/androguard/wiki/Analysis
 
-3 -] References
+2.6 --] Visualization
 
-4 -] Benchmark 
+http://code.google.com/p/androguard/wiki/Visualization
 
-5 -] Roadmap 
+2.7 --] Similarities, Diffing, rip-off indicator 
+
+http://code.google.com/p/androguard/wiki/Similarity
+http://code.google.com/p/androguard/wiki/DetectingApplications
+
+2.8 --] Open Source database of android malwares
+
+http://code.google.com/p/androguard/wiki/DatabaseAndroidMalwares
+
+3 -] Roadmap 
 http://code.google.com/p/androguard/wiki/RoadMap
 
-6 -] License
+4 -] License
 
-Copyright (C) 2010, Anthony Desnos <desnos at t0t0.org>                                                                                                                                                                         
+Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
 All rights reserved.
 
 Androguard is free software: you can redistribute it and/or modify

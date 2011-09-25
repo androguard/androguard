@@ -85,7 +85,7 @@ def main(options, arguments) :
                             print "ERROR", e
 
     elif options.version != None :
-        print "Androsign version %s" % androconf.ANDROSIGN_VERSION
+        print "Androsign version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

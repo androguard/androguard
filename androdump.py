@@ -135,7 +135,7 @@ def main(options, arguments) :
         AndroDump( apd )
 
     elif options.version != None :
-        print "Androdump version %s" % androconf.ANDRODUMP_VERSION
+        print "Androdump version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

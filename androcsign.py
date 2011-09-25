@@ -54,7 +54,7 @@ def main(options, arguments) :
         s.check_db( options.check )
 
     elif options.version != None :
-        print "Androcsign version %s" % androconf.ANDROCSIGN_VERSION
+        print "Androcsign version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()
