@@ -84,7 +84,7 @@ def main(options, arguments) :
         diff.SimJson( [ vm1, vmx1 ], options.json[1] )
 
     elif options.version != None :
-        print "Androsim version %s" % androconf.ANDROSIM_VERSION
+        print "Androsim version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

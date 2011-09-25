@@ -1342,6 +1342,10 @@ TAINTED_PACKAGE = {
 }
 
 def show_Path(paths) :
+    """
+        Show paths of packages
+        @param paths : a list of paths L{PathP}
+    """
     for path in paths :
         if isinstance(path, PathP) :
             if path.get_access_flag() == TAINTED_PACKAGE_CALL :
@@ -1445,6 +1449,10 @@ class TaintedPackage :
                     print "\t\t => %s@%x in %s" % (path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
 
 def show_Permissions( dx ) :
+    """
+        Show where permissions are used in a specific application
+        @param dx : the analysis virtual machine
+    """
     p = dx.get_permissions( [] )
 
     for i in p :

@@ -35,7 +35,7 @@ options = [option_0, option_1, option_2, option_5]
 
 def main(options, arguments) :
     if options.version != None :
-        print "Andromarks version %s" % androconf.ANDROMARKS_VERSION
+        print "Andromarks version %s" % androconf.ANDROGUARD_VERSION
 
     elif options.directory != None and options.xml != None :
         for root, dirs, files in os.walk( options.directory ) :
