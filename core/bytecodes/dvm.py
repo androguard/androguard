@@ -2390,6 +2390,9 @@ class DBCSpeNative(DBCSpe) :
             self.targets = self.op.get_targets()
         return self.targets
 
+    def get_data(self) :
+        return self.op.get_operands()
+
     def get_length(self) :
         return self.op_length
 

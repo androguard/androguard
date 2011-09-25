@@ -80,7 +80,7 @@ def main(options, arguments) :
                 i.show2()
 
     elif options.version != None :
-        print "Androsimforsign version %s" % androconf.ANDROSIM_VERSION
+        print "Androsimforsign version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

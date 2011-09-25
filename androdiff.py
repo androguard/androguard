@@ -92,7 +92,7 @@ def main(options, arguments) :
             fd.close()
 
     elif options.version != None :
-        print "Androdiff version %s" % androconf.ANDRODIFF_VERSION
+        print "Androdiff version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

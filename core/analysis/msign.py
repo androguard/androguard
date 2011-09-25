@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from ctypes import cdll, c_char, c_float, c_int, c_uint, c_ulong, c_double, c_void_p, Structure, addressof, create_string_buffer, cast, POINTER, pointer
 from array import array
 import json, sys, base64, hashlib, re
 
@@ -26,13 +25,7 @@ from analysis import *
 import libsign
 import similarity
 
-#DEFAULT_SIGNATURE = SIGNATURE_L0_2
 DEFAULT_SIGNATURE = SIGNATURE_L0_4
-
-############### 
-#from scikits.learn.decomposition import PCA
-#import pylab as pl
-##############
 
 METHSIM = 0
 CLASSSIM = 1
@@ -135,6 +128,13 @@ class SignHash :
 
 class MSignature :
     def __init__(self, dbname = "./signatures/dbandroguard", dbconfig = "./signatures/dbconfig") :
+        """
+            Check if signatures from a database is present in an android application (apk/dex)
+
+            @param dbname : the filename of the database
+            @param dbconfig : the filename of the configuration
+
+        """
         self.__signs = {}
         self.__rsigns = {}
         self.__ids = {}
@@ -144,28 +144,31 @@ class MSignature :
         self.class_sim = SignSim()
         self.bin_hash = SignHash()
 
-        #self.pca = PCA(n_components=2)
-        #self.X = []
-       
         self.dbname = dbname
         self.dbconfig = dbconfig
         self.debug = False
        
     def load(self) :
-        self.load_config( open(self.dbconfig, "r").read() )
-        self.load_sign( open(self.dbname, "r").read() )
+        """
+            Load the database
+        """
+        self._load_config( open(self.dbconfig, "r").read() )
+        self._load_sign( open(self.dbname, "r").read() )
 
         self.meth_sim.fix()
         self.class_sim.fix()
         self.bin_hash.fix()
 
     def set_debug(self) :
+        """
+            Debug mode !
+        """
         self.debug = True
         self.meth_sim.set_debug()
         self.class_sim.set_debug()
         self.bin_hash.set_debug()
         
-    def load_config(self, buff) :
+    def _load_config(self, buff) :
         buff = json.loads( buff )
 
         self.meth_sim.load_config( buff["METHSIM"] )
@@ -181,7 +184,7 @@ class MSignature :
         self.__lids[ v ] = 1
         return v
     
-    def load_sign(self, buff) :
+    def _load_sign(self, buff) :
         buff = json.loads( buff )
 
         nb_meth_sim = 0
@@ -271,6 +274,12 @@ class MSignature :
         self.class_sim.set_npass( nb_class_sim )
 
     def check_apk(self, apk) :
+        """
+            Check if a signature matches the application
+
+            @param apk : an L{APK} object
+            @rtype : None if no signatures match, otherwise the name of the signature
+        """
         if self.debug :
             print "loading apk..",
             sys.stdout.flush()
@@ -301,6 +310,12 @@ class MSignature :
         return None, []
 
     def check_dex(self, buff) :
+        """
+            Check if a signature matches the dex application
+
+            @param buff : a buffer which represents a dex file
+            @rtype : None if no signatures match, otherwise the name of the signature
+        """
         return self._check_dalvik( buff )
 
     def __check_meths(self) :
@@ -350,8 +365,6 @@ class MSignature :
             if class_data == None :
                 continue
 
-            #buff += "%d%d%d%d%d" % ( c.get_access_flags(), class_data.static_fields_size, class_data.instance_fields_size, class_data.direct_methods_size, class_data.virtual_methods_size )
-            
             for m in c.get_methods() :
                 z_tmp = create_entropies( vmx, m )
                             
@@ -364,11 +377,6 @@ class MSignature :
 
                 nb_methods += 1
                 
-            #buff += "%d%s" % (m.get_access_flags(), m.get_descriptor())
-
-            #for f in c.get_fields() :
-            #    buff += "%d%s" % (f.get_access_flags(), f.get_descriptor())
-
             if nb_methods != 0 :
                 uniqueid = self._create_id()
                 ret = self.class_sim.add_elem( uniqueid, value, [ value_entropy/nb_methods, 

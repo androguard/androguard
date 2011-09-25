@@ -56,7 +56,7 @@ def main(options, arguments) :
                             print e
 
     elif options.version != None :
-        print "Androrisk version %s" % androconf.ANDRORISK_VERSION
+        print "Androrisk version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

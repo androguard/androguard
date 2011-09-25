@@ -53,7 +53,7 @@ def main(options, arguments) :
         fd.write( buff )
         fd.close()
     elif options.version != None :
-        print "Androaxml version %s" % androconf.ANDROAXML_VERSION
+        print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

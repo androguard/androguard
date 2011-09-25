@@ -97,7 +97,7 @@ def main(options, arguments) :
             export_apps_to_format( a, options.output, options.dot, options.format )
 
     elif options.version != None :
-        print "Androdd version %s" % androconf.ANDRODD_VERSION
+        print "Androdd version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()
