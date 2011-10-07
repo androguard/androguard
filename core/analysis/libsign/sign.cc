@@ -62,6 +62,7 @@ class Signature {
 
 struct resultcheck {
     unsigned int id;
+    unsigned int rid;
     float value;
     
     unsigned int start;
@@ -345,46 +346,6 @@ class Msign {
             
                 for (i = 0; i < nrows; i++)
                     printf ("Sign %d: cluster %d %d\n", i, clusterid[i], cluster_id_hashmap[ i ]->id);
-            /*
-            int** index;
-            int* count;
-            */
-           /*
-                index = (int **)malloc(nclusters*sizeof(int*));
-                count = (int *)malloc(nclusters*sizeof(int));
-                for (i = 0; i < nclusters; i++) count[i] = 0;
-                for (i = 0; i < nrows; i++) count[clusterid[i]]++;
-                for (i = 0; i < nclusters; i++) index[i] = (int *)malloc(count[i]*sizeof(int));
-                for (i = 0; i < nclusters; i++) count[i] = 0;
-                for (i = 0; i < nrows; i++)
-                {   int id = clusterid[i];
-                    index[id][count[id]] = i;
-                    count[id]++;
-                } 
-            */
-/*
-            distance = clusterdistance(nrows, ncols, data, mask, weight, count[0], count[1], index[0], index[1], 'e', 'a', 0); 
-            printf("Distance between 0 and 1: %7.3f\n", distance);
-            distance = clusterdistance(nrows, ncols, data, mask, weight, count[0], count[2], index[0], index[2], 'e', 'a', 0); 
-  printf("Distance between 0 and 2: %7.3f\n", distance);
-  distance =
-    clusterdistance(nrows, ncols, data, mask, weight, count[1], count[2],
-		    index[1], index[2], 'e', 'a', 0); 
-  printf("Distance between 1 and 2: %7.3f\n", distance);
-*/
-                /*
-                printf ("\n");
-                printf ("------- Cluster centroids:\n");
-                getclustercentroids(nclusters, nrows, ncols, data, mask, clusterid, data, mask, 0, 'a');
-                printf("   Microarray:");
-                for(i=0; i<ncols; i++) printf("\t%7d", i);
-                printf("\n");
-                for (i = 0; i < nclusters; i++)
-                {   printf("Cluster %2d:", i);
-                    for (j = 0; j < ncols; j++) printf("\t%7.3f", data[i][j]);
-                    printf("\n");
-                }
-                */
             }
 
             sparse_hash_map<int, int> sign_clusters;
@@ -435,13 +396,144 @@ class Msign {
                 SSelem.clear();
             }
            
-            /*
-            if (dt.log) {
-                for (i = 0; i < nclusters; i++) free(index[i]);
-                free(index);
-                free(count);
-            }*/
+            for (i = 0; i < nrows; i++)
+            {   free(data[i]);
+                free(mask[i]);
+            }
+            free(data);
+            free(mask);
+            free(clusterid);
+           
+            sign_clusters.clear(); 
+            SScluster.clear();
 
+            return ret;
+        }
+
+        int check_asim() {
+            int ret = -1;
+
+            if (entropies_hashmap_sign_ncd.size() == 0)
+                return ret;
+
+            ac_index_fix( aho );
+
+            /* Fix Cluster */
+            int nrows = entropies_hashmap_sign_ncd.size() + entropies_hashmap_elem.size();
+
+            double** data = (double **)malloc(nrows*sizeof(double*));
+            int** mask = (int **)malloc(nrows*sizeof(int*));
+          
+            sparse_hash_map<int, Signature *> cluster_id_hashmap;
+
+            int i = 0;
+            for (i = 0; i < nrows; i++)
+            { 
+                data[i] = (double *)malloc(cluster_ncols*sizeof(double));
+                mask[i] = (int *)malloc(cluster_ncols*sizeof(int));
+            }
+
+            ////////////////////////////////////////////
+            if (dt.log) {
+                printf("ADD SIGNATURES\n");
+            }
+
+            i = 0;
+            for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_sign_ncd.begin(); it != entropies_hashmap_sign_ncd.end(); ++it) {
+                for(unsigned int ii = 0; ii < it->first->ets->size(); ii++) {
+                    data[ i ][ ii ] = (double)(*it->first->ets)[ ii ];
+                    mask[ i ][ ii ] = 1;
+                }
+
+                cluster_id_hashmap[ i ] = it->first;
+                i += 1;
+            }
+            
+            ///////////////////////////////////////////
+            if (dt.log) {
+                printf("ADD ELEMENTS\n");
+            }
+
+            for (sparse_hash_map<Signature *, float>::const_iterator it = entropies_hashmap_elem.begin(); it != entropies_hashmap_elem.end(); ++it) {
+                for(unsigned int ii = 0; ii < it->first->ets->size(); ii++) {
+                    data[ i ][ ii ] = (double)(*it->first->ets)[ ii ];
+                    mask[ i ][ ii ] = 1;
+                }
+
+                cluster_id_hashmap[ i ] = it->first;
+                i += 1;
+            }
+
+            int nclusters = (int)sqrt( nrows ); // + entropies_hashmap_sign_ncd.size();
+            int* clusterid = (int *)malloc(nrows*sizeof(int));
+            int transpose = 0;
+            int ifound = 0;
+            double error;
+
+
+            if (dt.log) {
+                printf("CLUSTERING ...\n");
+            }
+            
+            dt.nbclusters = nclusters;
+            kcluster(nclusters, nrows, cluster_ncols, data, mask, cluster_weight, transpose, cluster_npass, cluster_method, cluster_dist, clusterid, &error, &ifound);
+
+            if (dt.log) {
+                printf ("Solution found %d times; within-cluster sum of distances is %f\n", ifound, error);
+                printf ("Cluster assignments:\n");
+            
+                for (i = 0; i < nrows; i++)
+                    printf ("Sign %d: cluster %d %d\n", i, clusterid[i], cluster_id_hashmap[ i ]->id);
+            }
+
+            sparse_hash_map<int, int> sign_clusters;
+            vector<int> SScluster;
+            for (i = 0; i < nrows; i++) {
+                if (cluster_id_hashmap[ i ]->type == 0) {
+                    if (sign_clusters.count( clusterid[i] ) == 1)
+                        continue;
+                    SScluster.push_back( clusterid[i] );
+                    sign_clusters[ clusterid[i] ] = 1;
+                }
+            }
+
+            dt.nbcmpclusters = SScluster.size();
+            if (dt.log) {
+                printf("CLUSTER SIZE = %d\n", SScluster.size());
+            }
+
+            for(unsigned int ii=0; ii < SScluster.size(); ii++) {
+                vector<Signature *> SSsign;
+                vector<Signature *> SSelem;
+                for (i = 0; i < nrows; i++) {
+                    if (clusterid[i] == SScluster[ii]) {
+                        if (cluster_id_hashmap[ i ]->type == 0) {
+                            SSsign.push_back( cluster_id_hashmap[ i ] );
+                        } else {
+                            SSelem.push_back( cluster_id_hashmap[ i ] );
+                        }
+                    }
+                }
+
+                if (dt.log) {
+                    printf("CLUSTER %d SIGN %d ELEM %d\n", SScluster[ii], SSsign.size(), SSelem.size());
+                }
+
+                for(unsigned int jj=0; jj < SSelem.size(); jj++) {
+                    check_elem_ncd_2( SSsign, SSelem[ jj ] );
+                    /*if (ret == 0) {
+                        break;
+                    }*/
+                }
+
+                if (ret == 0){
+                    break;
+                }
+
+                SSsign.clear();
+                SSelem.clear();
+            }
+           
             for (i = 0; i < nrows; i++)
             {   free(data[i]);
                 free(mask[i]);
@@ -666,6 +758,23 @@ class Msign {
             return -1;
         }
 
+        int check_elem_ncd_2(vector <Signature *> SS, Signature *s1) {
+            float current_value;
+
+            unsigned int ii;
+            for(ii=0; ii < SS.size(); ii++) {
+                if (SS[ ii ]->used == 0)
+                    continue;
+
+                current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
+                if (current_value <= threshold_value_high)
+                {
+                    add_result( SS[ ii ]->id, s1->id, current_value );
+                }
+            }
+
+            return 0;
+        }
         void add_result(unsigned int id) {
             resultcheck_t *t = (resultcheck_t *)malloc( sizeof(resultcheck_t) );
             t->id = id;
@@ -676,6 +785,15 @@ class Msign {
         void add_result(unsigned int id, float value) {
             resultcheck_t *t = (resultcheck_t *)malloc( sizeof(resultcheck_t) );
             t->id = id;
+            t->value = value;
+
+            vector_results.push_back( t );
+        }
+
+        void add_result(unsigned int id, unsigned int idref, float value) {
+            resultcheck_t *t = (resultcheck_t *)malloc( sizeof(resultcheck_t) );
+            t->id = id;
+            t->rid = idref;
             t->value = value;
 
             vector_results.push_back( t );
@@ -944,6 +1062,32 @@ static PyObject *Msign_check_sim(sign_MsignObject *self, PyObject *args)
     return check_list;
 }
 
+static PyObject *Msign_check_asim(sign_MsignObject *self, PyObject *args)
+{
+    PyObject *check_list = PyList_New( 0 );
+    
+    if (self != NULL) {
+        
+        int ret = self->s->check_asim();
+        
+        PyList_Append( check_list, PyInt_FromLong( ret ) );
+
+        for(unsigned int ii = 0; ii < self->s->vector_results.size(); ii++) {
+            PyObject *icheck_list = PyList_New( 0 );
+
+            PyList_Append( icheck_list, PyInt_FromLong( self->s->vector_results[ ii ]->id ) );
+            PyList_Append( icheck_list, PyInt_FromLong( self->s->vector_results[ ii ]->rid ) );
+            PyList_Append( icheck_list, PyFloat_FromDouble( self->s->vector_results[ ii ]->value ) );
+
+            PyList_Append( check_list, icheck_list );
+        }
+
+        return check_list;
+    }
+
+    return check_list;
+}
+
 static PyObject *Msign_check_string(sign_MsignObject *self, PyObject *args)
 {
     char *input; size_t input_size;
@@ -1045,6 +1189,7 @@ static PyMethodDef Msign_methods[] = {
     {"add_elem_sim",  (PyCFunction)Msign_add_elem_sim, METH_VARARGS, "add elem_sim" },
     
     {"check_sim",  (PyCFunction)Msign_check_sim, METH_VARARGS, "check sim" },
+    {"check_asim",  (PyCFunction)Msign_check_asim, METH_VARARGS, "check asim" },
     {"check_string",  (PyCFunction)Msign_check_string, METH_VARARGS, "check string" },
     
     {"get_debug",  (PyCFunction)Msign_get_debug, METH_VARARGS, "get debug" },
