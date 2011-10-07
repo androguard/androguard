@@ -1186,6 +1186,18 @@ class TaintedVariables :
         return None
 
     # permission functions 
+    def get_permissions_method(self, method) :
+        permissions = []
+
+        for f, f1 in self.get_fields() :
+            data = "%s-%s-%s" % (f1.get_class_name(), f1.get_name(), f1.get_descriptor())
+            if data in DVM_PERMISSIONS_BY_ELEMENT :
+                for path in f.get_all_paths() :
+                    if path.get_method() == method :
+                        if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions :
+                            permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+
+        return permissions
 
     def get_permissions(self, permissions_needed) :
         """
@@ -1636,6 +1648,22 @@ class TaintedPackages :
             return self.__packages[ class_name ].get_method( name, descriptor )
         except KeyError :
             return []
+
+    def get_permissions_method(self, method) :
+        permissions = []
+
+        for m, _ in self.get_packages() :
+            paths = m.get_methods()
+            for j in paths :
+                if j.get_method() == method :
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                        tmp = j.get_descriptor()
+                        tmp = tmp[ : tmp.rfind(")") + 1 ]
+                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), tmp)
+                        if data in DVM_PERMISSIONS_BY_ELEMENT :
+                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions :
+                                permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+        return permissions
 
     def get_permissions(self, permissions_needed) :
         """
@@ -2170,6 +2198,12 @@ class VMAnalysis :
         permissions.update( self.tainted_variables.get_permissions( permissions_needed ) )
 
         return permissions
+
+    def get_permissions_method(self, method) :
+        permissions_f = self.tainted_packages.get_permissions_method( method )
+        permissions_v = self.tainted_variables.get_permissions_method( method )
+
+        return list( set( permissions_f + permissions_v ) )
 
     # FIXME
     def get_op(self, op) :
