@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -484,6 +484,7 @@ class CSignature :
                     z.append( METHSIM )
                     m = vm.get_method_descriptor( j["CN"], j["MN"], j["D"] )
                     if m == None :
+                        print "impossible to find", j["CN"], j["MN"], j["D"]
                         raise("ooo")
                     
                     #print m.get_length()
