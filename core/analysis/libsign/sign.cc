@@ -720,7 +720,7 @@ class Msign {
 
                 current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
                 
-               // cout << "\t" << s1->value << " VS " << SS[ ii ]->value << " ";
+               // cout << "\t" << s1->value.length() << " VS " << SS[ ii ]->value.length() << " ";
                // printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
                
                 if (current_value < min) {
@@ -743,6 +743,22 @@ class Msign {
                 set_compress_type( TYPE_BZ2 );                                                                                                                                           
                 current_value = sign_ncd( s1->value, SS[ pos_ii ]->value, 1 );
                 set_compress_type( TYPE_SNAPPY );                                                                                                                                           
+
+                if (current_value <= threshold_value_low) {
+                    add_result( id, current_value );
+                    SS[ pos_ii ]->used = 0;
+
+                    link_signatures[ SS[ pos_ii ]->link ] --;
+                    if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
+                        return 0;
+                    }
+                }
+            }
+
+            if (SS[ pos_ii ]->value.length() >= 10000) {
+                set_compress_type( TYPE_BZ2 );
+                current_value = sign_ncd( s1->value, SS[ pos_ii ]->value, 1 );
+                set_compress_type( TYPE_SNAPPY );
 
                 if (current_value <= threshold_value_low) {
                     add_result( id, current_value );
