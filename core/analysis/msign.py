@@ -529,7 +529,6 @@ class CSignature :
 
                                 nb_methods += 1
 
-                            print value
                             z.extend( [ base64.b64encode(value), 
                                         value_entropy/nb_methods, 
                                         android_entropy/nb_methods, 
