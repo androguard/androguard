@@ -665,8 +665,9 @@ def determineNext(i, end, m) :
         
         data = code.get_ins_off( off + end )
 
-        for target in data.get_targets() :
-            x.append( target*2 + end )
+        if data != None :
+            for target in data.get_targets() :
+                x.append( target*2 + end )
 
         return x
     return []
