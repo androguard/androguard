@@ -44,8 +44,6 @@
 double clusterdistance (int nrows, int ncolumns, double** data, int** mask,
   double weight[], int n1, int n2, int index1[], int index2[], char dist,
   char method, int transpose);
-double** distancematrix (int ngenes, int ndata, double** data,
-  int** mask, double* weight, char dist, int transpose);
 
 #ifdef __cplusplus
 extern "C" void kcluster (int nclusters, int ngenes, int ndata, double** data,
@@ -55,6 +53,8 @@ extern "C" void kcluster (int nclusters, int ngenes, int ndata, double** data,
 extern "C" int getclustercentroids(int nclusters, int nrows, int ncolumns,
                                    double** data, int** mask, int clusterid[], double** cdata, int** cmask,
                                    int transpose, char method);
+
+extern "C" double** distancematrix (int ngenes, int ndata, double** data,int** mask, double* weight, char dist, int transpose);
 #else
 /* Chapter 3 */
 int getclustercentroids(int nclusters, int nrows, int ncolumns,

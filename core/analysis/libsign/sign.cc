@@ -116,6 +116,7 @@ class Msign {
         debug_t dt;
     public :
         Msign() {
+            /* Default values */
             threshold_value_low = 0.2;
             threshold_value_high = 0.3;
             cluster_npass = 1;
@@ -125,7 +126,9 @@ class Msign {
 
             cluster_weight = NULL;
 
+            /* Setup aho corasick */
             aho = ac_index_new();
+            /* Set the default compressor : Snappy */
             set_compress_type( TYPE_SNAPPY );
             
             dt.log = 0;
@@ -278,21 +281,28 @@ class Msign {
             if (entropies_hashmap_sign_ncd.size() == 0)
                 return ret;
 
-            ac_index_fix( aho );
-
             /* Fix Cluster */
             int nrows = entropies_hashmap_sign_ncd.size() + entropies_hashmap_elem.size();
 
             double** data = (double **)malloc(nrows*sizeof(double*));
             int** mask = (int **)malloc(nrows*sizeof(int*));
           
+            if (data == NULL || mask == NULL)
+                return -2;
+
             sparse_hash_map<int, Signature *> cluster_id_hashmap;
 
             int i = 0;
+            int j = 0;
             for (i = 0; i < nrows; i++)
             { 
                 data[i] = (double *)malloc(cluster_ncols*sizeof(double));
+                if (data[i] == NULL)
+                    return -2;
+
                 mask[i] = (int *)malloc(cluster_ncols*sizeof(int));
+                if (mask[i] == NULL)
+                    return -2;
             }
 
             ////////////////////////////////////////////
@@ -326,12 +336,17 @@ class Msign {
                 i += 1;
             }
 
-            int nclusters = (int)sqrt( nrows ); // + entropies_hashmap_sign_ncd.size();
-            int* clusterid = (int *)malloc(nrows*sizeof(int));
+            /* Determine the number of clusters by using a classical formula */
+            int nclusters = (int)sqrt( nrows );
             int transpose = 0;
             int ifound = 0;
             double error;
+            int* clusterid = (int *)malloc(nrows*sizeof(int));
 
+
+            if (clusterid == NULL) {
+                return -2;
+            }
 
             if (dt.log) {
                 printf("CLUSTERING ...\n");
@@ -350,6 +365,42 @@ class Msign {
 
             sparse_hash_map<int, int> sign_clusters;
             vector<int> SScluster;
+            
+            double **distMatrix;
+            distMatrix = distancematrix(nrows, cluster_ncols, data, mask, cluster_weight, 'e', 0);
+            if (!distMatrix) {      
+                return -2;
+            }
+            
+            for(i=0; i<nrows; i++) {
+                for(j=0; j<i; j++) {
+                    if (distMatrix[i][j] == 0.0) {
+                        if (cluster_id_hashmap[ i ]->type == 0 ) {
+                            if (dt.log) {
+                                printf("DISTMATRIX ADD CLUSTER %d\n", clusterid[i]);
+                            }
+                            SScluster.push_back( clusterid[i] );
+                            sign_clusters[ clusterid[i] ] = 1;
+                        }
+                        else if (cluster_id_hashmap[ j ]->type == 0 ) {
+                            if (dt.log) {
+                                printf("DISTMATRIX ADD CLUSTER %d\n", clusterid[j]);
+                            }
+                            SScluster.push_back( clusterid[j] );
+                            sign_clusters[ clusterid[j] ] = 1;    
+                        }
+                                                
+                    }    
+                }                                            
+            }
+                 
+            for(i = 0; i < cluster_ncols; i++) 
+                free(distMatrix[i]);
+            free(distMatrix);
+
+            
+            ////////////////////////////////////////////////////////////////////// 
+
             for (i = 0; i < nrows; i++) {
                 if (cluster_id_hashmap[ i ]->type == 0) {
                     if (sign_clusters.count( clusterid[i] ) == 1)
@@ -388,7 +439,10 @@ class Msign {
                     }
                 }
 
-                if (ret == 0){
+                /* Ok we found a valid signature !, go out ! */
+                if (ret == 0) {
+                    SSsign.clear();
+                    SSelem.clear();
                     break;
                 }
 
@@ -396,10 +450,11 @@ class Msign {
                 SSelem.clear();
             }
            
-            for (i = 0; i < nrows; i++)
-            {   free(data[i]);
+            for (i = 0; i < nrows; i++) {   
+                free(data[i]);
                 free(mask[i]);
             }
+
             free(data);
             free(mask);
             free(clusterid);
@@ -416,21 +471,27 @@ class Msign {
             if (entropies_hashmap_sign_ncd.size() == 0)
                 return ret;
 
-            ac_index_fix( aho );
-
             /* Fix Cluster */
             int nrows = entropies_hashmap_sign_ncd.size() + entropies_hashmap_elem.size();
 
             double** data = (double **)malloc(nrows*sizeof(double*));
             int** mask = (int **)malloc(nrows*sizeof(int*));
           
+            if (data == NULL || mask == NULL)
+                return -2;
+
             sparse_hash_map<int, Signature *> cluster_id_hashmap;
 
             int i = 0;
             for (i = 0; i < nrows; i++)
             { 
                 data[i] = (double *)malloc(cluster_ncols*sizeof(double));
+                if (data[i] == NULL)
+                    return -2;
+                
                 mask[i] = (int *)malloc(cluster_ncols*sizeof(int));
+                if (mask[i] == NULL)
+                    return -2;
             }
 
             ////////////////////////////////////////////
@@ -464,7 +525,7 @@ class Msign {
                 i += 1;
             }
 
-            int nclusters = (int)sqrt( nrows ); // + entropies_hashmap_sign_ncd.size();
+            int nclusters = (int)sqrt( nrows );
             int* clusterid = (int *)malloc(nrows*sizeof(int));
             int transpose = 0;
             int ifound = 0;
@@ -520,14 +581,7 @@ class Msign {
                 }
 
                 for(unsigned int jj=0; jj < SSelem.size(); jj++) {
-                    check_elem_ncd_2( SSsign, SSelem[ jj ] );
-                    /*if (ret == 0) {
-                        break;
-                    }*/
-                }
-
-                if (ret == 0){
-                    break;
+                    check_elem_ncd_full( SSsign, SSelem[ jj ] );
                 }
 
                 SSsign.clear();
@@ -578,6 +632,7 @@ class Msign {
             }
             vector_results.clear();
 
+            /* Clear caches */
             if (ncd_hashmap.size() > CACHE_ELEM) {
                 ncd_hashmap.clear();
             }
@@ -713,15 +768,15 @@ class Msign {
             float min = 1.0;
             unsigned int id;
 
-            unsigned int ii, pos_ii;
+            unsigned int ii;
+            unsigned int pos_ii;
             for(ii=0; ii < SS.size(); ii++) {
                 if (SS[ ii ]->used == 0)
                     continue;
 
                 current_value = sign_ncd( s1->value, SS[ ii ]->value, 0 );
-                
-               // cout << "\t" << s1->value.length() << " VS " << SS[ ii ]->value.length() << " ";
-               // printf("VAL %d %d = %f\n", SS[ii]->id, s1->id, current_value);
+               
+                //printf("ALL VAL %d(%d) %d(%d) = %f\n", SS[ii]->id, SS[ ii ]->value.length(), s1->id, s1->value.length(), current_value);
                
                 if (current_value < min) {
                     min = current_value;
@@ -734,6 +789,7 @@ class Msign {
                 add_result( id, min );
                 SS[ pos_ii ]->used = 0;
                 
+                //printf("MATCH VAL %d(%d) %d(%d) = %f\n", SS[ pos_ii ]->id, SS[ pos_ii ]->value.length(), s1->id, s1->value.length(), current_value);
                 link_signatures[ SS[ pos_ii ]->link ] --;
                 if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
                     return 0;                            
@@ -748,6 +804,7 @@ class Msign {
                     add_result( id, current_value );
                     SS[ pos_ii ]->used = 0;
 
+                    //printf("MATCH VAL %d(%d) %d(%d) = %f\n", SS[ pos_ii ]->id, SS[ pos_ii ]->value.length(), s1->id, s1->value.length(), current_value);
                     link_signatures[ SS[ pos_ii ]->link ] --;
                     if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
                         return 0;
@@ -755,7 +812,7 @@ class Msign {
                 }
             }
 
-            if (SS[ pos_ii ]->value.length() >= 10000) {
+            if ((min < 1.0) && (SS[ pos_ii ]->value.length() >= 10000)) {
                 set_compress_type( TYPE_BZ2 );
                 current_value = sign_ncd( s1->value, SS[ pos_ii ]->value, 1 );
                 set_compress_type( TYPE_SNAPPY );
@@ -764,6 +821,7 @@ class Msign {
                     add_result( id, current_value );
                     SS[ pos_ii ]->used = 0;
 
+                    //printf("MATCH VAL %d(%d) %d(%d) = %f\n", SS[ pos_ii ]->id, SS[ pos_ii ]->value.length(), s1->id, s1->value.length(), current_value);
                     link_signatures[ SS[ pos_ii ]->link ] --;
                     if (link_signatures[ SS[ pos_ii ]->link ] == 0) {
                         return 0;
@@ -774,7 +832,7 @@ class Msign {
             return -1;
         }
 
-        int check_elem_ncd_2(vector <Signature *> SS, Signature *s1) {
+        int check_elem_ncd_full(vector <Signature *> SS, Signature *s1) {
             float current_value;
 
             unsigned int ii;

@@ -41,6 +41,7 @@ class SignSim :
         self.minimum_signature = None
 
         #self.sign.set_debug_log( 1 )
+        #self.fd = open("./toto.csv", "w")
 
     def set_debug(self) :
         self.debug = True
@@ -68,6 +69,8 @@ class SignSim :
                                 signature, 
                                 ssign[ 2 : ] )
         
+        #self.fd.write("%d;%f;%f;%f;%f;%f;\"%s\"\n" % (unique_id, ssign[ 2 ], ssign[ 3 ], ssign[ 4 ], ssign[ 5 ], ssign[6], signature))
+
         if self.debug :
             print "L:%d I:%d N:%d J:%d %d" % (unique_idlink, unique_id, nb, j, len(signature)),
             print ssign[ 2 : ], 
@@ -78,6 +81,9 @@ class SignSim :
 
     def add_elem(self, uniqueid, s1, entropies) :
         if self.minimum_signature < len(s1) :
+            #if self.debug :
+            #    print "ELEM", uniqueid, entropies
+            #self.fd.write("%d;%f;%f;%f;%f;%f;\"%s\"\n" % (uniqueid, entropies[ 0 ], entropies[ 1 ], entropies[ 2 ], entropies[ 3 ], entropies[ 4 ], s1))
             return self.sign.add_elem_sim( uniqueid, s1, entropies )
 
     def set_npass(self, npass) :

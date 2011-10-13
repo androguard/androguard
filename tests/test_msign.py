@@ -64,6 +64,8 @@ TESTS = {
     "./apks/mixe/ba1aa326ca5b79e79feba9bbfe85f238b63c317d9329f1f7c28d54fe905353b9" : "Spitmo",
     "./apks/mixe/87181846f84be37892a2cb1095dca4e8c2e56716e9d7758651d13e81120696ef" : "Ewalls",
     "./apks/mixe/5ee2f4c1cfcba8865e4cd866a013a78e6f89ebe15e3d73ab1b714b04d626c3ce" : "Ewalls.B",
+    "./apks/mixe/19944bf715391ecb7aac998b469c52ae3116060ac7b46d4a6d1bc23f7ed14ec7" : "Ozotshielder",
+    "./apks/mixe/8c0eb00e014f39b9b4e90e25e56b0f85b5332dd231956f9b7f07743df4c80581" : "Ozotshielder.B",
 
     # exploits
 
@@ -83,13 +85,15 @@ def test(got, expected):
     if got == expected:
         prefix = ' OK '
     else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+        prefix = ' NO '
+    print 'got: %s expected: %s : %s' % (repr(got), repr(expected), prefix)
 
 
 def check(db, dbconf, TESTS) :
     s = msign.MSignature( db, dbconf )
     s.load()
+
+    s.set_debug()
 
     for i in TESTS :
         ret_type = androconf.is_android( i )
