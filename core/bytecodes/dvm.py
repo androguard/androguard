@@ -1944,6 +1944,9 @@ class ClassItem :
     def get_name(self) :
         return self._name
 
+    def get_superclassname(self) :
+        return self._sname
+
     def get_info(self) :
         return "%s:%s" % (self._name, self._sname)
 

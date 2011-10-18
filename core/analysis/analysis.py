@@ -1594,7 +1594,7 @@ class TaintedPackages :
                         l.append( [ path.get_class_name(), path.get_name(), path.get_descriptor() ] )
         return l, d
 
-    def search_methods(self, class_name, name, descriptor) :
+    def search_methods(self, class_name, name, descriptor, re_expr=True) :
         """
             @param class_name : a regexp for the class name of the method (the package)
             @param name : a regexp for the name of the method
@@ -1602,12 +1602,14 @@ class TaintedPackages :
 
             @rtype : a list of called methods' paths
         """
-        ex = re.compile( class_name )
         l = []
+        if re_expr == True :
+            ex = re.compile( class_name )
 
-        for m, _ in self.get_packages() :
-            if ex.match( m.get_info() ) != None :
-                l.extend( m.search_method( name, descriptor ) )
+            for m, _ in self.get_packages() :
+                if ex.match( m.get_info() ) != None :
+                    l.extend( m.search_method( name, descriptor ) )
+
         return l
     
     def search_objects(self, class_name) :
@@ -2038,6 +2040,9 @@ class VMAnalysis :
             self.methods.append( x )
             self.hmethods[ i ] = x
             self.__nmethods[ i.get_name() ] = x
+
+    def get_vm(self) :
+        return self.__vm
 
     def get_method(self, method) :
         """
