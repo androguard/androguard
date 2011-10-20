@@ -20,6 +20,7 @@ from networkx import DiGraph
 from xml.sax.saxutils import escape
 
 
+import libsign
 import bytecode
 from dvm_permissions import DVM_PERMISSIONS
 from risk import PERMISSIONS_RISK, INTERNET_RISK, PRIVACY_RISK, PHONE_RISK, SMS_RISK, MONEY_RISK
@@ -44,6 +45,16 @@ class GVMAnalysis :
         for j in self.vmx.tainted_packages.get_internal_packages() :
             n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
             n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
+
+
+            m1 = self.vm.get_method_descriptor( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor()  )
+            m2 = j.get_method()
+
+            #n1.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+            #n2.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+
+            n1.set_attributes( { "android_api" : libsign.entropy( vmx.get_method_signature(m1, predef_sign = "L0_4" ).get_string() ) } )
+            n2.set_attributes( { "android_api" : libsign.entropy( vmx.get_method_signature(m2, predef_sign = "L0_4" ).get_string() ) } )
 
             self.__G.add_edge( n1.id, n2.id )
             
@@ -140,6 +151,7 @@ class GVMAnalysis :
         fd.write( "<attribute default=\"normal\" id=\"0\" title=\"type\" type=\"string\"/>\n" )
         fd.write( "<attribute default=\"0\" id=\"1\" title=\"permissions\" type=\"integer\"/>\n" )
         fd.write( "<attribute default=\"normal\" id=\"2\" title=\"permissions_level\" type=\"string\"/>\n" )
+        fd.write( "<attribute default=\"0.0\" id=\"3\" title=\"android_api\" type=\"float\"/>\n" )
         fd.write( "</attributes>\n" )   
 
         fd.write( "<nodes>" )
@@ -199,6 +211,7 @@ class NodeF :
                             "color" : None,
                             "permissions" : DEFAULT_NODE_PERM,
                             "permissions_level" : DEFAULT_NODE_PERM_LEVEL,
+                            "android_api" : 0.0,
                           }
 
     def get_attributes(self) :
@@ -215,6 +228,7 @@ class NodeF :
             buff += "<attvalue id=\"2\" value=\"%s\"/>\n" % self.attributes[ "permissions_level_name" ]
 
 
+        buff += "<attvalue id=\"3\" value=\"%f\"/>\n" % self.attributes[ "android_api" ]
         buff += "</attvalues>\n"
 
         return buff
@@ -240,4 +254,5 @@ class NodeF :
                     self.attributes[ "color" ] = COLOR_PERMISSIONS_LEVEL[ values[i] ]
             elif i == "color" :
                 self.attributes[ "color" ] = values[i] 
-
+            elif i == "android_api" :
+                self.attributes[ "android_api" ] = values[i]
