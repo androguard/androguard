@@ -71,6 +71,9 @@ class GVMAnalysis :
             n1.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
             n2.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
 
+            n1.set_attributes( { "java_api" : libsign.entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+            n2.set_attributes( { "java_api" : libsign.entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+
             self.G.add_edge( n1.id, n2.id )
             
         #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
