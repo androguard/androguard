@@ -47,7 +47,7 @@ class ChilkatZip :
         self.zip.UnlockComponent( CHILKAT_KEY )
 
         self.zip.OpenFromMemory( raw, len(raw) )
-
+        
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
         while e != None :
@@ -93,7 +93,7 @@ class APK :
             self.zip = ChilkatZip( self.__raw )
         else :
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
-
+        
         # CHECK if there is only one embedded file
         #self._reload_apk()
 

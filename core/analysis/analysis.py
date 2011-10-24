@@ -1372,6 +1372,10 @@ def show_Path(paths) :
         else :
             print "%s %s %s ---> %s %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), (path.get_bb().start + path.get_idx() ) )
 
+def show_PathVariable(paths) :
+    for path in paths :
+        print path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % ( path.get_bb().start + path.get_idx())
+
 class PathP(Path) :
     def __init__(self, info, class_name) :
         Path.__init__( self, info )
