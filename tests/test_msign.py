@@ -44,6 +44,7 @@ TESTS = {
     "./apks/mixe/7f0aaf040b475085713b09221c914a971792e1810b0666003bf38ac9a9b013e6" : "Plankton.C",
     "./apks/mixe/e5b775383f7a16d96f55701d72a8c87ca27e991d600cb4254bb47dfef556fd18" : "Crusewind",
     "./apks/mixe/7a21caba58a033a696265d2f1a9c421a84293cbba19ed890be3cc26ac584b021" : "YZHCSMS",
+    "./apks/mixe/ee19913af9d8b3051b8f05f1afebecfd79ca25525fc9256bcf7e57269b158b33" : "YZHCSMS.B",
     "./apks/mixe/f6239ba0487ffcf4d09255dba781440d2600d3c509e66018e6a5724912df34a9" : "Zitmo",
     "./apks/mixe/77cd811c6bdb8111a98bbb6986d3f17d72c38a78bed33ac18f8938e980783d42" : "RogueSPPush",
     "./apks/mixe/ad785708e2f23c48dc8b3b088cedef5afc97759d5dc92103125a599657fca7fa" : "BaseBridge",
@@ -67,6 +68,8 @@ TESTS = {
     "./apks/mixe/5ee2f4c1cfcba8865e4cd866a013a78e6f89ebe15e3d73ab1b714b04d626c3ce" : "Ewalls.B",
     "./apks/mixe/19944bf715391ecb7aac998b469c52ae3116060ac7b46d4a6d1bc23f7ed14ec7" : "Ozotshielder",
     "./apks/mixe/8c0eb00e014f39b9b4e90e25e56b0f85b5332dd231956f9b7f07743df4c80581" : "Ozotshielder.B",
+    "./apks/mixe/68e66bb028998c22014f9cc882943bab1497cedc797b638c3f8d479a8eedfd2b" : "Ozotshielder.C",
+    "./apks/mixe/6953fb1a1245c4bfaba98fd799a6222fde3567b7bf7380aca2a7ecf006c8c678" : "Tapsnake",
 
     # exploits
 
