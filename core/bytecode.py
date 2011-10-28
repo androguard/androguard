@@ -475,10 +475,11 @@ def FormatNameToPython(input) :
 def FormatDescriptorToPython(input) :
     i = input.replace("/", "_")
     i = i.replace(";", "")
-    i = i.replace("[", "_")
-    i = i.replace("(", "_")
-    i = i.replace(")", "__")
+    i = i.replace("[", "")
+    i = i.replace("(", "")
+    i = i.replace(")", "")
     i = i.replace(" ", "")
+    i = i.replace("$", "")
 
     return i
 
@@ -508,7 +509,7 @@ def ExportVMToPython(vm) :
                 setattr( _class, name, j )
             else :
                 for j in m[i] :
-                    name = "METHOD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
+                    name = "METHOD_" + FormatNameToPython( j.get_name() ) + "_" + FormatDescriptorToPython( j.get_descriptor() )
                     setattr( _class, name, j )
 
         ### Fields
@@ -525,6 +526,5 @@ def ExportVMToPython(vm) :
                 setattr( _class, name, j )
             else :
                 for j in f[i] :
-                    name = "FIELD_" + FormatNameToPython( j.get_name() ) + FormatDescriptorToPython( j.get_descriptor() )
+                    name = "FIELD_" + FormatNameToPython( j.get_name() ) + "_" + FormatDescriptorToPython( j.get_descriptor() )
                     setattr( _class, name, j )
-
