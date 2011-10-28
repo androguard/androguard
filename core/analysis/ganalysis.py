@@ -18,11 +18,11 @@
 
 from networkx import DiGraph
 from xml.sax.saxutils import escape
+import math
 
-
-import libsign
 import bytecode
 from dvm_permissions import DVM_PERMISSIONS
+from api_permissions import DVM_PERMISSIONS_BY_ELEMENT, DVM_PERMISSIONS_BY_PERMISSION
 from risk import PERMISSIONS_RISK, INTERNET_RISK, PRIVACY_RISK, PHONE_RISK, SMS_RISK, MONEY_RISK
 from analysis import TAINTED_PACKAGE_CREATE
 
@@ -51,6 +51,18 @@ ID_ATTRIBUTES = {
     "dynamic_code" : 8,
 }
 
+def entropy(data):
+    entropy = 0
+
+    if len(data) == 0 :
+        return entropy
+
+    for x in range(256):
+        p_x = float(data.count(chr(x)))/len(data)
+        if p_x > 0:
+            entropy += - p_x*math.log(p_x, 2)
+    return entropy
+
 class GVMAnalysis :
     def __init__(self, vmx, apk) :
         self.vmx = vmx
@@ -58,21 +70,25 @@ class GVMAnalysis :
 
         self.__nodes = {}
         self.__nodes_id = {}
+        self.__entry_nodes = [] 
         self.G = DiGraph()
 
         for j in self.vmx.tainted_packages.get_internal_packages() :
             n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
             n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
 
+            m1 = j.get_method()
+            m2 = self.vm.get_method_descriptor( j.get_class_name(), j.get_name(), j.get_descriptor()  )
 
-            m1 = self.vm.get_method_descriptor( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor()  )
-            m2 = j.get_method()
-
-            n1.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-            n2.set_attributes( { "android_api" : libsign.entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-
-            n1.set_attributes( { "java_api" : libsign.entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
-            n2.set_attributes( { "java_api" : libsign.entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+            n1.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+            n1.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+            
+            if m2 == None :
+                n2.set_attributes( { "android_api" : 0.0 } )
+                n2.set_attributes( { "java_api" : 0.0 } )
+            else :
+                n2.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+                n2.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
 
             self.G.add_edge( n1.id, n2.id )
             
@@ -90,6 +106,7 @@ class GVMAnalysis :
                     n2 = self._get_new_node_from( n1, "ACTIVITY" )
                     n2.set_attributes( { "color" : ACTIVITY_COLOR } )
                     self.G.add_edge( n2.id, n1.id )
+                    self.__entry_nodes.append( n1.id )
             for i in apk.get_services() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "()V" )
@@ -99,6 +116,7 @@ class GVMAnalysis :
                     n2 = self._get_new_node_from( n1, "SERVICE" )
                     n2.set_attributes( { "color" : SERVICE_COLOR } )
                     self.G.add_edge( n2.id, n1.id )
+                    self.__entry_nodes.append( n1.id )
             for i in apk.get_receivers() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V" )
@@ -108,6 +126,7 @@ class GVMAnalysis :
                     n2 = self._get_new_node_from( n1, "RECEIVER" )
                     n2.set_attributes( { "color" : RECEIVER_COLOR } )
                     self.G.add_edge( n2.id, n1.id )
+                    self.__entry_nodes.append( n1.id )
 
         for c in self.vm.get_classes() :
             #if c.get_superclassname() == "Landroid/app/Service;" :
@@ -122,8 +141,18 @@ class GVMAnalysis :
                         n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() ) 
                         
                         self.G.add_edge( n1.id, n2.id )
+            #elif c.get_superclassname() == "Landroid/os/AsyncTask;" :
+            #    for i in self.vm.get_method("doInBackground") :
+            #        if i.get_class_name() == c.get_name() :
+            #            n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
+            #            n2 = self._get_exist_node( i.get_class_name(), "execute", i.get_descriptor() )
+            #            print n1, n2, i.get_descriptor()
+                        #for j in self.vm.get_method("doInBackground") :
+                        #    n2 = self._get_exist_node( i.get_class_name(), j.get_name(), j.get_descriptor() )
+                        #    print n1, n2
+                        # n2 = self._get_node( i.get_class_name(), "
+            #    raise("ooo")
 
-       
         list_permissions = self.vmx.get_permissions( [] ) 
         for x in list_permissions :
             for j in list_permissions[ x ] :
@@ -146,6 +175,9 @@ class GVMAnalysis :
                                                      DEFAULT_RISKS[ tmp_perm ][0] )
                             n2.set_attributes( { "color" : DEFAULT_RISKS[ tmp_perm ][1] } )
                             self.G.add_edge( n2.id, n1.id )
+                           
+                            n1.add_risk( DEFAULT_RISKS[ tmp_perm ][0] )
+                            n1.add_api( x, j.get_class_name() + "-" + j.get_name() + "-" + j.get_descriptor() )
                 except KeyError :
                     pass
 
@@ -160,6 +192,8 @@ class GVMAnalysis :
                         n1.set_attributes( { "dynamic_code" : "true" } )
                         n2.set_attributes( { "color" : DEXCLASSLOADER_COLOR } )
                         self.G.add_edge( n2.id, n1.id )
+                        
+                        n1.add_risk( "DEXCLASSLOADER" )
 
     def _get_exist_node(self, class_name, method_name, descriptor) :
         key = "%s %s %s" % (class_name, method_name, descriptor)
@@ -182,7 +216,7 @@ class GVMAnalysis :
     def _get_new_node(self, class_name, method_name, descriptor, label) :
         key = "%s %s %s" % (class_name, method_name, descriptor)
         if key not in self.__nodes :
-            self.__nodes[ key ] = NodeF( len(self.__nodes), class_name, method_name, descriptor, label )
+            self.__nodes[ key ] = NodeF( len(self.__nodes), class_name, method_name, descriptor, label, False )
             self.__nodes_id[ self.__nodes[ key ].id ] = self.__nodes[ key ]
 
         return self.__nodes[ key ]
@@ -230,6 +264,90 @@ class GVMAnalysis :
         fd.write("</gexf>\n")
         fd.close()
 
+    def get_paths_method(self, method) :
+        return self.get_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
+
+    def get_paths(self, class_name, method_name, descriptor) :
+        import connectivity_approx as ca
+        paths = []
+        key = "%s %s %s" % (class_name, method_name, descriptor)
+       
+        if key not in self.__nodes :
+            return paths
+
+        for origin in self.G.nodes() : #self.__entry_nodes :
+            if ca.vertex_connectivity_approx(self.G, origin, self.__nodes[ key ].id) > 0 :
+                for path in ca.node_independent_paths(self.G, origin, self.__nodes[ key ].id) :
+                    if self.__nodes_id[ path[0] ].real == True :
+                        paths.append( path )
+        return paths
+
+    def print_paths_method(self, method) :
+        self.print_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
+
+    def print_paths(self, class_name, method_name, descriptor) :
+        paths = self.get_paths( class_name, method_name, descriptor )
+        for path in paths :
+            print path, ":"
+            print "\t",
+            for p in path[:-1] :
+                print self.__nodes_id[ p ].label, "-->",
+            print self.__nodes_id[ path[-1] ].label
+
+    def evalrisk(self, list_nodes) :
+        values = { 
+            "MONEY_RISK" : 0,
+            "INTERNET_RISK" : 0,
+            "PRIVACY_RISK" : 0,
+            "SMS_RISK" : 0,
+        }
+
+        for i in list_nodes :
+            #print self.__nodes_id[ i ].id
+            for j in self.__nodes_id[ i ].risks :
+                values[ j ] = 1
+        return values.values()
+
+    def evalapi(self, list_nodes) :
+        #"READ_PHONE_STATE" : [0] * sum( len(DVM_PERMISSIONS_BY_PERMISSION[ "READ_PHONE_STATE" ][i]) for i in DVM_PERMISSIONS_BY_PERMISSION[ "READ_PHONE_STATE" ] ),
+        values = {
+        }
+
+        for i in list_nodes :
+            if self.__nodes_id[ i ].api != {} :
+                for perm in self.__nodes_id[ i ].api :
+                    if perm not in values :
+                        values[ perm ] = dict( [(j,0) for j in DVM_PERMISSIONS_BY_PERMISSION[ perm ] ] )
+                    for api in self.__nodes_id[ i ].api[ perm ] :
+                        values[ perm ][ api ] = 1
+        
+        for i in values :
+            print i, values[ i ].values()
+
+        return values
+
+    def print_communities(self) :
+        from networkx import Graph
+        import community
+
+        print len(DVM_PERMISSIONS_BY_ELEMENT), len(DVM_PERMISSIONS["MANIFEST_PERMISSION"])
+
+        G = Graph(self.G)
+        partition = community.best_partition(G)
+        #print partition
+        size = float(len(set(partition.values())))
+        count = 0.
+        for com in set(partition.values()) :
+            count = count + 1.
+            list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+            if len(list_nodes) > 1 :
+                print list_nodes, self.evalrisk( list_nodes )
+                self.evalapi( list_nodes )
+            #nx.draw_networkx_nodes(G, pos, list_nodes, node_size = 20, node_color = str(count / size))
+
+        #nx.draw_networkx_edges(G,pos, alpha=0.5)
+        #plt.show()
+        #plt.savefig("toto2.png")
 
 DEFAULT_NODE_TYPE = "normal"
 DEFAULT_NODE_PERM = 0
@@ -250,12 +368,15 @@ COLOR_PERMISSIONS_LEVEL = {
 }
 
 class NodeF :
-    def __init__(self, id, class_name, method_name, descriptor, label=None) :
+    def __init__(self, id, class_name, method_name, descriptor, label=None, real=True) :
         self.class_name = class_name
         self.method_name = method_name 
         self.descriptor = descriptor
 
         self.id = id
+        self.real = real
+        self.risks = []
+        self.api = {} 
 
         if label == None : 
             self.label = "%s %s %s" % (class_name, method_name, descriptor)
@@ -310,3 +431,14 @@ class NodeF :
                     self.attributes[ "color" ] = COLOR_PERMISSIONS_LEVEL[ values[i] ]
             else :
                 self.attributes[ i ] = values[i]
+
+    def add_risk(self, risk) :
+        if risk not in self.risks :
+            self.risks.append( risk )
+
+    def add_api(self, perm, api) :
+        if perm not in self.api :
+            self.api[ perm ] = []
+
+        if api not in self.api[ perm ] :
+            self.api[ perm ].append( api )
