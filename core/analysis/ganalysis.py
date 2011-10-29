@@ -244,7 +244,7 @@ class GVMAnalysis :
         fd.write( "</attributes>\n" )   
 
         fd.write( "<nodes>" )
-        for node in self.G.node :
+        for node in self.G.nodes() :
             fd.write( "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.__nodes_id[ node ].label)) )
             fd.write( self.__nodes_id[ node ].get_attributes() )
             fd.write( "</node>\n" )
@@ -253,10 +253,9 @@ class GVMAnalysis :
 
         fd.write( "<edges>\n" )
         nb = 0
-        for edge in self.G.edge :
-            for link in self.G.edges( edge ) :
-                fd.write( "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, link[0], link[1]) )
-                nb += 1
+        for edge in self.G.edges() :
+            fd.write( "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1]) )
+            nb += 1
         fd.write( "</edges>\n")
 
 
