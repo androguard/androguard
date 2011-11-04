@@ -32,11 +32,13 @@ options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
     if options.input != None :
-        if androconf.is_android( options.input ) == "APK" :
+        ret_type = androconf.is_android( options.input ) 
+        if ret_type == "APK" :
             ri = risk.RiskIndicator()
             a = apk.APK( options.input )
-            
             print options.input, ri.with_apk( a )
+        elif ret_type == "DEX" :
+            print options.input, ri.with_dex( open(options.input, "r").read() )
 
     elif options.directory != None :
         ri = risk.RiskIndicator()
@@ -48,12 +50,16 @@ def main(options, arguments) :
                         real_filename += "/"
                     real_filename += f
 
-                    if androconf.is_android( real_filename ) == "APK"  :
+                    ret_type = androconf.is_android( real_filename )
+                    if ret_type == "APK"  :
                         try :
                             a = apk.APK( real_filename )
-                            print ri.with_apk(a), real_filename#, ri.with_apk( a )
+                            print ri.with_apk(a), real_filename
                         except Exception, e :
                             print e
+
+                    elif ret_type == "DEX" :
+                        print ri.with_dex( open(real_filename, "r").read() ), real_filename
 
     elif options.version != None :
         print "Androrisk version %s" % androconf.ANDROGUARD_VERSION

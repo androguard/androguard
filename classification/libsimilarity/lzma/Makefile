@@ -1,7 +1,7 @@
 SRC	= 	Alloc.c LzFind.c LzmaDec.c LzmaEnc.c LzmaLib.c lzma.c
 
 LDFLAGS =
-CFLAGS  =      -Wall -D_7ZIP_ST       
+CFLAGS  =      -Wall -D_7ZIP_ST -fPIC  
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f

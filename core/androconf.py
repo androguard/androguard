@@ -20,6 +20,11 @@ import logging, types, random, string
 
 ANDROGUARD_VERSION = "0.9"
 
+CONF = {
+    "BIN_DED" : "ded.sh",
+    "PATH_DED" : "./decompiler/ded/",
+}
+
 class Color:
     normal = "\033[0m"
     black = "\033[30m"
@@ -91,6 +96,19 @@ def is_android(filename) :
     fd.close()
     return val
 
+def is_android_raw(raw) :
+    val = None
+    f_bytes = raw[:7]
+    
+    if f_bytes[0:2] == "PK" :
+        val = "APK"
+    elif f_bytes[0:3] == "dex" :
+        val = "DEX"
+    elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
+        val = "ELF"
+
+    return val
+
 # from scapy
 log_andro = logging.getLogger("andro")
 console_handler = logging.StreamHandler()
@@ -115,3 +133,6 @@ def error(x) :
 
 def debug(x) :
     log_runtime.debug(x)
+
+def set_options(key, value) :
+    CONF[ key ] = value

@@ -30,6 +30,7 @@ sys.path.append(PATH_INSTALL + "/core/vm")
 sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
 sys.path.append(PATH_INSTALL + "/classification")
+sys.path.append(PATH_INSTALL + "/decompiler")
 
 import bytecode, jvm, dvm, apk, androconf, analysis, opaque
 from androconf import error
@@ -178,6 +179,7 @@ class BC :
 
     def analyze(self) :
         self.__a = analysis.VMAnalysis( self.__bc, code_analysis=True )
+        self.__bc.set_vmanalysis( self.__a )
 
     def _get(self, val, name) :
         l = []
@@ -209,7 +211,7 @@ class BC :
         self.__bc.show()
 
     def pretty_show(self) :
-        self.__bc.pretty_show( self.__a )
+        self.__bc.pretty_show()
 
     def save(self) :
         return self.__bc.save()

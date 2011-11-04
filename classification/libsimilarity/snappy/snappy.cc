@@ -13,7 +13,7 @@ extern "C" size_t snappy_max_compressed_size(size_t length) {
    return snappy::MaxCompressedLength(length);
 }
 
-extern "C" void snappy_compress(const char * input, size_t input_size, char * output, unsigned int *avail_out)
+extern "C" void snappy_compress(const char * input, size_t input_size, char * output, size_t *avail_out)
 {
    //printf("COMPRESS 0x%x %d 0x%x %d\n", input, input_size, output, *avail_out);
    //ncompbytes = snappy::Compress(input, input_size, &sout);
@@ -25,7 +25,7 @@ extern "C" void snappy_compress(const char * input, size_t input_size, char * ou
 
 #endif
 
-extern "C" int snappyCompress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+extern "C" int snappyCompress(int level, void *data, unsigned int avail_in, void *odata, size_t *avail_out)
 {
    size_t max_comp_size;
 

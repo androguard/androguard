@@ -30,6 +30,7 @@ from apk import *
 from analysis import *
 from diff import *
 from msign import *
+from decompiler import *
 
 import androconf 
 
@@ -88,9 +89,25 @@ def AnalyzeAPK(filename, raw=False) :
     d = DalvikVMFormat( a.get_dex() )
     dx = VMAnalysis( d )
 
+    d.set_vmanalysis( dx )
+
     ExportVMToPython( d )
 
     set_pretty_show( 1 )
+
+    return a, d, dx
+
+def AAnalyzeAPK(filename, raw=False) :
+    """
+        Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
+
+        @param filename : the filename of the android application or a buffer which represents the application
+        @param raw : True is you would like to use a buffer
+        
+        @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
+    """
+    a, d, dx = AnalyzeAPK( filename, raw )
+    d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
 
     return a, d, dx
 
