@@ -1,7 +1,7 @@
 SRC	= 	bz2.c
 
 LDFLAGS =	-lbz2
-CFLAGS  +=      -Wall       
+CFLAGS  +=      -Wall -fPIC       
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f

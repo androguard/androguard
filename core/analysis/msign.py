@@ -33,6 +33,8 @@ METHHASH = 2
 CLASSHASH = 3
 BINHASH = 4
 
+VERSION = 0.1
+
 class SignSim :
     def __init__(self) :
         self.sign = libsign.Msign()

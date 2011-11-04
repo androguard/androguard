@@ -162,9 +162,23 @@ class APK :
             return {}
 
         l = {}
-        m = magic.Magic()
-        for i in self.get_files() :
-            l[ i ] = m.from_buffer( self.zip.read( i ) )
+        
+        builtin_magic = 0
+        try :
+            getattr(magic, "Magic")
+        except AttributeError :
+            builtin_magic = 1
+                
+        if builtin_magic :
+            ms = magic.open(magic.MAGIC_NONE)
+            ms.load()
+            
+            for i in self.get_files() :
+                l[ i ] = ms.buffer( self.zip.read( i ) )
+        else :
+            m = magic.Magic()
+            for i in self.get_files() :
+                l[ i ] = m.from_buffer( self.zip.read( i ) )
 
         return l
 

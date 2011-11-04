@@ -9,15 +9,15 @@ sys.path.append(PATH_INSTALL + "/core/analysis")
 
 import dvm, analysis
 
-TEST = "./examples/android/Test/bin/classes.dex"
-#TEST = "examples/android/Hello_Kitty/classes.dex"
+TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
 j = dvm.DalvikVMFormat( open(TEST).read() )
 x = analysis.VMAnalysis( j )
+j.set_vmanalysis( x )
 
 # SHOW CLASSES (verbose and pretty)
-#j.pretty_show( x )
+j.pretty_show()
 
 # SHOW METHODS
 for i in j.get_methods() :
-    i.pretty_show( x )
+    i.pretty_show( )

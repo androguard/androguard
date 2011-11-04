@@ -1,7 +1,7 @@
 SRC	= 	z.c
 
 LDFLAGS =	-lz
-CFLAGS  +=      -Wall       
+CFLAGS  +=      -Wall -fPIC      
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f

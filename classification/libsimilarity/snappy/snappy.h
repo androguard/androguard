@@ -5,6 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-int snappyCompress(int, void *, unsigned int, void *, unsigned int *);
+int snappyCompress(int, void *, size_t, void *, size_t *);
 
 #endif
