@@ -1,0 +1,293 @@
+<html>
+<head>
+    <title>Controlling the Embedded VM</title>
+    <link rel=stylesheet href="android.css">
+</head>
+
+<body>
+<h1>Controlling the Embedded VM</h1>
+
+<ul>
+    <li><a href="#introduction">Introduction</a> (read this first!)
+    <li><a href="#checkjni">Extended JNI Checks</a>
+    <li><a href="#assertions">Assertions</a>
+    <li><a href="#verifier">Bytecode Verification and Optimization</a>
+    <li><a href="#execmode">Execution Mode</a>
+    <li><a href="#dp">Deadlock Prediction</a>
+    <li><a href="#stackdump">Stack Dumps</a>
+    <li><a href="#dexcheck">DEX File Checksums</a>
+</ul>
+
+<h2><a name="introduction">Introduction (read this first!)</a></h2>
+
+<p>The Dalvik VM supports a variety of command-line arguments
+(use <code>adb shell dalvikvm -help</code> to get a summary), but
+it's not possible to pass arbitrary arguments through the
+Android application runtime.  It is, however, possible to affect the
+VM behavior through certain system properties.
+
+<p>For all of the features described below, you would set the system property
+with <code>setprop</code>,
+issuing a shell command on the device like this:
+<pre>adb shell setprop &lt;name&gt; &lt;value&gt;</pre>
+
+<p><strong>The Android runtime must be restarted before the changes will take
+effect</strong> (<code>adb shell stop; adb shell start</code>).  This is because the
+settings are processed in the "zygote" process, which starts early and stays
+around "forever".
+
+<p>You may not be able to set <code>dalvik.*</code> properties or restart
+the system as an unprivileged user.  You can use
+<code>adb root</code> or run the <code>su</code> command from the device
+shell on "userdebug" builds to become root first.  When in doubt,
+<pre>adb shell getprop &lt;name&gt;</pre>
+will tell you if the <code>setprop</code> took.
+
+<p>If you don't want the property to evaporate when the device reboots,
+add a line to <code>/data/local.prop</code> that looks like:
+<pre>&lt;name&gt; = &lt;value&gt;</pre>
+
+<p>Such changes will survive reboots, but will be lost if the data
+partition is wiped.  (Hint: create a <code>local.prop</code>
+on your workstation, then <code>adb push local.prop /data</code>.  Or,
+use one-liners like
+<code>adb shell "echo name = value &gt;&gt; /data/local.prop"</code> -- note
+the quotes are important.)
+
+
+<h2><a name="checkjni">Extended JNI Checks</a></h2>
+
+<p>JNI, the Java Native Interface, provides a way for code written in the
+Java programming language
+interact with native (C/C++) code.  The extended JNI checks will cause
+the system to run more slowly, but they can spot a variety of nasty bugs
+before they have a chance to cause problems.
+
+<p>There are two system properties that affect this feature, which is
+enabled with the <code>-Xcheck:jni</code> command-line argument.  The
+first is <code>ro.kernel.android.checkjni</code>.  This is set by the
+Android build system for development builds.  (It may also be set by
+the Android emulator unless the <code>-nojni</code> flag is provided on the
+emulator command line.)  Because this is an "ro." property, the value cannot
+be changed once the device has started.
+
+<p>To allow toggling of the CheckJNI flag, a second
+property, <code>dalvik.vm.checkjni</code>, is also checked.  The value
+of this overrides the value from <code>ro.kernel.android.checkjni</code>.
+
+<p>If neither property is defined, or <code>dalvik.vm.checkjni</code>
+is set to <code>false</code>, the <code>-Xcheck:jni</code> flag is
+not passed in, and JNI checks will be disabled.
+
+<p>To enable JNI checking:
+<pre>adb shell setprop dalvik.vm.checkjni true</pre>
+
+<p>You can also pass JNI-checking options into the VM through a system
+property.  The value set for <code>dalvik.vm.jniopts</code> will
+be passed in as the <code>-Xjniopts</code> argument.  For example:
+<pre>adb shell setprop dalvik.vm.jniopts forcecopy</pre>
+
+<p>For more information about JNI checks, see
+<a href="jni-tips.html">JNI Tips</a>.
+
+
+<h2><a name="assertions">Assertions</a></h2>
+
+<p>Dalvik VM supports the Java programming language "assert" statement.
+By default they are off, but the <code>dalvik.vm.enableassertions</code>
+property provides a way to set the value for a <code>-ea</code> argument.
+
+<p>The argument behaves the same as it does in other desktop VMs.  You
+can provide a class name, a package name (followed by "..."), or the
+special value "all".
+
+<p>For example, this:
+<pre>adb shell setprop dalvik.vm.enableassertions all</pre>
+enables assertions in all non-system classes.
+
+<p>The system property is much more limited than the full command line.
+It is not possible to specify more than one <code>-ea</code> entry, and there
+is no way to specify a <code>-da</code> entry.  There is presently no
+equivalent for <code>-esa</code>/<code>-dsa</code>.
+
+
+<h2><a name="verifier">Bytecode Verification and Optimization</a></h2>
+
+<p>The system tries to pre-verify all classes in a DEX file to reduce
+class load overhead, and performs a series of optimizations to improve
+runtime performance.  Both of these are done by the <code>dexopt</code>
+command, either in the build system or by the installer.  On a development
+device, <code>dexopt</code> may be run the first time a DEX file is used
+and whenever it or one of its dependencies is updated ("just-in-time"
+optimization and verification).
+
+<p>There are two command-line flags that control the just-in-time
+verification and optimization,
+<code>-Xverify</code> and <code>-Xdexopt</code>.  The Android framework
+configures these based on the <code>dalvik.vm.dexopt-flags</code>
+property.
+
+<p>If you set:
+<pre>adb shell setprop dalvik.vm.dexopt-flags v=a,o=v</pre>
+then the framework will pass <code>-Xverify:all -Xdexopt:verified</code>
+to the VM.  This enables verification, and only optimizes classes that
+successfully verified.  This is the safest setting, and is the default.
+<p>You could also set <code>dalvik.vm.dexopt-flags</code> to <code>v=n</code>
+to have the framework pass <code>-Xverify:none -Xdexopt:verified</code>
+to disable verification.  (We could pass in <code>-Xdexopt:all</code> to
+allow optimization, but that wouldn't necessarily optimize more of the
+code, since classes that fail verification may well be skipped by the
+optimizer for the same reasons.)  Classes will not be verified by
+<code>dexopt</code>, and unverified code will be loaded and executed.
+
+<p>Enabling verification will make the <code>dexopt</code> command
+take significantly longer, because the verification process is fairly slow.
+Once the verified and optimized DEX files have been prepared, verification
+incurs no additional overhead except when loading classes that failed
+to pre-verify.
+
+<p>If your DEX files are processed with verification disabled, and you
+later turn the verifier on, application loading will be noticeably
+slower (perhaps 40% or more) as classes are verified on first use.
+
+<p>For best results you should force a re-dexopt of all DEX files when
+this property changes.  You can do this with:
+<pre>adb shell "rm /data/dalvik-cache/*"</pre>
+This removes the cached versions of the DEX files.  Remember to
+stop and restart the runtime (<code>adb shell stop; adb shell start</code>).
+
+<p>(Previous version of the runtime supported the boolean
+<code>dalvik.vm.verify-bytecode</code> property, but that has been
+superceded by <code>dalvik.vm.dexopt-flags</code>.)</p>
+
+
+<h2><a name="execmode">Execution Mode</a></h2>
+
+<p>The current implementation of the Dalvik VM includes three distinct
+interpreter cores.  These are referred to as "fast", "portable", and
+"debug".  The "fast" interpreter is optimized for the current
+platform, and might consist of hand-optimized assembly routines.  In
+constrast, the "portable" interpreter is written in C and expected to
+run on a broad range of platforms.  The "debug" interpreter is a variant
+of "portable" that includes support for profiling and single-stepping.
+
+<p>The VM may also support just-in-time compilation.  While not strictly
+a different interpreter, the JIT compiler may be enabled or disabled
+with the same flag.  (Check the output of <code>dalvikvm -help</code> to
+see if JIT compilation is enabled in your VM.)
+
+<p>The VM allows you to choose between "fast", "portable", and "jit" with an
+extended form of the <code>-Xint</code> argument.  The value of this
+argument can be set through the <code>dalvik.vm.execution-mode</code>
+system property.
+
+<p>To select the "portable" interpreter, you would use:
+<pre>adb shell setprop dalvik.vm.execution-mode int:portable</pre>
+If the property is not specified, the most appropriate interpreter
+will be selected automatically.  At some point this mechanism may allow
+selection of other modes, such as JIT compilation.
+
+<p>Not all platforms have an optimized implementation.  In such cases,
+the "fast" interpreter is generated as a series of C stubs, and the
+result will be slower than the
+"portable" version.  (When we have optimized versions for all popular
+architectures the naming convention will be more accurate.)
+
+<p>If profiling is enabled or a debugger is attached, the VM
+switches to the "debug" interpreter.  When profiling ends or the debugger
+disconnects, the original interpreter is resumed.  (The "debug" interpreter
+is substantially slower, something to keep in mind when evaluating
+profiling data.)
+
+<p>The JIT compiler can be disabled on a per-application basis by adding
+<code>android:vmSafeMode="true"</code> in the <code>application</code>
+tag in <code>AndroidManifest.xml</code>.  This can be useful if you
+suspect that JIT compilation is causing your application to behave
+incorrectly.
+
+
+<h2><a name="dp">Deadlock Prediction</a></h2>
+
+<p>If the VM is built with <code>WITH_DEADLOCK_PREDICTION</code>, the deadlock
+predictor can be enabled with the <code>-Xdeadlockpredict</code> argument.
+(The output from <code>dalvikvm -help</code> will tell you if the VM was
+built appropriately -- look for <code>deadlock_prediction</code> on the
+<code>Configured with:</code> line.)
+This feature tells the VM to keep track of the order in which object
+monitor locks are acquired.  If the program attempts to acquire a set
+of locks in a different order from what was seen earlier, the VM logs
+a warning and optionally throws an exception.
+
+<p>The command-line argument is set based on the
+<code>dalvik.vm.deadlock-predict</code> property.  Valid values are
+<code>off</code> to disable it (default), <code>warn</code> to log the
+problem but continue executing, <code>err</code> to cause a
+<code>dalvik.system.PotentialDeadlockError</code> to be thrown from the
+<code>monitor-enter</code> instruction, and <code>abort</code> to have
+the entire VM abort.
+
+<p>You will usually want to use:
+<pre>adb shell setprop dalvik.vm.deadlock-predict err</pre>
+unless you are keeping an eye on the logs as they scroll by.
+
+<p>Please note that this feature is deadlock prediction, not deadlock
+detection -- in the current implementation, the computations are performed
+after the lock is acquired (this simplifies the code, reducing the
+overhead added to every mutex operation).  You can spot a deadlock in a
+hung process by sending a <code>kill -3</code> and examining the stack
+trace written to the log.
+
+<p>This only takes monitors into account.  Native mutexes and other resources
+can also be the cause of deadlocks, but will not be detected by this.
+
+
+<h2><a name="stackdump">Stack Dumps</a></h2>
+
+<p>Like other desktop VMs, when the Dalvik VM receives a SIGQUIT
+(Ctrl-\ or <code>kill -3</code>), it dumps stack traces for all threads.
+By default this goes to the Android log, but it can also be written to a file.
+
+<p>The <code>dalvik.vm.stack-trace-file</code> property allows you to
+specify the name of the file where the thread stack traces will be written.
+The file will be created (world writable) if it doesn't exist, and the
+new information will be appended to the end of the file.  The filename
+is passed into the VM via the <code>-Xstacktracefile</code> argument.
+
+<p>For example:
+<pre>adb shell setprop dalvik.vm.stack-trace-file /tmp/stack-traces.txt</pre>
+
+<p>If the property is not defined, the VM will write the stack traces to
+the Android log when the signal arrives.
+
+
+<h2><a name="dexcheck">DEX File Checksums</a></h2>
+
+<p>For performance reasons, the checksum on "optimized" DEX files is
+ignored.  This is usually safe, because the files are generated on the
+device, and have access permissions that prevent modification.
+
+<p>If the storage on a device becomes unreliable, however, data corruption
+can occur.  This usually manifests itself as a repeatable virtual machine
+crash.  To speed diagnosis of such failures, the VM provides the
+<code>-Xcheckdexsum</code> argument.  When set, the checksums on all DEX
+files are verified before the contents are used.
+
+<p>The application framework will provide this argument during VM
+creation if the <code>dalvik.vm.check-dex-sum</code> property is enabled.
+
+<p>To enable extended DEX checksum verification:
+<pre>adb shell setprop dalvik.vm.check-dex-sum true</pre>
+
+<p>Incorrect checksums will prevent the DEX data from being used, and will
+cause errors to be written to the log file.  If a device has a history of
+problems it may be useful to add the property to
+<code>/data/local.prop</code>.
+
+<p>Note also that the
+<code>dexdump</code> tool always verifies DEX checksums, and can be used
+to check for corruption in a large set of files.
+
+
+<address>Copyright &copy; 2008 The Android Open Source Project</address>
+
+</body></html>

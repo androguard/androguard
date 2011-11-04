@@ -1,0 +1,1 @@
+[ { "SAMPLE" : "apks/malwares/kungfu/droidkungfu.apk" }, { "BASE" : "AndroidOS", "NAME" : "DroidKungfu", "SIGNATURE" : [ { "TYPE" : "METHSIM", "CN" : "Lcom/google/ssearch/SearchService;", "MN" : "getPermission2", "D" : "()V" } ], "BF" : "0" } ]

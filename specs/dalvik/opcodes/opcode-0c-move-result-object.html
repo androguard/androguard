@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>move-result-object</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>move-result-object</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move the object result of the most recent invoke-kind into the indicated
+register. This must be done as the instruction immediately after an invoke-kind
+or filled-new-array whose (object) result is not to be ignored; anywhere else
+is invalid.
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>0c 11x</td>
+  <td>move-result-object vAA</td>
+  <td><code>A:</code> destination register (8 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    The instruction must be immediately preceded (in the code array) by an
+    invoke-kind, filled-new-array, or filled-new-array/range instruction.
+  </li>
+  <li>
+    The instruction must be immediately reached (in the actual control flow)
+    through returning from this invoke-kind instruction or by passing a
+    filled-new-array or filled-new-array/range instruction (it must not be
+    jumped to).
+  </li>
+  <li>
+    The result delivered by the invoke-kind instruction must be a reference
+    value (which excludes the case of a long and double values).
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The result delivered by the invoke-kind instruction is moved to register
+    vA, that, is vA' = result.
+  </li>
+  <li>
+    If register v(A-1) is the lower half of a register pair, register v(A-1)'
+    becomes undefined.
+  </li>
+  <li>
+    If register v(A+1) is the upper half of a register pair, register v(A+1)'
+    becomes undefined.
+  </li>
+</ul>
+ 
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+<h2>Notes</h2>
+
+<p>
+This instruction can also be thought of as reading the contents of a special
+"result" register that is made valid and defined by executing a non-void return
+instruction or a filled-new-array instruction. The execution of any other
+instruction (including this one) renders this special register invalid. 
+</p>
+
+</body>
+</html>

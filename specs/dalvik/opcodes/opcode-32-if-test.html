@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>if-test</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>if-test</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Branch to the given destination if the given two registers' values compare as
+specified.
+</p>
+<p>
+Note: The branch offset may not be 0. (A spin loop may be legally constructed
+either by branching around a backward goto or by including a nop as a target
+before the branch.) 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>32..37 22t</td>
+  <td>if-<i>test</i> vA, vB, +CCCC<br/>
+    32: if-eq<br/>
+    33: if-ne<br/>
+    34: if-lt<br/>
+    35: if-ge<br/>
+    36: if-gt<br/>
+    37: if-le<br/>
+  </td>
+  <td><code>A:</code> first register to test (4 bits)<br/>
+    <code>B:</code> second register to test (4 bits)<br/>
+    <code>C:</code> signed branch offset (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A and B must be valid register indices for the current stack frame.
+  </li>
+  <li>
+    Registers vA and vB must not contain a reference value.
+  </li>
+  <li>
+    Registers vA and vB must not be part of a register pair.
+  </li>
+  <li>
+    Registers vA and vB must not contain a floating point value (???).
+  </li>
+    C must of a signed offset that, when added to the PC of the instruction,
+    points to a valid bytecode instruction inside the same method.
+  </li> 
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    The values of registers vA and vB are compared according to the &lt;test&gt;
+    condition. Two results are possible:
+    <ul>
+      <li>
+        The condition holds. The value of C is used as a signed offset to the
+        address of the if-&lt;test&gt; instruction. Execution continues at the
+        resulting address.
+      </li>
+      <li>
+        The condition does not hold. Execution continues at the instruction
+        following the if-&lt;test&gt; instruction.
+      </li>
+    </ul>
+  </li>
+</ul> 
+
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>

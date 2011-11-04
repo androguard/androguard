@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>const-class</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>const-class</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move a reference to the class specified by the given index into the specified
+register. In the case where the indicated type is primitive, this will store a
+reference to the primitive type's degenerate class. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1c 21c</td>
+  <td>const-class vAA, type@BBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> type index</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stack frame.
+  </li>
+  <li>
+    B must be a valid index into the type constant pool.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    An attempt is made to get a reference to the class C the name of which is
+    contained in type pool entry B.
+  </li>
+  <li>
+    If B refers to a primitive type, the corresponding degenerate class is used
+    instead.
+  </li>
+  <li>
+    If C has not been loaded and resolved before, it is being loaded and
+    resolved. All exceptions that are possible during class loading can occur at
+    this point.
+  </li>
+  <li>
+    A reference to C is moved into register vA, that is, vA' = C.
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+  <li>
+    If v(A+1) is the upper half of a register pair, v(A+1)' becomes undefined.
+  </li>
+</ul>
+
+<h2>Exceptions</h2>
+
+<ul>
+  <li>
+    ClassNotFoundException is thrown if the class does not exist at all.
+  </li>
+  <li>
+    VerifyError is thrown if the class does exist, but could not be verified.
+  </li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html>
+
+<head>
+<title>const</title>
+<link rel=stylesheet href="opcode.css">
+</head>
+
+<body>
+
+<h1>const</h1>
+
+<h2>Purpose</h2>
+
+<p>
+Move the given literal value (sign-extended to 32 bits, if necessary) into the
+specified register. 
+</p>
+
+<h2>Details</h2>
+
+<table class="instruc">
+<thead>
+<tr>
+  <th>Op &amp; Format</th>
+  <th>Mnemonic / Syntax</th>
+  <th>Arguments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>12 11n</td>
+  <td>const/4 vA, #+B</td>
+  <td><code>A:</code> destination register (4 bits)<br/>
+    <code>B:</code> signed int (4 bits)</td>
+</tr>
+<tr>
+  <td>13 21s</td>
+  <td>const/16 vAA, #+BBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> signed int (16 bits)</td>
+</tr>
+<tr>
+  <td>14 31i</td>
+  <td>const vAA, #+BBBBBBBB</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> arbitrary 32-bit constant</td>
+</tr>
+<tr>
+  <td>15 21h</td>
+  <td>const/high16 vAA, #+BBBB0000</td>
+  <td><code>A:</code> destination register (8 bits)<br/>
+    <code>B:</code> signed int (16 bits)</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Constraints</h2>
+
+<ul>
+  <li>
+    A must be a valid register index in the current stackframe.
+  </li>
+</ul>
+
+<h2>Behavior</h2>
+
+<ul>
+  <li>
+    First, an adjusted value B' is determined as follows:
+    <ul>
+      <li>
+        If we are executing the /high16 variant, then B is left-shifted by 16
+        bits, that is, B'=B << 0x10 
+      <li>
+        Otherwise, if B is a 4 bit or 16 bit constant, it is sign-extended to 32
+        bits, that is, B'=sign-extended(B).
+      </li>
+      <li>
+        Otherwise, B'=B.
+      </li>
+    </ul>
+  <li>
+    Then, the adjusted value B' is moved into the register A, that is, vA'=B'
+  </li>
+  <li>
+    If v(A-1) is the lower half of a register pair, v(A-1)' becomes undefined.
+  </li>
+  <li>
+    If v(A+1) is the upper half of a register pair, v(A+1)' becomes undefined.
+  </li>
+</ul>
+     
+<h2>Exceptions</h2>
+
+<p>
+None.
+</p>
+
+</body>
+</html>
