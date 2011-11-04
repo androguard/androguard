@@ -1,7 +1,7 @@
 SRC	= 	similarity.c
 
 LDFLAGS =	-lm -lbz2 -lz -llzma -lsnappy
-CFLAGS  +=      -Wall       
+CFLAGS  +=      -Wall -fPIC      
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f

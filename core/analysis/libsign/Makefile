@@ -1,7 +1,7 @@
 SRC	= 	sign.cc
 
 LDFLAGS =	-lm -lbz2 -lz -llzma -lsnappy 
-CFLAGS  += 	-Wall -I/usr/include/python2.6/
+CFLAGS  += 	-Wall -fPIC -I/usr/include/python2.6/
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
@@ -26,15 +26,15 @@ CLUSTER_OBJ = cluster.o
 all :   AHO CLUSTER $(OBJ) LIBSIGN
 
 AHO :
-		$(CC) -c ac_heap.c
-		$(CC) -c ac_list.c
-		$(CC) -c aho_corasick.c
+		$(CC) $(CFLAGS) -c ac_heap.c
+		$(CC) $(CFLAGS) -c ac_list.c
+		$(CC) $(CFLAGS) -c aho_corasick.c
 
 CLUSTER :
-		$(CC) -c cluster.c
+		$(CC) $(CFLAGS) -c cluster.c
 
 WUMANBER :
-		$(CCP) WuManber.cpp
+		$(CCP) $(CFLAGS) -c WuManber.cpp
 
 LIBSIGN :
 	$(CCP) -o $(LIBNAME).so $(OBJ) $(AHO_OBJ) $(WUMANBER_OBJ) $(CLUSTER_OBJ) $(EXT_SIMILARITY) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS)

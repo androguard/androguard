@@ -1757,10 +1757,13 @@ class EncodedMethod :
         if self._code != None :
             self._code.show()
 
-    def pretty_show(self, vm_a) :
+    def pretty_show(self) :
         print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s %s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
         if self._code != None :
-            self._code.pretty_show( vm_a.hmethods[ self ] )
+            self._code.pretty_show( self.__CM.vmanalysis_ob.hmethods[ self ] )
+
+    def source(self) :
+        print self.__CM.decompiler_ob.get_source( self.get_class_name(), self.get_name() )
 
     def get_access_flags(self) :
         return self.access_flags
@@ -1860,7 +1863,7 @@ class ClassDataItem :
         for i in self.virtual_methods :
             i.show()
 
-    def pretty_show(self, vm_a) :
+    def pretty_show(self) :
         print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
                 (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
 
@@ -1874,11 +1877,11 @@ class ClassDataItem :
 
         print "DM"
         for i in self.direct_methods :
-            i.pretty_show( vm_a )
+            i.pretty_show()
 
         print "VM"
         for i in self.virtual_methods :
-            i.pretty_show( vm_a )
+            i.pretty_show()
 
     def get_methods(self) :
         return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
@@ -1937,6 +1940,9 @@ class ClassItem :
 
     def show(self) :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
+
+    def source(self) :
+        print self.__CM.decompiler_ob.get_all( self.get_name() )
 
     def get_class_data(self) :
         return self._class_data_item
@@ -2692,9 +2698,9 @@ class DalvikCode :
     def _end_show(self) :
         print "*" * 80
 
-    def pretty_show(self, vm_a) :
+    def pretty_show(self, m_a) :
         self._begin_show()
-        self._code.pretty_show(vm_a)
+        self._code.pretty_show(m_a)
         self._end_show()
 
     def get_obj(self) :
@@ -2849,7 +2855,7 @@ class MapItem :
                 if isinstance(self.item, CodeItem) == False :
                     self.item.show()
 
-    def pretty_show(self, vm_a) :
+    def pretty_show(self) :
         bytecode._Print( "MAP_ITEM", self.format )
         bytecode._Print( "\tTYPE_ITEM", TYPE_MAP_ITEM[ self.format.get_value().type ])
 
@@ -2857,12 +2863,12 @@ class MapItem :
             if isinstance( self.item, list ):
                 for i in self.item :
                     if isinstance(i, ClassDataItem) :
-                        i.pretty_show(vm_a)
+                        i.pretty_show()
                     elif isinstance(self.item, CodeItem) == False :
                         i.show()
             else :
                 if isinstance(self.item, ClassDataItem) :
-                    self.item.pretty_show(vm_a)
+                    self.item.pretty_show()
                 elif isinstance(self.item, CodeItem) == False :
                     self.item.show()
 
@@ -2898,8 +2904,11 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self, engine=["automatic"]) :
+    def __init__(self, vm, engine=["automatic"]) :
+        self.vm = vm
         self.engine = engine
+        self.decompiler_ob = None
+        self.vmanalysis_on = None
 
         self.__manage_item = {}
         self.__manage_item_off = []
@@ -2917,6 +2926,12 @@ class ClassManager :
                 self.engine.append( dvmnative.DVM() )
             except ImportError :
                 self.engine[0] = "python"
+
+    def set_vmanalysis(self, vmanalysis) :
+        self.vmanalysis_ob = vmanalysis
+
+    def set_decompiler(self, decompiler) :
+        self.decompiler_ob = decompiler
 
     def get_engine(self) :
         return self.engine[0]
@@ -3050,10 +3065,10 @@ class MapList :
         for i in self.map_item :
             i.show()
 
-    def pretty_show(self, vm_a) :
+    def pretty_show(self) :
         bytecode._Print("MAP_LIST SIZE", self.size.get_value())
         for i in self.map_item :
-            i.pretty_show(vm_a)
+            i.pretty_show()
 
     def get_obj(self) :
         return [ x for x in self.map_item ]
@@ -3066,10 +3081,11 @@ class MapList :
         return self.CM
 
 class DalvikVMFormat(bytecode._Bytecode) :
-    def __init__(self, buff, engine=["automatic"]) :
+    def __init__(self, buff, engine=["automatic"], decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
         
         self.CM = ClassManager( engine )
+        self.CM.set_decompiler( decompiler )
 
         self.__header = HeaderItem( 0, self, ClassManager( ["python"] ) )
         self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
@@ -3080,6 +3096,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
         self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
 
+        
     def show(self) :
         """Show the .class format into a human readable format"""
         self.map_list.show()
@@ -3095,8 +3112,8 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def dotbuff(self, ins, idx) :
         return dot_buff(ins, idx)
 
-    def pretty_show(self, vm_a) :
-        self.map_list.pretty_show(vm_a)
+    def pretty_show(self) :
+        self.map_list.pretty_show()
 
     def _iterFlatten(self, root):
         if isinstance(root, (list, tuple)):
@@ -3273,3 +3290,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
     def get_type(self) :
         return "DVM"
+    
+    def set_decompiler(self, decompiler) :
+        self.CM.set_decompiler( decompiler )
+
+    def set_vmanalysis(self, vmanalysis) :
+        self.CM.set_vmanalysis( vmanalysis )

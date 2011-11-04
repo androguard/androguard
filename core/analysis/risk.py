@@ -40,9 +40,10 @@ SMS_RISK                = 6
 PHONE_RISK              = 7
 INTERNET_RISK           = 8
 PRIVACY_RISK            = 9 
+DYNAMIC_RISK            = 10
 
-BINARY_RISK             = 10
-EXPLOIT_RISK            = 11
+BINARY_RISK             = 11
+EXPLOIT_RISK            = 12
 
 RISK_VALUES = {
     DANGEROUS_RISK          : 4,
@@ -55,6 +56,7 @@ RISK_VALUES = {
     PHONE_RISK              : 4,
     INTERNET_RISK           : 2,
     PRIVACY_RISK            : 6,
+    DYNAMIC_RISK            : 10,
 
     BINARY_RISK             : 5,
     EXPLOIT_RISK            : 18,
@@ -100,6 +102,9 @@ HIGH_MALWARE_RISK           = "high"
 UNACCEPTABLE_MALWARE_RISK   = "unacceptable"
 
 from androconf import error, warning, debug, set_debug, get_debug
+import dvm, analysis
+from dvm_permissions import DVM_PERMISSIONS
+from analysis import TAINTED_PACKAGE_CREATE
 
 def add_system_rule(system, rule_name, rule) :
     system.rules[ rule_name ] = rule
@@ -132,6 +137,7 @@ def create_system_risk() :
     input_Privacy_Risk = fuzzy.InputVariable.InputVariable(fuzzify=fuzzy.fuzzify.Plain.Plain())
     input_Binary_Risk = fuzzy.InputVariable.InputVariable(fuzzify=fuzzy.fuzzify.Plain.Plain())
     input_Internet_Risk = fuzzy.InputVariable.InputVariable(fuzzify=fuzzy.fuzzify.Plain.Plain())
+    input_Dynamic_Risk = fuzzy.InputVariable.InputVariable(fuzzify=fuzzy.fuzzify.Plain.Plain())
     
     # Input variables
 
@@ -161,6 +167,10 @@ def create_system_risk() :
     input_Internet_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (4.0, 0.0)]) )
     input_Internet_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(2.0, 0.0), (27.0, 1.0)]) )
 
+        # Dynamic Risk
+    system.variables["input_Dynamic_Risk"] = input_Dynamic_Risk
+    input_Dynamic_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (8.0, 0.0)]) )
+    input_Dynamic_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(6.0, 0.0), (27.0, 1.0)]) )
 
     # Output variables
     output_malware_risk = fuzzy.OutputVariable.OutputVariable(
@@ -176,8 +186,15 @@ def create_system_risk() :
     system.variables["output_malware_risk"] = output_malware_risk
 
     # Rules
-    #RULE 1 : IF input_Dangerous_Risk IS Low THEN output_risk_malware IS Null;
     
+    #RULE 0 : IF input_Dynamic_Risk IS High THEN output_risk_malware IS High;
+    add_system_rule(system, "r0", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dynamic_Risk"].adjectives[HIGH_RISK] )
+                    )
+    )
+    
+    #RULE 1 : IF input_Dangerous_Risk IS Low THEN output_risk_malware IS Null;
     add_system_rule(system, "r1", fuzzy.Rule.Rule(
                                         adjective=[system.variables["output_malware_risk"].adjectives[NULL_MALWARE_RISK]],
                                         operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[LOW_RISK] )
@@ -610,6 +627,9 @@ class RiskIndicator :
             - call
             - privacy
 
+         API :
+            - DexClassLoader
+
          Files :
             - binary file
             - shared library
@@ -624,20 +644,7 @@ class RiskIndicator :
             SYSTEM = create_system_risk()
 #            export_system( SYSTEM, "./output" )
 
-    def with_apk(self, apk_file) :
-        """
-            @param apk_file : an L{APK} object
-
-            @rtype : return the risk of the apk file (from 0.0 to 100.0)
-        """
-        risks = { DANGEROUS_RISK    : 0.0,
-                  MONEY_RISK        : 0.0,
-                  PRIVACY_RISK      : 0.0,
-                  INTERNET_RISK     : 0.0,
-                  BINARY_RISK       : 0.0,
-                }
-
-        list_details_permissions = apk_file.get_details_permissions()
+    def __eval_risk_perm(self, list_details_permissions, risks) :
         for i in list_details_permissions :
             permission = i
             if permission.find(".") != -1 :
@@ -654,7 +661,15 @@ class RiskIndicator :
             except KeyError :
                 pass
 
-        list_details_files = apk_file.get_files_types()
+    def __eval_risk_dyn(self, vmx, risks) :
+        for m, _ in vmx.tainted_packages.get_packages() :
+            if m.get_info() == "Ldalvik/system/DexClassLoader;" :
+                for path in m.get_paths() :
+                    if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
+                        risks[ DYNAMIC_RISK ] = RISK_VALUES[ DYNAMIC_RISK ]
+                        return
+
+    def __eval_risk_bin(self, list_details_files, risks) :
         for i in list_details_files :
             if "ELF" in list_details_files[ i ] :
                 # shared library
@@ -664,7 +679,7 @@ class RiskIndicator :
                 else :
                     risks[ BINARY_RISK ] += RISK_VALUES [ EXPLOIT_RISK ]
 
-
+    def __eval_risks(self, risks) :
         output_values = {"output_malware_risk" : 0.0}
         input_val = {}
         input_val['input_Dangerous_Risk'] = risks[ DANGEROUS_RISK ]
@@ -672,6 +687,7 @@ class RiskIndicator :
         input_val['input_Privacy_Risk'] = risks[ PRIVACY_RISK ]
         input_val['input_Binary_Risk'] = risks[ BINARY_RISK ]
         input_val['input_Internet_Risk'] = risks[ INTERNET_RISK ]
+        input_val['input_Dynamic_Risk'] = risks[ DYNAMIC_RISK ]
 
 #        print input_val,
 
@@ -679,6 +695,69 @@ class RiskIndicator :
 
         val = output_values[ "output_malware_risk" ]
         return val
+
+    def with_apk(self, apk_file) :
+        """
+            @param apk_file : an L{APK} object
+
+            @rtype : return the risk of the apk file (from 0.0 to 100.0)
+        """
+        risks = { DANGEROUS_RISK    : 0.0,
+                  MONEY_RISK        : 0.0,
+                  PRIVACY_RISK      : 0.0,
+                  INTERNET_RISK     : 0.0,
+                  BINARY_RISK       : 0.0,
+                  DYNAMIC_RISK      : 0.0,
+                }
+
+
+        if apk_file.is_valid_APK() :
+            try :
+                vm = dvm.DalvikVMFormat( apk_file.get_dex() )
+            except Exception, e :
+                return -1 
+
+            vmx = analysis.VMAnalysis( vm )
+
+            self.__eval_risk_perm( apk_file.get_details_permissions(), risks )
+            self.__eval_risk_dyn( vmx, risks )
+            self.__eval_risk_bin( apk_file.get_files_types(), risks )
+
+            val = self.__eval_risks( risks )
+            return val
+        return -1
+
+    def with_dex(self, dex_file) :
+        """
+            @param dex_file : a buffer
+
+            @rtype : return the risk of the dex file (from 0.0 to 100.0)
+        """
+        risks = { DANGEROUS_RISK    : 0.0,
+                  MONEY_RISK        : 0.0,
+                  PRIVACY_RISK      : 0.0,
+                  INTERNET_RISK     : 0.0,
+                  BINARY_RISK       : 0.0,
+                  DYNAMIC_RISK      : 0.0,
+                }
+       
+        try : 
+            vm = dvm.DalvikVMFormat( dex_file )
+        except Exception, e :
+            return -1
+
+        vmx = analysis.VMAnalysis( vm )
+       
+        d = {}
+        for i in vmx.get_permissions( [] ) :
+            d[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][i] 
+        
+        self.__eval_risk_perm( d, risks )
+        self.__eval_risk_dyn( vmx, risks )
+        
+        val = self.__eval_risks( risks )
+        return val
+
 
 class MethodScore :
     def __init__(self, length, matches, android_entropy, java_entropy, permissions, similarity_matches) :
