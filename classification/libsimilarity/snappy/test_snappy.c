@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "snappy.h"
+#include "snappy.h"
 
 #define LEN 30
 #define LEN2 LEN*2
@@ -24,7 +24,7 @@ void hexdump(unsigned char * data, unsigned int amount, size_t addr)
     {
       if ( (dp % 16) == 1 )
         {
-          fprintf( stdout, "%#08x | ", addr+dp-1 );
+          fprintf( stdout, "%#08" PRIXPTR " | ", (uintptr_t)addr+dp-1 );
         }
 
       fprintf( stdout, "%02x ", data[dp-1] );
@@ -68,7 +68,7 @@ void hexdump(unsigned char * data, unsigned int amount, size_t addr)
 int main(int argc, char *argv[])
 {
    unsigned char data[LEN], data2[LEN2];
-   unsigned int avail_out;
+   size_t avail_out;
    int ret;
 
    memset(data, 0, sizeof(data));
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
    avail_out = sizeof(data2);
 
    ret = snappyCompress(9, data, strlen(STRING1), data2, &avail_out);
-   printf("RET = %d AVAIL OUT %d\n", ret, avail_out);
+   printf("RET = %d AVAIL OUT %" PRIdPTR "\n", ret, (uintptr_t)avail_out);
    hexdump(data, sizeof(data), (size_t)data);
    hexdump(data2, sizeof(data2), (size_t)data2);
 

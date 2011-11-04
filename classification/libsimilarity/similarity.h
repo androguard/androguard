@@ -25,8 +25,8 @@ struct libsimilarity {
    void *cmp;
    unsigned size_cmp;
 
-   unsigned int *corig;
-   unsigned int *ccmp;
+   size_t *corig;
+   size_t *ccmp;
 
    float res;
 };
@@ -40,7 +40,7 @@ extern "C" {
 }
 #else
 void set_compress_type(int);
-unsigned int compress(int, void *, unsigned int);
+unsigned int compress(int, void *, size_t);
 int ncd(int, libsimilarity_t *);
 int ncs(int, libsimilarity_t *);
 int cmid(int, libsimilarity_t *);

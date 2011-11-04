@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
-int snappyCompress(int, void *, size_t, void *, size_t *);
+int snappyCompress(int, const unsigned char *, size_t, unsigned char *, size_t *);
 
 #endif

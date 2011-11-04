@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int lzmaCompress(int, void *, unsigned int, void *, unsigned int *);
+int lzmaCompress(int, const unsigned char *, size_t , unsigned char *, size_t *);
 
 #endif

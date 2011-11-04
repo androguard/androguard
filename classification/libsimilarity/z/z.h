@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int zCompress(int, void *, unsigned int, void *, unsigned int *);
+int zCompress(int, const unsigned char *, size_t, unsigned char *, size_t *);
 
 #endif

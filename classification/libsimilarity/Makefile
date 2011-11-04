@@ -24,7 +24,7 @@ ZIP :
 	cd xz && make
 	cd lzma && make
 	cd snappy && make
-	
+
 LIBSIMILARITY :
 	$(CC) -o $(LIBNAME).so $(OBJ) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS)
 

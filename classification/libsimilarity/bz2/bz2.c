@@ -2,7 +2,7 @@
 
 #include <bzlib.h>
 
-int bz2Compress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+int bz2Compress(int level, const unsigned char *data, size_t avail_in, unsigned char *odata, size_t *avail_out)
 {
    int ret;
    int verbosity = 0;

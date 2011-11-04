@@ -23,7 +23,7 @@
 #define M_BLOCK         1000000
 
 unsigned char inbuf[M_BLOCK];
-int (*generic_Compress)(int, void *, unsigned int, void *, unsigned int *) = zCompress;
+int (*generic_Compress)(int, const unsigned char *, size_t, unsigned char *, size_t *) = zCompress;
 
 void *alloc_buff(unsigned int s1, unsigned int s2, unsigned int *nsize, int *context) {
     void *addr;
@@ -74,10 +74,11 @@ void set_compress_type(int type) {
    }
 }
 
-unsigned int compress(int level, void *orig, unsigned int size_orig) 
+unsigned int compress(int level, void *orig, size_t size_orig) 
 {
    int context;
-   unsigned int s1, size_tmp_buff, ret;
+   size_t s1;
+   unsigned int size_tmp_buff, ret;
    void *tmp_buff;
 
    tmp_buff = alloc_buff( size_orig, 0, &size_tmp_buff, &context );
@@ -97,10 +98,11 @@ unsigned int compress(int level, void *orig, unsigned int size_orig)
 int ncd(int level, libsimilarity_t *n) 
 {
    int context;
-   unsigned int s1, s2, s3, size_tmp_buff, size_join_buff, max, min, ret;
+   size_t s1, s2, s3;
+   unsigned int size_tmp_buff, size_join_buff, max, min, ret;
    void *tmp_buff, *joinbuff;
 
-   //printf("ORIG = 0x%x SIZE_ORIG = 0x%x CMP = 0x%x SIZE_CMP = 0x%x 0x%x 0x%x\n", (unsigned int)(n->orig), n->size_orig, (unsigned int)(n->cmp), n->size_cmp, *(n->corig), *(n->ccmp));
+   //printf("ORIG = 0x%p SIZE_ORIG = 0x%x CMP = 0x%p SIZE_CMP = 0x%x 0x%x 0x%x\n", n->orig, n->size_orig, n->cmp, n->size_cmp, *(n->corig), *(n->ccmp));
 
    if ((n->size_orig == 0) || (n->size_cmp == 0)) {
         n->res = 1.0;
@@ -114,7 +116,7 @@ int ncd(int level, libsimilarity_t *n)
       s1 = size_tmp_buff;
       //printf("COMPRESS S1 ...\n");
       ret = generic_Compress(level, n->orig, n->size_orig, tmp_buff, &s1);
-      //printf("S1 RET = %d AVAIL OUT %d\n", ret, s1);
+      //printf("S1 RET = %d AVAIL OUT %" PRIdPTR "\n", ret, s1);
       if (ret < 0) {
           free_buff( tmp_buff, context );
           return -1;
@@ -123,12 +125,14 @@ int ncd(int level, libsimilarity_t *n)
       *(n->corig) = s1;
    }
 
+   if (n->ccmp == 0) 
+     return -1;
    s2 = *(n->ccmp);
    if (s2 == 0) {
       s2 = size_tmp_buff;
       //printf("COMPRESS S2 ...\n");
       ret = generic_Compress(level, n->cmp, n->size_cmp, tmp_buff, &s2);
-      //printf("S2 RET = %d AVAIL OUT %d\n", ret, s2);
+      //printf("S2 RET = %d AVAIL OUT %" PRIdPTR "\n", ret, s2);
       if (ret < 0) {
           free_buff( tmp_buff, context );
           return -1;
@@ -151,7 +155,7 @@ int ncd(int level, libsimilarity_t *n)
    ret = generic_Compress(level, joinbuff, size_join_buff, tmp_buff, &s3);
    free(joinbuff);
 
-   //printf("S3 RET = %d %d AVAIL OUT %d\n", ret, size_join_buff, s3);
+   //printf("S3 RET = %d %d AVAIL OUT %" PRIdPTR "\n", ret, size_join_buff, s3);
    if (ret < 0) {
         free_buff( tmp_buff, context );
         return -1;
@@ -172,7 +176,7 @@ int ncd(int level, libsimilarity_t *n)
        n->res = 1.0;
    }
 
-   //printf("S3 = %d MIN = %d MAX = %d %f\n", s3, min, max, n->res);
+   //printf("S3 = %" PRIdPTR " MIN = %d MAX = %d %f\n", s3, min, max, n->res);
 
    return 0;
 }
@@ -189,7 +193,8 @@ int ncs(int level, libsimilarity_t *n)
 int cmid(int level, libsimilarity_t *n) 
 {
    int context;
-   unsigned int s1, s2, s3, size_tmp_buff, size_join_buff, max, min, ret;
+   size_t s1, s2, s3;
+   unsigned int size_tmp_buff, size_join_buff, max, min, ret;
    void *tmp_buff, *joinbuff;
 
    //printf("ORIG = 0x%x SIZE_ORIG = 0x%x CMP = 0x%x SIZE_CMP = 0x%x 0x%x 0x%x\n", (unsigned int)(n->orig), n->size_orig, (unsigned int)(n->cmp), n->size_cmp, *(n->corig), *(n->ccmp));

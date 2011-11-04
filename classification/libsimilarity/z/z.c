@@ -3,7 +3,7 @@
 #include <zlib.h>
 
 
-int zCompress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+int zCompress(int level, const unsigned char *data, size_t avail_in, unsigned char *odata, size_t *avail_out)
 {
    int ret;
    z_stream strm;

@@ -77,14 +77,14 @@ static char *Smaz_rcb[254] = {
 };
 
 
-int smaz_compress(char *in, int inlen, char *out, int outlen) {
+int smaz_compress(const unsigned char *in, size_t inlen, unsigned char *out, size_t outlen) {
     unsigned int h1,h2,h3=0;
     int verblen = 0, _outlen = outlen;
-    char verb[256], *_out = out;
+    unsigned char verb[256], *_out = out;
 
     while(inlen) {
         int j = 7, needed;
-        char *flush = NULL;
+        unsigned char *flush = NULL;
         char *slot;
 
         h1 = h2 = in[0]<<3;
@@ -155,7 +155,7 @@ out:
     return out-_out;
 }
 
-int sCompress(int level, char *in, unsigned int inlen, char *out, unsigned int *outlen) {
+int sCompress(int level, const unsigned char *in, size_t inlen, unsigned char *out, size_t *outlen) {
    int res = smaz_compress(in, inlen, out, *outlen);
    *outlen = res;
    

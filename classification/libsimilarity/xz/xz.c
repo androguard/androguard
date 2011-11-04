@@ -8,7 +8,7 @@
 #define INTEGRITY_CHECK LZMA_CHECK_NONE 
 //LZMA_CHECK_CRC64
 
-int xzCompress(int level, void *data, unsigned int avail_in, void *odata, unsigned int *avail_out)
+int xzCompress(int level, const unsigned char *data, size_t avail_in, unsigned char *odata, size_t *avail_out)
 {
    uint32_t preset = COMPRESSION_LEVEL | (COMPRESSION_EXTREME ? LZMA_PRESET_EXTREME : 0);
    lzma_check check = INTEGRITY_CHECK;

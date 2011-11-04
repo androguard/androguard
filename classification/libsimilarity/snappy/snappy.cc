@@ -25,7 +25,7 @@ extern "C" void snappy_compress(const char * input, size_t input_size, char * ou
 
 #endif
 
-extern "C" int snappyCompress(int level, void *data, unsigned int avail_in, void *odata, size_t *avail_out)
+extern "C" int snappyCompress(int level, const unsigned char *data, size_t avail_in, unsigned char *odata, size_t *avail_out)
 {
    size_t max_comp_size;
 
