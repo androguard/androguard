@@ -1474,6 +1474,16 @@ def show_Permissions( dx ) :
     for i in p :
         print i, ":"
         show_Path( p[i] )
+        
+def show_DynCode(dx) :
+    """
+        Show where dynamic code is used
+        @param dx : the analysis virtual machine
+    """
+
+    for m, _ in dx.tainted_packages.get_packages() :
+        if m.get_info() == "Ldalvik/system/DexClassLoader;" :
+           show_Path( m.get_paths() ) 
 
 class TaintedPackages :
     def __init__(self, _vm) :
