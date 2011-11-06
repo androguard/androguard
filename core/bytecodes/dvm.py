@@ -2923,8 +2923,9 @@ class ClassManager :
             try : 
                 import dvmnative
                 self.engine[0] = "native"
-                self.engine.append( dvmnative.DVM() )
+                self.engine.append( dvmnative.DalvikBytecode() )
             except ImportError :
+                
                 self.engine[0] = "python"
 
     def set_vmanalysis(self, vmanalysis) :

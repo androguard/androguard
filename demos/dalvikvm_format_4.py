@@ -14,7 +14,8 @@ import dvm, analysis, decompiler
 TEST = "apks/malwares/DroidDream/tmp/classes.dex"
 
 j = dvm.DalvikVMFormat( open(TEST).read() )
-d = decompiler.DecompilerDed( j )
+d = decompiler.DecompilerDex2Jad( j )
+#d = decompiler.DecompilerDed( j )
 j.set_decompiler( d )
 
 # SHOW METHODS
