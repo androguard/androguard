@@ -26,6 +26,68 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter, TerminalFormatter
 from pygments.token import Token, Text, STANDARD_TYPES
 
+class DecompilerDex2Jad :
+    def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad") :
+        self.classes = {}
+        self.classes_failed = []
+        
+        pathtmp = os.getcwd() + "/tmp/"
+        
+        fd, fdname = tempfile.mkstemp( dir=pathtmp )
+        fd = os.fdopen(fd, "w+b")
+        fd.write( vm.get_buff() )
+        fd.flush()
+        fd.close()
+       
+        dirname = tempfile.mkdtemp(prefix=fdname + "-src")
+        compile = Popen([ path_dex2jar + bin_dex2jar, fdname ], stdout=PIPE, stderr=STDOUT)        
+        stdout, stderr = compile.communicate()
+        os.unlink( fdname )
+
+        pathclasses = fdname + "dex2jar/"
+        compile = Popen([ "unzip", fdname + "_dex2jar.jar", "-d", pathclasses ], stdout=PIPE, stderr=STDOUT)        
+        stdout, stderr = compile.communicate()
+        os.unlink( fdname + "_dex2jar.jar" )
+
+        for root, dirs, files in os.walk( pathclasses, followlinks=True ) :
+            if files != [] :
+                for f in files :
+                    real_filename = root
+                    if real_filename[-1] != "/" :
+                        real_filename += "/"
+                    real_filename += f
+                    
+                    compile = Popen([ path_jad + bin_jad, "-o", "-d", root, real_filename ], stdout=PIPE, stderr=STDOUT)
+                    stdout, stderr = compile.communicate()
+
+        for i in vm.get_classes() :
+            fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
+            if os.path.isfile(fname) == True :
+                fd = open(fname, "r")
+                self.classes[ i.get_name() ] = fd.read() 
+                fd.close()
+            else :
+                self.classes_failed.append( i.get_name() )
+    
+    def get_source(self, class_name, method_name) :
+        if class_name not in self.classes :
+            return ""
+
+        lexer = get_lexer_by_name("java", stripall=True)
+        lexer.add_filter(MethodFilter(method_name=method_name))
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
+
+    def get_all(self, class_name) :
+        if class_name not in self.classes :
+            return ""
+
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
+
 class DecompilerDed :
     def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh") :
         self.classes = {}

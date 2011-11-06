@@ -1,4 +1,4 @@
-SRC	= 	dvm.cc
+SRC	= 	dvm.cc buff.cc
 
 LDFLAGS = 
 CFLAGS  += 	-fPIC -I/usr/include/python2.6/       
