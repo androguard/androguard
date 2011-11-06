@@ -127,6 +127,7 @@ int ncd(int level, libsimilarity_t *n)
 
    if (n->ccmp == 0) 
      return -1;
+
    s2 = *(n->ccmp);
    if (s2 == 0) {
       s2 = size_tmp_buff;
