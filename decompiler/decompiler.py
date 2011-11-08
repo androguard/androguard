@@ -26,6 +26,14 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter, TerminalFormatter
 from pygments.token import Token, Text, STANDARD_TYPES
 
+def rrmdir( directory ):
+    for root, dirs, files in os.walk(directory, topdown=False):
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    os.rmdir( directory )
+
 class DecompilerDex2Jad :
     def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad") :
         self.classes = {}
@@ -39,7 +47,6 @@ class DecompilerDex2Jad :
         fd.flush()
         fd.close()
        
-        dirname = tempfile.mkdtemp(prefix=fdname + "-src")
         compile = Popen([ path_dex2jar + bin_dex2jar, fdname ], stdout=PIPE, stderr=STDOUT)        
         stdout, stderr = compile.communicate()
         os.unlink( fdname )
@@ -69,6 +76,8 @@ class DecompilerDex2Jad :
             else :
                 self.classes_failed.append( i.get_name() )
     
+        rrmdir( pathclasses )
+
     def get_source(self, class_name, method_name) :
         if class_name not in self.classes :
             return ""
@@ -128,13 +137,8 @@ class DecompilerDed :
                 fd.close()
             else :
                 self.classes_failed.append( i.get_name() )
-       
-        for root, dirs, files in os.walk(dirname, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir( dirname )
+      
+        rrmdir( dirname )
 
     def get_source(self, class_name, method_name) :
         if class_name not in self.classes :

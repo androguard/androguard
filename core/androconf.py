@@ -23,6 +23,10 @@ ANDROGUARD_VERSION = "0.9"
 CONF = {
     "BIN_DED" : "ded.sh",
     "PATH_DED" : "./decompiler/ded/",
+    "PATH_DEX2JAR" : "./decompiler/dex2jar/",
+    "BIN_DEX2JAR" : "dex2jar.sh",
+    "PATH_JAD" : "./decompiler/jad/",
+    "BIN_JAD" : "jad",
 }
 
 class Color:

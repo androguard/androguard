@@ -1370,3 +1370,565 @@ DCode *DalvikBytecode::new_code(const char *data, size_t data_len) {
     return d;
 }
 
+/* PYTHON BINDING */
+typedef struct {
+    PyObject_HEAD;
+    DBC *d;
+} dvm_DBCObject;
+
+static void
+DBC_dealloc(dvm_DBCObject* self)
+{
+    //cout<<"Called dbc dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DBCObject *self;
+
+    self = (dvm_DBCObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
+{
+    return 0;
+}
+
+static PyObject *DBC_get_opvalue(dvm_DBCObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_opvalue());
+}
+
+static PyObject *DBC_get_length(dvm_DBCObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_length());
+}
+
+static PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args)
+{
+    return PyString_FromString( self->d->get_opname() );
+}
+
+static PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
+{
+    PyObject *operands = PyList_New( 0 );
+
+    for(int ii=1; ii < self->d->voperands->size(); ii++) {
+        PyObject *ioperands = PyList_New( 0 );
+
+        if ((*self->d->vdescoperands)[ii] == FIELD) {
+            PyList_Append( ioperands, PyString_FromString( "field@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == METHOD) {
+            PyList_Append( ioperands, PyString_FromString( "meth@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == TYPE) {
+            PyList_Append( ioperands, PyString_FromString( "type@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == INTEGER) {
+            PyList_Append( ioperands, PyString_FromString( "#+" ) );
+        } else if ((*self->d->vdescoperands)[ii] == STRING) {
+            PyList_Append( ioperands, PyString_FromString( "string@" ) );
+        } else if ((*self->d->vdescoperands)[ii] == INTEGER_BRANCH) {
+            PyList_Append( ioperands, PyString_FromString( "+" ) );
+        } else {
+            PyList_Append( ioperands, PyString_FromString( "v" ) );
+        }
+        
+        PyList_Append( ioperands, PyInt_FromLong( (*self->d->voperands)[ii] ) );
+        
+        PyList_Append( operands, ioperands );
+    }
+
+    return operands;
+}
+
+static PyMethodDef DBC_methods[] = {
+    {"get_op_value",  (PyCFunction)DBC_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBC_get_length, METH_NOARGS, "get nb bytecodes" },
+    {"get_name",  (PyCFunction)DBC_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBC_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBC",             /*tp_name*/
+    sizeof(dvm_DBCObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBC_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBC_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBC_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBC_new,                 /* tp_new */
+};
+
+typedef struct {
+    PyObject_HEAD;
+    DBCSpe *d;
+} dvm_DBCSpeObject;
+
+static void
+DBCSpe_dealloc(dvm_DBCSpeObject* self)
+{
+    //cout<<"Called dbcspe dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DBCSpe_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DBCSpeObject *self;
+
+    self = (dvm_DBCSpeObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DBCSpe_init(dvm_DBCSpeObject *self, PyObject *args, PyObject *kwds)
+{
+    return 0;
+}
+
+static PyObject *DBCSpe_get_opvalue(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", -1);
+}
+
+static PyObject *DBCSpe_get_name(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return PyString_FromString( self->d->get_opname() );
+}
+
+static PyObject *DBCSpe_get_operands(dvm_DBCSpeObject *self, PyObject* args)
+{
+    if (self->d->get_type() == 0) {
+        FillArrayData *fad = reinterpret_cast<FillArrayData *>( self->d );
+        return PyString_FromStringAndSize( fad->data, fad->data_size );
+    } else if (self->d->get_type() == 1) {
+        SparseSwitch *ss = reinterpret_cast<SparseSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        
+        PyObject *ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->keys.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ss->keys[ii] ) );
+        PyList_Append( operands, ioperands );
+      
+        ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->targets.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ss->targets[ii] ) );
+        PyList_Append( operands, ioperands );
+
+        return operands;
+    } else if (self->d->get_type() == 2) {
+        PackedSwitch *ps = reinterpret_cast<PackedSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        PyList_Append( operands, PyInt_FromLong( ps->pst.first_key ) );
+      
+        PyObject *ioperands = PyList_New( 0 );
+        for (int ii = 0; ii < ps->targets.size(); ii++)
+            PyList_Append( ioperands, PyInt_FromLong( ps->targets[ii] ) );
+        PyList_Append( operands, ioperands );
+
+        return operands;
+    }
+
+    return NULL; 
+}
+
+static PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args)
+{
+    if (self->d->get_type() == 1) {
+        SparseSwitch *ss = reinterpret_cast<SparseSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        for (int ii = 0; ii < ss->targets.size(); ii++)
+            PyList_Append( operands, PyInt_FromLong( ss->targets[ii] ) );
+
+        return operands;
+    } else if (self->d->get_type() == 2) {
+        PackedSwitch *ps = reinterpret_cast<PackedSwitch *>( self->d );
+        
+        PyObject *operands = PyList_New( 0 );
+        for (int ii = 0; ii < ps->targets.size(); ii++)
+            PyList_Append( operands, PyInt_FromLong( ps->targets[ii] ) );
+
+        return operands;
+    }
+
+    return NULL; 
+}
+
+static PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", self->d->get_length());
+}
+
+static PyMethodDef DBCSpe_methods[] = {
+    {"get_name",  (PyCFunction)DBCSpe_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_op_value",  (PyCFunction)DBCSpe_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBCSpe_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {"get_targets",  (PyCFunction)DBCSpe_get_targets, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBCSpe_get_length, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCSpeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBCSpe",             /*tp_name*/
+    sizeof(dvm_DBCSpeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBCSpe_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBCSpe_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBCSpe_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBCSpe_new,                 /* tp_new */
+};
+
+typedef struct {
+    PyObject_HEAD;
+    DalvikBytecode *dparent;
+    DCode *d;
+} dvm_DCodeObject;
+
+static void
+DCode_dealloc(dvm_DCodeObject* self)
+{
+    //cout<<"Called dcode dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DCode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DCodeObject *self;
+
+    self = (dvm_DCodeObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
+{
+    const char *code;
+    size_t code_len;
+
+    if (self != NULL) {
+        //cout<<"Called dcode init\n"; 
+        
+        int ok = PyArg_ParseTuple( args, "s#", &code, &code_len);
+        if(!ok) return -1;
+    
+
+        self->d = self->dparent->new_code( code, code_len );
+    }
+
+    return 0;
+}
+
+static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
+{
+    //cout<<"Called get_nb_bytecodes()\n"; 
+
+    return Py_BuildValue("i", self->d->size());
+}
+
+static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
+{
+    PyObject *bytecodes_list = PyList_New( 0 );
+
+    for (int ii=0; ii < self->d->bytecodes.size(); ii++) {
+        PyObject *nc = DBC_new(&dvm_DBCType, NULL, NULL);
+        dvm_DBCObject *dc = (dvm_DBCObject *)nc;
+
+        dc->d = self->d->bytecodes[ii];
+
+        Py_INCREF( nc );
+
+        PyList_Append( bytecodes_list, nc );
+    }
+    
+    return bytecodes_list;
+}
+
+static PyObject *DCode_get_bytecodes_spe(dvm_DCodeObject *self, PyObject* args)
+{
+    PyObject *bytecodes_list = PyList_New( 0 );
+    
+    for (int ii=0; ii < self->d->bytecodes_spe.size(); ii++) {
+        PyObject *nc = DBCSpe_new(&dvm_DBCSpeType, NULL, NULL);
+        dvm_DBCSpeObject *dc = (dvm_DBCSpeObject *)nc;
+
+        dc->d = self->d->bytecodes_spe[ii];
+
+        Py_INCREF( nc );
+
+        PyList_Append( bytecodes_list, nc );
+    }
+
+    return bytecodes_list;
+}
+
+static PyMethodDef DCode_methods[] = {
+    {"get_nb_bytecodes",  (PyCFunction)DCode_get_nb_bytecodes, METH_NOARGS, "get nb bytecodes" },
+    {"get_bytecodes",  (PyCFunction)DCode_get_bytecodes, METH_NOARGS, "get nb bytecodes" },
+    {"get_bytecodes_spe",  (PyCFunction)DCode_get_bytecodes_spe, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DCodeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DCode",             /*tp_name*/
+    sizeof(dvm_DCodeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DCode_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DCode objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DCode_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,            /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DCode_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DCode_new,                 /* tp_new */
+};
+
+typedef struct {
+    PyObject_HEAD;
+    DalvikBytecode *d;
+} dvm_DalvikBytecodeObject;
+
+static void
+DalvikBytecode_dealloc(dvm_DalvikBytecodeObject* self)
+{
+    //cout<<"Called dvm dealloc\n";
+
+    delete self->d;
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *DalvikBytecode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    dvm_DalvikBytecodeObject *self;
+
+    self = (dvm_DalvikBytecodeObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->d = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static int
+DalvikBytecode_init(dvm_DalvikBytecodeObject *self, PyObject *args, PyObject *kwds)
+{
+    if (self != NULL)
+        self->d = new DalvikBytecode();
+    
+    return 0;
+}
+
+static PyObject *DalvikBytecode_new_code(dvm_DalvikBytecodeObject *self, PyObject* args)
+{
+    //cout<<"Called new code()\n"; 
+
+    PyObject *nc = DCode_new(&dvm_DCodeType, NULL, NULL);
+ 
+    dvm_DCodeObject *dnc = (dvm_DCodeObject *)nc;
+
+    dnc->dparent = self->d;
+    DCode_init( (dvm_DCodeObject *)nc, args, NULL );
+   
+    //Py_INCREF( nc );
+
+    return nc;
+}
+
+static PyMethodDef DalvikBytecode_methods[] = {
+    {"new_code",  (PyCFunction)DalvikBytecode_new_code, METH_VARARGS, "new code" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DalvikBytecodeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DalvikBytecode",             /*tp_name*/
+    sizeof(dvm_DalvikBytecodeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DalvikBytecode_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DalvikBytecode objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DalvikBytecode_methods,             /* tp_methods */
+    NULL,              /* tp_members */
+    NULL,            /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DalvikBytecode_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DalvikBytecode_new,                 /* tp_new */
+};
+
+static PyMethodDef dvm_methods[] = {
+    {NULL}  /* Sentinel */
+};
+
+extern "C" PyMODINIT_FUNC initdvmnative(void) {
+    PyObject *m;
+
+    dvm_DalvikBytecodeType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DalvikBytecodeType) < 0)
+        return;
+
+    dvm_DCodeType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DCodeType) < 0)
+        return;
+
+    dvm_DBCType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DBCType) < 0)
+        return;
+
+    dvm_DBCSpeType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&dvm_DBCSpeType) < 0)
+        return;
+    
+    m = Py_InitModule3("dvmnative", dvm_methods, "Example module that creates an extension type.");
+
+    Py_INCREF(&dvm_DalvikBytecodeType);
+    PyModule_AddObject(m, "DalvikBytecode", (PyObject *)&dvm_DalvikBytecodeType);
+    
+    Py_INCREF(&dvm_DCodeType);
+    PyModule_AddObject(m, "DCode", (PyObject *)&dvm_DCodeType);
+    
+    Py_INCREF(&dvm_DBCType);
+    PyModule_AddObject(m, "DBC", (PyObject *)&dvm_DBCType);
+    
+    Py_INCREF(&dvm_DBCSpeType);
+    PyModule_AddObject(m, "DBCSpe", (PyObject *)&dvm_DBCSpeType);
+}
+
