@@ -2631,7 +2631,6 @@ class DalvikCode :
         off = buff.get_idx()
         while off % 4 != 0 :
             off += 1
-
         buff.set_idx( off )
 
         self.__offset = self.__CM.add_offset( buff.get_idx(), self )
@@ -2644,7 +2643,7 @@ class DalvikCode :
         self.tries_size = SV( '=H', buff.read( 2 ) )
         self.debug_info_off = SV( '=L', buff.read( 4 ) )
         self.insns_size = SV( '=L', buff.read( 4 ) )
-
+        
         ushort = calcsize( '=H' )
 
         if self.__CM.get_engine() == "native" :
@@ -2774,7 +2773,7 @@ class MapItem :
         general_format = self.format.get_value()
         buff.set_idx( general_format.offset )
 
-#       print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d" % (buff.get_idx(), buff.get_idx(), general_format.size)
+#        print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
 
         if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]
@@ -2925,7 +2924,6 @@ class ClassManager :
                 self.engine[0] = "native"
                 self.engine.append( dvmnative.DalvikBytecode() )
             except ImportError :
-                
                 self.engine[0] = "python"
 
     def set_vmanalysis(self, vmanalysis) :

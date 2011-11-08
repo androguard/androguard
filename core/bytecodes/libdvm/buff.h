@@ -51,6 +51,12 @@ class Buff {
         size_t get_end();
         bool empty();
         int register_dynamic_offset(unsigned long *addr);
+        int set_idx(unsigned long);
+        unsigned char read_uc();
+        char read_c();
+        unsigned long read_ul();
+        unsigned int read_ui();
+        unsigned short read_us();
 };
 
 #endif

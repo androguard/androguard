@@ -107,7 +107,8 @@ def AAnalyzeAPK(filename, raw=False) :
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
     a, d, dx = AnalyzeAPK( filename, raw )
-    d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+    #d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+    d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
 
     return a, d, dx
 

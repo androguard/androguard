@@ -72,3 +72,27 @@ bool Buff::empty() {
 int Buff::register_dynamic_offset(unsigned long *addr) {
     DynamicOffsets.push_back( addr );
 }
+
+int Buff::set_idx(unsigned long idx) {
+    bcurrent_idx = idx;
+}
+
+unsigned char Buff::read_uc() {
+    return *( reinterpret_cast<unsigned char *>( const_cast<char *>(this->read(1))) );
+}
+
+char Buff::read_c() {
+    return *( reinterpret_cast<char *>( const_cast<char *>(this->read(1))) );
+}
+
+unsigned long Buff::read_ul() {
+    return *( reinterpret_cast<unsigned long *>( const_cast<char *>(this->read(4))) );
+}
+
+unsigned int Buff::read_ui() {
+    return *( reinterpret_cast<unsigned int *>( const_cast<char *>(this->read(4))) );
+}
+
+unsigned short Buff::read_us() {
+    return *( reinterpret_cast<unsigned short *>( const_cast<char *>(this->read(2))) );
+}
