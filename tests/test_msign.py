@@ -71,6 +71,8 @@ TESTS = {
     "./apks/mixe/8c0eb00e014f39b9b4e90e25e56b0f85b5332dd231956f9b7f07743df4c80581" : "Ozotshielder.B",
     "./apks/mixe/68e66bb028998c22014f9cc882943bab1497cedc797b638c3f8d479a8eedfd2b" : "Ozotshielder.C",
     "./apks/mixe/6953fb1a1245c4bfaba98fd799a6222fde3567b7bf7380aca2a7ecf006c8c678" : "Tapsnake",
+    "./apks/mixe/e2752f49b478dfa7754c0079c72ce06967b9be99e80b53f5a184a00c00b4686a" : "NickyBot",
+    "./apks/mixe/e7b79446333b7fa2af2cc0c0661e1f9135edefa09b341dfd96bfe4df4e755566" : "Boxer",
 
     # exploits
 
