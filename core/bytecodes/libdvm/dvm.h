@@ -144,5 +144,70 @@ class DalvikBytecode {
         DCode *new_code(const char *data, size_t data_len);
 };
 
+typedef struct {
+    PyObject_HEAD;
+    DBC *d;
+} dvm_DBCObject;
+
+PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+void DBC_dealloc(dvm_DBCObject* self);
+PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+int DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds);
+PyObject *DBC_get_opvalue(dvm_DBCObject *self, PyObject* args);
+PyObject *DBC_get_length(dvm_DBCObject *self, PyObject* args);
+PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args);
+PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args);
+
+static PyMethodDef DBC_methods[] = {
+    {"get_op_value",  (PyCFunction)DBC_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBC_get_length, METH_NOARGS, "get nb bytecodes" },
+    {"get_name",  (PyCFunction)DBC_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBC_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBC",             /*tp_name*/
+    sizeof(dvm_DBCObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBC_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBC_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBC_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBC_new,                 /* tp_new */
+};
+
+
 #endif
 #endif

@@ -68,7 +68,6 @@ bool Buff::empty() {
     return bcurrent_idx == bdata_len;
 }
 
-
 int Buff::register_dynamic_offset(unsigned long *addr) {
     DynamicOffsets.push_back( addr );
 }
