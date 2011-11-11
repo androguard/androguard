@@ -516,7 +516,7 @@ DALVIK_OPCODES = {
                         ###################
                       }
 
-MATH_DVM_OPCODES = { "add." : '+',
+MATH_DVM_OPCODES = {        "add." : '+',
                             "div." : '/',
                             "mul." : '*',
                             "or." : '|',
@@ -525,7 +525,7 @@ MATH_DVM_OPCODES = { "add." : '+',
                             "xor." : '^',
                             "shl." : "<<",
                             "shr." : ">>",
-                         }
+                    }
 
 INVOKE_DVM_OPCODES = [ "invoke." ]
 
@@ -718,6 +718,13 @@ def determineException(vm, m) :
 
     #print m.get_name(), exceptions 
     return exceptions
+
+def DVM_TOSTRING() :
+    return { "O" : MATH_DVM_OPCODES.keys(),
+             "I" : INVOKE_DVM_OPCODES,
+             "G" : FIELD_READ_DVM_OPCODES,
+             "P" : FIELD_WRITE_DVM_OPCODES,
+            }
 
 class HeaderItem :
     def __init__(self, size, buff, cm) :
@@ -3290,6 +3297,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def get_type(self) :
         return "DVM"
     
+    def get_BRANCH_DVM_OPCODES(self) :
+        return BRANCH_DVM_OPCODES
+
+    def get_determineNext(self) :
+        return determineNext
+
+    def get_determineException(self) :
+        return determineException
+
+    def get_DVM_TOSTRING(self) :
+        return DVM_TOSTRING()
+
     def set_decompiler(self, decompiler) :
         self.CM.set_decompiler( decompiler )
 
