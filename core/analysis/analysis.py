@@ -116,29 +116,6 @@ class BreakBlock(object) :
             print "\t\t",
             i.show(0)
 
-##### DVM ######
-
-MATH_DVM_RE = []
-for i in dvm.MATH_DVM_OPCODES :
-    MATH_DVM_RE.append( (re.compile( i ), dvm.MATH_DVM_OPCODES[i]) )
-
-DVM_TOSTRING = { "O" : dvm.MATH_DVM_OPCODES.keys(),
-                 "I" : dvm.INVOKE_DVM_OPCODES,
-                 "G" : dvm.FIELD_READ_DVM_OPCODES,
-                 "P" : dvm.FIELD_WRITE_DVM_OPCODES,
-               }
-
-class DVMBreakBlock(BreakBlock) :
-    def __init__(self, _vm) :
-        super(DVMBreakBlock, self).__init__(_vm)
-
-    def analyze(self) :
-        for i in self._ins :
-            for mre in MATH_DVM_RE :
-                if mre[0].match( i.get_name() ) :
-                    self._ops.append( mre[1] )
-                    break
-
 ##### JVM ######
 FIELDS = {
             "getfield" : "R",
@@ -1825,7 +1802,10 @@ class MethodAnalysis :
                "TS" : JVM_TOSTRING, "Dexception" : jvm.determineException }
         if self.__vm.get_type() == "DVM" :
             BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : dvm.determineNext,
-                   "TS" : DVM_TOSTRING, "Dexception" : dvm.determineException }
+                   "TS" : dvm.DVM_TOSTRING(), "Dexception" : dvm.determineException }
+        #if self.__vm.get_type() == "DVM" :
+        #    BO = { "BasicOPCODES" : self.__vm.get_BRANCH_DVM_OPCODES(), "BasicClass" : DVMBasicBlock, "Dnext" : self.__vm.get_determineNext(),
+        #           "TS" : self.__vm.get_DVM_TOSTRING(), "Dexception" : self.__vm.get_determineException() }
 
         self.__TS = ToString( BO[ "TS" ] )
 

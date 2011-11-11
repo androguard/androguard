@@ -326,6 +326,9 @@ class MSignature :
         """
         return self._check_dalvik( buff )
 
+    def check_dex_direct(self, d, dx) :
+        return self._check_dalvik_direct( d, dx )
+
     def __check_meths(self) :
         if self.debug :
             print "S",
@@ -402,6 +405,9 @@ class MSignature :
         vm = dvm.DalvikVMFormat( buff )
         vmx = VMAnalysis( vm )
 
+        return self._check_dalvik_direct( vm, vmx )
+
+    def _check_dalvik_direct(self, vm, vmx) :
         # check methods with similarity
         self.__load_meths(vm, vmx)
         ret, l = self.__check_meths()
