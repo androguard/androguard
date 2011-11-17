@@ -96,11 +96,11 @@ class Signature :
             internal = []
 
             if "return" in b.get_last().get_name() :
-                internal.append( (b.end, "R") )
+                internal.append( (b.end-1, "R") )
             elif "if" in b.get_last().get_name() :
-                internal.append( (b.end, "I") )
+                internal.append( (b.end-1, "I") )
             elif "goto" in b.get_last().get_name() :
-                internal.append( (b.end, "G") )
+                internal.append( (b.end-1, "G") )
             
             for f in functions :
                 try :
@@ -111,7 +111,7 @@ class Signature :
             internal.sort()
 
             for i in internal :
-                if i[0] >= b.start and i[0] <= b.end :
+                if i[0] >= b.start and i[0] < b.end :
                     l.append( i )
 
             del internal
@@ -155,17 +155,12 @@ class Signature :
             return buff
 
         handlers = code.handlers
-#       for try_item in method.get_code().tries :
-#           print "w00t", try_item
 
         handler_catch_list = method.get_code().handlers
 
-        #print "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size
         for handler_catch in handler_catch_list.list :
-            #print "\t\t HANDLER_CATCH SIZE ", handler_catch.size
             for handler in handler_catch.handlers :
                 buff += analysis_method.get_vm().get_class_manager().get_type( handler.type_idx )
-                #print "\t\t\t HANDLER", handler.type_idx, a.get_vm().get_class_manager().get_type( handler.type_idx ), handler.add
         return buff
 
     def _get_strings_a1(self, analysis_method) :
@@ -197,12 +192,14 @@ class Signature :
         return l
 
     def _get_fields_a(self, analysis_method) :
+        #print analysis_method
         fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
 
         l = []
 
         for f in fields_method :
             for path in fields_method[ f ] :
+                #print (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ])
                 l.append( (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ]) )
         return l
 

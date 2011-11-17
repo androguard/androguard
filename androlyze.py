@@ -28,6 +28,7 @@ from jvm import *
 from dvm import *
 from apk import *
 from analysis import *
+from ganalysis import *
 from diff import *
 from msign import *
 from decompiler import *
@@ -88,16 +89,16 @@ def AnalyzeAPK(filename, raw=False) :
 
     d = DalvikVMFormat( a.get_dex() )
     dx = VMAnalysis( d )
-
+    gx = GVMAnalysis( dx, a )
     d.set_vmanalysis( dx )
-
     ExportVMToPython( d )
-
+    ExportXREFToPython( d, gx )
     set_pretty_show( 1 )
 
     return a, d, dx
 
-def AAnalyzeAPK(filename, raw=False) :
+
+def AAnalyzeAPK(filename, raw=False, decompiler="Dex2Jad") :
     """
         Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
 
@@ -107,8 +108,10 @@ def AAnalyzeAPK(filename, raw=False) :
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
     a, d, dx = AnalyzeAPK( filename, raw )
-    #d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
-    d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
+    if decompiler == "Dex2jad" :
+        d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
+    elif decompiler == "Ded" :
+        d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
 
     return a, d, dx
 
@@ -126,11 +129,12 @@ def AnalyzeDex(filename, raw=False) :
         d = DalvikVMFormat( open(filename, "rb").read() )
     else :
         d = DalvikVMFormat( raw )
-
+    
     dx = VMAnalysis( d )
-
+    gx = GVMAnalysis( dx, None )
+    d.set_vmanalysis( dx )
     ExportVMToPython( d )
-
+    ExportXREFToPython( d, gx )
     set_pretty_show( 1 )
 
     return d, dx
