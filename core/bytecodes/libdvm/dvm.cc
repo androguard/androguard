@@ -37,15 +37,6 @@ unsigned long B_A_OP_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned lon
     return 4;
 }
 
-#define OPVALUE 0
-#define REGISTER 1
-#define FIELD 2
-#define METHOD 3
-#define TYPE 4
-#define INTEGER 5
-#define STRING 6
-#define INTEGER_BRANCH 7
-
 unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned long size = B_A_OP_CCCC( b, v, vdesc );
 
@@ -1416,20 +1407,22 @@ PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args)
 PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
 {
     PyObject *operands = PyList_New( 0 );
+    int present; 
 
     for(int ii=1; ii < self->d->voperands->size(); ii++) {
         PyObject *ioperands = PyList_New( 0 );
+        present = -1;
 
         if ((*self->d->vdescoperands)[ii] == FIELD) {
-            PyList_Append( ioperands, PyString_FromString( "field@" ) );
+            PyList_Append( ioperands, PyString_FromString( "field@" ) ); present = 0;
         } else if ((*self->d->vdescoperands)[ii] == METHOD) {
-            PyList_Append( ioperands, PyString_FromString( "meth@" ) );
+            PyList_Append( ioperands, PyString_FromString( "meth@" ) ); present = 0;
         } else if ((*self->d->vdescoperands)[ii] == TYPE) {
-            PyList_Append( ioperands, PyString_FromString( "type@" ) );
+            PyList_Append( ioperands, PyString_FromString( "type@" ) ); present = 0;
         } else if ((*self->d->vdescoperands)[ii] == INTEGER) {
             PyList_Append( ioperands, PyString_FromString( "#+" ) );
         } else if ((*self->d->vdescoperands)[ii] == STRING) {
-            PyList_Append( ioperands, PyString_FromString( "string@" ) );
+            PyList_Append( ioperands, PyString_FromString( "string@" ) ); present = 0;
         } else if ((*self->d->vdescoperands)[ii] == INTEGER_BRANCH) {
             PyList_Append( ioperands, PyString_FromString( "+" ) );
         } else {
@@ -1438,6 +1431,13 @@ PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
         
         PyList_Append( ioperands, PyInt_FromLong( (*self->d->voperands)[ii] ) );
         
+        if (present==0) {
+            for(int jj=0; jj < self->d->vstrings->size(); jj++) {
+                PyList_Append( ioperands, PyString_FromString( (*self->d->vstrings)[jj].c_str() ) );
+            }
+        }
+       
+
         PyList_Append( operands, ioperands );
     }
 

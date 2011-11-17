@@ -528,3 +528,29 @@ def ExportVMToPython(vm) :
                 for j in f[i] :
                     name = "FIELD_" + FormatNameToPython( j.get_name() ) + "_" + FormatDescriptorToPython( j.get_descriptor() )
                     setattr( _class, name, j )
+
+class XREF : 
+    pass
+
+def ExportXREFToPython(vm, gvm) :
+    for _class in vm.get_classes() :
+        for method in _class.get_methods() :
+            method.XREFfrom = XREF()
+            method.XREFto = XREF()
+            
+            key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
+            
+            if key in gvm.nodes :
+                for i in gvm.G.predecessors( gvm.nodes[ key ].id ) :
+                    xref = gvm.nodes_id[ i ]
+                    xref_meth = vm.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
+                    if xref_meth != None :
+                        name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                        setattr( method.XREFfrom, name, xref_meth )
+                
+                for i in gvm.G.successors( gvm.nodes[ key ].id ) :
+                    xref = gvm.nodes_id[ i ]
+                    xref_meth = vm.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
+                    if xref_meth != None :
+                        name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                        setattr( method.XREFto, name, xref_meth )
