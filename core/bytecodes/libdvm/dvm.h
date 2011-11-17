@@ -31,6 +31,15 @@
 
 #include "buff.h"
 
+#define OPVALUE 0
+#define REGISTER 1
+#define FIELD 2
+#define METHOD 3
+#define TYPE 4
+#define INTEGER 5
+#define STRING 6
+#define INTEGER_BRANCH 7
+
 using namespace __gnu_cxx;
 using namespace std;
 using std::cout;
@@ -60,6 +69,7 @@ class DBC {
         size_t op_length;
         vector<unsigned long> *voperands;
         vector<unsigned long> *vdescoperands;
+        vector<string> *vstrings;
 
     public :
         DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector<unsigned long> *vdesc, size_t length);

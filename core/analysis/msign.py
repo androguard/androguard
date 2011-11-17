@@ -502,7 +502,7 @@ class CSignature :
                         raise("ooo")
                     
                     #print m.get_length()
-
+                    
                     z_tmp = create_entropies( vmx, m )
                     z_tmp[0] = base64.b64encode( z_tmp[0] )
                     z.extend( z_tmp )
