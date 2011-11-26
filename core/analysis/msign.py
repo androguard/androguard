@@ -71,7 +71,7 @@ class SignSim :
                                 signature, 
                                 ssign[ 2 : ] )
         
-        #self.fd.write("%d;%f;%f;%f;%f;%f;\"%s\"\n" % (unique_id, ssign[ 2 ], ssign[ 3 ], ssign[ 4 ], ssign[ 5 ], ssign[6], signature))
+        #self.fd.write("%d;%f;%f;%f;%f;%f;\n" % (unique_id, ssign[ 2 ], ssign[ 3 ], ssign[ 4 ], ssign[ 5 ], ssign[6]))
 
         if self.debug :
             print "L:%d I:%d N:%d J:%d %d" % (unique_idlink, unique_id, nb, j, len(signature)),
@@ -85,7 +85,7 @@ class SignSim :
         if self.minimum_signature < len(s1) :
             #if self.debug :
             #    print "ELEM", uniqueid, entropies
-            #self.fd.write("%d;%f;%f;%f;%f;%f;\"%s\"\n" % (uniqueid, entropies[ 0 ], entropies[ 1 ], entropies[ 2 ], entropies[ 3 ], entropies[ 4 ], s1))
+            #self.fd.write("%d;%f;%f;%f;%f;%f;\n" % (uniqueid, entropies[ 0 ], entropies[ 1 ], entropies[ 2 ], entropies[ 3 ], entropies[ 4 ]))
             return self.sign.add_elem_sim( uniqueid, s1, entropies )
 
     def set_npass(self, npass) :
@@ -502,7 +502,7 @@ class CSignature :
                         raise("ooo")
                     
                     #print m.get_length()
-                    
+                   
                     z_tmp = create_entropies( vmx, m )
                     z_tmp[0] = base64.b64encode( z_tmp[0] )
                     z.extend( z_tmp )
