@@ -2780,7 +2780,7 @@ class MapItem :
         general_format = self.format.get_value()
         buff.set_idx( general_format.offset )
 
-#        print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
+        #print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
 
         if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]

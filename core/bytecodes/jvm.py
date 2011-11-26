@@ -222,7 +222,7 @@ JAVA_OPCODES = {
                         0xe  : [ "dconst_0" ],
                         0xf  : [ "dconst_1" ],
                         0x6f : [ "ddiv" ],
-                        0x18 : [ "dload", "index:1" ],
+                        0x18 : [ "dload", "index:B", special_F0, special_F0, None ],
                         0x26 : [ "dload_0" ],
                         0x27 : [ "dload_1" ],
                         0x28 : [ "dload_2" ],
@@ -3170,7 +3170,7 @@ class JVMFormat(bytecode._Bytecode) :
         nb = 0
         for i in self.interfaces :
             print nb,
-            i.show()
+            print i
 
         bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
         nb = 0

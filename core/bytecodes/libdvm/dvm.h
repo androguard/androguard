@@ -218,6 +218,71 @@ static PyTypeObject dvm_DBCType = {
     DBC_new,                 /* tp_new */
 };
 
+typedef struct {
+    PyObject_HEAD;
+    DBCSpe *d;
+} dvm_DBCSpeObject;
+
+void DBCSpe_dealloc(dvm_DBCSpeObject* self);
+PyObject *DBCSpe_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+int DBCSpe_init(dvm_DBCSpeObject *self, PyObject *args, PyObject *kwds);
+PyObject *DBCSpe_get_opvalue(dvm_DBCSpeObject *self, PyObject* args);
+PyObject *DBCSpe_get_name(dvm_DBCSpeObject *self, PyObject* args);
+PyObject *DBCSpe_get_operands(dvm_DBCSpeObject *self, PyObject* args);
+PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args);
+PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args);
+
+static PyMethodDef DBCSpe_methods[] = {
+    {"get_name",  (PyCFunction)DBCSpe_get_name, METH_NOARGS, "get nb bytecodes" },
+    {"get_op_value",  (PyCFunction)DBCSpe_get_opvalue, METH_NOARGS, "get nb bytecodes" },
+    {"get_operands",  (PyCFunction)DBCSpe_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {"get_targets",  (PyCFunction)DBCSpe_get_targets, METH_NOARGS, "get nb bytecodes" },
+    {"get_length",  (PyCFunction)DBCSpe_get_length, METH_NOARGS, "get nb bytecodes" },
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+static PyTypeObject dvm_DBCSpeType = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "dvm.DBCSpe",             /*tp_name*/
+    sizeof(dvm_DBCSpeObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)DBCSpe_dealloc,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "DBC objects",           /* tp_doc */
+    0,                     /* tp_traverse */
+    0,                     /* tp_clear */
+    0,                     /* tp_richcompare */
+    0,                     /* tp_weaklistoffset */
+    0,                     /* tp_iter */
+    0,                     /* tp_iternext */
+    DBCSpe_methods,             /* tp_methods */
+    NULL,             /* tp_members */
+    NULL,           /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)DBCSpe_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    DBCSpe_new,                 /* tp_new */
+};
+
 
 #endif
 #endif
