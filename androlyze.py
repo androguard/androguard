@@ -98,7 +98,7 @@ def AnalyzeAPK(filename, raw=False) :
     return a, d, dx
 
 
-def AAnalyzeAPK(filename, raw=False, decompiler="Dex2Jad") :
+def AAnalyzeAPK(filename, raw=False, decompiler="") :
     """
         Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
 
@@ -108,9 +108,11 @@ def AAnalyzeAPK(filename, raw=False, decompiler="Dex2Jad") :
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
     a, d, dx = AnalyzeAPK( filename, raw )
-    if decompiler == "Dex2jad" :
+
+    decompiler = decompiler.lower()
+    if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
-    elif decompiler == "Ded" :
+    elif decompiler == "ded" :
         d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
 
     return a, d, dx

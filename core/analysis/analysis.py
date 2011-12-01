@@ -1020,7 +1020,6 @@ class DVMBasicBlock :
                 c[2].set_fathers( ( c[1], c[0], self ) )
 
     def analyze(self) :
-        class_manager = self.__vm.get_class_manager()
         idx = 0
         for i in self.ins :
             op_value = i.get_op_value()
@@ -1028,20 +1027,21 @@ class DVMBasicBlock :
             #if i.get_name() in DVM_FIELDS_ACCESS :
             if (op_value >= 0x52 and op_value <= 0x6d) :
                 o = i.get_operands()
-                desc = self.__vm.get_class_manager().get_field(o[-1][1], True)
+                desc = self.__vm.get_cm_field(o[-1][1])
                 self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
             #elif "invoke" in i.get_name() :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
                 idx_meth = i.get_operands()[-1][1]
-                method_info = class_manager.get_method( idx_meth )
+                method_info = i.get_operands()[-1][2:] #self.__vm.get_cm_method( idx_meth )
+                method_info = [ method_info[0], [ method_info[1], method_info[2] ], method_info[3] ]
                 self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
-                type_info = class_manager.get_type( i.get_operands()[-1][1] )
+                type_info = self.__vm.get_cm_type( i.get_operands()[-1][1] )
                 self.__context.get_tainted_packages()._push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
             #elif "const-string" in i.get_name() :
             elif (op_value >= 0x1a and op_value <= 0x1b) :
-                string_name = class_manager.get_string( i.get_operands()[-1][1] )
+                string_name = self.__vm.get_cm_string( i.get_operands()[-1][1] )
                 self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
                 self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
 
@@ -1100,7 +1100,7 @@ class TaintedVariable :
 
     def get_info(self) :
         if self.type == TAINTED_FIELD :
-            return [ self.var.get_class_name(), self.var.get_name(), self.var.get_descriptor() ]
+            return [ self.var[0], self.var[2], self.var[1] ]
         return self.var
 
     def push(self, info) :
@@ -1155,13 +1155,6 @@ class TaintedVariables :
                 return self.__vars[ TAINTED_FIELD ] [i]
         return None
 
-
-    def get_field_by_ref(self, ref) :
-        for i in self.__vars[ TAINTED_FIELD ] :
-            if i.get_class_name() == ref.get_class_name() and i.get_name() == ref.get_name() and i.get_descriptor() == ref.get_descriptor() :
-                return self.__vars[ TAINTED_FIELD ] [i]
-        return None
-
     # permission functions 
     def get_permissions_method(self, method) :
         permissions = []
@@ -1191,7 +1184,7 @@ class TaintedVariables :
         classes = self.__vm.get_classes_names()
 
         for f, f1 in self.get_fields() :
-            data = "%s-%s-%s" % (f1.get_class_name(), f1.get_name(), f1.get_descriptor())
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
             
             if data in DVM_PERMISSIONS_BY_ELEMENT :
                 if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn :
@@ -1243,8 +1236,9 @@ class TaintedVariables :
 
     def add(self, var, _type, _method=None) :
         if _type == TAINTED_FIELD :
-            if var not in self.__vars[ TAINTED_FIELD ] :
-                self.__vars[ TAINTED_FIELD ][ var ] = TaintedVariable( var, _type )
+            key = var[0] + var[1] + var[2]
+            if key not in self.__vars[ TAINTED_FIELD ] :
+                self.__vars[ TAINTED_FIELD ][ key ] = TaintedVariable( var, _type )
         elif _type == TAINTED_STRING :
             if var not in self.__vars[ TAINTED_STRING ] :
                 self.__vars[ TAINTED_STRING ][ var ] = TaintedVariable( var, _type )
@@ -1258,7 +1252,24 @@ class TaintedVariables :
             raise("ooop")
 
     def push_info(self, _type, var, info) :
-        if _type == TAINTED_FIELD or _type == TAINTED_STRING :
+        if _type == TAINTED_FIELD :
+            self.add( var, _type )
+            key = var[0] + var[1] + var[2]
+
+            p = self.__vars[ _type ][ key ].push( info )
+
+            try :
+                self.__methods[ _type ][ p.get_method() ][ key ].append( p )
+            except KeyError :
+                try :
+                    self.__methods[ _type ][ p.get_method() ][ key ] = []
+                except KeyError :
+                    self.__methods[ _type ][ p.get_method() ] = {}
+                    self.__methods[ _type ][ p.get_method() ][ key ] = []
+
+                self.__methods[ _type ][ p.get_method() ][ key ].append( p )
+
+        elif _type == TAINTED_STRING :
             self.add( var, _type )
             p = self.__vars[ _type ][ var ].push( info )
 
@@ -1270,7 +1281,7 @@ class TaintedVariables :
                 except KeyError :
                     self.__methods[ _type ][ p.get_method() ] = {}
                     self.__methods[ _type ][ p.get_method() ][ var ] = []
-
+                
                 self.__methods[ _type ][ p.get_method() ][ var ].append( p )
 
         elif _type == TAINTED_LOCAL_VARIABLE :
@@ -2024,7 +2035,7 @@ class VMAnalysis :
         self.signature = Signature( self.tainted )
 
         for i in self.__vm.get_all_fields() :
-            self.tainted_variables.add( i, TAINTED_FIELD )
+            self.tainted_variables.add( [ i.get_class_name(), i.get_descriptor(), i.get_name() ], TAINTED_FIELD )
 
         self.methods = []
         self.hmethods = {}
