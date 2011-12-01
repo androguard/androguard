@@ -73,7 +73,8 @@ TESTS = {
     "./apks/mixe/6953fb1a1245c4bfaba98fd799a6222fde3567b7bf7380aca2a7ecf006c8c678" : "Tapsnake",
     "./apks/mixe/e2752f49b478dfa7754c0079c72ce06967b9be99e80b53f5a184a00c00b4686a" : "NickyBot",
     "./apks/mixe/e7b79446333b7fa2af2cc0c0661e1f9135edefa09b341dfd96bfe4df4e755566" : "Boxer",
-
+    "./apks/mixe/98a402d885cdb941dca8b45a4bbcbbe7f44ba62910d519bc1c2161dba117ebd2" : "Foncy",
+    
     # exploits
 
 

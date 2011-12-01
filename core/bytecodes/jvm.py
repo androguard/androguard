@@ -742,7 +742,20 @@ class FieldInfo :
         return val + calcsize( FIELD_INFO[0] )
 
     def get_access(self) :
-        return ACC_FIELD_FLAGS[ self.format.get_value().access_flags ][0]
+        try :
+            return ACC_FIELD_FLAGS[ self.format.get_value().access_flags ][0]
+        except KeyError :
+            ok = True
+            access = ""
+            for i in ACC_FIELD_FLAGS :
+                if (i & self.format.get_value().access_flags) == i :
+                    access += ACC_FIELD_FLAGS[ i ][0] + " "
+                    ok = False
+
+            if ok == False :
+                return access[:-1]
+
+            return "ACC_PRIVATE"
 
     def set_access(self, value) :
         self.format.set_value( { "access_flags" : value } )

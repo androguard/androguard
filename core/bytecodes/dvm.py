@@ -674,20 +674,20 @@ def determineNext(i, end, m) :
 
 def determineException(vm, m) :
     # no exceptions !
-    if m.get_code().tries_size.get_value() <= 0 :
+    if m.get_code().get_tries_size() <= 0 :
         return []
 
     h_off = {}
 
-    handler_catch_list = m.get_code().handlers
-    
-    for try_item in m.get_code().tries :
+    handler_catch_list = m.get_code().get_handlers()
+
+    for try_item in m.get_code().get_tries() :
         value = try_item.get_value()
     #    print m.get_name(), try_item, (value.start_addr * 2) + (value.insn_count * 2)# - 1m.get_code().get_bc().get_next_addr( value.start_addr * 2, value.insn_count )
         h_off[ value.handler_off + handler_catch_list.get_offset() ] = [ try_item ]
 
     #print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
-    for handler_catch in handler_catch_list.list :
+    for handler_catch in handler_catch_list.get_list() :
     #    print m.get_name(), "\t\t HANDLER_CATCH SIZE ", handler_catch.size, handler_catch.get_offset()
        
         if handler_catch.get_offset() not in h_off :
@@ -2123,6 +2123,9 @@ class EncodedCatchHandlerList :
     def get_offset(self) :
         return self.__offset.off
 
+    def get_list(self) :
+        return self.list
+
 class DBCSpe :
     def __init__(self, cm, op) :
         self.__CM = cm
@@ -2731,6 +2734,15 @@ class DalvikCode :
         return bytecode.Buff( self.__offset.off,
                                      buff )
 
+    def get_tries_size(self) :
+        return self.tries_size.get_value()
+
+    def get_handlers(self) :
+        return self.handlers
+
+    def get_tries(self) :
+        return self.tries
+
 class CodeItem :
     def __init__(self, size, buff, cm) :
         self.__CM = cm
@@ -3162,6 +3174,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
             idx += i.size
 
         return buff
+
+    def get_cm_field(self, idx) :
+        return self.CM.get_field(idx, False)
+    
+    def get_cm_method(self, idx) :
+        return self.CM.get_method(idx)
+
+    def get_cm_string(self, idx) :
+        return self.CM.get_string( idx )
+
+    def get_cm_type(self, idx) :
+        return self.CM.get_type( idx )
 
     def get_classes_names(self) :
         """
