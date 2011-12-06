@@ -50,6 +50,8 @@ class Signature :
         self._cached_fields = {}
         self._cached_packages = {}
 
+        self._global_cached = {}
+
         self.levels = {
                         # Classical method signature with basic blocks, strings, fields, packages
                         "L0" : {
@@ -69,6 +71,7 @@ class Signature :
                         "L3" : [ "_get_fill_array_data" ],
                     }
 
+        self.classes_names = None
         self._init_caches()
 
     def _get_hex(self, analysis_method) :
@@ -81,10 +84,6 @@ class Signature :
             buff += dvm.clean_name_instruction( i )
             buff += dvm.static_operand_instruction( i )
 
-        #raw = code.get_bc().get_raw()
-        #buff = ""
-        #for i in raw :
-        #    buff += "%02x" % ord(i)
         return buff
 
     def _get_bb(self, analysis_method, functions, options) :
@@ -95,13 +94,25 @@ class Signature :
 
             internal = []
 
-            if "return" in b.get_last().get_name() :
+            op_value = b.get_last().get_op_value()
+
+            # return
+            if op_value >= 0x0e and op_value <= 0x11 :
                 internal.append( (b.end-1, "R") )
-            elif "if" in b.get_last().get_name() :
+           
+            # if
+            elif op_value >= 0x32 and op_value <= 0x3d :
                 internal.append( (b.end-1, "I") )
-            elif "goto" in b.get_last().get_name() :
+          
+            # goto
+            elif op_value >= 0x28 and op_value <= 0x2a :
                 internal.append( (b.end-1, "G") )
-            
+          
+            # sparse or packed switch
+            elif op_value >= 0x2b and op_value <= 0x2c :
+                internal.append( (b.end-1, "G") )
+
+
             for f in functions :
                 try :
                     internal.extend( getattr( self, f )( analysis_method, options ) )
@@ -151,16 +162,14 @@ class Signature :
 
         method = analysis_method.get_method()
         code = method.get_code()
-        if code == None or code.tries_size.get_value() <= 0 :
+        if code == None or code.get_tries_size() <= 0 :
             return buff
 
-        handlers = code.handlers
+        handler_catch_list = code.get_handlers()
 
-        handler_catch_list = method.get_code().handlers
-
-        for handler_catch in handler_catch_list.list :
-            for handler in handler_catch.handlers :
-                buff += analysis_method.get_vm().get_class_manager().get_type( handler.type_idx )
+        for handler_catch in handler_catch_list.get_list() :
+            for handler in handler_catch.get_handlers() :
+                buff += analysis_method.get_vm().get_cm_type( handler.get_type_idx() )
         return buff
 
     def _get_strings_a1(self, analysis_method) :
@@ -183,16 +192,25 @@ class Signature :
 
 
     def _get_strings_a(self, analysis_method) :
+        key = "SA-%s" % analysis_method
+        if key in self._global_cached :
+            return self._global_cached[ key ]
+
         l = []
 
         strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
         for s in strings_method :
             for path in strings_method[s] :
                 l.append( (path.get_bb().start + path.get_idx(), "S") )
+        
+        self._global_cached[ key ] = l
         return l
 
     def _get_fields_a(self, analysis_method) :
-        #print analysis_method
+        key = "FA-%s" % analysis_method
+        if key in self._global_cached :
+            return self._global_cached[ key ]
+
         fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
 
         l = []
@@ -201,6 +219,8 @@ class Signature :
             for path in fields_method[ f ] :
                 #print (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ])
                 l.append( (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ]) )
+        
+        self._global_cached[ key ] = l
         return l
 
     def _get_packages_a(self, analysis_method) :
@@ -218,11 +238,16 @@ class Signature :
         return "".join([ i[1] for i in l ])
 
     def _get_packages_pa_1(self, analysis_method, include_packages) :
+        key = "PA1-%s-%s" % (analysis_method, include_packages)
+        if key in self._global_cached :
+            return self._global_cached[ key ]
+
         packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+        if self.classes_names == None :
+            self.classes_names = analysis_method.get_vm().get_classes_names()
 
         l = []
 
-        classes_names = analysis_method.get_vm().get_classes_names()
 
         for m in packages_method :
             for path in packages_method[ m ] :
@@ -233,7 +258,7 @@ class Signature :
                         break
 
                 if path.get_access_flag() == 1 :
-                    if path.get_class_name() in classes_names :
+                    if path.get_class_name() in self.classes_names :
                         l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ 2 ]) ) )
                     else :
                         if present == True :
@@ -245,6 +270,8 @@ class Signature :
                         l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
                     else :
                         l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+        
+        self._global_cached[ key ] = l
         return l
 
     def _get_packages_pa_2(self, analysis_method, include_packages) :

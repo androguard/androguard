@@ -1,7 +1,7 @@
 SRC	= 	dvm.cc buff.cc
 
 LDFLAGS = 
-CFLAGS  += 	-fPIC -I/usr/include/python2.6/       
+CFLAGS  += 	-g -fPIC -I/usr/include/python2.6/       
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f

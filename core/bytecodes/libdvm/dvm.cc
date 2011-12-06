@@ -596,14 +596,24 @@ DBC::DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector
     voperands = v;
     vdescoperands = vdesc;
     op_length = length;
+    vstrings = NULL;
 }
 
 DBC::~DBC() {
-    voperands->clear();
-    vdescoperands->clear();
+#ifdef DEBUG_DESTRUCTOR
+    cout << "~DBC\n";
+#endif
 
-    delete voperands;
-    delete vdescoperands;
+    this->voperands->clear();
+    this->vdescoperands->clear();
+
+    delete this->voperands;
+    delete this->vdescoperands;
+    
+    if (this->vstrings != NULL) {
+        this->vstrings->clear();
+        delete this->vstrings;
+    }
 }
 
 int DBC::get_opvalue() {
@@ -627,7 +637,8 @@ FillArrayData::FillArrayData(Buff *b, unsigned long off) {
 }
 
 FillArrayData::~FillArrayData() {
-    free(data);
+    if (this->data != NULL)
+        free(data);
 }
 
 const char *FillArrayData::get_opname() {
@@ -707,15 +718,19 @@ DCode::DCode() {
 }
 
 DCode::~DCode() {
-    for(int ii=0; ii < bytecodes.size(); ii++) {
-        delete bytecodes[ ii ];
-    }
-    bytecodes.clear();
+#ifdef DEBUG_DESTRUCTOR
+    cout << "~DCode\n";
+#endif
 
-    for(int ii=0; ii < bytecodes_spe.size(); ii++) {
-        delete bytecodes_spe[ ii ];
+    for(int ii=0; ii < this->bytecodes.size(); ii++) {
+        delete this->bytecodes[ ii ];
     }
-    bytecodes_spe.clear();
+    this->bytecodes.clear();
+
+    for(int ii=0; ii < this->bytecodes_spe.size(); ii++) {
+        delete this->bytecodes_spe[ ii ];
+    }
+    this->bytecodes_spe.clear();
 }
 
 DCode::DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
@@ -725,7 +740,6 @@ DCode::DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsi
     unsigned char op_value;
     unsigned long size;
 
-    vector<unsigned long> *v;
     vector<unsigned long> *datas;
     unsigned long min_data = b->get_end();
 
@@ -1362,12 +1376,14 @@ DCode *DalvikBytecode::new_code(const char *data, size_t data_len) {
 }
 
 /* PYTHON BINDING */
-
 void DBC_dealloc(dvm_DBCObject* self)
 {
-    //cout<<"Called dbc dealloc\n";
+#ifdef DEBUG_DESTRUCTOR
+    cout << "DBC_dealloc\n";
+#endif
 
     delete self->d;
+    //Py_DECREF( self->operands );
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -1378,13 +1394,13 @@ PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (dvm_DBCObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->d = NULL;
+        self->operands = NULL;
     }
 
     return (PyObject *)self;
 }
 
-int
-DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
+int DBC_init(dvm_DBCObject *self, PyObject *args, PyObject *kwds)
 {
     return 0;
 }
@@ -1406,7 +1422,12 @@ PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args)
 
 PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
 {
-    PyObject *operands = PyList_New( 0 );
+    if (self->operands != NULL) {
+        Py_INCREF( self->operands );
+        return self->operands;
+    }
+
+    self->operands = PyList_New( 0 );
     int present; 
 
     for(int ii=1; ii < self->d->voperands->size(); ii++) {
@@ -1431,23 +1452,32 @@ PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args)
         
         PyList_Append( ioperands, PyInt_FromLong( (*self->d->voperands)[ii] ) );
         
-        if (present==0) {
+        if (present==0 && self->d->vstrings != NULL) {
             for(int jj=0; jj < self->d->vstrings->size(); jj++) {
                 PyList_Append( ioperands, PyString_FromString( (*self->d->vstrings)[jj].c_str() ) );
             }
-        }
-       
 
-        PyList_Append( operands, ioperands );
+            present = -1;
+        }
+
+        Py_INCREF( ioperands );
+        PyList_Append( self->operands, ioperands );
     }
 
-    return operands;
+    Py_INCREF( self->operands );
+    return self->operands;
 }
 
+PyObject *DBC_get_type_ins(dvm_DBCObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", 0);
+}
 
 void DBCSpe_dealloc(dvm_DBCSpeObject* self)
 {
-    //cout<<"Called dbcspe dealloc\n";
+#ifdef DEBUG_DESTRUCTOR
+    cout << "DBCSpe_dealloc\n";
+#endif
 
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
@@ -1515,7 +1545,8 @@ PyObject *DBCSpe_get_operands(dvm_DBCSpeObject *self, PyObject* args)
         return operands;
     }
 
-    return NULL; 
+    Py_INCREF(Py_None);                                                                                                                                                                      
+    return Py_None;
 }
 
 PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args)
@@ -1538,7 +1569,8 @@ PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args)
         return operands;
     }
 
-    return NULL; 
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args)
@@ -1546,17 +1578,25 @@ PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args)
     return Py_BuildValue("i", self->d->get_length());
 }
 
+PyObject *DBCSpe_get_type_ins(dvm_DBCSpeObject *self, PyObject* args)
+{
+    return Py_BuildValue("i", 1);
+}
+
 typedef struct {
     PyObject_HEAD;
     DalvikBytecode *dparent;
     DCode *d;
+    PyObject *bytecodes_list;
+    PyObject *bytecodes_spe_list;
 } dvm_DCodeObject;
 
 static void
 DCode_dealloc(dvm_DCodeObject* self)
 {
-    //cout<<"Called dcode dealloc\n";
-
+#ifdef DEBUG_DESTRUCTOR
+    cout << "DCode_dealloc\n";
+#endif
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -1568,6 +1608,8 @@ static PyObject *DCode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (dvm_DCodeObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->d = NULL;
+        self->bytecodes_list = NULL;
+        self->bytecodes_spe_list = NULL;
     }
 
     return (PyObject *)self;
@@ -1580,8 +1622,6 @@ DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
     size_t code_len;
 
     if (self != NULL) {
-        //cout<<"Called dcode init\n"; 
-        
         int ok = PyArg_ParseTuple( args, "s#", &code, &code_len);
         if(!ok) return -1;
     
@@ -1594,14 +1634,17 @@ DCode_init(dvm_DCodeObject *self, PyObject *args, PyObject *kwds)
 
 static PyObject *DCode_get_nb_bytecodes(dvm_DCodeObject *self, PyObject* args)
 {
-    //cout<<"Called get_nb_bytecodes()\n"; 
-
     return Py_BuildValue("i", self->d->size());
 }
 
 static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 {
-    PyObject *bytecodes_list = PyList_New( 0 );
+    if (self->bytecodes_list != NULL) {
+        Py_INCREF( self->bytecodes_list );
+        return self->bytecodes_list;
+    }
+
+    self->bytecodes_list = PyList_New( 0 );
 
     for (int ii=0; ii < self->d->bytecodes.size(); ii++) {
         PyObject *nc = DBC_new(&dvm_DBCType, NULL, NULL);
@@ -1611,15 +1654,21 @@ static PyObject *DCode_get_bytecodes(dvm_DCodeObject *self, PyObject* args)
 
         Py_INCREF( nc );
 
-        PyList_Append( bytecodes_list, nc );
+        PyList_Append( self->bytecodes_list, nc );
     }
-    
-    return bytecodes_list;
+   
+    Py_INCREF( self->bytecodes_list );
+    return self->bytecodes_list;
 }
 
 static PyObject *DCode_get_bytecodes_spe(dvm_DCodeObject *self, PyObject* args)
 {
-    PyObject *bytecodes_list = PyList_New( 0 );
+    if (self->bytecodes_spe_list != NULL) {
+        Py_INCREF( self->bytecodes_spe_list );
+        return self->bytecodes_spe_list;
+    }
+
+    self->bytecodes_spe_list = PyList_New( 0 );
     
     for (int ii=0; ii < self->d->bytecodes_spe.size(); ii++) {
         PyObject *nc = DBCSpe_new(&dvm_DBCSpeType, NULL, NULL);
@@ -1629,10 +1678,11 @@ static PyObject *DCode_get_bytecodes_spe(dvm_DCodeObject *self, PyObject* args)
 
         Py_INCREF( nc );
 
-        PyList_Append( bytecodes_list, nc );
+        PyList_Append( self->bytecodes_spe_list, nc );
     }
 
-    return bytecodes_list;
+    Py_INCREF( self->bytecodes_spe_list );
+    return self->bytecodes_spe_list;
 }
 
 static PyMethodDef DCode_methods[] = {
@@ -1692,8 +1742,9 @@ typedef struct {
 static void
 DalvikBytecode_dealloc(dvm_DalvikBytecodeObject* self)
 {
-    //cout<<"Called dvm dealloc\n";
-
+#ifdef DEBUG_DESTRUCTOR
+    cout << "DalvikBytecode_dealloc\n";
+#endif
     delete self->d;
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -1730,8 +1781,6 @@ static PyObject *DalvikBytecode_new_code(dvm_DalvikBytecodeObject *self, PyObjec
     dnc->dparent = self->d;
     DCode_init( (dvm_DCodeObject *)nc, args, NULL );
    
-    //Py_INCREF( nc );
-
     return nc;
 }
 

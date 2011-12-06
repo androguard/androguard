@@ -88,6 +88,11 @@ class SignSim :
             #self.fd.write("%d;%f;%f;%f;%f;%f;\n" % (uniqueid, entropies[ 0 ], entropies[ 1 ], entropies[ 2 ], entropies[ 3 ], entropies[ 4 ]))
             return self.sign.add_elem_sim( uniqueid, s1, entropies )
 
+    def check_elem(self, ls1) :
+        if self.minimum_signature < ls1 :
+            return True
+        return False
+
     def set_npass(self, npass) :
         self.sign.set_npass( npass )
 
@@ -331,7 +336,7 @@ class MSignature :
 
     def __check_meths(self) :
         if self.debug :
-            print "S",
+            print "SM",
             sys.stdout.flush()
         
         l_meth = self.meth_sim.check_sim() 
@@ -341,17 +346,24 @@ class MSignature :
         if self.debug :
             print "M",
             sys.stdout.flush()
-        
+
+        import time
+        t1 = time.time()
         # Add methods for METHSIM
         for method in vm.get_methods() :
             uniqueid = self._create_id()
-            entropies = create_entropies(vmx, method)
-            ret = self.meth_sim.add_elem( uniqueid, entropies[0], entropies[1:] )
-            del entropies
+           
+            s1 = get_signature( vmx, method )
+            if self.meth_sim.check_elem( len(s1) ) == True :
+                entropies = create_entropies(vmx, method)
+                self.meth_sim.add_elem( uniqueid, entropies[0], entropies[1:] )
+                del entropies
+        t2 = time.time()
+        print t2 - t1,
 
     def __check_classes(self) :
         if self.debug :
-            print "S",
+            print "SC",
             sys.stdout.flush()
         
         l_class = self.class_sim.check_sim()
@@ -361,7 +373,7 @@ class MSignature :
         if self.debug :
             print "C",
             sys.stdout.flush()
-        
+      
         # Add classes for CLASSSIM
         for c in vm.get_classes() :
             value = ""
@@ -402,9 +414,15 @@ class MSignature :
             print "loading dex..",
             sys.stdout.flush()
         
+        #import dvmfull
+        #vm = dvmfull.DalvikVMFormat( buff )
         vm = dvm.DalvikVMFormat( buff )
+        
+        if self.debug :
+            print "analysis..",
+            sys.stdout.flush()
+        
         vmx = VMAnalysis( vm )
-
         return self._check_dalvik_direct( vm, vmx )
 
     def _check_dalvik_direct(self, vm, vmx) :
@@ -428,7 +446,7 @@ class MSignature :
         self.meth_sim.raz()
         self.class_sim.raz()
 
-        del vm, vmx
+        del vmx, vm
 
         return ret, l
 
@@ -456,9 +474,13 @@ class MSignature :
         
         return None
 
+def get_signature(vmx, m) :
+    return vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
+
 def create_entropies(vmx, m) :
-    l = [ vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string(),
-          libsign.entropy( vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE ).get_string() ),
+    default_signature = vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
+    l = [ default_signature,
+          libsign.entropy( default_signature ),
           libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
           libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
           libsign.entropy( vmx.get_method_signature(m, "hex" ).get_string() ),

@@ -18,7 +18,7 @@
 
 import logging, types, random, string
 
-ANDROGUARD_VERSION = "0.9"
+ANDROGUARD_VERSION = "1.0"
 
 CONF = {
     "BIN_DED" : "ded.sh",

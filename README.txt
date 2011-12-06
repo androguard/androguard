@@ -10,11 +10,11 @@
 
 Androguard (Android Guard) is primarily a tool written in full python to 
 play with :
-    - .class (JavaVM)
     - .dex (DalvikVM)
     - APK
-    - JAR
     - Android's binary xml
+    - .class (JavaVM)
+    - JAR
 
 Androguard has the following features :
     - Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full 
@@ -126,7 +126,7 @@ http://code.google.com/p/androguard/wiki/Analysis
 
 http://code.google.com/p/androguard/wiki/Visualization
 
-2.7 --] Similarities, Diffing, rip-off indicator 
+2.7 --] Similarities, Diffing, plagiarism/rip-off indicator 
 
 http://code.google.com/p/androguard/wiki/Similarity
 http://code.google.com/p/androguard/wiki/DetectingApplications
@@ -135,12 +135,15 @@ http://code.google.com/p/androguard/wiki/DetectingApplications
 
 http://code.google.com/p/androguard/wiki/DatabaseAndroidMalwares
 
-3 -] Roadmap 
+2.9 --] Decompiler
+
+3 -] Roadmap/Issues
 http://code.google.com/p/androguard/wiki/RoadMap
+http://code.google.com/p/androguard/issues/list
 
 4 -] License
 
-Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
 All rights reserved.
 
 Androguard is free software: you can redistribute it and/or modify
