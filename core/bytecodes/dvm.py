@@ -548,11 +548,12 @@ def clean_name_instruction( instruction ) :
 def static_operand_instruction( instruction ) :
     buff = ""
     for op in instruction.get_operands() :
-        if instruction.type_ins_tag == 0 :
+        if instruction.get_type_ins() == 0 :
             if "#" in op[0] :
                 buff += "%s" % op
     
-    if instruction.get_name() == "const-string" :
+    op_value = instruction.get_op_value()
+    if op_value == 0x1a or op_value == 0x1b :
         buff += instruction.get_operands()[1][-1]
     #print instruction.get_operands()
 
@@ -646,16 +647,22 @@ def writesleb128(value) :
     return buff
 
 def determineNext(i, end, m) :
-    if "return" in i.get_name() :
+    op_value = i.get_op_value()
+
+    if op_value >= 0x0e and op_value <= 0x11 :
+    #if "return" in i.get_name() :
         return [ -1 ]
-    elif "goto" in i.get_name() :
+    elif op_value >= 0x28 and op_value <= 0x2a :
+    #elif "goto" in i.get_name() :
         off = i.get_operands()[-1][1] * 2
         return [ off + end ]
-    elif "if" in i.get_name() :
+    elif op_value >= 0x32 and op_value <= 0x3d :
+    #elif "if" in i.get_name() :
         off = i.get_operands()[-1][1] * 2
 
         return [ end + i.get_length(), off + (end) ]
-    elif "packed" in i.get_name() or "sparse" in i.get_name() :
+    elif op_value == 0x2b or op_value == 0x2c :
+    #elif "packed" in i.get_name() or "sparse" in i.get_name() :
         x = []
 
         x.append( end + i.get_length() )
@@ -682,9 +689,8 @@ def determineException(vm, m) :
     handler_catch_list = m.get_code().get_handlers()
 
     for try_item in m.get_code().get_tries() :
-        value = try_item.get_value()
     #    print m.get_name(), try_item, (value.start_addr * 2) + (value.insn_count * 2)# - 1m.get_code().get_bc().get_next_addr( value.start_addr * 2, value.insn_count )
-        h_off[ value.handler_off + handler_catch_list.get_offset() ] = [ try_item ]
+        h_off[ try_item.get_handler_off() + handler_catch_list.get_offset() ] = [ try_item ]
 
     #print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
     for handler_catch in handler_catch_list.get_list() :
@@ -704,15 +710,15 @@ def determineException(vm, m) :
     exceptions = []
     #print m.get_name(), h_off
     for i in h_off :
-        value = h_off[ i ][0].get_value()
-        z = [ value.start_addr * 2, (value.start_addr * 2) + (value.insn_count * 2) - 1 ]
+        value = h_off[ i ][0]
+        z = [ value.get_start_addr() * 2, (value.get_start_addr() * 2) + (value.get_insn_count() * 2) - 1 ]
 
         handler_catch = h_off[ i ][1]
-        if handler_catch.size <= 0 :
-            z.append( [ "any", handler_catch.catch_all_addr * 2 ] )
+        if handler_catch.get_size() <= 0 :
+            z.append( [ "any", handler_catch.get_catch_all_addr() * 2 ] )
 
-        for handler in handler_catch.handlers :
-            z.append( [ vm.get_class_manager().get_type( handler.type_idx ), handler.addr * 2 ] )
+        for handler in handler_catch.get_handlers() :
+            z.append( [ vm.get_cm_type( handler.get_type_idx() ), handler.get_addr() * 2 ] )
 
         exceptions.append( z )
 
@@ -2067,6 +2073,12 @@ class EncodedTypeAddrPair :
     def get_raw(self) :
         return writeuleb128( self.type_idx ) + writeuleb128( self.addr )
 
+    def get_type_idx(self) :
+        return self.type_idx
+
+    def get_addr(self) :
+        return self.addr
+
 class EncodedCatchHandler :
     def __init__(self, buff, cm) :
         self.__offset = cm.add_offset( buff.get_idx(), self ) 
@@ -2096,8 +2108,17 @@ class EncodedCatchHandler :
 
         return buff
 
+    def get_handlers(self) :
+        return self.handlers
+
     def get_offset(self) :
         return self.__offset.off
+
+    def get_size(self) :
+        return self.size
+
+    def get_catch_all_addr(self) :
+        return self.catch_all_addr
 
 class EncodedCatchHandlerList :
     def __init__(self, buff, cm) :
@@ -2166,6 +2187,9 @@ class DBCSpe :
 
     def show(self, pos) :
         print self.op.show_buff( pos ),
+    
+    def get_type_ins(self) :
+        return self.type_ins_tag
 
 class DBC :
     def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
@@ -2183,6 +2207,9 @@ class DBC :
 
     def get_op_value(self) :
         return self.op_value
+
+    def get_type_ins(self) :
+        return self.type_ins_tag
 
     def _reload(self) :
         self.operands.pop(0)
@@ -2634,6 +2661,28 @@ class DCode :
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
+class TryItem :
+    def __init__(self, buff, cm) :
+        self.__CM = cm
+        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+                
+        self.item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
+
+    def get_start_addr(self) :
+        return self.item.get_value().start_addr
+
+    def get_insn_count(self) :
+        return self.item.get_value().insn_count
+
+    def get_handler_off(self) :
+        return self.item.get_value().handler_off
+
+    def get_off(self) :
+        return self.__offset.off
+
+    def get_raw(self) :
+        return self.item.get_value_buff()
+
 class DalvikCode :
     def __init__(self, buff, cm) :
         self.__CM = cm
@@ -2668,8 +2717,7 @@ class DalvikCode :
         self.handlers = None 
         if self.tries_size.get_value() > 0 :
             for i in range(0, self.tries_size.get_value()) :
-                try_item = SVs( TRY_ITEM[0], TRY_ITEM[1], buff.read( calcsize(TRY_ITEM[0]) ) )
-                self.tries.append( try_item )
+                self.tries.append( TryItem( buff, self.__CM ) )
 
             self.handlers = EncodedCatchHandlerList( buff, self.__CM )
 
@@ -2728,7 +2776,7 @@ class DalvikCode :
             buff += self.__padding.get_value_buff()
 
         if self.tries_size.get_value() > 0 :
-            buff += ''.join(i.get_value_buff() for i in self.tries)
+            buff += ''.join(i.get_raw() for i in self.tries)
             buff += self.handlers.get_raw()
 
         return bytecode.Buff( self.__offset.off,
@@ -3114,6 +3162,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
         self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
 
+        self.classes_names = None
         
     def show(self) :
         """Show the .class format into a human readable format"""
@@ -3191,7 +3240,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Return the names of classes
         """
-        return [ i.get_name() for i in self.classes.class_def ]
+        if self.classes_names == None :
+            self.classes_names = [ i.get_name() for i in self.classes.class_def ]
+        return self.classes_names
 
     def get_classes(self) :
         return self.classes.class_def

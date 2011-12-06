@@ -96,7 +96,7 @@ def test(got, expected):
     else:
         prefix = ' NO '
     print 'got: %s expected: %s : %s' % (repr(got), repr(expected), prefix)
-
+    sys.stdout.flush()
 
 def check(db, dbconf, TESTS) :
     s = msign.MSignature( db, dbconf )

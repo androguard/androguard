@@ -104,6 +104,7 @@ def AAnalyzeAPK(filename, raw=False, decompiler="") :
 
         @param filename : the filename of the android application or a buffer which represents the application
         @param raw : True is you would like to use a buffer
+        @param decompiler : ded, dex2jad, dad
         
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
@@ -114,6 +115,8 @@ def AAnalyzeAPK(filename, raw=False, decompiler="") :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
     elif decompiler == "ded" :
         d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+    elif decompiler == "dad" :
+        pass
 
     return a, d, dx
 
@@ -139,6 +142,28 @@ def AnalyzeDex(filename, raw=False) :
     ExportXREFToPython( d, gx )
     set_pretty_show( 1 )
 
+    return d, dx
+
+def AAnalyzeDex(filename, raw=False, decompiler="") :
+    """
+        Analyze an android dex file and setup all stuff for a more quickly analysis !
+
+        @param filename : the filename of the android dex file or a buffer which represents the dex file
+        @param raw : True is you would like to use a buffe
+        @param decompiler : ded, dex2jad, dad
+
+        @rtype : return the DalvikVMFormat, and VMAnalysis objects
+    """
+    d, dx = AnalyzeDex( filename, raw )
+
+    decompiler = decompiler.lower()
+    if decompiler == "dex2jad" :
+        d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
+    elif decompiler == "ded" :
+        d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+    elif decompiler == "dad" :
+        pass
+   
     return d, dx
 
 def sort_length_method(vm) :
