@@ -745,6 +745,13 @@ class Diff(object) :
     def get_elem(self, attr) :
         return [ x for x in self.filters[attr] ]
 
+    def show(self): 
+        print "Methods:"
+        print "\t SIMILAR: \t", len(self.get_diff_methods())
+        print "\t NEW:\t\t", len(self.get_new_methods())
+        print "\t IDENTICAL:\t", len(self.get_match_methods())
+        print "\t DELETED:\t", len(self.get_delete_methods())
+
 ######################### SIM ###############################
 
 def filter_sim_meth_sim( m1, m2, sim ) :
@@ -900,6 +907,13 @@ class Sim(Diff) :
         for m in self.filters[ MATCHMETHODS ] :
             v = self.filters[BASE][FILTER_MARK_METH]( 0.0 )
             self.diff_methods_marks.append( v )
+
+
+    def show(self) :
+        super(Sim, self).show()
+
+        print "MARKS=", self.get_marks()
+        print "\t--> %f%% of similarities" % self.get_final_score()
 
         # Check if some methods in the second file are totally new !
         #for fil in self.filters :

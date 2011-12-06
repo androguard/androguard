@@ -43,32 +43,25 @@ def main(options, arguments) :
         vmx2 = a.get_bc()[1][1].get_analysis()
 
         dsim = diff.Sim( [ vm1, vmx1 ], [ vm2, vmx2 ] )
-
-        print "DIFF METHODS :", len(dsim.get_diff_methods())
-        print "NEW METHODS :", len(dsim.get_new_methods())
-        print "MATCH METHODS :", len(dsim.get_match_methods())
-        print "DELETE METHODS :", len(dsim.get_delete_methods())
-
-        print dsim.get_marks()
-        print dsim.get_final_score()
+        dsim.show()
 
         if options.display :
-            print "DIFF METHODS :"
+            print "SIMILAR methods:"
             diff_methods = dsim.get_diff_methods()
             for i in diff_methods :
                 i.show2()
             
-            print "MATCH METHODS :"
+            print "IDENTICAL methods:"
             new_methods = dsim.get_match_methods()
             for i in new_methods :
                 i.show2()
 
-            print "NEW METHODS :"
+            print "NEW methods:"
             new_methods = dsim.get_new_methods()
             for i in new_methods :
                 i.show2()
 
-            print "DELETE METHODS :"
+            print "DELETED methods:"
             del_methods = dsim.get_delete_methods()
             for i in del_methods :
                 i.show2()

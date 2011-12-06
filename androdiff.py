@@ -50,11 +50,8 @@ def main(options, arguments) :
         details = False
         if options.display != None :
             details = True
-
-        print "DIFF METHODS :", len(d.get_diff_methods())
-        print "NEW METHODS :", len(d.get_new_methods())
-        print "MATCH METHODS :", len(d.get_match_methods())
-        print "DELETE METHODS :", len(d.get_delete_methods())
+    
+        d.show()
 
         print "DIFF METHODS :"
         diff_methods = d.get_diff_methods()

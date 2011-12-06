@@ -974,6 +974,8 @@ class DVMBasicBlock :
 
         self.free_blocks_offsets = []
 
+        self.fill_array_data = {}
+
         self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
         self.exception_analysis = None
 
@@ -1023,7 +1025,6 @@ class DVMBasicBlock :
         idx = 0
         for i in self.ins :
             op_value = i.get_op_value()
-
             #if i.get_name() in DVM_FIELDS_ACCESS :
             if (op_value >= 0x52 and op_value <= 0x6d) :
                 o = i.get_operands()
@@ -1031,8 +1032,9 @@ class DVMBasicBlock :
                 self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
             #elif "invoke" in i.get_name() :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
-                idx_meth = i.get_operands()[-1][1]
-                method_info = i.get_operands()[-1][2:] #self.__vm.get_cm_method( idx_meth )
+                operands = i.get_operands()
+                idx_meth = operands[-1][1]
+                method_info = operands[-1][2:] #self.__vm.get_cm_method( idx_meth )
                 method_info = [ method_info[0], [ method_info[1], method_info[2] ], method_info[3] ]
                 self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
             #elif "new-instance" in i.get_name() :
@@ -1044,8 +1046,17 @@ class DVMBasicBlock :
                 string_name = self.__vm.get_cm_string( i.get_operands()[-1][1] )
                 self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
                 self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
+            elif op_value == 0x26 :
+                code = self.__method.get_code().get_bc()
+                self.fill_array_data[ i ] = code.get_ins_off( self.get_start() + idx + i.get_operands()[-1][1] * 2 )
 
             idx += i.get_length()
+
+    def get_fill_array_data(self, ins) :
+        try :
+            return self.fill_array_data[ ins ]
+        except :
+            return None
 
     def set_exception(self, exception_analysis) :
         self.exception_analysis = exception_analysis
@@ -1810,15 +1821,10 @@ class MethodAnalysis :
         self.__tainted = _tv
 
         BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : jvm.determineNext,
-               "TS" : JVM_TOSTRING, "Dexception" : jvm.determineException }
+               "Dexception" : jvm.determineException }
         if self.__vm.get_type() == "DVM" :
             BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : dvm.determineNext,
-                   "TS" : dvm.DVM_TOSTRING(), "Dexception" : dvm.determineException }
-        #if self.__vm.get_type() == "DVM" :
-        #    BO = { "BasicOPCODES" : self.__vm.get_BRANCH_DVM_OPCODES(), "BasicClass" : DVMBasicBlock, "Dnext" : self.__vm.get_determineNext(),
-        #           "TS" : self.__vm.get_DVM_TOSTRING(), "Dexception" : self.__vm.get_determineException() }
-
-        self.__TS = ToString( BO[ "TS" ] )
+                   "Dexception" : dvm.determineException }
 
         BO["BasicOPCODES_H"] = []
         for i in BO["BasicOPCODES"] :
@@ -1840,6 +1846,7 @@ class MethodAnalysis :
         l = []
         h = {}
         idx = 0
+
         for i in bc.get() :
             for j in BO["BasicOPCODES_H"] :
                 if j.match(i.get_name()) != None :
@@ -1853,12 +1860,10 @@ class MethodAnalysis :
         excepts = BO["Dexception"]( self.__vm, self.__method )
         for i in excepts:
             l.extend([i[0]])
-                              
+            
         idx = 0
         for i in bc.get() :
             name = i.get_name()
-
-            self.__TS.push( name )
 
             here = False
             # index is a destination
@@ -1877,7 +1882,6 @@ class MethodAnalysis :
 
             idx += i.get_length()
 
-
         if current_basic.ins == [] :
             self.basic_blocks.pop( -1 )
 
@@ -1888,7 +1892,6 @@ class MethodAnalysis :
                 i.set_childs( [] )
 
         # Create exceptions
-        #self.exceptions.add( BO["Dexception"]( self.__vm, self.__method ), self.basic_blocks )
         self.exceptions.add(excepts, self.basic_blocks)
 
         for i in self.basic_blocks.get() :
@@ -1900,8 +1903,7 @@ class MethodAnalysis :
         if code_analysis == True :
             for i in self.basic_blocks.get() :
                 i.analyze_code()
-
-
+        
     def get_length(self) :
         """
             @rtype : an integer which is the length of the code
@@ -1938,9 +1940,6 @@ class MethodAnalysis :
                 return i.get_break_block( idx )
         return None
 
-    def get_ts(self) :
-        return self.__TS.get_string()
-
     def get_vm(self) :
         return self.__vm
 
@@ -1962,7 +1961,6 @@ class MethodAnalysis :
 
     def show(self) :
         print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
-        print "\tTOSTRING = ", self.__TS.get_string()
 
         for i in self.basic_blocks.get() :
             print "\t", i
@@ -2191,7 +2189,7 @@ class VMAnalysis :
                 else :
                     g += i
                     g += ":" 
-            
+        
             return self.signature.get_method( self.get_method( method ), g[:-1], o )
         else : 
             return self.signature.get_method( self.get_method( method ), grammar_type, options )

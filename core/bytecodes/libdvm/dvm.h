@@ -40,6 +40,10 @@
 #define STRING 6
 #define INTEGER_BRANCH 7
 
+
+//#define DEBUG_DESTRUCTOR
+#undef DEBUG_DESTRUCTOR
+
 using namespace __gnu_cxx;
 using namespace std;
 using std::cout;
@@ -157,6 +161,7 @@ class DalvikBytecode {
 typedef struct {
     PyObject_HEAD;
     DBC *d;
+    PyObject *operands;
 } dvm_DBCObject;
 
 PyObject *DBC_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -167,12 +172,14 @@ PyObject *DBC_get_opvalue(dvm_DBCObject *self, PyObject* args);
 PyObject *DBC_get_length(dvm_DBCObject *self, PyObject* args);
 PyObject *DBC_get_name(dvm_DBCObject *self, PyObject* args);
 PyObject *DBC_get_operands(dvm_DBCObject *self, PyObject* args);
+PyObject *DBC_get_type_ins(dvm_DBCObject *self, PyObject* args);
 
 static PyMethodDef DBC_methods[] = {
     {"get_op_value",  (PyCFunction)DBC_get_opvalue, METH_NOARGS, "get nb bytecodes" },
     {"get_length",  (PyCFunction)DBC_get_length, METH_NOARGS, "get nb bytecodes" },
     {"get_name",  (PyCFunction)DBC_get_name, METH_NOARGS, "get nb bytecodes" },
     {"get_operands",  (PyCFunction)DBC_get_operands, METH_NOARGS, "get nb bytecodes" },
+    {"get_type_ins",  (PyCFunction)DBC_get_type_ins, METH_NOARGS, "get type ins" },
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -231,6 +238,7 @@ PyObject *DBCSpe_get_name(dvm_DBCSpeObject *self, PyObject* args);
 PyObject *DBCSpe_get_operands(dvm_DBCSpeObject *self, PyObject* args);
 PyObject *DBCSpe_get_targets(dvm_DBCSpeObject *self, PyObject* args);
 PyObject *DBCSpe_get_length(dvm_DBCSpeObject *self, PyObject* args);
+PyObject *DBCSpe_get_type_ins(dvm_DBCSpeObject *self, PyObject* args);
 
 static PyMethodDef DBCSpe_methods[] = {
     {"get_name",  (PyCFunction)DBCSpe_get_name, METH_NOARGS, "get nb bytecodes" },
@@ -238,6 +246,7 @@ static PyMethodDef DBCSpe_methods[] = {
     {"get_operands",  (PyCFunction)DBCSpe_get_operands, METH_NOARGS, "get nb bytecodes" },
     {"get_targets",  (PyCFunction)DBCSpe_get_targets, METH_NOARGS, "get nb bytecodes" },
     {"get_length",  (PyCFunction)DBCSpe_get_length, METH_NOARGS, "get nb bytecodes" },
+    {"get_type_ins",  (PyCFunction)DBCSpe_get_type_ins, METH_NOARGS, "get type ins" },
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
