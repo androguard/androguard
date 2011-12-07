@@ -1,4 +1,22 @@
-from itertools import count
+#!/usr/bin/env python
+
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 TYPE_DESCRIPTOR = {
     'V': 'void',
@@ -9,49 +27,50 @@ TYPE_DESCRIPTOR = {
     'I': 'int',
     'J': 'long',
     'F': 'float',
-    'D': 'double'
+    'D': 'double',
+    'STR': 'String'
 }
 
 ACCESS_FLAGS_CLASSES = {
-    0x1   : 'public', #'ACC_PUBLIC',
-    0x2   : 'private', #'ACC_PRIVATE',
-    0x4   : 'protected', #'ACC_PROTECTED',
-    0x8   : 'static', #'ACC_STATIC',
-    0x10  : 'final', #'ACC_FINAL',
-    0x200 : 'interface', #'ACC_INTERFACE',
-    0x400 : 'abstract', #'ACC_ABSTRACT',
-    0x1000: 'synthetic', #'ACC_SYNTHETIC',
-    0x2000: 'annotation', #'ACC_ANNOTATION',
-    0x4000: 'enum'  #'ACC_ENUM'
+    0x1   : 'public',
+    0x2   : 'private',
+    0x4   : 'protected',
+    0x8   : 'static',
+    0x10  : 'final',
+    0x200 : 'interface',
+    0x400 : 'abstract',
+    0x1000: 'synthetic',
+    0x2000: 'annotation',
+    0x4000: 'enum'
 }
 
 ACCESS_FLAGS_FIELDS = {
-    0x1   : 'public', #'ACC_PUBLIC',
-    0x2   : 'private', #'ACC_PRIVATE',
-    0x4   : 'protected', #'ACC_PROTECTED',
-    0x8   : 'static', #'ACC_STATIC',
-    0x10  : 'final', #'ACC_FINAL',
-    0x40  : 'volatile', #'ACC_VOLATILE',
-    0x80  : 'transient', #'ACC_TRANSIENT',
-    0x1000: 'synthetic', #'ACC_SYNTHETIC',
-    0x4000: 'enum'  #'ACC_ENUM'
+    0x1   : 'public',
+    0x2   : 'private',
+    0x4   : 'protected',
+    0x8   : 'static',
+    0x10  : 'final',
+    0x40  : 'volatile',
+    0x80  : 'transient',
+    0x1000: 'synthetic',
+    0x4000: 'enum'
 }
 
 ACCESS_FLAGS_METHODS = {
-    0x1    : 'public', #'ACC_PUBLIC',
-    0x2    : 'private', #'ACC_PRIVATE',
-    0x4    : 'protected', #'ACC_PROTECTED',
-    0x8    : 'static', #'ACC_STATIC',
-    0x10   : 'final', #'ACC_FINAL',
-    0x20   : 'synchronized', #'ACC_SYNCHRONIZED',
-    0x40   : 'bridge', #'ACC_BRIDGE',
-    0x80   : 'varargs', #'ACC_VARARGS',
-    0x100  : 'native', #'ACC_NATIVE',
-    0x400  : 'abstract', #'ACC_ABSTRACT',
-    0x800  : 'strict', #'ACC_STRICT',
-    0x1000 : 'synthetic', #'ACC_SYNTHETIC',
-    0x10000: '', #'ACC_CONSTRUCTOR',
-    0x20000: 'synchronized'  #'ACC_DECLARED_SYNCHRONIZED'
+    0x1    : 'public',
+    0x2    : 'private',
+    0x4    : 'protected',
+    0x8    : 'static',
+    0x10   : 'final',
+    0x20   : 'synchronized',
+    0x40   : 'bridge',
+    0x80   : 'varargs',
+    0x100  : 'native',
+    0x400  : 'abstract',
+    0x800  : 'strict',
+    0x1000 : 'synthetic',
+    0x10000: '', # ACC_CONSTRUCTOR
+    0x20000: 'synchronized'
 }
 
 TYPE_LEN = {
@@ -60,23 +79,25 @@ TYPE_LEN = {
 }
 
 DEBUG_MODES = {
-    'off' : -1,
-    'error' : 0,
-    'log' : 1,
-    'debug' : 2
+    'off':  -1,
+    'error': 0,
+    'log':   1,
+    'debug': 2
 }
 
 DEBUG_LEVEL = 'log'
 
+
 class wrap_stream(object):
     def __init__(self):
-        self.val = ''
+        self.val = []
     def write(self, s):
-        self.val += s
+        self.val.append(s)
     def clean(self):
-        self.val = ''
+        self.val = []
     def __str__(self):
         return ''.join(self.val)
+
 
 def merge_inner(clsdict):
     '''
@@ -111,20 +132,13 @@ def merge_inner(clsdict):
                     del clsdict[classname]
                     samelist = False
 
-def get_next_register(params):
-    '''
-    Return the number of the next register in a generator form.
-    '''
-    size = 0
-    for type in params:
-        size += TYPE_LEN.get(type, 1)
-        yield size
 
 def get_type_size(param):
     '''
     Return the number of register needed by the type @param
     '''
     return TYPE_LEN.get(param, 1)
+
 
 def get_type(atype, size=None):
     '''
@@ -143,6 +157,7 @@ def get_type(atype, size=None):
             log('Unknown descriptor: "%s".' % atype, 'error')
     return res
 
+
 def get_params_type(descriptor):
     '''
     Return the parameters type of a descriptor (e.g (IC)V)
@@ -152,12 +167,6 @@ def get_params_type(descriptor):
         return [param for param in params]
     return []
 
-def get_new_var(atype):
-    '''
-    Generator for variables name.
-    '''
-    for n in count(0):
-        yield '%s var%s' % (atype, n)
 
 def log(s, mode):
     def _log(s):
