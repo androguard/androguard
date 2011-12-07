@@ -1,19 +1,38 @@
+#!/usr/bin/env python
+
+# This file is part of Androguard.
+#
+# Copyright (C) 2010, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+# All rights reserved.
+#
+# Androguard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Androguard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 sys.path.append('./')
 import androguard
 import analysis
-import copy
 import Instruction
-import Util
-#import Findloop
 import Structure
+import Util
+import copy
+
 
 class This():
     def __init__(self, cls):
         self.cls = cls
-
-    def get_content(self):
-        return self
+        self.used = False
+        self.content = self
 
     def get_type(self):
         return self.cls.name
@@ -21,13 +40,15 @@ class This():
     def get_value(self):
         return 'this'
 
+    def get_name(self):
+        return 'this'
+
 
 class Register():
-    def __init__(self, content, num):
+    def __init__(self, content):
         self.content = content
         self.nbuses = 0
         self.used = False
-        self.num = num
         self.isPair = False
 
     def modify(self, ins):
@@ -39,16 +60,13 @@ class Register():
 
     def get_content(self):
         self.nbuses += 1
-        if self.nbuses >= 1 and self.content.get_content():
+        if self.nbuses > 1:
             self.used = True
             Util.log('GET CONTENT -> USED TRUE (%s)' % self.content, 'debug')
         return self.content
 
-    def get_content_dbg(self):
-        return self.content
-
     def dump(self, ins):
-        Util.log("""Register #%d Dump :
+        Util.log("""Register Dump :
                 ---------------
                 Old value :
                 %s
@@ -56,25 +74,26 @@ class Register():
                 -------
                 New value :
                 %s
-                -> %s
-                ---------------""" % (self.num, str(self.content),
-                self.content.get_value(), str(ins), ins.get_value()), 'debug')
+                -> %s (used : %s)
+                ---------------""" % (str(self.content),
+                self.content.get_value(), str(ins),
+                ins.get_value(), self.used), 'debug')
 
     def __deepcopy__(self, dic=None):
         d = dic.get(self, None)
         if d is None:
-            r = Register(self.content, self.num)
+            r = Register(self.content)
             r.nbuses = self.nbuses
             r.used = self.used
-            r.num = self.num
             r.isPair = self.isPair
             dic[self] = r
             return r
         return d
 
     def __str__(self):
-        return 'Register number %d :\n\tused : %s\n\tcontent : %s\t\tvalue : %s.' % (
-                self.num, self.used, str(self.content), str(self.content.get_value()))
+        return 'Register :\n\tused : %s\n' \
+               '\tcontent : %s\t\tvalue : %s.' % (self.used, str(self.content),
+                                                  str(self.content.get_value()))
 
     def __repr__(self):
         return repr(self.content)
@@ -94,88 +113,58 @@ class DvMethod():
         code = self.method.get_code()
 
         access = self.method.get_access()
-        self.access = [flag for flag in Util.ACCESS_FLAGS_METHODS if flag & access]
+        self.access = [flag for flag in Util.ACCESS_FLAGS_METHODS
+                                     if flag & access]
         desc = self.method.get_descriptor()
         self.type = Util.get_type(desc.split(')')[-1])
         self.paramsType = Util.get_params_type(desc)
 
-        #Util.log('Searching loops in method %s' % self.name, 'debug')
-        """
-        Findloop.loopCounter = 0
-        cfg = Findloop.CFG()
-        lsg = Findloop.LSG()
-        self.cfg = cfg
-        self.lsg = lsg
-        Findloop.AddEdges(cfg, self)
-        nbLoops = Findloop.FindLoops(cfg, lsg)
+        Util.log('Searching loops in method %s' % self.name, 'debug')
         
-        if nbLoops > 1:
-            Util.log('==================', 'debug')
-            Util.log('==== DUMP CFG ====', 'debug')
-            cfg.dump()
-            Util.log('==================', 'debug')
-            Findloop.ShowBlocks(lsg, 0)
-            Util.log('==== DUMP LSG ====', 'debug')
-            lsg.dump()
-            Util.log('==================', 'debug')
-        """
-        lsg = None
-        blocks = []
         exceptions = methanalysis.exceptions.exceptions
-        print "METHOD :", self.name
-        self.graph = Structure.ConstructCFG(lsg, self.basic_blocks, exceptions, blocks)
-        print
+        Util.log('METHOD : %s' % self.name, 'debug')
+        #print "excepts :", [ e.exceptions for e in exceptions ]
+        self.ast = Structure.ConstructAST(self.basic_blocks, exceptions)
 
-        #androguard.bytecode.method2png('graphs/%s#%s.png' % (self.method.get_class_name().split('/')[-1][:-1], self.name), methanalysis)
+        #androguard.bytecode.method2png('graphs/%s#%s.png' % \
+        #        (self.method.get_class_name().split('/')[-1][:-1], self.name),
+        #                                                         methanalysis)
 
         if code is None:
-            Util.log('CODE NONE : %s %s' % (self.name, self.method.get_class_name()), 'debug')
+            Util.log('CODE NONE : %s %s' % (self.name,
+                                            self.method.get_class_name()),
+                                            'debug')
         else:
             start = code.registers_size.get_value() - code.ins_size.get_value()
-            # 0x8 == Static case : this is not passed as a parameter
+            # 0x8 == Static : 'this' is not passed as a parameter
             if 0x8 in self.access:
                 self._add_parameters(start)
             else:
-                self.memory[start] = Register(this, start)
-                #print 'THIS ( %s ) : %d' % (self.name, start)
+                self.memory[start] = Register(this)
                 self._add_parameters(start + 1)
         self.ins = []
         self.cur = 0
 
     def _add_parameters(self, start):
-        i = 1
         size = 0
         for paramType in self.paramsType:
             param = self.variables.newVar(paramType)
             param.param = True
-            self.memory[start + size] = Register(param, start + size)
+            self.memory[start + size] = Register(param)
             self.lparams.append(param)
             size += param.size
-            i += 1
 
     def process(self):
-        startBlock = self.graph.getBlock(self.basic_blocks[0])
-        firstNode = startBlock.node
-        if firstNode is None:
-            print "ARRRRRRRRRRRRRR"
-
-        print "\nMETHOD :", self.name
-        print "FIRSTNODE :", firstNode, firstNode.content, firstNode.content.block, firstNode.content.block.name
-        next = firstNode.get_next()
-        print "NEXT :", firstNode.content , '=>', next
-        self.ins.append(firstNode.process(self.memory, self.variables))
-        while next:
-            self.ins.append(next.process(self.memory, self.variables))
-            next = next.get_next()
-            if next:
-                print "=NEXT :", next, next.content.block.name#, [n.content.block.name for n in next]
-
-        return self.debug()
+        if self.ast is None:
+            return
+        Util.log('METHOD : %s' % self.name, 'debug')
+        for child in self.ast.childs:
+            Util.log('Processing %s' % child, 'debug')
+            blockins = child.process(self.memory, self.variables, 0)
+            if blockins:
+                self.ins.append(blockins)
 
     def debug(self, code=None):
-        print "TEST :"
-        for var in self.variables.vars:
-            print "VAR ::", var
         if code is None:
             code = []
         Util.log('Dump of method :', 'debug')
@@ -189,23 +178,21 @@ class DvMethod():
             else:
                 acc.append(Util.ACCESS_FLAGS_METHODS.get(i))
         if self.type:
-            proto = '%s %s %s(' % (' '.join(acc), self.type, self.name)
+            proto = '    %s %s %s(' % (' '.join(acc), self.type, self.name)
         else:
-            proto = '%s %s(' % (' '.join(acc), self.name)
+            proto = '    %s %s(' % (' '.join(acc), self.name)
         if self.paramsType:
             proto += ', '.join(['%s' % param.decl() for param in self.lparams])
-        proto += ') {'
+        proto += ')\n    {\n'
         Util.log(proto, 'debug')
         code.append(proto)
-        for var in self.variables.vars:
-            if var.used and not var.param:
-                code.append('    %s;' % var.decl())
         for i in self.ins:
             Util.log('%s' % i, 'debug')
-            code.append('    %s' % i)
+            code.append(''.join(['   ' * 2 + '%s\n' % ii for ii in
+                                                            i.splitlines()]))
         Util.log('}', 'debug')
-        code.append('}')
-        return '\n'.join(code)
+        code.append('    }')
+        return ''.join(code)
 
     def __repr__(self):
         return 'Method %s' % self.name
@@ -213,11 +200,12 @@ class DvMethod():
 
 class DvClass():
     def __init__(self, dvclass, bca):
-        self.name = dvclass.get_name()[1:-1].split('/')[-1]
-        self.package = dvclass.get_name().rsplit('/', 1)[0][1:].replace('/', '.')
+        self.name = dvclass.get_name()
+        self.package = dvclass.get_name().rsplit('/', 1)[0][1:].replace('/',
+                                                                        '.')
         self.this = This(self)
-        lmethods = [(method.get_idx(), DvMethod(bca.get_method(method), self.this))
-                    for method in dvclass.get_methods()]
+        lmethods = [(method.get_idx(), DvMethod(bca.get_method(method),
+                       self.this)) for method in dvclass.get_methods()]
         self.methods = dict(lmethods)
         self.fields = {}
         for field in dvclass.get_fields():
@@ -257,7 +245,8 @@ class DvClass():
 
     def select_meth(self, nb):
         if nb in self.methods:
-            self.code.append(self.methods[nb].process())
+            self.methods[nb].process()
+            self.code.append(self.methods[nb].debug())
         elif self.subclasses.values():
             for cls in self.subclasses.values():
                 cls.select_meth(nb)
@@ -277,7 +266,7 @@ class DvClass():
         if self.interfaces is not None:
             self.interfaces = self.interfaces[1:-1].split(' ')
             self.prototype += ' implements %s' % ', '.join(
-                            [n[1:-1].replace('/', '.') for n in self.interfaces])
+                        [n[1:-1].replace('/', '.') for n in self.interfaces])
 
         Util.log('%s {' % self.prototype, 'log')
         for field in self.fields.values():
@@ -348,20 +337,14 @@ class DvMachine():
 
 
 if __name__ == '__main__':
-    try:
-        TEST = open('examples/android/TestsAndroguard/bin/classes.dex')
-    except IOError:
-        TEST = open('../examples/android/TestsAndroguard/bin/classes.dex')
-    TEST.close()
-
     Util.DEBUG_LEVEL = 'debug'
 
-    MACHINE = DvMachine(TEST.name)
+    MACHINE = DvMachine('examples/android/TestsAndroguard/bin/classes.dex')
 
     from pprint import pprint
     temp = Util.wrap_stream()
     Util.log('===========================', 'log')
-    Util.log('Classes :', 'log')
+    Util.log('dvclass.get_Classes :', 'log')
     pprint(MACHINE.classes, temp)
     Util.log(temp, 'log')
     Util.log('===========================', 'log')

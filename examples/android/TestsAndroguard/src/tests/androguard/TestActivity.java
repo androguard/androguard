@@ -6,13 +6,14 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public abstract class TestActivity<T> extends Activity implements java.lang.Comparable<T>, java.lang.CharSequence {
+public class TestActivity<T> extends Activity {
 	public int value;
 	public int value2;
 	private int test = 10;
 	private static final int test2 = 20;
 	public int test3 = 30;
-	public int tab[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	public int tab[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
 	static {
 		int t = 5;
 		System.out.println("foobar");
@@ -22,17 +23,16 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		value = 100;
 		value2 = 200;
 	}
-	
-	public TestActivity( int value, int value2 ) {
+
+	public TestActivity(int value, int value2) {
 		this.value = value;
 		this.value2 = value2;
 	}
-	
-	public TestActivity( double value, double value2 )
-	{
+
+	public TestActivity(double value, double value2) {
 		this.test = 5;
-		this.value = (int)value;
-		this.value2 = (int)value2;
+		this.value = (int) value;
+		this.value2 = (int) value2;
 	}
 
 	public int test_base(int _value, int _value2) {
@@ -51,7 +51,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		double z = 5;
 		double cd = 6;
 		float g = 4.20f;
-		
+
 		double useless = g * c + b - y + d;
 
 		System.out.println("VALUE = " + this.value + " VALUE 2 = "
@@ -111,7 +111,35 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		}
 	}
 
+    public int foobis(int i, int j) {
+		while (i < j && i != 10) {
+			try {
+					i = j++ / i;
+			} catch (RuntimeException re) {
+				i = 10;
+				continue;
+			}
+		}
+		return j;
+
+    }
+
 	public int foo2(int i, int j) {
+		while (true) {
+			if (i < j) {
+				try {
+					i = j++ / i;
+				} catch (RuntimeException re) {
+					i = 10;
+					continue;
+				}
+			}
+			if (i == 0)
+				return j;
+		}
+	}
+
+	public int foo4(int i, int j) {
 		while (i < j) {
 			try {
 				i = j++ / i;
@@ -253,7 +281,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		float xpqr = 32768.50f;
 		float xstu = 32767.50f;
 		float xvwx = 32766.50f;
-		
+
 		float ymno = -5f;
 		float ypqr = -65535f;
 		float ystu = -65536f;
@@ -268,33 +296,39 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 	public static void testCall1(float b) {
 		System.out.println("k" + b);
 	}
-	
+
 	public static void testCall2(long i) {
-		new PrintStream(System.out).println("k"+i);
+		new PrintStream(System.out).println("k" + i);
 	}
-	
-	public static void testCalls(TestIfs d){
+
+	public static void testCalls(TestIfs d) {
 		testCall2(3);
 		TestIfs.testIF(5);
 		System.out.println(d.getClass());
 	}
-	
-	public static void testLoop( double a )
-	{
-		while( a < 10 ) {
+
+	public static void testLoop(double a) {
+		while (a < 10) {
 			System.out.println(a);
 			a *= 2;
 		}
 	}
+
+	public void testVarArgs(int p, long[] p2, String... p3) {
+
+	}
 	
-    public void testVarArgs(int p, long[] p2, String ... p3){
-    	
-    }
+	public void testString( )
+	{
+		String a = "foo";
+		String b = new String("bar");
+		System.out.println(a + b);
+	}
 
 	public synchronized int pouet2() {
 		int i = 0, j = 10;
 		System.out.println("test");
-		
+
 		while (i < j) {
 			try {
 				i = j++ / i;
@@ -315,7 +349,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 		return test + test2 + 10;
 	}
 
-	public void testAccessField( ) {
+	public void testAccessField() {
 		TestArr$ays a = new TestArr$ays();
 		a.d = new byte[5];
 		a.d[2] = 'c';
@@ -327,5 +361,7 @@ public abstract class TestActivity<T> extends Activity implements java.lang.Comp
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
+		TestLoops o = new TestLoops();
+		o.testIrreducible(test3, test2);
 	}
 }
