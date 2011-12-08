@@ -20,7 +20,6 @@
 
 import Instruction
 import Util
-from start import Register
 import pydot
 
 
@@ -604,6 +603,7 @@ def process_block_ins(memory, variables, block):
         if regnum:
             register = memory.get(regnum[0])
             if register is None:
+                from start import Register
                 memory[regnum[0]] = Register(newIns)
             else:
                 register.modify(newIns)
