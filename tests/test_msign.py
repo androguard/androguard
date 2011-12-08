@@ -74,7 +74,9 @@ TESTS = {
     "./apks/mixe/e2752f49b478dfa7754c0079c72ce06967b9be99e80b53f5a184a00c00b4686a" : "NickyBot",
     "./apks/mixe/e7b79446333b7fa2af2cc0c0661e1f9135edefa09b341dfd96bfe4df4e755566" : "Boxer",
     "./apks/mixe/98a402d885cdb941dca8b45a4bbcbbe7f44ba62910d519bc1c2161dba117ebd2" : "Foncy",
-    
+    "./apks/mixe/97b704c6ffeb9ec7aed84d71071ae22300d21aafb9f2ceefa06c6841f8d10337" : "Foncy.B",
+    "./apks/mixe/81dd17ea168cf884bfb5aebb7cd2241a5624d1ae14444594bf7677e1080339f9" : "Foncy.C",
+
     # exploits
 
 

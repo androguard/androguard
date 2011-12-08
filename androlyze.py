@@ -114,9 +114,9 @@ def AAnalyzeAPK(filename, raw=False, decompiler="") :
     if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
     elif decompiler == "ded" :
-        d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+        d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
     elif decompiler == "dad" :
-        pass
+        d.set_decompiler( DecompilerDAD( d, dx ) )
 
     return a, d, dx
 

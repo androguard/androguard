@@ -11,6 +11,7 @@
 #include "./lzma/lzma.h"
 #include "./xz/xz.h"
 #include "./snappy/snappy.h"
+#include "./vcblocksort/vcblocksort.h"
 
 #define TYPE_Z          0
 #define TYPE_BZ2        1
@@ -18,6 +19,7 @@
 #define TYPE_LZMA       3
 #define TYPE_XZ         4
 #define TYPE_SNAPPY     5 
+#define TYPE_VCBLOCKSORT     6
 
 struct libsimilarity {
    void *orig;

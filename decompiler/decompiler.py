@@ -88,6 +88,9 @@ class DecompilerDex2Jad :
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
 
+    def display_source(self, class_name, method_name, method_descriptor) :
+        print self.get_source( class_name, method_name )
+
     def get_all(self, class_name) :
         if class_name not in self.classes :
             return ""
@@ -149,6 +152,9 @@ class DecompilerDed :
         formatter = TerminalFormatter()
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
+
+    def display_source(self, class_name, method_name, method_descriptor) :
+        print self.get_source( class_name, method_name )
 
     def get_all(self, class_name) :
         if class_name not in self.classes :
@@ -252,3 +258,13 @@ class MethodFilter(Filter):
             #return l[:item_end+1]
             
         return rep
+
+class DecompilerDAD :
+    def __init__(self, vm, vmx) :
+        self.vm = vm
+        self.vmx = vmx
+
+    def display_source(self, class_name, method_name, method_descriptor) :
+        m = self.vm.get_method_descriptor( class_name, method_name, method_descriptor )
+        mx = self.vmx.get_method( m )
+        #import start 

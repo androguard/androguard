@@ -846,6 +846,8 @@ class MethodInfo :
         return self.get_code().get_local_variables()
 
     def get_code(self) :
+        if self.__code == None :
+            return None
         return self.__code.get_item()
 
     def set_name_index(self, name_index) :
@@ -3429,6 +3431,9 @@ class JVMFormat(bytecode._Bytecode) :
             @rtype: string
         """
         return self._get_raw()
+    
+    def set_vmanalysis(self, vmanalysis) :
+        pass
 
     def get_generator(self) :
         import jvm_generate
