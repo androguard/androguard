@@ -9,6 +9,6 @@ sys.path.append(PATH_INSTALL + "/core/bytecodes")
 from xml.dom import minidom
 import apk 
 
-ap = apk.AXMLPrinter( open("apks/tmp/AndroidManifest.xml", "r").read() )
+ap = apk.AXMLPrinter( open("examples/axml/AndroidManifest.xml", "r").read() )
 
 print minidom.parseString( ap.getBuff() ).toxml()

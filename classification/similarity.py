@@ -50,6 +50,7 @@ SMAZ_COMPRESS =         2
 LZMA_COMPRESS =         3
 XZ_COMPRESS =           4
 SNAPPY_COMPRESS =       5
+VCBLOCKSORT_COMPRESS =  6
 class SIMILARITY :
     def __init__(self, path="./libsimilarity/libsimilarity.so") :
         self._u = cdll.LoadLibrary( path )
@@ -72,6 +73,7 @@ class SIMILARITY :
            LZMA_COMPRESS : {},
            XZ_COMPRESS : {},
            SNAPPY_COMPRESS : {},
+           VCBLOCKSORT_COMPRESS : {},
         }
         
         self.__rcaches = {
@@ -81,6 +83,7 @@ class SIMILARITY :
            LZMA_COMPRESS : {},
            XZ_COMPRESS : {},
            SNAPPY_COMPRESS : {},
+           VCBLOCKSORT_COMPRESS : {},
         }
        
         self.__ecaches = {}

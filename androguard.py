@@ -31,6 +31,7 @@ sys.path.append(PATH_INSTALL + "/core/wm")
 sys.path.append(PATH_INSTALL + "/core/protection")
 sys.path.append(PATH_INSTALL + "/classification")
 sys.path.append(PATH_INSTALL + "/decompiler")
+sys.path.append(PATH_INSTALL + "/dad")
 
 import bytecode, jvm, dvm, apk, androconf, analysis, opaque
 from androconf import error

@@ -19,6 +19,7 @@ play with :
 Androguard has the following features :
     - Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full 
       Python objects,
+    - Native decompiler for android application (dex to java),
     - Native support of DEX code in a c++ library,
     - Access to the static analysis of your code (basic blocks, 
       instructions, permissions (with database from 
@@ -37,10 +38,6 @@ Androguard has the following features :
     - Visualize your application into cytoscape (by using xgmml format), 
       or PNG/DOT output,
     - Patch JVM classes, add native library dependencies,
-    - Dump the jvm process to find classes into memory,
-    - Add a watermark into your application (in progress),
-    - Classify android apks (in progress),
-    - Protect your application against thefts on android market (in 
       progress),
     - ...
 
@@ -70,30 +67,6 @@ can contact me (see the top of this README for my e-mail).
 You need to follow the following information to install dependencies
 for androguard :
     http://code.google.com/p/androguard/wiki/Installation
-
-All objects can be access directly, and most of the time, there is 
-a field called "format" which contained the raw fields which can 
-be changed :
->>> j = JVMFormat( open("./VM.class").read() )
->>> x = j.get_method("<init>")[0]
->>> print x.format
-MethodInfo(access_flags=0, name_index=40, descriptor_index=41, \
-           attributes_count=1)
->>> x.format.get_value_buff()
-'\x00\x00\x00(\x00)\x00\x01'
->>> x.format.set_value( { "access_flags" : 1 } )
->>> x.format.get_value_buff()
-'\x00\x01\x00(\x00)\x00\x01'
->>> print x.format
-MethodInfo(access_flags=1, name_index=40, descriptor_index=41, \
-           attributes_count=1)
-
-
-So you can do what you would like with that, but be carefull because it's
-possible to have an unusable format if you change something that you don't
-know correctly. But most of the time there will be no problem, but if you
-don't know what you are doing, it's better to use the providing API to
-change a field.
 
 You must go to the website to see more example :
    http://code.google.com/p/androguard/wiki/Usage
@@ -141,7 +114,18 @@ http://code.google.com/p/androguard/wiki/DatabaseAndroidMalwares
 http://code.google.com/p/androguard/wiki/RoadMap
 http://code.google.com/p/androguard/issues/list
 
-4 -] License
+4 -] Authors
+
+Androguard + tools: Anthony Desnos <desnos at t0t0.fr>
+DAD (DAD is A Decompiler): Geoffroy Gueguen <geoffroy dot gueguen at gmail dot com>
+
+5 -] Contributors
+
+Craig Smith <agent dot craig at gmail dot com>: 64 bits patch + magic tricks
+
+6 -] Licenses
+
+6.1 --] Androguard
 
 Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
 All rights reserved.
@@ -158,3 +142,22 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
+
+
+6.2 -] DAD
+
+Copyright (C) 2011, Geoffroy Gueguen <geoffroy.gueguen at gmail.com>
+All rights reserved.
+
+Androguard is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Androguard is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with DAD.  If not, see <http://www.gnu.org/licenses/>.

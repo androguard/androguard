@@ -707,11 +707,11 @@ class JVMBasicBlock :
                 desc = getattr(self.__vm, "get_field_descriptor")(o[0], o[1], o[2])
 
                 # It's an external
-                if desc == None :
-                    desc = ExternalFM( o[0], o[1], o[2] )
+                #if desc == None :
+                #    desc = ExternalFM( o[0], o[1], o[2] )
 
 #               print "RES", res, "-->", desc.get_name()
-                self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
+                self.__context.get_tainted_variables().push_info( TAINTED_FIELD, [o[0], o[1], o[2]], (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
             #########################################################
 
             ################### TAINTED PACKAGES ###################

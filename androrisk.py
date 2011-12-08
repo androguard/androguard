@@ -32,9 +32,9 @@ options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
     if options.input != None :
+        ri = risk.RiskIndicator()
         ret_type = androconf.is_android( options.input ) 
         if ret_type == "APK" :
-            ri = risk.RiskIndicator()
             a = apk.APK( options.input )
             print options.input, ri.with_apk( a )
         elif ret_type == "DEX" :

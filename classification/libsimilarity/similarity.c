@@ -71,6 +71,8 @@ void set_compress_type(int type) {
       generic_Compress = xzCompress;
    } else if (type == TYPE_SNAPPY) {
       generic_Compress = snappyCompress;
+   } else if (type == TYPE_VCBLOCKSORT) {
+      generic_Compress = vcblocksortCompress;
    }
 }
 
