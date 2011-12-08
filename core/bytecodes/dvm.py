@@ -1259,6 +1259,7 @@ class EncodedValue :
         return []
 
     def get_raw(self) :
+        print self.val, self.value
         if isinstance(self.value, str) :
             return self.val.get_value_buff() + self.value
         else :
@@ -1776,7 +1777,7 @@ class EncodedMethod :
             self._code.pretty_show( self.__CM.vmanalysis_ob.hmethods[ self ] )
 
     def source(self) :
-        print self.__CM.decompiler_ob.get_source( self.get_class_name(), self.get_name() )
+        self.__CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
 
     def get_access_flags(self) :
         return self.access_flags
@@ -1955,7 +1956,7 @@ class ClassItem :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
 
     def source(self) :
-        print self.__CM.decompiler_ob.get_all( self.get_name() )
+        self.__CM.decompiler_ob.get_all( self.get_name() )
 
     def get_class_data(self) :
         return self._class_data_item

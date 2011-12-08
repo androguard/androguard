@@ -139,17 +139,43 @@ class SignHash :
     def raz(self) :
         self.sign.raz()
 
-class MSignature :
-    def __init__(self, dbname = "./signatures/dbandroguard", dbconfig = "./signatures/dbconfig") :
-        """
-            Check if signatures from a database is present in an android application (apk/dex)
-
-            @param dbname : the filename of the database
-            @param dbconfig : the filename of the configuration
-
-        """
+class BooleanSignature :
+    def __init__(self) :
         self.__signs = {}
         self.__rsigns = {}
+
+    def add_sign(self, current_sign) :
+        self.__signs[ len(self.__signs) ] = current_sign
+
+    def add_rsign(self, uniqueid) :
+        self.__rsigns[ uniqueid ] = len(self.__signs) - 1
+    
+    def _eval(self, l) :
+        current_sign = {} 
+        ret = [] 
+
+        for i in l :
+            m_sign = self.__signs[ self.__rsigns[ i[0] ] ]
+
+            try :
+                ev = current_sign[ self.__rsigns[ i[0] ] ]
+            except KeyError :
+                current_sign[ self.__rsigns[ i[0] ] ] = m_sign[-1]
+                ev = current_sign[ self.__rsigns[ i[0] ] ]
+           
+            current_sign[ self.__rsigns[ i[0] ] ] = ev.replace( str( m_sign[1][i[0]] ), "True" )
+
+        for i in l :
+            ev = current_sign[ self.__rsigns[ i[0] ] ]
+            ev = re.sub("[0-9]", "False", ev)
+
+            if (eval(ev) == True) :
+                return self.__signs[ self.__rsigns[ i[0] ] ][0]
+        
+        return None
+
+class PublicSignature:
+    def __init__(self, dbname, dbconfig) :
         self.__ids = {}
         self.__lids = {}
         
@@ -159,12 +185,12 @@ class MSignature :
 
         self.dbname = dbname
         self.dbconfig = dbconfig
+        
+        self.bs = BooleanSignature()
+
         self.debug = False
-       
+
     def load(self) :
-        """
-            Load the database
-        """
         self._load_config( open(self.dbconfig, "r").read() )
         self._load_sign( open(self.dbname, "r").read() )
 
@@ -172,15 +198,12 @@ class MSignature :
         self.class_sim.fix()
         self.bin_hash.fix()
 
-    def set_debug(self) :
-        """
-            Debug mode !
-        """
+    def set_debug(self):
         self.debug = True
         self.meth_sim.set_debug()
         self.class_sim.set_debug()
         self.bin_hash.set_debug()
-        
+
     def _load_config(self, buff) :
         buff = json.loads( buff )
 
@@ -209,7 +232,8 @@ class MSignature :
             j = buff[i][0]
 
             current_sign = [ i ]
-            self.__signs[ len(self.__signs) ] = current_sign
+            self.bs.add_sign( current_sign )
+
             unique_idlink = self._create_id_link()
 
             nb = 0
@@ -237,7 +261,7 @@ class MSignature :
                     self.meth_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_meth_sim, nb )
 
                     ccurrent_sign[ uniqueid ] = nb
-                    self.__rsigns[ uniqueid ] = len(self.__signs) - 1
+                    self.bs.add_rsign( uniqueid )
                     nb += 1 
                     nb_meth_sim += 1
                     if self.debug :
@@ -249,7 +273,7 @@ class MSignature :
                     self.class_sim.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_class_sim, nb )
 
                     ccurrent_sign[ uniqueid ] = nb
-                    self.__rsigns[ uniqueid ] = len(self.__signs) - 1
+                    self.bs.add_rsign( uniqueid )
                     nb += 1 
                     nb_class_sim += 1
                     if self.debug :
@@ -261,7 +285,7 @@ class MSignature :
                     self.bin_hash.load_sign( uniqueid, unique_idlink, i, ssign, c_nb_bin_hash, nb )
 
                     ccurrent_sign[ uniqueid ] = nb
-                    self.__rsigns[ uniqueid ] = len(self.__signs) - 1
+                    self.bs.add_rsign( uniqueid )
                     nb += 1
                     if self.debug :
                         print
@@ -286,26 +310,6 @@ class MSignature :
         self.meth_sim.set_npass( nb_meth_sim )
         self.class_sim.set_npass( nb_class_sim )
 
-    def check_apk(self, apk) :
-        """
-            Check if a signature matches the application
-
-            @param apk : an L{APK} object
-            @rtype : None if no signatures match, otherwise the name of the signature
-        """
-        if self.debug :
-            print "loading apk..",
-            sys.stdout.flush()
-        
-        classes_dex = apk.get_dex()
-        ret, l = self._check_dalvik( classes_dex )
-
-        if ret == None :
-            ret, l1 = self._check_bin( apk )
-            l.extend( l1 )
-
-        return ret, l
-
     def _check_bin(self, apk) :
         if self.debug :
             print "B",
@@ -319,21 +323,9 @@ class MSignature :
 
                 ret = l_bin_hash[0]
                 if ret == 0 :
-                    return self.__eval( l_bin_hash[1:] ), l_bin_hash[1:]
+                    return self.bs._eval( l_bin_hash[1:] ), l_bin_hash[1:]
         return None, []
-
-    def check_dex(self, buff) :
-        """
-            Check if a signature matches the dex application
-
-            @param buff : a buffer which represents a dex file
-            @rtype : None if no signatures match, otherwise the name of the signature
-        """
-        return self._check_dalvik( buff )
-
-    def check_dex_direct(self, d, dx) :
-        return self._check_dalvik_direct( d, dx )
-
+    
     def __check_meths(self) :
         if self.debug :
             print "SM",
@@ -440,8 +432,8 @@ class MSignature :
             dt1 = self.class_sim.get_debug()
             print "C:%d CC:%d CMP:%d EL:%d" % (dt[2], dt[3], dt[0], dt[1]),
             print "C:%d CC:%d CMP:%d EL:%d" % (dt1[2], dt1[3], dt1[0], dt1[1]),
-        
-        ret = self.__eval( l )
+       
+        ret = self.bs._eval( l )
 
         self.meth_sim.raz()
         self.class_sim.raz()
@@ -450,29 +442,72 @@ class MSignature :
 
         return ret, l
 
-    def __eval(self, l) :
-        current_sign = {} 
-        ret = [] 
 
-        for i in l :
-            m_sign = self.__signs[ self.__rsigns[ i[0] ] ]
+class MSignature :
+    def __init__(self, dbname = "./signatures/dbandroguard", dbconfig = "./signatures/dbconfig") :
+        """
+            Check if signatures from a database is present in an android application (apk/dex)
 
-            try :
-                ev = current_sign[ self.__rsigns[ i[0] ] ]
-            except KeyError :
-                current_sign[ self.__rsigns[ i[0] ] ] = m_sign[-1]
-                ev = current_sign[ self.__rsigns[ i[0] ] ]
-           
-            current_sign[ self.__rsigns[ i[0] ] ] = ev.replace( str( m_sign[1][i[0]] ), "True" )
+            @param dbname : the filename of the database
+            @param dbconfig : the filename of the configuration
 
-        for i in l :
-            ev = current_sign[ self.__rsigns[ i[0] ] ]
-            ev = re.sub("[0-9]", "False", ev)
+        """
 
-            if (eval(ev) == True) :
-                return self.__signs[ self.__rsigns[ i[0] ] ][0]
+        self.debug = False
+        self.p = PublicSignature( dbname, dbconfig )
+
+    def load(self) :
+        """
+            Load the database
+        """
+        self.p.load()
+
+    def set_debug(self) :
+        """
+            Debug mode !
+        """
+        self.debug = True
+        self.p.set_debug()
         
-        return None
+
+    def check_apk(self, apk) :
+        """
+            Check if a signature matches the application
+
+            @param apk : an L{APK} object
+            @rtype : None if no signatures match, otherwise the name of the signature
+        """
+        if self.debug :
+            print "loading apk..",
+            sys.stdout.flush()
+        
+        classes_dex = apk.get_dex()
+        ret, l = self.p._check_dalvik( classes_dex )
+
+        if ret == None :
+            ret, l1 = self.p._check_bin( apk )
+            l.extend( l1 )
+
+        return ret, l
+
+    def check_dex(self, buff) :
+        """
+            Check if a signature matches the dex application
+
+            @param buff : a buffer which represents a dex file
+            @rtype : None if no signatures match, otherwise the name of the signature
+        """
+        return self.p._check_dalvik( buff )
+
+    def check_dex_direct(self, d, dx) :
+        """
+            Check if a signature matches the dex application
+
+            @param buff : a buffer which represents a dex file
+            @rtype : None if no signatures match, otherwise the name of the signature
+        """
+        return self.p._check_dalvik_direct( d, dx )
+
 
 def get_signature(vmx, m) :
     return vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
@@ -598,7 +633,7 @@ class CSignature :
         for i in buff :
             print i, 
             for j in buff[i][0] :
-                print j[0], j[2:],
+                print j[0], j[2:], len(base64.b64decode( j[1] )),
             print
 
     def check_db(self, output) :

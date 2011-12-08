@@ -702,14 +702,6 @@ class RiskIndicator :
 
             @rtype : return the risk of the apk file (from 0.0 to 100.0)
         """
-        risks = { DANGEROUS_RISK    : 0.0,
-                  MONEY_RISK        : 0.0,
-                  PRIVACY_RISK      : 0.0,
-                  INTERNET_RISK     : 0.0,
-                  BINARY_RISK       : 0.0,
-                  DYNAMIC_RISK      : 0.0,
-                }
-
 
         if apk_file.is_valid_APK() :
             try :
@@ -719,20 +711,10 @@ class RiskIndicator :
 
             vmx = analysis.VMAnalysis( vm )
 
-            self.__eval_risk_perm( apk_file.get_details_permissions(), risks )
-            self.__eval_risk_dyn( vmx, risks )
-            self.__eval_risk_bin( apk_file.get_files_types(), risks )
-
-            val = self.__eval_risks( risks )
-            return val
+            return self.with_apk_direct( apk_file, vm, vmx )
         return -1
-
-    def with_dex(self, dex_file) :
-        """
-            @param dex_file : a buffer
-
-            @rtype : return the risk of the dex file (from 0.0 to 100.0)
-        """
+    
+    def with_apk_direct(self, apk, vm, vmx) :
         risks = { DANGEROUS_RISK    : 0.0,
                   MONEY_RISK        : 0.0,
                   PRIVACY_RISK      : 0.0,
@@ -740,14 +722,39 @@ class RiskIndicator :
                   BINARY_RISK       : 0.0,
                   DYNAMIC_RISK      : 0.0,
                 }
-       
+
+        self.__eval_risk_perm( apk.get_details_permissions(), risks )
+        self.__eval_risk_dyn( vmx, risks )
+        self.__eval_risk_bin( apk.get_files_types(), risks )
+        
+        val = self.__eval_risks( risks )
+
+        return val
+
+    def with_dex(self, dex_file) :
+        """
+            @param dex_file : a buffer
+
+            @rtype : return the risk of the dex file (from 0.0 to 100.0)
+        """
         try : 
             vm = dvm.DalvikVMFormat( dex_file )
         except Exception, e :
             return -1
 
         vmx = analysis.VMAnalysis( vm )
-       
+        
+        return self.with_dex_direct( vm, vmx )
+
+    def with_dex_direct(self, vm, vmx) :
+        risks = { DANGEROUS_RISK    : 0.0,
+                  MONEY_RISK        : 0.0,
+                  PRIVACY_RISK      : 0.0,
+                  INTERNET_RISK     : 0.0,
+                  BINARY_RISK       : 0.0,
+                  DYNAMIC_RISK      : 0.0,
+                }
+        
         d = {}
         for i in vmx.get_permissions( [] ) :
             d[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][i] 
@@ -757,6 +764,7 @@ class RiskIndicator :
         
         val = self.__eval_risks( risks )
         return val
+       
 
 
 class MethodScore :

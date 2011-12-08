@@ -46,6 +46,15 @@ TESTS_DIFFERENT_SIGN = [
                [ "B[F0P1P1P1P0F0P1P1P1P1P1P0F0P1F0P1P1P0P1P1P1P1R]", "B[F0P1F0P1P1]B[SP1P1F0F0F0I]B[F0F0P1G]" ],
             ]
 
+TESTS_SMALL_SIGN = [ 
+    [ "TOTO TOTO", "TOTO TOTO" ],
+    [ "TITO TOTO", "TOTO TOTO" ],
+    [ "TOTO TATO", "TOTO TOTO" ],
+    [ "B[]B[]B[IR]", "B[]B[]B[IR]"],
+    [ "B[]B[]B[IR]", "B[]B[]B[IR]B"],
+    [ "HELLO WORLD", "TOTO TOTO" ],
+]
+
 CONVERT_RESULT_TEST = { " OK " : 1,
                         "  X " : 0,
                       }
@@ -233,6 +242,10 @@ def TestProperties(n, data) :
     Symetry( n, data )
     Distributivity( n, data )
 
+def TestSmallString(n, data) :
+    for i in data :
+        print i, n.ncd( i[0], i[1] )
+
 def RandomData() :
     l = []
     for i in range(0,9) :
@@ -244,6 +257,7 @@ TESTS = { "ZLIB"        : ZLIB_COMPRESS,
           "LZMA"        : LZMA_COMPRESS,
           "XZ"          : XZ_COMPRESS,
           "SNAPPY"      : SNAPPY_COMPRESS,
+          "VCBLOCKSORT" : VCBLOCKSORT_COMPRESS,
    #       "SMAZ"         : SMAZ_COMPRESS,
         }
 
@@ -263,7 +277,9 @@ if __name__ == "__main__" :
         n.set_compress_type( TESTS[i] )
         print "* ", i
 
-        TestProperties( n, TESTS_RANDOM_SIGN )
+        #TestProperties( n, TESTS_RANDOM_SIGN )
+        TestSmallString( n, TESTS_SMALL_SIGN )
+        
         #TestProperties( n, RandomData() )
 
 

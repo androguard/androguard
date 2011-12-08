@@ -399,7 +399,8 @@ class _Bytecode(object) :
             import psyco
             psyco.full()
         except ImportError :
-            warning("module psyco not found")
+            pass
+            #warning("module psyco not found")
 
         self.__buff = buff
         self.__idx = 0

@@ -1,0 +1,8 @@
+1.0 :                                                                                                                                                                                            
+- Native decompiler for android application: DAD
+- Embedded DED, DEX2JAR + JAD decompilers and DAD :)
+- Plagiarism/Diffing tools for android application
+- Open source database of android malware
+- Detection of code in android application
+- Improve analysis/risk algorithms
+- XREF(to/from) in androlyze.py
