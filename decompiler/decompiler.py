@@ -276,3 +276,6 @@ class DecompilerDAD :
         formatter = TerminalFormatter()
         result = highlight(z.debug(), lexer, formatter)
         print result
+    
+    def get_all(self, class_name) :
+        pass

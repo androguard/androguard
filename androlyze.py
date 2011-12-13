@@ -93,12 +93,13 @@ def AnalyzeAPK(filename, raw=False) :
     d.set_vmanalysis( dx )
     ExportVMToPython( d )
     ExportXREFToPython( d, gx )
+    ExportDREFToPython( d, dx )
     set_pretty_show( 1 )
 
     return a, d, dx
 
 
-def AAnalyzeAPK(filename, raw=False, decompiler="") :
+def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
     """
         Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
 
@@ -140,11 +141,12 @@ def AnalyzeDex(filename, raw=False) :
     d.set_vmanalysis( dx )
     ExportVMToPython( d )
     ExportXREFToPython( d, gx )
+    ExportDREFToPython( d, dx )
     set_pretty_show( 1 )
 
     return d, dx
 
-def AAnalyzeDex(filename, raw=False, decompiler="") :
+def AAnalyzeDex(filename, raw=False, decompiler="dad") :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -162,7 +164,7 @@ def AAnalyzeDex(filename, raw=False, decompiler="") :
     elif decompiler == "ded" :
         d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
     elif decompiler == "dad" :
-        pass
+        d.set_decompiler( DecompilerDAD( d, dx ) )
    
     return d, dx
 

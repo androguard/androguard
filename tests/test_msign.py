@@ -76,6 +76,7 @@ TESTS = {
     "./apks/mixe/98a402d885cdb941dca8b45a4bbcbbe7f44ba62910d519bc1c2161dba117ebd2" : "Foncy",
     "./apks/mixe/97b704c6ffeb9ec7aed84d71071ae22300d21aafb9f2ceefa06c6841f8d10337" : "Foncy.B",
     "./apks/mixe/81dd17ea168cf884bfb5aebb7cd2241a5624d1ae14444594bf7677e1080339f9" : "Foncy.C",
+    "./apks/mixe/f18891b20623ad35713e7f44feade51a1fd16030af55056a45cefa3f5f38e983" : "Logastrod",
 
     # exploits
 

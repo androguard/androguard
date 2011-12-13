@@ -63,7 +63,7 @@ def entropy(data):
     return entropy
 
 class GVMAnalysis :
-    def __init__(self, vmx, apk) :
+    def __init__(self, vmx, apk, details=True) :
         self.vmx = vmx
         self.vm = self.vmx.get_vm()
 
@@ -76,18 +76,19 @@ class GVMAnalysis :
             n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
             n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
 
-            m1 = j.get_method()
-            m2 = self.vm.get_method_descriptor( j.get_class_name(), j.get_name(), j.get_descriptor()  )
+            if details :
+                m1 = j.get_method()
+                m2 = self.vm.get_method_descriptor( j.get_class_name(), j.get_name(), j.get_descriptor()  )
 
-            n1.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-            n1.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+                n1.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+                n1.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
             
-            if m2 == None :
-                n2.set_attributes( { "android_api" : 0.0 } )
-                n2.set_attributes( { "java_api" : 0.0 } )
-            else :
-                n2.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-                n2.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
+                if m2 == None :
+                    n2.set_attributes( { "android_api" : 0.0 } )
+                    n2.set_attributes( { "java_api" : 0.0 } )
+                else :
+                    n2.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
+                    n2.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
 
             self.G.add_edge( n1.id, n2.id )
             

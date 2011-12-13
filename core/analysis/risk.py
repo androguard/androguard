@@ -724,7 +724,10 @@ class RiskIndicator :
                 }
 
         self.__eval_risk_perm( apk.get_details_permissions(), risks )
-        self.__eval_risk_dyn( vmx, risks )
+        
+        if (vmx != None):
+            self.__eval_risk_dyn( vmx, risks )
+        
         self.__eval_risk_bin( apk.get_files_types(), risks )
         
         val = self.__eval_risks( risks )
