@@ -555,3 +555,30 @@ def ExportXREFToPython(vm, gvm) :
                     if xref_meth != None :
                         name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
                         setattr( method.XREFto, name, xref_meth )
+
+def ExportDREFToPython(vm, vmx) :
+    for _class in vm.get_classes() :
+        for field in _class.get_fields() :
+            field.DREFr = XREF()
+            field.DREFw = XREF()
+
+            paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
+            if paths != None :
+                for path in paths.get_paths() :
+                    if path.get_access_flag() == 'R' :
+                        method_class_name = path.get_method().get_class_name()
+                        method_name = path.get_method().get_name()
+                        method_descriptor = path.get_method().get_descriptor()
+
+                        dref_meth = vm.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                        name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                        setattr( field.DREFr, name, dref_meth )
+                    else :
+                        method_class_name = path.get_method().get_class_name()
+                        method_name = path.get_method().get_name()
+                        method_descriptor = path.get_method().get_descriptor()
+
+                        dref_meth = vm.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                        name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                        setattr( field.DREFw, name, dref_meth )
+
