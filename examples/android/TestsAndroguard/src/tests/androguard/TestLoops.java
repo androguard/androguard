@@ -175,6 +175,21 @@ public class TestLoops {
         return a + c;
     }
 	
+    public int testBreakMid( boolean b ) {
+    	int a = Loop.i, c = Loop.j;
+    	while(true) {
+    		System.out.println("foo");
+    		a += c;
+    		c += 5;
+    		if ( a == 50 )
+    			b = !b;
+    		if ( b ) break;
+    		System.out.println("bar");
+    		a *= 2;
+    	}
+    	return a + c;
+    }
+    
 	public int testBreakDoWhile( boolean b ) {
 		int a = 0, c = 0;
 		do {
