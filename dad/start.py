@@ -22,7 +22,6 @@ import sys
 sys.path.append('./')
 import androguard
 import analysis
-import Instruction
 import Structure
 import Util
 import copy
@@ -37,32 +36,106 @@ class This():
     def get_type(self):
         return self.cls.name
 
-    def get_value(self):
+    def value(self):
         return 'this'
 
     def get_name(self):
         return 'this'
 
 
+class Var():
+    def __init__(self, name, typeDesc, type, size, content):
+        self.name = name
+        self.type = type
+        self.size = size
+        self.content = content
+        self.param = False
+        self.typeDesc = typeDesc
+        self.used = 0
+    
+    def get_content(self):
+        return self.content
+
+    def get_type(self):
+        return self.typeDesc
+
+    def value(self):
+#        if self.content:
+#            return self.content.value()
+#        self.used += 1
+        return self.name
+
+    def get_name(self):
+        if self.type is 'void':
+            return self.content.value()
+        self.used += 1
+        return self.name
+
+    def neg(self):
+        return self.content.neg()
+
+    def dump(self, indent):
+        if str(self.content.value()).startswith('ret'):
+            return '   ' * indent + self.content.value() + ';\n'
+            #return '   ' * indent + self.content.value() + ';(%d)\n' % self.used
+
+        #if self.type is 'void':
+        #    if self.content.value() != 'this':
+        #        return '   ' * indent + '%s;(%d)\n' % (self.content.value(), self.used)
+        #    return ''
+
+        return '   ' * indent + '%s %s = %s;\n' % (self.type, self.name,
+                                                   self.content.value())
+
+        #return '   ' * indent + '%s %s = %s;(%d)\n' % (self.type, self.name,
+        #                        self.content.value(), self.used)
+    
+    def decl(self):
+        return '%s %s' % (self.type, self.name)
+     
+    def __repr__(self):
+        if self.content:
+            return 'var(%s==%s==%s)' % (self.type, self.name, self.content)
+        return 'var(%s===%s)' % (self.type, self.name)
+
+
+class Variable():
+    def __init__(self):
+        self.nbVars = {}
+        self.vars = []
+
+    def newVar(self, typeDesc, content=None):
+        n = self.nbVars.setdefault(typeDesc, 1)
+        self.nbVars[typeDesc] += 1
+        size = Util.get_type_size(typeDesc)
+        _type = Util.get_type(typeDesc)
+        if _type:
+            type = _type.split('.')[-1]
+        Util.log('typeDesc : %s' % typeDesc, 'debug')
+        if type.endswith('[]'):
+            name = '%sArray%d' % (type.strip('[]'), n)
+        else:
+            name = '%sVar%d' % (type, n)
+        var = Var(name, typeDesc, type, size, content)
+        self.vars.append(var)
+        return var
+
+    def startBlock(self):
+        self.varscopy = copy.deepcopy(self.nbVars)
+
+    def endBlock(self):
+        self.nbVars = self.varscopy
+
+
 class Register():
     def __init__(self, content):
         self.content = content
-        self.nbuses = 0
-        self.used = False
         self.isPair = False
 
     def modify(self, ins):
-        if self.used:
-            self.dump(ins)
         self.content = ins
-        self.nbuses = 0
-        self.used = False
 
     def get_content(self):
-        self.nbuses += 1
-        if self.nbuses > 1:
-            self.used = True
-            Util.log('GET CONTENT -> USED TRUE (%s)' % self.content, 'debug')
         return self.content
 
     def dump(self, ins):
@@ -74,26 +147,23 @@ class Register():
                 -------
                 New value :
                 %s
-                -> %s (used : %s)
+                -> %s
                 ---------------""" % (str(self.content),
-                self.content.get_value(), str(ins),
-                ins.get_value(), self.used), 'debug')
+                self.content.value(), str(ins),
+                ins.value()), 'debug')
 
     def __deepcopy__(self, dic=None):
         d = dic.get(self, None)
         if d is None:
             r = Register(self.content)
-            r.nbuses = self.nbuses
-            r.used = self.used
             r.isPair = self.isPair
             dic[self] = r
             return r
         return d
 
     def __str__(self):
-        return 'Register :\n\tused : %s\n' \
-               '\tcontent : %s\t\tvalue : %s.' % (self.used, str(self.content),
-                                                  str(self.content.get_value()))
+        return 'Register content : %s\t\tvalue : %s.' % (str(self.content),
+                                                str(self.content.value()))
 
     def __repr__(self):
         return repr(self.content)
@@ -105,7 +175,8 @@ class DvMethod():
         self.method = methanalysis.get_method()
         self.name = self.method.get_name()
         self.lparams = []
-        self.variables = Instruction.Variable()
+        self.variables = Variable()
+        self.tabsymb = {}
         
         if self.name == '<init>':
             self.name = self.method.get_class_name()[1:-1].split('/')[-1]
@@ -140,7 +211,7 @@ class DvMethod():
             if 0x8 in self.access:
                 self._add_parameters(start)
             else:
-                self.memory[start] = Register(this)
+                self.memory[start] = this#Register(this)
                 self._add_parameters(start + 1)
         self.ins = []
         self.cur = 0
@@ -149,8 +220,9 @@ class DvMethod():
         size = 0
         for paramType in self.paramsType:
             param = self.variables.newVar(paramType)
+            self.tabsymb[param.get_name()] = param
             param.param = True
-            self.memory[start + size] = Register(param)
+            self.memory[start + size] = param#Register(param)
             self.lparams.append(param)
             size += param.size
 
@@ -158,9 +230,9 @@ class DvMethod():
         if self.ast is None:
             return
         Util.log('METHOD : %s' % self.name, 'debug')
-        for child in self.ast.childs:
+        for child in self.ast.succs:
             Util.log('Processing %s' % child, 'debug')
-            blockins = child.process(self.memory, self.variables, 0)
+            blockins = child.process(self.memory, self.tabsymb, self.variables, 0)
             if blockins:
                 self.ins.append(blockins)
 

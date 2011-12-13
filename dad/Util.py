@@ -28,7 +28,8 @@ TYPE_DESCRIPTOR = {
     'J': 'long',
     'F': 'float',
     'D': 'double',
-    'STR': 'String'
+    'STR': 'String',
+    'StringBuilder': 'String'
 }
 
 ACCESS_FLAGS_CLASSES = {
@@ -144,7 +145,9 @@ def get_type(atype, size=None):
     '''
     Retrieve the type of a descriptor (e.g : I)
     '''
-    res = TYPE_DESCRIPTOR.get(atype)
+    if atype.startswith('java.lang'):
+        atype = atype.replace('java.lang.', '')
+    res = TYPE_DESCRIPTOR.get(atype.lstrip('java.lang'))
     if res is None:
         if atype[0] == 'L':
             res = atype[1:-1].replace('/', '.')
@@ -175,6 +178,7 @@ def log(s, mode):
         print 'DEBUG: %s' % s
     def _log_error(s):
         print 'ERROR: %s' % s
+        exit()
     if mode is None:
         return
     mode = DEBUG_MODES.get(mode)
