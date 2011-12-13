@@ -3029,7 +3029,10 @@ class ClassManager :
                 self.__manage_item_off.append( item.get_off() )
 
     def get_code(self, idx) :
-        return self.__manage_item[ "TYPE_CODE_ITEM" ].get_code( idx )
+        try :
+            return self.__manage_item[ "TYPE_CODE_ITEM" ].get_code( idx )
+        except KeyError :
+            return None
 
     def get_class_data_item(self, off) :
         for i in self.__manage_item[ "TYPE_CLASS_DATA_ITEM" ] :
@@ -3275,7 +3278,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return l
 
     def get_all_fields(self) :
-        return self.fields.gets()
+        try :
+            return self.fields.gets()
+        except AttributeError :
+            return []
 
     def get_fields(self) :
         """Return all objects fields"""

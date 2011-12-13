@@ -974,7 +974,7 @@ class DVMBasicBlock :
 
         self.free_blocks_offsets = []
 
-        self.fill_array_data = {}
+        self.special_ins = {}
 
         self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
         self.exception_analysis = None
@@ -1046,15 +1046,15 @@ class DVMBasicBlock :
                 string_name = self.__vm.get_cm_string( i.get_operands()[-1][1] )
                 self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
                 self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
-            elif op_value == 0x26 :
+            elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c) :
                 code = self.__method.get_code().get_bc()
-                self.fill_array_data[ i ] = code.get_ins_off( self.get_start() + idx + i.get_operands()[-1][1] * 2 )
+                self.special_ins[ i ] = code.get_ins_off( self.get_start() + idx + i.get_operands()[-1][1] * 2 )
 
             idx += i.get_length()
 
-    def get_fill_array_data(self, ins) :
+    def get_special_ins(self, ins) :
         try :
-            return self.fill_array_data[ ins ]
+            return self.special_ins[ ins ]
         except :
             return None
 
@@ -1161,17 +1161,19 @@ class TaintedVariables :
             return None
 
     def get_field(self, class_name, name, descriptor) :
-        for i in self.__vars[ TAINTED_FIELD ] :
-            if i.get_class_name() == class_name and i.get_name() == name and i.get_descriptor() == descriptor :
-                return self.__vars[ TAINTED_FIELD ] [i]
-        return None
+        key = class_name + descriptor + name
+
+        try :
+            return self.__vars[ TAINTED_FIELD ] [ key ]
+        except KeyError :
+            return None
 
     # permission functions 
     def get_permissions_method(self, method) :
         permissions = []
 
         for f, f1 in self.get_fields() :
-            data = "%s-%s-%s" % (f1.get_class_name(), f1.get_name(), f1.get_descriptor())
+            data = "%s-%s-%s" % (f1[0], f1[1], f1[2])
             if data in DVM_PERMISSIONS_BY_ELEMENT :
                 for path in f.get_all_paths() :
                     if path.get_method() == method :
