@@ -43,7 +43,7 @@ class Block(object):
     def set_next(self, next):
         self.next = next
 
-    def process(self, memory, vars, indent):
+    def process(self, memory, tabsymb, vars, indent):
         print 'Process not done :', self
 
 
@@ -51,9 +51,11 @@ class StatementBlock(Block):
     def __init__(self, node, block):
         super(StatementBlock, self).__init__(node, block)
 
-    def process(self, memory, vars, indent):
-        res = process_block_ins(memory, vars, self.block)
-        res = ''.join([str(i.dump(indent)) for i in res])
+    def process(self, memory, tabsymb, vars, indent):
+        res = process_block_ins(memory, tabsymb, vars, self.block)
+        res = ';\n'.join(['   ' * indent + str(i.value()) for i in res])
+        if res != '':
+            res += ';\n'
         return res
 
     def __str__(self):
@@ -63,23 +65,26 @@ class StatementBlock(Block):
 class WhileBlock(Block):
     def __init__(self, node, block):
         super(WhileBlock, self).__init__(node, block)
+        self.true = None
+        self.false = None
 
-    def process(self, memory, vars, indent):
-        if len(self.node.succs) > 1:
-            self.false = self.node.succs[0]
-            self.true = self.node.succs[1]
-        elif len(self.node.succs) == 1:
-            self.false = self.node.succs[0]
+    def process(self, memory, tabsymb, vars, indent):
+        print 'TRUE :', self.true
+        print 'FALSE :', self.false
+        if self.true is self.next:
             self.true = None
-        else:
-            self.false, self.true = None, None
+        elif self.false is self.next:
+            self.false = None
 
         if self.node.looptype == LOOP_PRETEST:
-            ins, cond = self.block.get_cond(memory, vars, indent)
-            ins += '   ' * indent + 'while( %s ) {\n' % cond.get_value()
+            ins, cond = self.block.get_cond(memory, tabsymb, vars, indent)
+            ins += '   ' * indent + 'while( %s ) {\n' % cond.value()
             indent += 1
             vars.startBlock()
-            res = self.false.process(memory, vars, indent)
+            if self.true:
+                res = self.true.process(memory, tabsymb, vars, indent)
+            else:
+                res = self.false.process(memory, tabsymb, vars, indent)
             vars.endBlock()
             indent -= 1
             ins += '%s' % res
@@ -90,36 +95,41 @@ class WhileBlock(Block):
             if self.true and self.false:
                 if not self.true.end_loop():
                     self.true, self.false = self.false, self.true
-                ins1, cond1 = self.block.get_cond(memory, vars, indent)
+                ins1, cond1 = self.block.get_cond(memory, tabsymb, vars, indent)
                 ins += ins1
-                ins += '   ' * indent + 'if( %s ) {\n' % cond1.get_value()
+                cond1.neg()
+                ins += '   ' * indent + 'if( %s ) {\n' % cond1.value()
                 vars.startBlock()
-                res = self.false.process(memory, vars, indent + 1)
+                res = self.false.process(memory, tabsymb, vars, indent + 1)
                 vars.endBlock()
                 ins += '%s' % res
                 ins += '   ' * indent + '} else {\n'
                 vars.startBlock()
-                ins2, cond2 = self.true.content.get_cond(memory, vars, indent + 1)
+                ins2, cond2 = self.true.content.get_cond(memory, tabsymb, vars, indent + 1)
                 vars.endBlock()
                 ins += ins2
                 ins += '   ' * indent + '}\n'
                 indent -= 1
-                ins += '   ' * indent + '} while( %s );\n' % cond2.get_value()
+                ins += '   ' * indent + '} while( %s );\n' % cond2.value()
+            if self.true is None and self.false is None:
+                ins1, cond1 = self.block.get_cond(memory, tabsymb, vars, indent)
+                ins += ins1
+                cond1.neg()
+                ins += '   ' * indent + '} while( %s );\n' % cond1.value()
         elif self.node.looptype == LOOP_ENDLESS:
             ins = '   ' * indent + 'while(True){\n'
             vars.startBlock()
-            res = self.block.process(memory, vars, indent + 1)
+            res = self.block.process(memory, tabsymb, vars, indent + 1)
             vars.endBlock()
             ins += '%s' % res
         else:
             Util.log('Loop Error', 'error')
-            exit()
         return ins
             
     def __str__(self):
-        if self.node.type == LOOP_PRETEST:
+        if self.node.looptype == LOOP_PRETEST:
             return 'While(%s)' % self.block
-        elif self.node.type == LOOP_POSTTEST:
+        elif self.node.looptype == LOOP_POSTTEST:
             return 'DoWhile(%s)' % self.block
         else:
             return 'WhileTrue(%s)' % self.block
@@ -139,9 +149,9 @@ class TryBlock(Block):
         super(TryBlock, self).__init__(node, block)
         self.catch = []
     
-    def process(self, memory, vars, indent):
-        res = process_block_ins(memory, vars, self.block)
-        res = ''.join([str(i.dump(indent)) for i in res])
+    def process(self, memory, tabsymb, vars, indent):
+        res = process_block_ins(memory, tabsymb, vars, self.block)
+        res = ''.join([str(i.get_value()) for i in res])
         return res
 
     def add_catch(self, node):
@@ -172,9 +182,9 @@ class Condition( ):
         self.cond2.neg()
         self.isand = not self.isand
 
-    def get_cond(self, memory, vars, indent):
-        ins1, cond1 = self.cond1.content.get_cond(memory, vars, indent)
-        ins2, cond2 = self.cond2.content.get_cond(memory, vars, indent)
+    def get_cond(self, memory, tabsymb, vars, indent):
+        ins1, cond1 = self.cond1.content.get_cond(memory, tabsymb, vars, indent)
+        ins2, cond2 = self.cond2.content.get_cond(memory, tabsymb, vars, indent)
         if self.isnot:
             cond1.neg()
         self.cond = Condition(cond1, cond2, self.isand, self.isnot)
@@ -185,9 +195,9 @@ class Condition( ):
             ins += ins2
         return ins, self.cond
 
-    def get_value(self):
+    def value(self):
         cond = ['||', '&&'][self.isand]
-        return '(%s %s %s)' % (self.cond1.get_value(), cond, self.cond2.get_value())
+        return '(%s %s %s)' % (self.cond1.value(), cond, self.cond2.value())
 
     def __str__(self):
         return '(%s %s %s)' % (self.cond1, ['||', '&&'][self.isand], self.cond2)
@@ -197,19 +207,21 @@ class ShortCircuitBlock(Block):
     def __init__(self, newNode, cond):
         super(ShortCircuitBlock, self).__init__(newNode, None)
         self.cond = cond
-        self.next = cond.cond1.get_next()
         newNode.type = NODE_IF
         newNode.num = cond.cond1.num
         newNode.looptype = cond.cond1.looptype
         newNode.loophead = cond.cond1.loop_head()
         newNode.startloop = cond.cond1.start_loop()
         newNode.endloop = cond.cond1.end_loop()
+        self.true = None
+        self.false = None
 
     def update(self):
         interval = self.cond.cond1.interval
         interval.content.remove(self.cond.cond1)
         interval.content.remove(self.cond.cond2)
         interval.add(self.node)
+        self.node.set_next(self.cond.cond1.get_next())
         for pred in self.cond.cond1.preds:
             if pred.get_next() is self.cond.cond1:
                 pred.set_next(self.node)
@@ -221,37 +233,37 @@ class ShortCircuitBlock(Block):
             suc.preds.remove(self.cond.cond2)
             self.node.add_node(suc)
     
-    def get_cond(self, memory, vars, indent):
-        return self.cond.get_cond(memory, vars, indent)
+    def get_cond(self, memory, tabsymb, vars, indent):
+        return self.cond.get_cond(memory, tabsymb, vars, indent)
 
-    def process(self, memory, vars, indent):
+    def process(self, memory, tabsymb, vars, indent):
         if len(self.node.succs) > 1:
             self.true = self.node.succs[1]
         else:
             self.true = None
         self.false = self.node.succs[0]
-        ins, cond = self.cond.get_cond(memory, vars, indent)
+        ins, cond = self.cond.get_cond(memory, tabsymb, vars, indent)
         if self.true is not None:
-            ins += '   ' * indent + 'if ( %s ) {\n' % cond.get_value()
+            ins += '   ' * indent + 'if ( %s ) {\n' % cond.value()
             indent += 1
             vars.startBlock()
-            res = self.true.process(memory, vars, indent)
+            res = self.true.process(memory, tabsymb, vars, indent)
             vars.endBlock()
             indent -= 1
             ins += '%s' % res
             ins += '   ' * indent + '} else {\n'
             indent += 1
             vars.startBlock()
-            res = self.false.process(memory, vars, indent)
+            res = self.false.process(memory, tabsymb, vars, indent)
             vars.endBlock()
             indent -= 1
             ins += '%s' % res
             vars.endBlock()
         else:
             cond.neg()
-            ins += '   ' * indent + 'if( %s ) {\n' % cond.get_value()
+            ins += '   ' * indent + 'if( %s ) {\n' % cond.value()
             indent += 1
-            res = self.false.process(memory, vars, indent)
+            res = self.false.process(memory, tabsymb, vars, indent)
             indent -= 1
             ins += '%s' % res
         ins += '   ' * indent + '}\n'
@@ -267,14 +279,45 @@ class ShortCircuitBlock(Block):
 class IfBlock(Block):
     def __init__(self, node, block):
         super(IfBlock, self).__init__(node, block)
+        self.true = None
+        self.false = None
 
-    def get_cond(self, memory, vars, indent):
-        res = process_block_ins(memory, vars, self.block)
-        ins = ''.join([str(i.dump(indent)) for i in res[:-1]])
+    def get_cond(self, memory, tabsymb, vars, indent):
+        res = process_block_ins(memory, tabsymb, vars, self.block)
+        ins = ';\n'.join([str(i.value()) for i in res[:-1]])
         cond = res[-1]
         return ins, cond
-        
-    def process(self, memory, vars, indent):
+
+    def compute_next(self):
+#        if self.next:
+#            print 'NEXT ALREADY SET :', self.next
+#            return self.next
+        def get_branch(node, l=None):
+            if l is None:
+                l = set()
+            l.add(node)
+#            print '\nnode :', node, 'list :', l
+#            print ' -> childs:', node.succs
+            for child in node.succs:
+#                print 'child :', child
+                if not (child in l):
+                    l.add(child)
+                    get_branch(child, l)
+            return l
+#        print 'Computing next :', self, 'true:', self.true, 'false:',self.false
+        true = get_branch(self.true)
+        false = get_branch(self.false)
+#        print 'SELF :', self
+#        print 'TRUE :', self.true, '==>', true
+#        print 'FALSE :', self.false, '==>', false
+        next = true & false
+        if next:
+            print 'NEXT', self, '==>', next
+            return next.pop()
+        print 'NEXT NONE :', self
+        exit()
+
+    def process(self, memory, tabsymb, vars, indent):
         if len(self.node.succs) > 1:
             self.true = self.node.succs[1]
             self.false = self.node.succs[0]
@@ -283,28 +326,28 @@ class IfBlock(Block):
             self.true = None
         else:
             self.false, self.true = None, None
-        ins, cond = self.get_cond(memory, vars, indent)
+        ins, cond = self.get_cond(memory, tabsymb, vars, indent)
         if self.true or self.false:
             if self.true is not None:
-                ins += '   ' * indent + 'if( %s ) {\n' % cond.get_value()
+                ins += '   ' * indent + 'if( %s ) {\n' % cond.value()
                 indent += 1
                 vars.startBlock()
-                res = self.true.process(memory, vars, indent)
+                res = self.true.process(memory, tabsymb, vars, indent)
                 vars.endBlock()
                 indent -= 1
                 ins += '%s' % res
                 ins += '   ' * indent + '} else {\n'
                 indent += 1
                 vars.startBlock()
-                res = self.false.process(memory, vars, indent)
+                res = self.false.process(memory, tabsymb, vars, indent)
                 vars.endBlock()
                 indent -= 1
                 ins += '%s' % res
             else:
                 cond.neg()
-                ins += '   ' * indent + 'if( %s ) {\n' % cond.get_value()
+                ins += '   ' * indent + 'if( %s ) {\n' % cond.value()
                 indent += 1
-                res = self.false.process(memory, vars, indent)
+                res = self.false.process(memory, tabsymb, vars, indent)
                 indent -= 1
                 ins += '%s' % res
             ins += '   ' * indent + '}\n'
@@ -321,6 +364,7 @@ class Node(object):
         self.type = None
         self.content = None
         self.interval = None
+        self.next = None
         self.num = 0
         self.looptype = None
         self.loophead = None
@@ -333,6 +377,13 @@ class Node(object):
         return False
 
     def add_node(self, node):
+        if self.type == NODE_IF:
+            if self.content.false:
+                self.content.true = node
+            else:
+                self.content.false = node
+        elif self.type == NODE_STMT:
+            self.content.next = node
         if node not in self.succs:
             self.succs.append(node)
         if self not in node.preds:
@@ -369,13 +420,14 @@ class Node(object):
     def end_loop(self):
         return self.endloop
 
-    def process(self, memory, vars, indent):
-        return self.content.process(memory, vars, indent)
+    def process(self, memory, tabsymb, vars, indent):
+        return self.content.process(memory, tabsymb, vars, indent)
 
     def get_next(self):
         return self.content.get_next()
 
     def set_next(self, next):
+        print 'NEXT (%s) => %s' % (self, next)
         self.content.set_next(next)
 
     def __repr__(self):
@@ -415,6 +467,8 @@ class Graph( ):
         return r
 
     def draw(self, dname, name):
+        if len(self.nodes) < 3:
+            return
         digraph = 'Digraph %s {\n' % dname
         digraph += 'graph [bgcolor=white];\n'
         digraph += 'node [color=lightgray, style=filled shape=box '\
@@ -438,28 +492,43 @@ class Graph( ):
 
 
 class AST( ):
-    def __init__(self, root):
-        self.childs = [root]
-        self.build(root)
+    def __init__(self, root, doms):
+        self.succs = [root]
+      #  else:
+      #      self.root = root
+      #      self.childs = root.succs
+      #  print 'Root :', root,
+      #  if root.looptype:
+      #      print ['LOOP_PRETEST', 'LOOP_POSTTEST', 'LOOP_ENDLESS'][root.looptype]
+      #  else:
+      #      print 'not loop'
+      #  print 'childs :', self.childs
+        self.build(root, doms)
+      #  print 'childs after build :', self.childs
+      #  self.childs = [AST(child, False) for child in self.childs]
 
-    def build(self, node):
-        if node.type == NODE_STMT:
-            if node.succs:
-                child = node.succs[0]
-            else:
-                child = None
+    def build(self, node, doms):
+        if node.type == NODE_RETURN:
+            child = None
         else:
             child = node.get_next()
+      #      if child is None and len(node.succs) > 0:
+      #          self.childs = node.succs
+      #          return
+      #  node.set_next(None)
         if child is not None:
             for pred in child.preds:
                 if child in pred.succs:
                     pred.succs.remove(child)
             child.preds = []
-            self.childs.append(child)
-            self.build(child)
+            self.succs.append(child)
+            self.build(child, doms)
 
     def draw(self, dname, name):
+        if len(self.succs) < 2:
+            return
         def slabel(node, done):
+            done.add(node)
             val = 'green'
             lenSuc = len(node.succs)
             if lenSuc > 1:
@@ -471,8 +540,7 @@ class AST( ):
                 label += '"%s" -> "%s" [color="%s"];\n' % (node, child, val)
                 if val == 'red':
                     val = 'green'
-                if child not in done:
-                    done.add(child)
+                if not (child in done):
                     label += slabel(child, done)
             label += '"%s" [ label = "%s" ];\n' % (node, str(node))
             return label
@@ -481,21 +549,8 @@ class AST( ):
         digraph += 'graph [bgcolor=white];\n'
         digraph += 'node [color=lightgray, style=filled shape=box '\
                    'fontname=\"Courier\" fontsize=\"8\"];\n'
-        val = 'green'
-        lenSuc = len(self.childs)
-        if lenSuc > 1:
-            val = 'red'
-        elif lenSuc == 1:
-            val = 'blue'
-        label = ''
         done = set()
-        for child in self.childs:
-            label += '"%s" -> "%s" [color="%s"];\n' % (self, child, val)
-            if val == 'red':
-                val = 'green'
-            done.add(child)
-            label += slabel(child, done)
-        label += '"%s" [ label = "%s" ];\n' % (self, str(self))
+        label = slabel(self, done)
         dir = 'graphs2/ast'
         digraph += label + '}'
         pydot.graph_from_dot_data(digraph).write_png('%s/%s.png' % (dir, name))
@@ -580,37 +635,39 @@ def Construct(node, block):
     return currentblock
 
 
-def process_block_ins(memory, variables, block):
+def process_block_ins(memory, tabsymb, variables, block):
     lins = []
     memory['heap'] = None
     for ins in block.get_ins():
         Util.log('Name : %s, Operands : %s' % (ins.get_name(),
                                                ins.get_operands()), 'debug')
         _ins = Instruction.INSTRUCTION_SET.get(ins.get_name().lower())
-        if _ins == Instruction.Goto:
+        if _ins is None:
+            Util.log('Unknown instruction : %s.' % _ins.get_name().lower(),
+                                                                    'error')
+        if _ins[1] == Instruction.Goto:
             continue
         else:
-            newIns = _ins
-        if newIns is None:
-            Util.log('Unknown instruction : %s.' % ins.get_name().lower(),
-                                                                    'error')
-            exit()
+            newIns = _ins[1]
         newIns = newIns(ins)
-        newIns.symbolic_process(memory)
-        regnum = newIns.get_reg()
-        newIns = variables.newVar(newIns.get_type(), newIns)
-        lins.append(newIns)
-        if regnum:
-            register = memory.get(regnum[0])
-            if register is None:
-                from start import Register
-                memory[regnum[0]] = Register(newIns)
-            else:
-                register.modify(newIns)
+        newIns.symbolic_process(memory, tabsymb, variables)
+        #regnum = newIns.get_reg()
+    #    newIns = variables.newVar(newIns.get_type(), newIns)
+        if _ins[0] in (Instruction.INST, Instruction.COND):
+            lins.append(newIns)
+    #    if regnum:
+    #        register = memory.get(regnum[0])
+    #        if register is None:
+    #            from start import Register
+    #            memory[regnum[0]] = Register(newIns)
+    #        else:
+    #            register.modify(newIns)
         if memory['heap'] is True:
             memory['heap'] = newIns
-        Util.log('---> newIns : %s, register : %s. varName : %s.\n'
-                        % (ins.get_name(), regnum, newIns.name), 'debug')
+        #Util.log('---> newIns : %s, register : %s. varName : %s.\n'
+        #                % (ins.get_name(), regnum, newIns), 'debug')
+        Util.log('---> newIns : %s. varName : %s.\n' % (ins.get_name(),
+                                                        newIns), 'debug')
     return lins
 
 
@@ -716,30 +773,33 @@ def DerivedSequence(G):
             different = False
     return derivSeq, derivInterv
 
+
 def InLoop(node, nodesInLoop):
     for n in nodesInLoop:
         if node in n:
             return True
     return False
 
+
 def MarkLoop(G, root, end, L):
     def MarkLoopRec(end):
         if not InLoop(end, nodesInLoop):
             nodesInLoop.append(end)
-            end.set_loophead(root.loop_head())
+            end.set_loophead(headnode)
             for node in end.preds:
-                if node.num > root.get_head().num and node.num <= end.num:
+                if node.num > headnode.num and node.num <= end.num:
                     if InLoop(node, L[root].content):
                         MarkLoopRec(node)
     headnode = root.get_head()
+    endnode = end.get_end()
     nodesInLoop = [headnode]
     root.set_loophead(headnode)
     root.set_startloop()
     for pred in root.get_head().preds:
         if pred.num > headnode.num:
             pred.set_endloop()
-    end.set_endloop()
-    MarkLoopRec(end.get_end())
+    endnode.set_endloop()
+    MarkLoopRec(endnode)
     return nodesInLoop
 
 
@@ -769,6 +829,7 @@ def LoopType(G, root, end, nodesInLoop):
                 root.set_loop_type(LOOP_PRETEST)
         else:
             root.set_loop_type(LOOP_ENDLESS)
+    print 'SET root :', root, 'to :', ['LOOP_PRETEST', 'LOOP_POSTTEST', 'LOOP_ENDLESS'][root.looptype]
 
 
 def LoopFollow(G, root, end, nodesInLoop):
@@ -801,6 +862,7 @@ def LoopFollow(G, root, end, nodesInLoop):
                     numNext = next.num
         if numNext != 10**10:
             root.set_next(next)
+    print 'FOLLOW %s => %s' % (root, root.get_head().get_next())
 
 
 def LoopStruct(G, Gi, Li):
@@ -823,7 +885,7 @@ def IfStruct(G, immDom):
         if node.type == NODE_IF and not (node.start_loop() or node.end_loop()):
             ldominates = []
             for n, dom in immDom.iteritems():
-                if node is dom and len(n.preds) >= 2:
+                if node is dom and len(n.preds) > 1:
                     ldominates.append(n)
             if len(ldominates) > 0:
                 n = max(ldominates, key=lambda x: x.num)
@@ -875,7 +937,7 @@ def ShortCircuitStruct(G):
         done = set()
         for node in G.nodes[:]: # work on copy
             if node.type == NODE_IF and node not in done and \
-                                    not (node.start_loop() or node.end_loop()): 
+                                    not (node.start_loop() or node.end_loop()):
                 then = node.succs[1]
                 els = node.succs[0]
                 if then.type is NODE_IF and len(then.preds) == 1:
@@ -900,7 +962,13 @@ def WhileBlockStruct(G):
         if node.start_loop():
             cnt = node.content
             block = WhileBlock(node, cnt)
-            block.next = cnt.next
+            if cnt.next and node.num < cnt.next.num: # FIXME?
+                block.next = cnt.next
+            else:
+                block.next = None
+            if node.type == NODE_IF:
+                block.true = node.content.true
+                block.false = node.content.false
             node.set_content(block)
 
 
@@ -1005,7 +1073,7 @@ def ConstructAST(basicblocks, exceptions):
     Gi, Li = DerivedSequence(G)
     
     immdoms = BuildImmediateDominator(G)
-    
+
     SwitchStruct(G, immdoms)
 
     LoopStruct(G, Gi, Li)
@@ -1015,7 +1083,7 @@ def ConstructAST(basicblocks, exceptions):
     ShortCircuitStruct(G)
 
     WhileBlockStruct(G)
-    
+
     if False:
     #if True:
         import string
@@ -1031,7 +1099,17 @@ def ConstructAST(basicblocks, exceptions):
         for pred in node.preds:
             if node in pred.succs and node.num <= pred.num:
                 pred.succs.remove(node)
-    ast = AST(G.first_node())
+    
+    immdoms = BuildImmediateDominator(G)
+    invdoms = {}
+    for i, j in immdoms.iteritems():
+        invdoms.setdefault(j, []).append(i)
+    
+    from pprint import pprint
+    print 'INVDOMS :'
+    pprint(invdoms)
+
+    ast = AST(G.first_node(), invdoms)
     
     if False:
     #if True:
