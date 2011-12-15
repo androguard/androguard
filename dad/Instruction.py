@@ -93,7 +93,7 @@ class StaticInstruction(Instruction):
     def __init__(self, ins):
         super(StaticInstruction, self).__init__(ins)
         self.register = self.ops[0][1] 
-        self.loc = self.ops[1][2] #FIXME remove name of class
+        self.loc = Util.get_type(self.ops[1][2]) #FIXME remove name of class
         self.type = self.ops[1][3]
         self.name = self.ops[1][4]
         self.op = '%s.%s = %s'
@@ -137,9 +137,9 @@ class InvokeInstruction(Instruction):
     def __init__(self, ins):
         super(InvokeInstruction, self).__init__(ins)
         self.register = self.ops[0][1]
-        self.type = self.ops[-1][2]
+        self.type = Util.get_type(self.ops[-1][2])
         self.paramsType = Util.get_params_type(self.ops[-1][3])
-        self.returnType = self.ops[-1][4]
+        self.returnType = Util.get_type(self.ops[-1][4])
         self.methCalled = self.ops[-1][-1]
 
     def get_type(self):
@@ -162,7 +162,7 @@ class ArrayInstruction(Instruction):
     def value(self):
         if self.index.get_type() != 'I':
             return self.op % (self.array.value(),
-                              self.index.get_int_value(),
+                              self.index.int_value(),
                               self.source.value())
         else:
             return self.op % (self.array.value(), self.index.value(),
@@ -238,7 +238,9 @@ class BinaryExpression(Expression):
                  'debug')
         self.lhs = memory[self.lhs]
         self.rhs = memory[self.rhs]
-        memory[self.register] = self
+        var = varsgen.newVar(self.type, self)
+        tabsymb[var.get_name()] = var
+        memory[self.register] = var
         Util.log('Ins : %s' % self.op, 'debug')
 
     def value(self):
@@ -259,7 +261,9 @@ class BinaryExpressionLit(Expression):
         Util.log('Default symbolic processing for this binary expression.',
                  'debug')
         self.lhs = memory[self.lhs]
-        memory[self.register] = self
+        var = varsgen.newVar(self.type, self)
+        tabsymb[var.get_name()] = var
+        memory[self.register] = var
         Util.log('Ins : %s' % self.op, 'debug')
 
     def value(self):
@@ -277,9 +281,13 @@ class UnaryExpression(Expression):
 
     def symbolic_process(self, memory, tabsymb, varsgen):
         self.source = memory[self.source]
-        memory[self.register] = self
+        var = varsgen.newVar(self.type, self)
+        tabsymb[var.get_name()] = var
+        memory[self.register] = var
 
     def value(self):
+        if self.op.startswith('('):
+            return self.source.value() #TEMP to avoir to much parenthesis
         return '(%s %s)' % (self.op, self.source.value())
 
     def get_type(self):
@@ -293,17 +301,18 @@ class IdentifierExpression(Expression):
 
     def get_reg(self):
         return [self.register]
+    
+    def symbolic_process(self, memory, tabsymb, varsgen):
+        var = varsgen.newVar(self.type, self)
+        tabsymb[var.get_name()] = var
+        memory[self.register] = var
+        self.register = var
 
     def value(self):
-        return self.val
+        return '%s = %s' % (self.register.name, self.val)
 
     def get_type(self):
         return self.type
-
-    def symbolic_process(self, memory, tabsymb, varsgen):
-        var = varsgen.newVar(self.type, self.val)
-        tabsymb[var.get_name()] = var
-        memory[self.register] = self
 
 
 class ConditionalExpression(Expression):
@@ -609,7 +618,7 @@ class Const(IdentifierExpression):
     def value(self):
         return struct.unpack('f', struct.pack('L', self.val))[0]
 
-    def get_int_value(self):
+    def int_value(self):
         return self.val
 
     def __str__(self):
@@ -736,10 +745,10 @@ class MonitorEnter(RefExpression):
     def __init__(self, ins):
         super(MonitorEnter, self).__init__(ins)
         Util.log('MonitorEnter : %s' % self.ops, 'debug')
+        self.op = 'synchronized( %s )'
 
     def symbolic_process(self, memory, tabsymb, varsgen):
         self.register = memory[self.register]
-        self.op = 'synchronized( %s )'
 
     def get_type(self):
         return self.register.get_type()
@@ -756,10 +765,10 @@ class MonitorExit(RefExpression):
     def __init__(self, ins):
         super(MonitorExit, self).__init__(ins)
         Util.log('MonitorExit : %s' % self.ops, 'debug')
+        self.op = ''
 
     def symbolic_process(self, memory, tabsymb, varsgen):
         self.register = memory[self.register]
-        self.op = ''
 
     def get_type(self):
         return self.register.get_type()
@@ -821,14 +830,14 @@ class NewInstance(RefExpression):
         super(NewInstance, self).__init__(ins)
         Util.log('NewInstance : %s' % self.ops, 'debug')
         self.type = self.ops[-1][-1]
-        self.op = 'new'
+        self.op = 'new %s'
 
     def symbolic_process(self, memory, tabsymb, varsgen):
         self.type = Util.get_type(self.type)
         memory[self.register] = self
 
     def value(self):
-        return self.op
+        return self.op % self.type
 
     def get_type(self):
         return self.type
@@ -906,13 +915,17 @@ class Goto32(Expression):
     pass
 
 # packed-switch vAA, +BBBBBBBB ( reg to test, 32b )
-class PackedSwitch(UnaryExpression):
+class PackedSwitch(Instruction):
     def __init__(self, ins):
         super(PackedSwitch, self).__init__(ins)
         Util.log('PackedSwitch : %s' % self.ops, 'debug')
+        self.register = self.ops[0][1]
 
-#    def symbolic_process(self, memory):
-#        self.switch = memory[self.register].get_content()
+    def symbolic_process(self, memory, tabsymb, varsgen):
+        self.register = memory[self.register]
+
+    def value(self):
+        return self.register.value()
 
     def get_reg(self):
         Util.log('PackedSwitch has no dest register.', 'debug')
@@ -1742,7 +1755,31 @@ class InvokeDirectRange(InvokeInstruction):
 
 # invoke-static/range {vCCCC..vNNNN} ( 16b each )
 class InvokeStaticRange(InvokeInstruction):
-    pass
+    def __init__(self, ins):
+        super(InvokeStaticRange, self).__init__(ins)
+        Util.log('InvokeStaticRange : %s' % self.ops, 'debug')
+        if len(self.ops) > 1:
+            self.params = [int(i[1]) for i in self.ops[0:-1]]
+        else:
+            self.params = []
+        Util.log('Parameters = %s' % self.params, 'debug')
+
+    def symbolic_process(self, memory, tabsymb, varsgen):
+        memory['heap'] = True
+        self.params = get_invoke_params(self.params, self.paramsType, memory)
+        self.op = '%s.%s(%s)'
+        Util.log('Ins :: %s' % self.op, 'debug')
+
+    def value(self):
+        return self.op % (self.type, self.methCalled, ', '.join([
+                          str(param.value()) for param in self.params]))
+
+    def get_reg(self):
+        Util.log('InvokeStaticRange has no dest register.', 'debug')
+
+    def __str__(self):
+        return 'InvokeStaticRange (%s) %s (%s ; %s)' % (self.returnType,
+                 self.methCalled, self.paramsType, str(self.params))
 
 
 # invoke-interface/range {vCCCC..vNNNN} ( 16b each )
@@ -3116,7 +3153,7 @@ INSTRUCTION_SET = {
     'goto'                  : (EXPR, Goto),
     'goto/16'               : (EXPR, Goto16),
     'goto/32'               : (EXPR, Goto32),
-    'packed-switch'         : (EXPR, PackedSwitch),
+    'packed-switch'         : (INST, PackedSwitch),
     'sparse-switch'         : (EXPR, SparseSwitch),
     'cmpl-float'            : (EXPR, CmplFloat),
     'cmpg-float'            : (EXPR, CmpgFloat),
@@ -3142,13 +3179,13 @@ INSTRUCTION_SET = {
     'aget-byte'             : (EXPR, AGetByte),
     'aget-char'             : (EXPR, AGetChar),
     'aget-short'            : (EXPR, AGetShort),
-    'aput'                  : (EXPR, APut),
-    'aput-wide'             : (EXPR, APutWide),
-    'aput-object'           : (EXPR, APutObject),
-    'aput-boolean'          : (EXPR, APutBoolean),
-    'aput-byte'             : (EXPR, APutByte),
-    'aput-char'             : (EXPR, APutChar),
-    'aput-short'            : (EXPR, APutShort),
+    'aput'                  : (INST, APut),
+    'aput-wide'             : (INST, APutWide),
+    'aput-object'           : (INST, APutObject),
+    'aput-boolean'          : (INST, APutBoolean),
+    'aput-byte'             : (INST, APutByte),
+    'aput-char'             : (INST, APutChar),
+    'aput-short'            : (INST, APutShort),
     'iget'                  : (EXPR, IGet),
     'iget-wide'             : (EXPR, IGetWide),
     'iget-object'           : (EXPR, IGetObject),
@@ -3156,13 +3193,13 @@ INSTRUCTION_SET = {
     'iget-byte'             : (EXPR, IGetByte),
     'iget-char'             : (EXPR, IGetChar),
     'iget-short'            : (EXPR, IGetShort),
-    'iput'                  : (EXPR, IPut),
-    'iput-wide'             : (EXPR, IPutWide),
-    'iput-object'           : (EXPR, IPutObject),
-    'iput-boolean'          : (EXPR, IPutBoolean),
-    'iput-byte'             : (EXPR, IPutByte),
-    'iput-char'             : (EXPR, IPutChar),
-    'iput-short'            : (EXPR, IPutShort),
+    'iput'                  : (INST, IPut),
+    'iput-wide'             : (INST, IPutWide),
+    'iput-object'           : (INST, IPutObject),
+    'iput-boolean'          : (INST, IPutBoolean),
+    'iput-byte'             : (INST, IPutByte),
+    'iput-char'             : (INST, IPutChar),
+    'iput-short'            : (INST, IPutShort),
     'sget'                  : (EXPR, SGet),
     'sget-wide'             : (EXPR, SGetWide),
     'sget-object'           : (EXPR, SGetObject),
@@ -3170,13 +3207,13 @@ INSTRUCTION_SET = {
     'sget-byte'             : (EXPR, SGetByte),
     'sget-char'             : (EXPR, SGetChar),
     'sget-short'            : (EXPR, SGetShort),
-    'sput'                  : (EXPR, SPut),
-    'sput-wide'             : (EXPR, SPutWide),
-    'sput-object'           : (EXPR, SPutObject),
-    'sput-boolean'          : (EXPR, SPutBoolean),
-    'sput-byte'             : (EXPR, SPutByte),
-    'sput-char'             : (EXPR, SPutChar),
-    'sput-short'            : (EXPR, SPutShort),
+    'sput'                  : (INST, SPut),
+    'sput-wide'             : (INST, SPutWide),
+    'sput-object'           : (INST, SPutObject),
+    'sput-boolean'          : (INST, SPutBoolean),
+    'sput-byte'             : (INST, SPutByte),
+    'sput-char'             : (INST, SPutChar),
+    'sput-short'            : (INST, SPutShort),
     'invoke-virtual'        : (INST, InvokeVirtual),
     'invoke-super'          : (INST, InvokeSuper),
     'invoke-direct'         : (INST, InvokeDirect),
