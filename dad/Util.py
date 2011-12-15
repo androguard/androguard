@@ -157,7 +157,8 @@ def get_type(atype, size=None):
             else:
                 res = '%s[%s]' % (get_type(atype[1:]), size)
         else:
-            log('Unknown descriptor: "%s".' % atype, 'error')
+            res = atype
+            log('Unknown descriptor: "%s".' % atype, 'debug')
     return res
 
 
