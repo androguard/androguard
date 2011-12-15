@@ -59,11 +59,24 @@ class Var():
     def get_type(self):
         return self.typeDesc
 
+    def init(self):
+        if self.typeDesc == 'Z':
+            return '%s = %s;\n' % (self.decl(),
+                                  ['false', 'true'][self.content])
+        if self.typeDesc in Util.TYPE_DESCRIPTOR:
+            return '%s = %s;\n' % (self.decl(), self.content)
+        return '%s %s = %s;\n' % (self.type, self.name, self.content.value())
+
     def value(self):
-#        if self.content:
-#            return self.content.value()
-#        self.used += 1
+        if self.used < 1 and self.typeDesc in Util.TYPE_DESCRIPTOR:
+            return self.name
+        if self.content is not None:
+            return self.content.value()
+        self.used += 1
         return self.name
+
+    def int_value(self):
+        return self.content.int_value()
 
     def get_name(self):
         if self.type is 'void':
@@ -127,48 +140,6 @@ class Variable():
         self.nbVars = self.varscopy
 
 
-class Register():
-    def __init__(self, content):
-        self.content = content
-        self.isPair = False
-
-    def modify(self, ins):
-        self.content = ins
-
-    def get_content(self):
-        return self.content
-
-    def dump(self, ins):
-        Util.log("""Register Dump :
-                ---------------
-                Old value :
-                %s
-                -> %s
-                -------
-                New value :
-                %s
-                -> %s
-                ---------------""" % (str(self.content),
-                self.content.value(), str(ins),
-                ins.value()), 'debug')
-
-    def __deepcopy__(self, dic=None):
-        d = dic.get(self, None)
-        if d is None:
-            r = Register(self.content)
-            r.isPair = self.isPair
-            dic[self] = r
-            return r
-        return d
-
-    def __str__(self):
-        return 'Register content : %s\t\tvalue : %s.' % (str(self.content),
-                                                str(self.content.value()))
-
-    def __repr__(self):
-        return repr(self.content)
-
-
 class DvMethod():
     def __init__(self, methanalysis, this):
         self.memory = {}
@@ -195,7 +166,7 @@ class DvMethod():
         exceptions = methanalysis.exceptions.exceptions
         Util.log('METHOD : %s' % self.name, 'debug')
         #print "excepts :", [ e.exceptions for e in exceptions ]
-        self.ast = Structure.ConstructAST(self.basic_blocks, exceptions)
+        self.graph = Structure.ConstructAST(self.basic_blocks, exceptions)
 
         #androguard.bytecode.method2png('graphs/%s#%s.png' % \
         #        (self.method.get_class_name().split('/')[-1][:-1], self.name),
@@ -211,7 +182,7 @@ class DvMethod():
             if 0x8 in self.access:
                 self._add_parameters(start)
             else:
-                self.memory[start] = this#Register(this)
+                self.memory[start] = this
                 self._add_parameters(start + 1)
         self.ins = []
         self.cur = 0
@@ -222,19 +193,19 @@ class DvMethod():
             param = self.variables.newVar(paramType)
             self.tabsymb[param.get_name()] = param
             param.param = True
-            self.memory[start + size] = param#Register(param)
+            self.memory[start + size] = param
             self.lparams.append(param)
             size += param.size
 
     def process(self):
-        if self.ast is None:
-            return
+        if self.graph is None: return
         Util.log('METHOD : %s' % self.name, 'debug')
-        for child in self.ast.succs:
-            Util.log('Processing %s' % child, 'debug')
-            blockins = child.process(self.memory, self.tabsymb, self.variables, 0)
-            if blockins:
-                self.ins.append(blockins)
+        Util.log('Processing %s' % self.graph.first_node(), 'debug')
+        node = self.graph.first_node()
+        blockins = node.process(self.memory, self.tabsymb, self.variables,
+                                0, None, None)
+        if blockins:
+            self.ins.append(blockins)
 
     def debug(self, code=None):
         if code is None:
@@ -256,6 +227,9 @@ class DvMethod():
         if self.paramsType:
             proto += ', '.join(['%s' % param.decl() for param in self.lparams])
         proto += ')\n    {\n'
+#        for _, v in sorted(self.tabsymb.iteritems(), key=lambda x: x[0]):
+#            if not (v in self.lparams):
+#                proto += '%s%s' % ('   ' * 2, v.init())
         Util.log(proto, 'debug')
         code.append(proto)
         for i in self.ins:
@@ -411,7 +385,8 @@ class DvMachine():
 if __name__ == '__main__':
     Util.DEBUG_LEVEL = 'debug'
 
-    MACHINE = DvMachine('examples/android/TestsAndroguard/bin/classes.dex')
+#    MACHINE = DvMachine('examples/android/TestsAndroguard/bin/classes.dex')
+    MACHINE = DvMachine('examples/android/TestsAndroguard/bin/droiddream.dex')
 
     from pprint import pprint
     temp = Util.wrap_stream()
