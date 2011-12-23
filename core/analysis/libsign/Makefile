@@ -8,7 +8,7 @@ RM      =       rm -f
 
 PATH_SIMILARITY = ../../../classification/libsimilarity/
 EXT_SIMILARITY = $(PATH_SIMILARITY)similarity.o
-EXT_ZIP = $(PATH_SIMILARITY)z/z.o $(PATH_SIMILARITY)bz2/bz2.o $(PATH_SIMILARITY)smaz/smaz.o $(PATH_SIMILARITY)xz/xz.o $(PATH_SIMILARITY)snappy/snappy.o
+EXT_ZIP = $(PATH_SIMILARITY)z/z.o $(PATH_SIMILARITY)bz2/bz2.o $(PATH_SIMILARITY)smaz/smaz.o $(PATH_SIMILARITY)xz/xz.o $(PATH_SIMILARITY)snappy/snappy.o $(PATH_SIMILARITY)vcblocksort/vcblocksort.o
 EXT_SDK_LZMA = $(PATH_SIMILARITY)lzma/Alloc.o  $(PATH_SIMILARITY)lzma/LzFind.o  $(PATH_SIMILARITY)lzma/LzmaDec.o  $(PATH_SIMILARITY)lzma/LzmaEnc.o  $(PATH_SIMILARITY)lzma/LzmaLib.o  $(PATH_SIMILARITY)lzma/lzma.o
 
 CCP		= g++
@@ -21,7 +21,7 @@ AHO_OBJ = ac_heap.o ac_list.o aho_corasick.o
 WUMANBER_OBJ = #WuManber.o 
 CLUSTER_OBJ = cluster.o
 
-#.SILENT:
+.SILENT:
 
 all :   AHO CLUSTER $(OBJ) LIBSIGN
 

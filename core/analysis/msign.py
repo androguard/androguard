@@ -26,6 +26,20 @@ import libsign
 import similarity
 
 DEFAULT_SIGNATURE = SIGNATURE_L0_4
+def get_signature(vmx, m) :
+    return vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
+
+def create_entropies(vmx, m) :
+    default_signature = vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
+    l = [ default_signature,
+          libsign.entropy( default_signature ),
+          libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
+          libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
+          libsign.entropy( vmx.get_method_signature(m, "hex" ).get_string() ),
+          libsign.entropy( vmx.get_method_signature(m, "L2" ).get_string() ),
+        ]
+
+    return l
 
 METHSIM = 0
 CLASSSIM = 1
@@ -80,11 +94,13 @@ class SignSim :
     def fix(self) :
         if self.minimum_signature != None :
             self.minimum_signature = (self.minimum_signature - self.minimum_signature * 0.5)
+            if self.debug :
+                print "FIX MINIMUM SIGNATURE", self.minimum_signature
 
     def add_elem(self, uniqueid, s1, entropies) :
         if self.minimum_signature < len(s1) :
             #if self.debug :
-            #    print "ELEM", uniqueid, entropies
+            #    print "ELEM", uniqueid, len(s1), entropies
             #self.fd.write("%d;%f;%f;%f;%f;%f;\n" % (uniqueid, entropies[ 0 ], entropies[ 1 ], entropies[ 2 ], entropies[ 3 ], entropies[ 4 ]))
             return self.sign.add_elem_sim( uniqueid, s1, entropies )
 
@@ -339,8 +355,8 @@ class PublicSignature:
             print "M",
             sys.stdout.flush()
 
-        import time
-        t1 = time.time()
+        #import time
+        #t1 = time.time()
         # Add methods for METHSIM
         for method in vm.get_methods() :
             uniqueid = self._create_id()
@@ -350,8 +366,8 @@ class PublicSignature:
                 entropies = create_entropies(vmx, method)
                 self.meth_sim.add_elem( uniqueid, entropies[0], entropies[1:] )
                 del entropies
-        t2 = time.time()
-        print t2 - t1,
+        #t2 = time.time()
+        #print t2 - t1,
 
     def __check_classes(self) :
         if self.debug :
@@ -406,8 +422,6 @@ class PublicSignature:
             print "loading dex..",
             sys.stdout.flush()
         
-        #import dvmfull
-        #vm = dvmfull.DalvikVMFormat( buff )
         vm = dvm.DalvikVMFormat( buff )
         
         if self.debug :
@@ -418,6 +432,9 @@ class PublicSignature:
         return self._check_dalvik_direct( vm, vmx )
 
     def _check_dalvik_direct(self, vm, vmx) :
+        #import time
+        #t0 = time.time()
+
         # check methods with similarity
         self.__load_meths(vm, vmx)
         ret, l = self.__check_meths()
@@ -440,11 +457,13 @@ class PublicSignature:
 
         del vmx, vm
 
+        #t1 = time.time()
+        #print t1 - t0
         return ret, l
 
 
 class MSignature :
-    def __init__(self, dbname = "./signatures/dbandroguard", dbconfig = "./signatures/dbconfig") :
+    def __init__(self, dbname = "./signatures/dbandroguard", dbconfig = "./signatures/dbconfig", ps=PublicSignature) :
         """
             Check if signatures from a database is present in an android application (apk/dex)
 
@@ -454,7 +473,7 @@ class MSignature :
         """
 
         self.debug = False
-        self.p = PublicSignature( dbname, dbconfig )
+        self.p = ps( dbname, dbconfig )
 
     def load(self) :
         """
@@ -509,22 +528,10 @@ class MSignature :
         return self.p._check_dalvik_direct( d, dx )
 
 
-def get_signature(vmx, m) :
-    return vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
+    def show(self) :
+        self.p.show()
 
-def create_entropies(vmx, m) :
-    default_signature = vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
-    l = [ default_signature,
-          libsign.entropy( default_signature ),
-          libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
-          libsign.entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
-          libsign.entropy( vmx.get_method_signature(m, "hex" ).get_string() ),
-          libsign.entropy( vmx.get_method_signature(m, "L2" ).get_string() ),
-        ]
-
-    return l
-
-class CSignature :
+class PublicCSignature :
     def add_file(self, srules) :
         l = []
         rules = json.loads( srules )
@@ -622,8 +629,56 @@ class CSignature :
         print l
         return l
 
-    def entropy(self, s) :
-        return libsign.entropy( s )
+    def get_info(self, srules) :
+        l = []
+        rules = json.loads( srules )
+
+        ret_type = androconf.is_android( rules[0]["SAMPLE"] )
+        if ret_type == "APK" :
+            a = apk.APK( rules[0]["SAMPLE"] )
+            classes_dex = a.get_dex()
+        elif ret_type == "DEX" :
+            classes_dex = open( rules[0]["SAMPLE"], "rb" ).read()
+        elif ret_type == "ELF" :
+            elf_file = open( rules[0]["SAMPLE"], "rb" ).read()
+        else :
+            return None
+
+        if ret_type == "APK" or ret_type == "DEX" :
+            vm = dvm.DalvikVMFormat( classes_dex )
+            vmx = VMAnalysis( vm )
+
+        res = []
+        for i in rules[1:] :
+            x = { i["NAME"] : [] }
+            n = 0
+            
+            sign = []
+            for j in i["SIGNATURE"] :
+                z = []
+                if j["TYPE"] == "METHSIM" :
+                    m = vm.get_method_descriptor( j["CN"], j["MN"], j["D"] )
+                    if m == None :
+                        print "impossible to find", j["CN"], j["MN"], j["D"]
+                    else :
+                        res.append( m )
+
+                elif j["TYPE"] == "CLASSSIM" :
+                    for c in vm.get_classes() :
+                        if j["CN"] == c.get_name() :
+                            res.append( c )
+
+        return vm, vmx, res
+
+class CSignature :
+    def __init__(self, pcs=PublicCSignature) :
+        self.pcs = pcs()
+
+    def add_file(self, srules) :
+        return self.pcs.add_file(srules)
+
+    def get_info(self, srules) :
+        return self.pcs.get_info(srules)
 
     def list_indb(self, output) :
         fd = open(output, "r")

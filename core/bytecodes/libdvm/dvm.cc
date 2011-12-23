@@ -169,6 +169,24 @@ unsigned long AA_OP_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long
     return 4;
 }
 
+unsigned long DAA_OP_DBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+    unsigned short i16;
+
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    v->push_back( (unsigned long)(i16 & 0xff) );
+    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+
+    i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
+    v->push_back( (unsigned long)(i16) );
+
+    vdesc->push_back( OPVALUE );
+    for(int i=1; i < v->size(); i++)
+        vdesc->push_back( INTEGER );
+
+    return 4;
+}
+
+
 unsigned long AA_OP_BBBB_2_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
     unsigned long size = AA_OP_BBBB( b, v, vdesc );
 
@@ -1049,7 +1067,7 @@ DalvikBytecode::DalvikBytecode() {
     bytecodes_names[ 0xea ] = "nop";
     bytecodes_names[ 0xeb ] = "nop";
     bytecodes_names[ 0xec ] = "nop";
-    bytecodes_names[ 0xed ] = "nop";
+    bytecodes_names[ 0xed ] = "^throw-verification-error";
     bytecodes_names[ 0xee ] = "nop";
     bytecodes_names[ 0xef ] = "nop";
     bytecodes_names[ 0xf0 ] = "nop";
@@ -1347,7 +1365,9 @@ DalvikBytecode::DalvikBytecode() {
     bytecodes[ 0xea ] = &OP_00;
     bytecodes[ 0xeb ] = &OP_00;
     bytecodes[ 0xec ] = &OP_00;
-    bytecodes[ 0xed ] = &OP_00;
+    
+    bytecodes[ 0xed ] = &DAA_OP_DBBBB;
+
     bytecodes[ 0xee ] = &OP_00;
     bytecodes[ 0xef ] = &OP_00;
     bytecodes[ 0xf0 ] = &OP_00;
