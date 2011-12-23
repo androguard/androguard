@@ -22,6 +22,7 @@ from androconf import error, warning
 import jvm, dvm
 from api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
+
 class ContextField :
     def __init__(self, mode) :
         self.mode = mode
@@ -1079,12 +1080,18 @@ class Path :
         self.info_obj = info_obj
 
     def get_class_name(self) :
+        if isinstance(self.info_obj, list) :
+            return self.info_obj[0]
         return self.info_obj.get_class_name()
 
     def get_name(self) :
+        if isinstance(self.info_obj, list) :
+            return self.info_obj[1]
         return self.info_obj.get_name()
 
     def get_descriptor(self) :
+        if isinstance(self.info_obj, list) :
+            return self.info_obj[2]
         return self.info_obj.get_descriptor()
 
     def get_access_flag(self) :
@@ -1559,6 +1566,20 @@ class TaintedPackages :
             for j in paths :
                 if j.get_method().get_class_name() in classes and m.get_info() in classes :
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                        l.append( j )
+        return l
+       
+    def get_internal_new_packages(self) :
+        """
+            @rtype : return a list of the internal packages called in the application
+        """
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages() :
+            paths = m.get_methods()
+            for j in paths :
+                if j.get_method().get_class_name() in classes and m.get_info() in classes :
+                    if j.get_access_flag() == TAINTED_PACKAGE_CREATE :
                         l.append( j )
         return l
        
