@@ -28,7 +28,7 @@ sys.path.append(PATH_INSTALL + "./")
 import androguard, apk, dvm, analysis, ganalysis, androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xgmml', 'nargs' : 1 }
+option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the gexf', 'nargs' : 1 }
 
 options = [option_0, option_1]
 

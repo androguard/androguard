@@ -484,6 +484,7 @@ DALVIK_OPCODES = {
                         0xe2 : [ "22b", "ushr-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
                         
                         # UNUSED OPCODES
+                        #0xe3 : [ "22c", "+iget-volatile",                   "vA, vB, type@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "type@" } ],
                         0xe3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xe4 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xe5 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
@@ -493,8 +494,10 @@ DALVIK_OPCODES = {
                         0xe9 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xea : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xeb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xec : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xed : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        
+                        0xec : [ "00x", "^breakpoint", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
+                        0xed : [ "20bc", "^throw-verification-error",                  "op AA, kind@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 1 : '+', 2 : '+' } ],
+
                         0xee : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xef : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
                         0xf0 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
@@ -2971,8 +2974,7 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self, vm, engine=["automatic"]) :
-        self.vm = vm
+    def __init__(self, engine=["automatic"]) :
         self.engine = engine
         self.decompiler_ob = None
         self.vmanalysis_on = None
@@ -3153,7 +3155,7 @@ class MapList :
 class DalvikVMFormat(bytecode._Bytecode) :
     def __init__(self, buff, engine=["automatic"], decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
-        
+       
         self.CM = ClassManager( engine )
         self.CM.set_decompiler( decompiler )
 

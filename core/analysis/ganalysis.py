@@ -134,13 +134,22 @@ class GVMAnalysis :
             #    n2 = self._get_node( c.get_name(), "onCreate", "()V" )
 
             #    self.G.add_edge( n1.id, n2.id )
-            if c.get_superclassname() == "Ljava/lang/Thread;" :
+            if c.get_superclassname() == "Ljava/lang/Thread;" or c.get_superclassname() == "Ljava/util/TimerTask;" :
                 for i in self.vm.get_method("run") :
                     if i.get_class_name() == c.get_name() :
                         n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
                         n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() ) 
-                        
-                        self.G.add_edge( n1.id, n2.id )
+                       
+                        # link from start to run
+                        self.G.add_edge( n2.id, n1.id )
+
+                        # link from init to start
+                        for init in self.vm.get_method("<init>") :
+                            if init.get_class_name() == c.get_name() :
+                                n3 = self._get_node( init.get_class_name(), "<init>", init.get_descriptor() )
+                                #n3 = self._get_node( i.get_class_name(), "<init>", i.get_descriptor() )
+                                self.G.add_edge( n3.id, n2.id )
+
             #elif c.get_superclassname() == "Landroid/os/AsyncTask;" :
             #    for i in self.vm.get_method("doInBackground") :
             #        if i.get_class_name() == c.get_name() :
@@ -152,6 +161,12 @@ class GVMAnalysis :
                         #    print n1, n2
                         # n2 = self._get_node( i.get_class_name(), "
             #    raise("ooo")
+
+        #for j in self.vmx.tainted_packages.get_internal_new_packages() :
+        #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
+        #                                            j.get_bb().start + j.get_idx(), \
+        #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
+
 
         list_permissions = self.vmx.get_permissions( [] ) 
         for x in list_permissions :

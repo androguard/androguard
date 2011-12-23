@@ -34,23 +34,19 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 def main(options, arguments) :
+    s = msign.CSignature()
     if options.input != None :
-        s = msign.CSignature()
-
         ret = s.add_file( open( options.input, "rb" ).read() )
         if ret != None and options.output != None :
             s.add_indb( ret, options.output )
 
     elif options.list != None :
-        s = msign.CSignature()
         s.list_indb( options.list )
 
     elif options.remove != None :
-        s = msign.CSignature()
         s.remove_indb( options.remove, options.output )
 
     elif options.check != None :
-        s = msign.CSignature()
         s.check_db( options.check )
 
     elif options.version != None :
