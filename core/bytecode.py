@@ -362,6 +362,17 @@ class SVs :
     def __str__(self) :
         return self.__value.__str__()
 
+def object_to_str(obj) :
+    if isinstance(obj, str) :
+        return obj
+    elif isinstance(obj, int) :
+        return pack("<L", obj)
+    elif obj == None :
+        return ""
+    else :
+        #print type(obj), obj
+        return obj.get_raw()
+
 class MethodBC(object) :
     def show(self, value) :
         getattr(self, "show_" + value)()
@@ -400,11 +411,9 @@ class _Bytecode(object) :
             psyco.full()
         except ImportError :
             pass
-            #warning("module psyco not found")
 
         self.__buff = buff
         self.__idx = 0
-
 
     def read(self, size) :
         if isinstance(size, SV) :
