@@ -18,7 +18,7 @@
 
 import bytecode
 
-from bytecode import SV, SVs
+from bytecode import SV, SVs, object_to_str
 
 import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
@@ -1207,25 +1207,26 @@ class EncodedValue :
         self.__value_type = self.val.get_value() & 0x1f
 
 
+        self.raw_value = None
         self.value = ""
 
         #  TODO: parse floats/doubles correctly
         if self.__value_type >= VALUE_SHORT and self.__value_type < VALUE_STRING :
-            self.value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            self.value, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
         elif self.__value_type == VALUE_STRING :
-            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_string(id)
         elif self.__value_type == VALUE_TYPE :
-            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_type(id)
         elif self.__value_type == VALUE_FIELD :
-            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_field(id)
         elif self.__value_type == VALUE_METHOD :
-            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_method(id)
         elif self.__value_type == VALUE_ENUM :
-            id = self._getintvalue(buff.read( self.__value_arg + 1 ))
+            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_field(id)
         elif self.__value_type == VALUE_ARRAY :
             self.value = EncodedArray( buff, cm )
@@ -1251,7 +1252,7 @@ class EncodedValue :
             ret |= ord(b) << shift
             shift += 8
 
-        return ret
+        return ret, buf
 
     def show(self) :
         print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, repr(self.value)
@@ -1262,11 +1263,10 @@ class EncodedValue :
         return []
 
     def get_raw(self) :
-        print self.val, self.value
-        if isinstance(self.value, str) :
-            return self.val.get_value_buff() + self.value
+        if self.raw_value == None :
+            return self.val.get_value_buff() + object_to_str( self.value )
         else :
-            return self.val.get_value_buff() + self.value.get_raw()
+            return self.val.get_value_buff() + object_to_str( self.raw_value )
 
 class AnnotationElement :
     def __init__(self, buff, cm) :
@@ -3009,6 +3009,7 @@ class ClassManager :
         return self.engine
 
     def add_offset(self, off, obj) :
+        #print "%x" % off, obj
         x = OffObj( off )
         self.__offsets[ obj ] = x
         return x
@@ -3169,7 +3170,8 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
 
         self.classes_names = None
-        
+        self.__cache_methods = None
+
     def show(self) :
         """Show the .class format into a human readable format"""
         self.map_list.show()
@@ -3314,11 +3316,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
             @param descriptor : the descriptor of the method
 
         """
-        for i in self.classes.class_def :
-            for j in i.get_methods() :
-                if class_name == j.get_class_name() and method_name == j.get_name() and descriptor == j.get_descriptor() :
-                    return j
-        return None
+        key = class_name + method_name + descriptor
+
+        if self.__cache_methods == None :
+            self.__cache_methods = {}
+            for i in self.classes.class_def :
+                for j in i.get_methods() :
+                    self.__cache_methods[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
+
+        try : 
+            return self.__cache_methods[ key ]
+        except KeyError :
+            return None
 
     def get_methods_class(self, class_name) :
         """

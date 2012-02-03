@@ -89,7 +89,7 @@ def AnalyzeAPK(filename, raw=False) :
 
     d = DalvikVMFormat( a.get_dex() )
     dx = VMAnalysis( d )
-    gx = GVMAnalysis( dx, a )
+    gx = GVMAnalysis( dx, a, False )
     d.set_vmanalysis( dx )
     ExportVMToPython( d )
     ExportXREFToPython( d, gx )
@@ -198,7 +198,7 @@ def main(options, arguments) :
             for method in _a.get("method", options.method) :
                 if options.pretty != None :
                     _a.ianalyze()
-                    method.pretty_show( _a.get_analysis() )
+                    method.pretty_show() 
                 else :
                     method.show()
 
