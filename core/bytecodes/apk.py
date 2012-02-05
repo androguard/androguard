@@ -25,6 +25,7 @@ from dvm_permissions import DVM_PERMISSIONS
 import zipfile, StringIO
 from struct import pack, unpack
 from xml.dom import minidom
+from zlib import crc32
 
 try :
     import chilkat
@@ -80,6 +81,9 @@ class APK :
         self.androidversion = {}
         self.permissions = []
         self.validAPK = False
+
+        self.files = {}
+        self.files_crc32 = {}
 
         if raw == True :
             self.__raw = filename
@@ -159,10 +163,11 @@ class APK :
         try : 
             import magic
         except ImportError :
-            return {}
+            return self.files
 
-        l = {}
-        
+        if self.files != {} :
+            return self.files
+
         builtin_magic = 0
         try :
             getattr(magic, "Magic")
@@ -174,13 +179,30 @@ class APK :
             ms.load()
             
             for i in self.get_files() :
-                l[ i ] = ms.buffer( self.zip.read( i ) )
+                buffer = self.zip.read( i )
+                self.files[ i ] = ms.buffer( buffer )
+                self.files_crc32[ i ] = crc32( buffer )
         else :
             m = magic.Magic()
             for i in self.get_files() :
-                l[ i ] = m.from_buffer( self.zip.read( i ) )
+                buffer = self.zip.read( i )
+                self.files[ i ] = m.from_buffer( buffer )
+                self.files_crc32[ i ] = crc32( buffer )
 
-        return l
+        return self.files 
+
+    def get_files_crc32(self) :
+        if self.files_crc32 == {} :
+            self.get_files_types()
+        
+        return self.files_crc32
+
+    def get_files_information(self) :
+        if self.files == {} :
+            self.get_files_types()
+
+        for i in self.get_files() :
+            yield i, self.files[ i ], self.files_crc32[ i ]
 
     def get_raw(self) :
         """ 
@@ -313,7 +335,9 @@ class APK :
         return self.get_elements( "uses-library", "android:name" )
 
     def show(self) :
-        print "FILES : ", self.get_files_types()
+        print "FILES : "
+        for i in self.get_files() :
+            print "\t", i, self.files[i], self.files_crc32[i]
 
         print "PERMISSIONS : ", self.get_details_permissions()
         print "ACTIVITIES : ", self.get_activities()
