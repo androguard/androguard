@@ -163,6 +163,9 @@ class APK :
         try : 
             import magic
         except ImportError :
+            for i in self.get_files() :
+                buffer = self.zip.read( i )
+                self.files_crc32[ i ] = crc32( buffer )
             return self.files
 
         if self.files != {} :
@@ -336,9 +339,13 @@ class APK :
 
     def show(self) :
         self.get_files_types()
+        
         print "FILES : "
         for i in self.get_files() :
-            print "\t", i, self.files[i], self.files_crc32[i]
+            try :
+                print "\t", i, self.files[i], "%x" % self.files_crc32[i]
+            except KeyError :
+                print "\t", i, "%x" % self.files_crc32[i]
 
         print "PERMISSIONS : ", self.get_details_permissions()
         print "ACTIVITIES : ", self.get_activities()
