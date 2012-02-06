@@ -335,6 +335,7 @@ class APK :
         return self.get_elements( "uses-library", "android:name" )
 
     def show(self) :
+        self.get_files_types()
         print "FILES : "
         for i in self.get_files() :
             print "\t", i, self.files[i], self.files_crc32[i]
