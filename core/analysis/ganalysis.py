@@ -278,6 +278,9 @@ class GVMAnalysis :
         fd.write("</gexf>\n")
         fd.close()
 
+    def export_to_gml(self, output) :
+        pass
+
     def get_paths_method(self, method) :
         return self.get_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
 

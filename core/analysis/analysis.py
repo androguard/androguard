@@ -1879,7 +1879,7 @@ class MethodAnalysis :
                     break
 
             idx += i.get_length()
-
+        
         excepts = BO["Dexception"]( self.__vm, self.__method )
         for i in excepts:
             l.extend([i[0]])
@@ -1899,7 +1899,7 @@ class MethodAnalysis :
             current_basic.push( i )
 
             # index is a branch instruction
-            if idx in h : 
+            if idx in h :
                 current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
                 self.basic_blocks.push( current_basic )
 
@@ -1926,7 +1926,7 @@ class MethodAnalysis :
         if code_analysis == True :
             for i in self.basic_blocks.get() :
                 i.analyze_code()
-        
+       
     def get_length(self) :
         """
             @rtype : an integer which is the length of the code
