@@ -412,7 +412,7 @@ class Msign {
 
             dt.nbcmpclusters = SScluster.size();
             if (dt.log) {
-                printf("CLUSTER SIZE = %d\n", SScluster.size());
+                printf("CLUSTER SIZE = %d\n", (int)SScluster.size());
             }
 
             for(unsigned int ii=0; ii < SScluster.size(); ii++) {
@@ -429,7 +429,7 @@ class Msign {
                 }
 
                 if (dt.log) {
-                    printf("CLUSTER %d SIGN %d ELEM %d\n", SScluster[ii], SSsign.size(), SSelem.size());
+                    printf("CLUSTER %d SIGN %d ELEM %d\n", (int)SScluster[ii], (int)SSsign.size(), (int)SSelem.size());
                 }
 
                 for(unsigned int jj=0; jj < SSelem.size(); jj++) {
@@ -560,7 +560,7 @@ class Msign {
 
             dt.nbcmpclusters = SScluster.size();
             if (dt.log) {
-                printf("CLUSTER SIZE = %d\n", SScluster.size());
+                printf("CLUSTER SIZE = %d\n", (int)SScluster.size());
             }
 
             for(unsigned int ii=0; ii < SScluster.size(); ii++) {
@@ -577,7 +577,7 @@ class Msign {
                 }
 
                 if (dt.log) {
-                    printf("CLUSTER %d SIGN %d ELEM %d\n", SScluster[ii], SSsign.size(), SSelem.size());
+                    printf("CLUSTER %d SIGN %d ELEM %d\n", (int)SScluster[ii], (int)SSsign.size(), (int)SSelem.size());
                 }
 
                 for(unsigned int jj=0; jj < SSelem.size(); jj++) {
@@ -655,8 +655,8 @@ class Msign {
 
         float sign_ncd(string s1, string s2, int cache) {
             int ret;
-            unsigned int corig = 0;
-            unsigned int ccmp = 0;
+            size_t corig = 0;
+            size_t ccmp = 0;
     
             if (!cache && ncd_hashmap.count( s1 + s2 ) == 1) {
                 return ncd_hashmap[ s1 + s2 ];

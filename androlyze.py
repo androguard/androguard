@@ -87,14 +87,7 @@ def AnalyzeAPK(filename, raw=False) :
     """
     a = APK(filename, raw)
 
-    d = DalvikVMFormat( a.get_dex() )
-    dx = VMAnalysis( d )
-    gx = GVMAnalysis( dx, a, False )
-    d.set_vmanalysis( dx )
-    ExportVMToPython( d )
-    ExportXREFToPython( d, gx )
-    ExportDREFToPython( d, dx )
-    set_pretty_show( 1 )
+    d, dx = AnalyzeDex( filename, a.get_dex() )
 
     return a, d, dx
 
@@ -136,12 +129,17 @@ def AnalyzeDex(filename, raw=False) :
     else :
         d = DalvikVMFormat( raw )
     
+    ExportVMToPython( d )
+    
     dx = VMAnalysis( d )
     gx = GVMAnalysis( dx, None )
+    
     d.set_vmanalysis( dx )
-    ExportVMToPython( d )
-    ExportXREFToPython( d, gx )
-    ExportDREFToPython( d, dx )
+    d.set_gvmanalysis( gx )
+    
+    d.create_xref()
+    d.create_dref()
+    
     set_pretty_show( 1 )
 
     return d, dx

@@ -98,7 +98,11 @@ class DecompilerDex2Jad :
         lexer = get_lexer_by_name("java", stripall=True)
         formatter = TerminalFormatter()
         result = highlight(self.classes[class_name], lexer, formatter)
+        
         return result
+
+    def display_all(self, class_name) :
+        print self.get_all( class_name )
 
 class DecompilerDed :
     def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh") :
@@ -164,6 +168,9 @@ class DecompilerDed :
         formatter = TerminalFormatter()
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
+    
+    def display_all(self, class_name) :
+        print self.get_all( class_name )
 
 class MethodFilter(Filter):
     def __init__(self, **options):

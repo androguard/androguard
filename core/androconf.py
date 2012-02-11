@@ -140,3 +140,8 @@ def debug(x) :
 
 def set_options(key, value) :
     CONF[ key ] = value
+
+def save_to_disk(buff, output) :
+    fd = open(output, "w")
+    fd.write(buff)
+    fd.close()

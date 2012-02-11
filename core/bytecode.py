@@ -62,7 +62,7 @@ def PrettyShow( basic_blocks ) :
 
 def PrettyShowEx( exceptions ) :
     if len(exceptions) > 0 :
-        print "Exceptions :"
+        print "Exceptions:"
         if PRETTY_SHOW == 0 :
             for i in exceptions : 
                 print "\t", "%s" % (i.show_buff())
@@ -538,56 +538,4 @@ def ExportVMToPython(vm) :
                 for j in f[i] :
                     name = "FIELD_" + FormatNameToPython( j.get_name() ) + "_" + FormatDescriptorToPython( j.get_descriptor() )
                     setattr( _class, name, j )
-
-class XREF : 
-    pass
-
-def ExportXREFToPython(vm, gvm) :
-    for _class in vm.get_classes() :
-        for method in _class.get_methods() :
-            method.XREFfrom = XREF()
-            method.XREFto = XREF()
-            
-            key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
-            
-            if key in gvm.nodes :
-                for i in gvm.G.predecessors( gvm.nodes[ key ].id ) :
-                    xref = gvm.nodes_id[ i ]
-                    xref_meth = vm.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
-                    if xref_meth != None :
-                        name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
-                        setattr( method.XREFfrom, name, xref_meth )
-                
-                for i in gvm.G.successors( gvm.nodes[ key ].id ) :
-                    xref = gvm.nodes_id[ i ]
-                    xref_meth = vm.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
-                    if xref_meth != None :
-                        name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
-                        setattr( method.XREFto, name, xref_meth )
-
-def ExportDREFToPython(vm, vmx) :
-    for _class in vm.get_classes() :
-        for field in _class.get_fields() :
-            field.DREFr = XREF()
-            field.DREFw = XREF()
-
-            paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
-            if paths != None :
-                for path in paths.get_paths() :
-                    if path.get_access_flag() == 'R' :
-                        method_class_name = path.get_method().get_class_name()
-                        method_name = path.get_method().get_name()
-                        method_descriptor = path.get_method().get_descriptor()
-
-                        dref_meth = vm.get_method_descriptor( method_class_name, method_name, method_descriptor )
-                        name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
-                        setattr( field.DREFr, name, dref_meth )
-                    else :
-                        method_class_name = path.get_method().get_class_name()
-                        method_name = path.get_method().get_name()
-                        method_descriptor = path.get_method().get_descriptor()
-
-                        dref_meth = vm.get_method_descriptor( method_class_name, method_name, method_descriptor )
-                        name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
-                        setattr( field.DREFw, name, dref_meth )
 
