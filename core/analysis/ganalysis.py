@@ -91,7 +91,8 @@ class GVMAnalysis :
                     n2.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
 
             self.G.add_edge( n1.id, n2.id )
-            
+            n1.add_edge( n2, j )
+
         #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
         #                                            j.get_bb().start + j.get_idx(), \
         #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
@@ -171,7 +172,6 @@ class GVMAnalysis :
         list_permissions = self.vmx.get_permissions( [] ) 
         for x in list_permissions :
             for j in list_permissions[ x ] :
-
                 #print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
                 #                                    j.get_bb().start + j.get_idx(), \
                 #                                    j.get_class_name(), j.get_name(), j.get_descriptor())
@@ -236,50 +236,71 @@ class GVMAnalysis :
 
         return self.nodes[ key ]
 
-    def export_to_gexf(self, output) :
-        fd = open(output, "w")
+    def export_to_gexf(self) :
+        buff = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        buff += "<gexf xmlns=\"http://www.gephi.org/gexf\" xmlns:viz=\"http://www.gephi.org/gexf/viz\">\n"
+        buff += "<graph type=\"static\">\n"
 
-        fd.write( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" )
-        fd.write( "<gexf xmlns=\"http://www.gephi.org/gexf\" xmlns:viz=\"http://www.gephi.org/gexf/viz\">\n" )
-        fd.write( "<graph type=\"static\">\n")
-
-        fd.write( "<attributes class=\"node\" type=\"static\">\n" )
-        fd.write( "<attribute default=\"normal\" id=\"%d\" title=\"type\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "type"] )
-        fd.write( "<attribute id=\"%d\" title=\"class_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "class_name"] )
-        fd.write( "<attribute id=\"%d\" title=\"method_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "method_name"] )
-        fd.write( "<attribute id=\"%d\" title=\"descriptor\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "descriptor"] )
+        buff += "<attributes class=\"node\" type=\"static\">\n" 
+        buff += "<attribute default=\"normal\" id=\"%d\" title=\"type\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "type"]
+        buff += "<attribute id=\"%d\" title=\"class_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "class_name"]
+        buff += "<attribute id=\"%d\" title=\"method_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "method_name"]
+        buff += "<attribute id=\"%d\" title=\"descriptor\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "descriptor"]
 
 
-        fd.write( "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[ "permissions"] )
-        fd.write( "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "permissions_level"] )
-        fd.write( "<attribute default=\"0.0\" id=\"%d\" title=\"android_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "android_api"] )
-        fd.write( "<attribute default=\"0.0\" id=\"%d\" title=\"java_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "java_api"] )
+        buff += "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[ "permissions"]
+        buff += "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "permissions_level"]
+        buff += "<attribute default=\"0.0\" id=\"%d\" title=\"android_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "android_api"]
+        buff += "<attribute default=\"0.0\" id=\"%d\" title=\"java_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "java_api"]
         
-        fd.write( "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[ "dynamic_code"] )
-        fd.write( "</attributes>\n" )   
+        buff += "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[ "dynamic_code"]
+        buff += "</attributes>\n"   
 
-        fd.write( "<nodes>" )
+        buff += "<nodes>\n"
         for node in self.G.nodes() :
-            fd.write( "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label)) )
-            fd.write( self.nodes_id[ node ].get_attributes() )
-            fd.write( "</node>\n" )
-        fd.write( "</nodes>\n" )
+            buff += "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label))
+            buff += self.nodes_id[ node ].get_attributes_gexf()
+            buff += "</node>\n"
+        buff += "</nodes>\n"
 
 
-        fd.write( "<edges>\n" )
+        buff += "<edges>\n"
         nb = 0
         for edge in self.G.edges() :
-            fd.write( "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1]) )
+            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
             nb += 1
-        fd.write( "</edges>\n")
+        buff += "</edges>\n"
 
 
-        fd.write("</graph>\n")
-        fd.write("</gexf>\n")
-        fd.close()
+        buff += "</graph>\n"
+        buff += "</gexf>\n"
 
-    def export_to_gml(self, output) :
-        pass
+        return buff
+
+    def export_to_gml(self) :
+        buff = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+        buff += "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n"
+
+        buff += "<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n"
+        buff += "<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n"
+
+        buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
+
+        for node in self.G.nodes() :
+            buff += "<node id=\"%d\">\n" % (node)
+            #fd.write( "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label)) )
+            buff += self.nodes_id[ node ].get_attributes_gml()
+            buff += "</node>\n"
+
+        nb = 0
+        for edge in self.G.edges() :
+            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
+            nb += 1
+
+        buff += "</graph>\n"
+        buff += "</graphml>\n"
+        
+        return buff
 
     def get_paths_method(self, method) :
         return self.get_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
@@ -339,6 +360,7 @@ class NodeF :
         self.real = real
         self.risks = []
         self.api = {} 
+        self.edges = {}
 
         if label == None : 
             self.label = "%s %s %s" % (class_name, method_name, descriptor)
@@ -354,7 +376,14 @@ class NodeF :
                             "dynamic_code" : "false",
                           }
 
-    def get_attributes(self) :
+    def add_edge(self, n, idx) :
+        try :
+            self.edges[ n ].append( idx )
+        except KeyError :
+            self.edges[ n ] = []
+            self.edges[ n ].append( idx )
+
+    def get_attributes_gexf(self) :
         buff = ""
         
         if self.attributes[ "color" ] != None : 
@@ -379,6 +408,31 @@ class NodeF :
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["dynamic_code"], self.attributes[ "dynamic_code" ])
 
         buff += "</attvalues>\n"
+
+        return buff
+
+    def get_attributes_gml(self) :
+        buff = ""
+        
+        buff += "<data key=\"d6\">\n"
+        buff += "<y:ShapeNode>\n"
+       
+        height = 10 
+        width = max(len(self.class_name), len(self.method_name))
+        width = max(width, len(self.descriptor))
+
+        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 8 * width)
+        if self.attributes[ "color" ] != None : 
+            buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
+
+        buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"
+
+        label = self.class_name + "\n" + self.method_name + "\n" + self.descriptor
+        buff += escape(label)
+
+        buff += "</y:NodeLabel>\n"
+        buff += "</y:ShapeNode>\n"
+        buff += "</data>\n"
 
         return buff
 

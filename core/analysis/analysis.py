@@ -22,6 +22,7 @@ from androconf import error, warning
 import jvm, dvm
 from api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
+from zlib import crc32
 
 class ContextField :
     def __init__(self, mode) :
@@ -1079,6 +1080,9 @@ class Path :
         self.method = info[3]
         self.info_obj = info_obj
 
+    def get_offset(self) :
+        return self.bb.start + self.idx
+
     def get_class_name(self) :
         if isinstance(self.info_obj, list) :
             return self.info_obj[0]
@@ -1111,7 +1115,7 @@ class TaintedVariable :
         self.var = var
         self.type = _type
 
-        self.paths = []
+        self.paths = [] 
 
     def get_type(self) :
         return self.type
@@ -1125,6 +1129,14 @@ class TaintedVariable :
         p = Path( info, self.var )
         self.paths.append( p )
         return p
+        
+        #print self.var.get_name()
+        #p = Path( info, self.var )
+        #try :
+        #    self.paths[ p.get_method() ].append( p.get_idx() + p.get_bb().start )
+        #except KeyError :
+        #    self.paths[ p.get_method() ] = [] 
+        #    self.paths[ p.get_method() ].append( p.get_idx() + p.get_bb().start )
 
     def get_paths_access(self, mode) :
         for i in self.paths :
@@ -1268,8 +1280,6 @@ class TaintedVariables :
 
             if var not in self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ] :
                 self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ][ var ] = TaintedVariable( var, _type )
-        else :
-            raise("ooop")
 
     def push_info(self, _type, var, info) :
         if _type == TAINTED_FIELD :
@@ -1278,37 +1288,35 @@ class TaintedVariables :
 
             p = self.__vars[ _type ][ key ].push( info )
 
-            try :
-                self.__methods[ _type ][ p.get_method() ][ key ].append( p )
-            except KeyError :
-                try :
-                    self.__methods[ _type ][ p.get_method() ][ key ] = []
-                except KeyError :
-                    self.__methods[ _type ][ p.get_method() ] = {}
-                    self.__methods[ _type ][ p.get_method() ][ key ] = []
+            #try :
+            #    self.__methods[ _type ][ p.get_method() ][ key ].append( p )
+            #except KeyError :
+            #    try :
+            #        self.__methods[ _type ][ p.get_method() ][ key ] = []
+            #    except KeyError :
+            #        self.__methods[ _type ][ p.get_method() ] = {}
+            #        self.__methods[ _type ][ p.get_method() ][ key ] = []
 
-                self.__methods[ _type ][ p.get_method() ][ key ].append( p )
+            #    self.__methods[ _type ][ p.get_method() ][ key ].append( p )
 
         elif _type == TAINTED_STRING :
             self.add( var, _type )
             p = self.__vars[ _type ][ var ].push( info )
 
-            try :
-                self.__methods[ _type ][ p.get_method() ][ var ].append( p )
-            except KeyError :
-                try :
-                    self.__methods[ _type ][ p.get_method() ][ var ] = []
-                except KeyError :
-                    self.__methods[ _type ][ p.get_method() ] = {}
-                    self.__methods[ _type ][ p.get_method() ][ var ] = []
+            #try :
+            #    self.__methods[ _type ][ p.get_method() ][ var ].append( p )
+            #except KeyError :
+            #    try :
+            #        self.__methods[ _type ][ p.get_method() ][ var ] = []
+            #    except KeyError :
+            #        self.__methods[ _type ][ p.get_method() ] = {}
+            #        self.__methods[ _type ][ p.get_method() ][ var ] = []
                 
-                self.__methods[ _type ][ p.get_method() ][ var ].append( p )
+            #    self.__methods[ _type ][ p.get_method() ][ var ].append( p )
 
         elif _type == TAINTED_LOCAL_VARIABLE :
             self.add( var, _type, info[-1] )
             self.__vars[ TAINTED_LOCAL_VARIABLE ][ info[-1] ][ var ].push( info )
-        else :
-            raise("ooop")
 
 class PathI(Path) :
     def __init__(self, info) :
@@ -1795,12 +1803,12 @@ class ExceptionAnalysis :
             i.append( bb.get_basic_block( i[1] ) )
 
     def show_buff(self) :
-        buff = "%x:%x " % (self.start, self.end)
+        buff = "%x:%x\n" % (self.start, self.end)
 
         for i in self.exceptions :
-            buff += "(%s -> %x %s)" % (i[0], i[1], i[2].get_name())
+            buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
 
-        return buff
+        return buff[:-1]
 
 class Exceptions :
     def __init__(self, _vm) :
