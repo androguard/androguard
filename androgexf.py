@@ -53,7 +53,8 @@ def main(options, arguments) :
         vmx = analysis.VMAnalysis( vm )
         gvmx = ganalysis.GVMAnalysis( vmx, a )
 
-        gvmx.export_to_gexf( options.output )
+        b = gvmx.export_to_gexf()
+        androconf.save_to_disk( b, options.output )
 
 if __name__ == "__main__" :
    parser = OptionParser()

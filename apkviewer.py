@@ -26,7 +26,8 @@ from optparse import OptionParser
 PATH_INSTALL = "./"																																																			   
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, apk, dvm, analysis, ganalysis, androconf 
+import androguard, apk, analysis, ganalysis, androconf 
+import dvm
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'directory output', 'nargs' : 1 }
@@ -54,20 +55,14 @@ class DexViewer :
         self.vmx = vmx
         self.gvmx = gvmx
     
-    def add_method_node(self, i, id_i) :
-        buff = "<node id=\"%d\">\n" % id_i
+
+    def _create_node(self, id, height, width, color, label) :
+        buff = "<node id=\"%d\">\n" % id
         buff += "<data key=\"d6\">\n"
         buff += "<y:ShapeNode>\n"
-        
-        height = 2 
-        width = 2
-        label = ""
-        
-        label += i.get_name()
-        label += i.get_descriptor()
-        
-        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 7 * width)
-        buff += "<y:Fill color=\"#%s\" transparent=\"false\"/>\n" % "FF0000"
+
+        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 7.5 * width)
+        buff += "<y:Fill color=\"#%s\" transparent=\"false\"/>\n" % color
 
         buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"
 
@@ -80,12 +75,38 @@ class DexViewer :
         buff += "</node>\n"
 
         return buff
+        
+    def add_exception_node(self, exception, id_i) :
+        buff = ""
+       # 9933FF 
+        height = 2 
+        width = 0
+        label = ""
+        
+        label += "%x:%x\n" % (exception.start, exception.end)
+        for i in exception.exceptions :
+            c_label = "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
+            label += c_label
+
+            width = max(len(c_label), width)
+            height += 1
+
+        return self._create_node( id_i, height, width, "9333FF", label )
+
+    def add_method_node(self, i, id_i) :
+        height = 0 
+        width = 0
+        label = ""
+        
+        label += i.get_name() + "\n"
+        label += i.get_descriptor()
+        
+        height = 3 
+        width = len(label)
+
+        return self._create_node( id_i, height, width, "FF0000", label )
 
     def add_node(self, i, id_i) :
-        buff = "<node id=\"%d\">\n" % id_i
-        buff += "<data key=\"d6\">\n"
-        buff += "<y:ShapeNode>\n"
-        
         height = 0
         width = 0
         idx = i.start
@@ -100,20 +121,7 @@ class DexViewer :
         if height < 10 :
             height += 3 
             
-        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 7 * width)
-        buff += "<y:Fill color=\"#%s\" transparent=\"false\"/>\n" % "FFCC00"
-
-        buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"
-
-        buff += escape(label)
-
-        buff += "</y:NodeLabel>\n"
-        buff += "</y:ShapeNode>\n"
-        buff += "</data>\n"
-
-        buff += "</node>\n"
-
-        return buff
+        return self._create_node( id_i, height, width, "FFCC00", label )
 
     def add_edge(self, i, id_i, j, id_j, l_eid, val) :
         buff = "<edge id=\"%d\" source=\"%d\" target=\"%d\">\n" % (len(l_eid), id_i, id_j)
@@ -145,20 +153,22 @@ class DexViewer :
             return l[i]
 
     def export_to_gml(self, output) :
-        self.gvmx.export_to_gml( output + "/" + "methodcalls.graphml" )
+        androconf.save_to_disk( self.gvmx.export_to_gml(),  output + "/" + "methodcalls.graphml" )
 
         for _class in self.vm.get_classes() :
             name = _class.get_name()
             name = name[1:-1]
-            fd = open(output + "/" + name + ".graphml", "w")
-            fd.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-            fd.write("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n")
+            
+            buff = ""
+
+            buff += "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+            buff += "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n"
+
+            buff += "<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n"
+            buff += "<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n"
+            buff += "<key for=\"edge\" id=\"d9\" yfiles.type=\"edgegraphics\"/>\n"
         
-            fd.write("<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n")
-            fd.write("<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n")
-            fd.write("<key for=\"edge\" id=\"d9\" yfiles.type=\"edgegraphics\"/>\n")
-        
-            fd.write("<graph edgedefault=\"directed\" id=\"G\">\n")
+            buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
             print name
 
@@ -169,16 +179,19 @@ class DexViewer :
 
             for method in _class.get_methods() :
                 mx = self.vmx.get_method( method )
-                
+                exceptions = mx.exceptions
+
                 id_method = self.new_id(method, l_id)
                 buff_nodes += self.add_method_node(method, id_method)
 
                 for i in mx.basic_blocks.get() :
                     
                     id_i = self.new_id(i, l_id)
-                    print i, id_i
+                    print i, id_i, i.exception_analysis
+
                     buff_nodes += self.add_node( i, id_i )
                     
+                    # add childs nodes
                     val = 0
                     if len(i.childs) > 1 :
                         val = 1
@@ -193,14 +206,22 @@ class DexViewer :
                         if val == 1 :
                             val = 0
 
+                    # add exceptions node
+                    if i.exception_analysis != None :
+                        id_exceptions = self.new_id(i.exception_analysis, l_id)
+                        buff_nodes += self.add_exception_node(i.exception_analysis, id_exceptions)
+                        buff_edges += self.add_edge(None, id_exceptions, None, id_i, l_eid, 2)
+
                 buff_edges += self.add_edge(None, id_method, None, id_method+1, l_eid, 2)
+                
+            buff += buff_nodes
+            buff += buff_edges
 
-            fd.write(buff_nodes)
-            fd.write(buff_edges)
 
-            fd.write("</graph>\n")
-            fd.write("</graphml>\n")
-            fd.close()
+            buff += "</graph>\n"
+            buff += "</graphml>\n"
+            
+            androconf.save_to_disk( buff, output + "/" + name + ".graphml" )
 
 class Directory :
     def __init__(self, name) :
@@ -276,51 +297,50 @@ class ApkViewer :
             self.ids[ n2 ] = len(self.ids)
         
     def export_to_gml(self, output) :
-        fd = open(output + "apk.graphml", "w")
-        fd.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-        fd.write("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n")
-        
-        fd.write("<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n")
-        fd.write("<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n")
+        buff = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+        buff += "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n"
+
+        buff += "<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n"
+        buff += "<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n"
 
         
-        fd.write("<graph edgedefault=\"directed\" id=\"G\">\n")
+        buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
         
         for node in self.G.nodes() :
             print node
 
-            fd.write("<node id=\"%d\">\n" % self.ids[node])
-            fd.write("<data key=\"d6\">\n")
-            fd.write("<y:ShapeNode>\n")
+            buff += "<node id=\"%d\">\n" % self.ids[node]
+            buff += "<data key=\"d6\">\n"
+            buff += "<y:ShapeNode>\n"
             
-            fd.write("<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (60.0, 7 * node.width))
-            fd.write("<y:Fill color=\"#%s\" transparent=\"false\"/>\n" % node.color)
+            buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (60.0, 7 * node.width)
+            buff += "<y:Fill color=\"#%s\" transparent=\"false\"/>\n" % node.color
 
-            fd.write("<y:NodeLabel>\n")
-            fd.write("%s\n" % node.basename)
+            buff += "<y:NodeLabel>\n"
+            buff += "%s\n" % node.basename
 
             if isinstance(node, File) :
-                fd.write("%s\n" % node.file_type)
-                fd.write("%s\n" % hex(node.file_crc))
+                buff += "%s\n" % node.file_type
+                buff += "%s\n" % hex(node.file_crc)
             
-            fd.write("</y:NodeLabel>\n")
+            buff += "</y:NodeLabel>\n"
 
-            fd.write("</y:ShapeNode>\n")
-            fd.write("</data>\n")
+            buff += "</y:ShapeNode>\n"
+            buff += "</data>\n"
 
-            fd.write("</node>\n")
+            buff += "</node>\n"
 
         nb = 0
         for edge in self.G.edges() :
-            fd.write("<edge id=\"%d\" source=\"%d\" target=\"%d\">\n" % (nb, self.ids[edge[0]], self.ids[edge[1]]))
-            fd.write("</edge>\n")
+            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\">\n" % (nb, self.ids[edge[0]], self.ids[edge[1]])
+            buff += "</edge>\n"
             nb += 1
 
-        fd.write("</graph>\n")
-        fd.write("</graphml>\n")
-        fd.close()
+        buff += "</graph>\n"
+        buff += "</graphml>\n"
 
+        androconf.save_to_disk( buff, output + "/" + "apk.graphml" )
 
 
 def main(options, arguments) :
@@ -332,10 +352,9 @@ def main(options, arguments) :
         if ret_type == "APK"  :
             a = apk.APK( options.input )
             if a.is_valid_APK() :
-                print a.get_files_types()
-                print a.get_files_crc32()
+                av = ApkViewer( a )
+                av.export_to_gml( options.output )
 
-                #a.export_to_gml()
                 vm = dvm.DalvikVMFormat( a.get_dex() )
             else :
                 print "INVALID APK"
@@ -345,12 +364,10 @@ def main(options, arguments) :
             except Exception, e :
                 print "INVALID DEX", e
 
-        av = ApkViewer( a )
-        av.export_to_gml( options.output )
 
         vmx = analysis.VMAnalysis( vm )
         gvmx = ganalysis.GVMAnalysis( vmx, a )
- 
+
         create_directories( vm, options.output )
 
         dv = DexViewer( vm, vmx, gvmx )

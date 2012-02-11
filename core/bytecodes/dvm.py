@@ -19,6 +19,7 @@
 import bytecode
 
 from bytecode import SV, SVs, object_to_str
+from bytecode import FormatClassToPython, FormatNameToPython, FormatDescriptorToPython
 
 import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
@@ -1742,7 +1743,17 @@ class EncodedField :
         return writeuleb128( self.field_idx_diff ) + writeuleb128( self.access_flags )
 
     def show(self) :
-        print "\tENCODED_FIELD field_idx_diff=%d access_flags=%d (%s,%s,%s)" % (self.field_idx_diff, self.access_flags, self._class_name, self._proto, self._name)
+        print "\tENCODED_FIELD access_flags=%d (%s,%s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        self.show_dref()
+    
+    def show_dref(self) :
+        try :
+            for i in self.DREFr.items :
+                print "R:", i.get_class_name(), i.get_name(), i.get_descriptor()
+            for i in self.DREFw.items :
+                print "W:", i.get_class_name(), i.get_name(), i.get_descriptor()
+        except AttributeError:
+            pass
 
 class EncodedMethod :
     def __init__(self, buff, cm) :
@@ -1770,14 +1781,25 @@ class EncodedMethod :
         self._code = self.__CM.get_code( self.code_off )
 
     def show(self) :
-        print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s %s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
+        print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
         if self._code != None :
             self._code.show()
+            self.show_xref()
 
     def pretty_show(self) :
-        print "\tENCODED_METHOD method_idx_diff=%d access_flags=%d code_off=0x%x (%s %s,%s)" % (self.method_idx_diff, self.access_flags, self.code_off, self._class_name, self._proto, self._name)
+        print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
         if self._code != None :
-            self._code.pretty_show( self.__CM.vmanalysis_ob.hmethods[ self ] )
+            self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
+            self.show_xref()
+
+    def show_xref(self) :
+        try :
+            for i in self.XREFfrom.items :
+                print "F:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
+            for i in self.XREFto.items :
+                print "T:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
+        except AttributeError:
+            pass
 
     def source(self) :
         self.__CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
@@ -1959,7 +1981,7 @@ class ClassItem :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()
 
     def source(self) :
-        self.__CM.decompiler_ob.get_all( self.get_name() )
+        self.__CM.decompiler_ob.display_all( self.get_name() )
 
     def get_class_data(self) :
         return self._class_data_item
@@ -2195,7 +2217,7 @@ class DBCSpe :
     def get_type_ins(self) :
         return self.type_ins_tag
 
-class DBC :
+class DBC:
     def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
         self.CM = class_manager
         self.type_ins_tag = NORMAL_DVM_INS
@@ -2328,6 +2350,10 @@ class DBC :
                 l.append( ''.join( str(j) for j in i ) )
             l.append( "," )
 
+        if l != [] :
+            l.pop(-1)
+            l.append("//")
+
         formatted_operands = self.get_formatted_operands()
         if formatted_operands != [] :
             for i in formatted_operands :
@@ -2345,7 +2371,7 @@ class DBC :
             buff += ' '.join( i for i in l )
 
         return buff
-
+    
     def _more_info(self, c, v) :
         if "string@" == c :
             return [ c, v, repr(self.CM.get_string(v)) ]
@@ -2977,7 +3003,8 @@ class ClassManager :
     def __init__(self, engine=["automatic"]) :
         self.engine = engine
         self.decompiler_ob = None
-        self.vmanalysis_on = None
+        self.vmanalysis_ob = None
+        self.gvmanalysis_ob = None
 
         self.__manage_item = {}
         self.__manage_item_off = []
@@ -2996,8 +3023,17 @@ class ClassManager :
             except ImportError :
                 self.engine[0] = "python"
 
+    def get_vmanalysis(self) :
+        return self.vmanalysis_ob
+
     def set_vmanalysis(self, vmanalysis) :
         self.vmanalysis_ob = vmanalysis
+    
+    def get_gvmanalysis(self) :
+        return self.gvmanalysis_ob
+
+    def set_gvmanalysis(self, gvmanalysis) :
+        self.gvmanalysis_ob = gvmanalysis
 
     def set_decompiler(self, decompiler) :
         self.decompiler_ob = decompiler
@@ -3407,3 +3443,83 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
     def set_vmanalysis(self, vmanalysis) :
         self.CM.set_vmanalysis( vmanalysis )
+
+    def set_gvmanalysis(self, gvmanalysis) :
+        self.CM.set_gvmanalysis( gvmanalysis )
+
+    def create_xref(self, python_export=True) :
+        gvm = self.CM.get_gvmanalysis()
+
+        for _class in self.get_classes() :
+            for method in _class.get_methods() :
+                method.XREFfrom = XREF()
+                method.XREFto = XREF()
+            
+                key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
+            
+                if key in gvm.nodes :
+                    for i in gvm.G.predecessors( gvm.nodes[ key ].id ) :
+                        xref = gvm.nodes_id[ i ]
+                        xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
+                        if xref_meth != None :
+                            name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                            if python_export == True :
+                                setattr( method.XREFfrom, name, xref_meth )
+                            method.XREFfrom.add( xref_meth, xref.edges[ gvm.nodes[ key ] ] )
+
+                    for i in gvm.G.successors( gvm.nodes[ key ].id ) :
+                        xref = gvm.nodes_id[ i ]
+                        xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
+                        if xref_meth != None :
+                            name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                            if python_export == True :
+                                setattr( method.XREFto, name, xref_meth )
+                            method.XREFto.add( xref_meth, gvm.nodes[ key ].edges[ xref ] )
+
+    def create_dref(self, python_export=True) :
+        vmx = self.CM.get_vmanalysis()
+
+        for _class in self.get_classes() :
+            for field in _class.get_fields() :
+                field.DREFr = DREF()
+                field.DREFw = DREF()
+
+                paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
+                if paths != None :
+                    for path in paths.get_paths() :
+                  #      print field.get_class_name(), field.get_name(), field.get_descriptor(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_idx()
+                        if path.get_access_flag() == 'R' :
+                            method_class_name = path.get_method().get_class_name()
+                            method_name = path.get_method().get_name()
+                            method_descriptor = path.get_method().get_descriptor()
+
+                            dref_meth = self.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                            name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            if python_export == True :
+                                setattr( field.DREFr, name, dref_meth )
+                            
+                            field.DREFr.add( dref_meth )
+                        else :
+                            method_class_name = path.get_method().get_class_name()
+                            method_name = path.get_method().get_name()
+                            method_descriptor = path.get_method().get_descriptor()
+
+                            dref_meth = self.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                            name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            if python_export == True :
+                                setattr( field.DREFw, name, dref_meth )
+                            field.DREFw.add( dref_meth )
+
+class XREF : 
+    def __init__(self) :
+        self.items = []
+
+    def add(self, x, y):
+        self.items.append((x, y))
+
+class DREF : 
+    def __init__(self) :
+        self.items = []
+
+    def add(self, x):
+        self.items.append(x)
