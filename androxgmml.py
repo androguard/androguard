@@ -22,10 +22,8 @@ from xml.sax.saxutils import escape
 import sys, os
 from optparse import OptionParser
 
-PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
-
-import androguard, analysis, androconf 
+from androguard.core.androgen import Androguard
+from androguard.core.analysis import analysis
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xgmml', 'nargs' : 1 }
@@ -238,7 +236,7 @@ def export_xgmml_efcg(a, x, fd) :
                     EDGES_ID[ label ] = id
 
 def export_apps_to_xgmml( input, output, fcg, efcg ) :
-    a = androguard.Androguard( [ input ] )
+    a = Androguard( [ input ] )
 
     fd = open(output, "w")
     fd.write("<?xml version='1.0'?>\n")

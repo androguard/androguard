@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -22,8 +22,10 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, analysis, androconf 
-from bytecode import method2dot, method2format
+import androguard
+from androguard.core import androconf
+from androguard.core.analysis import analysis
+from androguard.core.bytecode import method2dot, method2format
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'base directory to output all files', 'nargs' : 1 }

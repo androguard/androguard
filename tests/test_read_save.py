@@ -4,9 +4,10 @@ import hashlib
 
 import sys
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard
+
+from androguard.core.androgen import Androguard
 
 def test(got, expected):
     if got == expected:
@@ -76,7 +77,7 @@ if TEST_TYPE & TYPE_DVM :
     for i in FILES_DVM :
         TEST.append( i )
 
-a = androguard.Androguard( TEST )
+a = Androguard( TEST )
 
 i = 0
 while i < len(TEST) :

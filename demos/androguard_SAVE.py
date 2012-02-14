@@ -6,8 +6,7 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard
-
+from androguard.core.androgen import Androguard
 
 def hexdump(src, length=8, off=0):
     result = []
@@ -74,7 +73,7 @@ if TEST_TYPE & TYPE_DVM :
 
 print TEST
 
-a = androguard.Androguard( TEST )
+a = Androguard( TEST )
 
 i = 0
 while i < len(TEST) :

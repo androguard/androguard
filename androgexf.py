@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -25,7 +25,9 @@ from optparse import OptionParser
 PATH_INSTALL = "./"																																																			   
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, apk, dvm, analysis, ganalysis, androconf 
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis import analysis, ganalysis
+from androguard.core import androconf
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the gexf', 'nargs' : 1 }

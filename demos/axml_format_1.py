@@ -3,11 +3,12 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
+sys.path.append(PATH_INSTALL)
+
+from androguard.core.bytecodes import apk
+
 
 from xml.dom import minidom
-import apk 
 
 ap = apk.AXMLPrinter( open("examples/axml/AndroidManifest.xml", "r").read() )
 

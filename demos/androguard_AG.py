@@ -4,7 +4,7 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard
+from androgen import Androguard
 
 CONF1 = "./examples/java/Demo1/androguard_1.xml"
 
@@ -39,7 +39,7 @@ for i in FILES :
         TEST.append( BASE_MAIN_TEST + i[0] )
         TEST_OUTPUT.append( BASE_MAIN_TEST_OUTPUT + i[0] )
 
-a = androguard.Androguard( TEST )
+a = Androguard( TEST )
 a.do( CONF1 )
 
 i = 0

@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -22,10 +22,12 @@ import sys
 
 from optparse import OptionParser
 
-import androguard, androconf, diff
+from androguard.core.androgen import Androguard
+from androguard.core import androconf
+from androguard.core.analysis import diff
+
 from cPickle import dumps
 
-from similarity import *
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
@@ -37,7 +39,7 @@ options = [option_0, option_1, option_2, option_3, option_4]
 
 def main(options, arguments) :
     if options.input != None :
-        a = androguard.Androguard( options.input )
+        a = Androguard( options.input )
         a.ianalyze()
 
         vm1 = a.get_bc()[0][1].get_vm()

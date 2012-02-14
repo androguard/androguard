@@ -3,14 +3,15 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, analysis
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
 #TEST  = 'examples/java/test/orig/Test1.class'
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-a = androguard.AndroguardS( TEST )
+a = AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm() )
 
 for method in a.get_methods() :

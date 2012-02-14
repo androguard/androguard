@@ -3,18 +3,21 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
-sys.path.append(PATH_INSTALL + "/core/analysis")
-sys.path.append(PATH_INSTALL + "/decompiler")
+sys.path.append(PATH_INSTALL)
 
-import dvm, analysis, decompiler
+from androguard.core.bytecodes import dvm
+from androguard.core.analysis import analysis
+from androguard.decompiler import decompiler
 
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
 j = dvm.DalvikVMFormat( open(TEST).read() )
-d = decompiler.DecompilerDex2Jad( j )
+jx = analysis.VMAnalysis( j )
+
+#d = decompiler.DecompilerDex2Jad( j )
 #d = decompiler.DecompilerDed( j )
+d = decompiler.DecompilerDAD( j, jx ) 
+
 j.set_decompiler( d )
 
 # SHOW METHODS
