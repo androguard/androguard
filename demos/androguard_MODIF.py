@@ -6,15 +6,15 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard
+from androguard.core.androgen import AndroguardS
 
 TEST = './examples/java/test/orig/Test1.class'
 TEST_OUTPUT = './examples/java/test/new/Test1.class'
 
 TEST2 = './examples/java/Hello.class'
 
-_a = androguard.AndroguardS( TEST )
-_b = androguard.AndroguardS( TEST2 )
+_a = AndroguardS( TEST )
+_b = AndroguardS( TEST2 )
 
 _a.show()
 

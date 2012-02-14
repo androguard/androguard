@@ -21,9 +21,12 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, androconf, apk, dvm, msign
+from androguard.core import androconf
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis import msign
+
 import os
 
 TESTS = {

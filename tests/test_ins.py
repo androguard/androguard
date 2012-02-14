@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -21,9 +21,10 @@
 import sys, re
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, analysis
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
 
 TESTS_CASES  = [ #'examples/android/TC/bin/classes.dex',
@@ -125,7 +126,7 @@ def check(a, values) :
 
 
 for i in TESTS_CASES :
-    a = androguard.AndroguardS( i )
+    a = AndroguardS( i )
     check( a, VALUES[i] )
 
     x = analysis.VMAnalysis( a.get_vm() )

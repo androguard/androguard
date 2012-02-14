@@ -3,11 +3,10 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
-sys.path.append(PATH_INSTALL + "/core/analysis")
+sys.path.append(PATH_INSTALL)
 
-import dvm, analysis
+from androguard.core.bytecodes import dvm
+from androguard.core.analysis import analysis
 
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 

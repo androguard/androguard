@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -22,18 +22,20 @@ import sys, os, cmd, threading, code, re
 
 from optparse import OptionParser
 
-from androguard import *
-from bytecode import *
-from jvm import *
-from dvm import *
-from apk import *
-from analysis import *
-from ganalysis import *
-from diff import *
-from msign import *
-from decompiler import *
+from androguard.core import *
+from androguard.core.bytecode import *
+from androguard.core.bytecodes.jvm import *
+from androguard.core.bytecodes.dvm import *
+from androguard.core.bytecodes.apk import *
+from androguard.core.analysis.analysis import *
+from androguard.core.analysis.ganalysis import *
+from androguard.core.analysis.risk import *
+from androguard.core.analysis.diff import *
+from androguard.core.analysis.msign import *
 
-import androconf 
+from androguard.decompiler.decompiler import *
+
+from androguard.core import androconf
 
 import IPython.ipapi
 from IPython.Shell import IPShellEmbed

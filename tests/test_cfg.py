@@ -5,9 +5,10 @@ import sys, re
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, analysis
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
-from jvm import BRANCH2_JVM_OPCODES, determineNext
+from androguard.core.bytecodes.jvm import BRANCH2_JVM_OPCODES, determineNext
 
 TEST_CASE  = 'examples/java/TC/orig/TCE.class'
 
@@ -135,7 +136,7 @@ def modify(a, modif) :
         for i in modif[key] :
             getattr( code, i[0] )( *i[1:] )
 
-a = androguard.AndroguardS( TEST_CASE )
+a = AndroguardS( TEST_CASE )
 
 ### INIT CHECK ###
 check( a, VALUES, BRANCH2_JVM_OPCODES )

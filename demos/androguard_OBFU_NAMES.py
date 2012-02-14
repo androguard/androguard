@@ -4,15 +4,15 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard
+from androguard.core.androgen import Androguard, OBFU_Names, OBFU_NAMES_FIELDS, OBFU_NAMES_METHODS
 
 TEST = [ './examples/java/test/orig/Test1.class', './examples/java/test/orig_main/Test.class' ]
 TEST_OUTPUT = [ './examples/java/test/new/Test1.class', './examples/java/test/new_main/Test.class' ]
 
-a = androguard.Androguard( TEST )
+a = Androguard( TEST )
 
-androguard.OBFU_Names( a, "Test1", "value", ".", androguard.OBFU_NAMES_FIELDS )
-androguard.OBFU_Names( a, "Test1", ".", ".", androguard.OBFU_NAMES_METHODS )
+OBFU_Names( a, "Test1", "value", ".", OBFU_NAMES_FIELDS )
+OBFU_Names( a, "Test1", ".", ".", OBFU_NAMES_METHODS )
 
 i = 0
 while i < len(TEST) :

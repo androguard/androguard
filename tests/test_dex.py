@@ -5,10 +5,10 @@ from xml.dom import minidom
 from optparse import OptionParser
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./core/")
-sys.path.append(PATH_INSTALL + "./core/bytecodes/")
+sys.path.append(PATH_INSTALL)
 
-import apk, dvm, androconf 
+from androguard.core.bytecodes import apk, dvm
+from androguard.core import androconf
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'input directory', 'nargs' : 1 }
 options = [option_0]

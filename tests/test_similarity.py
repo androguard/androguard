@@ -21,10 +21,9 @@
 import sys, itertools, time, os, random
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
-sys.path.append(PATH_INSTALL + "./classification")
+sys.path.append(PATH_INSTALL)
 
-from similarity import *
+from androguard.core.similarity.similarity import *
 
 TESTS_RANDOM_SIGN = [   "B[F1]",
                         "B[G]",
@@ -268,7 +267,7 @@ if __name__ == "__main__" :
     except ImportError:
         pass
 
-    n = SIMILARITY( "classification/libsimilarity/libsimilarity.so" )
+    n = SIMILARITY( "androguard/core/similarity/libsimilarity/libsimilarity.so" )
 
     TestEntropy( n, TESTS_CLOSED_SIGN, 0.04 )
     TestEntropy( n, TESTS_DIFFERENT_SIGN, 0.8 )

@@ -3,10 +3,8 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
-
-import dvm
+sys.path.append(PATH_INSTALL)
+from androguard.core.bytecodes import dvm
 
 TEST = "./examples/dalvik/test/bin/classes.dex"
 

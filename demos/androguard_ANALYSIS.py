@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import sys, hashlib
-
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, analysis
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
 OUTPUT = "./output/"
 #TEST  = 'examples/java/test/orig/Test1.class'
@@ -83,7 +83,7 @@ def display_OBJECT_CREATED(a, x, class_name) :
     print "Search object", class_name
     analysis.show_Path( x.tainted_packages.search_objects( class_name ) )
 
-a = androguard.AndroguardS( TEST )
+a = AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 classes = a.get_vm().get_classes_names()
