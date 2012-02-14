@@ -26,8 +26,9 @@ from optparse import OptionParser
 PATH_INSTALL = "./"																																																			   
 sys.path.append(PATH_INSTALL + "./")
 
-import androguard, apk, analysis, ganalysis, androconf 
-import dvm
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis import analysis, ganalysis
+from androguard.core import androconf 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'directory output', 'nargs' : 1 }

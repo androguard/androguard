@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -21,10 +21,11 @@
 import sys, re
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, analysis
-import bytecode
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
+from androguard.core import bytecode
 
 TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 
@@ -40,8 +41,10 @@ def test(got, expected):
 
     print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
-a = androguard.AndroguardS( TEST_CASE )
+a = AndroguardS( TEST_CASE )
 ax = analysis.VMAnalysis( a.get_vm() )
+
+a.set_vmanalysis( ax )
 
 for method in a.get_methods() :
     key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
@@ -50,10 +53,10 @@ for method in a.get_methods() :
         continue
 
     bytecode.set_pretty_show( 0 )
-    method.pretty_show( ax )
+    method.pretty_show()
 
     bytecode.set_pretty_show( 1 )
-    method.pretty_show( ax )
+    method.pretty_show()
 
     bytecode.method2dot( ax.get_method(method) )
     #bytecode.method2png( "test.png", ax.get_method( method ) )

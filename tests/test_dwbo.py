@@ -3,13 +3,10 @@
 import sys, time
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/wm")
-sys.path.append(PATH_INSTALL + "/core/analysis")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
+sys.path.append(PATH_INSTALL)
 
-import androconf 
-from wm import DWBO, DWBOCheck
+from androguard.core import androconf
+from androguard.core.wm.wm import DWBO, DWBOCheck
 
 def test(obc, secret, x) :
     r = obc.verify_with_X( x )

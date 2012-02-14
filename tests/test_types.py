@@ -21,9 +21,10 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, analysis
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
 #TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
@@ -157,7 +158,7 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 
-a = androguard.AndroguardS( TEST_CASE )
+a = AndroguardS( TEST_CASE )
 
 for method in a.get_methods() :
     key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()

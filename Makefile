@@ -7,11 +7,11 @@ RM      =       rm -f
 all :   LIBS
 
 LIBS :
-	cd classification/libsimilarity && make
-	cd core/bytecodes/libdvm && make
-	cd core/analysis/libsign && make 
+	cd androguard/core/similarity/libsimilarity && make
+	cd androguard/core/bytecodes/libdvm && make
+	cd androguard/core/analysis/libsign && make 
 
 clean :
-	cd classification/libsimilarity && make clean
-	cd core/bytecodes/libdvm && make clean
-	cd core/analysis/libsign && make clean
+	cd androguard/core/similarity/libsimilarity && make clean
+	cd androguard/core/bytecodes/libdvm && make clean
+	cd androguard/core/analysis/libsign && make clean

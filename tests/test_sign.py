@@ -21,10 +21,12 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "./")
+sys.path.append(PATH_INSTALL)
 
-import androguard, analysis
-from analysis import *
+from androguard.core.androgen import AndroguardS
+
+from androguard.core.androgen import AndroguardS
+from androguard.core.analysis import analysis
 
 TEST_CASE  = "examples/android/TestsAndroguard/bin/classes.dex"
 
@@ -36,16 +38,16 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 
-a = androguard.AndroguardS( TEST_CASE )
+a = AndroguardS( TEST_CASE )
 x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
 for method in a.get_methods() :
     print method.get_class_name(), method.get_name(), method.get_descriptor()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_1).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_2).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
-    print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_0).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_1).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_2).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_3).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_4).get_string()
     #print "-> : \t", x.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string()
     #print "-> : \t", x.get_method_signature(method, "L2" ).get_string() 
 

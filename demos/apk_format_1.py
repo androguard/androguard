@@ -3,10 +3,9 @@
 import sys
 
 PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL + "/core")
-sys.path.append(PATH_INSTALL + "/core/bytecodes")
+sys.path.append( PATH_INSTALL )
 
-import dvm, apk 
+from androguard.core.bytecodes import dvm, apk 
 
 TEST = "./examples/android/TC/bin/TC-debug.apk"
 
