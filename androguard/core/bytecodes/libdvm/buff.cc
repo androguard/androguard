@@ -20,6 +20,8 @@
 
 #include "buff.h"
 
+#include <stdio.h>
+
 Buff::Buff() {
 
 }
@@ -68,11 +70,11 @@ bool Buff::empty() {
     return bcurrent_idx == bdata_len;
 }
 
-int Buff::register_dynamic_offset(unsigned long *addr) {
+int Buff::register_dynamic_offset(unsigned int *addr) {
     DynamicOffsets.push_back( addr );
 }
 
-int Buff::set_idx(unsigned long idx) {
+int Buff::set_idx(unsigned int idx) {
     bcurrent_idx = idx;
 }
 

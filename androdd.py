@@ -22,7 +22,7 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard
+from androguard.core.androgen import Androguard
 from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecode import method2dot, method2format
@@ -91,7 +91,7 @@ def export_apps_to_format( a, output, dot=None, _format=None ) :
 
 def main(options, arguments) :
     if options.input != None and options.output != None :
-        a = androguard.Androguard( [ options.input ] )
+        a = Androguard( [ options.input ] )
 
         create_directories( a, options.output )
 

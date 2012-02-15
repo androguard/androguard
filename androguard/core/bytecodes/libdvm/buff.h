@@ -38,7 +38,7 @@ class Buff {
         size_t bdata_len;
         size_t bcurrent_idx;
 
-        vector<unsigned long *> DynamicOffsets;
+        vector<unsigned int *> DynamicOffsets;
     public :
         Buff();
         Buff(const char *data, size_t data_len);
@@ -50,8 +50,8 @@ class Buff {
         size_t get_current_idx();
         size_t get_end();
         bool empty();
-        int register_dynamic_offset(unsigned long *addr);
-        int set_idx(unsigned long);
+        int register_dynamic_offset(unsigned int *addr);
+        int set_idx(unsigned int);
         unsigned char read_uc();
         char read_c();
         unsigned long read_ul();
