@@ -22,7 +22,9 @@ import sys, os
 
 from optparse import OptionParser
 
-import androguard, apk, risk, androconf 
+from androguard.core import androconf
+from androguard.core.bytecodes import apk
+from androguard.core.analysis import risk
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }

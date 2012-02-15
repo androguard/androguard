@@ -1,7 +1,7 @@
 SRC	= 	sign.cc
 
 LDFLAGS =	-lm -lbz2 -lz -llzma -lsnappy 
-CFLAGS  += 	-Wall -fPIC -I/usr/include/python2.6/
+CFLAGS  += 	-Wall -fPIC -I/usr/include/python2.7/
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
