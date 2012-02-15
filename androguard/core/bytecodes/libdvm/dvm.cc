@@ -20,25 +20,25 @@
 
 #include "dvm.h"
 
-unsigned long B_A_OP_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int B_A_OP_CCCC(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     unsigned short *si16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 12) & 0xf) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)i16 );
+    v->push_back( (unsigned int)i16 );
 
     return 4;
 }
 
-unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = B_A_OP_CCCC( b, v, vdesc );
+unsigned int B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = B_A_OP_CCCC( b, v, vdesc );
 
     vdesc->push_back( OPVALUE );
     for(int i=1; i < v->size(); i++)
@@ -49,8 +49,8 @@ unsigned long B_A_OP_CCCC_3_FIELD(Buff *b, vector<unsigned long> *v, vector<unsi
     return size;
 }
 
-unsigned long B_A_OP_CCCC_3_TYPE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = B_A_OP_CCCC( b, v, vdesc );
+unsigned int B_A_OP_CCCC_3_TYPE(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = B_A_OP_CCCC( b, v, vdesc );
 
     vdesc->push_back( OPVALUE );
     for(int i=1; i < v->size(); i++)
@@ -61,35 +61,35 @@ unsigned long B_A_OP_CCCC_3_TYPE(Buff *b, vector<unsigned long> *v, vector<unsig
     return size;
 }
 
-unsigned long B_A_OP_CCCC_G_F_E_D(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int B_A_OP_CCCC_G_F_E_D(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 12) & 0xf) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)i16 );
+    v->push_back( (unsigned int)i16 );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
     //memcpy( &i16, b->read( 2 ), 2 );
-    v->push_back( (unsigned long)(i16 & 0xf) );
+    v->push_back( (unsigned int)(i16 & 0xf) );
 
-    v->push_back( (unsigned long)((i16 >> 4) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 4) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 12) & 0xf) );
 
     return 6;
 }
 
-unsigned long OP_00(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int OP_00(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned char i8;
 
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    v->push_back( (unsigned long)(i8) );
+    v->push_back( (unsigned int)(i8) );
 
     b->read(1);
 
@@ -98,16 +98,16 @@ unsigned long OP_00(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vd
     return 2;
 }
 
-unsigned long AA_OP_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_SBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     signed short si16;
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -116,21 +116,21 @@ unsigned long AA_OP_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned lon
     return 4;
 }
 
-unsigned long AA_OP_SBBBB_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = AA_OP_SBBBB(b, v, vdesc);
+unsigned int AA_OP_SBBBB_BRANCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = AA_OP_SBBBB(b, v, vdesc);
 
     (*vdesc)[2] = INTEGER_BRANCH;
 
     return size;
 }
 
-unsigned long SB_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int SB_A_OP(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     signed short si16;
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16 & 0xff) );
-    v->push_back( (unsigned long)((si16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((si16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)(si16 & 0xff) );
+    v->push_back( (unsigned int)((si16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((si16 >> 12) & 0xf) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -139,12 +139,12 @@ unsigned long SB_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *
     return 2;
 }
 
-unsigned long AA_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -152,15 +152,15 @@ unsigned long AA_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vd
     return 2;
 }
 
-unsigned long AA_OP_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_BBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     vdesc->push_back( OPVALUE );
     for(int i=1; i < v->size(); i++)
@@ -169,15 +169,15 @@ unsigned long AA_OP_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long
     return 4;
 }
 
-unsigned long DAA_OP_DBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int DAA_OP_DBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     vdesc->push_back( OPVALUE );
     for(int i=1; i < v->size(); i++)
@@ -187,40 +187,40 @@ unsigned long DAA_OP_DBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned lo
 }
 
 
-unsigned long AA_OP_BBBB_2_FIELD(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+unsigned int AA_OP_BBBB_2_FIELD(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = AA_OP_BBBB( b, v, vdesc );
 
     (*vdesc)[2] = FIELD;
 
     return size;
 }
 
-unsigned long AA_OP_BBBB_2_TYPE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+unsigned int AA_OP_BBBB_2_TYPE(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = AA_OP_BBBB( b, v, vdesc );
 
     (*vdesc)[2] = TYPE;
 
     return size;
 }
 
-unsigned long AA_OP_BBBB_2_STRING(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = AA_OP_BBBB( b, v, vdesc );
+unsigned int AA_OP_BBBB_2_STRING(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = AA_OP_BBBB( b, v, vdesc );
 
     (*vdesc)[2] = STRING;
 
     return size;
 }
 
-unsigned long AA_OP_BBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_BBBBBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     unsigned int i32;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i32 = *( reinterpret_cast<unsigned int *>( const_cast<char *>(b->read(4))) );
-    v->push_back( (unsigned long)(i32) );
+    v->push_back( (unsigned int)(i32) );
 
     vdesc->push_back( OPVALUE );
     for(int i=1; i < v->size(); i++)
@@ -229,23 +229,23 @@ unsigned long AA_OP_BBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned 
     return 6;
 }
 
-unsigned long AA_OP_BBBBBBBB_2_STRING(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = AA_OP_BBBBBBBB(b, v, vdesc);
+unsigned int AA_OP_BBBBBBBB_2_STRING(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = AA_OP_BBBBBBBB(b, v, vdesc);
 
     (*vdesc)[2] = STRING;
 
     return size;
 }
 
-unsigned long OP_SAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int OP_SAA(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned char i8;
     signed char si8;
 
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    v->push_back( (unsigned long)(i8) );
+    v->push_back( (unsigned int)(i8) );
 
     si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
-    v->push_back( (unsigned long)(si8) );
+    v->push_back( (unsigned int)(si8) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( INTEGER );
@@ -253,21 +253,21 @@ unsigned long OP_SAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *v
     return 2;
 }
 
-unsigned long OP_SAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = OP_SAA(b, v, vdesc);
+unsigned int OP_SAA_BRANCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = OP_SAA(b, v, vdesc);
 
     (*vdesc)[ 1 ] = INTEGER_BRANCH;
 
     return size;
 }
 
-unsigned long B_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int B_A_OP(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 12) & 0xf) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -276,15 +276,15 @@ unsigned long B_A_OP(Buff *b, vector<unsigned long> *v, vector<unsigned long> *v
     return 2;
 }
 
-unsigned long _00_OP_SAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int _00_OP_SAAAA(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed short si16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( INTEGER );
@@ -292,23 +292,23 @@ unsigned long _00_OP_SAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     return 4;
 }
 
-unsigned long _00_OP_SAAAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = _00_OP_SAAAA(b, v, vdesc);
+unsigned int _00_OP_SAAAA_BRANCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = _00_OP_SAAAA(b, v, vdesc);
 
     (*vdesc)[ 1 ] = INTEGER_BRANCH;
 
     return size;
 }
 
-unsigned long _00_OP_SAAAAAAAA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int _00_OP_SAAAAAAAA(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed int si32;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
 
     si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->read(4))) );
-    v->push_back( (unsigned long)(si32) );
+    v->push_back( (unsigned int)(si32) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( INTEGER );
@@ -316,26 +316,26 @@ unsigned long _00_OP_SAAAAAAAA(Buff *b, vector<unsigned long> *v, vector<unsigne
     return 6;
 }
 
-unsigned long _00_OP_SAAAAAAAA_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = _00_OP_SAAAAAAAA(b, v, vdesc);
+unsigned int _00_OP_SAAAAAAAA_BRANCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = _00_OP_SAAAAAAAA(b, v, vdesc);
 
     (*vdesc)[ 1 ] = INTEGER_BRANCH;
 
     return size;
 }
 
-unsigned long B_A_OP_SCCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int B_A_OP_SCCCC(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed short si16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xf) );
-    v->push_back( (unsigned long)((i16 >> 12) & 0xf) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xf) );
+    v->push_back( (unsigned int)((i16 >> 12) & 0xf) );
 
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)si16 );
+    v->push_back( (unsigned int)si16 );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -345,24 +345,24 @@ unsigned long B_A_OP_SCCCC(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     return 4;
 }
 
-unsigned long B_A_OP_SCCCC_BRANCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
-    unsigned long size = B_A_OP_SCCCC(b, v, vdesc);
+unsigned int B_A_OP_SCCCC_BRANCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
+    unsigned int size = B_A_OP_SCCCC(b, v, vdesc);
 
     (*vdesc)[3] = INTEGER_BRANCH;
 
     return size;
 }
 
-unsigned long AA_OP_CC_BB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_CC_BB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -372,20 +372,20 @@ unsigned long AA_OP_CC_BB(Buff *b, vector<unsigned long> *v, vector<unsigned lon
     return 4;
 }
 
-unsigned long AA_OP_BB_SCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_BB_SCC(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     unsigned char i8;
     char si8;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i8 = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read(1))) );
-    v->push_back( (unsigned long)(i8) );
+    v->push_back( (unsigned int)(i8) );
 
     si8 = *( reinterpret_cast<signed char *>( const_cast<char *>(b->read(1))) );
-    v->push_back( (unsigned long)(si8) );
+    v->push_back( (unsigned int)(si8) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -395,16 +395,16 @@ unsigned long AA_OP_BB_SCC(Buff *b, vector<unsigned long> *v, vector<unsigned lo
     return 4;
 }
 
-unsigned long AA_OP_SBBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_SBBBBBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed int si32;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     si32 = *( reinterpret_cast<signed int *>( const_cast<char *>(b->read(4))) );
-    v->push_back( (unsigned long)(si32) );
+    v->push_back( (unsigned int)(si32) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -413,35 +413,35 @@ unsigned long AA_OP_SBBBBBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned
     return 6;
 }
 
-unsigned long AA_OP_BBBB_CCCC(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_BBBB_CCCC(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     return 6;
 }
 
-unsigned long AA_OP_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_SBBBB_SBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed short si16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -451,25 +451,25 @@ unsigned long AA_OP_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsign
     return 6;
 }
 
-unsigned long AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
     signed short si16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
-    v->push_back( (unsigned long)((i16 >> 8) & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
+    v->push_back( (unsigned int)((i16 >> 8) & 0xff) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     si16 = *( reinterpret_cast<signed short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(si16) );
+    v->push_back( (unsigned int)(si16) );
 
     vdesc->push_back( OPVALUE );
     vdesc->push_back( REGISTER );
@@ -481,28 +481,28 @@ unsigned long AA_OP_SBBBB_SBBBB_SBBBB_SBBBB(Buff *b, vector<unsigned long> *v, v
     return 10;
 }
 
-unsigned long _00_OP_AAAA_BBBB(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc) {
+unsigned int _00_OP_AAAA_BBBB(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc) {
     unsigned short i16;
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16 & 0xff) );
+    v->push_back( (unsigned int)(i16 & 0xff) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     i16 = *( reinterpret_cast<unsigned short *>( const_cast<char *>(b->read(2))) );
-    v->push_back( (unsigned long)(i16) );
+    v->push_back( (unsigned int)(i16) );
 
     return 6;
 }
 
-void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
-    unsigned long nb_arg = (*v)[2];
-    unsigned long meth = (*v)[3];
-    vector<unsigned long>::iterator it;
+void INVOKE(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
+    unsigned int nb_arg = (*v)[2];
+    unsigned int meth = (*v)[3];
+    vector<unsigned int>::iterator it;
 
     if (nb_arg == 5) {
-        unsigned long op_1 = (*v)[1];
+        unsigned int op_1 = (*v)[1];
 
         it=v->begin()+4;
         v->insert( v->begin()+1, it, it+4+nb_arg );
@@ -527,17 +527,17 @@ void INVOKE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vec
     (*vdesc)[ vdesc->size() - 1 ] = METHOD;
 }
 
-void FILLEDNEWARRAY(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+void FILLEDNEWARRAY(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
     INVOKE(b, v, vdesc, d, min_data);
     (*vdesc)[ vdesc->size() - 1 ] = TYPE;
 }
 
-void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
-    unsigned long nb_arg = (*v)[1];
-    unsigned long meth = (*v)[2];
-    vector<unsigned long>::iterator it;
+void INVOKERANGE(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
+    unsigned int nb_arg = (*v)[1];
+    unsigned int meth = (*v)[2];
+    vector<unsigned int>::iterator it;
 
-    unsigned long NNNN = (*v)[3] + (*v)[1] + 1;
+    unsigned int NNNN = (*v)[3] + (*v)[1] + 1;
 
     for(int ii = (*v)[3]+1; ii < NNNN - 1; ii++) {
         v->push_back( ii );
@@ -553,13 +553,13 @@ void INVOKERANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc
     (*vdesc)[ vdesc->size() - 1 ] = METHOD;
 }
 
-void FILLEDNEWARRAYRANGE(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+void FILLEDNEWARRAYRANGE(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
     INVOKERANGE(b, v, vdesc, d, min_data);
     (*vdesc)[ vdesc->size() - 1 ] = TYPE;
 }
 
-void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
-    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
+void FILLARRAYDATA(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
+    unsigned int value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
     //    printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[3], value);
     if (*min_data > value) {
@@ -572,10 +572,10 @@ void FILLARRAYDATA(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vde
     (*vdesc)[2] = INTEGER_BRANCH;
 }
 
-void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+void SPARSESWITCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
     //    printf("SPARSESWITCH\n"); fflush(stdout);
 
-    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
+    unsigned int value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
     if (*min_data > value) {
         *min_data = value;
@@ -587,10 +587,10 @@ void SPARSESWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdes
     (*vdesc)[2] = INTEGER_BRANCH;
 }
 
-void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+void PACKEDSWITCH(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
     //    printf("PACKEDSWITCH\n"); fflush(stdout);
 
-    unsigned long value = ((*v)[2] * 2) + b->get_current_idx() - 6;
+    unsigned int value = ((*v)[2] * 2) + b->get_current_idx() - 6;
 
     //printf("MIN_DATA = %d %d %d %d %d\n", b->get_end(), b->get_current_idx(), *min_data, (*v)[2], value);
     if (*min_data > value) {
@@ -604,11 +604,11 @@ void PACKEDSWITCH(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdes
 }
 
 
-void DEFAULT(Buff *b, vector<unsigned long> *v, vector<unsigned long> *vdesc, vector<unsigned long> *d, unsigned long *min_data) {
+void DEFAULT(Buff *b, vector<unsigned int> *v, vector<unsigned int> *vdesc, vector<unsigned int> *d, unsigned int *min_data) {
 
 }
 
-DBC::DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector<unsigned long> *vdesc, size_t length) {
+DBC::DBC(unsigned char value, const char *name, vector<unsigned int> *v, vector<unsigned int> *vdesc, size_t length) {
     op_value = value;
     op_name = name;
     voperands = v;
@@ -646,9 +646,8 @@ size_t DBC::get_length() {
     return op_length;
 }
 
-FillArrayData::FillArrayData(Buff *b, unsigned long off) {
+FillArrayData::FillArrayData(Buff *b, unsigned int off) {
     memcpy( &fadt, b->readat( off, sizeof(fillarraydata_t) ), sizeof(fillarraydata_t) );
-
     data_size = fadt.size * fadt.element_width;
     data = (char *)malloc( data_size );
     memcpy(data, b->readat( off + sizeof(fillarraydata_t), data_size ), data_size);
@@ -671,7 +670,7 @@ size_t FillArrayData::get_type() {
     return 0;
 }
 
-SparseSwitch::SparseSwitch(Buff *b, unsigned long off) {
+SparseSwitch::SparseSwitch(Buff *b, unsigned int off) {
     memcpy( &sst, b->readat( off, sizeof(sparseswitch_t) ), sizeof(sparseswitch_t) );
 
     int idx = off + sizeof(sparseswitch_t);
@@ -703,7 +702,7 @@ size_t SparseSwitch::get_type() {
     return 1;
 }
 
-PackedSwitch::PackedSwitch(Buff *b, unsigned long off) {
+PackedSwitch::PackedSwitch(Buff *b, unsigned int off) {
     memcpy( &pst, b->readat( off, sizeof(packedswitch_t) ), sizeof(packedswitch_t) );
 
     int idx = off + sizeof(packedswitch_t) ;
@@ -751,23 +750,23 @@ DCode::~DCode() {
     this->bytecodes_spe.clear();
 }
 
-DCode::DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
-        vector<void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes,
+DCode::DCode(vector<unsigned int(*)(Buff *, vector<unsigned int>*, vector<unsigned int>*)> *parsebytecodes,
+        vector<void (*)(Buff *, vector<unsigned int> *, vector<unsigned int> *, vector<unsigned int> *, unsigned int *)> *postbytecodes,
         vector<const char *> *bytecodes_names,
         Buff *b) {
     unsigned char op_value;
-    unsigned long size;
+    unsigned int size;
 
-    vector<unsigned long> *datas;
-    unsigned long min_data = b->get_end();
+    vector<unsigned int> *datas;
+    unsigned int min_data = b->get_end();
 
-    datas = new vector<unsigned long>;
+    datas = new vector<unsigned int>;
 
     while (b->empty() == false) {
         op_value = *( reinterpret_cast<unsigned char *>( const_cast<char *>(b->read_false(1))) );
 
-        vector<unsigned long> *v = new vector<unsigned long>;
-        vector<unsigned long> *vdesc = new vector<unsigned long>;
+        vector<unsigned int> *v = new vector<unsigned int>;
+        vector<unsigned int> *vdesc = new vector<unsigned int>;
         size = (*parsebytecodes)[ op_value ]( b, v, vdesc );
 
         if ((*postbytecodes)[ op_value ] != NULL)

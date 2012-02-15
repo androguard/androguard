@@ -52,7 +52,7 @@ using std::endl;
 typedef struct fillarraydata {
     unsigned short ident;
     unsigned short element_width;
-    unsigned long size;
+    unsigned int size;
 } fillarraydata_t;
 
 typedef struct sparseswitch {
@@ -63,7 +63,7 @@ typedef struct sparseswitch {
 typedef struct packedswitch {
     unsigned short ident;
     unsigned short size;
-    unsigned long first_key;
+    unsigned int first_key;
 } packedswitch_t;
 
 class DBC {
@@ -71,12 +71,12 @@ class DBC {
         unsigned char op_value;
         const char *op_name;
         size_t op_length;
-        vector<unsigned long> *voperands;
-        vector<unsigned long> *vdescoperands;
+        vector<unsigned int> *voperands;
+        vector<unsigned int> *vdescoperands;
         vector<string> *vstrings;
 
     public :
-        DBC(unsigned char value, const char *name, vector<unsigned long> *v, vector<unsigned long> *vdesc, size_t length);
+        DBC(unsigned char value, const char *name, vector<unsigned int> *v, vector<unsigned int> *vdesc, size_t length);
         ~DBC();
         int get_opvalue();
         const char *get_opname();
@@ -96,7 +96,7 @@ class FillArrayData : public DBCSpe {
         char *data;
         size_t data_size;
     public :
-        FillArrayData(Buff *b, unsigned long off);
+        FillArrayData(Buff *b, unsigned int off);
         ~FillArrayData();
         const char *get_opname();
         size_t get_length();
@@ -110,7 +110,7 @@ class SparseSwitch : public DBCSpe {
         vector<int> targets;
 
     public :
-        SparseSwitch(Buff *b, unsigned long off);
+        SparseSwitch(Buff *b, unsigned int off);
         ~SparseSwitch();
         const char *get_opname();
         size_t get_length();
@@ -123,7 +123,7 @@ class PackedSwitch : public DBCSpe {
         vector<int> targets;
 
     public :
-        PackedSwitch(Buff *b, unsigned long off);
+        PackedSwitch(Buff *b, unsigned int off);
         ~PackedSwitch();
         const char *get_opname();
         size_t get_length();
@@ -138,8 +138,8 @@ class DCode {
     public :
         DCode();
         ~DCode();
-        DCode(vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> *parsebytecodes,
-              vector<void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> *postbytecodes,
+        DCode(vector<unsigned int(*)(Buff *, vector<unsigned int>*, vector<unsigned int>*)> *parsebytecodes,
+              vector<void (*)(Buff *, vector<unsigned int> *, vector<unsigned int> *, vector<unsigned int> *, unsigned int *)> *postbytecodes,
               vector<const char *> *bytecodes_names,
               Buff *b);
         int size();
@@ -148,8 +148,8 @@ class DCode {
 
 class DalvikBytecode {
     public :
-        vector<unsigned long(*)(Buff *, vector<unsigned long>*, vector<unsigned long>*)> bytecodes;
-        vector<void (*)(Buff *, vector<unsigned long> *, vector<unsigned long> *, vector<unsigned long> *, unsigned long *)> postbytecodes;
+        vector<unsigned int(*)(Buff *, vector<unsigned int>*, vector<unsigned int>*)> bytecodes;
+        vector<void (*)(Buff *, vector<unsigned int> *, vector<unsigned int> *, vector<unsigned int> *, unsigned int *)> postbytecodes;
 
         vector<const char *> bytecodes_names;
 

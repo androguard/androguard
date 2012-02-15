@@ -27,7 +27,7 @@ ZIP :
 	cd vcblocksort && make
 
 LIBSIMILARITY :
-	$(CC) -o $(LIBNAME).so $(OBJ) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS)
+	$(CC) -o $(LIBNAME).so $(OBJ) $(EXT_ZIP) $(EXT_SDK_LZMA) -shared $(LDFLAGS) $(CFLAGS)
 
 clean :
 	$(RM) *.o $(LIBNAME).so
