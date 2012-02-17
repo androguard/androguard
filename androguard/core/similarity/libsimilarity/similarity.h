@@ -23,7 +23,7 @@
 
 struct libsimilarity {
    void *orig;
-   unsigned int size_orig;
+   size_t size_orig;
    void *cmp;
    unsigned size_cmp;
 
@@ -36,17 +36,17 @@ typedef struct libsimilarity libsimilarity_t;
 
 #ifdef __cplusplus
 extern "C" {                                                                                                                                                                                     
-    float entropy(void *, unsigned int);
+    float entropy(void *, size_t);
     void set_compress_type(int);
     int ncd(int, libsimilarity_t *);
 }
 #else
 void set_compress_type(int);
-unsigned int compress(int, void *, size_t);
+size_t compress(int, void *, size_t);
 int ncd(int, libsimilarity_t *);
 int ncs(int, libsimilarity_t *);
 int cmid(int, libsimilarity_t *);
-float entropy(void *, unsigned int);
+float entropy(void *, size_t);
 #endif
 
 

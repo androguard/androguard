@@ -25,9 +25,9 @@
 unsigned char inbuf[M_BLOCK];
 int (*generic_Compress)(int, const unsigned char *, size_t, unsigned char *, size_t *) = zCompress;
 
-void *alloc_buff(unsigned int s1, unsigned int s2, unsigned int *nsize, int *context) {
+void *alloc_buff(size_t s1, size_t s2, size_t *nsize, int *context) {
     void *addr;
-    unsigned int max = s1;
+    size_t max = s1;
 
     if (s2 > max) {
         max = s2;
@@ -76,11 +76,11 @@ void set_compress_type(int type) {
    }
 }
 
-unsigned int compress(int level, void *orig, size_t size_orig) 
+size_t compress(int level, void *orig, size_t size_orig)
 {
    int context;
    size_t s1;
-   unsigned int size_tmp_buff, ret;
+   size_t size_tmp_buff, ret;
    void *tmp_buff;
 
    tmp_buff = alloc_buff( size_orig, 0, &size_tmp_buff, &context );
@@ -101,9 +101,10 @@ int ncd(int level, libsimilarity_t *n)
 {
    int context;
    size_t s1, s2, s3;
-   unsigned int size_tmp_buff, size_join_buff, max, min, ret;
+   size_t size_tmp_buff, size_join_buff, max, min, ret;
    void *tmp_buff, *joinbuff;
 
+   //printf("%d N = 0x%x %x %d %x %d %x %x\n", level, n, n->orig, n->size_orig, n->cmp, n->size_cmp, n->corig, n->ccmp);
    //printf("ORIG = 0x%p SIZE_ORIG = 0x%x CMP = 0x%p SIZE_CMP = 0x%x 0x%x 0x%x\n", n->orig, n->size_orig, n->cmp, n->size_cmp, *(n->corig), *(n->ccmp));
 
    if ((n->size_orig == 0) || (n->size_cmp == 0)) {
@@ -197,7 +198,7 @@ int cmid(int level, libsimilarity_t *n)
 {
    int context;
    size_t s1, s2, s3;
-   unsigned int size_tmp_buff, size_join_buff, max, min, ret;
+   size_t size_tmp_buff, size_join_buff, max, min, ret;
    void *tmp_buff, *joinbuff;
 
    //printf("ORIG = 0x%x SIZE_ORIG = 0x%x CMP = 0x%x SIZE_CMP = 0x%x 0x%x 0x%x\n", (unsigned int)(n->orig), n->size_orig, (unsigned int)(n->cmp), n->size_cmp, *(n->corig), *(n->ccmp));
@@ -261,7 +262,7 @@ int cmid(int level, libsimilarity_t *n)
    return 0;
 }
 
-float entropy(void *orig, unsigned int size_orig)
+float entropy(void *orig, size_t size_orig)
 {
    float e;
    char a;
@@ -290,7 +291,7 @@ float entropy(void *orig, unsigned int size_orig)
 #ifndef MIN
 # define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
-unsigned int levenshtein(const u_int8_t *a, size_t alen, const u_int8_t *b, size_t blen)
+size_t levenshtein(const u_int8_t *a, size_t alen, const u_int8_t *b, size_t blen)
 {
 	size_t tmplen, i, j;
 	const u_int8_t *tmp;
