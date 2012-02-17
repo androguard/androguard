@@ -19,7 +19,7 @@
 import hashlib
 
 import zlib
-from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof, create_string_buffer, cast
+from ctypes import cdll, c_float, c_int, c_uint, c_ulong, c_void_p, Structure, addressof, create_string_buffer, cast
 
 #struct libsimilarity {
 #   void *orig;
@@ -34,12 +34,12 @@ from ctypes import cdll, c_float, c_int, c_uint, c_void_p, Structure, addressof,
 #};
 class LIBSIMILARITY_T(Structure) :
     _fields_ = [("orig", c_void_p),
-                ("size_orig", c_uint),
+                ("size_orig", c_ulong),
                 ("cmp", c_void_p),
-                ("size_cmp", c_uint),
+                ("size_cmp", c_ulong),
 
-                ("corig", c_uint),
-                ("ccmp", c_uint),
+                ("corig", c_ulong),
+                ("ccmp", c_ulong),
 
                 ("res", c_float),
                ]
