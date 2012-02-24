@@ -23,7 +23,7 @@ import sys, os
 from optparse import OptionParser
 
 from androguard.core import androconf
-from androguard.core.bytecodes import apk, dvm
+from androguard.core.bytecodes import apk
 from androguard.core.analysis import msign
 
 
