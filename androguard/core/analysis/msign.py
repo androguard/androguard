@@ -58,7 +58,7 @@ class SignSim :
         self.minimum_signature = None
 
         #self.sign.set_debug_log( 1 )
-        #self.fd = open("./toto.csv", "w")
+        #self.fd = open("./data.py", "w")
 
     def set_debug(self) :
         self.debug = True
