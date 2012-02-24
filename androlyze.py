@@ -80,7 +80,7 @@ def interact() :
     ipshell = IPShellEmbed(banner="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
     ipshell()
 
-def AnalyzeAPK(filename, raw=False) :
+def AnalyzeAPK(filename, raw=False, engine=["automatic"]) :
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
@@ -89,14 +89,15 @@ def AnalyzeAPK(filename, raw=False) :
         
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
+    androconf.debug("APK ...")
     a = APK(filename, raw)
 
-    d, dx = AnalyzeDex( filename, a.get_dex() )
+    d, dx = AnalyzeDex( filename, a.get_dex(), engine )
 
     return a, d, dx
 
 
-def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
+def AAnalyzeAPK(filename, raw=False, decompiler="dad", engine=["automatic"]) :
     """
         Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
 
@@ -106,8 +107,9 @@ def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
         
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
-    a, d, dx = AnalyzeAPK( filename, raw )
+    a, d, dx = AnalyzeAPK( filename, raw, engine )
 
+    androconf.debug("Decompiler ...")
     decompiler = decompiler.lower()
     if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
@@ -118,7 +120,7 @@ def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
 
     return a, d, dx
 
-def AnalyzeDex(filename, raw=False) :
+def AnalyzeDex(filename, raw=False, engine=["automatic"]) :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -127,28 +129,34 @@ def AnalyzeDex(filename, raw=False) :
 
         @rtype : return the DalvikVMFormat, and VMAnalysis objects
     """
+    androconf.debug("DalvikVMFormat ...")
     d = None
     if raw == False :
-        d = DalvikVMFormat( open(filename, "rb").read() )
+        d = DalvikVMFormat( open(filename, "rb").read(), engine )
     else :
-        d = DalvikVMFormat( raw )
-    
+        d = DalvikVMFormat( raw, engine )
+
+    androconf.debug("EXPORT VM to python namespace")
     ExportVMToPython( d )
     
+    androconf.debug("VMAnalysis ...")
     dx = VMAnalysis( d )
+    androconf.debug("GVMAnalysis ...")
     gx = GVMAnalysis( dx, None )
     
     d.set_vmanalysis( dx )
     d.set_gvmanalysis( gx )
     
+    androconf.debug("XREF ...")
     d.create_xref()
+    androconf.debug("DREF ...")
     d.create_dref()
     
     set_pretty_show( 1 )
 
     return d, dx
 
-def AAnalyzeDex(filename, raw=False, decompiler="dad") :
+def AAnalyzeDex(filename, raw=False, decompiler="dad", engine=["automatic"]) :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -158,8 +166,9 @@ def AAnalyzeDex(filename, raw=False, decompiler="dad") :
 
         @rtype : return the DalvikVMFormat, and VMAnalysis objects
     """
-    d, dx = AnalyzeDex( filename, raw )
+    d, dx = AnalyzeDex( filename, raw, engine )
 
+    androconf.debug("Decompiler ...")
     decompiler = decompiler.lower()
     if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )

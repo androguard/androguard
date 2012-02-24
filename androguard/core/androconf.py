@@ -137,7 +137,7 @@ def error(x) :
 
 def debug(x) :
     log_runtime.debug(x)
-
+    
 def set_options(key, value) :
     CONF[ key ] = value
 
