@@ -71,12 +71,12 @@ class DBC {
         unsigned char op_value;
         const char *op_name;
         size_t op_length;
-        vector<unsigned int> *voperands;
-        vector<unsigned int> *vdescoperands;
+        vector<int> *voperands;
+        vector<int> *vdescoperands;
         vector<string> *vstrings;
 
     public :
-        DBC(unsigned char value, const char *name, vector<unsigned int> *v, vector<unsigned int> *vdesc, size_t length);
+        DBC(unsigned char value, const char *name, vector<int> *v, vector<int> *vdesc, size_t length);
         ~DBC();
         int get_opvalue();
         const char *get_opname();
@@ -138,8 +138,8 @@ class DCode {
     public :
         DCode();
         ~DCode();
-        DCode(vector<unsigned int(*)(Buff *, vector<unsigned int>*, vector<unsigned int>*)> *parsebytecodes,
-              vector<void (*)(Buff *, vector<unsigned int> *, vector<unsigned int> *, vector<unsigned int> *, unsigned int *)> *postbytecodes,
+        DCode(vector<unsigned int(*)(Buff *, vector<int>*, vector<int>*)> *parsebytecodes,
+              vector<void (*)(Buff *, vector<int> *, vector<int> *, vector<int> *, unsigned int *)> *postbytecodes,
               vector<const char *> *bytecodes_names,
               Buff *b);
         int size();
@@ -148,8 +148,8 @@ class DCode {
 
 class DalvikBytecode {
     public :
-        vector<unsigned int(*)(Buff *, vector<unsigned int>*, vector<unsigned int>*)> bytecodes;
-        vector<void (*)(Buff *, vector<unsigned int> *, vector<unsigned int> *, vector<unsigned int> *, unsigned int *)> postbytecodes;
+        vector<unsigned int(*)(Buff *, vector<int>*, vector<int>*)> bytecodes;
+        vector<void (*)(Buff *, vector<int> *, vector<int> *, vector<int> *, unsigned int *)> postbytecodes;
 
         vector<const char *> bytecodes_names;
 

@@ -31,7 +31,7 @@ try :
     import chilkat
     ZIPMODULE = 0
     # UNLOCK : change it with your valid key !
-    try : 
+    try :
         CHILKAT_KEY = open("key.txt", "rb").read()
     except Exception :
         CHILKAT_KEY = "testme"
