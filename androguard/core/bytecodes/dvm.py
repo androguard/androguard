@@ -1258,7 +1258,7 @@ class EncodedValue :
         return ret, buf
 
     def show(self) :
-        print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type, repr(self.value)
+        print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type
 
     def get_obj(self) :
         if isinstance(self.value, str) == False :
