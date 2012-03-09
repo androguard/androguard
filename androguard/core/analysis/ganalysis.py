@@ -18,7 +18,6 @@
 
 from networkx import DiGraph
 from xml.sax.saxutils import escape
-import math
 
 from androguard.core import bytecode
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
@@ -45,25 +44,11 @@ ID_ATTRIBUTES = {
     "descriptor" : 3,
     "permissions" : 4,
     "permissions_level" : 5,
-    "android_api" : 6,
-    "java_api" : 7,
-    "dynamic_code" : 8,
+    "dynamic_code" : 6,
 }
 
-def entropy(data):
-    entropy = 0
-
-    if len(data) == 0 :
-        return entropy
-
-    for x in range(256):
-        p_x = float(data.count(chr(x)))/len(data)
-        if p_x > 0:
-            entropy += - p_x*math.log(p_x, 2)
-    return entropy
-
 class GVMAnalysis :
-    def __init__(self, vmx, apk, details=True) :
+    def __init__(self, vmx, apk) :
         self.vmx = vmx
         self.vm = self.vmx.get_vm()
 
@@ -76,23 +61,8 @@ class GVMAnalysis :
             n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
             n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
 
-            if details :
-                m1 = j.get_method()
-                m2 = self.vm.get_method_descriptor( j.get_class_name(), j.get_name(), j.get_descriptor()  )
-
-                n1.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-                n1.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m1, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
-            
-                if m2 == None :
-                    n2.set_attributes( { "android_api" : 0.0 } )
-                    n2.set_attributes( { "java_api" : 0.0 } )
-                else :
-                    n2.set_attributes( { "android_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ) } )
-                    n2.set_attributes( { "java_api" : entropy( self.vmx.get_method_signature(m2, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ) } )
-
             self.G.add_edge( n1.id, n2.id )
             n1.add_edge( n2, j )
-
         #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
         #                                            j.get_bb().start + j.get_idx(), \
         #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
@@ -129,6 +99,7 @@ class GVMAnalysis :
                     self.G.add_edge( n2.id, n1.id )
                     self.entry_nodes.append( n1.id )
 
+        # Specific Java/Android library
         for c in self.vm.get_classes() :
             #if c.get_superclassname() == "Landroid/app/Service;" :
             #    n1 = self._get_node( c.get_name(), "<init>", "()V" )
@@ -143,6 +114,7 @@ class GVMAnalysis :
                        
                         # link from start to run
                         self.G.add_edge( n2.id, n1.id )
+                        n2.add_edge( n1, {} )
 
                         # link from init to start
                         for init in self.vm.get_method("<init>") :
@@ -150,6 +122,7 @@ class GVMAnalysis :
                                 n3 = self._get_node( init.get_class_name(), "<init>", init.get_descriptor() )
                                 #n3 = self._get_node( i.get_class_name(), "<init>", i.get_descriptor() )
                                 self.G.add_edge( n3.id, n2.id )
+                                n3.add_edge( n2, {} )
 
             #elif c.get_superclassname() == "Landroid/os/AsyncTask;" :
             #    for i in self.vm.get_method("doInBackground") :
@@ -182,6 +155,7 @@ class GVMAnalysis :
 
                 n1.set_attributes( { "permissions" : 1 } )
                 n1.set_attributes( { "permissions_level" : DVM_PERMISSIONS[ "MANIFEST_PERMISSION" ][ x ][0] } )
+                n1.set_attributes( { "permissions_details" : x } )
                 
                 try :
                     for tmp_perm in PERMISSIONS_RISK[ x ] :
@@ -196,6 +170,7 @@ class GVMAnalysis :
                 except KeyError :
                     pass
 
+        # Tag DexClassLoader
         for m, _ in self.vmx.tainted_packages.get_packages() :
             if m.get_info() == "Ldalvik/system/DexClassLoader;" :
                 for path in m.get_paths() :
@@ -236,6 +211,15 @@ class GVMAnalysis :
 
         return self.nodes[ key ]
 
+    def set_new_attributes(self, cm) :
+        for i in self.G.nodes() :
+            n1 = self.nodes_id[ i ]
+            m1 = self.vm.get_method_descriptor( n1.class_name, n1.method_name, n1.descriptor )
+
+            H = cm( self.vmx, m1 )
+
+            n1.set_attributes( H )
+
     def export_to_gexf(self) :
         buff = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         buff += "<gexf xmlns=\"http://www.gephi.org/gexf\" xmlns:viz=\"http://www.gephi.org/gexf/viz\">\n"
@@ -250,8 +234,6 @@ class GVMAnalysis :
 
         buff += "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[ "permissions"]
         buff += "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "permissions_level"]
-        buff += "<attribute default=\"0.0\" id=\"%d\" title=\"android_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "android_api"]
-        buff += "<attribute default=\"0.0\" id=\"%d\" title=\"java_api\" type=\"float\"/>\n" % ID_ATTRIBUTES[ "java_api"]
         
         buff += "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[ "dynamic_code"]
         buff += "</attributes>\n"   
@@ -371,8 +353,7 @@ class NodeF :
                             "color" : None,
                             "permissions" : DEFAULT_NODE_PERM,
                             "permissions_level" : DEFAULT_NODE_PERM_LEVEL,
-                            "android_api" : 0.0,
-                            "java_api" : 0.0,
+                            "permissions_details" : set(),
                             "dynamic_code" : "false",
                           }
 
@@ -401,9 +382,6 @@ class NodeF :
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions"], self.attributes[ "permissions" ])
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions_level"], self.attributes[ "permissions_level_name" ])
 
-
-        buff += "<attvalue id=\"%d\" value=\"%f\"/>\n" % (ID_ATTRIBUTES["android_api"], self.attributes[ "android_api" ])
-        buff += "<attvalue id=\"%d\" value=\"%f\"/>\n" % (ID_ATTRIBUTES["java_api"], self.attributes[ "java_api" ])
 
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["dynamic_code"], self.attributes[ "dynamic_code" ])
 
@@ -436,6 +414,12 @@ class NodeF :
 
         return buff
 
+    def get_attributes(self) :
+        return self.attributes
+
+    def get_attribute(self, name) :
+        return self.attributes[ name ]
+
     def set_attributes(self, values) :
         for i in values :
             if i == "permissions" :
@@ -445,6 +429,8 @@ class NodeF :
                     self.attributes[ "permissions_level" ] = PERMISSIONS_LEVEL[ values[i] ]
                     self.attributes[ "permissions_level_name" ] = values[i]
                     self.attributes[ "color" ] = COLOR_PERMISSIONS_LEVEL[ values[i] ]
+            elif i == "permissions_details" :
+                self.attributes[ i ].add( values[i] )
             else :
                 self.attributes[ i ] = values[i]
 

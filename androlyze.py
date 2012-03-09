@@ -39,8 +39,8 @@ from androguard.decompiler.decompiler import *
 
 from androguard.core import androconf
 
-import IPython.ipapi
-from IPython.Shell import IPShellEmbed
+from IPython.frontend.terminal.embed import InteractiveShellEmbed
+from IPython.config.loader import Config
 
 from cPickle import dumps, loads
 
@@ -77,7 +77,8 @@ def load_session(filename) :
     return loads( open(filename, "r").read() )
 
 def interact() :
-    ipshell = IPShellEmbed(banner="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
+    cfg = Config()
+    ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
     ipshell()
 
 def AnalyzeAPK(filename, raw=False, engine=["automatic"]) :

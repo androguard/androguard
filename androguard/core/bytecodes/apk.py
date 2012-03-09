@@ -25,6 +25,7 @@ from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 import zipfile, StringIO
 from struct import pack, unpack
 from xml.dom import minidom
+from xml.sax.saxutils import escape
 from zlib import crc32
 
 try :
@@ -731,7 +732,7 @@ class AXMLPrinter :
                     self.xmlns = True
 
                 for i in range(0, self.axml.getAttributeCount()) :
-                    self.buff += "%s%s=\"%s\"\n" % ( self.getPrefix( self.axml.getAttributePrefix(i) ), self.axml.getAttributeName(i), self.getAttributeValue( i ) )
+                    self.buff += "%s%s=\"%s\"\n" % ( self.getPrefix( self.axml.getAttributePrefix(i) ), self.axml.getAttributeName(i), escape( self.getAttributeValue( i ) ) )
 
                 self.buff += ">\n"
 
@@ -801,49 +802,3 @@ class AXMLPrinter :
             return "android:"
         return ""
 
-#import pydot
-# DO NOT USE
-def apk2png(a, vmx) :
-    buff = "digraph code {\n"
-    buff += "graph [bgcolor=white];\n"
-    buff += "node [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n"
-    buff += "splines=ortho"   
-
-    for i in a.get_services() :
-        print i, bytecode.FormatClassToJava( i )
-
-    p = vmx.tainted_packages.get_internal_packages_from_package( bytecode.FormatClassToJava( i ) )
-    #for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :                                                                                                    
-
-    oncreate = []
-    for j in p :
-        if j.get_method().get_name() != "onCreate" :
-            continue
-        oncreate.append( j )
-
-    L = {}
-    N = {}
-    for j in sorted(oncreate, key=lambda x : x.get_bb().start + x.get_idx()) :
-        keyn1 = j.get_method().get_class_name() + "\l" + j.get_method().get_name() + "\l" + j.get_method().get_descriptor()
-        keyn2 = j.get_class_name() + "\l" + j.get_name() + "\l" + j.get_descriptor()
-
-        keyl = keyn1 + keyn2
-
-        if keyl not in L :
-            L[ keyl ] = True
-            buff += "\"%s\" -> \"%s\" [color=\"%s\"];\n" % (keyn1, keyn2, "red")
-
-        if keyn1 not in N :
-            N[ keyn1 ] = True
-            buff += "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (keyn1, keyn1)
-
-        if keyn2 not in N :
-            N[ keyn2 ] = True
-            buff += "\"%s\" [color=\"lightgray\", label=\"%s\"]\n" % (keyn2, keyn2)
-
-        print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                                                                                        j.get_bb().start + j.get_idx(), \
-                                                                                                        j.get_class_name(), j.get_name(), j.get_descriptor())
-    buff += "}"
-    d = pydot.graph_from_dot_data( buff )
-    getattr(d, "write_" + "png")( "toto.png" )
