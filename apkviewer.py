@@ -21,10 +21,6 @@
 import sys, os
 from optparse import OptionParser
 
-PATH_INSTALL = "./"
-
-sys.path.append(PATH_INSTALL + "./")
-
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.data import data
 from androguard.core.analysis import analysis, ganalysis

@@ -24,7 +24,8 @@ from optparse import OptionParser
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
-from androguard.core.analysis import msign
+
+from elsim.elsign import dalvik_elsign
 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
@@ -45,11 +46,7 @@ def main(options, arguments) :
     if options.database == None or options.config == None :
         return
 
-    s = msign.MSignature( options.database, options.config )
-    if options.verbose :
-        s.set_debug()
-    
-    s.load()
+    s = dalvik_elsign.MSignature( options.database, options.config, options.verbose != None, ps = dalvik_elsign.PublicSignature)
 
     if options.input != None :
         ret_type = androconf.is_android( options.input ) 

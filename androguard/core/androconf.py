@@ -20,6 +20,20 @@ import logging, types, random, string
 
 ANDROGUARD_VERSION = "1.0"
 
+def get_ascii_string(s) :
+    try :
+        return s.decode("ascii")
+    except UnicodeDecodeError, e:
+#        print s,
+        d = ""
+        for i in s :
+            if ord(i) < 128 :
+                d += i
+            else :
+                d += "%x" % ord(i)
+#        print d
+        return d
+
 CONF = {
     "BIN_DED" : "ded.sh",
     "PATH_DED" : "./decompiler/ded/",
@@ -27,6 +41,16 @@ CONF = {
     "BIN_DEX2JAR" : "dex2jar.sh",
     "PATH_JAD" : "./decompiler/jad/",
     "BIN_JAD" : "jad",
+   
+    #"ENGINE" : "automatic",
+    "ENGINE" : "python",
+
+    "RECODE_ASCII_STRING" : False,
+    #"RECODE_ASCII_STRING" : True,
+    "RECODE_ASCII_STRING_METH" : get_ascii_string,
+    
+    "DEOBFUSCATED_STRING" : True,
+#    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
 }
 
 class Color:
@@ -145,3 +169,4 @@ def save_to_disk(buff, output) :
     fd = open(output, "w")
     fd.write(buff)
     fd.close()
+

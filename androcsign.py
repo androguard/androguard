@@ -18,12 +18,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os
-
-from optparse import OptionParser
+import sys
 
 from androguard.core import androconf
-from androguard.core.analysis import msign
+
+from elsim.elsign import dalvik_elsign
+
+from optparse import OptionParser
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-r', '--remove'), 'help' : 'remote the signature', 'nargs' : 1 }
@@ -35,7 +36,7 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 def main(options, arguments) :
-    s = msign.CSignature()
+    s = dalvik_elsign.CSignature(pcs=dalvik_elsign.PublicCSignature)
     if options.input != None :
         ret = s.add_file( open( options.input, "rb" ).read() )
         if ret != None and options.output != None :
