@@ -81,7 +81,7 @@ def interact() :
     ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
     ipshell()
 
-def AnalyzeAPK(filename, raw=False, engine=["automatic"]) :
+def AnalyzeAPK(filename, raw=False) :
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
@@ -93,12 +93,12 @@ def AnalyzeAPK(filename, raw=False, engine=["automatic"]) :
     androconf.debug("APK ...")
     a = APK(filename, raw)
 
-    d, dx = AnalyzeDex( filename, a.get_dex(), engine )
+    d, dx = AnalyzeDex( filename, a.get_dex() )
 
     return a, d, dx
 
 
-def AAnalyzeAPK(filename, raw=False, decompiler="dad", engine=["automatic"]) :
+def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
     """
         Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
 
@@ -108,7 +108,7 @@ def AAnalyzeAPK(filename, raw=False, decompiler="dad", engine=["automatic"]) :
         
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
-    a, d, dx = AnalyzeAPK( filename, raw, engine )
+    a, d, dx = AnalyzeAPK( filename, raw )
 
     androconf.debug("Decompiler ...")
     decompiler = decompiler.lower()
@@ -121,7 +121,7 @@ def AAnalyzeAPK(filename, raw=False, decompiler="dad", engine=["automatic"]) :
 
     return a, d, dx
 
-def AnalyzeDex(filename, raw=False, engine=["automatic"]) :
+def AnalyzeDex(filename, raw=False) :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -133,9 +133,9 @@ def AnalyzeDex(filename, raw=False, engine=["automatic"]) :
     androconf.debug("DalvikVMFormat ...")
     d = None
     if raw == False :
-        d = DalvikVMFormat( open(filename, "rb").read(), engine )
+        d = DalvikVMFormat( open(filename, "rb").read() )
     else :
-        d = DalvikVMFormat( raw, engine )
+        d = DalvikVMFormat( raw )
 
     androconf.debug("EXPORT VM to python namespace")
     ExportVMToPython( d )
@@ -157,7 +157,7 @@ def AnalyzeDex(filename, raw=False, engine=["automatic"]) :
 
     return d, dx
 
-def AAnalyzeDex(filename, raw=False, decompiler="dad", engine=["automatic"]) :
+def AAnalyzeDex(filename, raw=False, decompiler="dad") :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -167,7 +167,7 @@ def AAnalyzeDex(filename, raw=False, decompiler="dad", engine=["automatic"]) :
 
         @rtype : return the DalvikVMFormat, and VMAnalysis objects
     """
-    d, dx = AnalyzeDex( filename, raw, engine )
+    d, dx = AnalyzeDex( filename, raw )
 
     androconf.debug("Decompiler ...")
     decompiler = decompiler.lower()

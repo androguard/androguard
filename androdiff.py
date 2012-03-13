@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -22,73 +22,77 @@ import sys
 
 from optparse import OptionParser
 
-from androguard.core.androgen import Androguard
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis import analysis
 from androguard.core import androconf
-from androguard.core.analysis import diff
 
-from cPickle import dumps
+from elsim import elsim
+from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK, FILTERS_DALVIK_SIM, ProxyDalvikMethod, FILTERS_DALVIK_BB
+from elsim.elsim_dalvik import ProxyDalvikBasicBlock, FILTERS_DALVIK_DIFF_BB
+from elsim.elsim_dalvik import DiffDalvikMethod
 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_2 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific blocks (0 : orig, 1 : diff, 2 : new)', 'nargs' : 1 }
-option_3 = { 'name' : ('-p', '--pickle'), 'help' : 'output the diff in a file with pickle', 'nargs' : 1 }
-option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
+option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
+option_3 = { 'name' : ('-f', '--filter'), 'help' : 'select the filter', 'nargs' : 1 }
+option_4 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_5 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific blocks (0 : orig, 1 : diff, 2 : new)', 'nargs' : 1 }
+option_6 = { 'name' : ('-p', '--pickle'), 'help' : 'output the diff in a file with pickle', 'nargs' : 1 }
+option_7 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4]
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
 
 def main(options, arguments) :
-    if options.input != None :
-        a = Androguard( options.input )
-        a.ianalyze()
-
-        vm1 = a.get_bc()[0][1].get_vm()
-        vmx1 = a.get_bc()[0][1].get_analysis()
-
-        vm2 = a.get_bc()[1][1].get_vm()
-        vmx2 = a.get_bc()[1][1].get_analysis()
-
-        d = diff.Diff( [ vm1, vmx1 ], [ vm2, vmx2 ] )
-        details = False
-        if options.display != None :
-            details = True
+    details = False
+    if options.display != None :
+        details = True
     
-        d.show()
+    if options.input != None :
+        ret_type = androconf.is_android( options.input[0] )
+        if ret_type == "APK" :
+            a = apk.APK( options.input[0] )
+            d1 = dvm.DalvikVMFormat( a.get_dex() )
+        elif ret_type == "DEX" :
+            d1 = dvm.DalvikVMFormat( open(options.input[0], "rb").read() )
+        
+        dx1 = analysis.VMAnalysis( d1 )
+       
+        ret_type = androconf.is_android( options.input[1] )
+        if ret_type == "APK" :
+            a = apk.APK( options.input[1] )
+            d2 = dvm.DalvikVMFormat( a.get_dex() )
+        elif ret_type == "DEX" :
+            d2 = dvm.DalvikVMFormat( open(options.input[1], "rb").read() )
+        
+        dx2 = analysis.VMAnalysis( d2 )
 
-        print "DIFF METHODS :"
-        diff_methods = d.get_diff_methods()
-        for i in diff_methods :
-            exclude = options.exclude
-            if exclude == None :
-                exclude = []
-            else :
-                exclude = [ int(exclude) ]
+        print d1, dx1, d2, dx2
+        sys.stdout.flush()
+        
+        threshold = None
+        if options.threshold != None :
+            threshold = float(options.threshold)
 
-            i.show( details, exclude )
-            print
+        filter_sim = 1 
+        if options.filter != None :
+            filter_sim = int(options.filter)
 
-        print "MATCH METHODS :"
-        new_methods = d.get_match_methods()
-        for i in new_methods :
-            i.show2( False )
+        FS = { 0 : FILTERS_DALVIK_SIM, 1 : FILTERS_DALVIK }
+        el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS[filter_sim], threshold, options.compressor )
+        el.show()
 
-        print "NEW METHODS :"
-        new_methods = d.get_new_methods()
-        for i in new_methods :
-            i.show2( details )
-            print
+        e1 = elsim.split_elements( el, el.get_similar_elements() )
+        for i in e1 :
+            j = e1[ i ]
+            elb = elsim.Elsim( ProxyDalvikMethod(i), ProxyDalvikMethod(j), FILTERS_DALVIK_BB, threshold, options.compressor )
+            #elb.show()
 
-        print "DELETE METHODS :"
-        del_methods = d.get_delete_methods()
-        for i in del_methods :
-            i.show2( details )
-            print
-
-        if options.pickle != None :
-            d.sim.raz()
-            fd = open(options.pickle, "w")
-            fd.write( dumps(d, -1) )
-            fd.close()
+            eld = elsim.Eldiff( ProxyDalvikBasicBlock(elb), FILTERS_DALVIK_DIFF_BB )
+            #eld.show()
+ 
+            ddm = DiffDalvikMethod( i, j, elb, eld )
+            ddm.show()
 
     elif options.version != None :
         print "Androdiff version %s" % androconf.ANDROGUARD_VERSION

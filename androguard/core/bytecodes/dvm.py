@@ -27,7 +27,7 @@ import sys, re, types, string, zipfile, StringIO
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
-from xml.dom import minidom
+from androguard.core.androconf import CONF
 
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
@@ -1218,7 +1218,7 @@ class EncodedValue :
             self.value, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
         elif self.__value_type == VALUE_STRING :
             id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
-            self.value = cm.get_string(id)
+            self.value = cm.get_raw_string(id)
         elif self.__value_type == VALUE_TYPE :
             id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
             self.value = cm.get_type(id)
@@ -1605,6 +1605,9 @@ class FieldItem :
     def get_name(self) :
         return self._name
 
+    def get_list(self) :
+        return [ self.get_class(), self.get_type(), self.get_name() ]
+
     def show(self) :
         print "FIELD_ITEM", self._class, self._type, self._name, self.format.get_value()
 
@@ -1657,6 +1660,9 @@ class MethodItem :
 
     def get_name(self) :
         return self._name
+
+    def get_list(self) :
+        return [ self.get_class(), self.get_name(), self.get_proto() ]
 
     def get_obj(self) :
         return []
@@ -1776,11 +1782,20 @@ class EncodedMethod :
 
     def reload(self) :
         v = self.__CM.get_method( self.__method_idx )
+
         self._class_name = v[0]
-        self._proto = ''.join(i for i in v[1])
-        self._name = v[2]
+        self._name = v[1]
+        self._proto = ''.join(i for i in v[2])
 
         self._code = self.__CM.get_code( self.code_off )
+
+    def set_name(self, value) :
+        self.__CM.set_hook_method_name( self.__method_idx, value )
+        self.reload()
+    
+    def set_class_name(self, value) :
+        self.__CM.set_hook_method_class_name( self.__method_idx, value )
+        self.reload()
 
     def show(self) :
         print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
@@ -2225,6 +2240,7 @@ class DBC:
         self.type_ins_tag = NORMAL_DVM_INS
 
         self.op_name = op_name
+
         self.operands = operands
         self.formatted_operands = None
         self.relative_operands = None
@@ -2247,14 +2263,18 @@ class DBC:
 
         last = self.operands[-1][0]
         if "string@" == last :
-            self.operands[-1] = [ last, self.operands[-1][1], repr(self.CM.get_string( self.operands[-1][1] )) ] 
+            self.operands[-1] = [ last, self.operands[-1][1], repr(self.CM.get_raw_string( self.operands[-1][1] )) ] 
         elif "meth@" == last :
-            m = self.CM.get_method( self.operands[-1][1] )
-            self.operands[-1] = [ last, self.operands[-1][1], m[0], m[1][0], m[1][1], m[2] ]
+            #m = self.CM.get_method( self.operands[-1][1] )
+            m = self.CM.get_method_ref( self.operands[-1][1] )
+            self.operands[-1] = [ last, self.operands[-1][1], m ]
+            #self.operands[-1] = [ last, self.operands[-1][1], m[0], m[1][0], m[1][1], m[2] ]
         elif "field@" == last :
-            f = self.CM.get_field( self.operands[-1][1] )
-            self.operands[-1] = [ last, self.operands[-1][1], f[0], f[1], f[2] ]
+            f = self.CM.get_field_ref( self.operands[-1][1] )
+            self.operands[-1] = [ last, self.operands[-1][1], f ]
+            #self.operands[-1] = [ last, self.operands[-1][1], f[0], f[1], f[2] ]
         elif "type@" == last :
+            #self.operands[-1] = [ last, self.operands[-1][1], self.CM.get_type_ref( self.operands[-1][1] ) ]
             self.operands[-1] = [ last, self.operands[-1][1], self.CM.get_type( self.operands[-1][1] ) ]
 
     def get_length(self) :
@@ -2347,9 +2367,21 @@ class DBC:
         operands = self.get_operands()
         for i in operands :
             if i[0] != "v" :
-                l.append( "[" + ' '.join( str(j) for j in i ) + "]" )
+                l.append("[")
+                for j in i :
+                    if isinstance(j, MethodItem) :
+                        l.extend( str(k) for k in j.get_list() )
+                    elif isinstance(j, FieldItem) :
+                        l.extend( j.get_list() )
+                    else :
+                        l.append(str(j))
+
+                l.append("]")
+
+                #l.append( "[" + ' '.join( str(j) for j in i ) + "]" )
             else :
                 l.append( ''.join( str(j) for j in i ) )
+
             l.append( "," )
 
         if l != [] :
@@ -2374,19 +2406,6 @@ class DBC:
 
         return buff
     
-    def _more_info(self, c, v) :
-        if "string@" == c :
-            return [ c, v, repr(self.CM.get_string(v)) ]
-        elif "meth@" == c :
-            m = self.CM.get_method(v)
-            return [ c, v, m[0], m[1][0], m[1][1], m[2] ]
-        elif "field@" == c :
-            f = self.CM.get_field(v)
-            return [ c, v, f[0], f[1], f[2] ]
-        elif "type@" == c :
-            return [ c, v, self.CM.get_type(v) ]
-        return [ c, v ]
-
 def op_B_A_OP(insn, current_pos) :
     i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
     return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
@@ -2540,7 +2559,7 @@ class DCodeNative :
         self.__bytecodes = None
         self.__internal_dcode = self.__CM.get_all_engine()[1].new_code( self.__insn )
 
-    def reload(self) :                                                                                                                                                                           
+    def reload(self) :
         self.__bytecodes = [ DBCNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
         self.__bytecodes.extend( [ DBCSpeNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes_spe() ] )
 
@@ -3002,8 +3021,7 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self, engine=["automatic"]) :
-        self.engine = engine
+    def __init__(self) :
         self.decompiler_ob = None
         self.vmanalysis_ob = None
         self.gvmanalysis_ob = None
@@ -3017,13 +3035,21 @@ class ClassManager :
         self.__cached_type_list = {}
         self.__cached_proto = {}
 
-        if self.engine[0] == "automatic" :
+        self.recode_ascii_string = CONF["RECODE_ASCII_STRING"]
+        self.recode_ascii_string_meth = CONF["RECODE_ASCII_STRING_METH"]
+       
+        self.hook_strings = {}
+
+        self.engine = []
+        if CONF["ENGINE"] == "automatic" :
             try :
                 from androguard.core.bytecodes.libdvm import dvmnative
-                self.engine[0] = "native"
+                self.engine.append("native")
                 self.engine.append( dvmnative.DalvikBytecode() )
             except ImportError :
-                self.engine[0] = "python"
+                self.engine.append("python")
+        else :
+            self.engine.append("python")
 
     def get_vmanalysis(self) :
         return self.vmanalysis_ob
@@ -3088,6 +3114,18 @@ class ClassManager :
                 return i
 
     def get_string(self, idx) :
+        if idx in self.hook_strings :
+            return self.hook_strings[ idx ]
+
+        off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+        try :
+            if self.recode_ascii_string :
+                return self.recode_ascii_string_meth( self.__strings_off[off].get() )
+            return self.__strings_off[off].get()
+        except KeyError :
+            bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
+    
+    def get_raw_string(self, idx) :
         off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
         try :
             return self.__strings_off[off].get()
@@ -3110,13 +3148,13 @@ class ClassManager :
         return None
 
     def get_type(self, idx) :
-        type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
-        return self.get_string( type )
+        _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
+        return self.get_string( _type )
+    
+    def get_type_ref(self, idx) :
+        return self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
 
     def get_proto(self, idx) :
-        #proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
-        #return [ proto.get_params(), proto.get_return_type() ]
-        
         try :
             proto = self.__cached_proto[ idx ]
         except KeyError :
@@ -3125,17 +3163,32 @@ class ClassManager :
         
         return [ proto.get_params(), proto.get_return_type() ]
 
-    def get_field(self, idx, ref=False) :
+    def get_field(self, idx) :
         field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
-        
-        if ref == True :
-            return field
-
         return [ field.get_class(), field.get_type(), field.get_name() ]
+
+    def get_field_ref(self, idx) :
+        return self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
 
     def get_method(self, idx) :
         method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-        return [ method.get_class(), method.get_proto(), method.get_name() ]
+        return method.get_list()
+
+    def get_method_ref(self, idx) :
+        return self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
+
+    def set_hook_method_class_name(self, idx, value) :
+        method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
+        self.set_hook_string( method.format.get_value().class_idx, value )
+        method.reload()
+
+    def set_hook_method_name(self, idx, value) :
+        method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
+        self.set_hook_string( method.format.get_value().name_idx, value )
+        method.reload()
+
+    def set_hook_string(self, idx, value) :
+        self.hook_strings[ idx ] = value
 
     def get_next_offset_item(self, idx) :
         for i in self.__manage_item_off :
@@ -3192,13 +3245,13 @@ class MapList :
         return self.CM
 
 class DalvikVMFormat(bytecode._Bytecode) :
-    def __init__(self, buff, engine=["automatic"], decompiler=None) :
+    def __init__(self, buff, decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
        
-        self.CM = ClassManager( engine )
+        self.CM = ClassManager()
         self.CM.set_decompiler( decompiler )
 
-        self.__header = HeaderItem( 0, self, ClassManager( ["python"] ) )
+        self.__header = HeaderItem( 0, self, ClassManager() )
         self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
 
         self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
@@ -3271,13 +3324,13 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return buff
 
     def get_cm_field(self, idx) :
-        return self.CM.get_field(idx, False)
-    
+        return self.CM.get_field(idx)
+
     def get_cm_method(self, idx) :
         return self.CM.get_method(idx)
 
     def get_cm_string(self, idx) :
-        return self.CM.get_string( idx )
+        return self.CM.get_raw_string( idx )
 
     def get_cm_type(self, idx) :
         return self.CM.get_type( idx )
