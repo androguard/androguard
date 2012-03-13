@@ -7,11 +7,9 @@ RM      =       rm -f
 all :   LIBS
 
 LIBS :
-	cd androguard/core/similarity/libsimilarity && make
 	cd androguard/core/bytecodes/libdvm && make
-	cd androguard/core/analysis/libsign && make 
+	cd elsim && make
 
 clean :
-	cd androguard/core/similarity/libsimilarity && make clean
 	cd androguard/core/bytecodes/libdvm && make clean
-	cd androguard/core/analysis/libsign && make clean
+	cd elsim && make clean
