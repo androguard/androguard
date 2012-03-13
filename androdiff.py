@@ -26,6 +26,7 @@ from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
 from androguard.core import androconf
 
+sys.path.append("./elsim")
 from elsim import elsim
 from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK, FILTERS_DALVIK_SIM, ProxyDalvikMethod, FILTERS_DALVIK_BB
 from elsim.elsim_dalvik import ProxyDalvikBasicBlock, FILTERS_DALVIK_DIFF_BB
