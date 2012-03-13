@@ -22,6 +22,7 @@ import sys
 
 from androguard.core import androconf
 
+sys.path.append("./elsim/")
 from elsim.elsign import dalvik_elsign
 
 from optparse import OptionParser
