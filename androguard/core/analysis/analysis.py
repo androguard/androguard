@@ -22,8 +22,6 @@ from androguard.core.androconf import error, warning
 from androguard.core.bytecodes import jvm, dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
-from zlib import crc32
-
 class ContextField :
     def __init__(self, mode) :
         self.mode = mode
@@ -1036,9 +1034,9 @@ class DVMBasicBlock :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
                 operands = i.get_operands()
                 idx_meth = operands[-1][1]
-                method_info = operands[-1][2:] #self.__vm.get_cm_method( idx_meth )
-                method_info = [ method_info[0], [ method_info[1], method_info[2] ], method_info[3] ]
-                self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[2], method_info[1][0] + method_info[1][1]) )
+                method_info = self.__vm.get_cm_method( idx_meth )
+                #method_info = [ method_info[0], [ method_info[1], method_info[2] ], method_info[3] ]
+                self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[1], method_info[2][0] + method_info[2][1]) )
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
                 type_info = self.__vm.get_cm_type( i.get_operands()[-1][1] )
