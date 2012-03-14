@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, xml.dom.minidom, re, random, string, os
-
-from androguard.core import bytecode, androconf
+from androguard.core import androconf
 from androguard.core.bytecodes import jvm
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
