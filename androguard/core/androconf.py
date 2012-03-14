@@ -41,6 +41,7 @@ CONF = {
     "BIN_DEX2JAR" : "dex2jar.sh",
     "PATH_JAD" : "./decompiler/jad/",
     "BIN_JAD" : "jad",
+    "PRETTY_SHOW" : 1,
    
     #"ENGINE" : "automatic",
     "ENGINE" : "python",

@@ -18,10 +18,7 @@
 
 from struct import unpack, pack
 
-from androconf import Color, warning, error
-
-global PRETTY_SHOW
-PRETTY_SHOW = 0
+from androconf import Color, warning, error, CONF
 
 # Handle exit message
 def Exit( msg ):
@@ -45,25 +42,18 @@ def _Print(name, arg) :
 
     print buff
 
-def set_pretty_show( val ) :
-    """
-        @param val : set value for the corresponding pretty print (0, 1, 2)
-    """
-    global PRETTY_SHOW
-    PRETTY_SHOW = val
-
 def PrettyShow( basic_blocks ) :
-    if PRETTY_SHOW == 0 :
+    if CONF["PRETTY_SHOW"] == 0 :
         PrettyShow0( basic_blocks )
-    elif PRETTY_SHOW == 1 :
+    elif CONF["PRETTY_SHOW"] == 1 :
         PrettyShow1( basic_blocks )
-    elif PRETTY_SHOW == 2 :
+    elif CONF["PRETTY_SHOW"] == 2 :
         PrettyShow1bis( basic_blocks )
 
 def PrettyShowEx( exceptions ) :
     if len(exceptions) > 0 :
         print "Exceptions:"
-        if PRETTY_SHOW == 0 :
+        if CONF["PRETTY_SHOW"] == 0 :
             for i in exceptions : 
                 print "\t", "%s" % (i.show_buff())
         else :

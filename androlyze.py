@@ -33,7 +33,6 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
 from androguard.core.analysis.ganalysis import *
 from androguard.core.analysis.risk import *
-from androguard.core.analysis.diff import *
 
 from androguard.decompiler.decompiler import *
 
@@ -118,6 +117,9 @@ def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
         d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
     elif decompiler == "dad" :
         d.set_decompiler( DecompilerDAD( d, dx ) )
+    else :
+        print "Unknown decompiler, use default", decompiler
+        d.set_decompiler( DecompilerDAD( d, dx ) )
 
     return a, d, dx
 
@@ -153,8 +155,6 @@ def AnalyzeDex(filename, raw=False) :
     androconf.debug("DREF ...")
     d.create_dref()
     
-    set_pretty_show( 1 )
-
     return d, dx
 
 def AAnalyzeDex(filename, raw=False, decompiler="dad") :
@@ -197,7 +197,7 @@ def main(options, arguments) :
         _a = AndroguardS( options.input )
 
         if options.type_pretty != None :
-            bytecode.set_pretty_show( int( options.type_pretty ) )
+            CONF["PRETTY_SHOW"] = int( options.type_pretty )
 
         if options.display != None :
             if options.pretty != None :
