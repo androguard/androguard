@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 from androguard.core import bytecode
 
 from androguard.core.bytecode import SV, SVs, object_to_str
 from androguard.core.bytecode import FormatClassToPython, FormatNameToPython, FormatDescriptorToPython
 
-import sys, re, types, string, zipfile, StringIO
+import sys, re
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
@@ -1999,6 +1997,10 @@ class ClassItem :
 
     def source(self) :
         self.__CM.decompiler_ob.display_all( self.get_name() )
+    
+    def set_name(self, value) :
+        self.__CM.set_hook_class_name( self.format.get_value().class_idx, value )
+        self.reload()
 
     def get_class_data(self) :
         return self._class_data_item
@@ -3176,10 +3178,11 @@ class ClassManager :
 
     def get_method_ref(self, idx) :
         return self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-
+    
     def set_hook_method_class_name(self, idx, value) :
         method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-        self.set_hook_string( method.format.get_value().class_idx, value )
+        _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( method.format.get_value().class_idx )
+        self.set_hook_string( _type, value )
         method.reload()
 
     def set_hook_method_name(self, idx, value) :
