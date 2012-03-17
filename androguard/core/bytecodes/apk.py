@@ -732,7 +732,8 @@ class AXMLPrinter :
                     self.xmlns = True
 
                 for i in range(0, self.axml.getAttributeCount()) :
-                    self.buff += "%s%s=\"%s\"\n" % ( self.getPrefix( self.axml.getAttributePrefix(i) ), self.axml.getAttributeName(i), escape( self.getAttributeValue( i ) ) )
+                    self.buff += "%s%s=\"%s\"\n" % ( self.getPrefix(
+                        self.axml.getAttributePrefix(i) ), self.axml.getAttributeName(i), self._escape( self.getAttributeValue( i ) ) )
 
                 self.buff += ">\n"
 
@@ -744,6 +745,17 @@ class AXMLPrinter :
 
             elif _type == END_DOCUMENT :
                 break
+
+    # pleed patch
+    def _escape(self, s) :
+        s = s.replace("&","&amp;")
+        s = s.replace('"',"&quot;")
+        s = s.replace("'","&apos;")
+        s = s.replace("<","&lt;")
+        s = s.replace(">","&gt;")
+       
+        return escape(s)
+
 
     def getBuff(self) :
         return self.buff.encode("utf-8")

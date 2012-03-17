@@ -28,17 +28,18 @@ from androguard.core.analysis import analysis
 
 sys.path.append("./elsim")
 from elsim import elsim
-from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK, FILTERS_DALVIK_SIM
+from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK_SIM
 from elsim.elsim_dalvik import ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
 option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--filter'), 'help' : 'select the filter', 'nargs' : 1 }
 option_4 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_5 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
+option_6 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
+option_7 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7]
 
 ############################################################
 def main(options, arguments) :
@@ -68,12 +69,11 @@ def main(options, arguments) :
         if options.threshold != None :
             threshold = float(options.threshold)
 
-        filter_sim = 0
-        if options.filter != None :
-            filter_sim = int(options.filter)
+        FS = FILTERS_DALVIK_SIM
+        FS[elsim.FILTER_SKIPPED_METH].set_regexp( options.exclude )
+        FS[elsim.FILTER_SKIPPED_METH].set_size( options.size )
 
-        FS = { 0 : FILTERS_DALVIK_SIM, 1 : FILTERS_DALVIK }
-        el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS[filter_sim], threshold, options.compressor )
+        el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor )
         el.show()
         print "\t--> methods: %f%% of similarities" % el.get_similarity_value()
         
