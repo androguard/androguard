@@ -79,6 +79,58 @@ TYPE_MAP_ITEM = {
                         0x2006 : "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                      }
 
+ACCESS_FLAGS_METHODS = {
+    0x1    : 'public',
+    0x2    : 'private',
+    0x4    : 'protected',
+    0x8    : 'static',
+    0x10   : 'final',
+    0x20   : 'synchronized',
+    0x40   : 'bridge',
+    0x80   : 'varargs',
+    0x100  : 'native',
+    0x200  : 'interface',
+    0x400  : 'abstract',
+    0x800  : 'strict',
+    0x1000 : 'synthetic',
+    0x4000 : 'enum',
+    0x8000 : 'unused',
+    0x10000: 'constructors',
+    0x20000: 'synchronized'
+}
+
+TYPE_DESCRIPTOR = {
+    'V': 'void',
+    'Z': 'boolean',
+    'B': 'byte',
+    'S': 'short',
+    'C': 'char',
+    'I': 'int',
+    'J': 'long',
+    'F': 'float',
+    'D': 'double',
+    'STR': 'String',
+    'StringBuilder': 'String'
+}
+def get_type(atype, size=None):
+    '''
+    Retrieve the type of a descriptor (e.g : I)
+    '''
+    if atype.startswith('java.lang'):
+        atype = atype.replace('java.lang.', '')
+    res = TYPE_DESCRIPTOR.get(atype.lstrip('java.lang'))
+    if res is None:
+        if atype[0] == 'L':
+            res = atype[1:-1].replace('/', '.')
+        elif atype[0] == '[':
+            if size is None:
+                res = '%s[]' % get_type(atype[1:])
+            else:
+                res = '%s[%s]' % (get_type(atype[1:]), size)
+        else:
+            res = atype
+    return res
+
 SPARSE_SWITCH_NAMEDTUPLE = namedtuple("SPARSE_SWITCH_NAMEDTUPLE", "ident size")
 SPARSE_SWITCH = [ '=HH', SPARSE_SWITCH_NAMEDTUPLE ]
 
@@ -1795,15 +1847,36 @@ class EncodedMethod :
         self.__CM.set_hook_method_class_name( self.__method_idx, value )
         self.reload()
 
+    def each_params_by_register(self, nb, proto) :
+        ret = proto.split(')')
+        params = ret[0][1:].split()
+        if params :
+            print "local registers: v%d...v%d" % (0, nb-len(params)-1)
+            j = 0
+            for i in range(nb - len(params), nb) :
+                print "v%d:%s" % (i, get_type(params[j]))
+                j += 1
+        else :
+            print "local registers: v%d...v%d" % (0, nb-1)
+        print "return:%s" % get_type(ret[1])
+
+    def show_info(self) :
+        try :
+            print "\tMETHOD access_flags=%s (%s %s,%s)" % (ACCESS_FLAGS_METHODS[self.access_flags], self._class_name, self._name, self._proto)
+        except KeyError :
+            print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+
     def show(self) :
-        print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        self.show_info()
         if self._code != None :
+            self.each_params_by_register( self._code.registers_size.get_value(), self._proto )
             self._code.show()
             self.show_xref()
 
     def pretty_show(self) :
-        print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        self.show_info()
         if self._code != None :
+            self.each_params_by_register( self._code.registers_size.get_value(), self._proto )
             self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
             self.show_xref()
 
