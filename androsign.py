@@ -38,10 +38,8 @@ option_4 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information',
 options = [option_0, option_1, option_2, option_3, option_4]
 
 def display(ret, debug) :
-    print "---->", ret[0],
-    if debug :
-        print ret[1],
-    print
+    print "---->", ret[0]
+
 
 def main(options, arguments) :
     if options.database == None or options.config == None :

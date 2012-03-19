@@ -105,6 +105,7 @@ def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False
 ############################################################
 def main(options, arguments) :
     if options.input != None :
+        a = None
         ret_type = androconf.is_android( options.input[0] )
         if ret_type == "APK" :
             a = apk.APK( options.input[0] )
