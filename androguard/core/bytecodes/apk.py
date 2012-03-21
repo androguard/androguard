@@ -753,7 +753,7 @@ class AXMLPrinter :
         s = s.replace("'","&apos;")
         s = s.replace("<","&lt;")
         s = s.replace(">","&gt;")
-       
+      
         return escape(s)
 
 
