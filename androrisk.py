@@ -27,10 +27,19 @@ from androguard.core.bytecodes import apk
 from androguard.core.analysis import risk
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
-option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-a', '--analysis'), 'help' : 'perform analysis to calculate the risk', 'action' : 'count' }
+option_2 = { 'name' : ('-m', '--method'), 'help' : 'perform analysis of each method', 'action' : 'count' }
+option_3 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
+option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3, option_4]
+
+def analyze_app(filename, ri, a, analysis, method) :
+    print filename, ri.with_apk( a, analysis, method )
+
+def analyze_dex(filename, ri, d, analysis, method) :
+    print filename, ri.with_dex( d, analysis, method )
+
 
 def main(options, arguments) :
     if options.input != None :
@@ -38,10 +47,11 @@ def main(options, arguments) :
         ret_type = androconf.is_android( options.input ) 
         if ret_type == "APK" :
             a = apk.APK( options.input )
-            print options.input, ri.with_apk( a )
+            analyze_app( options.input, ri, a, options.analysis, options.method )
         elif ret_type == "DEX" :
-            print options.input, ri.with_dex( open(options.input, "r").read() )
+            analyze_dex( options.input, ri, open(options.input, "r").read(), options.analysis, options.method )
 
+        
     elif options.directory != None :
         ri = risk.RiskIndicator()
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
@@ -56,12 +66,12 @@ def main(options, arguments) :
                     if ret_type == "APK"  :
                         try :
                             a = apk.APK( real_filename )
-                            print ri.with_apk(a), real_filename
+                            analyze_app( real_filename, ri, a, options.analysis, options.method )
                         except Exception, e :
                             print e
 
                     elif ret_type == "DEX" :
-                        print ri.with_dex( open(real_filename, "r").read() ), real_filename
+                        analyze_dex( real_filename, ri, open(real_filename, "r").read(), options.analysis, options.method )
 
     elif options.version != None :
         print "Androrisk version %s" % androconf.ANDROGUARD_VERSION

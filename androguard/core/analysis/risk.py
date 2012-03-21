@@ -46,20 +46,20 @@ BINARY_RISK             = 11
 EXPLOIT_RISK            = 12
 
 RISK_VALUES = {
-    DANGEROUS_RISK          : 4,
+    DANGEROUS_RISK          : 5,
     SIGNATURE_SYSTEM_RISK   : 10,
     SIGNATURE_RISK          : 10,
     NORMAL_RISK             : 0,
     
-    MONEY_RISK              : 6,
-    SMS_RISK                : 4,
-    PHONE_RISK              : 4,
+    MONEY_RISK              : 5,
+    SMS_RISK                : 5,
+    PHONE_RISK              : 5,
     INTERNET_RISK           : 2,
-    PRIVACY_RISK            : 6,
-    DYNAMIC_RISK            : 10,
+    PRIVACY_RISK            : 5,
+    DYNAMIC_RISK            : 5,
 
-    BINARY_RISK             : 5,
-    EXPLOIT_RISK            : 18,
+    BINARY_RISK             : 10,
+    EXPLOIT_RISK            : 15,
 }
 
 GENERAL_PERMISSIONS_RISK = {
@@ -93,9 +93,11 @@ PERMISSIONS_RISK = {
     "ACCESS_COARSE_LOCATION"    : [ PRIVACY_RISK ],
 }
 
-HIGH_RISK                   = "high"
 LOW_RISK                    = "low"
 AVERAGE_RISK                = "average"
+HIGH_RISK                   = "high"
+UNACCEPTABLE_RISK           = "unacceptable"
+
 NULL_MALWARE_RISK           = "null"
 AVERAGE_MALWARE_RISK        = "average"
 HIGH_MALWARE_RISK           = "high"
@@ -121,6 +123,10 @@ def create_system_risk() :
     import fuzzy.fuzzify.Plain
     import fuzzy.OutputVariable
     import fuzzy.defuzzify.COGS
+    import fuzzy.defuzzify.COG
+    import fuzzy.defuzzify.MaxRight
+    import fuzzy.defuzzify.MaxLeft
+    import fuzzy.defuzzify.LM
     import fuzzy.set.Polygon
     import fuzzy.set.Singleton
     import fuzzy.set.Triangle
@@ -130,7 +136,8 @@ def create_system_risk() :
     import fuzzy.norm.Min
     import fuzzy.norm.Max
     import fuzzy.Rule
-    
+    import fuzzy.defuzzify.Dict
+
     system = fuzzy.System.System()
 
     input_Dangerous_Risk = fuzzy.InputVariable.InputVariable(fuzzify=fuzzy.fuzzify.Plain.Plain())
@@ -145,33 +152,37 @@ def create_system_risk() :
         # Dangerous Risk
     system.variables["input_Dangerous_Risk"] = input_Dangerous_Risk
     input_Dangerous_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (8.0, 1.0), (12.0, 0.0)]) )
-    input_Dangerous_Risk.adjectives[AVERAGE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(8.0, 0.0), (16.0, 1.0), (20.0, 0.0)]) )
-    input_Dangerous_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(16.0, 0.0), (24.0, 1.0)]) )
+    input_Dangerous_Risk.adjectives[AVERAGE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(8.0, 0.0), (50.0, 1.0), (60.0, 0.0)]) )
+    input_Dangerous_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(50.0, 0.0), (85.0, 1.0), (95.0, 0.0)]) )
+    input_Dangerous_Risk.adjectives[UNACCEPTABLE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(85.0, 0.0), (100.0, 1.0)]) )
 
         # Money Risk
     system.variables["input_Money_Risk"] = input_Money_Risk
-    input_Money_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (5.0, 0.0)]) )
-    input_Money_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(4.0, 0.0), (6.0, 1.0), (30.0, 1.0)]) )
+    input_Money_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (2.0, 1.0), (3.0, 0.0)]) )
+    input_Money_Risk.adjectives[UNACCEPTABLE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(4.0, 0.0), (5.0, 1.0), (30.0, 1.0)]) )
 
         # Privacy Risk
     system.variables["input_Privacy_Risk"] = input_Privacy_Risk
-    input_Privacy_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (6.0, 0.0)]) )
-    input_Privacy_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(4.0, 0.0), (30.0, 1.0)]) )
-
+    input_Privacy_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (6.0, 1.0), (10.0, 0.0)]) )
+    input_Privacy_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(6.0, 0.0), (10.0, 1.0), (20.0, 0.0)]) )
+    input_Privacy_Risk.adjectives[UNACCEPTABLE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(15.0, 0.0), (20.0, 1.0), (30.0, 1.0)]) )
+    
         # Binary Risk
     system.variables["input_Binary_Risk"] = input_Binary_Risk
-    input_Binary_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (20.0, 0.0)]) )
-    input_Binary_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(10.0, 0.0), (30.0, 1.0)]) )
+    input_Binary_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (6.0, 1.0), (10.0, 0.0)]) )
+    input_Binary_Risk.adjectives[AVERAGE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(6.0, 0.0), (10.0, 1.0), (15.0, 0.0)]) )
+    input_Binary_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(10.0, 0.0), (20.0, 1.0), (24.0, 0.0)]) )
+    input_Binary_Risk.adjectives[UNACCEPTABLE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(23.0, 0.0), (30.0, 1.0), (40.0, 1.0)]) )
 
         # Internet Risk
     system.variables["input_Internet_Risk"] = input_Internet_Risk
-    input_Internet_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (4.0, 0.0)]) )
-    input_Internet_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(2.0, 0.0), (27.0, 1.0)]) )
+    #input_Internet_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (1.0, 1.0)]) )
+    input_Internet_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(1.0, 0.0), (5.0, 1.0), (30.0, 1.0)]) )
 
         # Dynamic Risk
     system.variables["input_Dynamic_Risk"] = input_Dynamic_Risk
-    input_Dynamic_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (8.0, 0.0)]) )
-    input_Dynamic_Risk.adjectives[HIGH_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(6.0, 0.0), (27.0, 1.0)]) )
+    input_Dynamic_Risk.adjectives[LOW_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(0.0, 1.0), (2.0, 1.0), (3.0, 0.0)]))
+    input_Dynamic_Risk.adjectives[UNACCEPTABLE_RISK] = fuzzy.Adjective.Adjective( fuzzy.set.Polygon.Polygon([(4.0, 0.0), (5.0, 1.0), (50.0, 1.0)]) )
 
     # Output variables
     output_malware_risk = fuzzy.OutputVariable.OutputVariable(
@@ -179,88 +190,94 @@ def create_system_risk() :
                             description="malware risk",
                             min=0.0,max=100.0,
                         )
-    output_malware_risk.adjectives[NULL_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(0.0))
-    output_malware_risk.adjectives[AVERAGE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(20.0))
-    output_malware_risk.adjectives[HIGH_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(80.0))
-    output_malware_risk.adjectives[UNACCEPTABLE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(100.0))
+    
+    #output_malware_risk = fuzzy.OutputVariable.OutputVariable(defuzzify=fuzzy.defuzzify.Dict.Dict())
 
+    output_malware_risk.adjectives[NULL_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(0.0))
+    output_malware_risk.adjectives[AVERAGE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(30.0))
+    output_malware_risk.adjectives[HIGH_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(60.0))
+    output_malware_risk.adjectives[UNACCEPTABLE_MALWARE_RISK] = fuzzy.Adjective.Adjective(fuzzy.set.Singleton.Singleton(100.0))
+    
     system.variables["output_malware_risk"] = output_malware_risk
 
     # Rules
-    
-    #RULE 0 : IF input_Dynamic_Risk IS High THEN output_risk_malware IS High;
+    #RULE 0: DYNAMIC 
     add_system_rule(system, "r0", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dynamic_Risk"].adjectives[HIGH_RISK] )
+                                        adjective=[system.variables["output_malware_risk"].adjectives[NULL_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dynamic_Risk"].adjectives[LOW_RISK] )
                     )
     )
     
-    #RULE 1 : IF input_Dangerous_Risk IS Low THEN output_risk_malware IS Null;
+    add_system_rule(system, "r0a", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dynamic_Risk"].adjectives[UNACCEPTABLE_RISK] )
+                    )
+    )
+    
+
+    #RULE 1: MONEY
     add_system_rule(system, "r1", fuzzy.Rule.Rule(
                                         adjective=[system.variables["output_malware_risk"].adjectives[NULL_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[LOW_RISK] )
-                    )
-    )
-     
-    #RULE 2 : IF input_Dangerous_Risk IS Average THEN output_risk_malware IS Average;
-    add_system_rule(system, "r2", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[AVERAGE_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[AVERAGE_RISK] )
-                    )
-    )
-     
-     
-    #RULE 3 : IF input_Dangerous_Risk IS High THEN output_risk_malware IS High;
-    add_system_rule(system, "r3", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[HIGH_RISK] )
-                    )
-    )
-      
-    #RULE 4 : IF input_Dangerous_Risk IS Low AND input_Binary_Risk IS High THEN output_risk_malware IS High;
-    add_system_rule(system, "r4", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                                        operator = fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] )
-                    )
-    )
-    
-    #RULE 5 : IF input_Money_Risk IS High THEN output_risk_malware IS Unacceptable;
-    add_system_rule(system, "r5", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Input.Input( system.variables["input_Money_Risk"].adjectives[HIGH_RISK] )
-                    )
-    )
-    
-    #RULE 6 : IF input_Dangerous_Risk IS High AND input_Binary_Risk IS High THEN output_risk_malware IS Unacceptable;
-    add_system_rule(system, "r6", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Compound.Compound(
-                                            fuzzy.norm.Min.Min(),
-                                            fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[HIGH_RISK] ),
-                                            fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] ) )
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Money_Risk"].adjectives[LOW_RISK] )
                     )
     )
 
-    #RULE 7 : IF input_Internet_Risk IS Low AND input_Privacy_Risk IS High THEN output_risk_malware IS High;
-    add_system_rule(system, "r7", fuzzy.Rule.Rule(
-                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
-                                        operator=fuzzy.operator.Compound.Compound(
-                                            fuzzy.norm.Min.Min(),
-                                            fuzzy.operator.Input.Input( system.variables["input_Internet_Risk"].adjectives[LOW_RISK] ),
-                                            fuzzy.operator.Input.Input( system.variables["input_Privacy_Risk"].adjectives[HIGH_RISK] ) )
+    add_system_rule(system, "r1a", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Money_Risk"].adjectives[UNACCEPTABLE_RISK] )
                     )
     )
     
-    #RULE 8 : IF input_Internet_Risk IS High AND input_Privacy_Risk IS High THEN output_risk_malware IS Unacceptable;
-    add_system_rule(system, "r8", fuzzy.Rule.Rule(
+    #RULE 3 : BINARY
+    add_system_rule(system, "r3", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[AVERAGE_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[AVERAGE_RISK] )
+                    )
+    )
+    
+    add_system_rule(system, "r3a", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[HIGH_RISK] )
+                    )
+    )
+
+    add_system_rule(system, "r3b", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Binary_Risk"].adjectives[UNACCEPTABLE_RISK] )
+                    )
+    )
+    
+    # PRIVACY + INTERNET
+    add_system_rule(system, "r5", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_MALWARE_RISK]],
+                                        operator=fuzzy.operator.Compound.Compound(
+                                            fuzzy.norm.Min.Min(),
+                                            fuzzy.operator.Input.Input( system.variables["input_Privacy_Risk"].adjectives[LOW_RISK] ),
+                                            fuzzy.operator.Input.Input( system.variables["input_Internet_Risk"].adjectives[HIGH_RISK] ) )
+                    )
+    )
+    add_system_rule(system, "r5a", fuzzy.Rule.Rule(
                                         adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_MALWARE_RISK]],
                                         operator=fuzzy.operator.Compound.Compound(
                                             fuzzy.norm.Min.Min(),
-                                            fuzzy.operator.Input.Input( system.variables["input_Internet_Risk"].adjectives[HIGH_RISK] ),
-                                            fuzzy.operator.Input.Input( system.variables["input_Privacy_Risk"].adjectives[HIGH_RISK] ) )
+                                            fuzzy.operator.Input.Input( system.variables["input_Privacy_Risk"].adjectives[HIGH_RISK] ),
+                                            fuzzy.operator.Input.Input( system.variables["input_Internet_Risk"].adjectives[HIGH_RISK] ) )
                     )
     )
-        
+    
+    add_system_rule(system, "r6", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[HIGH_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[HIGH_RISK] )
+                    )
+    )
+    
+    add_system_rule(system, "r6a", fuzzy.Rule.Rule(
+                                        adjective=[system.variables["output_malware_risk"].adjectives[UNACCEPTABLE_RISK]],
+                                        operator=fuzzy.operator.Input.Input( system.variables["input_Dangerous_Risk"].adjectives[UNACCEPTABLE_RISK] )
+                    )
+    )
+
+
     return system
 
 
@@ -644,6 +661,8 @@ class RiskIndicator :
         if SYSTEM == None :
             SYSTEM = create_system_risk()
 #            export_system( SYSTEM, "./output" )
+        
+        self.system_method_risk = create_system_method_one_score()
 
     def __eval_risk_perm(self, list_details_permissions, risks) :
         for i in list_details_permissions :
@@ -690,14 +709,14 @@ class RiskIndicator :
         input_val['input_Internet_Risk'] = risks[ INTERNET_RISK ]
         input_val['input_Dynamic_Risk'] = risks[ DYNAMIC_RISK ]
 
-#        print input_val,
-
+        print input_val,
+        
         SYSTEM.calculate(input=input_val, output = output_values)
 
         val = output_values[ "output_malware_risk" ]
         return val
 
-    def with_apk(self, apk_file) :
+    def with_apk(self, apk_file, analysis=None, analysis_method=None) :
         """
             @param apk_file : an L{APK} object
 
@@ -705,17 +724,13 @@ class RiskIndicator :
         """
 
         if apk_file.is_valid_APK() :
-            try :
-                vm = dvm.DalvikVMFormat( apk_file.get_dex() )
-            except Exception, e :
-                return -1 
-
-            vmx = analysis.VMAnalysis( vm )
-
-            return self.with_apk_direct( apk_file, vm, vmx )
+            if analysis == None :
+                return self.with_apk_direct( apk_file )
+            else :
+                return self.with_apk_analysis( apk_file, analysis_method )
         return -1
     
-    def with_apk_direct(self, apk, vm, vmx) :
+    def with_apk_direct(self, apk) :
         risks = { DANGEROUS_RISK    : 0.0,
                   MONEY_RISK        : 0.0,
                   PRIVACY_RISK      : 0.0,
@@ -725,17 +740,16 @@ class RiskIndicator :
                 }
 
         self.__eval_risk_perm( apk.get_details_permissions(), risks )
-        
-        if (vmx != None):
-            self.__eval_risk_dyn( vmx, risks )
-        
         self.__eval_risk_bin( apk.get_files_types(), risks )
         
         val = self.__eval_risks( risks )
 
         return val
 
-    def with_dex(self, dex_file) :
+    def with_apk_analysis( self, apk, analysis_method=None ) :
+        return self.with_dex( apk.get_dex(), apk, analysis_method )
+
+    def with_dex(self, dex_file, apk=None, analysis_method=None) :
         """
             @param dex_file : a buffer
 
@@ -747,10 +761,11 @@ class RiskIndicator :
             return -1
 
         vmx = analysis.VMAnalysis( vm )
-        
-        return self.with_dex_direct( vm, vmx )
 
-    def with_dex_direct(self, vm, vmx) :
+
+        return self.with_dex_direct( vm, vmx, apk, analysis_method )
+
+    def with_dex_direct(self, vm, vmx, apk=None, analysis_method=None) :
         risks = { DANGEROUS_RISK    : 0.0,
                   MONEY_RISK        : 0.0,
                   PRIVACY_RISK      : 0.0,
@@ -759,16 +774,76 @@ class RiskIndicator :
                   DYNAMIC_RISK      : 0.0,
                 }
         
-        d = {}
-        for i in vmx.get_permissions( [] ) :
-            d[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][i] 
-        
-        self.__eval_risk_perm( d, risks )
+        if apk :
+            self.__eval_risk_bin( apk.get_files_types(), risks )
+            self.__eval_risk_perm( apk.get_details_permissions(), risks )
+        else :
+            d = {}
+            for i in vmx.get_permissions( [] ) :
+                d[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][i] 
+            self.__eval_risk_perm( d, risks )
+
         self.__eval_risk_dyn( vmx, risks )
         
         val = self.__eval_risks( risks )
-        return val
+        
+        if analysis_method == None :
+            return val, {}
+
+
+        ##########################
+        score_order_sign = {}
+
+
+        import sys
+        sys.path.append("./elsim")
+        from elsim.elsign.libelsign import libelsign
+        for method in vm.get_methods() :
+            if method.get_length() < 80 :
+                continue
+
+            score_order_sign[ method ] = self.get_method_score( method.get_length(),
+                                 libelsign.entropy( vmx.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
+                                 libelsign.entropy( vmx.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
+                                 map(lambda perm : (perm, DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]), vmx.get_permissions_method( method )),
+            )
+
+            
+        for v in sorted(score_order_sign, key=lambda x : score_order_sign[x], reverse=True) :
+            print v.get_name(), v.get_class_name(), v.get_descriptor(), v.get_length(), score_order_sign[ v ]
+
+        ##########################
+
+        return val, score_order_sign
        
+   
+    def get_method_score(self, length, android_entropy, java_entropy, permissions) :
+        val_permissions = 0
+        for i in permissions :
+            val_permissions += RISK_VALUES[ GENERAL_PERMISSIONS_RISK[ i[1][0] ] ]
+
+            try :
+                for j in PERMISSIONS_RISK[ i[0] ] :
+                    val_permissions += RISK_VALUES[ j ]
+            except KeyError :
+                pass
+        
+        print length, android_entropy, java_entropy, val_permissions
+
+        output_values = {"output_method_one_score" : 0.0}
+        input_val = {}
+        input_val['input_Length_MS'] = length
+        input_val['input_AndroidEntropy_MS'] = android_entropy
+        input_val['input_JavaEntropy_MS'] = java_entropy
+        input_val['input_Permissions_MS'] = val_permissions
+       
+        self.system_method_risk.calculate(input=input_val, output = output_values)
+        score = output_values[ "output_method_one_score" ]
+
+        return score
+
+    def simulate(self, risks) :
+        return self.__eval_risks( risks )
 
 
 class MethodScore :
@@ -800,37 +875,6 @@ class MethodScore :
        
         self.system.calculate(input=input_val, output = output_values)
         self.score = output_values[ "output_method_score" ]
-
-    def get_score(self) :
-        return self.score
-
-class MethodOneScore :
-    def __init__(self, length, android_entropy, java_entropy, permissions) :
-        self.system = create_system_method_one_score()
-        #export_system( self.system, "./output" )
-
-        
-        val_permissions = 0
-        for i in permissions :
-            val_permissions += RISK_VALUES[ GENERAL_PERMISSIONS_RISK[ i[1][0] ] ]
-
-            try :
-                for j in PERMISSIONS_RISK[ i[0] ] :
-                    val_permissions += RISK_VALUES[ j ]
-            except KeyError :
-                pass
-        
-        print length, android_entropy, java_entropy, val_permissions
-
-        output_values = {"output_method_one_score" : 0.0}
-        input_val = {}
-        input_val['input_Length_MS'] = length
-        input_val['input_AndroidEntropy_MS'] = android_entropy
-        input_val['input_JavaEntropy_MS'] = java_entropy
-        input_val['input_Permissions_MS'] = val_permissions
-       
-        self.system.calculate(input=input_val, output = output_values)
-        self.score = output_values[ "output_method_one_score" ]
 
     def get_score(self) :
         return self.score
