@@ -1,6 +1,12 @@
 SRC	= 	dvm.cc buff.cc
 
-LDFLAGS = 
+CUROS = $(shell uname -s)
+ifeq ($(CUROS),Darwin)
+LDFLAGS =       -lpython
+else
+LDFLAGS =
+endif
+
 CFLAGS  += 	-g -fPIC -I/usr/include/python2.7/       
 mkdir	=	mkdir -p
 CD      =       cd
