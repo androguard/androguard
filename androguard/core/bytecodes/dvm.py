@@ -3554,6 +3554,19 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
         return [i.get() for i in self.strings]
 
+    def get_regex_strings(self, regular_expressions) :
+        """
+            Return all taget strings matched the regex in input
+        """
+        str_list = []
+        if regular_expressions.count is None :
+            return None
+        for i in self.get_strings() :
+            if re.match(regular_expressions, i) :
+                str_list.append(i)
+        return str_list
+
+
     def get_type(self) :
         return "DVM"
     

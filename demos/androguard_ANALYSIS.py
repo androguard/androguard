@@ -86,6 +86,11 @@ def display_OBJECT_CREATED(a, x, class_name) :
 a = AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
 
+print a.get_vm().get_strings()
+print a.get_vm().get_regex_strings( "access" )
+print a.get_vm().get_regex_strings( "(long).*2" )
+print a.get_vm().get_regex_strings( ".*(t\_t).*" )
+
 classes = a.get_vm().get_classes_names()
 
 display_CFG( a, x, classes )
@@ -97,5 +102,6 @@ display_PERMISSION( a, x, classes )
 display_SEARCH_PACKAGES( a, x, classes, "Landroid/telephony/" )
 display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
 display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )
+
 
 display_OBJECT_CREATED( a, x, "." )
