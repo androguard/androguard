@@ -25,9 +25,14 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include <hash_map>
 #include <string>
 #include <vector>
+
+#if defined __GNUC__ || defined __APPLE__
+#include <ext/hash_map>
+#else
+#include <hash_map>
+#endif
 
 #include "buff.h"
 
