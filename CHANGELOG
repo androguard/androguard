@@ -4,5 +4,6 @@
 - Open source database of android malware
 - improve analysis/risk algorithms
 - improve Dalvik bytecodes analysis
+- support mercury project to analyze apps from emulator/device
 - XREF and DREF
 - Alpha Native decompiler for android application: DAD
