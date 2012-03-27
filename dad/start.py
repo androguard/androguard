@@ -20,8 +20,8 @@
 
 import sys
 sys.path.append('./')
-import androguard
-import analysis
+from androguard.core import androgen
+from androguard.core.analysis import analysis
 import Structure
 import Util
 import copy
@@ -349,7 +349,7 @@ class DvClass():
 
 class DvMachine():
     def __init__(self, name):
-        vm = androguard.AndroguardS(name).get_vm()
+        vm = androgen.AndroguardS(name).get_vm()
         bca = analysis.VMAnalysis(vm)
         self.vm = vm
         self.bca = bca
