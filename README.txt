@@ -1,10 +1,9 @@
 ##########################################################################
-####################### Androguard : Android Guard #######################
+################################# Androguard #############################
 ##########################################################################
 ################### http://code.google.com/p/androguard ##################
 ###################### androguard (at) t0t0 (dot) fr #####################
 ##########################################################################
-
 
 1 -] About
 
@@ -17,50 +16,23 @@ play with :
     - JAR
 
 Androguard has the following features :
-    - Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full 
-      Python objects,
-    - Native decompiler for android application (dex to java),
-    - Native support of DEX code in a c++ library,
-    - Access to the static analysis of your code (basic blocks, 
-      instructions, permissions (with database from 
-      http://www.android-permissions.org/) ...) and create your own static
-      analysis tool,
-    - Check if an android application is present in a database (malwares, 
-      goodwares ?),
-    - Open source database of android malwares,
-    - Diffing of android applications,
-    - Measure the efficiency of obfuscators (proguard, ...),
-    - Determine if your application has been pirated (rip-off indicator),
-    - Risk indicator of malicious application,
-    - Reverse engineering of applications (goodwares, malwares),
-    - Transform Android's binary xml (like AndroidManifest.xml) into 
-      classic xml,
-    - Visualize your application into cytoscape (by using xgmml format), 
-      or PNG/DOT output,
-    - Patch JVM classes, add native library dependencies,
-      progress),
-    - ...
-
-So, you can analyze, display, modify and save your apps easily and 
-statically by creating your own software (by using the API), or by
-using the tool (androlyze) in command line. This tool is useful 
-when you would like to do reverse engineering on a specific 
-application (e.g : malware).
-
-The second part of the tool is to do new tools to get differences 
-between two android/java applications, or to find similarities 
-in different applications (e.g : to check if a part or entire 
-application has been stolen).
-
-And for now, you can check if an android application is present 
-in a database (like a malware).
-
-This tool has been designed for Android apps, but if you have read 
-this section, you have seen that we support JVM format, so you can
-used this tool with classical Java apps.
-
-If you are interesting to develop and to work on this youth project, you 
-can contact me (see the top of this README for my e-mail).
+    Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full Python objects,
+    Native support of DEX code in a c++ library,
+    Access to the static analysis of your code 
+        (basic blocks, instructions, permissions (with database from http://www.android-permissions.org/) ...) 
+        and create your own static analysis tool,
+    Check if an android application is present in a database (malwares, goodwares ?),
+    Open source database of android malware (this opensource database is done on my free time, of course my free time is limited, so if you want to help, you are welcome !),
+    Diffing of android applications,
+    Measure the efficiency of obfuscators (proguard, ...),
+    Determine if your application has been pirated (plagiarism/rip-off indicator),
+    Risk indicator of malicious application,
+    Reverse engineering of applications (goodwares, malwares),
+    Transform Android's binary xml (like AndroidManifest.xml) into classic xml,
+    Visualize your application with gephi (gexf format), or with cytoscape (xgmml format), or PNG/DOT output,
+    Patch JVM classes, add native library dependencies,
+    Dump the jvm process to find classes into memory,
+    ....
 
 2 -] Usage
 
@@ -110,11 +82,15 @@ http://code.google.com/p/androguard/wiki/DatabaseAndroidMalwares
 
 2.9 --] Decompiler
 
+2.10 --] Reverse
+
+http://code.google.com/p/androguard/wiki/RE
+
 3 -] Roadmap/Issues
 http://code.google.com/p/androguard/wiki/RoadMap
 http://code.google.com/p/androguard/issues/list
 
-4 -] Authors
+4 -] Authors: Androguard Team
 
 Androguard + tools: Anthony Desnos <desnos at t0t0.fr>
 DAD (DAD is A Decompiler): Geoffroy Gueguen <geoffroy dot gueguen at gmail dot com>
@@ -127,7 +103,7 @@ Craig Smith <agent dot craig at gmail dot com>: 64 bits patch + magic tricks
 
 6.1 --] Androguard
 
-Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
+Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 All rights reserved.
 
 Androguard is free software: you can redistribute it and/or modify
@@ -146,7 +122,7 @@ along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 6.2 -] DAD
 
-Copyright (C) 2011, Geoffroy Gueguen <geoffroy.gueguen at gmail.com>
+Copyright (C) 2012, Geoffroy Gueguen <geoffroy.gueguen at gmail.com>
 All rights reserved.
 
 Androguard is free software: you can redistribute it and/or modify
