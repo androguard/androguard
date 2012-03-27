@@ -52,11 +52,15 @@ def main(options, arguments) :
         
         print os.path.basename(options.input), ":",
         if ret_type == "APK" :
-            a = apk.APK( options.input )
-            if a.is_valid_APK() :
-                display( s.check_apk( a ), options.verbose )
-            else :
-                print "INVALID"
+            try :
+                a = apk.APK( options.input )
+                if a.is_valid_APK() :
+                    display( s.check_apk( a ), options.verbose )
+                else :
+                    print "INVALID"
+            except Exception, e :
+                print "ERROR", e
+
         elif ret_type == "DEX" :
             display( s.check_dex( open(options.input, "rb").read() ), options.verbose )
     elif options.directory != None :
@@ -71,11 +75,14 @@ def main(options, arguments) :
                     ret_type = androconf.is_android( real_filename )
                     if ret_type == "APK"  :
                         print os.path.basename( real_filename ), ":",
-                        a = apk.APK( real_filename )
-                        if a.is_valid_APK() :
-                            display( s.check_apk( a ), options.verbose )
-                        else :
-                            print "INVALID APK"
+                        try :
+                            a = apk.APK( real_filename )
+                            if a.is_valid_APK() :
+                                display( s.check_apk( a ), options.verbose )
+                            else :
+                                print "INVALID APK"
+                        except Exception, e :
+                            print "ERROR", e
                     elif ret_type == "DEX" :
                         try :
                             print os.path.basename( real_filename ), ":",
