@@ -1767,11 +1767,16 @@ class EncodedField :
         self._proto = None
         self._class_name = None
 
+        self.static_init_value = None
+
     def reload(self) :
         name = self.__CM.get_field( self.__field_idx )
         self._class_name = name[0]
         self._name = name[2]
         self._proto = ''.join(i for i in name[1])
+
+    def set_init_value(self, value) :
+        self.static_init_value = value
 
     def get_access_flags(self) :
         return self.access_flags
@@ -1802,8 +1807,11 @@ class EncodedField :
 
     def show(self) :
         print "\tENCODED_FIELD access_flags=%d (%s,%s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        if self.static_init_value != None :
+            print "\tvalue:", self.static_init_value.value
+
         self.show_dref()
-    
+
     def show_dref(self) :
         try :
             for i in self.DREFr.items :
@@ -1948,6 +1956,12 @@ class ClassDataItem :
         self.load_field( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
         self.load_field( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
 
+    def set_static_fields(self, values) :
+        if values != None :
+            if len(values.values) <= len(self.static_fields) :
+                for i in range(0, len(values.values)) :
+                    self.static_fields[i].set_init_value( values.values[i] )
+
     def load_field(self, size, l, Type, buff, cm) :
         prev = 0
         for i in range(0, size) :
@@ -2064,6 +2078,10 @@ class ClassItem :
     
         if general_format.static_values_off != 0 :
             self._static_values = self.__CM.get_encoded_array_item ( general_format.static_values_off )
+            if self._class_data_item != None :
+                self._class_data_item.set_static_fields( self._static_values.value )
+            #for i in self._static_values.value.values :
+            #    print i, i.value
 
     def show(self) :
         print "CLASS_ITEM", self._name, self._sname, self._interfaces, self.format.get_value()

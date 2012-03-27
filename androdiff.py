@@ -37,12 +37,12 @@ option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 
 option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
 option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
 option_3 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_4 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific blocks (0 : orig, 1 : diff, 2 : new)', 'nargs' : 1 }
+#option_4 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific blocks (0 : orig, 1 : diff, 2 : new)', 'nargs' : 1 }
 option_5 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
 option_6 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
 option_7 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
+options = [option_0, option_1, option_2, option_3, option_5, option_6, option_7]
 
 def main(options, arguments) :
     details = False
