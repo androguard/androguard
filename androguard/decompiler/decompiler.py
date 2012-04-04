@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from subprocess import Popen, PIPE, STDOUT                                                                                                                                                       
+from subprocess import Popen, PIPE, STDOUT
+
 import shutil
 import tempfile, os
 

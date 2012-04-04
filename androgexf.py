@@ -22,9 +22,6 @@ from xml.sax.saxutils import escape, unescape
 import sys, hashlib, os
 from optparse import OptionParser
 
-PATH_INSTALL = "./"																																																			   
-sys.path.append(PATH_INSTALL + "./")
-
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis, ganalysis
 from androguard.core import androconf

@@ -38,7 +38,7 @@ def analyze_app(filename, ri, a, analysis, method) :
     print filename, ri.with_apk( a, analysis, method )
 
 def analyze_dex(filename, ri, d, analysis, method) :
-    print filename, ri.with_dex( d, analysis, method )
+    print filename, ri.with_dex( d, analysis_method=method )
 
 
 def main(options, arguments) :
