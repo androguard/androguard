@@ -84,7 +84,7 @@ PERMISSIONS_RISK = {
     "CALL_PRIVILEGED"           : [ MONEY_RISK ],
 
 
-    "INTERNET"                  : [ INTERNET_RISK ],
+    "INTERNET"                  : [ MONEY_RISK, INTERNET_RISK ],
     
     "READ_PHONE_STATE"          : [ PRIVACY_RISK ],
     "READ_CONTACTS"             : [ PRIVACY_RISK ],
