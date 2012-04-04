@@ -115,6 +115,9 @@ class APK :
 
                 self.validAPK = True
 
+    def get_AndroidManifest(self) :
+        return self.xml["AndroidManifest.xml"]
+
     def is_valid_APK(self) :
         return self.validAPK
 
