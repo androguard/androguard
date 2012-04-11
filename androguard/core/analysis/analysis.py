@@ -1491,6 +1491,18 @@ def show_DynCode(dx) :
         if m.get_info() == "Ldalvik/system/DexClassLoader;" :
            show_Path( m.get_paths() ) 
 
+def is_dyn_code(dx) :
+    for m, _ in dx.tainted_packages.get_packages() :
+        if m.get_info() == "Ldalvik/system/DexClassLoader;" :
+            return True
+    return False
+
+def is_reflection_code(dx) :
+    for m, _ in dx.tainted_packages.get_packages() :
+        if m.get_info() == "Ljava/lang/reflect/Method;" :
+            return True
+    return False
+
 class TaintedPackages :
     def __init__(self, _vm) :
         self.__vm = _vm
@@ -2014,6 +2026,7 @@ SIGNATURE_L0_5_L1 = "L0_5:L1"
 SIGNATURE_L0_0_L2 = "L0_0:L2"
 SIGNATURE_L0_0_L3 = "L0_0:L3"
 SIGNATURE_HEX = "hex"
+SIGNATURE_SEQUENCE_BB = "sequencebb"
 
 SIGNATURES = {
                 SIGNATURE_L0_0 : { "type" : 0 },
@@ -2023,6 +2036,7 @@ SIGNATURES = {
                 SIGNATURE_L0_4 : { "type" : 2, "arguments" : ["Landroid", "Ljava"] },
                 SIGNATURE_L0_5 : { "type" : 3, "arguments" : ["Landroid"] },
                 SIGNATURE_L0_6 : { "type" : 3, "arguments" : ["Ljava"] },
+                SIGNATURE_SEQUENCE_BB : {},
                 SIGNATURE_HEX : {},
             }
 

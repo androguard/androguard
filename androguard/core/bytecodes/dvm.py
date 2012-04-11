@@ -867,7 +867,7 @@ class AnnotationSetRefItem :
         self.annotations_off = SV( '=L', buff.read( 4 ) )
 
     def show(self) :
-        print "ANNOTATION_SET_REF_ITEM annotations_off=0x%x" % self.annotation_offs.get_value()
+        print "ANNOTATION_SET_REF_ITEM annotations_off=0x%x" % self.annotations_off.get_value()
 
     def get_obj(self) :
         return []

@@ -709,7 +709,7 @@ class RiskIndicator :
         input_val['input_Internet_Risk'] = risks[ INTERNET_RISK ]
         input_val['input_Dynamic_Risk'] = risks[ DYNAMIC_RISK ]
 
-        print input_val,
+        #print input_val,
         
         SYSTEM.calculate(input=input_val, output = output_values)
 
