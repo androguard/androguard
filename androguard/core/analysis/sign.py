@@ -41,6 +41,9 @@ class Sign :
             buff += self.levels[ i ]
         return buff
 
+    def get_list(self) :
+        return self.levels[ "sequencebb" ]
+
 class Signature :
     def __init__(self, tainted_information) :
         self.__tainted = tainted_information
@@ -72,6 +75,28 @@ class Signature :
 
         self.classes_names = None
         self._init_caches()
+
+    def _get_sequence_bb(self, analysis_method) :
+        l = []
+
+        buff = ""
+        nb = 0
+        for i in analysis_method.basic_blocks.get() :
+            if nb == 0 :
+                buff = ""
+
+            for ins in i.get_ins() :
+                buff += ins.get_name()
+                nb += 1
+
+            if nb > 5 :
+                l.append( buff )
+                nb = 0
+        
+        if nb != 0 :
+            l.append( buff )
+
+        return l
 
     def _get_hex(self, analysis_method) :
         code = analysis_method.get_method().get_code()
@@ -329,6 +354,10 @@ class Signature :
 
             elif i == "hex" :
                 value = self._get_hex( analysis_method )
+                s.add( i, value )
+
+            elif i == "sequencebb" :
+                value = self._get_sequence_bb( analysis_method )
                 s.add( i, value )
 
             else :
