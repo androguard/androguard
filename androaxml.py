@@ -32,13 +32,14 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2]
 
 def main(options, arguments) :
-    if options.input != None and options.output != None :
+    if options.input != None :
         buff = ""
 
         ret_type = androconf.is_android( options.input )
         if ret_type == "APK" :
             a = apk.APK( options.input )
             buff = a.xml[ "AndroidManifest.xml" ].toprettyxml()
+            a.get_activities()
         elif ".xml" in options.input :
             ap = apk.AXMLPrinter( open(options.input, "rb").read() )
             buff = minidom.parseString( ap.getBuff() ).toprettyxml()
@@ -46,9 +47,13 @@ def main(options, arguments) :
             print "Unknown file type"
             return
 
-        fd = codecs.open(options.output, "w", "utf-8")
-        fd.write( buff )
-        fd.close()
+        if options.output != None :
+            fd = codecs.open(options.output, "w", "utf-8")
+            fd.write( buff )
+            fd.close()
+        else :
+            print buff
+
     elif options.version != None :
         print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
 

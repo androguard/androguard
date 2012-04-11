@@ -188,15 +188,27 @@ class APK :
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = ms.buffer( buffer )
+                self.files[ i ] = self.patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
         else :
             m = magic.Magic()
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = m.from_buffer( buffer )
+                self.files[ i ] = self.patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
 
         return self.files 
+
+    def patch_magic(self, buffer, orig) :
+        if ("Zip" in orig) or ("DBase" in orig) :
+            val = androconf.is_android_raw( buffer )
+            if val == "APK" :
+                return "Android application package file"
+            elif val == "AXML" :
+                return "Android's binary XML"
+
+        return orig
 
     def get_files_crc32(self) :
         if self.files_crc32 == {} :
@@ -243,19 +255,23 @@ class APK :
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
                 value = item.getAttribute(attribute)
-               
-                if len(value) > 0 :
-                    if value[0] == "." : 
-                        value = self.package + value
-                    else :
-                        v_dot = value.find(".")
-                        if v_dot == 0 :
-                            value = self.package + "." + value
-                        elif v_dot == -1 :
-                            value = self.package + "." + value
+                value = self.format_value( value )
+
 
                 l.append( str( value ) )
         return l
+   
+    def format_value(self, value) :
+        if len(value) > 0 :
+            if value[0] == "." : 
+                value = self.package + value
+            else :
+                v_dot = value.find(".")
+                if v_dot == 0 :
+                    value = self.package + "." + value
+                elif v_dot == -1 :
+                    value = self.package + "." + value
+        return value
 
     def get_element(self, tag_name, attribute) :
         """
@@ -271,6 +287,29 @@ class APK :
 
                 if len(value) > 0 :
                     return value
+        return None
+
+    def get_main_activity(self) :
+        """
+            Return the name of the main activity
+        """
+        for i in self.xml :
+            x = set()
+            y = set()
+            for item in self.xml[i].getElementsByTagName("activity") :
+                for sitem in item.getElementsByTagName( "action" ) :
+                    val = sitem.getAttribute( "android:name" )
+                    if val == "android.intent.action.MAIN" :
+                        x.add( item.getAttribute( "android:name" ) )
+                   
+                for sitem in item.getElementsByTagName( "category" ) :
+                    val = sitem.getAttribute( "android:name" )
+                    if val == "android.intent.category.LAUNCHER" :
+                        y.add( item.getAttribute( "android:name" ) )
+                
+        z = x.intersection(y)
+        if len(z) > 0 :
+            return self.format_value(z.pop())
         return None
 
     def get_activities(self) :
@@ -344,21 +383,22 @@ class APK :
     def show(self) :
         self.get_files_types()
         
-        print "FILES : "
+        print "FILES: "
         for i in self.get_files() :
             try :
                 print "\t", i, self.files[i], "%x" % self.files_crc32[i]
             except KeyError :
                 print "\t", i, "%x" % self.files_crc32[i]
 
-        print "PERMISSIONS : "
+        print "PERMISSIONS: "
         details_permissions = self.get_details_permissions()
         for i in details_permissions :
             print "\t", i, details_permissions[i]
-        print "ACTIVITIES : ", self.get_activities()
-        print "SERVICES : ", self.get_services()
-        print "RECEIVERS : ", self.get_receivers()
-        print "PROVIDERS : ", self.get_providers()
+        print "MAIN ACTIVITY: ", self.get_main_activity()
+        print "ACTIVITIES: ", self.get_activities()
+        print "SERVICES: ", self.get_services()
+        print "RECEIVERS: ", self.get_receivers()
+        print "PROVIDERS: ", self.get_providers()
 
 ######################################################## AXML FORMAT ########################################################
 # Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
@@ -629,6 +669,20 @@ class AXMLParser :
         uri = self.m_prefixuriL[ pos ][1]
         return self.sb.getRaw( uri )
 
+    def getXMLNS(self) :
+        buff = ""
+        
+        i = 0
+        while 1 :
+            try :
+                buff += "xmlns:%s=\"%s\"\n" % ( self.getNamespacePrefix( i ), self.getNamespaceUri( i ) )
+            except IndexError:
+                break
+            
+            i += 1
+
+        return buff
+
     def getNamespaceCount(self, pos) :
         pass
 
@@ -731,7 +785,7 @@ class AXMLPrinter :
 
                 # FIXME : use namespace
                 if self.xmlns == False :
-                    self.buff += "xmlns:%s=\"%s\"\n" % ( self.axml.getNamespacePrefix( 0 ), self.axml.getNamespaceUri( 0 ) )
+                    self.buff += self.axml.getXMLNS()
                     self.xmlns = True
 
                 for i in range(0, self.axml.getAttributeCount()) :

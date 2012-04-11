@@ -23,15 +23,13 @@ ANDROGUARD_VERSION = "1.0"
 def get_ascii_string(s) :
     try :
         return s.decode("ascii")
-    except UnicodeDecodeError, e:
-#        print s,
+    except UnicodeDecodeError :
         d = ""
         for i in s :
             if ord(i) < 128 :
                 d += i
             else :
                 d += "%x" % ord(i)
-#        print d
         return d
 
 CONF = {
@@ -42,12 +40,12 @@ CONF = {
     "PATH_JAD" : "./decompiler/jad/",
     "BIN_JAD" : "jad",
     "PRETTY_SHOW" : 1,
-   
+  
+    # Full python or mix python/c++ (native)
     #"ENGINE" : "automatic",
     "ENGINE" : "python",
 
     "RECODE_ASCII_STRING" : False,
-    #"RECODE_ASCII_STRING" : True,
     "RECODE_ASCII_STRING_METH" : get_ascii_string,
     
     "DEOBFUSCATED_STRING" : True,
@@ -115,12 +113,7 @@ def is_android(filename) :
 
     f_bytes = fd.read(7)
 
-    if f_bytes[0:2] == "PK" :
-        val = "APK"
-    elif f_bytes[0:3] == "dex" :
-        val = "DEX"
-    elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
-        val = "ELF"
+    val = is_android_raw( f_bytes )
 
     fd.close()
     return val
@@ -135,6 +128,8 @@ def is_android_raw(raw) :
         val = "DEX"
     elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
         val = "ELF"
+    elif f_bytes[0:4] == "\x03\x00\x08\x00" :
+        val = "AXML"
 
     return val
 
