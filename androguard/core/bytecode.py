@@ -25,6 +25,9 @@ def Exit( msg ):
     warning("Error : " + msg)
     raise("oops")
 
+def Warning( msg ):
+    warning(msg)
+
 # Print arg into a correct format
 def _Print(name, arg) :
     buff = name + " "

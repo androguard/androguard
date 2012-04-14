@@ -39,7 +39,7 @@ options = [option_0, option_1, option_2, option_3, option_4]
 
 def display(ret, debug) :
     print "---->", ret[0]
-
+    sys.stdout.flush()
 
 def main(options, arguments) :
     if options.database == None or options.config == None :
@@ -51,6 +51,7 @@ def main(options, arguments) :
         ret_type = androconf.is_android( options.input ) 
         
         print os.path.basename(options.input), ":",
+        sys.stdout.flush()
         if ret_type == "APK" :
             try :
                 a = apk.APK( options.input )
@@ -75,6 +76,7 @@ def main(options, arguments) :
                     ret_type = androconf.is_android( real_filename )
                     if ret_type == "APK"  :
                         print os.path.basename( real_filename ), ":",
+                        sys.stdout.flush()
                         try :
                             a = apk.APK( real_filename )
                             if a.is_valid_APK() :
@@ -86,6 +88,7 @@ def main(options, arguments) :
                     elif ret_type == "DEX" :
                         try :
                             print os.path.basename( real_filename ), ":",
+                            sys.stdout.flush()
                             display( s.check_dex( open(real_filename, "rb").read() ), options.verbose )
                         except Exception, e : 
                             print "ERROR", e
