@@ -400,6 +400,24 @@ class APK :
         print "RECEIVERS: ", self.get_receivers()
         print "PROVIDERS: ", self.get_providers()
 
+    def get_certificate(self, filename) :
+        """
+            Return a certificate object by giving the name in the apk file
+        """
+        import chilkat
+
+        cert = chilkat.CkCert()
+        f = self.get_file( filename )
+        
+        success = cert.LoadFromBinary(f, len(f))
+
+        return success, cert
+
+def show_Certificate(cert) :
+    print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
+    print "Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(), cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
+
+
 ######################################################## AXML FORMAT ########################################################
 # Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 class StringBlock :

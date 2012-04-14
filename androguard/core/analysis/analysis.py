@@ -1486,21 +1486,53 @@ def show_DynCode(dx) :
         Show where dynamic code is used
         @param dx : the analysis virtual machine
     """
+    paths = dx.tainted_packages.search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
+    show_Path( paths )
 
-    for m, _ in dx.tainted_packages.get_packages() :
-        if m.get_info() == "Ldalvik/system/DexClassLoader;" :
-           show_Path( m.get_paths() ) 
+def show_NativeMethods(dx) :
+    """
+        Show the native methods
+        @param dx : the analysis virtual machine
+    """
+    d = dx.get_vm()
+    for i in d.get_methods() :
+        if i.get_access_flags() & 0x100 :
+            print i.get_class_name(), i.get_name(), i.get_descriptor()
 
 def is_dyn_code(dx) :
-    for m, _ in dx.tainted_packages.get_packages() :
-        if m.get_info() == "Ldalvik/system/DexClassLoader;" :
-            return True
+    """
+        Dynamic code loading is present ?
+        @param dx : the analysis virtual machine
+        @rtype : boolean
+    """
+    paths = dx.tainted_packages.search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
+    if paths != [] :
+        return True
+
     return False
 
 def is_reflection_code(dx) :
-    for m, _ in dx.tainted_packages.get_packages() :
-        if m.get_info() == "Ljava/lang/reflect/Method;" :
-            return True
+    """
+        Reflection is present ?
+        @param dx : the analysis virtual machine
+        @rtype : boolean
+    """
+    paths = dx.tainted_packages.search_methods( "Ljava/lang/reflect/Method;", ".", ".")
+    if paths != [] :
+        return True
+
+    return False
+
+def is_native_code(dx) :
+    """
+        Native code is present ?
+        @param dx : the analysis virtual machine
+        @rtype : boolean
+    """
+    paths = dx.tainted_packages.search_methods( "Ljava/lang/System;", "loadLibrary", ".")
+    if paths != [] :
+        return True
+
     return False
 
 class TaintedPackages :

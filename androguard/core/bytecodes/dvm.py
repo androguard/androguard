@@ -79,25 +79,25 @@ TYPE_MAP_ITEM = {
                         0x2006 : "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                      }
 
-ACCESS_FLAGS_METHODS = {
-    0x1    : 'public',
-    0x2    : 'private',
-    0x4    : 'protected',
-    0x8    : 'static',
-    0x10   : 'final',
-    0x20   : 'synchronized',
-    0x40   : 'bridge',
-    0x80   : 'varargs',
-    0x100  : 'native',
-    0x200  : 'interface',
-    0x400  : 'abstract',
-    0x800  : 'strict',
-    0x1000 : 'synthetic',
-    0x4000 : 'enum',
-    0x8000 : 'unused',
-    0x10000: 'constructors',
-    0x20000: 'synchronized'
-}
+ACCESS_FLAGS_METHODS = [ 
+    (0x1    , 'public'),
+    (0x2    , 'private'),
+    (0x4    , 'protected'),
+    (0x8    , 'static'),
+    (0x10   , 'final'),
+    (0x20   , 'synchronized'),
+    (0x40   , 'bridge'),
+    (0x80   , 'varargs'),
+    (0x100  , 'native'),
+    (0x200  , 'interface'),
+    (0x400  , 'abstract'),
+    (0x800  , 'strict'),
+    (0x1000 , 'synthetic'),
+    (0x4000 , 'enum'),
+    (0x8000 , 'unused'),
+    (0x10000, 'constructors'),
+    (0x20000, 'synchronized'),
+]
 
 TYPE_DESCRIPTOR = {
     'V': 'void',
@@ -1837,6 +1837,8 @@ class EncodedMethod :
         self._class_name = None
 
         self._code = None
+        
+        self.access_flags_string = None
 
     def reload(self) :
         v = self.__CM.get_method( self.__method_idx )
@@ -1868,11 +1870,22 @@ class EncodedMethod :
             print "local registers: v%d...v%d" % (0, nb-1)
         print "return:%s" % get_type(ret[1])
 
+
+    def build_access_flags(self) :
+        if self.access_flags_string == None :
+            self.access_flags_string = ""
+            for i in ACCESS_FLAGS_METHODS :
+                if (i[0] & self.access_flags) == i[0] :
+                    self.access_flags_string += i[1] + " "
+
+            if self.access_flags_string == "" :
+                self.access_flags_string = "0x%x" % self.access_flags
+            else :
+                self.access_flags_string = self.access_flags_string[:-1]
+
     def show_info(self) :
-        try :
-            print "\tMETHOD access_flags=%s (%s %s,%s)" % (ACCESS_FLAGS_METHODS[self.access_flags], self._class_name, self._name, self._proto)
-        except KeyError :
-            print "\tMETHOD access_flags=%d (%s %s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        self.build_access_flags()
+        print "\tMETHOD access_flags=%s (%s %s,%s)" % (self.access_flags_string, self._class_name, self._name, self._proto)
 
     def show(self) :
         self.show_info()
@@ -2984,7 +2997,7 @@ class MapItem :
         general_format = self.format.get_value()
         buff.set_idx( general_format.offset )
 
-        #print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
+#        print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
 
         if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]
@@ -3216,14 +3229,16 @@ class ClassManager :
                 return self.recode_ascii_string_meth( self.__strings_off[off].get() )
             return self.__strings_off[off].get()
         except KeyError :
-            bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
-    
+            bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
+            return ""
+
     def get_raw_string(self, idx) :
         off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
         try :
             return self.__strings_off[off].get()
         except KeyError :
-            bytecode.Exit( "unknown string item @ 0x%x(%d)" % (off,idx) )
+            bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
+            return ""
 
     def get_type_list(self, off) :
         if off == 0 :
@@ -3346,13 +3361,17 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.CM.set_decompiler( decompiler )
 
         self.__header = HeaderItem( 0, self, ClassManager() )
-        self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
 
-        self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
-        self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
-        self.fields = self.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
-        self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
-        self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
+        if self.__header.get_value().map_off == 0 :
+            bytecode.Warning( "no map list ..." )
+        else :
+            self.map_list = MapList( self.CM, self.__header.get_value().map_off, self )
+
+            self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
+            self.methods = self.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
+            self.fields = self.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
+            self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
+            self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
 
         self.classes_names = None
         self.__cache_methods = None
