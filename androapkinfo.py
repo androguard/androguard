@@ -28,7 +28,7 @@ from androguard.core.bytecodes import apk
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information', 'action' : 'count' }
+option_2 = { 'name' : ('-v', '--version'), 'help' : 'version', 'action' : 'count' }
 
 options = [option_0, option_1, option_2]
 
