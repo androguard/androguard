@@ -41,7 +41,9 @@ class DecompilerDex2Jad :
         self.classes_failed = []
         
         pathtmp = os.getcwd() + "/tmp/"
-        
+        if not os.path.exists(pathtmp) :
+            os.makedirs( pathtmp )
+
         fd, fdname = tempfile.mkstemp( dir=pathtmp )
         fd = os.fdopen(fd, "w+b")
         fd.write( vm.get_buff() )
