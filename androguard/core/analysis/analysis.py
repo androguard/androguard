@@ -1251,9 +1251,9 @@ class TaintedVariables :
     def get_fields_by_bb(self, bb) :
         l = []
         for i in self.__vars[ TAINTED_FIELD ] :
-            for j in self.__vars[ TAINTED_FIELD ][i].gets() :
+            for j in self.__vars[ TAINTED_FIELD ][i].get_paths() :
                 if j.get_bb() == bb :
-                    l.append( (i.get_name(), j.get_access_flag()) )
+                    l.append( (i, j.get_access_flag()) )
         return l
 
     def add(self, var, _type, _method=None) :
