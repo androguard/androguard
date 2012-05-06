@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging, types, random, string
+import os, logging, types, random, string
 
 ANDROGUARD_VERSION = "1.1"
 
@@ -165,4 +165,12 @@ def save_to_disk(buff, output) :
     fd = open(output, "w")
     fd.write(buff)
     fd.close()
+
+def rrmdir( directory ):
+    for root, dirs, files in os.walk(directory, topdown=False):
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    os.rmdir( directory )
 
