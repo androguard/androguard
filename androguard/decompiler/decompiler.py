@@ -18,22 +18,15 @@
 
 from subprocess import Popen, PIPE, STDOUT
 
-import shutil
 import tempfile, os
+
+from androguard.core.androconf import rrmdir
 
 from pygments.filter import Filter
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter, TerminalFormatter
 from pygments.token import Token, Text, STANDARD_TYPES
-
-def rrmdir( directory ):
-    for root, dirs, files in os.walk(directory, topdown=False):
-        for name in files:
-            os.remove(os.path.join(root, name))
-        for name in dirs:
-            os.rmdir(os.path.join(root, name))
-    os.rmdir( directory )
 
 class DecompilerDex2Jad :
     def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad") :
@@ -113,6 +106,8 @@ class DecompilerDed :
         self.classes_failed = []
 
         pathtmp = os.getcwd() + "/tmp/"
+        if not os.path.exists(pathtmp) :
+            os.makedirs( pathtmp )
 
         fd, fdname = tempfile.mkstemp( dir=pathtmp )
         fd = os.fdopen(fd, "w+b")

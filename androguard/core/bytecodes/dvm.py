@@ -1857,6 +1857,12 @@ class EncodedMethod :
         self.__CM.set_hook_method_class_name( self.__method_idx, value )
         self.reload()
 
+    def get_locals(self) :
+        ret = self._proto.split(')')
+        params = ret[0][1:].split()
+
+        return self._code.registers_size.get_value()-len(params) - 1
+
     def each_params_by_register(self, nb, proto) :
         ret = proto.split(')')
         params = ret[0][1:].split()
