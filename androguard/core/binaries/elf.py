@@ -35,28 +35,73 @@ def disasm_at_addr(in_str, ad_to_dis, symbol_pool) :
     for i in all_bloc :
         print i.label
         for j in i.lines :
-            print "\t", j
+            print "\t", type(j), j #.getname(), j.args2str()
         print
+
+class Function :
+    def __init__(self, cm, name, info) :
+        self.cm = cm
+        self.name = name
+        self.info = info
+
+    def show(self) :
+        print self.name, hex(self.info.value)
+
+        self.cm.disasm_at_addr( self.info.value )
+        #self.cm.disasm_at_addr( self.info.value )
+
+class ClassManager :
+    def __init__(self, in_str, symbol_pool) :
+        self.in_str = in_str
+        self.symbol_pool = symbol_pool
+
+    def disasm_at_addr(self, ad_to_dis) :
+        disasm_at_addr( self.in_str, ad_to_dis, self.symbol_pool )
 
 class ELF :
     def __init__(self, buff) :
-        self.e = elf_init.ELF( buff )
+        self.E = elf_init.ELF( buff )
 
-        in_str = bin_stream.bin_stream(self.e.virt)
+        self.in_str = bin_stream.bin_stream(self.E.virt)
+        self.symbol_pool = None
+        self.functions = []
 
-        dll_dyn_funcs = get_import_address_elf(self.e)
+        self.create_symbol_pool()
 
-        symbol_pool = asmbloc.asm_symbol_pool()
+        self.CM = ClassManager( self.in_str, self.symbol_pool )
+        
+        self.create_functions()
+
+#        for k, v in self.e.sh.symtab.symbols.items():
+#            if v.size != 0 :
+#                print k, type(v), hex(v.value), v.size, v.other, v.info
+#                if k == "rootshell" : 
+#                    disasm_at_addr( in_str, v.value, symbol_pool )
+
+    def create_symbol_pool(self) :
+        dll_dyn_funcs = get_import_address_elf(self.E)
+        self.symbol_pool = asmbloc.asm_symbol_pool()
         for (n,f), ads in dll_dyn_funcs.items() :
             for ad in ads :
-                l  = symbol_pool.getby_name_create("%s_%s"%(n, f))
+                l  = self.symbol_pool.getby_name_create("%s_%s"%(n, f))
                 l.offset = ad
-                symbol_pool.s_offset[l.offset] = l
+                self.symbol_pool.s_offset[l.offset] = l
 
-        print symbol_pool
-                #print f, hex(ad)
+    def show(self) :
+        for i in self.get_functions():
+            i.show()
+
+    def get_functions(self) :
+        return self.functions
+
+    def create_functions(self) :
+        try :
+            for k, v in self.E.sh.symtab.symbols.items():
+                if v.size != 0 :
+                    self.functions.append( Function(self.CM, k, v) )
+        except AttributeError :
+            pass
         
-        for k, v in self.e.sh.symtab.symbols.items():
-            print k, v, type(v), hex(v.value)
-            if k == "rootshell" :
-                disasm_at_addr( in_str, v.value, symbol_pool )
+        for k, v in self.E.sh.dynsym.symbols.items() :
+            if v.size != 0 :
+                self.functions.append( Function(self.CM, k, v) )

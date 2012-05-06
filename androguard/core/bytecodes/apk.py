@@ -57,6 +57,36 @@ class ChilkatZip :
             self.files.append( filename.getString() )
             e = e.NextEntry()
 
+    def delete(self, patterns) :
+        import re
+        el = []
+
+        filename = chilkat.CkString()
+        e = self.zip.FirstEntry()
+        while e != None :
+            e.get_FileName(filename)
+          
+            if re.match(patterns, filename.getString()) != None :
+                el.append( e )
+            e = e.NextEntry()
+
+        for i in el :
+            self.zip.DeleteEntry( i )
+
+    def remplace_file(self, filename, buff) :
+        entry = self.zip.GetEntryByName(filename)
+        if entry != None :
+
+            obj = chilkat.CkByteData()
+            obj.append( buff, len(buff) )
+            return entry.ReplaceData( obj )
+        return False
+
+    def write(self) :
+        obj = chilkat.CkByteData()
+        self.zip.WriteToMemory( obj )
+        return obj.getBytes()
+
     def namelist(self) :
         return self.files
 

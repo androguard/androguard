@@ -30,6 +30,8 @@ from androguard.core.bytecode import *
 from androguard.core.bytecodes.jvm import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
+from androguard.core.binaries.elf import *
+
 from androguard.core.analysis.analysis import *
 from androguard.core.analysis.ganalysis import *
 from androguard.core.analysis.risk import *
@@ -179,6 +181,22 @@ def AAnalyzeDex(filename, raw=False, decompiler="dad") :
         d.set_decompiler( DecompilerDAD( d, dx ) )
    
     return d, dx
+
+def AnalyzeElf(filename, raw=False) :
+    e = None
+    if raw == False:
+        e = ELF( open(filename, "rb").read() )
+    else:
+        e = ELF( raw )
+
+    ExportElfToPython( e )
+
+    return e
+
+def ExportElfToPython(e) :
+    for function in e.get_functions():
+        name = "FUNCTION_" + function.name
+        setattr( e, name, function )
 
 def sort_length_method(vm) :
     l = []
