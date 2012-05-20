@@ -1499,6 +1499,14 @@ def show_NativeMethods(dx) :
         if i.get_access_flags() & 0x100 :
             print i.get_class_name(), i.get_name(), i.get_descriptor()
 
+def show_ReflectionCode(dx) :
+    """
+        Show the reflection code 
+        @param dx : the analysis virtual machine
+    """
+    paths = dx.tainted_packages.search_methods( "Ljava/lang/reflect/Method;", ".", ".")
+    show_Path( paths )
+
 def is_dyn_code(dx) :
     """
         Dynamic code loading is present ?
@@ -1825,6 +1833,9 @@ class BasicBlocks :
             @rtype : a list of basic blocks
         """
         return self.bb
+
+    def get_basic_block_pos(self, idx) :
+        return self.bb[idx]
 
 class ExceptionAnalysis :
     def __init__(self, exception, bb) :
