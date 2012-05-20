@@ -24,13 +24,22 @@ from optparse import OptionParser
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
-
+from androguard.core.bytecodes import dvm
+from androguard.core.analysis import analysis 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
 option_2 = { 'name' : ('-v', '--version'), 'help' : 'version', 'action' : 'count' }
 
 options = [option_0, option_1, option_2]
+
+def display_dvm_info(apk) :
+    vm = dvm.DalvikVMFormat( apk.get_dex() )
+    vmx = analysis.VMAnalysis( vm )
+
+    print "Native code:", analysis.is_native_code(vmx)
+    print "Dynamic code:", analysis.is_dyn_code(vmx)
+    print "Reflection code:", analysis.is_reflection_code(vmx)
 
 def main(options, arguments) :
     if options.input != None :
@@ -42,6 +51,7 @@ def main(options, arguments) :
                 a = apk.APK( options.input )
                 if a.is_valid_APK() :
                     a.show()
+                    display_dvm_info( a )
                 else :
                     print "INVALID"
             except Exception, e :
@@ -63,6 +73,7 @@ def main(options, arguments) :
                             a = apk.APK( real_filename )
                             if a.is_valid_APK() :
                                 a.show()
+                                display_dvm_info( a )
                             else :
                                 print "INVALID APK"
                         except Exception, e :
