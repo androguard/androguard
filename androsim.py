@@ -35,14 +35,16 @@ option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 
 option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
 option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
 option_4 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_5 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
-option_6 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
-option_7 = { 'name' : ('-x', '--xstrings'), 'help' : 'display similarities of strings', 'action' : 'count'  }
-option_8 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_5 = { 'name' : ('-n', '--new'), 'help' : 'don\'t calculate the similarity score with new methods', 'action' : 'count' }
+option_6 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
+option_7 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
+option_8 = { 'name' : ('-x', '--xstrings'), 'help' : 'display similarities of strings', 'action' : 'count'  }
+option_9 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_10 = { 'name' : ('-l', '--library'), 'help' : 'version of the API', 'nargs' : 1 }
 
-options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8]
+options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
-def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False) :
+def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, new=True, library=True) :
     ret_type = androconf.is_android( file_input )
     if ret_type == "APK" :
         a = apk.APK( file_input )
@@ -55,14 +57,15 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False) :
     print d1, dx1, d2, dx2
     sys.stdout.flush()
 
-    el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor )
+    el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor, libnative=library )
     el.show()
-    print "\t--> methods: %f%% of similarities" % el.get_similarity_value()
+    print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
     
     if view_strings :
-        els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1), ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor )
+        els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1),
+            ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor, libnative=library )
         els.show()
-        print "\t--> strings: %f%% of similarities" % els.get_similarity_value()
+        print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
 
     if options.display :
         print "SIMILAR methods:"
@@ -90,7 +93,7 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False) :
         for i in skipped_methods :
             el.show_element( i )
 
-def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False) :
+def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True) :
     for root, dirs, files in os.walk( directory, followlinks=True ) :
         if files != [] :
             for f in files :
@@ -100,7 +103,7 @@ def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False
                 real_filename += f
 
                 print "filename: %s ..." % real_filename
-                check_one_file(a, d1, dx1, FS, threshold, real_filename, view_strings)
+                check_one_file(a, d1, dx1, FS, threshold, real_filename, view_strings, new, library)
 
 ############################################################
 def main(options, arguments) :
@@ -123,10 +126,20 @@ def main(options, arguments) :
         FS[elsim.FILTER_SKIPPED_METH].set_regexp( options.exclude )
         FS[elsim.FILTER_SKIPPED_METH].set_size( options.size )
     
+        new = True
+        if options.new != None :
+          new = False
+        
+        library = True
+        if options.library != None :
+            library = options.library
+            if options.library == "python" :
+                library = False
+
         if os.path.isdir( options.input[1] ) == False :
-            check_one_file( a, d1, dx1, FS, threshold, options.input[1], options.xstrings )
+            check_one_file( a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
         else :
-            check_one_directory(a, d1, dx1, FS, threshold, options.input[1], options.xstrings )
+            check_one_directory(a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
 
     elif options.version != None :
         print "Androsim version %s" % androconf.ANDROGUARD_VERSION
