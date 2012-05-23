@@ -20,7 +20,6 @@ from androguard.core import androconf
 from androguard.core.bytecodes import jvm
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
-from androguard.core.binaries import elf
 from androguard.core.analysis import analysis
 
 class BC :
@@ -120,6 +119,7 @@ class Androguard:
                 elif ret_type == "DEX" : 
                     bc = dvm.DalvikVMFormat( open(i, "rb").read() )
                 elif ret_type == "ELF" :
+                    from androguard.core.binaries import elf
                     bc = elf.ELF( open(i, "rb").read() )
                 else :
                     raise( "Unknown bytecode" )
