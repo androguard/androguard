@@ -30,7 +30,6 @@ from androguard.core.bytecode import *
 from androguard.core.bytecodes.jvm import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
-from androguard.core.binaries.elf import *
 
 from androguard.core.analysis.analysis import *
 from androguard.core.analysis.ganalysis import *
@@ -183,6 +182,7 @@ def AAnalyzeDex(filename, raw=False, decompiler="dad") :
     return d, dx
 
 def AnalyzeElf(filename, raw=False) :
+    from androguard.core.binaries.elf import *
     e = None
     if raw == False:
         e = ELF( open(filename, "rb").read() )
