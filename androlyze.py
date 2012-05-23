@@ -182,7 +182,7 @@ def AAnalyzeDex(filename, raw=False, decompiler="dad") :
     return d, dx
 
 def AnalyzeElf(filename, raw=False) :
-    from androguard.core.binaries.elf import *
+    from androguard.core.binaries.elf import ELF 
     e = None
     if raw == False:
         e = ELF( open(filename, "rb").read() )
