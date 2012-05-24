@@ -27,18 +27,23 @@ from struct import pack, unpack
 from xml.dom import minidom
 from xml.sax.saxutils import escape
 from zlib import crc32
+import re
 
-try :
-    import chilkat
-    ZIPMODULE = 0
-    # UNLOCK : change it with your valid key !
+import sys
+if sys.hexversion < 0x2070000 :
     try :
-        CHILKAT_KEY = open("key.txt", "rb").read()
-    except Exception :
-        CHILKAT_KEY = "testme"
+        import chilkat
+        ZIPMODULE = 0 
+        # UNLOCK : change it with your valid key !
+        try :
+            CHILKAT_KEY = open("key.txt", "rb").read()
+        except Exception :
+            CHILKAT_KEY = "testme"
 
-except ImportError :
-    ZIPMODULE = 1
+    except ImportError :
+        ZIPMODULE = 1
+else :
+    ZIPMODULE = 1 
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip :
@@ -58,7 +63,6 @@ class ChilkatZip :
             e = e.NextEntry()
 
     def delete(self, patterns) :
-        import re
         el = []
 
         filename = chilkat.CkString()
@@ -100,7 +104,7 @@ class ChilkatZip :
 ######################################################## APK FORMAT ########################################################
 class APK :
     """APK manages apk file format"""
-    def __init__(self, filename, raw=False) :
+    def __init__(self, filename, raw=False, mode="r") :
         """
             @param filename : specify the path of the file, or raw data
             @param raw : specify (boolean) if the filename is a path or raw data
@@ -127,7 +131,7 @@ class APK :
         if ZIPMODULE == 0 :
             self.zip = ChilkatZip( self.__raw )
         else :
-            self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
+            self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
         
         # CHECK if there is only one embedded file
         #self._reload_apk()
@@ -310,7 +314,6 @@ class APK :
             @param tag_name : a string which specify the tag name
             @param attribute : a string which specify the attribute
         """
-        l = []
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
                 value = item.getAttribute(attribute)
@@ -442,6 +445,25 @@ class APK :
         success = cert.LoadFromBinary(f, len(f))
 
         return success, cert
+
+    def new_zip(self, filename, deleted_files=None, new_files={}) :
+        zout = zipfile.ZipFile (filename, 'w')
+
+        for item in self.zip.infolist() :
+           
+            if deleted_files != None :
+                if re.match(deleted_files, item.filename) == None :
+                    print "ADD ", item.filename
+
+                    if item.filename in new_files :
+                        zout.writestr(item, new_files[item.filename])
+                    else :
+                        buffer = self.zip.read(item.filename)
+                        zout.writestr(item, buffer)
+                else :
+                    print "DELETE ", item.filename
+
+        zout.close()
 
 def show_Certificate(cert) :
     print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
