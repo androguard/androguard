@@ -76,9 +76,10 @@ def main(options, arguments) :
                                 display_dvm_info( a )
                             else :
                                 print "INVALID APK"
+                                raise("ooos")
                         except Exception, e :
                             print "ERROR", e
-                            raise("oups")
+                            raise("ooos")
 
     elif options.version != None :
         print "Androapkinfo version %s" % androconf.ANDROGUARD_VERSION
