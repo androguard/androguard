@@ -54,9 +54,6 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
         
     dx2 = analysis.VMAnalysis( d2 )
 
-    print d1, dx1, d2, dx2
-    sys.stdout.flush()
-
     el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor, libnative=library )
     el.show()
     print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
