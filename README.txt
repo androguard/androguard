@@ -45,8 +45,6 @@ You must go to the website to see more example :
 
 2.1 --] API
 
-see the directory 'doc'
-
 2.1.1 --] Instructions
 
 http://code.google.com/p/androguard/wiki/Instructions
