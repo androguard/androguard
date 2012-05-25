@@ -193,6 +193,29 @@ def AnalyzeElf(filename, raw=False) :
 
     return e
 
+def AnalyzeJAR(filename, raw=False) :
+    """
+        Analyze an java jar application and setup all stuff for a more quickly analysis !
+
+        @param filename : the filename of the jar or a buffer which represents the application
+        @param raw : True is you would like to use a buffer
+        
+        @rtype : return the JAR, JVMFormat classes
+    """
+    androconf.debug("JAR ...")
+    a = JAR(filename, raw)
+
+    d = AnalyzeClasses( a.get_classes() )
+
+    return a, d
+
+def AnalyzeClasses( classes ) :
+  d = {}
+  for i in classes :
+    d[i[0]] = JVMFormat( i[1] )
+
+  return d
+
 def ExportElfToPython(e) :
     for function in e.get_functions():
         name = "FUNCTION_" + function.name
