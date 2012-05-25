@@ -34,13 +34,13 @@ from elsim.elsim_dalvik import ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
 option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
-option_4 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
+option_4 = { 'name' : ('-d', '--display'), 'help' : 'display all information about methods', 'action' : 'count' }
 option_5 = { 'name' : ('-n', '--new'), 'help' : 'don\'t calculate the similarity score with new methods', 'action' : 'count' }
 option_6 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
 option_7 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
 option_8 = { 'name' : ('-x', '--xstrings'), 'help' : 'display similarities of strings', 'action' : 'count'  }
 option_9 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-option_10 = { 'name' : ('-l', '--library'), 'help' : 'version of the API', 'nargs' : 1 }
+option_10 = { 'name' : ('-l', '--library'), 'help' : 'use python library (python) or specify the path of the shared library)', 'nargs' : 1 }
 
 options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
