@@ -453,16 +453,11 @@ class APK :
            
             if deleted_files != None :
                 if re.match(deleted_files, item.filename) == None :
-                    print "ADD ", item.filename
-
                     if item.filename in new_files :
                         zout.writestr(item, new_files[item.filename])
                     else :
                         buffer = self.zip.read(item.filename)
                         zout.writestr(item, buffer)
-                else :
-                    print "DELETE ", item.filename
-
         zout.close()
 
 def show_Certificate(cert) :
