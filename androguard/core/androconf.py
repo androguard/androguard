@@ -18,7 +18,7 @@
 
 import os, logging, types, random, string
 
-ANDROGUARD_VERSION = "1.2"
+ANDROGUARD_VERSION = "1.3"
 
 def get_ascii_string(s) :
     try :

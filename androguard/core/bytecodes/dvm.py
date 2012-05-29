@@ -27,6 +27,10 @@ from struct import pack, unpack, calcsize
 
 from androguard.core.androconf import CONF
 
+import logging
+log_andro = logging.getLogger("andro")
+#log_andro.setLevel(logging.DEBUG)
+
 ######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
 
@@ -163,7 +167,7 @@ class FillArrayData :
         return self.data
 
     def get_name(self) :
-        return "FILL-ARRAY-DATA"
+        return "fill-array-data-payload"
 
     def show_buff(self, pos) :
         buff = self.get_name() + " "
@@ -211,7 +215,7 @@ class SparseSwitch :
         return [ self.keys, self.targets ]
 
     def get_name(self) :
-        return "SPARSE-SWITCH"
+        return "sparse-switch-payload"
 
     def show_buff(self, pos) :
         buff = self.get_name() + " "
@@ -232,7 +236,9 @@ class PackedSwitch :
         self.targets = []
 
         idx = calcsize(PACKED_SWITCH[0])
-        for i in range(0, self.format.get_value().size) :
+
+        max_size = min(self.format.get_value().size, len(buff) - idx - 8)
+        for i in range(0, max_size) :
             self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
             idx += 4
 
@@ -250,7 +256,7 @@ class PackedSwitch :
         return self.targets
 
     def get_name(self) :
-        return "PACKED-SWITCH"
+        return "packed-switch-payload"
 
     def show_buff(self, pos) :
         buff = self.get_name() + " "
@@ -266,311 +272,6 @@ class PackedSwitch :
 
     def get_length(self) :
         return calcsize(PACKED_SWITCH[0]) + (self.format.get_value().size * calcsize('<L'))
-
-OPCODE_OP           = 0x01
-OPCODE_BB           = 0x01
-
-OPCODE_AA_OP        = 0x02
-OPCODE_CC_BB        = 0x02
-
-OPCODE_00           = 0x03
-OPCODE_B_A_OP       = 0x04
-
-OPCODE_CCCC         = 0x05
-OPCODE_BBBB         = 0x05
-OPCODE_AAAA         = 0x05
-
-OPCODE_SBBBB        = 0x06
-OPCODE_SAAAA        = 0x06
-OPCODE_SCCCC        = 0x06
-
-OPCODE_G_F_E_D      = 0x07
-OPCODE_SB_A_OP      = 0x08
-OPCODE_SCC_BB       = 0x0b
-
-OPCODE_SCC          = 0x0d
-OPCODE_SAA          = 0x0d
-
-OPCODE_SBBBB0000    = 0x0f
-
-OPCODE_SBBBBBBBB    = 0x10
-OPCODE_SAAAAAAAA    = 0x10
-
-OPCODE_00_OP        = 0x11
-OPCODE_BBBBBBBB     = 0x12
-
-DALVIK_OPCODES = {
-                        0x00 : [ "10x", "nop",  "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x01 : [ "12x", "move",                     "vA, vB", [ OPCODE_B_A_OP ], {} ] ,
-                        0x02 : [ "22x", "move/from16",              "vAA, vBBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], {} ],
-                        0x03 : [ "32x", "move/16",                   "vAAAA, vBBBB", [ OPCODE_00_OP, OPCODE_AAAA, OPCODE_BBBB ], {} ],
-                        0x04 : [ "12x", "move-wide",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x05 : [ "22x", "move-wide/from16",           "vAA, vBBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], {} ],
-                        0x06 : [ "32x", "move-wide/16",                 "vAAAA, vBBBB", [ OPCODE_00_OP, OPCODE_AAAA, OPCODE_BBBB ], {} ],
-                        0x07 : [ "12x", "move-object",                   "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x08 : [ "22x", "move-object/from16",       "vAA, vBBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], {} ],
-                        0x09 : [ "32x", "move-object/16",                "vAAAA, vBBBB", [ OPCODE_00_OP, OPCODE_AAAA, OPCODE_BBBB ], {} ],
-                        0x0a : [ "11x", "move-result",                   "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x0b : [ "11x", "move-result-wide",           "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x0c : [ "11x", "move-result-object",       "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x0d : [ "11x", "move-exception",                "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x0e : [ "10x", "return-void",              "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x0f : [ "11x", "return",                   "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x10 : [ "11x", "return-wide",                   "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x11 : [ "11x", "return-object",                  "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x12 : [ "11n", "const/4",                  "vA, #+B", [ OPCODE_SB_A_OP ], { 2 : "#+" } ],
-                        0x13 : [ "21s", "const/16",                 "vAA, #+BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "#+" } ],
-                        0x14 : [ "31i", "const",                             "vAA, #+BBBBBBBB", [ OPCODE_AA_OP, OPCODE_SBBBB, OPCODE_SBBBB ], { 2 : "#+", 3 : "#+" } ],
-                        0x15 : [ "21h", "const/high16",              "vAA, #+BBBB0000", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "#+" } ],
-                        0x16 : [ "21s", "const-wide/16",                  "vAA, #+BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "#+" } ],
-                        0x17 : [ "31i", "const-wide/32",              "vAA, #+BBBBBBBB", [ OPCODE_AA_OP, OPCODE_SBBBB, OPCODE_SBBBB ], { 2 : "#+", 3 : "#+" } ],
-                        0x18 : [ "51l", "const-wide",                     "vAA, #+BBBBBBBBBBBBBBBB", [ OPCODE_AA_OP, OPCODE_SBBBB, OPCODE_SBBBB, OPCODE_SBBBB, OPCODE_SBBBB ], { 2 : "#+", 3 : "#+", 4 : "#+", 5 : "#+" } ],
-                        0x19 : [ "21h", "const-wide/high16",          "vAA, #+BBBB000000000000", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "#+" } ],
-                        0x1a : [ "21c", "const-string",             "vAA, string@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "string@" } ],
-                        0x1b : [ "31c", "const-string/jumbo",           "vAA, string@BBBBBBBB", [ OPCODE_AA_OP, OPCODE_BBBBBBBB ], { 2 : "string@" } ],
-                        0x1c : [ "21c", "const-class",                   "vAA, type@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "type@" } ],
-                        0x1d : [ "11x", "monitor-enter",             "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x1e : [ "11x", "monitor-exit",              "vAA", [ OPCODE_AA_OP ], {} ],
-                        0x1f : [ "21c", "check-cast",                     "vAA, type@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "type@" } ],
-                        0x20 : [ "22c", "instance-of",                   "vA, vB, type@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "type@" } ],
-                        0x21 : [ "12x", "array-length",                 "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x22 : [ "21c", "new-instance",             "vAA, type@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "type@" } ],
-                        0x23 : [ "22c", "new-array",                "vA, vB, type@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "type@"} ], 
-                        0x24 : [ "35c", "filled-new-array",           "vD, vE, vF, vG, vA, type@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "type@" } ],
-                        0x25 : [ "3rc", "filled-new-array/range",     "vB{vCCCC .. vNNNN}, type@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "type@" } ],
-                        0x26 : [ "31t", "fill-array-data",              "vAA, +BBBBBBBB ", [ OPCODE_AA_OP, OPCODE_SBBBBBBBB ], { 2 : "+" }, FillArrayData ],
-                        0x27 : [ "11x", "throw",                    "vAA", [ OPCODE_B_A_OP ], {} ],
-                        0x28 : [ "10t", "goto",                           "+AA", [ OPCODE_OP, OPCODE_SAA ], { 1 : "+" } ],
-                        0x29 : [ "20t", "goto/16",                        "+AAAA", [ OPCODE_00_OP, OPCODE_SAAAA ], { 1 : "+" } ],
-                        0x2a : [ "30t", "goto/32",                        "+AAAAAAAA", [ OPCODE_00_OP, OPCODE_SAAAAAAAA ], { 1 : "+" } ],
-                        0x2b : [ "31t", "packed-switch",                  "vAA, +BBBBBBBB ", [ OPCODE_AA_OP, OPCODE_SBBBBBBBB ], { 2 : "+"}, PackedSwitch ],
-                        0x2c : [ "31t", "sparse-switch",                  "vAA +BBBBBBBB", [ OPCODE_AA_OP, OPCODE_SBBBBBBBB ], { 2 : "+"}, SparseSwitch ],
-                        0x2d : [ "23x", "cmpl-float",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x2e : [ "23x", "cmpg-float",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x2f : [ "23x", "cmpl-double",                   "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x30 : [ "23x", "cmpg-double",                   "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x31 : [ "23x", "cmp-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x32 : [ "22t", "if-eq",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x33 : [ "22t", "if-ne",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x34 : [ "22t", "if-lt",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x35 : [ "22t", "if-ge",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x36 : [ "22t", "if-gt",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x37 : [ "22t", "if-le",                             "vA, vB, +CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "+" } ],
-                        0x38 : [ "21t", "if-eqz",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-                        0x39 : [ "21t", "if-nez",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-                        0x3a : [ "21t", "if-ltz",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-                        0x3b : [ "21t", "if-gez",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-                        0x3c : [ "21t", "if-gtz",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-                        0x3d : [ "21t", "if-lez",                           "vAA, +BBBB", [ OPCODE_AA_OP, OPCODE_SBBBB ], { 2 : "+" } ],
-
-                        # UNUSED OPCODES
-                        0x3e : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x3f : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x40 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x41 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x42 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x43 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        ###################
-
-                        0x44 : [ "23x", "aget",                           "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x45 : [ "23x", "aget-wide",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x46 : [ "23x", "aget-object",                   "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x47 : [ "23x", "aget-boolean",                 "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ], 
-                        0x48 : [ "23x", "aget-byte",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ], 
-                        0x49 : [ "23x", "aget-char",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ], 
-                        0x4a : [ "23x", "aget-short",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ], 
-                        0x4b : [ "23x", "aput",                 "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x4c : [ "23x", "aput-wide",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x4d : [ "23x", "aput-object",                   "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x4e : [ "23x", "aput-boolean",                 "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x4f : [ "23x", "aput-byte",            "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x50 : [ "23x", "aput-char",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x51 : [ "23x", "aput-short",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x52 : [ "22c", "iget",                 "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x53 : [ "22c", "iget-wide",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x54 : [ "22c", "iget-object",          "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x55 : [ "22c", "iget-boolean",                 "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x56 : [ "22c", "iget-byte",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x57 : [ "22c", "iget-char",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x58 : [ "22c", "iget-short",                     "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x59 : [ "22c", "iput",                           "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5a : [ "22c", "iput-wide",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5b : [ "22c", "iput-object",          "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5c : [ "22c", "iput-boolean",                 "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5d : [ "22c", "iput-byte",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5e : [ "22c", "iput-char",                        "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x5f : [ "22c", "iput-short",                     "vA, vB, field@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "field@" } ],
-                        0x60 : [ "21c", "sget",                           "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x61 : [ "21c", "sget-wide",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x62 : [ "21c", "sget-object",                   "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x63 : [ "21c", "sget-boolean",                 "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x64 : [ "21c", "sget-byte",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x65 : [ "21c", "sget-char",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x66 : [ "21c", "sget-short",                     "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x67 : [ "21c", "sput",                           "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x68 : [ "21c", "sput-wide",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x69 : [ "21c", "sput-object",                   "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x6a : [ "21c", "sput-boolean",                 "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x6b : [ "21c", "sput-byte",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x6c : [ "21c", "sput-char",                        "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x6d : [ "21c", "sput-short",                     "vAA, field@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 2 : "field@" } ],
-                        0x6e : [ "35c", "invoke-virtual",           "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
-                        0x6f : [ "35c", "invoke-super",             "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
-                        0x70 : [ "35c", "invoke-direct",                  "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ], 
-                        0x71 : [ "35c", "invoke-static",            "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
-                        0x72 : [ "35c", "invoke-interface",           "vB{vD, vE, vF, vG, vA}, meth@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC, OPCODE_G_F_E_D ], { 3 : "meth@" } ],
-                        
-                        0x73 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        
-                        0x74 : [ "3rc", "invoke-virtual/range",      "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
-                        0x75 : [ "3rc", "invoke-super/range",           "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
-                        0x76 : [ "3rc", "invoke-direct/range",        "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
-                        0x77 : [ "3rc", "invoke-static/range",        "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
-                        0x78 : [ "3rc", "invoke-interface/range",     "vB{vCCCC .. vNNNN}, meth@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB, OPCODE_CCCC ], { 2 : "meth@"} ],
-                        
-                        0x79 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0x7a : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        
-                        0x7b : [ "12x", "neg-int",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x7c : [ "12x", "not-int",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x7d : [ "12x", "neg-long",                      "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x7e : [ "12x", "not-long",                      "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x7f : [ "12x", "neg-float",                        "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x80 : [ "12x", "neg-double",                     "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x81 : [ "12x", "int-to-long",                   "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x82 : [ "12x", "int-to-float",                 "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x83 : [ "12x", "int-to-double",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x84 : [ "12x", "long-to-int",                   "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x85 : [ "12x", "long-to-float",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x86 : [ "12x", "long-to-double",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x87 : [ "12x", "float-to-int",                 "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x88 : [ "12x", "float-to-long",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x89 : [ "12x", "float-to-double",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8a : [ "12x", "double-to-int",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8b : [ "12x", "double-to-long",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8c : [ "12x", "double-to-float",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8d : [ "12x", "int-to-byte",                   "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8e : [ "12x", "int-to-char",                   "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x8f : [ "12x", "int-to-short",                 "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0x90 : [ "23x", "add-int",              "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ], 
-                        0x91 : [ "23x", "sub-int",              "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x92 : [ "23x", "mul-int",              "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x93 : [ "23x", "div-int",              "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x94 : [ "23x", "rem-int",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x95 : [ "23x", "and-int",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x96 : [ "23x", "or-int",                           "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x97 : [ "23x", "xor-int",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x98 : [ "23x", "shl-int",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x99 : [ "23x", "shr-int",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9a : [ "23x", "ushr-int",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9b : [ "23x", "add-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9c : [ "23x", "sub-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9d : [ "23x", "mul-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9e : [ "23x", "div-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0x9f : [ "23x", "rem-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa0 : [ "23x", "and-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa1 : [ "23x", "or-long",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa2 : [ "23x", "xor-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa3 : [ "23x", "shl-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa4 : [ "23x", "shr-long",                      "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa5 : [ "23x", "ushr-long",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa6 : [ "23x", "add-float",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa7 : [ "23x", "sub-float",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa8 : [ "23x", "mul-float",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xa9 : [ "23x", "div-float",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xaa : [ "23x", "rem-float",                        "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xab : [ "23x", "add-double",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xac : [ "23x", "sub-double",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xad : [ "23x", "mul-double",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xae : [ "23x", "div-double",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xaf : [ "23x", "rem-double",                     "vAA, vBB, vCC", [ OPCODE_AA_OP, OPCODE_CC_BB ], {} ],
-                        0xb0 : [ "12x", "add-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP], {} ],
-                        0xb1 : [ "12x", "sub-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP], {} ],
-                        0xb2 : [ "12x", "mul-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP], {} ],
-                        0xb3 : [ "12x", "div-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb4 : [ "12x", "rem-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb5 : [ "12x", "and-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb6 : [ "12x", "or-int/2addr",                 "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb7 : [ "12x", "xor-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb8 : [ "12x", "shl-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xb9 : [ "12x", "shr-int/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xba : [ "12x", "ushr-int/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xbb : [ "12x", "add-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xbc : [ "12x", "sub-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xbd : [ "12x", "mul-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xbe : [ "12x", "div-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xbf : [ "12x", "rem-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc0 : [ "12x", "and-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc1 : [ "12x", "or-long/2addr",                  "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc2 : [ "12x", "xor-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc3 : [ "12x", "shl-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc4 : [ "12x", "shr-long/2addr",                "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc5 : [ "12x", "ushr-long/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc6 : [ "12x", "add-float/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc7 : [ "12x", "sub-float/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc8 : [ "12x", "mul-float/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xc9 : [ "12x", "div-float/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xca : [ "12x", "rem-float/2addr",              "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xcb : [ "12x", "add-double/2addr",           "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xcc : [ "12x", "sub-double/2addr",           "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xcd : [ "12x", "mul-double/2addr",           "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xce : [ "12x", "div-double/2addr",           "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xcf : [ "12x", "rem-double/2addr",           "vA, vB", [ OPCODE_B_A_OP ], {} ],
-                        0xd0 : [ "22s", "add-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd1 : [ "22s", "rsub-int",                      "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd2 : [ "22s", "mul-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd3 : [ "22s", "div-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd4 : [ "22s", "rem-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd5 : [ "22s", "and-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd6 : [ "22s", "or-int/lit16",                 "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd7 : [ "22s", "xor-int/lit16",                  "vA, vB, #+CCCC", [ OPCODE_B_A_OP, OPCODE_SCCCC ], { 3 : "#+" } ],
-                        0xd8 : [ "22b", "add-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xd9 : [ "22b", "rsub-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xda : [ "22b", "mul-int/lit8",             "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdb : [ "22b", "div-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdc : [ "22b", "rem-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdd : [ "22b", "and-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xde : [ "22b", "or-int/lit8",                   "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xdf : [ "22b", "xor-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe0 : [ "22b", "shl-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe1 : [ "22b", "shr-int/lit8",                 "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        0xe2 : [ "22b", "ushr-int/lit8",                  "vAA, vBB, #+CC", [ OPCODE_AA_OP, OPCODE_BB, OPCODE_SCC ], { 3 : "#+" } ],
-                        
-                        # UNUSED OPCODES
-                        #0xe3 : [ "22c", "+iget-volatile",                   "vA, vB, type@CCCC", [ OPCODE_B_A_OP, OPCODE_CCCC ], { 3 : "type@" } ],
-                        0xe3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe4 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe5 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe6 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe7 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe8 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xe9 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xea : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xeb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        
-                        0xec : [ "00x", "^breakpoint", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xed : [ "20bc", "^throw-verification-error",                  "op AA, kind@BBBB", [ OPCODE_AA_OP, OPCODE_BBBB ], { 1 : '+', 2 : '+' } ],
-
-                        0xee : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xef : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf0 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf1 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf2 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf3 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf4 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf5 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf6 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf7 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf8 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xf9 : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xfa : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xfb : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xfc : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xfd : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xfe : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        0xff : [ "10x", "nop", "op", [ OPCODE_OP, OPCODE_00 ], {} ],
-                        ###################
-                      }
 
 MATH_DVM_OPCODES = {        "add." : '+',
                             "div." : '/',
@@ -603,15 +304,15 @@ def clean_name_instruction( instruction ) :
 
 def static_operand_instruction( instruction ) :
     buff = ""
-    for op in instruction.get_operands() :
-        if instruction.get_type_ins() == 0 :
-            if "#" in op[0] :
-                buff += "%s" % op
+
+    if isinstance(instruction, Instruction) :
+      # get instructions without registers
+      for val in instruction.get_literals() :
+          buff += "%s" % val
     
     op_value = instruction.get_op_value()
     if op_value == 0x1a or op_value == 0x1b :
-        buff += instruction.get_operands()[1][-1]
-    #print instruction.get_operands()
+        buff += instruction.get_string()
 
     return buff
 
@@ -705,27 +406,26 @@ def writesleb128(value) :
 def determineNext(i, end, m) :
     op_value = i.get_op_value()
 
+    # return*
     if op_value >= 0x0e and op_value <= 0x11 :
-    #if "return" in i.get_name() :
         return [ -1 ]
+    # goto
     elif op_value >= 0x28 and op_value <= 0x2a :
-    #elif "goto" in i.get_name() :
-        off = i.get_operands()[-1][1] * 2
+        off = i.get_ref_off() * 2
         return [ off + end ]
+    # if
     elif op_value >= 0x32 and op_value <= 0x3d :
-    #elif "if" in i.get_name() :
-        off = i.get_operands()[-1][1] * 2
-
+        off = i.get_ref_off() * 2
         return [ end + i.get_length(), off + (end) ]
+    # sparse/packed
     elif op_value == 0x2b or op_value == 0x2c :
-    #elif "packed" in i.get_name() or "sparse" in i.get_name() :
         x = []
 
         x.append( end + i.get_length() )
 
         code = m.get_code().get_bc()
-        off = i.get_operands()[-1][1] * 2
-        
+        off = i.get_ref_off() * 2
+
         data = code.get_ins_off( off + end )
 
         if data != None :
@@ -1538,6 +1238,8 @@ class TypeIdItem :
             i.reload()
 
     def get(self, idx) :
+        if idx > len(self.type) :
+            return self.type[-1].get_value()
         return self.type[ idx ].get_value()
 
     def show(self) :
@@ -2302,517 +2004,1099 @@ class EncodedCatchHandlerList :
     def get_list(self) :
         return self.list
 
-class DBCSpe :
-    def __init__(self, cm, op) :
-        self.__CM = cm
-        self.type_ins_tag = SPECIFIC_DVM_INS
-        self.op = op
-        self.op_name = self.op.get_name()
-        self.op_value = -1
-
-    def get_op_value(self) :
-        return self.op.get_op_value()
-
-    def _reload(self) :
-        pass
-
-    def get_data(self) :
-        return self.op.get_data()
-
-    def get_raw(self) :
-        return self.op.get_raw()
-
-    def get_name(self) :
-        return self.op.get_name()
-
-    def get_targets(self) :
-        return self.op.get_targets()
-
-    def get_formatted_operands(self) :
-        return []
-
-    def get_operands(self) :
-        return self.op.get_operands()
-
-    def get_length(self) :
-        return self.op.get_length()
-
-    def show_buff(self, pos) :
-        return self.op.show_buff( pos )
-
-    def show(self, pos) :
-        print self.op.show_buff( pos ),
-    
-    def get_type_ins(self) :
-        return self.type_ins_tag
-
-class DBC:
-    def __init__(self, class_manager, op_name, op_value, operands, raw_buff) :
-        self.CM = class_manager
-        self.type_ins_tag = NORMAL_DVM_INS
-
-        self.op_name = op_name
-
-        self.operands = operands
-        self.formatted_operands = None
-        self.relative_operands = None
-
-        self.raw_buff = raw_buff
-
-        self.op_value = op_value
-
-    def get_op_value(self) :
-        return self.op_value
-
-    def get_type_ins(self) :
-        return self.type_ins_tag
-
-    def _reload(self) :
-        self.operands.pop(0)
-
-        if self.operands == [] :
-            return
-
-        last = self.operands[-1][0]
-        if "string@" == last :
-            self.operands[-1] = [ last, self.operands[-1][1], repr(self.CM.get_raw_string( self.operands[-1][1] )) ] 
-        elif "meth@" == last :
-            #m = self.CM.get_method( self.operands[-1][1] )
-            m = self.CM.get_method_ref( self.operands[-1][1] )
-            self.operands[-1] = [ last, self.operands[-1][1], m ]
-            #self.operands[-1] = [ last, self.operands[-1][1], m[0], m[1][0], m[1][1], m[2] ]
-        elif "field@" == last :
-            f = self.CM.get_field_ref( self.operands[-1][1] )
-            self.operands[-1] = [ last, self.operands[-1][1], f ]
-            #self.operands[-1] = [ last, self.operands[-1][1], f[0], f[1], f[2] ]
-        elif "type@" == last :
-            #self.operands[-1] = [ last, self.operands[-1][1], self.CM.get_type_ref( self.operands[-1][1] ) ]
-            self.operands[-1] = [ last, self.operands[-1][1], self.CM.get_type( self.operands[-1][1] ) ]
-
-    def get_length(self) :
-        """Return the length of the instruction"""
-        return len(self.raw_buff)
-
-    def get_name(self) :
-        """Return the name of the bytecode"""
-        return self.op_name
-    
-    def get_relative_operands(self) :
-        """Return the relative operands"""
-        if self.relative_operands == None :
-            self.relative_operands = []
-        
-            # 0x26 fill-array-data
-            if self.op_value == 0x26 :
-                self.relative_operands.append( self.operands[1][1] * 2 )
-
-            elif self.op_value == 0x2b or self.op_value == 0x2c :
-                self.relative_operands.append( self.operands[1][1] * 2 )
-
-        return self.relative_operands
-
-    def get_formatted_operands(self) :
-        """Return the formatted operands"""
-        if self.formatted_operands == None :
-            # get operands if we use native module
-            self.get_operands()
-
-            self.formatted_operands = []
         
             # 0x12 : [ "11n", "const/4",                          "vA, #+B", "B|A|op" ],
-            if self.op_value == 0x12 :
-                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+#            if self.op_value == 0x12 :
+#                self.formatted_operands.append( ("#l", self.operands[1][1]) )
 
             # 0x13 : [ "21s", "const/16",                        "vAA, #+BBBB", "AA|op BBBB" ],
-            elif self.op_value == 0x13 :
-                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+#            elif self.op_value == 0x13 :
+#                self.formatted_operands.append( ("#l", self.operands[1][1]) )
 
             # 0x14 : [ "31i", "const",                           "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
             # const instruction, convert value into float
-            elif self.op_value == 0x14 :
-                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1] ) << 16)
-                self.formatted_operands.append( ("#f", unpack("=f", pack("=L", x))[0] ) )
+#            elif self.op_value == 0x14 :
+#                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1] ) << 16)
+#                self.formatted_operands.append( ("#f", unpack("=f", pack("=L", x))[0] ) )
 
             # 0x15 : [ "21h", "const/high16",                   "vAA, #+BBBB0000", "AA|op BBBB0000" ],
-            elif self.op_value == 0x15 :
-                self.formatted_operands.append( ("#f", unpack( '=f', '\x00\x00' + pack('=h', self.operands[1][1]))[0] ) )
+#            elif self.op_value == 0x15 :
+#                self.formatted_operands.append( ("#f", unpack( '=f', '\x00\x00' + pack('=h', self.operands[1][1]))[0] ) )
 
             # 0x16 : [ "21s", "const-wide/16",                "vAA, #+BBBB", "AA|op BBBB" ],
-            elif self.op_value == 0x16 :
-                self.formatted_operands.append( ("#l", self.operands[1][1]) )
+#            elif self.op_value == 0x16 :
+#                self.formatted_operands.append( ("#l", self.operands[1][1]) )
 
             # 0x17 : [ "31i", "const-wide/32",                "vAA, #+BBBBBBBB", "AA|op BBBB BBBB" ],
-            elif self.op_value == 0x17 :
-                x = ((0xFFFF & self.operands[2][1]) << 16) | (0xFFFF & self.operands[1][1])
-                self.formatted_operands.append( ("#l", unpack( '=d', pack('=d', x))[0] ) )
+#            elif self.op_value == 0x17 :
+#                x = ((0xFFFF & self.operands[2][1]) << 16) | (0xFFFF & self.operands[1][1])
+#                self.formatted_operands.append( ("#l", unpack( '=d', pack('=d', x))[0] ) )
 
             # 0x18 : [ "51l", "const-wide",                   "vAA, #+BBBBBBBBBBBBBBBB", "AA|op BBBB BBBB BBBB BBBB" ],
             # convert value to double
-            elif self.op_value == 0x18 :
-                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1]) << 16) | ((0xFFFF & self.operands[3][1]) << 32) | ((0xFFFF & self.operands[4][1]) << 48)
-                self.formatted_operands.append( ("#d", unpack( '=d', pack('=Q', x ) )[0]) )
+#            elif self.op_value == 0x18 :
+#                x = (0xFFFF & self.operands[1][1]) | ((0xFFFF & self.operands[2][1]) << 16) | ((0xFFFF & self.operands[3][1]) << 32) | ((0xFFFF & self.operands[4][1]) << 48)
+#                self.formatted_operands.append( ("#d", unpack( '=d', pack('=Q', x ) )[0]) )
 
             # 0x19 : [ "21h", "const-wide/high16",           "vAA, #+BBBB000000000000", "AA|op BBBB000000000000" ],
             # convert value to double
-            elif self.op_value == 0x19 :
-                self.formatted_operands.append( ("#d", unpack( '=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', self.operands[1][1]))[0]) )
+#            elif self.op_value == 0x19 :
+#                self.formatted_operands.append( ("#d", unpack( '=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', self.operands[1][1]))[0]) )
 
-        return self.formatted_operands
+#        return self.formatted_operands
 
-    def get_operands(self) :
-        """Return the operands"""
-        return self.operands
-
-    def get_raw(self) :
-        """Return the raw buffer"""
-        return self.raw_buff
-
-    def show(self, pos) :
-        """Display the instruction"""
-        print self.show_buff(pos),
-
-    def show_buff(self, pos) :
-        """Return the instruction in a buffer"""
-        buff = self.op_name + " "
-
-        l = []
-        operands = self.get_operands()
-        for i in operands :
-            if i[0] != "v" :
-                l.append("[")
-                for j in i :
-                    if isinstance(j, MethodItem) :
-                        l.extend( str(k) for k in j.get_list() )
-                    elif isinstance(j, FieldItem) :
-                        l.extend( j.get_list() )
-                    else :
-                        l.append(str(j))
-
-                l.append("]")
-
-                #l.append( "[" + ' '.join( str(j) for j in i ) + "]" )
-            else :
-                l.append( ''.join( str(j) for j in i ) )
-
-            l.append( "," )
-
-        if l != [] :
-            l.pop(-1)
-            l.append("//")
-
-        formatted_operands = self.get_formatted_operands()
-        if formatted_operands != [] :
-            for i in formatted_operands :
-                l.append( "{" + str(i[1]) + "}" )
-                l.append(",")
-
-        relative_operands = self.get_relative_operands()
-        if relative_operands != [] :
-            for i in relative_operands :
-                l.append("{" + "0x%x" % (i + pos) + "}")
-                l.append(",")
-
-        if l != [] :
-            l.pop(-1)
-            buff += ' '.join( i for i in l )
-
-        return buff
     
-def op_B_A_OP(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
-        
-def op_AA_OP(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff, (i16 >> 8) & 0xff]]
 
-def op_00_OP(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff]]
-    
-def op_CCCC(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16]]
-        
-def op_SAAAA(insn, current_pos) :
-    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
-    return [2, [i16]]
-    
-def op_SB_A_OP(insn, current_pos) :
-    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
-        
-def op_SCC_BB(insn, current_pos) :
-    i16 = unpack("=h", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xff, (i16 >> 8) & 0xff]]
-        
-def op_G_F_E_D(insn, current_pos) :
-    i16 = unpack("=H", insn[current_pos:current_pos+2])[0]
-    return [2, [i16 & 0xf, (i16 >> 4) & 0xf, (i16 >> 8) & 0xf, (i16 >> 12) & 0xf]]
-    
-def op_OP(insn, current_pos) :
-    i8 = unpack("=B", insn[current_pos:current_pos+1])[0]
-    return [1, [i8]]
-   
-def op_SCC(insn, current_pos) :
-    i8 = unpack("=b", insn[current_pos:current_pos+1])[0]
-    return [1, [i8]]
-        
-def op_SAAAAAAAA(insn, current_pos) :
-    i32 = unpack("=i", insn[current_pos:current_pos+4])[0]
-    return [4, [i32]]
-
-def op_BBBBBBBB(insn, current_pos) :
-    i32 = unpack("=I", insn[current_pos:current_pos+4])[0]
-    return [4, [i32]]
-       
-def op_00(insn, current_pos) :
-    return [1, []]
-
-MAP_EXTRACT_VALUES = { 
-    OPCODE_B_A_OP   :   op_B_A_OP,
-    OPCODE_AA_OP    :   op_AA_OP,
-    OPCODE_00_OP    :   op_00_OP,
-    OPCODE_CCCC     :   op_CCCC,
-    OPCODE_SAAAA    :   op_SAAAA,
-    OPCODE_SB_A_OP  :   op_SB_A_OP,
-    OPCODE_SCC_BB   :   op_SCC_BB,
-    OPCODE_G_F_E_D  :   op_G_F_E_D,
-    OPCODE_OP       :   op_OP,
-    OPCODE_SCC      :   op_SCC,
-    OPCODE_SAAAAAAAA :  op_SAAAAAAAA,
-    OPCODE_BBBBBBBB :   op_BBBBBBBB,
-    OPCODE_00       :   op_00,
+DALVIK_OPCODES_PAYLOAD = {
+    0x0100 : [PackedSwitch],
+    0x0200 : [SparseSwitch],
+    0x0300 : [FillArrayData],
 }
 
-class DBCSpeNative(DBCSpe) :
-    def __init__(self, class_manager, value) :
-        self.CM = class_manager        
-        self.op = value
-        self.targets = None
+DALVIK_OPCODES_EXPANDED = {
+    0x00ff : [],
+    0x01ff : [],
+    0x02ff : [],
+    0x03ff : [],
+    0x04ff : [],
+    0x05ff : [],
 
-        self.type_ins_tag = SPECIFIC_DVM_INS
-        self.op_name = self.op.get_name()
-        self.op_length = self.op.get_length()
+    0x06ff : [],
+    0x07ff : [],
+    0x08ff : [],
+    0x09ff : [],
+    0x10ff : [],
+    0x11ff : [],
+    0x12ff : [],
+    0x13ff : [],
 
-    def get_targets(self) :
-        if self.targets == None :
-            self.targets = self.op.get_targets()
-        return self.targets
+    0x14ff : [],
+    0x15ff : [],
+    0x16ff : [],
+    0x17ff : [],
+    0x18ff : [],
+    0x19ff : [],
+    0x20ff : [],
+    0x21ff : [],
 
-    def get_data(self) :
-        return self.op.get_operands()
+
+    0x22ff : [],
+    0x23ff : [],
+    0x24ff : [],
+    0x25ff : [],
+    0x26ff : [],
+}
+                        
+
+def get_kind(cm, kind, value) :
+  if kind == KIND_METH :
+    return cm.get_method(value)
+  elif kind == KIND_STRING :
+    return "\"" + cm.get_string(value) + "\""
+  elif kind == KIND_FIELD :
+    return cm.get_field(value)
+  elif kind == KIND_TYPE :
+    return cm.get_type(value)
+  return None
+
+class Instruction :
+  def get_name(self) :
+    return self.name
+  
+  def get_op_value(self) :
+    return self.OP
+ 
+  def get_literals(self) :
+    return []
+  
+  def show(self, nb) :
+    print self.get_output(),
+
+  def show_buff(self, nb) :
+    return self.get_output()
+    
+  def get_translated_kind(self) :
+    return get_kind(self.cm, self.kind, self.get_ref_kind())
+
+class Instruction35c(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      self.kind = args[0][1]
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.G = (i16 >> 8) & 0xf
+      self.A = (i16 >> 12) & 0xf
+      self.BBBB = unpack("=H", buff[2:4])[0]
+    
+      i16 = unpack("=H", buff[4:6])[0]
+      self.C = i16 & 0xf
+      self.D = (i16 >> 4) & 0xf
+      self.E = (i16 >> 8) & 0xf
+      self.F = (i16 >> 12) & 0xf
+
+      log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
+
+    def get_output(self) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.kind, self.BBBB)
+
+      if self.A == 0 :
+        buff += "%s %s" % (self.name, kind)
+      elif self.A == 1 :
+        buff += "%s v%d, %s" % (self.name, self.C, kind)
+      elif self.A == 2 :
+        buff += "%s v%d, v%d, %s" % (self.name, self.C, self.D, kind)
+      elif self.A == 3 :
+        buff += "%s v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, kind)
+      elif self.A == 4 :
+        buff += "%s v%d, v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, self.F, kind)
+      elif self.A == 5 :
+        buff += "%s v%d, v%d, v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, self.F, self.G, kind)
+
+      return buff
 
     def get_length(self) :
-        return self.op_length
+      return 6
 
-    def get_name(self) :
-        return self.op_name
+    def get_ref_kind(self) :
+      return self.BBBB
+    
+class Instruction10x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
 
-    def show_buff(self, pos) :
-        buff = self.op_name + " "
+      log_andro.debug("OP:%x %s" % (self.OP, args[0]))
 
-        if self.op_name == "FILL-ARRAY-DATA" :
-            op = self.op.get_operands()
-            for i in range(0, len(op)) :
-                buff += "\\x%02x" % ord( op[i] )
-        elif self.op_name == "PACKED-SWITCH" :
-            op = self.op.get_operands()
-
-            buff += "%x:" % op[0]
-            for i in op[1] :
-                buff += " %x" % i
-        elif self.op_name == "SPARSE-SWITCH" :
-            op = self.op.get_operands()
-            for i in range(0, len(op[0])) :
-                buff += "%x:%x " % (op[0][i], op[1][i])
-        return buff
-
-    def show(self, pos) :
-        print self.show_buff( pos ),
-
-class DBCNative(DBC) :
-    def __init__(self, class_manager, value) :
-        self.CM = class_manager
-        
-        self.__internal_dbc = value
-
-        self.op_value = self.__internal_dbc.get_op_value()
-        self.op_length = self.__internal_dbc.get_length()
-        self.op_name = self.__internal_dbc.get_name()
-
-        self.operands = None
-        self.formatted_operands = None
-        self.relative_operands = None
-
-        self.type_ins_tag = NORMAL_DVM_INS
+    def get_output(self) :
+      buff = ""
+      buff += "%s" % (self.name)
+      return buff
 
     def get_length(self) :
-        return self.op_length
-
-    def get_op_value(self) :
-        return self.op_value
-
-    def get_name(self) :
-        return self.op_name
-
-    def get_operands(self) :
-        if self.operands == None :
-            self.operands = self.__internal_dbc.get_operands()
-            self.operands.insert( 0, [ "OP", self.op_value ] )
-            self._reload()
-        return self.operands
-
-class DCodeNative :
-    def __init__(self, class_manager, size, buff) :
-        self.__CM = class_manager
-        self.__insn = buff
-
-        self.__bytecodes = None
-        self.__internal_dcode = self.__CM.get_all_engine()[1].new_code( self.__insn )
-
-    def reload(self) :
-        self.__bytecodes = [ DBCNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes() ]
-        self.__bytecodes.extend( [ DBCSpeNative( self.__CM, i ) for i in self.__internal_dcode.get_bytecodes_spe() ] )
-
-    def get_ins_off(self, off) :
-        idx = 0
-        for i in self.__bytecodes :
-            if idx == off :
-                return i
-            idx += i.get_length()
-        return None
+      return 2
     
-    def get(self) :
-        return self.__bytecodes
+class Instruction21h(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=h", buff[2:4])[0]
+      
+      log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+      self.formatted_operands = []
+      
+      if self.OP == 0x15 :
+        self.formatted_operands.append( unpack( '=f', '\x00\x00' + pack('=h', self.BBBB ) )[0] )
+      elif self.OP == 0x19:
+        self.formatted_operands.append( unpack( '=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', self.BBBB) )[0] )
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      
+      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBB)
+      
+      if self.formatted_operands != [] :
+        buff += " // %s" % (str(self.formatted_operands))
+      
+      return buff
+
+    def show(self, nb) :
+      print self.get_output(),
+  
+    def get_literals(self) :
+      return [ self.BBBB ]
+
+class Instruction11n(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=h", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+
+      log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
+
+    def get_length(self) :
+      return 2
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, #+%d" % (self.name, self.A, self.B)
+      return buff
     
-    def show(self) :
-        nb = 0
-        idx = 0
-        for i in self.__bytecodes :
-            print nb, "0x%x" % idx,
-            i.show(nb)
-            print
+    def get_literals(self) :
+      return [ self.B ]
 
-            idx += i.get_length()
-            nb += 1
+class Instruction21c(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      self.kind = args[0][1]
+      self.cm = cm
 
-    def pretty_show(self, m_a) :
-        bytecode.PrettyShow( m_a.basic_blocks.gets() )
-        bytecode.PrettyShowEx( m_a.exceptions.gets() )
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=h", buff[2:4])[0]
+      log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      
+      kind = get_kind(self.cm, self.kind, self.BBBB)
+
+      buff += "%s v%d, %s" % (self.name, self.AA, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBB
+    
+    def get_string(self) :
+      return get_kind(self.cm, self.kind, self.BBBB)
+    
+class Instruction21s(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=h", buff[2:4])[0]
+      
+      self.formatted_operands = []
+
+      if self.OP == 0x16 :
+        self.formatted_operands.append( unpack( '=d', pack('=d', self.BBBB))[0] )
+
+      log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBB)
+
+      if self.formatted_operands != [] :
+        buff += " // %s" % str(self.formatted_operands)
+
+      return buff
+    
+    def get_literals(self) :
+      return [ self.BBBB ]
+
+class Instruction22c(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      self.kind = args[0][1]
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+      self.CCCC = unpack("=H", buff[2:4])[0]
+
+      log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+
+    def get_length(self) :
+      return 4
+    
+    def get_output(self) :
+      buff = ""
+      kind = get_kind(self.cm, self.kind, self.CCCC)
+      buff += "%s v%d, v%d, %s" % (self.name, self.A, self.B, kind)
+      return buff
+    
+    def get_ref_kind(self) :
+      return self.CCCC
+    
+class Instruction31t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBBBBBB = unpack("=i", buff[2:6])[0]
+      log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, +%d" % (self.name, self.AA, self.BBBBBBBB)
+      return buff
+
+    def get_ref_off(self) :
+      return self.BBBBBBBB 
+    
+class Instruction31c(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      self.kind = args[0][1]
+      self.cm = cm
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBBBBBB = unpack("=i", buff[2:6])[0]
+      log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.kind, self.BBBBBBBB)
+      buff += "%s v%d, %s" % (self.name, self.AA, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBBBBBB 
+
+    def get_string(self) :
+      return get_kind(self.cm, self.kind, self.BBBBBBBB)
+
+class Instruction12x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=h", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+
+      log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
+
+    def get_length(self) :
+      return 2
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d" % (self.name, self.A, self.B)
+      return buff
+
+class Instruction11x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
+
+    def get_length(self) :
+      return 2
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d" % (self.name, self.AA)
+      return buff
+
+class Instruction51l(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBBBBBBBBBBBBBB = unpack("=Q", buff[2:10])[0]
+      
+      self.formatted_operands = []
+
+      if self.OP == 0x18 :
+        self.formatted_operands.append( unpack( '=d', pack('=Q', self.BBBBBBBBBBBBBBBB ) )[0] )
+
+      log_andro.debug("OP:%x %s AA:%x BBBBBBBBBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBBBBBBBBBB))
+
+    def get_length(self) :
+      return 10
+
+    def get_output(self) :
+      buff = ""
+
+      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBBBBBBBBBBBBBB)
+      
+      if self.formatted_operands != [] :
+        buff += " // %s" % str(self.formatted_operands)
+
+      return buff
+    
+    def get_literals(self) :
+      return [ self.BBBBBBBBBBBBBBBB ]
+
+class Instruction31i(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBBBBBB = unpack("=i", buff[2:6])[0]
+     
+      self.formatted_operands = []
+      
+      if self.OP == 0x14 :
+        self.formatted_operands.append( unpack("=f", pack("=i", self.BBBBBBBB))[0] )
+
+      elif self.OP == 0x17 :
+        self.formatted_operands.append( unpack( '=d', pack('=d', self.BBBBBBBB))[0] )
+
+      log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+
+    def get_length(self) :
+      return 6 
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBBBBBB)
+
+      if self.formatted_operands != [] :
+        buff += " // %s" % str(self.formatted_operands)
+
+      return buff
+    
+    def get_literals(self) :
+      return [ self.BBBBBBBB ]
+
+class Instruction22x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=H", buff[2:4])[0]
+      
+      log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d" % (self.name, self.AA, self.BBBB)
+      return buff
+
+class Instruction23x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      i16 = unpack("=H", buff[2:4])[0]
+      self.BB = i16 & 0xff
+      self.CC = (i16 >> 8) & 0xff
+
+      log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d, v%d" % (self.name, self.AA, self.BB, self.CC)
+      return buff
+
+class Instruction20t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AAAA = unpack("=h", buff[2:4])[0]
+
+      log_andro.debug("OP:%x %s AAAA:%x" % (self.OP, args[0], self.AAAA))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s +%d" % (self.name, self.AAAA)
+      return buff
+
+    def get_ref_off(self) :
+      return self.AAAA
+    
+class Instruction21t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=h", buff[2:4])[0]
+      
+      log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, +%d" % (self.name, self.AA, self.BBBB)
+      return buff
+
+    def get_ref_off(self) :
+      return self.BBBB
+
+class Instruction10t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      self.OP = unpack("=B", buff[0:1])[0]
+      self.AA = unpack("=b", buff[1:2])[0]
+      
+      log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
+
+    def get_length(self) :
+      return 2
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s +%d" % (self.name, self.AA)
+      return buff
+
+    def show(self, nb) :
+      print self.get_output(),
+    
+    def get_ref_off(self) :
+      return self.AA
+
+class Instruction22t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+      self.CCCC = unpack("=h", buff[2:4])[0]
+      
+      log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+
+    def get_length(self) :
+      return 4
+    
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d, +%d" % (self.name, self.A, self.B, self.CCCC)
+      return buff
+    
+    def get_ref_off(self) :
+      return self.CCCC
+
+class Instruction22s(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+      self.CCCC = unpack("=h", buff[2:4])[0]
+      
+      log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+
+    def get_length(self) :
+      return 4
+    
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d, #+%d" % (self.name, self.A, self.B, self.CCCC)
+      return buff
+
+    def get_literals(self) :
+      return [ self.CCCC ]
+
+class Instruction22b(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      i16 = unpack("=h", buff[2:4])[0]
+      self.BB = i16 & 0xff
+      self.CC = (i16 >> 8) & 0xff
+
+      log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d, #+%d" % (self.name, self.AA, self.BB, self.CC)
+      return buff
+    
+    def get_literals(self) :
+      return [ self.CC ]
+
+class Instruction30t(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      
+      self.AAAAAAAA = unpack("=i", buff[2:6])[0]
+
+      log_andro.debug("OP:%x %s AAAAAAAA:%x" % (self.OP, args[0], self.AAAAAAAA))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self) :
+      buff = ""
+      buff += "%s +%d" % (self.name, self.AAAAAAAA)
+      return buff
+
+    def get_ref_off(self) :
+      return self.AAAAAAAA
+
+class Instruction3rc(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+      self.kind = args[0][1]
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=H", buff[2:4])[0]
+      self.CCCC = unpack("=H", buff[4:6])[0]
+
+      self.NNNN = self.CCCC + self.AA - 1
+
+      log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self) :
+      buff = ""
+      
+      kind = get_kind(self.cm, self.kind, self.BBBB)
+      
+      if self.CCCC == self.NNNN :
+        buff += "%s v%d, %s" % (self.name, self.CCCC, kind)
+      else :
+        buff += "%s v%d ... v%d, %s" % (self.name, self.CCCC, self.NNNN, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBB
+
+class Instruction32x(Instruction) :
+    def __init__(self, cm, buff, args) :
+      self.name = args[0][0]
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AAAAA =  unpack("=H", buff[2:4])[0]
+      self.BBBB =  unpack("=H", buff[4:6])[0]
+      
+      log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
+
+    def get_length(self) :
+      return 6
+    
+    def get_output(self) :
+      buff = ""
+      buff += "%s v%d, v%d" % (self.name, self.AAAAA, self.BBBBB)
+      return buff
+
+KIND_METH = 0
+KIND_STRING = 1
+KIND_FIELD = 2
+KIND_TYPE = 3
+
+DALVIK_OPCODES_FORMAT = {
+  0x00 : [Instruction10x, [ "nop" ] ],
+  0x01 : [Instruction12x, [ "move" ] ],
+  0x02 : [Instruction22x, [ "move/from16" ] ],
+  0x03 : [Instruction32x, [ "move/16" ] ],
+  0x04 : [Instruction12x, [ "move-wide" ] ],
+  0x05 : [Instruction22x, [ "move-wide/from16" ] ],
+  0x06 : [Instruction32x, [ "move-wide/16" ] ],
+  0x07 : [Instruction12x, [ "move-object" ] ],
+  0x08 : [Instruction22x, [ "move-object/from16" ] ],
+  0x09 : [Instruction32x, [ "move-object/16" ] ],
+  0x0a : [Instruction11x, [ "move-result" ] ],
+  0x0b : [Instruction11x, [ "move-result-wide" ] ],
+  0x0c : [Instruction11x, [ "move-result-object" ] ],
+  0x0d : [Instruction11x, [ "move-exception" ] ],
+  0x0e : [Instruction10x, [ "return-void" ] ],
+  0x0f : [Instruction11x, [ "return" ] ],
+  0x10 : [Instruction11x, [ "return-wide" ] ],
+  0x11 : [Instruction11x, [ "return-object" ] ],
+  0x12 : [Instruction11n, [ "const/4" ] ],
+  0x13 : [Instruction21s, [ "const/16" ] ],
+  0x14 : [Instruction31i, [ "const" ] ],
+  0x15 : [Instruction21h, [ "const/high16" ] ],
+  0x16 : [Instruction21s, [ "const-wide/16" ] ],
+  0x17 : [Instruction31i, [ "const-wide/32" ] ],
+  0x18 : [Instruction51l, [ "const-wide" ] ],
+  0x19 : [Instruction21h, [ "const-wide/high16" ] ],
+  0x1a : [Instruction21c, [ "const-string", KIND_STRING ] ],
+  0x1b : [Instruction31c, [ "const-string/jumbo", KIND_STRING ] ],
+  0x1c : [Instruction21c, [ "const-class", KIND_TYPE ] ],
+  0x1d : [Instruction11x, [ "monitor-enter" ] ],
+  0x1e : [Instruction11x, [ "monitor-exit" ] ],
+  0x1f : [Instruction21c, [ "check-cast", KIND_TYPE ] ],
+  0x20 : [Instruction22c, [ "instance-of", KIND_TYPE ] ],
+  0x21 : [Instruction12x, [ "array-length", KIND_TYPE ] ],
+  0x22 : [Instruction21c, [ "new-instance", KIND_TYPE ] ],
+  0x23 : [Instruction22c, [ "new-array", KIND_TYPE ] ],
+  
+  0x24 : [Instruction35c, [ "filled-new-array", KIND_TYPE ] ],
+  0x25 : [Instruction3rc, [ "filled-new-array/range", KIND_TYPE ] ],
+  0x26 : [Instruction31t, [ "fill-array-data" ] ],
+  
+  0x27 : [Instruction11x, [ "throw" ] ],
+  
+  0x28 : [Instruction10t, [ "goto" ] ],
+  0x29 : [Instruction20t, [ "goto/16" ] ],
+  0x2a : [Instruction30t, [ "goto/32" ] ],
+
+  0x2b : [Instruction31t, [ "packed-switch" ] ],
+  0x2c : [Instruction31t, [ "sparse-switch" ] ],
+  
+  0x2d : [Instruction23x, [ "cmpl-float"  ] ],
+  0x2e : [Instruction23x, [ "cmpg-float" ] ],
+  0x2f : [Instruction23x, [ "cmpl-double" ] ],
+  0x30 : [Instruction23x, [ "cmpg-double" ] ],
+  0x31 : [Instruction23x, [ "cmp-long" ] ],
+
+  0x32 : [Instruction22t, [ "if-eq" ] ],
+  0x33 : [Instruction22t, [ "if-ne" ] ],
+  0x34 : [Instruction22t, [ "if-lt" ] ],
+  0x35 : [Instruction22t, [ "if-ge" ] ],
+  0x36 : [Instruction22t, [ "if-gt" ] ],
+  0x37 : [Instruction22t, [ "if-le" ] ],
+  
+  0x38 : [Instruction21t, [ "if-eqz" ] ],
+  0x39 : [Instruction21t, [ "if-nez" ] ],
+  0x3a : [Instruction21t, [ "if-ltz" ] ],
+  0x3b : [Instruction21t, [ "if-gez" ] ],
+  0x3c : [Instruction21t, [ "if-gtz" ] ],
+  0x3d : [Instruction21t, [ "if-lez" ] ],
+ 
+  #unused
+  0x3e : [Instruction10x, [ "nop" ] ],
+  0x3f : [Instruction10x, [ "nop" ] ],
+  0x40 : [Instruction10x, [ "nop" ] ],
+  0x41 : [Instruction10x, [ "nop" ] ],
+  0x42 : [Instruction10x, [ "nop" ] ],
+  0x43 : [Instruction10x, [ "nop" ] ],
+  
+  0x44 : [Instruction23x, [ "aget" ] ],
+  0x45 : [Instruction23x, [ "aget-wide" ] ],
+  0x46 : [Instruction23x, [ "aget-object" ] ],
+  0x47 : [Instruction23x, [ "aget-boolean" ] ],
+  0x48 : [Instruction23x, [ "aget-byte" ] ],
+  0x49 : [Instruction23x, [ "aget-char" ] ],
+  0x4a : [Instruction23x, [ "aget-short" ] ],
+  0x4b : [Instruction23x, [ "aput" ] ],
+  0x4c : [Instruction23x, [ "aput-wide" ] ],
+  0x4d : [Instruction23x, [ "aput-object" ] ],
+  0x4e : [Instruction23x, [ "aput-boolean" ] ],
+  0x4f : [Instruction23x, [ "aput-byte" ] ],
+  0x50 : [Instruction23x, [ "aput-char" ] ],
+  0x51 : [Instruction23x, [ "aput-short" ] ],
+  
+  0x52 : [Instruction22c, [ "iget", KIND_FIELD ] ],
+  0x53 : [Instruction22c, [ "iget-wide", KIND_FIELD ] ],
+  0x54 : [Instruction22c, [ "iget-object", KIND_FIELD ] ],
+  0x55 : [Instruction22c, [ "iget-boolean", KIND_FIELD ] ],
+  0x56 : [Instruction22c, [ "iget-byte", KIND_FIELD ] ],
+  0x57 : [Instruction22c, [ "iget-char", KIND_FIELD ] ],
+  0x58 : [Instruction22c, [ "iget-short", KIND_FIELD ] ],
+  0x59 : [Instruction22c, [ "iput", KIND_FIELD ] ],
+  0x5a : [Instruction22c, [ "iput-wide", KIND_FIELD ] ],
+  0x5b : [Instruction22c, [ "iput-object", KIND_FIELD ] ],
+  0x5c : [Instruction22c, [ "iput-boolean", KIND_FIELD ] ],
+  0x5d : [Instruction22c, [ "iput-byte", KIND_FIELD ] ],
+  0x5e : [Instruction22c, [ "iput-char", KIND_FIELD ] ],
+  0x5f : [Instruction22c, [ "iput-short", KIND_FIELD ] ],
+  
+  
+  0x60 : [Instruction21c, [ "sget", KIND_FIELD ] ],
+  0x61 : [Instruction21c, [ "sget-wide", KIND_FIELD ] ],
+  0x62 : [Instruction21c, [ "sget-object", KIND_FIELD ] ],
+  0x63 : [Instruction21c, [ "sget-boolean", KIND_FIELD ] ],
+  0x64 : [Instruction21c, [ "sget-byte", KIND_FIELD ] ],
+  0x65 : [Instruction21c, [ "sget-char", KIND_FIELD ] ],
+  0x66 : [Instruction21c, [ "sget-short", KIND_FIELD ] ],
+  0x67 : [Instruction21c, [ "sput", KIND_FIELD ] ],
+  0x68 : [Instruction21c, [ "sput-wide", KIND_FIELD ] ],
+  0x69 : [Instruction21c, [ "sput-object", KIND_FIELD ] ],
+  0x6a : [Instruction21c, [ "sput-boolean", KIND_FIELD ] ],
+  0x6b : [Instruction21c, [ "sput-byte", KIND_FIELD ] ],
+  0x6c : [Instruction21c, [ "sput-char", KIND_FIELD ] ],
+  0x6d : [Instruction21c, [ "sput-short", KIND_FIELD ] ],
+
+
+  0x6e : [Instruction35c, [ "invoke-virtual", KIND_METH ] ],
+  0x6f : [Instruction35c, [ "invoke-super", KIND_METH ] ],
+  0x70 : [Instruction35c, [ "invoke-direct", KIND_METH ] ],
+  0x71 : [Instruction35c, [ "invoke-static", KIND_METH ] ],
+  0x72 : [Instruction35c, [ "invoke-interface", KIND_METH ] ],
+
+  # unused
+  0x73 : [Instruction10x, [ "nop" ] ],
+
+  0x74 : [Instruction3rc, [ "invoke-virtual/range", KIND_METH ] ],
+  0x75 : [Instruction3rc, [ "invoke-super/range", KIND_METH ] ],
+  0x76 : [Instruction3rc, [ "invoke-direct/range", KIND_METH ] ],
+  0x77 : [Instruction3rc, [ "invoke-static/range", KIND_METH ] ],
+  0x78 : [Instruction3rc, [ "invoke-interface/range", KIND_METH ] ],
+  
+  # unused
+  0x79 : [Instruction10x, [ "nop" ] ],
+  0x7a : [Instruction10x, [ "nop" ] ],
+
+
+  0x7b : [Instruction12x, [ "neg-int" ] ],
+  0x7c : [Instruction12x, [ "not-int" ] ],
+  0x7d : [Instruction12x, [ "neg-long" ] ],
+  0x7e : [Instruction12x, [ "not-long" ] ],
+  0x7f : [Instruction12x, [ "neg-float" ] ],
+  0x80 : [Instruction12x, [ "neg-double" ] ],
+  0x81 : [Instruction12x, [ "int-to-long" ] ],
+  0x82 : [Instruction12x, [ "int-to-float" ] ],
+  0x83 : [Instruction12x, [ "int-to-double" ] ],
+  0x84 : [Instruction12x, [ "long-to-int" ] ],
+  0x85 : [Instruction12x, [ "long-to-float" ] ],
+  0x86 : [Instruction12x, [ "long-to-double" ] ],
+  0x87 : [Instruction12x, [ "float-to-int" ] ],
+  0x88 : [Instruction12x, [ "float-to-long" ] ],
+  0x89 : [Instruction12x, [ "float-to-double" ] ],
+  0x8a : [Instruction12x, [ "double-to-int" ] ],
+  0x8b : [Instruction12x, [ "double-to-long" ] ],
+  0x8c : [Instruction12x, [ "double-to-float" ] ],
+  0x8d : [Instruction12x, [ "int-to-byte" ] ],
+  0x8e : [Instruction12x, [ "int-to-char" ] ],
+  0x8f : [Instruction12x, [ "int-to-short" ] ],
+
+
+  0x90 : [Instruction23x, [ "add-int" ] ],
+  0x91 : [Instruction23x, [ "sub-int" ] ],
+  0x92 : [Instruction23x, [ "mul-int" ] ],
+  0x93 : [Instruction23x, [ "div-int" ] ],
+  0x94 : [Instruction23x, [ "rem-int" ] ],
+  0x95 : [Instruction23x, [ "and-int" ] ],
+  0x96 : [Instruction23x, [ "or-int" ] ],
+  0x97 : [Instruction23x, [ "xor-int" ] ],
+  0x98 : [Instruction23x, [ "shl-int" ] ],
+  0x99 : [Instruction23x, [ "shr-int" ] ],
+  0x9a : [Instruction23x, [ "ushr-int" ] ],
+  0x9b : [Instruction23x, [ "add-long" ] ],
+  0x9c : [Instruction23x, [ "sub-long" ] ],
+  0x9d : [Instruction23x, [ "mul-long" ] ],
+  0x9e : [Instruction23x, [ "div-long" ] ],
+  0x9f : [Instruction23x, [ "rem-long" ] ],
+  0xa0 : [Instruction23x, [ "and-long" ] ],
+  0xa1 : [Instruction23x, [ "or-long" ] ],
+  0xa2 : [Instruction23x, [ "xor-long" ] ],
+  0xa3 : [Instruction23x, [ "shl-long" ] ],
+  0xa4 : [Instruction23x, [ "shr-long" ] ],
+  0xa5 : [Instruction23x, [ "ushr-long" ] ],
+  0xa6 : [Instruction23x, [ "add-float" ] ],
+  0xa7 : [Instruction23x, [ "sub-float" ] ],
+  0xa8 : [Instruction23x, [ "mul-float" ] ],
+  0xa9 : [Instruction23x, [ "div-float" ] ],
+  0xaa : [Instruction23x, [ "rem-float" ] ],
+  0xab : [Instruction23x, [ "add-double" ] ],
+  0xac : [Instruction23x, [ "sub-double" ] ],
+  0xad : [Instruction23x, [ "mul-double" ] ],
+  0xae : [Instruction23x, [ "div-double" ] ],
+  0xaf : [Instruction23x, [ "rem-double" ] ],
+  
+  
+  0xb0 : [Instruction12x, [ "add-int/2addr" ] ],
+  0xb1 : [Instruction12x, [ "sub-int/2addr" ] ],
+  0xb2 : [Instruction12x, [ "mul-int/2addr" ] ],
+  0xb3 : [Instruction12x, [ "div-int/2addr" ] ],
+  0xb4 : [Instruction12x, [ "rem-int/2addr" ] ],
+  0xb5 : [Instruction12x, [ "and-int/2addr" ] ],
+  0xb6 : [Instruction12x, [ "or-int/2addr" ] ],
+  0xb7 : [Instruction12x, [ "xor-int/2addr" ] ],
+  0xb8 : [Instruction12x, [ "shl-int/2addr" ] ],
+  0xb9 : [Instruction12x, [ "shr-int/2addr" ] ],
+  0xba : [Instruction12x, [ "ushr-int/2addr" ] ],
+  0xbb : [Instruction12x, [ "add-long/2addr" ] ],
+  0xbc : [Instruction12x, [ "sub-long/2addr" ] ],
+  0xbd : [Instruction12x, [ "mul-long/2addr" ] ],
+  0xbe : [Instruction12x, [ "div-long/2addr" ] ],
+  0xbf : [Instruction12x, [ "rem-long/2addr" ] ],
+  0xc0 : [Instruction12x, [ "and-long/2addr" ] ],
+  0xc1 : [Instruction12x, [ "or-long/2addr" ] ],
+  0xc2 : [Instruction12x, [ "xor-long/2addr" ] ],
+  0xc3 : [Instruction12x, [ "shl-long/2addr" ] ],
+  0xc4 : [Instruction12x, [ "shr-long/2addr" ] ],
+  0xc5 : [Instruction12x, [ "ushr-long/2addr" ] ],
+  0xc6 : [Instruction12x, [ "add-float/2addr" ] ],
+  0xc7 : [Instruction12x, [ "sub-float/2addr" ] ],
+  0xc8 : [Instruction12x, [ "mul-float/2addr" ] ],
+  0xc9 : [Instruction12x, [ "div-float/2addr" ] ],
+  0xca : [Instruction12x, [ "rem-float/2addr" ] ],
+  0xcb : [Instruction12x, [ "add-double/2addr" ] ],
+  0xcc : [Instruction12x, [ "sub-double/2addr" ] ],
+  0xcd : [Instruction12x, [ "mul-double/2addr" ] ],
+  0xce : [Instruction12x, [ "div-double/2addr" ] ],
+  0xcf : [Instruction12x, [ "rem-double/2addr" ] ],
+
+  0xd0 : [Instruction22s, [ "add-int/lit16" ] ],
+  0xd1 : [Instruction22s, [ "rsub-int" ] ],
+  0xd2 : [Instruction22s, [ "mul-int/lit16" ] ],
+  0xd3 : [Instruction22s, [ "div-int/lit16" ] ],
+  0xd4 : [Instruction22s, [ "rem-int/lit16" ] ],
+  0xd5 : [Instruction22s, [ "and-int/lit16" ] ],
+  0xd6 : [Instruction22s, [ "or-int/lit16" ] ],
+  0xd7 : [Instruction22s, [ "xor-int/lit16" ] ],
+
+
+  0xd8 : [Instruction22b, [ "add-int/lit8" ] ],
+  0xd9 : [Instruction22b, [ "rsub-int/lit8" ] ],
+  0xda : [Instruction22b, [ "mul-int/lit8" ] ],
+  0xdb : [Instruction22b, [ "div-int/lit8" ] ],
+  0xdc : [Instruction22b, [ "rem-int/lit8" ] ],
+  0xdd : [Instruction22b, [ "and-int/lit8" ] ],
+  0xde : [Instruction22b, [ "or-int/lit8" ] ],
+  0xdf : [Instruction22b, [ "xor-int/lit8" ] ],
+  0xe0 : [Instruction22b, [ "shl-int/lit8" ] ],
+  0xe1 : [Instruction22b, [ "shr-int/lit8" ] ],
+  0xe2 : [Instruction22b, [ "ushr-int/lit8" ] ],
+  
+  
+  # unused
+  0xe3 : [Instruction10x, [ "nop" ] ],
+  0xe4 : [Instruction10x, [ "nop" ] ],
+  0xe5 : [Instruction10x, [ "nop" ] ],
+  0xe6 : [Instruction10x, [ "nop" ] ],
+  0xe7 : [Instruction10x, [ "nop" ] ],
+  0xe8 : [Instruction10x, [ "nop" ] ],
+  0xe9 : [Instruction10x, [ "nop" ] ],
+  0xea : [Instruction10x, [ "nop" ] ],
+  0xeb : [Instruction10x, [ "nop" ] ],
+  0xec : [Instruction10x, [ "nop" ] ],
+  0xed : [Instruction10x, [ "nop" ] ],
+  0xee : [Instruction10x, [ "nop" ] ],
+  0xef : [Instruction10x, [ "nop" ] ],
+  0xf0 : [Instruction10x, [ "nop" ] ],
+  0xf1 : [Instruction10x, [ "nop" ] ],
+  0xf2 : [Instruction10x, [ "nop" ] ],
+  0xf3 : [Instruction10x, [ "nop" ] ],
+  0xf4 : [Instruction10x, [ "nop" ] ],
+  0xf5 : [Instruction10x, [ "nop" ] ],
+  0xf6 : [Instruction10x, [ "nop" ] ],
+  0xf7 : [Instruction10x, [ "nop" ] ],
+  0xf8 : [Instruction10x, [ "nop" ] ],
+  0xf9 : [Instruction10x, [ "nop" ] ],
+  0xfa : [Instruction10x, [ "nop" ] ],
+  0xfb : [Instruction10x, [ "nop" ] ],
+  0xfc : [Instruction10x, [ "nop" ] ],
+  0xfd : [Instruction10x, [ "nop" ] ],
+  0xfe : [Instruction10x, [ "nop" ] ],
+}
+
+def get_instruction(cm, op_value, buff) :
+  #print "Parsing instruction %x" % op_value
+  return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff, DALVIK_OPCODES_FORMAT[ op_value ][1:] )
+
+def get_instruction_payload(op_value, buff) :
+  #print "Parsing instruction payload %x" % op_value
+  return DALVIK_OPCODES_PAYLOAD[ op_value ][0]( buff )
 
 class DCode :
     def __init__(self, class_manager, size, buff) :
         self.__CM = class_manager
         self.__insn = buff
+        
+        self.bytecodes = []
+        
+        #print "New method ....", size * calcsize( '<H' )
+        
+        # Get instructions
+        idx = 0
+        while idx < (size * calcsize( '<H' )) :
+          obj = None
 
-        self.__h_special_bytecodes = {}
-        self.__bytecodes = []
-
-        self.__current_pos = 0
-
-        ushort = calcsize( '<H' )
-
-        real_j = 0
-        j = 0
-        while j < (size * ushort) :
-            # handle special instructions
-            if real_j in self.__h_special_bytecodes :
-                special_e = self.__h_special_bytecodes[ real_j ]( self.__insn[j : ] )
-
-                self.__bytecodes.append( DBCSpe( self.__CM, special_e ) )
-
-                del self.__h_special_bytecodes[ real_j ]
-
-                self.__current_pos += special_e.get_length()
-                j = self.__current_pos
-                #print "REAL_J === ", real_j, special_e, j, self.__h_special_bytecodes
+          #print "idx = %x" % idx
+          op_value = unpack( '=B', self.__insn[idx] )[0]
+          #print "First %x" % op_value
+          if op_value in DALVIK_OPCODES_FORMAT :
+            if op_value == 0x00 or op_value == 0xff:
+              op_value = unpack( '=H', self.__insn[idx:idx+2] )[0]
+              #print "Second %x" % op_value
+              if op_value in DALVIK_OPCODES_PAYLOAD :
+                obj = get_instruction_payload( op_value, self.__insn[idx:] )
+              elif op_value in DALVIK_OPCODES_EXPANDED :
+                raise("ooo")
+              else :
+                op_value = unpack( '=B', self.__insn[idx] )[0]
+                obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
             else :
-                op_value = unpack( '=B', self.__insn[j] )[0]
+              op_value = unpack( '=B', self.__insn[idx] )[0]
+              obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
 
-                if op_value in DALVIK_OPCODES :
-                    #print "BEFORE J === ", j, self.__current_pos 
-#                    operands, special = self._analyze_mnemonic2( op_value, DALVIK_OPCODES[ op_value ] ) 
-                    operands, special = self._analyze_mnemonic( op_value, DALVIK_OPCODES[ op_value ])
-#                    print operands, special, DALVIK_OPCODES[ op_value ]
+          self.bytecodes.append( obj )
+          idx = idx + obj.get_length()
 
-                    if special != None :
-                        self.__h_special_bytecodes[ special[0] + real_j ] = special[1]
-
-                    self.__bytecodes.append( DBC( self.__CM, DALVIK_OPCODES[ op_value ][1], op_value, operands, self.__insn[ j : self.__current_pos ] ) ) 
-                   
-                    #print self.__current_pos, DALVIK_OPCODES[ op_value ], operands
-                    #print "J === ", j, self.__current_pos 
-                    j = self.__current_pos
-                else :
-                    bytecode.Exit( "invalid opcode [ 0x%x ]" % op_value )
-            real_j = j / 2
-
-    def _extract_values(self, i) :
-        return MAP_EXTRACT_VALUES[i]( self.__insn, self.__current_pos )
-
-    def _analyze_mnemonic(self, op_value, mnemonic) :
-        special = False
-        if len(mnemonic) == 6 :
-            special = True
-
-        operands = []
-        for i in mnemonic[3] :
-            r = self._extract_values(i) 
-
-            self.__current_pos += r[0]
-            operands.extend( [ [ "v", j ] for j in r[1] ] )
-
-        operands[0][0] = "OP" 
-        if mnemonic[4] != {} :
-            for i in range(1, len(operands)) :
-                if i in mnemonic[4] :
-                    operands[i][0] = mnemonic[4][i]
-
-        # SPECIFIC OPCODES
-        if (op_value >= 0x6e and op_value <= 0x72) or op_value == 0x24 :
-            if operands[2][1] == 5 :
-                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 1 ]] + [operands[ 3 ]]    
-            else :
-                operands = [operands[ 0 ]] + operands[ 4 : 4 + operands[ 2 ][1] ] + [operands[ 3 ]]
-
-        elif (op_value >= 0x74 and op_value <= 0x78) or op_value == 0x25 :
-            NNNN = operands[3][1] + operands[1][1] + 1
-
-            for i in range(operands[3][1] + 1, NNNN - 1) :
-                operands.append( ["v", i ] )
-
-            operands.append( operands.pop(2) )
-            operands.pop(1)
-
-        # SPECIAL OPCODES
-        if special :
-            return operands, (operands[2][1], mnemonic[-1])
-        return operands, None
-
+    def reload(self) :
+        pass
+    
     def get(self) :
-        return self.__bytecodes
-
-    def get_raw(self) :
-        return self.__insn
-
+        return self.bytecodes
+    
     def get_ins_off(self, off) :
         idx = 0
 
-        for i in self.__bytecodes :
+        for i in self.bytecodes :
             if idx == off :
                 return i
             idx += i.get_length()
         return None
-    
-    def reload(self) :
-        for i in self.__bytecodes :
-            i._reload()
 
     def show(self) :
         nb = 0
         idx = 0
-        for i in self.__bytecodes :
+        for i in self.bytecodes :
             print nb, "0x%x" % idx,
             i.show(nb)
             print
@@ -2823,6 +3107,9 @@ class DCode :
     def pretty_show(self, m_a) :
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
+
+    def get_raw(self) :
+        return self.__insn
 
 class TryItem :
     def __init__(self, buff, cm) :
@@ -2869,9 +3156,9 @@ class DalvikCode :
         ushort = calcsize( '=H' )
 
         if self.__CM.get_engine() == "native" :
-            self._code = DCodeNative( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+            self.code = CodeNative( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
         else :
-            self._code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+            self.code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
         if (self.insns_size.get_value() % 2 == 1) :
             self.__padding = SV( '=H', buff.read( 2 ) )
@@ -2885,13 +3172,13 @@ class DalvikCode :
             self.handlers = EncodedCatchHandlerList( buff, self.__CM )
 
     def reload(self) :
-        self._code.reload()
+        self.code.reload()
 
     def get_length(self) :
         return self.insns_size.get_value()
 
     def get_bc(self) :
-        return self._code
+        return self.code
 
     def get_off(self) :
         return self.__off
@@ -2912,7 +3199,7 @@ class DalvikCode :
 
     def show(self) :
         self._begin_show()
-        self._code.show()
+        self.code.show()
         self._end_show()
 
     def _end_show(self) :
@@ -2920,7 +3207,7 @@ class DalvikCode :
 
     def pretty_show(self, m_a) :
         self._begin_show()
-        self._code.pretty_show(m_a)
+        self.code.pretty_show(m_a)
         self._end_show()
 
     def get_obj(self) :
@@ -2933,7 +3220,7 @@ class DalvikCode :
                   self.tries_size.get_value_buff() + \
                   self.debug_info_off.get_value_buff() + \
                   self.insns_size.get_value_buff() + \
-                  self._code.get_raw()
+                  self.code.get_raw()
 
         if (self.insns_size.get_value() % 2 == 1) :
             buff += self.__padding.get_value_buff()
@@ -3003,7 +3290,7 @@ class MapItem :
         general_format = self.format.get_value()
         buff.set_idx( general_format.offset )
 
-#        print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
+        #print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
 
         if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]
@@ -3381,6 +3668,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
         self.classes_names = None
         self.__cache_methods = None
+
+    def get_class_manager(self) :
+        return self.CM
 
     def show(self) :
         """Show the .class format into a human readable format"""
