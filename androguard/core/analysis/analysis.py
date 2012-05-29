@@ -552,10 +552,10 @@ class ExternalMethod :
         pass
 
 class JVMBasicBlock :
-    def __init__(self, start, _vm, _method, _context) :
-        self.__vm = _vm
-        self.__method = _method
-        self.__context = _context
+    def __init__(self, start, vm, method, context) :
+        self.__vm = vm
+        self.method = method
+        self.context = context
 
         self.__stack = Stack()
         self.stack_traces = StackTraces()
@@ -572,13 +572,13 @@ class JVMBasicBlock :
 
         self.free_blocks_offsets = []
 
-        self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
+        self.name = "%s-BB@0x%x" % (self.method.get_name(), self.start)
 
     def get_stack(self) :
         return self.__stack.gets()
 
     def get_method(self) :
-        return self.__method
+        return self.method
 
     def get_name(self) :
         return self.name
@@ -602,14 +602,14 @@ class JVMBasicBlock :
     def set_childs(self, values) :
 #      print self, self.start, self.end, values, self.ins[-1].get_name()
         if values == [] :
-            next_block = self.__context.get_basic_block( self.end + 1 )
+            next_block = self.context.get_basic_block( self.end + 1 )
             if next_block != None :
                 self.childs.append( ( self.end - self.ins[-1].get_length(), self.end, next_block ) )
         else :
             for i in values :
-                #print i, self.__context.get_basic_block( i )
+                #print i, self.context.get_basic_block( i )
                 if i != -1 :
-                    self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.__context.get_basic_block( i ) ) )
+                    self.childs.append( ( self.end - self.ins[-1].get_length(), i, self.context.get_basic_block( i ) ) )
 
         for c in self.childs :
             if c[2] != None :
@@ -697,8 +697,8 @@ class JVMBasicBlock :
 
                 variable_name = "%s-%s" % (i.get_name()[0], value)
 
-                self.__context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.__method )
-                self.__context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.__method) )
+                self.context.get_tainted_variables().add( variable_name, TAINTED_LOCAL_VARIABLE, self.method )
+                self.context.get_tainted_variables().push_info( TAINTED_LOCAL_VARIABLE, variable_name, (access_flag[0], idx, self, self.method) )
             #########################################################
 
             ################### TAINTED FIELDS ###################
@@ -711,15 +711,15 @@ class JVMBasicBlock :
                 #    desc = ExternalFM( o[0], o[1], o[2] )
 
 #               print "RES", res, "-->", desc.get_name()
-                self.__context.get_tainted_variables().push_info( TAINTED_FIELD, [o[0], o[1], o[2]], (FIELDS[ i.get_name() ][0], idx, self, self.__method) )
+                self.context.get_tainted_variables().push_info( TAINTED_FIELD, [o[0], o[1], o[2]], (FIELDS[ i.get_name() ][0], idx, self, self.method) )
             #########################################################
 
             ################### TAINTED PACKAGES ###################
             elif "new" in i.get_name() or "invoke" in i.get_name() or "getstatic" in i.get_name() :
                 if "new" in i.get_name() :
-                    self.__context.get_tainted_packages()._push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+                    self.context.get_tainted_packages().push_info( i.get_operands(), (TAINTED_PACKAGE_CREATE, idx, self, self.method) )
                 else :
-                    self.__context.get_tainted_packages()._push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, i.get_operands()[1], i.get_operands()[2]) )
+                    self.context.get_tainted_packages().push_info( i.get_operands()[0], (TAINTED_PACKAGE_CALL, idx, self, self.method, i.get_operands()[1], i.get_operands()[2]) )
             #########################################################
 
             ################### TAINTED INTEGERS ###################
@@ -727,13 +727,13 @@ class JVMBasicBlock :
                 o = i.get_operands()
 
                 if o[0] == "CONSTANT_Integer" :
-                    self.__context.get_tainted_integers().push_info( i, (o[1], idx, self, self.__method) )
+                    self.context.get_tainted_integers().push_info( i, (o[1], idx, self, self.method) )
 
             elif "sipush" in i.get_name() :
-                self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
+                self.context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.method) )
 
             elif "bipush" in i.get_name() :
-                self.__context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.__method) )
+                self.context.get_tainted_integers().push_info( i, (i.get_operands(), idx, self, self.method) )
 
             #########################################################
 
@@ -786,7 +786,7 @@ class JVMBasicBlock :
             except KeyError :
                 print "[[[[ %s is not in INSTRUCTIONS_ACTIONS ]]]]" % i.get_name()
             except IndexError :
-                print "[[[[ Analysis failed in %s-%s-%s ]]]]" % (self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor())
+                print "[[[[ Analysis failed in %s-%s-%s ]]]]" % (self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor())
 
             idx += i.get_length()
 
@@ -957,10 +957,10 @@ DVM_FIELDS_ACCESS = {
    }
 
 class DVMBasicBlock :
-    def __init__(self, start, _vm, _method, _context) :
-        self.__vm = _vm
-        self.__method = _method
-        self.__context = _context
+    def __init__(self, start, vm, method, context) :
+        self.__vm = vm
+        self.method = method
+        self.context = context
 
         self.ins = []
 
@@ -976,11 +976,11 @@ class DVMBasicBlock :
 
         self.special_ins = {}
 
-        self.name = "%s-BB@0x%x" % (self.__method.get_name(), self.start)
+        self.name = "%s-BB@0x%x" % (self.method.get_name(), self.start)
         self.exception_analysis = None
 
     def get_method(self) :
-        return self.__method
+        return self.method
 
     def get_name(self) :
         return self.name
@@ -1004,16 +1004,13 @@ class DVMBasicBlock :
     def set_childs(self, values) :
         #print self, self.start, self.end, values, self.ins[-1].get_name()
         if values == [] :
-            next_block = self.__context.get_basic_block( self.end + 1 )
+            next_block = self.context.get_basic_block( self.end + 1 )
             if next_block != None :
                 self.childs.append( ( self.end - self.ins[-1].get_length(), self.end, next_block ) )
         else :
             for i in values :
                 if i != -1 :
-                    next_block = self.__context.get_basic_block( i )
-                    #FIXME
-                    #print self, self.start, self.end, values, self.ins[-1].get_name()
-                    #   raise("ooo")
+                    next_block = self.context.get_basic_block( i )
                     if next_block != None :
                         self.childs.append( ( self.end - self.ins[-1].get_length(), i, next_block) )
 
@@ -1025,30 +1022,36 @@ class DVMBasicBlock :
         idx = 0
         for i in self.ins :
             op_value = i.get_op_value()
+
             #if i.get_name() in DVM_FIELDS_ACCESS :
             if (op_value >= 0x52 and op_value <= 0x6d) :
-                o = i.get_operands()
-                desc = self.__vm.get_cm_field(o[-1][1])
-                self.__context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.__method) )
+                desc = self.__vm.get_cm_field( i.get_ref_kind() )
+                self.context.get_tainted_variables().push_info( TAINTED_FIELD, desc, (DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self, self.method) )
+
             #elif "invoke" in i.get_name() :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
-                operands = i.get_operands()
-                idx_meth = operands[-1][1]
+                idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method( idx_meth )
-                #method_info = [ method_info[0], [ method_info[1], method_info[2] ], method_info[3] ]
-                self.__context.get_tainted_packages()._push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.__method, method_info[1], method_info[2][0] + method_info[2][1]) )
+                self.context.get_tainted_packages().push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1]) )
+                
+                #method = self.__vm.get_class_manager().get_method_ref( idx_meth )
+                #self.context.tags.emit( method )
+
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
-                type_info = self.__vm.get_cm_type( i.get_operands()[-1][1] )
-                self.__context.get_tainted_packages()._push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.__method) )
+                type_info = self.__vm.get_cm_type( i.get_ref_kind() )
+                self.context.get_tainted_packages().push_info( type_info, (TAINTED_PACKAGE_CREATE, idx, self, self.method) )
+
+
             #elif "const-string" in i.get_name() :
             elif (op_value >= 0x1a and op_value <= 0x1b) :
-                string_name = self.__vm.get_cm_string( i.get_operands()[-1][1] )
-                self.__context.get_tainted_variables().add( string_name, TAINTED_STRING )
-                self.__context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.__method) )
+                string_name = self.__vm.get_cm_string( i.get_ref_kind() )
+                self.context.get_tainted_variables().add( string_name, TAINTED_STRING )
+                self.context.get_tainted_variables().push_info( TAINTED_STRING, string_name, ("R", idx, self, self.method) )
+
             elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c) :
-                code = self.__method.get_code().get_bc()
-                self.special_ins[ i ] = code.get_ins_off( self.get_start() + idx + i.get_operands()[-1][1] * 2 )
+                code = self.method.get_code().get_bc()
+                self.special_ins[ i ] = code.get_ins_off( self.get_start() + idx + i.get_ref_off() * 2 )
 
             idx += i.get_length()
 
@@ -1203,8 +1206,6 @@ class TaintedVariables :
         if permissions_needed == [] :
             pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
 
-        classes = self.__vm.get_classes_names()
-
         for f, f1 in self.get_fields() :
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
             
@@ -1291,7 +1292,7 @@ class TaintedVariables :
 
         elif _type == TAINTED_STRING :
             self.add( var, _type )
-            p = self.__vars[ _type ][ var ].push( info )
+#            p = self.__vars[ _type ][ var ].push( info )
 
             #try :
             #    self.__methods[ _type ][ p.get_method() ][ var ].append( p )
@@ -1553,7 +1554,7 @@ class TaintedPackages :
         if name not in self.__packages :
             self.__packages[ name ] = TaintedPackage( name )
 
-    def _push_info(self, class_name, info) :
+    def push_info(self, class_name, info) :
         self._add_pkg( class_name )
         p = self.__packages[ class_name ].push( info )
 
@@ -1756,7 +1757,6 @@ class TaintedPackages :
     def get_permissions(self, permissions_needed) :
         """
             @param permissions_needed : a list of restricted permissions to get ([] returns all permissions)
-            
             @rtype : a dictionnary of permissions' paths
         """
         permissions = {}
@@ -1787,10 +1787,97 @@ class TaintedPackages :
 
         return permissions
 
+class Enum(object):
+  def __init__(self, names):
+    self.names = names
+    for value, name in enumerate(self.names):
+      setattr(self, name.upper(), value)
+  
+  def tuples(self):
+    return tuple(enumerate(self.names))
+
+TAG_ANDROID = Enum([ 'ANDROID', 'TELEPHONY', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
+    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DRM', 'GESTURE',
+    'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
+    'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
+    'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
+    'VIEW', 'WEBKIT', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM'])
+
+TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
+
+TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
+                 TAG_ANDROID.TELEPHONY :                [ 0, "Landroid/telephony"],
+                 TAG_ANDROID.ACCESSIBILITYSERVICE :     [ 0, "Landroid/accessibilityservice" ],
+                 TAG_ANDROID.ACCOUNTS :                 [ 0, "Landroid/accounts" ],
+                 TAG_ANDROID.ANIMATION :                [ 0, "Landroid/animation" ],
+                 TAG_ANDROID.APP :                      [ 0, "Landroid/app" ],
+                 TAG_ANDROID.BLUETOOTH :                [ 0, "Landroid/bluetooth" ],
+                 TAG_ANDROID.CONTENT :                  [ 0, "Landroid/content" ],
+                 TAG_ANDROID.DATABASE :                 [ 0, "Landroid/database" ],
+                 TAG_ANDROID.DRM :                      [ 0, "Landroid/drm" ],
+                 TAG_ANDROID.GESTURE :                  [ 0, "Landroid/gesture" ],
+                 TAG_ANDROID.GRAPHICS :                 [ 0, "Landroid/graphics" ],
+                 TAG_ANDROID.HARDWARE :                 [ 0, "Landroid/hardware" ],
+                 TAG_ANDROID.INPUTMETHODSERVICE :       [ 0, "Landroid/inputmethodservice" ],
+                 TAG_ANDROID.LOCATION :                 [ 0, "Landroid/location" ],
+                 TAG_ANDROID.MEDIA :                    [ 0, "Landroid/media" ],
+                 TAG_ANDROID.MTP :                      [ 0, "Landroid/mtp" ],
+                 TAG_ANDROID.NET :                      [ 0, "Landroid/net" ],
+                 TAG_ANDROID.NFC :                      [ 0, "Landroid/nfc" ],
+                 TAG_ANDROID.OPENGL :                   [ 0, "Landroid/opengl" ],
+                 TAG_ANDROID.OS :                       [ 0, "Landroid/os" ],
+                 TAG_ANDROID.PREFERENCE :               [ 0, "Landroid/preference" ],
+                 TAG_ANDROID.PROVIDER :                 [ 0, "Landroid/provider" ],
+                 TAG_ANDROID.RENDERSCRIPT :             [ 0, "Landroid/renderscript" ],
+                 TAG_ANDROID.SAX :                      [ 0, "Landroid/sax" ],
+                 TAG_ANDROID.SECURITY :                 [ 0, "Landroid/security" ],
+                 TAG_ANDROID.SERVICE :                  [ 0, "Landroid/service" ],
+                 TAG_ANDROID.SPEECH :                   [ 0, "Landroid/speech" ],
+                 TAG_ANDROID.SUPPORT :                  [ 0, "Landroid/support" ],
+                 TAG_ANDROID.TEST :                     [ 0, "Landroid/test" ],
+                 TAG_ANDROID.TEXT :                     [ 0, "Landroid/text" ],
+                 TAG_ANDROID.UTIL :                     [ 0, "Landroid/util" ],
+                 TAG_ANDROID.VIEW :                     [ 0, "Landroid/view" ],
+                 TAG_ANDROID.WEBKIT :                   [ 0, "Landroid/webkit" ],
+                 TAG_ANDROID.DALVIK_BYTECODE :          [ 0, "Ldalvik/bytecode" ],
+                 TAG_ANDROID.DALVIK_SYSTEM :            [ 0, "Ldalvik/system" ],
+}
+
+class Tags :
+  def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID) :
+    self.tags = set()
+   
+    self.patterns = patterns
+    self.reverse = TAG_REVERSE_ANDROID
+
+    for i in self.patterns :
+      self.patterns[i][1] = re.compile(self.patterns[i][1])
+
+  def emit(self, method) :
+    for i in self.patterns :
+      if self.patterns[i][0] == 0 :
+        if self.patterns[i][1].search( method.get_class() ) != None :
+          self.tags.add( i )
+  
+  def emit_by_classname(self, classname) :
+    for i in self.patterns :
+      if self.patterns[i][0] == 0 :
+        if self.patterns[i][1].search( classname ) != None :
+          self.tags.add( i )
+
+  def __contains__(self, key) :
+    return key in self.tags
+
+  def __str__(self) :
+    return str([ self.reverse[ i ] for i in self.tags ])
+
+  def empty(self) :
+    return self.tags == set()
+
 class BasicBlocks :
-    def __init__(self, _vm, _tv) :
+    def __init__(self, _vm, tv) :
         self.__vm = _vm
-        self.__tainted = _tv
+        self.tainted = tv
 
         self.bb = []
 
@@ -1807,13 +1894,13 @@ class BasicBlocks :
         return None
 
     def get_tainted_integers(self) :
-        return self.__tainted["integers"]
+        return self.tainted["integers"]
 
     def get_tainted_packages(self) :
-        return self.__tainted["packages"]
+        return self.tainted["packages"]
 
     def get_tainted_variables(self) :
-        return self.__tainted["variables"]
+        return self.tainted["variables"]
 
     def get_random(self) :
         """
@@ -1885,16 +1972,16 @@ class MethodAnalysis :
     """
        This class analyses in details a method of a class/dex file
     """
-    def __init__(self, _vm, _method, _tv, code_analysis=False) :
+    def __init__(self, vm, method, tv, code_analysis=False) :
         """
             @param _vm :  a L{JVMFormat} or L{DalvikVMFormat} object
             @param _method : a method object
             @param tv : a dictionnary of tainted information
         """
-        self.__vm = _vm
-        self.__method = _method
+        self.__vm = vm
+        self.method = method
 
-        self.__tainted = _tv
+        self.tainted = tv
 
         BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : jvm.determineNext,
                "Dexception" : jvm.determineException }
@@ -1906,14 +1993,14 @@ class MethodAnalysis :
         for i in BO["BasicOPCODES"] :
             BO["BasicOPCODES_H"].append( re.compile( i ) )
 
-        self.basic_blocks = BasicBlocks( self.__vm, self.__tainted )
+        self.basic_blocks = BasicBlocks( self.__vm, self.tainted )
         self.exceptions = Exceptions( self.__vm )
 
-        code = self.__method.get_code()
+        code = self.method.get_code()
         if code == None :
             return
 
-        current_basic = BO["BasicClass"]( 0, self.__vm, self.__method, self.basic_blocks )
+        current_basic = BO["BasicClass"]( 0, self.__vm, self.method, self.basic_blocks )
         self.basic_blocks.push( current_basic )
 
         ##########################################################
@@ -1926,34 +2013,30 @@ class MethodAnalysis :
         for i in bc.get() :
             for j in BO["BasicOPCODES_H"] :
                 if j.match(i.get_name()) != None :
-                    v = BO["Dnext"]( i, idx, self.__method )
+                    v = BO["Dnext"]( i, idx, self.method )
                     h[ idx ] = v
                     l.extend( v )
                     break
 
             idx += i.get_length()
         
-        excepts = BO["Dexception"]( self.__vm, self.__method )
+        excepts = BO["Dexception"]( self.__vm, self.method )
         for i in excepts:
             l.extend([i[0]])
             
         idx = 0
         for i in bc.get() :
-            name = i.get_name()
-
-            here = False
             # index is a destination
             if idx in l :
                 if current_basic.ins != [] :
-                    current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
+                    current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.method, self.basic_blocks )
                     self.basic_blocks.push( current_basic )
-                here = True
 
             current_basic.push( i )
 
             # index is a branch instruction
             if idx in h :
-                current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.__method, self.basic_blocks )
+                current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.method, self.basic_blocks )
                 self.basic_blocks.push( current_basic )
 
             idx += i.get_length()
@@ -2000,8 +2083,7 @@ class MethodAnalysis :
         return -1
 
     def random_free_block_offset(self) :
-        b = self.basic_blocks.get_random()
-        return x
+        return self.basic_blocks.get_random()
 
     def next_free_block_offset(self, idx=0) :
         for i in self.basic_blocks.get() :
@@ -2020,13 +2102,13 @@ class MethodAnalysis :
         return self.__vm
 
     def get_method(self) :
-        return self.__method
+        return self.method
 
     def get_op(self, op) :
         return []
 
     def get_local_variables(self) :
-        return self.__tainted["variables"].get_local_variables( self.__method )
+        return self.tainted["variables"].get_local_variables( self.method )
 
     def get_ops(self) :
         l = []
@@ -2036,7 +2118,7 @@ class MethodAnalysis :
         return l
 
     def show(self) :
-        print "METHOD", self.__method.get_class_name(), self.__method.get_name(), self.__method.get_descriptor()
+        print "METHOD", self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor()
 
         for i in self.basic_blocks.get() :
             print "\t", i
@@ -2045,13 +2127,17 @@ class MethodAnalysis :
 
     def show_methods(self) :
         print "\t #METHODS :"
-        l = []
         for i in self.__bb :
             methods = i.get_methods()
             for method in methods :
                 print "\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor()
                 for context in methods[method] :
                     print "\t\t\t |---|", context.details
+
+    def create_tags(self) :
+      self.tags = Tags()
+      for i in self.tainted["packages"].get_packages_by_method( self.method ) :
+        self.tags.emit_by_classname( i )
 
 SIGNATURE_L0_0 = "L0_0"
 SIGNATURE_L0_1 = "L0_1"
@@ -2145,10 +2231,6 @@ class VMAnalysis :
     def get_init_method(self) :
         m = self.__vm.get_method("<init>")
         return m[0]
-
-    # FIXME
-    def get_random_integer_value(self, method, descriptor) :
-        return 0
 
     def prev_free_block_offset(self, method, idx=0) :
         """
@@ -2301,3 +2383,7 @@ class VMAnalysis :
     # FIXME
     def get_ops(self, method) :
         return [ (i.get_method(), i.get_ops()) for i in self.l ]
+    
+    def create_tags(self) :
+      for i in self.methods :
+        i.create_tags()

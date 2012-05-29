@@ -93,13 +93,17 @@ def main(options, arguments) :
     if options.input != None and options.output != None :
         a = Androguard( [ options.input ] )
 
-        create_directories( a, options.output )
-
         if options.dot != None or options.format != None :
+            create_directories( a, options.output )
             export_apps_to_format( a, options.output, options.dot, options.format )
+        else :
+          print "Please, specify a format or dot option"
 
     elif options.version != None :
         print "Androdd version %s" % androconf.ANDROGUARD_VERSION
+    
+    else :
+      print "Please, specify an input file and an output directory"
 
 if __name__ == "__main__" :
     parser = OptionParser()
