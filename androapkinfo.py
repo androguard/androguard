@@ -27,11 +27,12 @@ from androguard.core.bytecodes import apk
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis 
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
+option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename (APK)', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version', 'action' : 'count' }
+option_2 = { 'name' : ('-t', '--tag'), 'help' : 'display tags', 'action' : 'count' }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version', 'action' : 'count' }
 
-options = [option_0, option_1, option_2]
+options = [option_0, option_1, option_2, option_3]
 
 def display_dvm_info(apk) :
     vm = dvm.DalvikVMFormat( apk.get_dex() )
@@ -40,6 +41,13 @@ def display_dvm_info(apk) :
     print "Native code:", analysis.is_native_code(vmx)
     print "Dynamic code:", analysis.is_dyn_code(vmx)
     print "Reflection code:", analysis.is_reflection_code(vmx)
+
+    print analysis.TAG_ANDROID
+
+    vmx.create_tags()
+    for i in vmx.get_methods() :
+      if not i.tags.empty() :
+        print i.method.get_class_name(), i.method.get_name(), i.tags
 
 def main(options, arguments) :
     if options.input != None :

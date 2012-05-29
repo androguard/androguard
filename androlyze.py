@@ -81,12 +81,13 @@ def interact() :
     ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
     ipshell()
 
-def AnalyzeAPK(filename, raw=False) :
+def AnalyzeAPK(filename, raw=False, decompiler=None) :
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
         @param filename : the filename of the android application or a buffer which represents the application
         @param raw : True is you would like to use a buffer
+        @param decompiler : ded, dex2jad, dad
         
         @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
     """
@@ -95,34 +96,21 @@ def AnalyzeAPK(filename, raw=False) :
 
     d, dx = AnalyzeDex( filename, a.get_dex() )
 
-    return a, d, dx
-
-
-def AAnalyzeAPK(filename, raw=False, decompiler="dad") :
-    """
-        Analyze (and decompile) an android application and setup all stuff for a more quickly analysis !
-
-        @param filename : the filename of the android application or a buffer which represents the application
-        @param raw : True is you would like to use a buffer
-        @param decompiler : ded, dex2jad, dad
-        
-        @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
-    """
-    a, d, dx = AnalyzeAPK( filename, raw )
-
-    androconf.debug("Decompiler ...")
-    decompiler = decompiler.lower()
-    if decompiler == "dex2jad" :
+    if decompiler != None :
+      androconf.debug("Decompiler ...")
+      decompiler = decompiler.lower()
+      if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
-    elif decompiler == "ded" :
+      elif decompiler == "ded" :
         d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
-    elif decompiler == "dad" :
+      elif decompiler == "dad" :
         d.set_decompiler( DecompilerDAD( d, dx ) )
-    else :
+      else :
         print "Unknown decompiler, use default", decompiler
         d.set_decompiler( DecompilerDAD( d, dx ) )
 
     return a, d, dx
+
 
 def AnalyzeDex(filename, raw=False) :
     """
