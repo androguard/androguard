@@ -108,6 +108,7 @@ class APK :
         """
             @param filename : specify the path of the file, or raw data
             @param raw : specify (boolean) if the filename is a path or raw data
+            @param mode
         """
         self.filename = filename
 
@@ -150,9 +151,15 @@ class APK :
                 self.validAPK = True
 
     def get_AndroidManifest(self) :
+        """
+            Return the Android Manifest XML file
+        """
         return self.xml["AndroidManifest.xml"]
 
     def is_valid_APK(self) :
+        """
+            Return true if APK is valid, false otherwise
+        """
         return self.validAPK
 
     #def _reload_apk(self) :
