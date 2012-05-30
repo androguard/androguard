@@ -61,7 +61,7 @@ def PrettyShowEx( exceptions ) :
                 print "\t", "%s" % (i.show_buff())
         else :
             for i in exceptions : 
-                print "\t", "%s%s%s" % (Color.cyan, i.show_buff(), Color.normal)
+                print "\t", "%s%s%s" % (CONF["COLORS"]["EXCEPTION"], i.show_buff(), Color.normal)
 
 def PrettyShow0( basic_blocks ) :
     paths = []
@@ -121,18 +121,36 @@ def PrettyShow0( basic_blocks ) :
 def PrettyShow1( basic_blocks ) :
     idx = 0
     nb = 0
+
+    offset_color = CONF["COLORS"]["OFFSET"]
+    offset_addr_color = CONF["COLORS"]["OFFSET_ADDR"]
+    instruction_name_color = CONF["COLORS"]["INSTRUCTION_NAME"]
+    branch_false_color = CONF["COLORS"]["BRANCH_FALSE"]
+    branch_true_color = CONF["COLORS"]["BRANCH_TRUE"]
+    branch_color = CONF["COLORS"]["BRANCH"]
+    exception_color = CONF["COLORS"]["EXCEPTION"]
+    bb_color = CONF["COLORS"]["BB"]
+    note_color = CONF["COLORS"]["NOTE"]
+
     for i in basic_blocks :
-        print "%s%s%s : " % (Color.purple, i.name, Color.normal)
+        print "%s%s%s : " % (bb_color, i.name, Color.normal)
         for ins in i.ins :
-            print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
-            ins.show( idx )
+            
+            notes = ins.get_notes()
+            if notes != [] :
+              for note in notes :
+                print "\t%s# %s%s" % (note_color, note, Color.normal)
+
+            print "\t%s%-3d%s(%s%08x%s)" % (offset_color, nb, Color.normal, offset_addr_color, idx, Color.normal),
+            print "%s%-20s%s %s" %(instruction_name_color, ins.get_name(), Color.normal, ins.get_output()),
+            #ins.show( idx )
 
             if ins == i.ins[-1] and i.childs != [] :
                 if len(i.childs) == 2 :
-                    print "%s[ %s%s " % (Color.red, i.childs[0][2].name, Color.green),
+                    print "%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color),
                     print ' '.join("%s" % c[2].name for c in i.childs[1:]), "]%s" % Color.normal,
                 else :
-                    print "%s[" % Color.blue, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
+                    print "%s[" % branch_color, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
 
             idx += ins.get_length()
             nb += 1
@@ -140,7 +158,7 @@ def PrettyShow1( basic_blocks ) :
             print
 
         if i.exception_analysis != None :
-            print "\t", "%s%s%s" % (Color.cyan, i.exception_analysis.show_buff(), Color.normal)
+          print "\t", "%s%s%s" % (exception_color, i.exception_analysis.show_buff(), Color.normal)
 
         print
 

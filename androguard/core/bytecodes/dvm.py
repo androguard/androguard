@@ -1539,7 +1539,7 @@ class EncodedMethod :
         self._class_name = None
 
         self._code = None
-        
+
         self.access_flags_string = None
 
     def reload(self) :
@@ -1655,6 +1655,10 @@ class EncodedMethod :
 
     def get_raw(self) :
         return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
+
+    def add_note(self, idx, msg) :
+        if self._code != None :  
+            self._code.add_note(idx, msg)
 
 
 class ClassDataItem :
@@ -2090,7 +2094,13 @@ DALVIK_OPCODES_EXPANDED = {
 
 def get_kind(cm, kind, value) :
   if kind == KIND_METH :
-    return cm.get_method(value)
+    method = cm.get_method_ref(value)
+    class_name = method.get_class()
+    name = method.get_name()
+    proto = method.get_proto()
+
+    proto = proto[0] + proto[1]
+    return "%s->%s%s" % (class_name, name, proto)
   elif kind == KIND_STRING :
     return "\"" + cm.get_string(value) + "\""
   elif kind == KIND_FIELD :
@@ -2099,7 +2109,10 @@ def get_kind(cm, kind, value) :
     return cm.get_type(value)
   return None
 
-class Instruction :
+class Instruction(object) :
+  def __init__(self) :
+    self.notes = []
+
   def get_name(self) :
     return self.name
   
@@ -2110,16 +2123,23 @@ class Instruction :
     return []
   
   def show(self, nb) :
-    print self.get_output(),
+    print self.name + " " + self.get_output(),
 
   def show_buff(self, nb) :
     return self.get_output()
-    
+
   def get_translated_kind(self) :
     return get_kind(self.cm, self.kind, self.get_ref_kind())
 
+  def add_note(self, msg) :
+    self.notes.append( msg )
+
+  def get_notes(self) :
+    return self.notes
+
 class Instruction35c(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction35c, self).__init__()
       self.name = args[0][0]
       self.kind = args[0][1]
       self.cm = cm
@@ -2144,17 +2164,17 @@ class Instruction35c(Instruction) :
       kind = get_kind(self.cm, self.kind, self.BBBB)
 
       if self.A == 0 :
-        buff += "%s %s" % (self.name, kind)
+        buff += "%s" % (kind)
       elif self.A == 1 :
-        buff += "%s v%d, %s" % (self.name, self.C, kind)
+        buff += "v%d, %s" % (self.C, kind)
       elif self.A == 2 :
-        buff += "%s v%d, v%d, %s" % (self.name, self.C, self.D, kind)
+        buff += "v%d, v%d, %s" % (self.C, self.D, kind)
       elif self.A == 3 :
-        buff += "%s v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, kind)
+        buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
       elif self.A == 4 :
-        buff += "%s v%d, v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, self.F, kind)
+        buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, kind)
       elif self.A == 5 :
-        buff += "%s v%d, v%d, v%d, v%d, v%d, %s" % (self.name, self.C, self.D, self.E, self.F, self.G, kind)
+        buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, self.G, kind)
 
       return buff
 
@@ -2166,6 +2186,7 @@ class Instruction35c(Instruction) :
     
 class Instruction10x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction10x, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2175,7 +2196,6 @@ class Instruction10x(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s" % (self.name)
       return buff
 
     def get_length(self) :
@@ -2183,6 +2203,7 @@ class Instruction10x(Instruction) :
     
 class Instruction21h(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction21h, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2206,7 +2227,7 @@ class Instruction21h(Instruction) :
     def get_output(self) :
       buff = ""
       
-      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBB)
+      buff += "v%d, #+%d" % (self.AA, self.BBBB)
       
       if self.formatted_operands != [] :
         buff += " // %s" % (str(self.formatted_operands))
@@ -2221,6 +2242,7 @@ class Instruction21h(Instruction) :
 
 class Instruction11n(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction11n, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=h", buff[0:2])[0]
@@ -2235,7 +2257,7 @@ class Instruction11n(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, #+%d" % (self.name, self.A, self.B)
+      buff += "v%d, #+%d" % (self.A, self.B)
       return buff
     
     def get_literals(self) :
@@ -2243,6 +2265,7 @@ class Instruction11n(Instruction) :
 
 class Instruction21c(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction21c, self).__init__()
       self.name = args[0][0]
       self.kind = args[0][1]
       self.cm = cm
@@ -2262,7 +2285,7 @@ class Instruction21c(Instruction) :
       
       kind = get_kind(self.cm, self.kind, self.BBBB)
 
-      buff += "%s v%d, %s" % (self.name, self.AA, kind)
+      buff += "v%d, %s" % (self.AA, kind)
       return buff
 
     def get_ref_kind(self) :
@@ -2273,6 +2296,7 @@ class Instruction21c(Instruction) :
     
 class Instruction21s(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction21s, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2293,7 +2317,7 @@ class Instruction21s(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBB)
+      buff += "v%d, #+%d" % (self.AA, self.BBBB)
 
       if self.formatted_operands != [] :
         buff += " // %s" % str(self.formatted_operands)
@@ -2305,6 +2329,7 @@ class Instruction21s(Instruction) :
 
 class Instruction22c(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction22c, self).__init__()
       self.name = args[0][0]
       self.kind = args[0][1]
       self.cm = cm
@@ -2323,7 +2348,7 @@ class Instruction22c(Instruction) :
     def get_output(self) :
       buff = ""
       kind = get_kind(self.cm, self.kind, self.CCCC)
-      buff += "%s v%d, v%d, %s" % (self.name, self.A, self.B, kind)
+      buff += "v%d, v%d, %s" % (self.A, self.B, kind)
       return buff
     
     def get_ref_kind(self) :
@@ -2331,6 +2356,7 @@ class Instruction22c(Instruction) :
     
 class Instruction31t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction31t, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2345,7 +2371,7 @@ class Instruction31t(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, +%d" % (self.name, self.AA, self.BBBBBBBB)
+      buff += "v%d, +%d" % (self.AA, self.BBBBBBBB)
       return buff
 
     def get_ref_off(self) :
@@ -2353,6 +2379,7 @@ class Instruction31t(Instruction) :
     
 class Instruction31c(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction31c, self).__init__()
       self.name = args[0][0]
       self.kind = args[0][1]
       self.cm = cm
@@ -2371,7 +2398,7 @@ class Instruction31c(Instruction) :
       buff = ""
 
       kind = get_kind(self.cm, self.kind, self.BBBBBBBB)
-      buff += "%s v%d, %s" % (self.name, self.AA, kind)
+      buff += "v%d, %s" % (self.AA, kind)
       return buff
 
     def get_ref_kind(self) :
@@ -2382,6 +2409,7 @@ class Instruction31c(Instruction) :
 
 class Instruction12x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction12x, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=h", buff[0:2])[0]
@@ -2396,11 +2424,12 @@ class Instruction12x(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d" % (self.name, self.A, self.B)
+      buff += "v%d, v%d" % (self.A, self.B)
       return buff
 
 class Instruction11x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction11x, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2414,11 +2443,12 @@ class Instruction11x(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d" % (self.name, self.AA)
+      buff += "v%d" % (self.AA)
       return buff
 
 class Instruction51l(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction51l, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2440,7 +2470,7 @@ class Instruction51l(Instruction) :
     def get_output(self) :
       buff = ""
 
-      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBBBBBBBBBBBBBB)
+      buff += "v%d, #+%d" % (self.AA, self.BBBBBBBBBBBBBBBB)
       
       if self.formatted_operands != [] :
         buff += " // %s" % str(self.formatted_operands)
@@ -2452,6 +2482,7 @@ class Instruction51l(Instruction) :
 
 class Instruction31i(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction31i, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2475,7 +2506,7 @@ class Instruction31i(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, #+%d" % (self.name, self.AA, self.BBBBBBBB)
+      buff += "v%d, #+%d" % (self.AA, self.BBBBBBBB)
 
       if self.formatted_operands != [] :
         buff += " // %s" % str(self.formatted_operands)
@@ -2487,6 +2518,7 @@ class Instruction31i(Instruction) :
 
 class Instruction22x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction22x, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2502,11 +2534,12 @@ class Instruction22x(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d" % (self.name, self.AA, self.BBBB)
+      buff += "v%d, v%d" % (self.AA, self.BBBB)
       return buff
 
 class Instruction23x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction23x, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2524,11 +2557,12 @@ class Instruction23x(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d, v%d" % (self.name, self.AA, self.BB, self.CC)
+      buff += "v%d, v%d, v%d" % (self.AA, self.BB, self.CC)
       return buff
 
 class Instruction20t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction20t, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2542,7 +2576,7 @@ class Instruction20t(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s +%d" % (self.name, self.AAAA)
+      buff += "%d" % (self.AAAA)
       return buff
 
     def get_ref_off(self) :
@@ -2550,6 +2584,7 @@ class Instruction20t(Instruction) :
     
 class Instruction21t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction21t, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2565,7 +2600,7 @@ class Instruction21t(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, +%d" % (self.name, self.AA, self.BBBB)
+      buff += "v%d, +%d" % (self.AA, self.BBBB)
       return buff
 
     def get_ref_off(self) :
@@ -2573,6 +2608,7 @@ class Instruction21t(Instruction) :
 
 class Instruction10t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction10t, self).__init__()
       self.name = args[0][0]
 
       self.OP = unpack("=B", buff[0:1])[0]
@@ -2585,7 +2621,7 @@ class Instruction10t(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s +%d" % (self.name, self.AA)
+      buff += "%d" % (self.AA)
       return buff
 
     def show(self, nb) :
@@ -2596,6 +2632,7 @@ class Instruction10t(Instruction) :
 
 class Instruction22t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction22t, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2611,7 +2648,7 @@ class Instruction22t(Instruction) :
     
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d, +%d" % (self.name, self.A, self.B, self.CCCC)
+      buff += "v%d, v%d, +%d" % (self.A, self.B, self.CCCC)
       return buff
     
     def get_ref_off(self) :
@@ -2619,6 +2656,7 @@ class Instruction22t(Instruction) :
 
 class Instruction22s(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction22s, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2634,7 +2672,7 @@ class Instruction22s(Instruction) :
     
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d, #+%d" % (self.name, self.A, self.B, self.CCCC)
+      buff += "v%d, v%d, #+%d" % (self.A, self.B, self.CCCC)
       return buff
 
     def get_literals(self) :
@@ -2642,6 +2680,7 @@ class Instruction22s(Instruction) :
 
 class Instruction22b(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction22b, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2659,7 +2698,7 @@ class Instruction22b(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d, #+%d" % (self.name, self.AA, self.BB, self.CC)
+      buff += "v%d, v%d, #+%d" % (self.AA, self.BB, self.CC)
       return buff
     
     def get_literals(self) :
@@ -2667,6 +2706,7 @@ class Instruction22b(Instruction) :
 
 class Instruction30t(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction30t, self).__init__()
       self.name = args[0][0]
       
       i16 = unpack("=H", buff[0:2])[0]
@@ -2681,7 +2721,7 @@ class Instruction30t(Instruction) :
 
     def get_output(self) :
       buff = ""
-      buff += "%s +%d" % (self.name, self.AAAAAAAA)
+      buff += "%d" % (self.AAAAAAAA)
       return buff
 
     def get_ref_off(self) :
@@ -2690,6 +2730,7 @@ class Instruction30t(Instruction) :
 class Instruction3rc(Instruction) :
     def __init__(self, cm, buff, args) :
       self.name = args[0][0]
+      super(Instruction3rc, self).__init__()
       self.kind = args[0][1]
       self.cm = cm
 
@@ -2713,9 +2754,9 @@ class Instruction3rc(Instruction) :
       kind = get_kind(self.cm, self.kind, self.BBBB)
       
       if self.CCCC == self.NNNN :
-        buff += "%s v%d, %s" % (self.name, self.CCCC, kind)
+        buff += "v%d, %s" % (self.CCCC, kind)
       else :
-        buff += "%s v%d ... v%d, %s" % (self.name, self.CCCC, self.NNNN, kind)
+        buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
       return buff
 
     def get_ref_kind(self) :
@@ -2723,6 +2764,7 @@ class Instruction3rc(Instruction) :
 
 class Instruction32x(Instruction) :
     def __init__(self, cm, buff, args) :
+      super(Instruction32x, self).__init__()
       self.name = args[0][0]
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -2737,7 +2779,7 @@ class Instruction32x(Instruction) :
     
     def get_output(self) :
       buff = ""
-      buff += "%s v%d, v%d" % (self.name, self.AAAAA, self.BBBBB)
+      buff += "v%d, v%d" % (self.AAAAA, self.BBBBB)
       return buff
 
 KIND_METH = 0
@@ -3083,7 +3125,10 @@ class DCode :
     
     def get(self) :
         return self.bytecodes
-    
+   
+    def add_note(self, idx, msg) :
+      self.bytecodes[ idx ].add_note(msg)
+
     def get_ins_off(self, off) :
         idx = 0
 
@@ -3155,10 +3200,7 @@ class DalvikCode :
         
         ushort = calcsize( '=H' )
 
-        if self.__CM.get_engine() == "native" :
-            self.code = CodeNative( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
-        else :
-            self.code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
+        self.code = DCode( self.__CM, self.insns_size.get_value(), buff.read( self.insns_size.get_value() * ushort ) )
 
         if (self.insns_size.get_value() % 2 == 1) :
             self.__padding = SV( '=H', buff.read( 2 ) )
@@ -3240,6 +3282,10 @@ class DalvikCode :
 
     def get_tries(self) :
         return self.tries
+
+    def add_note(self, idx, msg) :
+        if self.code :
+            self.code.add_note(idx, msg)
 
 class CodeItem :
     def __init__(self, size, buff, cm) :
