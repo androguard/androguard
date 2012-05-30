@@ -32,6 +32,21 @@ def get_ascii_string(s) :
                 d += "%x" % ord(i)
         return d
 
+class Color:
+    normal = "\033[0m"
+    black = "\033[30m"
+    red = "\033[31m"
+    green = "\033[32m"
+    yellow = "\033[33m"
+    blue = "\033[34m"
+    purple = "\033[35m"
+    cyan = "\033[36m"
+    grey = "\033[37m"
+    bold = "\033[1m"
+    uline = "\033[4m"
+    blink = "\033[5m"
+    invert = "\033[7m"
+
 CONF = {
     "BIN_DED" : "ded.sh",
     "PATH_DED" : "./decompiler/ded/",
@@ -50,22 +65,29 @@ CONF = {
     
     "DEOBFUSCATED_STRING" : True,
 #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
+    
+    "COLORS" : { 
+        "OFFSET" : Color.yellow,
+        "OFFSET_ADDR" : Color.green,
+        "INSTRUCTION_NAME" : Color.yellow,
+        "BRANCH_FALSE" : Color.red,
+        "BRANCH_TRUE" : Color.green,
+        "BRANCH" : Color.blue,
+        "EXCEPTION" : Color.cyan,
+        "BB" : Color.purple,
+        "NOTE" : Color.red,
+    }
 }
 
-class Color:
-    normal = "\033[0m"
-    black = "\033[30m"
-    red = "\033[31m"
-    green = "\033[32m"
-    yellow = "\033[33m"
-    blue = "\033[34m"
-    purple = "\033[35m"
-    cyan = "\033[36m"
-    grey = "\033[37m"
-    bold = "\033[1m"
-    uline = "\033[4m"
-    blink = "\033[5m"
-    invert = "\033[7m"
+def disable_colors() :
+  """ Disable colors from the output (color = normal)"""
+  for i in CONF["COLORS"] :
+    CONF["COLORS"][i] = Color.normal
+
+def remove_colors() :
+  """ Remove colors from the output (no escape sequences)"""
+  for i in CONF["COLORS"] :
+    CONF["COLORS"][i] = ""
 
 def long2int( l ) :
     if l > 0x7fffffff :

@@ -1801,7 +1801,7 @@ TAG_ANDROID = Enum([ 'ANDROID', 'TELEPHONY', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
     'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
     'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
     'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
-    'VIEW', 'WEBKIT', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM'])
+    'VIEW', 'WEBKIT', 'WIDGET', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM'])
 
 TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
 
@@ -1839,6 +1839,7 @@ TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
                  TAG_ANDROID.UTIL :                     [ 0, "Landroid/util" ],
                  TAG_ANDROID.VIEW :                     [ 0, "Landroid/view" ],
                  TAG_ANDROID.WEBKIT :                   [ 0, "Landroid/webkit" ],
+                 TAG_ANDROID.WIDGET :                   [ 0, "Landroid/widget" ],
                  TAG_ANDROID.DALVIK_BYTECODE :          [ 0, "Ldalvik/bytecode" ],
                  TAG_ANDROID.DALVIK_SYSTEM :            [ 0, "Ldalvik/system" ],
 }
@@ -1981,6 +1982,8 @@ class MethodAnalysis :
         self.__vm = vm
         self.method = method
 
+        setattr(self.method, "analysis", self)
+
         self.tainted = tv
 
         BO = { "BasicOPCODES" : jvm.BRANCH2_JVM_OPCODES, "BasicClass" : JVMBasicBlock, "Dnext" : jvm.determineNext,
@@ -2069,53 +2072,14 @@ class MethodAnalysis :
         """
         return self.get_code().get_length()
 
-    def prev_free_block_offset(self, idx=0) :
-        l = []
-        for i in self.basic_blocks.get() :
-            if i.get_start() <= idx :
-                l.append( i )
-
-        l.reverse()
-        for i in l :
-            x = i.prev_free_block_offset( idx )
-            if x != -1 :
-                return x
-        return -1
-
-    def random_free_block_offset(self) :
-        return self.basic_blocks.get_random()
-
-    def next_free_block_offset(self, idx=0) :
-        for i in self.basic_blocks.get() :
-            x = i.next_free_block_offset( idx )
-            if x != -1 :
-                return x
-        return -1
-
-    def get_break_block(self, idx) :
-        for i in self.basic_blocks.get() :
-            if idx >= i.get_start() and idx <= i.get_end() :
-                return i.get_break_block( idx )
-        return None
-
     def get_vm(self) :
         return self.__vm
 
     def get_method(self) :
         return self.method
 
-    def get_op(self, op) :
-        return []
-
     def get_local_variables(self) :
         return self.tainted["variables"].get_local_variables( self.method )
-
-    def get_ops(self) :
-        l = []
-        for i in self.__bb :
-            for j in i.get_ops() :
-                l.append( j )
-        return l
 
     def show(self) :
         print "METHOD", self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor()
@@ -2220,76 +2184,6 @@ class VMAnalysis :
         """
         return self.hmethods[ method ]
 
-    # FIXME
-    def get_like_field(self) :
-        return [ random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ]),
-                 "ACC_PUBLIC",
-                 "I"
-               ]
-
-    # FIXME
-    def get_init_method(self) :
-        m = self.__vm.get_method("<init>")
-        return m[0]
-
-    def prev_free_block_offset(self, method, idx=0) :
-        """
-           Find the previous offset where you can insert a block
-
-           @param method : a reference of a method object where you would like the offset
-           @param idx : the index to start the research
-
-           @rtype : return -1 if an error occured, otherwise the offset
-        """
-        # We would like a specific free offset in a method
-        try :
-            return self.hmethods[ method ].prev_free_block_offset( idx )
-        except KeyError :
-            # We haven't found the method ...
-            return -1
-
-    def random_free_block_offset(self, method) :
-        """
-           Find a random offset where you can insert a block
-
-           @param method : a reference of method object or a string which represents a regexp
-
-           @rtype : return -1 if an error occured, otherwise the offset
-        """
-        if isinstance(method, str) :
-            p = re.compile(method)
-            for i in self.hmethods :
-                if random.randint(0, 1) == 1 :
-                    if p.match( i.get_name() ) == None :
-                        return i, self.hmethods[i].random_free_block_offset()
-
-            for i in self.hmethods :
-                if p.match( i.get_name() ) == None :
-                    return i, self.hmethods[i].random_free_block_offset()
-
-        # We would like a specific free offset in a method
-        try :
-            return self.hmethods[ method ].random_free_block_offset()
-        except KeyError :
-            # We haven't found the method ...
-            return -1
-
-    def next_free_block_offset(self, method, idx=0) :
-        """
-           Find the next offset where you can insert a block
-
-           @param method : a reference of a method object where you would like the offset
-           @param idx : the index to start the research
-
-           @rtype : return -1 if an error occured, otherwise the offset
-        """
-        # We would like a specific free offset in a method
-        try :
-            return self.hmethods[ method ].next_free_block_offset( idx )
-        except KeyError :
-            # We haven't found the method ...
-            return -1
-
     def get_tainted_variables(self) :
         """
            Return the tainted variables
@@ -2376,14 +2270,6 @@ class VMAnalysis :
 
         return list( set( permissions_f + permissions_v ) )
 
-    # FIXME
-    def get_op(self, op) :
-        return [ (i.get_method(), i.get_op(op)) for i in self.l ]
-
-    # FIXME
-    def get_ops(self, method) :
-        return [ (i.get_method(), i.get_ops()) for i in self.l ]
-    
     def create_tags(self) :
       for i in self.methods :
         i.create_tags()
