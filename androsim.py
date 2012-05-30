@@ -32,12 +32,12 @@ from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK_SIM
 from elsim.elsim_dalvik import ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
-option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'define the threshold', 'nargs' : 1 }
-option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'define the compressor', 'nargs' : 1 }
+option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'specify the threshold (0.0 to 1.0) to know if a method is similar. This option will impact on the filtering method. Because if you specify a higher value of the threshold, you will have more associations', 'nargs' : 1 }
+option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'specify the compressor (BZ2, ZLIB, SNAPPY, LZMA, XZ). The final result depends directly of the type of compressor. But if you use LZMA for example, the final result will be better, but it take more time', 'nargs' : 1 }
 option_4 = { 'name' : ('-d', '--display'), 'help' : 'display all information about methods', 'action' : 'count' }
-option_5 = { 'name' : ('-n', '--new'), 'help' : 'don\'t calculate the similarity score with new methods', 'action' : 'count' }
+option_5 = { 'name' : ('-n', '--new'), 'help' : 'calculate the final score only by using the ratio of included methods', 'action' : 'count' }
 option_6 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
-option_7 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size', 'nargs' : 1 }
+option_7 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size (specify the minimum size of a method to be used (it is the length (bytes) of the dalvik method)', 'nargs' : 1 }
 option_8 = { 'name' : ('-x', '--xstrings'), 'help' : 'display similarities of strings', 'action' : 'count'  }
 option_9 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 option_10 = { 'name' : ('-l', '--library'), 'help' : 'use python library (python) or specify the path of the shared library)', 'nargs' : 1 }
@@ -45,13 +45,16 @@ option_10 = { 'name' : ('-l', '--library'), 'help' : 'use python library (python
 options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
 def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, new=True, library=True) :
+    d2 = None
     ret_type = androconf.is_android( file_input )
     if ret_type == "APK" :
         a = apk.APK( file_input )
         d2 = dvm.DalvikVMFormat( a.get_dex() )
     elif ret_type == "DEX" :
         d2 = dvm.DalvikVMFormat( open(file_input, "rb").read() )
-        
+
+    if d2 == None :
+      return
     dx2 = analysis.VMAnalysis( d2 )
 
     el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor, libnative=library )
