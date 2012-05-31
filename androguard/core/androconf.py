@@ -89,6 +89,16 @@ def remove_colors() :
   for i in CONF["COLORS"] :
     CONF["COLORS"][i] = ""
 
+def enable_colors(colors) :
+  for i in colors :
+    CONF["COLORS"][i] = colors[i]
+
+def save_colors() :
+  c = {}
+  for i in CONF["COLORS"] :
+    c[i] = CONF["COLORS"][i]
+  return c
+
 def long2int( l ) :
     if l > 0x7fffffff :
         l = (0x7fffffff & l) - 0x80000000
