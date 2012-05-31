@@ -18,7 +18,15 @@
 
 from struct import unpack, pack
 
-from androconf import Color, warning, error, CONF
+from androconf import Color, warning, error, CONF, disable_colors, enable_colors, remove_colors, save_colors
+
+def disable_print_colors() :
+  colors = save_colors()
+  remove_colors()
+  return colors 
+
+def enable_print_colors(colors) :
+  enable_colors(colors)
 
 # Handle exit message
 def Exit( msg ):
@@ -27,6 +35,19 @@ def Exit( msg ):
 
 def Warning( msg ):
     warning(msg)
+
+def _PrintBanner() :
+    print "*" * 75
+
+def _PrintSubBanner(title=None) :
+  if title == None :
+    print "#" * 20
+  else :
+    print "#" * 10 + " " + title
+
+def _PrintNote(note, tab=0) :
+  note_color = CONF["COLORS"]["NOTE"]
+  print "\t" * tab + "%s# %s%s" % (note_color, note, Color.normal)
 
 # Print arg into a correct format
 def _Print(name, arg) :
@@ -130,7 +151,6 @@ def PrettyShow1( basic_blocks ) :
     branch_color = CONF["COLORS"]["BRANCH"]
     exception_color = CONF["COLORS"]["EXCEPTION"]
     bb_color = CONF["COLORS"]["BB"]
-    note_color = CONF["COLORS"]["NOTE"]
 
     for i in basic_blocks :
         print "%s%s%s : " % (bb_color, i.name, Color.normal)
@@ -139,11 +159,10 @@ def PrettyShow1( basic_blocks ) :
             notes = ins.get_notes()
             if notes != [] :
               for note in notes :
-                print "\t%s# %s%s" % (note_color, note, Color.normal)
+                _PrintNote(note, 1)
 
             print "\t%s%-3d%s(%s%08x%s)" % (offset_color, nb, Color.normal, offset_addr_color, idx, Color.normal),
             print "%s%-20s%s %s" %(instruction_name_color, ins.get_name(), Color.normal, ins.get_output()),
-            #ins.show( idx )
 
             if ins == i.ins[-1] and i.childs != [] :
                 if len(i.childs) == 2 :

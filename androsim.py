@@ -29,7 +29,7 @@ from androguard.core.analysis import analysis
 sys.path.append("./elsim")
 from elsim import elsim
 from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK_SIM
-from elsim.elsim_dalvik import ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
+from elsim.elsim_dalvik import ProxyDalvikStringMultiple, ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
 option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'specify the threshold (0.0 to 1.0) to know if a method is similar. This option will impact on the filtering method. Because if you specify a higher value of the threshold, you will have more associations', 'nargs' : 1 }
@@ -61,11 +61,6 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
     el.show()
     print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
     
-    if view_strings :
-        els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1),
-            ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor, libnative=library )
-        els.show()
-        print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
 
     if options.display :
         print "SIMILAR methods:"
@@ -92,6 +87,45 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
         skipped_methods = el.get_skipped_elements()
         for i in skipped_methods :
             el.show_element( i )
+    
+    if view_strings :
+        els = elsim.Elsim( ProxyDalvikStringMultiple(d1, dx1),
+                           ProxyDalvikStringMultiple(d2, dx2), 
+                           FILTERS_DALVIK_SIM_STRING, 
+                           threshold, 
+                           options.compressor, 
+                           libnative=library )
+        #els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1),
+        #    ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor, libnative=library )
+        els.show()
+        print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
+    
+        if options.display :
+          print "SIMILAR strings:"
+          diff_strings = els.get_similar_elements()
+          for i in diff_strings :
+            els.show_element( i )
+            
+          print "IDENTICAL strings:"
+          new_strings = els.get_identical_elements()
+          for i in new_strings :
+            els.show_element( i )
+
+          print "NEW strings:"
+          new_strings = els.get_new_elements()
+          for i in new_strings :
+            els.show_element( i, False )
+
+          print "DELETED strings:"
+          del_strings = els.get_deleted_elements()
+          for i in del_strings :
+            els.show_element( i )
+            
+          print "SKIPPED strings:"
+          skipped_strings = els.get_skipped_elements()
+          for i in skipped_strings :
+            els.show_element( i )
+        
 
 def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True) :
     for root, dirs, files in os.walk( directory, followlinks=True ) :
