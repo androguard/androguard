@@ -819,7 +819,7 @@ class DBGBytecode :
                 buff += writesleb128( i[0] )
         return buff
 
-class DebugInfoItem2 :
+class DebugInfoItem :
     def __init__(self, buff, cm) :
         self.__CM = cm
         self.__offset = self.__CM.add_offset( buff.get_idx(), self )
@@ -849,9 +849,11 @@ class DebugInfoItem2 :
     def get_off(self) :
         return self.__offset.off
 
-class DebugInfoItem :
+class DebugInfoItem2 :
     def __init__(self, buff, cm) :
-        self.__offset = buff.get_idx()
+        self.__CM = cm
+        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
+        
         self.__line_start = readuleb128( buff )
         self.__parameters_size = readuleb128( buff )
 
@@ -865,7 +867,7 @@ class DebugInfoItem :
 
         while bcode.get_op_value().get_value() != DBG_END_SEQUENCE :
             bcode_value = bcode.get_op_value().get_value()
-#           print "0x%x" % bcode_value
+#            print "0x%x" % bcode_value
 
             if bcode_value == DBG_SET_PROLOGUE_END :
                 pass
@@ -907,6 +909,9 @@ class DebugInfoItem :
                                                             writeuleb128( self.__parameters_size ) + \
                                                             ''.join(writeuleb128(i) for i in self.__parameter_names) + \
                                                             ''.join(i.get_raw() for i in self.__bytecodes) ) ]
+
+    def get_off(self) :
+        return self.__offset.off
 
 
 VALUE_BYTE    = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
@@ -1542,6 +1547,8 @@ class EncodedMethod :
 
         self.access_flags_string = None
 
+        self.notes = []
+
     def reload(self) :
         v = self.__CM.get_method( self.__method_idx )
 
@@ -1566,17 +1573,19 @@ class EncodedMethod :
         return self._code.registers_size.get_value()-len(params) - 1
 
     def each_params_by_register(self, nb, proto) :
+        bytecode._PrintSubBanner("Params") 
         ret = proto.split(')')
         params = ret[0][1:].split()
         if params :
-            print "local registers: v%d...v%d" % (0, nb-len(params)-1)
+            print "- local registers: v%d...v%d" % (0, nb-len(params)-1)
             j = 0
             for i in range(nb - len(params), nb) :
-                print "v%d:%s" % (i, get_type(params[j]))
+                print "- v%d:%s" % (i, get_type(params[j]))
                 j += 1
         else :
             print "local registers: v%d...v%d" % (0, nb-1)
-        print "return:%s" % get_type(ret[1])
+        print "- return:%s" % get_type(ret[1])
+        bytecode._PrintSubBanner() 
 
 
     def build_access_flags(self) :
@@ -1593,17 +1602,17 @@ class EncodedMethod :
 
     def show_info(self) :
         self.build_access_flags()
-        print "\tMETHOD access_flags=%s (%s %s,%s)" % (self.access_flags_string, self._class_name, self._name, self._proto)
+        bytecode._PrintSubBanner("Method Information") 
+        print "%s->%s%s [access_flags=%s]" % (self._class_name, self._name, self._proto, self.access_flags_string)
 
     def show(self) :
-        self.show_info()
-        if self._code != None :
-            self.each_params_by_register( self._code.registers_size.get_value(), self._proto )
-            self._code.show()
-            self.show_xref()
+        colors = bytecode.disable_print_colors()
+        self.pretty_show() 
+        bytecode.enable_print_colors(colors)
 
     def pretty_show(self) :
         self.show_info()
+        self.show_notes()
         if self._code != None :
             self.each_params_by_register( self._code.registers_size.get_value(), self._proto )
             self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
@@ -1611,12 +1620,21 @@ class EncodedMethod :
 
     def show_xref(self) :
         try :
+            bytecode._PrintSubBanner("XREF") 
             for i in self.XREFfrom.items :
                 print "F:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
             for i in self.XREFto.items :
                 print "T:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
+            bytecode._PrintSubBanner() 
         except AttributeError:
             pass
+
+    def show_notes(self) :
+      if self.notes != [] :
+        bytecode._PrintSubBanner("Notes") 
+        for i in self.notes :
+          bytecode._PrintNote(i)
+        bytecode._PrintSubBanner() 
 
     def source(self) :
         self.__CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
@@ -1656,10 +1674,12 @@ class EncodedMethod :
     def get_raw(self) :
         return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
 
-    def add_note(self, idx, msg) :
+    def add_inote(self, msg, idx, off=None) :
         if self._code != None :  
-            self._code.add_note(idx, msg)
+            self._code.add_inote(msg, idx, off)
 
+    def add_note(self, msg) :
+        self.notes.append( msg )
 
 class ClassDataItem :
     def __init__(self, buff, cm) :
@@ -3126,8 +3146,20 @@ class DCode :
     def get(self) :
         return self.bytecodes
    
-    def add_note(self, idx, msg) :
+    def add_inote(self, msg, idx, off=None) :
+      if off != None :
+        idx = self.off_to_pos(off)
       self.bytecodes[ idx ].add_note(msg)
+    
+    def off_to_pos(self, off) :
+        idx = 0
+        nb = 0
+        for i in self.bytecodes :
+            if idx == off :
+                return nb
+            nb += 1
+            idx += i.get_length()
+        return -1
 
     def get_ins_off(self, off) :
         idx = 0
@@ -3226,18 +3258,7 @@ class DalvikCode :
         return self.__off
 
     def _begin_show(self) :
-        print "*" * 80
-        print "DALVIK_CODE :"
-        bytecode._Print("\tREGISTERS_SIZE", self.registers_size)
-        bytecode._Print("\tINS_SIZE", self.ins_size)
-        bytecode._Print("\tOUTS_SIZE", self.outs_size)
-        bytecode._Print("\tTRIES_SIZE", self.tries_size)
-        bytecode._Print("\tDEBUG_INFO_OFF", self.debug_info_off)
-        bytecode._Print("\tINSNS_SIZE", self.insns_size)
-
-        #self.handlers.show()
-
-        print ""
+      bytecode._PrintBanner() 
 
     def show(self) :
         self._begin_show()
@@ -3245,7 +3266,7 @@ class DalvikCode :
         self._end_show()
 
     def _end_show(self) :
-        print "*" * 80
+      bytecode._PrintBanner() 
 
     def pretty_show(self, m_a) :
         self._begin_show()
@@ -3283,9 +3304,9 @@ class DalvikCode :
     def get_tries(self) :
         return self.tries
 
-    def add_note(self, idx, msg) :
+    def add_inote(self, msg, idx, off=None) :
         if self.code :
-            self.code.add_note(idx, msg)
+            self.code.add_inote(msg, idx, off)
 
 class CodeItem :
     def __init__(self, size, buff, cm) :
