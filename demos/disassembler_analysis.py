@@ -32,7 +32,7 @@ for method in a.get_methods() :
         print "\t %s %x %x" % (i.name, i.start, i.end), i.ins[-1].get_name(), '[ CHILDS = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ FATHERS = ', ', '.join( j[2].get_name() for j in i.fathers ), ']', i.free_blocks_offsets
 
         for ins in i.get_ins() :
-            print "\t\t %x" % idx, ins.get_name(), ins.get_operands()
+            print "\t\t %x" % idx, ins.get_name(), ins.get_output()
             idx += ins.get_length()
 
         print ""

@@ -42,7 +42,7 @@ class Sign :
         return buff
 
     def get_list(self) :
-        return self.levels[ "sequencebb" ]
+      return self.levels[ "sequencebb" ]
 
 class Signature :
     def __init__(self, tainted_information) :
@@ -79,6 +79,19 @@ class Signature :
     def _get_sequence_bb(self, analysis_method) :
         l = []
 
+        for i in analysis_method.basic_blocks.get() :
+          buff = ""
+          if len(i.get_ins()) > 5 :
+            for ins in i.get_ins() :
+              buff += ins.get_name()
+          if buff != "" :
+            l.append( buff )
+
+        return l
+
+    def _get_sequence_bb2(self, analysis_method) :
+        l = []
+
         buff = ""
         nb = 0
         for i in analysis_method.basic_blocks.get() :
@@ -92,7 +105,7 @@ class Signature :
             if nb > 5 :
                 l.append( buff )
                 nb = 0
-        
+
         if nb != 0 :
             l.append( buff )
 
@@ -111,8 +124,9 @@ class Signature :
         return buff
 
     def _get_bb(self, analysis_method, functions, options) :
-        l = []
+        bbs = []
         for b in analysis_method.basic_blocks.get() :
+            l = []
             l.append( (b.start, "B") )
             l.append( (b.start, "[") )
 
@@ -123,15 +137,15 @@ class Signature :
             # return
             if op_value >= 0x0e and op_value <= 0x11 :
                 internal.append( (b.end-1, "R") )
-           
+
             # if
             elif op_value >= 0x32 and op_value <= 0x3d :
                 internal.append( (b.end-1, "I") )
-          
+
             # goto
             elif op_value >= 0x28 and op_value <= 0x2a :
                 internal.append( (b.end-1, "G") )
-          
+
             # sparse or packed switch
             elif op_value >= 0x2b and op_value <= 0x2c :
                 internal.append( (b.end-1, "G") )
@@ -152,7 +166,9 @@ class Signature :
             del internal
 
             l.append( (b.end, "]") )
-        return l
+
+            bbs.append( ''.join(i[1] for i in l) )
+        return bbs
 
     def _init_caches(self) :
         if self._cached_fields == {} :
@@ -341,8 +357,8 @@ class Signature :
                     _arguments = []
 
                 value = self._get_bb( analysis_method, _type, _arguments ) 
-                s.add( i, ''.join(i[1] for i in value))
-          
+                s.add( i, ''.join(z for z in value) )
+
             elif i == "L4" :
                 try :
                     _arguments = signature_arguments[ i ][ "arguments" ]
@@ -357,6 +373,12 @@ class Signature :
                 s.add( i, value )
 
             elif i == "sequencebb" :
+                _type = ('_get_strings_a', '_get_fields_a', '_get_packages_pa_1')
+                _arguments = ['Landroid', 'Ljava']
+
+                #value = self._get_bb( analysis_method, _type, _arguments )
+                #s.add( i, value )
+
                 value = self._get_sequence_bb( analysis_method )
                 s.add( i, value )
 
