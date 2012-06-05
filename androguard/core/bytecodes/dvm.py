@@ -163,6 +163,9 @@ class FillArrayData :
     def get_data(self) :
         return self.data
 
+    def get_output(self) :
+        return self.get_operands()
+
     def get_operands(self) :
         return self.data
 
@@ -214,6 +217,9 @@ class SparseSwitch :
     def get_operands(self) :
         return [ self.keys, self.targets ]
 
+    def get_output(self) :
+        return self.get_operands()
+
     def get_name(self) :
         return "sparse-switch-payload"
 
@@ -250,6 +256,9 @@ class PackedSwitch :
 
     def get_operands(self) :
         return [ self.format.get_value().first_key, self.targets ]
+
+    def get_output(self) :
+        return self.get_operands()
 
     def get_targets(self) :
         return self.targets
@@ -1614,8 +1623,11 @@ class EncodedMethod :
         self.show_notes()
         if self._code != None :
             self.each_params_by_register( self._code.registers_size.get_value(), self._proto )
-            self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
-            self.show_xref()
+            if self.__CM.get_vmanalysis() == None :
+                self._code.show()
+            else :
+                self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
+                self.show_xref()
 
     def show_xref(self) :
         try :
