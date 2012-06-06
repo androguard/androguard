@@ -89,9 +89,19 @@ def main(options, arguments) :
 
             eld = elsim.Eldiff( ProxyDalvikBasicBlock(elb), FILTERS_DALVIK_DIFF_BB )
             #eld.show()
- 
+
             ddm = DiffDalvikMethod( i, j, elb, eld )
             ddm.show()
+
+        print "NEW METHODS"
+        enew = el.get_new_elements()
+        for i in enew :
+            el.show_element( i, False )
+
+        print "DELETED METHODS"
+        edel = el.get_deleted_elements()
+        for i in edel :
+            el.show_element( i )
 
     elif options.version != None :
         print "Androdiff version %s" % androconf.ANDROGUARD_VERSION
