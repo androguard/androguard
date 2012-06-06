@@ -1595,7 +1595,6 @@ class EncodedMethod :
         print "- return:%s" % get_type(ret[1])
         bytecode._PrintSubBanner() 
 
-
     def build_access_flags(self) :
         if self.access_flags_string == None :
             self.access_flags_string = ""
@@ -1663,6 +1662,16 @@ class EncodedMethod :
 
     def get_code(self) :
         return self._code
+
+    def get_instructions(self) :
+        if self._code == None :
+          return []
+        return self._code.get_bc().get()
+
+    def get_instruction(self, idx, off=None) :
+        if self._code != None :
+            return self._code.get_instruction(idx, off)
+        return None
 
     def get_descriptor(self) :
         return self._proto
@@ -3228,15 +3237,20 @@ class DCode :
 
     def reload(self) :
         pass
-    
+
     def get(self) :
         return self.bytecodes
-   
+
     def add_inote(self, msg, idx, off=None) :
       if off != None :
         idx = self.off_to_pos(off)
       self.bytecodes[ idx ].add_note(msg)
-    
+
+    def get_instruction(self, idx, off=None) :
+        if off != None :
+          idx = self.off_to_pos(off)
+        return self.bytecodes[idx]
+
     def off_to_pos(self, off) :
         idx = 0
         nb = 0
@@ -3392,7 +3406,11 @@ class DalvikCode :
 
     def add_inote(self, msg, idx, off=None) :
         if self.code :
-            self.code.add_inote(msg, idx, off)
+            return self.code.add_inote(msg, idx, off)
+
+    def get_instruction(self, idx, off=None) :
+        if self.code :
+            return self.code.get_instruction(idx, off)
 
 class CodeItem :
     def __init__(self, size, buff, cm) :
@@ -3835,7 +3853,37 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
             @rtype: string
         """
-        return self._get_raw()
+        l = self.map_list.get_raw()
+
+        result = list(self._iterFlatten( l ))
+        result = sorted(result, key=lambda x: x.offset)
+
+        idx = 0
+        buff = ""
+        for i in result :
+#           print idx, i.offset, "--->", i.offset + i.size
+            if idx == i.offset :
+                buff += i.buff
+            else :
+                #print "PATCH @ 0x%x" % idx
+                buff += '\x00' * (i.offset - idx)
+                buff += i.buff
+                idx += (i.offset - idx)
+
+            idx += i.size
+
+        return self.fix_checksums(buff)
+
+    def fix_checksums(self, buff) :
+      import zlib, hashlib
+      checksum = zlib.adler32(buff[12:])
+      buff = buff[:8] + pack("=i", checksum) + buff[12:]
+
+      signature = hashlib.sha1(buff[32:]).digest()
+
+      buff = buff[:12] + signature + buff[32:]
+
+      return buff
 
     def dotbuff(self, ins, idx) :
         return dot_buff(ins, idx)
