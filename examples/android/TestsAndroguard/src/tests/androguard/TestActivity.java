@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class TestActivity<T> extends Activity {
 	public int value;
@@ -361,7 +362,11 @@ public class TestActivity<T> extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
+		
+		Toast.makeText(getApplicationContext(), "this is a test ! " + 42, Toast.LENGTH_LONG);
+		/*
 		TestLoops o = new TestLoops();
 		o.testIrreducible(test3, test2);
+		*/
 	}
 }

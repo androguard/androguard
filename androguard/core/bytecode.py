@@ -395,6 +395,8 @@ class SVs :
 def object_to_str(obj) :
     if isinstance(obj, str) :
         return obj
+    elif isinstance(obj, bool) :
+        return ""
     elif isinstance(obj, int) :
         return pack("<L", obj)
     elif obj == None :

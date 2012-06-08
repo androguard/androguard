@@ -968,10 +968,10 @@ class EncodedValue :
         self.__CM = cm
         self.__offset = self.__CM.add_offset( buff.get_idx(), self )
 
+
         self.val = SV('=B', buff.read( 1 ) )
         self.__value_arg = self.val.get_value() >> 5
         self.__value_type = self.val.get_value() & 0x1f
-
 
         self.raw_value = None
         self.value = ""
@@ -1007,7 +1007,6 @@ class EncodedValue :
                 self.value = True
             else:
                 self.value = False
-            pass
         else :
             bytecode.Exit( "Unknown value 0x%x" % self.__value_type )
 
@@ -3461,7 +3460,7 @@ class MapItem :
         general_format = self.format.get_value()
         buff.set_idx( general_format.offset )
 
-        #print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
+#        print TYPE_MAP_ITEM[ general_format.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), general_format.size, general_format.offset)
 
         if TYPE_MAP_ITEM[ general_format.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in range(0, general_format.size) ]
@@ -3861,11 +3860,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         idx = 0
         buff = ""
         for i in result :
-#           print idx, i.offset, "--->", i.offset + i.size
+#            print idx, i.offset, "--->", i.offset + i.size
             if idx == i.offset :
                 buff += i.buff
             else :
-                #print "PATCH @ 0x%x" % idx
+#                print "PATCH @ 0x%x %d" % (idx, (i.offset - idx))
                 buff += '\x00' * (i.offset - idx)
                 buff += i.buff
                 idx += (i.offset - idx)
@@ -3905,33 +3904,6 @@ class DalvikVMFormat(bytecode._Bytecode) :
             l.append(i)
             l.append( self._Exp( i.get_obj() ) )
         return l
-
-    def _get_raw(self) :
-#       print len( list(self._iterFlatten( self._Exp( self.map_list.get_obj() ) ) ) )
-        # Due to the specific format of dalvik virtual machine,
-        # we will get a list of raw object described by a buffer, a size and an offset
-        # where to insert the specific buffer into the file
-        l = self.map_list.get_raw()
-
-        result = list(self._iterFlatten( l ))
-        result = sorted(result, key=lambda x: x.offset)
-
-        idx = 0
-        buff = ""
-        for i in result :
-#           print idx, i.offset, "--->", i.offset + i.size
-            if idx == i.offset :
-                buff += i.buff
-            else :
-#               print "PATCH @ 0x%x" % idx
-                self.set_idx( idx )
-                buff += '\x00' * (i.offset - idx)
-                buff += i.buff
-                idx += (i.offset - idx)
-
-            idx += i.size
-
-        return buff
 
     def get_cm_field(self, idx) :
         return self.CM.get_field(idx)
