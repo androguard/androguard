@@ -55,17 +55,19 @@ CONF = {
     "PATH_JAD" : "./decompiler/jad/",
     "BIN_JAD" : "jad",
     "PRETTY_SHOW" : 1,
-  
+
     # Full python or mix python/c++ (native)
     #"ENGINE" : "automatic",
     "ENGINE" : "python",
 
     "RECODE_ASCII_STRING" : False,
     "RECODE_ASCII_STRING_METH" : get_ascii_string,
-    
+
     "DEOBFUSCATED_STRING" : True,
 #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
-    
+
+    "PATH_JARSIGNER" : "jarsigner",
+
     "COLORS" : { 
         "OFFSET" : Color.yellow,
         "OFFSET_ADDR" : Color.green,

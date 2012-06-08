@@ -101,6 +101,27 @@ class ChilkatZip :
         e.Inflate( s )
         return s.getBytes()
 
+def sign_apk(filename, keystore, storepass) :
+    from subprocess import Popen, PIPE, STDOUT
+  # jarsigner -verbose -sigalg MD5withRSA -digestalg SHA1 -keystore tmp/androguard.androtrace tmp/toto.apk alias_name
+    compile = Popen([ androconf.CONF["PATH_JARSIGNER"],
+                     "-sigalg", 
+                     "MD5withRSA", 
+                     "-digestalg", 
+                     "SHA1", 
+
+                     "-storepass", 
+                     storepass,  
+
+                     "-keystore", 
+                     keystore, 
+
+                     filename, 
+
+                     "alias_name" ], 
+                    stdout=PIPE, stderr=STDOUT)
+    stdout, stderr = compile.communicate()
+
 ######################################################## APK FORMAT ########################################################
 class APK :
     """APK manages apk file format"""
