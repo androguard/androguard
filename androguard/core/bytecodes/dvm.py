@@ -342,9 +342,31 @@ def readuleb128(buff) :
                 result |= (cur & 0x7f) << 21
                 if cur > 0x7f :
                     cur = ord( buff.read(1) )
+                    if cur > 0x0f :
+                      raise("prout")
                     result |= cur << 28
 
     return result
+
+def readusleb128(buff) :
+    result = ord( buff.read(1) )
+    if result > 0x7f :
+        cur = ord( buff.read(1) )
+        result = (result & 0x7f) | ((cur & 0x7f) << 7)
+        if cur > 0x7f :
+            cur = ord( buff.read(1) )
+            result |= (cur & 0x7f) << 14
+            if cur > 0x7f :
+                cur = ord( buff.read(1) )
+                result |= (cur & 0x7f) << 21
+                if cur > 0x7f :
+                    cur = ord( buff.read(1) )
+                    result |= cur << 28
+
+    return result
+
+def readuleb128p1(buff) :
+  return readuleb128( buff ) - 1
 
 def readsleb128(buff) :
     result = unpack( '=b', buff.read(1) )[0]
@@ -374,6 +396,36 @@ def readsleb128(buff) :
                     result |= cur << 28
 
     return result
+
+def get_sbyte(buff) :
+  return unpack( '=b', buff.read(1) )[0]
+
+def readsleb128_2(buff) :
+  result = get_sbyte(buff)
+  if result <= 0x7f :
+    result = (result << 25) >> 25
+  else :
+    cur = get_sbyte(buff)
+    result = (result & 0x7f) | ((cur & 0x7f) << 7)
+    if cur <= 0x7f :
+      result = (result << 18) >> 18
+    else :
+      cur = get_sbyte(buff)
+      result |= (cur & 0x7f) << 14
+      if cur <= 0x7f :
+        result = (result << 11) >> 11 
+      else :
+        cur = get_sbyte(buff)
+        result |= (cur & 0x7f) << 21 
+        if cur <= 0x7f :
+          result = (result << 4) >> 4
+        else :
+          cur = get_sbyte(buff)
+          result |= cur << 28
+
+  print "LA", hex(result)
+  return result
+
 
 def writeuleb128(value) :
     remaining = value >> 7
@@ -769,15 +821,15 @@ class TypeList :
     def get_off(self) :
         return self.__offset.off
 
-DBG_END_SEQUENCE                     = 0x00 #    (none)  terminates a debug info sequence for a code_item
+DBG_END_SEQUENCE                    = 0x00 #    (none)  terminates a debug info sequence for a code_item
 DBG_ADVANCE_PC                      = 0x01 #     uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
-DBG_ADVANCE_LINE                     = 0x02 #    sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
-DBG_START_LOCAL                   = 0x03 #   uleb128 register_num
+DBG_ADVANCE_LINE                    = 0x02 #    sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
+DBG_START_LOCAL                     = 0x03 #   uleb128 register_num
                                                     #    uleb128p1 name_idx
                                                     #    uleb128p1 type_idx
                                                     #         register_num: register that will contain local name_idx: string index of the name
                                                     #         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
-DBG_START_LOCAL_EXTENDED          = 0x04 #   uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
+DBG_START_LOCAL_EXTENDED            = 0x04 #   uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
                                                     #         register_num: register that will contain local
                                                     #         name_idx: string index of the name
                                                     #         type_idx: type index of the type
@@ -785,7 +837,7 @@ DBG_START_LOCAL_EXTENDED          = 0x04 #   uleb128 register_num uleb128p1 name
                                                     # introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
                                                     # If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
                                                     # Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
-DBG_END_LOCAL                        = 0x05 #    uleb128 register_num
+DBG_END_LOCAL                       = 0x05 #    uleb128 register_num
                                                     #           register_num: register that contained local
                                                     #           marks a currently-live local variable as out of scope at the current address
 DBG_RESTART_LOCAL                   = 0x06 #     uleb128 register_num
@@ -793,34 +845,41 @@ DBG_RESTART_LOCAL                   = 0x06 #     uleb128 register_num
                                                     #           The name and type are the same as the last local that was live in the specified register.
 DBG_SET_PROLOGUE_END                = 0x07 #     (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
                                                     #               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_EPILOGUE_BEGIN           = 0x08 #    (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
+DBG_SET_EPILOGUE_BEGIN              = 0x08 #    (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
                                                     #               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_FILE                          = 0x09 #   uleb128p1 name_idx
+DBG_SET_FILE                        = 0x09 #   uleb128p1 name_idx
                                                     #           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
                                                     #           instead of the default name specified in code_item
-DBG_Special_Opcodes_BEGIN        = 0x0a #    (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
-DBG_Special_Opcodes_END         = 0xff
+DBG_Special_Opcodes_BEGIN           = 0x0a #    (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
+DBG_Special_Opcodes_END             = 0xff
+DBG_LINE_BASE                       = -4
+DBG_LINE_RANGE                      = 15
+
 
 class DBGBytecode :
-    def __init__(self, op_value) :
-        self.__op_value = op_value
-        self.__format = []
+    def __init__(self, cm, op_value) :
+        self.CM = cm
+        self.op_value = op_value
+        self.format = []
 
     def get_op_value(self) :
-        return self.__op_value
+        return self.op_value.get_value()
 
     def add(self, value, ttype) :
-        self.__format.append( (value, ttype) )
+        self.format.append( (value, ttype) )
 
     def show(self) :
-        return [ i[0] for i in self.__format ]
+      if self.get_op_value() == DBG_START_LOCAL :
+        print self.format, self.CM.get_string(self.format[1][0])
+      elif self.get_op_value() == DBG_START_LOCAL_EXTENDED :
+        print self.format, self.CM.get_string(self.format[1][0])
 
     def get_obj(self) :
         return []
 
     def get_raw(self) :
-        buff = self.__op_value.get_value_buff()
-        for i in self.__format :
+        buff = self.op_value.get_value_buff()
+        for i in self.format :
             if i[1] == "u" :
                 buff += writeuleb128( i[0] )
             elif i[1] == "s" :
@@ -859,85 +918,93 @@ class DebugInfoItem2 :
 
 class DebugInfoItem :
     def __init__(self, buff, cm) :
-        self.__CM = cm
-        self.__offset = self.__CM.add_offset( buff.get_idx(), self )
-        
-        self.__line_start = readuleb128( buff )
-        self.__parameters_size = readuleb128( buff )
+        self.CM = cm
+        self.__offset = self.CM.add_offset( buff.get_idx(), self )
 
-        self.__parameter_names = []
-        for i in range(0, self.__parameters_size) :
-            self.__parameter_names.append( readuleb128( buff ) )
+        self.line_start = readuleb128( buff )
+        self.parameters_size = readuleb128( buff )
 
-        self.__bytecodes = []
-        bcode = DBGBytecode( SV( '=B', buff.read(1) ) )
-        self.__bytecodes.append( bcode )
+        print "line", self.line_start, "params", self.parameters_size
 
-        while bcode.get_op_value().get_value() != DBG_END_SEQUENCE :
-            bcode_value = bcode.get_op_value().get_value()
-#            print "0x%x" % bcode_value
+        self.parameter_names = []
+        for i in range(0, self.parameters_size) :
+            self.parameter_names.append( readuleb128p1( buff ) )
 
-            if bcode_value == DBG_SET_PROLOGUE_END :
-                pass
-            elif bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END :
-                pass
-            elif bcode_value == DBG_ADVANCE_PC :
+        self.bytecodes = []
+        bcode = DBGBytecode( self.CM, SV( '=B', buff.read(1) ) )
+        self.bytecodes.append( bcode )
+
+        while bcode.get_op_value() != DBG_END_SEQUENCE :
+            bcode_value = bcode.get_op_value()
+
+            print "0x%x" % bcode.get_op_value()
+
+            if bcode_value == DBG_ADVANCE_PC :
                 bcode.add( readuleb128( buff ), "u" )
             elif bcode_value == DBG_ADVANCE_LINE :
                 bcode.add( readsleb128( buff ), "s" )
             elif bcode_value == DBG_START_LOCAL :
-                bcode.add( readuleb128( buff ), "u" )
-                bcode.add( readuleb128( buff ), "u" )
-                bcode.add( readuleb128( buff ), "u" )
+                bcode.add( readusleb128( buff ), "u" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
             elif bcode_value == DBG_START_LOCAL_EXTENDED :
-                bcode.add( readuleb128( buff ), "u" )
-                bcode.add( readuleb128( buff ), "u" )
-                bcode.add( readuleb128( buff ), "u" )
-                bcode.add( readuleb128( buff ), "u" )
+                bcode.add( readusleb128( buff ), "u" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
             elif bcode_value == DBG_END_LOCAL :
-                bcode.add( readuleb128( buff ), "u" )
+                bcode.add( readusleb128( buff ), "u" )
             elif bcode_value == DBG_RESTART_LOCAL :
-                bcode.add( readuleb128( buff ), "u" )
-            else :
-                bytecode.Exit( "unknown or not yet supported DBG bytecode 0x%x" % bcode_value )
+                bcode.add( readusleb128( buff ), "u" )
+            elif bcode_value == DBG_SET_PROLOGUE_END :
+                pass
+            elif bcode_value == DBG_SET_EPILOGUE_BEGIN :
+                pass
+            elif bcode_value == DBG_SET_FILE :
+                bcode.add( readuleb128p1( buff ), "u1" )
+            else : #bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END :
+                pass
 
-            bcode = DBGBytecode( SV( '=B', buff.read(1) ) )
-            self.__bytecodes.append( bcode )
+            bcode = DBGBytecode( self.CM, SV( '=B', buff.read(1) ) )
+            self.bytecodes.append( bcode )
+        self.show()
 
     def reload(self) :
         pass
 
     def show(self) :
-        print self.__line_start
-        print self.__parameters_size
-        print self.__parameter_names
+        print self.line_start, self.parameters_size, self.parameter_names
+        for i in self.parameter_names :
+          print self.CM.get_string( i )
+
+        for i in self.bytecodes :
+          i.show()
 
     def get_raw(self) :
-        return [ bytecode.Buff( self.__offset, writeuleb128( self.__line_start ) + \
-                                                            writeuleb128( self.__parameters_size ) + \
-                                                            ''.join(writeuleb128(i) for i in self.__parameter_names) + \
-                                                            ''.join(i.get_raw() for i in self.__bytecodes) ) ]
+        return [ bytecode.Buff( self.__offset, writeuleb128( self.line_start ) + \
+                                                            writeuleb128( self.parameters_size ) + \
+                                                            ''.join(writeuleb128(i) for i in self.parameter_names) + \
+                                                            ''.join(i.get_raw() for i in self.bytecodes) ) ]
 
     def get_off(self) :
         return self.__offset.off
 
-
-VALUE_BYTE    = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
-VALUE_SHORT  = 0x02 # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
-VALUE_CHAR    = 0x03    # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
+VALUE_BYTE      = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
+VALUE_SHORT     = 0x02 # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
+VALUE_CHAR      = 0x03    # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
 VALUE_INT       = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
-VALUE_LONG    = 0x06    # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
-VALUE_FLOAT  = 0x10 # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
+VALUE_LONG      = 0x06    # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
+VALUE_FLOAT     = 0x10 # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
 VALUE_DOUBLE    = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
 VALUE_STRING    = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
-VALUE_TYPE    = 0x18    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
-VALUE_FIELD  = 0x19 # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
+VALUE_TYPE      = 0x18    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
+VALUE_FIELD     = 0x19 # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
 VALUE_METHOD    = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
-VALUE_ENUM    = 0x1b    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
-VALUE_ARRAY  = 0x1c # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
+VALUE_ENUM      = 0x1b    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
+VALUE_ARRAY     = 0x1c # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
 VALUE_ANNOTATION         = 0x1d # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
-VALUE_NULL    = 0x1e    # (none; must be 0)      (none)  null reference value
-VALUE_BOOLEAN  = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
+VALUE_NULL      = 0x1e    # (none; must be 0)      (none)  null reference value
+VALUE_BOOLEAN   = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
 
 
 class EncodedArray :
@@ -2129,7 +2196,7 @@ DALVIK_OPCODES_EXPANDED = {
     0x25ff : [],
     0x26ff : [],
 }
-                        
+
 
 def get_kind(cm, kind, value) :
   if kind == KIND_METH :
@@ -3195,6 +3262,11 @@ def get_instruction(cm, op_value, buff) :
   #print "Parsing instruction %x" % op_value
   return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff, DALVIK_OPCODES_FORMAT[ op_value ][1:] )
 
+# FIXME
+def get_extended_instruction(cm, op_value, buff) :
+  op_value = 0x00
+  return Instruction10x( cm, buff, DALVIK_OPCODES_FORMAT[ op_value ][1:] )
+
 def get_instruction_payload(op_value, buff) :
   #print "Parsing instruction payload %x" % op_value
   return DALVIK_OPCODES_PAYLOAD[ op_value ][0]( buff )
@@ -3222,14 +3294,20 @@ class DCode :
               #print "Second %x" % op_value
               if op_value in DALVIK_OPCODES_PAYLOAD :
                 obj = get_instruction_payload( op_value, self.__insn[idx:] )
-              elif op_value in DALVIK_OPCODES_EXPANDED :
-                raise("ooo")
               else :
                 op_value = unpack( '=B', self.__insn[idx] )[0]
                 obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
             else :
               op_value = unpack( '=B', self.__insn[idx] )[0]
               obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
+          else :
+              op_value = unpack( '=H', self.__insn[idx:idx+2] )[0]
+              #print "Second %x" % op_value
+              if op_value in DALVIK_OPCODES_EXPANDED :
+                pass
+              obj = get_extended_instruction( self.__CM, op_value, self.__insn[idx:] )
+
+
 
           self.bytecodes.append( obj )
           idx = idx + obj.get_length()
@@ -3505,8 +3583,10 @@ class MapItem :
             self.item = [ StringDataItem( buff, cm ) for i in range(0, general_format.size) ]
 
         elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_DEBUG_INFO_ITEM" :
-        # FIXME : strange bug with sleb128 ....
-#        self.item = [ DebugInfoItem( buff, cm ) for i in range(0, general_format.size) ]
+            #self.item = []
+            #for i in range(0, general_format.size) :
+             #   print "nb =", i
+             #   self.item.append( DebugInfoItem( buff, cm ) )
             self.item = DebugInfoItem2( buff, cm )
 
         elif TYPE_MAP_ITEM[ general_format.type ] == "TYPE_ENCODED_ARRAY_ITEM" :
@@ -3721,7 +3801,7 @@ class ClassManager :
     def get_type(self, idx) :
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
         return self.get_string( _type )
-    
+
     def get_type_ref(self, idx) :
         return self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
 
@@ -3731,7 +3811,7 @@ class ClassManager :
         except KeyError :
             proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
             self.__cached_proto[ idx ] = proto
-        
+
         return [ proto.get_params(), proto.get_return_type() ]
 
     def get_field(self, idx) :
@@ -3747,7 +3827,7 @@ class ClassManager :
 
     def get_method_ref(self, idx) :
         return self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-    
+
     def set_hook_method_class_name(self, idx, value) :
         method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( method.format.get_value().class_idx )
@@ -3795,6 +3875,7 @@ class MapList :
         for i in self.map_item :
             if TYPE_MAP_ITEM[ i.get_type() ] == ttype :
                 return i.get_item()
+        return None
 
     def show(self) :
         bytecode._Print("MAP_LIST SIZE", self.size.get_value())
@@ -3819,7 +3900,7 @@ class MapList :
 class DalvikVMFormat(bytecode._Bytecode) :
     def __init__(self, buff, decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
-       
+
         self.CM = ClassManager()
         self.CM.set_decompiler( decompiler )
 
@@ -3835,6 +3916,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             self.fields = self.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
             self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
             self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
+            self.debug = self.map_list.get_item_type( "TYPE_DEBUG_INFO_ITEM" )
 
         self.classes_names = None
         self.__cache_methods = None
