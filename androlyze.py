@@ -78,8 +78,8 @@ def load_session(filename) :
 
 def init_print_colors() :
     from IPython.utils import coloransi, io
-    CONF["PRINT_FCT"] = io.stdout.write
     default_colors(coloransi.TermColors)
+    CONF["PRINT_FCT"] = io.stdout.write
 
 def interact() :
     
