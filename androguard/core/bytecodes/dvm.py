@@ -1743,14 +1743,14 @@ class EncodedMethod :
         ret = proto.split(')')
         params = ret[0][1:].split()
         if params :
-            print "- local registers: v%d...v%d" % (0, nb-len(params)-1)
+            bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb-len(params)-1))
             j = 0
             for i in xrange(nb - len(params), nb) :
-                print "- v%d:%s" % (i, get_type(params[j]))
+                bytecode._PrintDefault("- v%d:%s\n" % (i, get_type(params[j])))
                 j += 1
         else :
-            print "local registers: v%d...v%d" % (0, nb-1)
-        print "- return:%s" % get_type(ret[1])
+            bytecode._PrintDefault("local registers: v%d...v%d\n" % (0, nb-1))
+        bytecode._PrintDefault("- return:%s\n" % get_type(ret[1]))
         bytecode._PrintSubBanner() 
 
     def build_access_flags(self) :
@@ -1768,7 +1768,7 @@ class EncodedMethod :
     def show_info(self) :
         self.build_access_flags()
         bytecode._PrintSubBanner("Method Information") 
-        print "%s->%s%s [access_flags=%s]" % (self._class_name, self._name, self._proto, self.access_flags_string)
+        bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % (self._class_name, self._name, self._proto, self.access_flags_string))
 
     def show(self) :
         colors = bytecode.disable_print_colors()

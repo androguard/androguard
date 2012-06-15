@@ -40,14 +40,17 @@ def _PrintBanner() :
     print "*" * 75
 
 def _PrintSubBanner(title=None) :
+  print_fct = CONF["PRINT_FCT"]
   if title == None :
-    print "#" * 20
+    print_fct("#" * 20 + "\n")
   else :
-    print "#" * 10 + " " + title
+    print_fct("#" * 10 + " " + title + "\n")
 
 def _PrintNote(note, tab=0) :
+  print_fct = CONF["PRINT_FCT"]
   note_color = CONF["COLORS"]["NOTE"]
-  print "\t" * tab + "%s# %s%s" % (note_color, note, Color.normal)
+  normal_color = CONF["COLORS"]["NORMAL"]
+  print_fct("\t" * tab + "%s# %s%s" % (note_color, note, normal_color) + "\n")
 
 # Print arg into a correct format
 def _Print(name, arg) :
@@ -79,6 +82,10 @@ def _PrintXRef(tag, items) :
   print_fct = CONF["PRINT_FCT"]
   for i in items :
     print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_offset() for j in i[1])))
+
+def _PrintDefault(msg) :
+  print_fct = CONF["PRINT_FCT"]
+  print_fct(msg)
 
 def PrettyShow1( basic_blocks ) :
     idx = 0
