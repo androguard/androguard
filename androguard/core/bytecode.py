@@ -67,77 +67,18 @@ def _Print(name, arg) :
     print buff
 
 def PrettyShow( basic_blocks ) :
-    if CONF["PRETTY_SHOW"] == 0 :
-        PrettyShow0( basic_blocks )
-    elif CONF["PRETTY_SHOW"] == 1 :
-        PrettyShow1( basic_blocks )
-    elif CONF["PRETTY_SHOW"] == 2 :
-        PrettyShow1bis( basic_blocks )
+    PrettyShow1( basic_blocks )
 
 def PrettyShowEx( exceptions ) :
     if len(exceptions) > 0 :
-        print "Exceptions:"
-        if CONF["PRETTY_SHOW"] == 0 :
-            for i in exceptions : 
-                print "\t", "%s" % (i.show_buff())
-        else :
-            for i in exceptions : 
-                print "\t", "%s%s%s" % (CONF["COLORS"]["EXCEPTION"], i.show_buff(), Color.normal)
+        CONF["PRINT_FCT"]("Exceptions:\n")
+        for i in exceptions : 
+          CONF["PRINT_FCT"]("\t%s%s%s\n" % (CONF["COLORS"]["EXCEPTION"], i.show_buff(), CONF["COLORS"]["NORMAL"]))
 
-def PrettyShow0( basic_blocks ) :
-    paths = []
-    for i in basic_blocks :
-        val = 0
-        if len(i.childs) > 1 :
-            val = 1
-        elif len(i.childs) == 1 :
-            val = 2
-
-        for j in i.childs :
-            paths.append( ( j[0], j[1], val ) )
-            if val == 1 :
-                val = 0
-
-    nb = 0
-    idx = 0
-    for bb in basic_blocks :
-        for ins in bb.ins :
-            p = []
-            for j in paths :
-                way = Color.green
-                if j[2] == 1 :
-                    way = Color.red
-                elif j[2] == 2 :
-                    way = Color.blue
-
-                m_in = j[0]
-                m_ax = j[1]
-                if j[0] > j[1] :
-                    m_in = j[1]
-                    m_ax = j[0]
-
-                if idx >= m_in and idx <= m_ax :
-                    if idx == j[0] :
-                        p.append( j[1] )
-                        print "o",
-                    if idx == j[1] :
-                        print "%s>%s" % (way, Color.normal),
-
-                    if idx != j[0] and idx != j[1] :
-                        print "%s|%s" % (way, Color.normal),
-                else :
-                    print " ",
-
-            print "%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
-            ins.show( idx )
-
-            if p != [] :
-                print "%s[" % Color.green, ' '.join("%x" % i for i in p), "]%s" % Color.normal,
-            print
-
-            idx += ( ins.get_length() )
-            nb += 1
-
+def _PrintXRef(tag, items) :
+  print_fct = CONF["PRINT_FCT"]
+  for i in items :
+    print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_offset() for j in i[1])))
 
 def PrettyShow1( basic_blocks ) :
     idx = 0
@@ -151,105 +92,46 @@ def PrettyShow1( basic_blocks ) :
     branch_color = CONF["COLORS"]["BRANCH"]
     exception_color = CONF["COLORS"]["EXCEPTION"]
     bb_color = CONF["COLORS"]["BB"]
+    normal_color = CONF["COLORS"]["NORMAL"]
+    print_fct = CONF["PRINT_FCT"]
 
     for i in basic_blocks :
-        print "%s%s%s : " % (bb_color, i.name, Color.normal)
+        print_fct("%s%s%s : \n" % (bb_color, i.name, normal_color))
         for ins in i.ins :
-            
+
             notes = ins.get_notes()
             if notes != [] :
               for note in notes :
                 _PrintNote(note, 1)
 
-            print "\t%s%-3d%s(%s%08x%s)" % (offset_color, nb, Color.normal, offset_addr_color, idx, Color.normal),
-            print "%s%-20s%s %s" %(instruction_name_color, ins.get_name(), Color.normal, ins.get_output()),
+            print_fct("\t%s%-3d%s(%s%08x%s) " % (offset_color, nb, normal_color, offset_addr_color, idx, normal_color))
+            print_fct("%s%-20s%s %s" %(instruction_name_color, ins.get_name(), normal_color, ins.get_output(idx)))
 
+            op_value = ins.get_op_value()
             if ins == i.ins[-1] and i.childs != [] :
-                if len(i.childs) == 2 :
-                    print "%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color),
-                    print ' '.join("%s" % c[2].name for c in i.childs[1:]), "]%s" % Color.normal,
+                print_fct(" ")
+                # packed/sparse-switch
+                if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1 :
+                      values = i.special_ins[ins].get_values()
+
+                      print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].name, branch_color))
+                      print_fct(' '.join("%d:%s" % (values[j], i.childs[j+1][2].name) for j in range(0, len(i.childs)-1) ) + " ]%s" % normal_color)
                 else :
-                    print "%s[" % branch_color, ' '.join("%s" % c[2].name for c in i.childs), "]%s" % Color.normal,
+                    if len(i.childs) == 2 :
+                        print_fct("%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
+                        print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + " ]%s" % normal_color)
+                    else :
+                        print_fct("%s[ " % branch_color + ' '.join("%s" % c[2].name for c in i.childs) + " ]%s" % normal_color)
 
             idx += ins.get_length()
             nb += 1
 
-            print
+            print_fct("\n")
 
         if i.exception_analysis != None :
-          print "\t", "%s%s%s" % (exception_color, i.exception_analysis.show_buff(), Color.normal)
+          print_fct("\t%s%s%s" % (exception_color, i.exception_analysis.show_buff(), normal_color))
 
-        print
-
-def PrettyShow1bis( basic_blocks ) :
-    idx = 0
-    nb = 0
-    for i in basic_blocks :
-
-        print "%s : " % (i.name)
-        for ins in i.ins :
-            print "\t%d(%x)" % (nb, idx),
-            ins.show( idx )
-
-            if ins == i.ins[-1] and i.childs != [] :
-                print "[", ' '.join("%s" % c[2].name for c in i.childs), "]",
-
-            idx += ins.get_length()
-            nb += 1
-
-            print
-        print
-
-# Use to print diff basic blocks !
-def PrettyShow2( basic_blocks, exclude_tags=[] ) :
-    idx = 0
-    nb = 0
-    for i in basic_blocks :
-        if i.bb_tag in exclude_tags :
-            continue
-
-        if i.bb_tag == 1 :
-            print "%sDIFF%s" % (Color.cyan, Color.normal),
-        elif i.bb_tag == 2 :
-            print "%sNEW%s" %(Color.cyan, Color.normal),
-
-        print "%s%s%s : " % (Color.purple, i.name, Color.normal)
-        for ins in i.ins :
-            print "\t%s%d%s(%s%x%s)" % (Color.yellow, nb, Color.normal, Color.yellow, idx, Color.normal),
-
-            try :
-                tag = getattr(ins, "diff_tag")
-            except AttributeError :
-                tag = 0
-
-            if tag == 1 :
-                print "%s" % Color.green,
-            elif tag == 2 :
-                print "%s" % Color.red,
-
-            ins.show( idx )
-
-            childs = None
-            try :
-                childs = getattr( ins, "childs" )
-            except AttributeError :
-                if ins == i.ins[-1] :
-                    childs = i.childs
-
-            if childs != None and childs != [] :
-                if len(childs) == 2 :
-                    print "%s[ %s%s " % (Color.red, childs[0][2].name, Color.green),
-                    print ' '.join("%s" % c[2].name for c in childs[1:]), "]%s" % Color.normal,
-                else :
-                    print "%s[" % Color.blue, ' '.join("%s" % c[2].name for c in childs), "]%s" % Color.normal,
-
-            if tag == 0 :
-                idx += ins.get_length()
-
-            nb += 1
-
-            print
-        print
+        print_fct("\n")
 
 def method2dot( mx ) :
     """

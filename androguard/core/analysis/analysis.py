@@ -970,10 +970,6 @@ class DVMBasicBlock :
         self.start = start
         self.end = self.start
 
-        self.break_blocks = []
-
-        self.free_blocks_offsets = []
-
         self.special_ins = {}
 
         self.name = "%s-BB@0x%x" % (self.method.get_name(), self.start)
@@ -1033,9 +1029,6 @@ class DVMBasicBlock :
                 idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method( idx_meth )
                 self.context.get_tainted_packages().push_info( method_info[0], (TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1]) )
-                
-                #method = self.__vm.get_class_manager().get_method_ref( idx_meth )
-                #self.context.tags.emit( method )
 
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
@@ -1052,6 +1045,9 @@ class DVMBasicBlock :
             elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c) :
                 code = self.method.get_code().get_bc()
                 self.special_ins[ i ] = code.get_ins_off( self.get_start() + idx + i.get_ref_off() * 2 )
+                if op_value == 0x26 and self.special_ins[ i ] != None :
+                  key = "%x" % (self.start + idx)
+                  self.special_ins[ i ].add_info( key )
 
             idx += i.get_length()
 
@@ -2013,7 +2009,8 @@ class MethodAnalysis :
         h = {}
         idx = 0
 
-        for i in bc.get() :
+        instructions = bc.get()
+        for i in instructions :
             for j in BO["BasicOPCODES_H"] :
                 if j.match(i.get_name()) != None :
                     v = BO["Dnext"]( i, idx, self.method )
@@ -2022,11 +2019,11 @@ class MethodAnalysis :
                     break
 
             idx += i.get_length()
-        
+
         excepts = BO["Dexception"]( self.__vm, self.method )
         for i in excepts:
             l.extend([i[0]])
-            
+
         idx = 0
         for i in bc.get() :
             # index is a destination
@@ -2065,7 +2062,7 @@ class MethodAnalysis :
         if code_analysis == True :
             for i in self.basic_blocks.get() :
                 i.analyze_code()
-       
+
     def get_length(self) :
         """
             @rtype : an integer which is the length of the code

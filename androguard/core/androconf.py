@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, logging, types, random, string
+import sys, os, logging, types, random, string
 
 ANDROGUARD_VERSION = "1.3"
 
@@ -33,19 +33,16 @@ def get_ascii_string(s) :
         return d
 
 class Color:
-    normal = "\033[0m"
-    black = "\033[30m"
-    red = "\033[31m"
-    green = "\033[32m"
-    yellow = "\033[33m"
-    blue = "\033[34m"
-    purple = "\033[35m"
-    cyan = "\033[36m"
-    grey = "\033[37m"
-    bold = "\033[1m"
-    uline = "\033[4m"
-    blink = "\033[5m"
-    invert = "\033[7m"
+    Normal = "\033[0m"
+    Black = "\033[30m"
+    Red = "\033[31m"
+    Green = "\033[32m"
+    Yellow = "\033[33m"
+    Blue = "\033[34m"
+    Purple = "\033[35m"
+    Cyan = "\033[36m"
+    Grey = "\033[37m"
+    Bold = "\033[1m"
 
 CONF = {
     "BIN_DED" : "ded.sh",
@@ -68,18 +65,33 @@ CONF = {
 
     "PATH_JARSIGNER" : "jarsigner",
 
-    "COLORS" : { 
-        "OFFSET" : Color.yellow,
-        "OFFSET_ADDR" : Color.green,
-        "INSTRUCTION_NAME" : Color.yellow,
-        "BRANCH_FALSE" : Color.red,
-        "BRANCH_TRUE" : Color.green,
-        "BRANCH" : Color.blue,
-        "EXCEPTION" : Color.cyan,
-        "BB" : Color.purple,
-        "NOTE" : Color.red,
-    }
+    "COLORS" : {
+        "OFFSET" : Color.Yellow,
+        "OFFSET_ADDR" : Color.Green,
+        "INSTRUCTION_NAME" : Color.Yellow,
+        "BRANCH_FALSE" : Color.Red,
+        "BRANCH_TRUE" : Color.Green,
+        "BRANCH" : Color.Blue,
+        "EXCEPTION" : Color.Cyan,
+        "BB" : Color.Purple,
+        "NOTE" : Color.Red,
+        "NORMAL" : Color.Normal,
+    },
+
+    "PRINT_FCT" : sys.stdout.write,
 }
+
+def default_colors(obj) :
+  CONF["COLORS"]["OFFSET"] = obj.Yellow
+  CONF["COLORS"]["OFFSET_ADDR"] = obj.Green
+  CONF["COLORS"]["INSTRUCTION_NAME"] = obj.Yellow
+  CONF["COLORS"]["BRANCH_FALSE"] = obj.Red
+  CONF["COLORS"]["BRANCH_TRUE"] = obj.Green
+  CONF["COLORS"]["BRANCH"] = obj.Blue
+  CONF["COLORS"]["EXCEPTION"] = obj.Cyan
+  CONF["COLORS"]["BB"] = obj.Purple
+  CONF["COLORS"]["NOTE"] = obj.Red
+  CONF["COLORS"]["NORMAL"] = obj.Normal
 
 def disable_colors() :
   """ Disable colors from the output (color = normal)"""
