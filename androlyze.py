@@ -76,7 +76,15 @@ def load_session(filename) :
     """
     return loads( open(filename, "r").read() )
 
+def init_print_colors() :
+    from IPython.utils import coloransi, io
+    CONF["PRINT_FCT"] = io.stdout.write
+
+    default_colors(Color)
+
 def interact() :
+    
+    init_print_colors()
     cfg = Config()
     ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
     ipshell()
