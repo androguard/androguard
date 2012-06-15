@@ -82,10 +82,9 @@ def init_print_colors() :
     CONF["PRINT_FCT"] = io.stdout.write
 
 def interact() :
-    
-    init_print_colors()
     cfg = Config()
     ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
+    init_print_colors()
     ipshell()
 
 def AnalyzeAPK(filename, raw=False, decompiler=None) :
