@@ -39,7 +39,7 @@ def test(got, expected):
 
 
 a = AndroguardS( TEST_CASE )
-x = analysis.VMAnalysis( a.get_vm(), code_analysis=True )
+x = analysis.VMAnalysis( a.get_vm() )
 
 for method in a.get_methods() :
     print method.get_class_name(), method.get_name(), method.get_descriptor()

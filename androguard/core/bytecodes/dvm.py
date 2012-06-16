@@ -345,9 +345,7 @@ def static_operand_instruction( instruction ) :
     return buff
 
 def dot_buff(ins, idx) :
-    if ins.get_op_value() == 0x1a or ins.get_op_value() == 0x1b :
-        return ins.show_buff(idx).replace('"', '\\"')
-    return ins.show_buff(idx)
+    return ins.get_name() + " " + ins.get_output(idx)
 
 def readuleb128(buff) :
     result = ord( buff.read(1) )
@@ -443,7 +441,6 @@ def readsleb128_2(buff) :
           cur = get_sbyte(buff)
           result |= cur << 28
 
-  print "LA", hex(result)
   return result
 
 
@@ -1688,9 +1685,9 @@ class EncodedField :
     def show_dref(self) :
         try :
             for i in self.DREFr.items :
-                print "R:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
+                print "R:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j for j in i[1] ]
             for i in self.DREFw.items :
-                print "W:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j.get_offset() for j in i[1] ]
+                print "W:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j for j in i[1] ]
         except AttributeError:
             pass
 
@@ -1727,7 +1724,7 @@ class EncodedMethod :
     def set_name(self, value) :
         self.__CM.set_hook_method_name( self.__method_idx, value )
         self.reload()
-    
+
     def set_class_name(self, value) :
         self.__CM.set_hook_method_class_name( self.__method_idx, value )
         self.reload()
@@ -1783,7 +1780,7 @@ class EncodedMethod :
             if self.__CM.get_vmanalysis() == None :
                 self._code.show()
             else :
-                self._code.pretty_show( self.__CM.get_vmanalysis().hmethods[ self ] )
+                self._code.pretty_show( self.__CM.get_vmanalysis().get_method( self ) )
                 self.show_xref()
 
     def show_xref(self) :
@@ -1822,7 +1819,8 @@ class EncodedMethod :
     def get_instructions(self) :
         if self._code == None :
           return []
-        return self._code.get_bc().get()
+        #return self._code.get_bc().get()
+        return self._code.get_bc().get_instructions()
 
     def get_instruction(self, idx, off=None) :
         if self._code != None :
@@ -3292,8 +3290,7 @@ def get_instruction(cm, op_value, buff) :
   return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
 
 # FIXME
-def get_extended_instruction(cm, op_value, buff) :
-  op_value = 0x00
+def get_expanded_instruction(cm, op_value, buff) :
   return Instruction10x( cm, buff )
 
 def get_instruction_payload(op_value, buff) :
@@ -3307,11 +3304,8 @@ class DCode :
         self.size = size
 
         self.bytecodes = []
-        self.resolve = False
 
-        self.parse()
-
-    def parse(self) :
+    def get_instructions(self) :
         #print "New method ....", size * calcsize( '<H' )
 
         # Get instructions
@@ -3339,19 +3333,17 @@ class DCode :
               #print "Second %x" % op_value
               if op_value in DALVIK_OPCODES_EXPANDED :
                 pass
-              obj = get_extended_instruction( self.__CM, op_value, self.__insn[idx:] )
+              obj = get_expanded_instruction( self.__CM, op_value, self.__insn[idx:] )
 
 
-          self.bytecodes.append( obj )
+          yield obj
           idx = idx + obj.get_length()
-
-        self.resolve = True
 
     def reload(self) :
         pass
 
     def get(self) :
-        return self.bytecodes
+      return self.get_instructions()
 
     def add_inote(self, msg, idx, off=None) :
       if off != None :
@@ -3375,8 +3367,7 @@ class DCode :
 
     def get_ins_off(self, off) :
         idx = 0
-
-        for i in self.bytecodes :
+        for i in self.get_instructions() :
             if idx == off :
                 return i
             idx += i.get_length()
@@ -3577,6 +3568,14 @@ class MapItem :
 
         buff.set_idx( self.offset )
 
+        lazy_analysis = self.__CM.get_lazy_analysis()
+
+        if lazy_analysis :
+          self.next_lazy(buff, cm)
+        else :
+          self.next(buff, cm)
+
+    def next(self, buff, cm) :
 #        print TYPE_MAP_ITEM[ self.type ], "@ 0x%x(%d) %d %d" % (buff.get_idx(), buff.get_idx(), self.size, self.offset)
 
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM" :
@@ -3639,6 +3638,50 @@ class MapItem :
 
         else :
             bytecode.Exit( "Map item %d @ 0x%x(%d) is unknown" % (self.type, buff.get_idx(), buff.get_idx()) )
+
+    def next_lazy(self, buff, cm) :
+        if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM" :
+            self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CODE_ITEM" :
+            self.item = CodeItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_TYPE_ID_ITEM" :
+            self.item = TypeIdItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_PROTO_ID_ITEM" :
+            self.item = ProtoIdItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_FIELD_ID_ITEM" :
+            self.item = FieldIdItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_METHOD_ID_ITEM" :
+            self.item = MethodIdItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CLASS_DEF_ITEM" :
+            self.item = ClassDefItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_HEADER_ITEM" :
+            self.item = HeaderItem( self.size, buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_TYPE_LIST" :
+            self.item = [ TypeList( buff, cm ) for i in xrange(0, self.size) ]
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_DATA_ITEM" :
+            self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM" :
+            self.item = DebugInfoItem2( buff, cm )
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM" :
+            self.item = [ EncodedArrayItem( buff, cm ) for i in xrange(0, self.size) ]
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CLASS_DATA_ITEM" :
+            self.item = [ ClassDataItem(buff, cm) for i in xrange(0, self.size) ]
+
+        elif TYPE_MAP_ITEM[ self.type ] == "TYPE_MAP_LIST" :
+            pass # It's me I think !!!
+
 
     def reload(self) :
         if self.item != None :
@@ -3726,18 +3769,15 @@ class ClassManager :
         self.recode_ascii_string = CONF["RECODE_ASCII_STRING"]
         self.recode_ascii_string_meth = CONF["RECODE_ASCII_STRING_METH"]
 
+        self.lazy_analysis = CONF["LAZY_ANALYSIS"]
+
         self.hook_strings = {}
 
         self.engine = []
-        if CONF["ENGINE"] == "automatic" :
-            try :
-                from androguard.core.bytecodes.libdvm import dvmnative
-                self.engine.append("native")
-                self.engine.append( dvmnative.DalvikBytecode() )
-            except ImportError :
-                self.engine.append("python")
-        else :
-            self.engine.append("python")
+        self.engine.append("python")
+
+    def get_lazy_analysis(self) :
+      return self.lazy_analysis
 
     def get_vmanalysis(self) :
         return self.vmanalysis_ob
@@ -4100,6 +4140,13 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def get_len_methods(self) :
         return len( self.get_methods() )
 
+    def get_method_by_idx(self, idx) :
+        for i in self.classes.class_def :
+          for j in i.get_methods() :
+            if j.get_idx() == idx :
+              return j
+        return None
+
     def get_method_descriptor(self, class_name, method_name, descriptor) :
         """
             Return the specific method
@@ -4224,9 +4271,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
             for method in _class.get_methods() :
                 method.XREFfrom = XREF()
                 method.XREFto = XREF()
-            
+
                 key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
-            
+
                 if key in gvm.nodes :
                     for i in gvm.G.predecessors( gvm.nodes[ key ].id ) :
                         xref = gvm.nodes_id[ i ]
@@ -4255,43 +4302,39 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 field.DREFw = DREF()
 
                 paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
+
                 if paths != None :
                     access = {}
                     access["R"] = {}
                     access["W"] = {}
 
                     for path in paths.get_paths() :
-                        if path.get_access_flag() == 'R' :
-                            method_class_name = path.get_method().get_class_name()
-                            method_name = path.get_method().get_name()
-                            method_descriptor = path.get_method().get_descriptor()
+                        access_val, idx = path[0]
+                        m_idx = path[1]
 
-                            dref_meth = self.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                        if access_val == 'R' :
+                            dref_meth = self.get_method_by_idx( m_idx )
                             name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
                             if python_export == True :
                                 setattr( field.DREFr, name, dref_meth )
-                          
+
                             try :
-                                access["R"][ path.get_method() ].append( path )
+                                access["R"][ dref_meth ].append( idx )
                             except KeyError :
-                                access["R"][ path.get_method() ] = [] 
-                                access["R"][ path.get_method() ].append( path )
+                                access["R"][ dref_meth ] = []
+                                access["R"][ dref_meth ].append( idx )
 
                         else :
-                            method_class_name = path.get_method().get_class_name()
-                            method_name = path.get_method().get_name()
-                            method_descriptor = path.get_method().get_descriptor()
-
-                            dref_meth = self.get_method_descriptor( method_class_name, method_name, method_descriptor )
+                            dref_meth = self.get_method_by_idx( m_idx )
                             name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
                             if python_export == True :
                                 setattr( field.DREFw, name, dref_meth )
-                            
+
                             try :
-                                access["W"][ path.get_method() ].append( path )
+                                access["W"][ dref_meth ].append( idx )
                             except KeyError :
-                                access["W"][ path.get_method() ] = [] 
-                                access["W"][ path.get_method() ].append( path )
+                                access["W"][ dref_meth ] = [] 
+                                access["W"][ dref_meth ].append( idx )
 
                     for i in access["R"] :
                         field.DREFr.add( i, access["R"][i] )

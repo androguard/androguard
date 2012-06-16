@@ -46,7 +46,8 @@ class Sign :
 
 class Signature :
     def __init__(self, tainted_information) :
-        self.__tainted = tainted_information
+        self.tainted_packages = tainted_information.get_tainted_packages()
+        self.tainted_variables = tainted_information.get_tainted_variables()
 
         self._cached_signatures = {}
         self._cached_fields = {}
@@ -158,7 +159,7 @@ class Signature :
                     internal.extend( getattr( self, f )( analysis_method ) )
 
             internal.sort()
-
+            
             for i in internal :
                 if i[0] >= b.start and i[0] < b.end :
                     l.append( i )
@@ -172,7 +173,7 @@ class Signature :
 
     def _init_caches(self) :
         if self._cached_fields == {} :
-            for f_t, f in self.__tainted["variables"].get_fields() :
+            for f_t, f in self.tainted_variables.get_fields() :
                 self._cached_fields[ f ] = f_t.get_paths_length()
             n = 0
             for f in sorted( self._cached_fields ) :
@@ -180,7 +181,7 @@ class Signature :
                 n += 1
 
         if self._cached_packages == {} :
-            for m_t, m in self.__tainted["packages"].get_packages() :
+            for m_t, m in self.tainted_packages.get_packages() :
                 self._cached_packages[ m ] = m_t.get_paths_length()
             n = 0
             for m in sorted( self._cached_packages ) :
@@ -215,7 +216,7 @@ class Signature :
     def _get_strings_a1(self, analysis_method) :
         buff = ""
 
-        strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+        strings_method = self.tainted_variables.get_strings_by_method( analysis_method.get_method() )
         for s in strings_method :
             for path in strings_method[s] :
                 buff += s.replace('\n', ' ')
@@ -224,10 +225,10 @@ class Signature :
     def _get_strings_pa(self, analysis_method) :
         l = []
 
-        strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+        strings_method = self.tainted_variables.get_strings_by_method( analysis_method.get_method() )
         for s in strings_method :
             for path in strings_method[s] :
-                l.append( (path.get_bb().start + path.get_idx(), "S%d" % len(s) ) )
+                l.append( ( path[1], "S%d" % len(s) ) )
         return l
 
 
@@ -238,11 +239,11 @@ class Signature :
 
         l = []
 
-        strings_method = self.__tainted["variables"].get_strings_by_method( analysis_method.get_method() )
+        strings_method = self.tainted_variables.get_strings_by_method( analysis_method.get_method() )
         for s in strings_method :
             for path in strings_method[s] :
-                l.append( (path.get_bb().start + path.get_idx(), "S") )
-        
+                l.append( ( path[1], "S") )
+
         self._global_cached[ key ] = l
         return l
 
@@ -251,26 +252,23 @@ class Signature :
         if key in self._global_cached :
             return self._global_cached[ key ]
 
-        fields_method = self.__tainted["variables"].get_fields_by_method( analysis_method.get_method() )
-
+        fields_method = self.tainted_variables.get_fields_by_method( analysis_method.get_method() )
         l = []
 
         for f in fields_method :
             for path in fields_method[ f ] :
-                #print (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ])
-                l.append( (path.get_bb().start + path.get_idx(), "F%d" % FIELD_ACCESS[ path.get_access_flag() ]) )
-        
+                l.append( (path[1], "F%d" % FIELD_ACCESS[ path[0] ]) )
+
         self._global_cached[ key ] = l
         return l
 
     def _get_packages_a(self, analysis_method) :
-        packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
-
+        packages_method = self.tainted_packages.get_packages_by_method( analysis_method.get_method() )
         l = []
 
         for m in packages_method :
             for path in packages_method[ m ] :
-                l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+                l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
         return l
 
     def _get_packages(self, analysis_method, include_packages) :
@@ -282,7 +280,7 @@ class Signature :
         if key in self._global_cached :
             return self._global_cached[ key ]
 
-        packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+        packages_method = self.tainted_packages.get_packages_by_method( analysis_method.get_method() )
         if self.classes_names == None :
             self.classes_names = analysis_method.get_vm().get_classes_names()
 
@@ -299,23 +297,23 @@ class Signature :
 
                 if path.get_access_flag() == 1 :
                     if path.get_class_name() in self.classes_names :
-                        l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ 2 ]) ) )
+                        l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ 2 ]) ) )
                     else :
                         if present == True :
-                            l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                            l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
                         else :
-                            l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+                            l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                 else :
                     if present == True :
-                        l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
+                        l.append( (path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
                     else :
-                        l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+                        l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
         
         self._global_cached[ key ] = l
         return l
 
     def _get_packages_pa_2(self, analysis_method, include_packages) :
-        packages_method = self.__tainted["packages"].get_packages_by_method( analysis_method.get_method() )
+        packages_method = self.tainted_packages.get_packages_by_method( analysis_method.get_method() )
 
         l = []
 
@@ -328,14 +326,14 @@ class Signature :
                         break
                 
                 if present == True :
-                    l.append( (path.get_bb().start + path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
+                    l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                     continue
 
 
                 if path.get_access_flag() == 1 :
-                    l.append( (path.get_bb().start + path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                    l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
                 else :
-                    l.append( (path.get_bb().start + path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
+                    l.append( (path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
 
         return l
 

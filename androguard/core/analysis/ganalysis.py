@@ -57,7 +57,7 @@ class GVMAnalysis :
         self.entry_nodes = [] 
         self.G = DiGraph()
 
-        for j in self.vmx.tainted_packages.get_internal_packages() :
+        for j in self.vmx.get_tainted_packages().get_internal_packages() :
             n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
             n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
 
@@ -149,14 +149,14 @@ class GVMAnalysis :
                 #                                    j.get_bb().start + j.get_idx(), \
                 #                                    j.get_class_name(), j.get_name(), j.get_descriptor())
                 n1 = self._get_exist_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
-                
+
                 if n1 == None :
                     continue
 
                 n1.set_attributes( { "permissions" : 1 } )
                 n1.set_attributes( { "permissions_level" : DVM_PERMISSIONS[ "MANIFEST_PERMISSION" ][ x ][0] } )
                 n1.set_attributes( { "permissions_details" : x } )
-                
+
                 try :
                     for tmp_perm in PERMISSIONS_RISK[ x ] :
                         if tmp_perm in DEFAULT_RISKS :
@@ -164,14 +164,14 @@ class GVMAnalysis :
                                                      DEFAULT_RISKS[ tmp_perm ][0] )
                             n2.set_attributes( { "color" : DEFAULT_RISKS[ tmp_perm ][1] } )
                             self.G.add_edge( n2.id, n1.id )
-                           
+
                             n1.add_risk( DEFAULT_RISKS[ tmp_perm ][0] )
                             n1.add_api( x, j.get_class_name() + "-" + j.get_name() + "-" + j.get_descriptor() )
                 except KeyError :
                     pass
 
         # Tag DexClassLoader
-        for m, _ in self.vmx.tainted_packages.get_packages() :
+        for m, _ in self.vmx.get_tainted_packages().get_packages() :
             if m.get_info() == "Ldalvik/system/DexClassLoader;" :
                 for path in m.get_paths() :
                     if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
