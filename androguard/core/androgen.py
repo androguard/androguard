@@ -33,7 +33,7 @@ class BC :
         return self.__a
 
     def analyze(self) :
-        self.__a = analysis.VMAnalysis( self.__bc, code_analysis=True )
+        self.__a = analysis.uVMAnalysis( self.__bc )
         self.__bc.set_vmanalysis( self.__a )
 
     def _get(self, val, name) :

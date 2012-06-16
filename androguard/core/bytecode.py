@@ -37,7 +37,8 @@ def Warning( msg ):
     warning(msg)
 
 def _PrintBanner() :
-    print "*" * 75
+    print_fct = CONF["PRINT_FCT"]
+    print_fct("*" * 75 + "\n")
 
 def _PrintSubBanner(title=None) :
   print_fct = CONF["PRINT_FCT"]
@@ -81,7 +82,7 @@ def PrettyShowEx( exceptions ) :
 def _PrintXRef(tag, items) :
   print_fct = CONF["PRINT_FCT"]
   for i in items :
-    print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_offset() for j in i[1])))
+    print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_idx() for j in i[1])))
 
 def _PrintDefault(msg) :
   print_fct = CONF["PRINT_FCT"]
@@ -104,7 +105,9 @@ def PrettyShow1( basic_blocks ) :
 
     for i in basic_blocks :
         print_fct("%s%s%s : \n" % (bb_color, i.name, normal_color))
-        for ins in i.ins :
+        instructions = i.get_instructions()
+        for ins in instructions :
+        #for ins in i.ins :
 
             notes = ins.get_notes()
             if notes != [] :
@@ -115,11 +118,11 @@ def PrettyShow1( basic_blocks ) :
             print_fct("%s%-20s%s %s" %(instruction_name_color, ins.get_name(), normal_color, ins.get_output(idx)))
 
             op_value = ins.get_op_value()
-            if ins == i.ins[-1] and i.childs != [] :
+            if ins == instructions[-1] and i.childs != [] :
                 print_fct(" ")
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1 :
-                      values = i.special_ins[ins].get_values()
+                      values = i.get_special_ins(idx).get_values()
 
                       print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].name, branch_color))
                       print_fct(' '.join("%d:%s" % (values[j], i.childs[j+1][2].name) for j in range(0, len(i.childs)-1) ) + " ]%s" % normal_color)
@@ -136,7 +139,7 @@ def PrettyShow1( basic_blocks ) :
             print_fct("\n")
 
         if i.exception_analysis != None :
-          print_fct("\t%s%s%s" % (exception_color, i.exception_analysis.show_buff(), normal_color))
+          print_fct("\t%s%s%s\n" % (exception_color, i.exception_analysis.show_buff(), normal_color))
 
         print_fct("\n")
 
@@ -165,7 +168,7 @@ def method2dot( mx ) :
 
         idx = i.start
         label = ""
-        for ins in i.ins :
+        for ins in i.get_instructions() :
             label += "%x %s\l" % (idx, vm.dotbuff(ins, idx))
             idx += ins.get_length()
 

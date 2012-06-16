@@ -136,20 +136,22 @@ def AnalyzeDex(filename, raw=False) :
 
     androconf.debug("EXPORT VM to python namespace")
     ExportVMToPython( d )
-    
+
     androconf.debug("VMAnalysis ...")
-    dx = VMAnalysis( d )
+    dx = uVMAnalysis( d )
+    #dx = VMAnalysis( d )
+
     androconf.debug("GVMAnalysis ...")
     gx = GVMAnalysis( dx, None )
-    
+
     d.set_vmanalysis( dx )
     d.set_gvmanalysis( gx )
-    
+
     androconf.debug("XREF ...")
     d.create_xref()
     androconf.debug("DREF ...")
     d.create_dref()
-    
+
     return d, dx
 
 def AAnalyzeDex(filename, raw=False, decompiler="dad") :
@@ -259,9 +261,9 @@ def main(options, arguments) :
             for perm in perms_access :
                 print "PERM : ", perm
                 for path in perms_access[ perm ] :
-                    print "\t%s %s %s (@%s-0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                                     path.get_bb().get_name(), path.get_bb().start + path.get_idx(), \
-                                                                     path.get_class_name(), path.get_name(), path.get_descriptor())
+                    print "\t%s %s %s (0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                                 path.get_idx(), \
+                                                                 path.get_class_name(), path.get_name(), path.get_descriptor())
 
     elif options.version != None :
         print "Androlyze version %s" % androconf.ANDROGUARD_VERSION

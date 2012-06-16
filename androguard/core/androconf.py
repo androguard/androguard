@@ -18,7 +18,7 @@
 
 import sys, os, logging, types, random, string
 
-ANDROGUARD_VERSION = "1.3"
+ANDROGUARD_VERSION = "1.5"
 
 def get_ascii_string(s) :
     try :
@@ -79,6 +79,8 @@ CONF = {
     },
 
     "PRINT_FCT" : sys.stdout.write,
+
+    "LAZY_ANALYSIS" : False,
 }
 
 def default_colors(obj) :
@@ -187,6 +189,9 @@ log_andro.addHandler(console_handler)
 log_runtime = logging.getLogger("andro.runtime")          # logs at runtime
 log_interactive = logging.getLogger("andro.interactive")  # logs in interactive functions
 log_loading = logging.getLogger("andro.loading")          # logs when loading andro
+
+def set_lazy() :
+  CONF["LAZY_ANALYSIS"] = True
 
 def set_debug() :
     log_andro.setLevel( logging.DEBUG )
