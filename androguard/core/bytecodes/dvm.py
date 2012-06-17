@@ -3995,6 +3995,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             self.codes = self.map_list.get_item_type( "TYPE_CODE_ITEM" )
             self.strings = self.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
             self.debug = self.map_list.get_item_type( "TYPE_DEBUG_INFO_ITEM" )
+            self.header = self.map_list.get_item_type( "TYPE_HEADER_ITEM" )
 
         self.classes_names = None
         self.__cache_methods = None
