@@ -1361,16 +1361,16 @@ def show_Path(paths) :
     for path in paths :
         if isinstance(path, PathP) :
             if path.get_access_flag() == TAINTED_PACKAGE_CALL :
-                print "%s %s %s (@%s-0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                              path.get_bb().get_name(), path.get_idx(), \
-                                                              path.get_class_name(), path.get_name(), path.get_descriptor())
+                print "%s %s %s (0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                          path.get_idx(), \
+                                                          path.get_class_name(), path.get_name(), path.get_descriptor())
             else :
-                print "%s %s %s (@%s-0x%x)  ---> %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                        path.get_bb().get_name(), path.get_idx(), \
-                                                        path.get_class_name())
+                print "%s %s %s (0x%x)  ---> %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
+                                                    path.get_idx(), \
+                                                    path.get_class_name())
 
         else :
-            print "%s %s %s ---> %s %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), path.get_idx() )
+            print "%s %s %s ---> %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_idx() )
 
 def show_PathVariable(d, paths) :
     for path in paths :
@@ -1482,7 +1482,7 @@ def show_Permissions( dx ) :
     for i in p :
         print i, ":"
         show_Path( p[i] )
-        
+
 def show_DynCode(dx) :
     """
         Show where dynamic code is used
