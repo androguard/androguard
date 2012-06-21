@@ -22,7 +22,7 @@ from xml.sax.saxutils import escape
 from androguard.core import bytecode
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.core.analysis.risk import PERMISSIONS_RISK, INTERNET_RISK, PRIVACY_RISK, PHONE_RISK, SMS_RISK, MONEY_RISK
-from androguard.core.analysis.analysis import TAINTED_PACKAGE_CREATE
+from androguard.core.analysis.analysis import PathVar, TAINTED_PACKAGE_CREATE
 
 DEFAULT_RISKS = {
     INTERNET_RISK : ( "INTERNET_RISK", (195, 255, 0) ),
@@ -58,14 +58,14 @@ class GVMAnalysis :
         self.G = DiGraph()
 
         for j in self.vmx.get_tainted_packages().get_internal_packages() :
-            n1 = self._get_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
-            n2 = self._get_node( j.get_class_name(), j.get_name(), j.get_descriptor() )
+            src_class_name, src_method_name, src_descriptor = j.get_src( self.vm.get_class_manager() )
+            dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.vm.get_class_manager() )
+
+            n1 = self._get_node( src_class_name, src_method_name, src_descriptor )
+            n2 = self._get_node( dst_class_name, dst_method_name, dst_descriptor )
 
             self.G.add_edge( n1.id, n2.id )
             n1.add_edge( n2, j )
-        #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-        #                                            j.get_bb().start + j.get_idx(), \
-        #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
 
         if apk != None :
             for i in apk.get_activities() :
@@ -145,10 +145,12 @@ class GVMAnalysis :
         list_permissions = self.vmx.get_permissions( [] ) 
         for x in list_permissions :
             for j in list_permissions[ x ] :
-                #print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                #                                    j.get_bb().start + j.get_idx(), \
-                #                                    j.get_class_name(), j.get_name(), j.get_descriptor())
-                n1 = self._get_exist_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() )
+                if isinstance(j, PathVar) :
+                  continue
+
+                src_class_name, src_method_name, src_descriptor = j.get_src( self.vm.get_class_manager() )
+                dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.vm.get_class_manager() )
+                n1 = self._get_exist_node( dst_class_name, dst_method_name, dst_descriptor )
 
                 if n1 == None :
                     continue
@@ -160,29 +162,33 @@ class GVMAnalysis :
                 try :
                     for tmp_perm in PERMISSIONS_RISK[ x ] :
                         if tmp_perm in DEFAULT_RISKS :
-                            n2 = self._get_new_node( j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor() + " " + DEFAULT_RISKS[ tmp_perm ][0],
+                            n2 = self._get_new_node( dst_class_name,
+                                                     dst_method_name,
+                                                     dst_descriptor + " " + DEFAULT_RISKS[ tmp_perm ][0],
                                                      DEFAULT_RISKS[ tmp_perm ][0] )
                             n2.set_attributes( { "color" : DEFAULT_RISKS[ tmp_perm ][1] } )
                             self.G.add_edge( n2.id, n1.id )
 
                             n1.add_risk( DEFAULT_RISKS[ tmp_perm ][0] )
-                            n1.add_api( x, j.get_class_name() + "-" + j.get_name() + "-" + j.get_descriptor() )
+                            n1.add_api( x, src_class_name + "-" + src_method_name + "-" + src_descriptor )
                 except KeyError :
                     pass
 
         # Tag DexClassLoader
         for m, _ in self.vmx.get_tainted_packages().get_packages() :
-            if m.get_info() == "Ldalvik/system/DexClassLoader;" :
+            if m.get_name() == "Ldalvik/system/DexClassLoader;" :
                 for path in m.get_paths() :
                     if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
-                        n1 = self._get_exist_node( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor() )    
-                        n2 = self._get_new_node( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor() + " " + "DEXCLASSLOADER",
+                        src_class_name, src_method_name, src_descriptor = path.get_src( self.vm.get_class_manager() )
+                        dst_class_name, dst_method_name, dst_descriptor = path.get_dst( self.vm.get_class_manager() )
+                        n1 = self._get_exist_node( dst_class_name, dst_method_name, dst_descriptor )
+                        n2 = self._get_new_node( dst_class_name, dst_method_name, dst_descriptor + " " + "DEXCLASSLOADER",
                                                  "DEXCLASSLOADER" )
 
                         n1.set_attributes( { "dynamic_code" : "true" } )
                         n2.set_attributes( { "color" : DEXCLASSLOADER_COLOR } )
                         self.G.add_edge( n2.id, n1.id )
-                        
+
                         n1.add_risk( "DEXCLASSLOADER" )
 
     def _get_exist_node(self, class_name, method_name, descriptor) :
