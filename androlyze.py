@@ -100,7 +100,7 @@ def AnalyzeAPK(filename, raw=False, decompiler=None) :
     androconf.debug("APK ...")
     a = APK(filename, raw)
 
-    d, dx = AnalyzeDex( filename, a.get_dex() )
+    d, dx = AnalyzeDex( a.get_dex(), raw=True )
 
     if decompiler != None :
       androconf.debug("Decompiler ...")
@@ -132,7 +132,7 @@ def AnalyzeDex(filename, raw=False) :
     if raw == False :
         d = DalvikVMFormat( open(filename, "rb").read() )
     else :
-        d = DalvikVMFormat( raw )
+        d = DalvikVMFormat( filename )
 
     androconf.debug("EXPORT VM to python namespace")
     ExportVMToPython( d )
@@ -261,9 +261,7 @@ def main(options, arguments) :
             for perm in perms_access :
                 print "PERM : ", perm
                 for path in perms_access[ perm ] :
-                    print "\t%s %s %s (0x%x)  ---> %s %s %s" % ( path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                                 path.get_idx(), \
-                                                                 path.get_class_name(), path.get_name(), path.get_descriptor())
+                    show_Path( _a.get_vm(), path )
 
     elif options.version != None :
         print "Androlyze version %s" % androconf.ANDROGUARD_VERSION

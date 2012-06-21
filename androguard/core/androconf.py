@@ -181,6 +181,9 @@ def is_android_raw(raw) :
 
     return val
 
+def is_valid_android_raw(raw) :
+  return raw.find("AndroidManifest.xml") != -1
+
 # from scapy
 log_andro = logging.getLogger("andro")
 console_handler = logging.StreamHandler()

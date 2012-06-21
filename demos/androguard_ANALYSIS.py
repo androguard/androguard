@@ -12,8 +12,8 @@ OUTPUT = "./output/"
 #TEST  = 'examples/java/Demo1/orig/DES.class'
 #TEST  = 'examples/java/Demo1/orig/Util.class'
 #TEST = "apks/DroidDream/tmp/classes.dex"
-TEST = "./examples/android/TCDiff/bin/classes.dex"
-#TEST = "apks/iCalendar.apk"
+#TEST = "./examples/android/TCDiff/bin/classes.dex"
+TEST = "apks/iCalendar.apk"
 #TEST = "apks/adrd/5/8370959.dex"
 
 def display_CFG(a, x, classes) :
@@ -40,35 +40,27 @@ def display_FIELDS(a, x, classes) :
 def display_PACKAGES(a, x, classes) :
     print "CREATED PACKAGES"
     for m, _ in x.get_tainted_packages().get_packages() :
-        print "package : ", repr(m.get_info())
-        for path in m.get_paths() :
-            if path.get_access_flag() == analysis.TAINTED_PACKAGE_CREATE :
-                print "\t\t =>", path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
-
+      m.show()
 
 def display_PACKAGES_II(a, x, classes) :
 # Internal Methods -> Internal Methods
     print "Internal --> Internal"
     for j in x.get_tainted_packages().get_internal_packages() :
-        print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                                j.get_bb().start + j.get_idx(), \
-                                                j.get_class_name(), j.get_name(), j.get_descriptor())
+      analysis.show_Path( a, j )
 
 def display_PACKAGES_IE(a, x, classes) :
 # Internal Methods -> External Methods
     print "Internal --> External"
     for j in x.get_tainted_packages().get_external_packages() :
-        print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
-                                                j.get_bb().start + j.get_idx(), \
-                                                j.get_class_name(), j.get_name(), j.get_descriptor())
+      analysis.show_Path( a, j )
 
 def display_SEARCH_PACKAGES(a, x, classes, package_name) :
     print "Search package", package_name
-    analysis.show_Path( x.get_tainted_packages().search_packages( package_name ) )
+    analysis.show_Paths( a, x.get_tainted_packages().search_packages( package_name ) )
 
 def display_SEARCH_METHODS(a, x, classes, package_name, method_name, descriptor) :
     print "Search method", package_name, method_name, descriptor
-    analysis.show_Path( x.get_tainted_packages().search_methods( package_name, method_name, descriptor) )
+    analysis.show_Paths( a, x.get_tainted_packages().search_methods( package_name, method_name, descriptor) )
 
 def display_PERMISSION(a, x, classes) :
     # Show methods used by permission
@@ -79,7 +71,7 @@ def display_PERMISSION(a, x, classes) :
 
 def display_OBJECT_CREATED(a, x, class_name) :
     print "Search object", class_name
-    analysis.show_Path( x.get_tainted_packages().search_objects( class_name ) )
+    analysis.show_Paths( a, x.get_tainted_packages().search_objects( class_name ) )
 
 a = AndroguardS( TEST )
 x = analysis.uVMAnalysis( a.get_vm() )
@@ -90,17 +82,18 @@ x = analysis.uVMAnalysis( a.get_vm() )
 #print a.get_vm().get_regex_strings( ".*(t\_t).*" )
 
 classes = a.get_vm().get_classes_names()
+vm = a.get_vm()
 
 #display_CFG( a, x, classes )
-display_STRINGS( a.get_vm(), x, classes )
-display_FIELDS( a.get_vm(), x, classes )
-display_PACKAGES( a, x, classes )
-display_PACKAGES_IE( a, x, classes )
-display_PACKAGES_II( a, x, classes )
-display_PERMISSION( a, x, classes )
+display_STRINGS( vm, x, classes )
+display_FIELDS( vm, x, classes )
+display_PACKAGES( vm, x, classes )
+display_PACKAGES_IE( vm, x, classes )
+display_PACKAGES_II( vm, x, classes )
+display_PERMISSION( vm, x, classes )
 
-#display_SEARCH_PACKAGES( a, x, classes, "Landroid/telephony/" )
-#display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
-#display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )
+display_SEARCH_PACKAGES( a, x, classes, "Landroid/telephony/" )
+display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
+display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )
 
 display_OBJECT_CREATED( a, x, "." )

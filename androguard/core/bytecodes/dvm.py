@@ -54,7 +54,7 @@ TYPE_MAP_ITEM = {
                         0x2006 : "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                      }
 
-ACCESS_FLAGS_METHODS = [ 
+ACCESS_FLAGS = [ 
     (0x1    , 'public'),
     (0x2    , 'private'),
     (0x4    , 'protected'),
@@ -70,7 +70,7 @@ ACCESS_FLAGS_METHODS = [
     (0x1000 , 'synthetic'),
     (0x4000 , 'enum'),
     (0x8000 , 'unused'),
-    (0x10000, 'constructors'),
+    (0x10000, 'constructor'),
     (0x20000, 'synchronized'),
 ]
 
@@ -87,6 +87,18 @@ TYPE_DESCRIPTOR = {
     'STR': 'String',
     'StringBuilder': 'String'
 }
+
+def get_access_flags_string(value) :
+  buff = ""
+  for i in ACCESS_FLAGS :
+    if (i[0] & value) == i[0] :
+      buff += i[1] + " "
+
+  if buff != "" :
+    return buff[:-1]
+  return buff
+
+
 def get_type(atype, size=None):
     '''
     Retrieve the type of a descriptor (e.g : I)
@@ -522,31 +534,30 @@ def determineException(vm, m) :
     handler_catch_list = m.get_code().get_handlers()
 
     for try_item in m.get_code().get_tries() :
-    #    print m.get_name(), try_item, (value.start_addr * 2) + (value.insn_count * 2)# - 1m.get_code().get_bc().get_next_addr( value.start_addr * 2, value.insn_count )
-        h_off[ try_item.get_handler_off() + handler_catch_list.get_offset() ] = [ try_item ]
+        offset_handler = try_item.get_handler_off() + handler_catch_list.get_offset()
+        if offset_handler in h_off :
+          h_off[ offset_handler ].append( [ try_item ] )
+        else :
+          h_off[ offset_handler ] = []
+          h_off[ offset_handler ].append( [ try_item ] )
 
     #print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
     for handler_catch in handler_catch_list.get_list() :
-    #    print m.get_name(), "\t\t HANDLER_CATCH SIZE ", handler_catch.size, handler_catch.get_offset()
-       
         if handler_catch.get_offset() not in h_off :
             continue
 
-        h_off[ handler_catch.get_offset() ].append( handler_catch )
-
-   #     if handler_catch.size <= 0 :
-   #         print m.get_name(), handler_catch.catch_all_addr
-
-   #     for handler in handler_catch.handlers :
-   #         print m.get_name(), "\t\t\t HANDLER", handler.type_idx, vm.get_class_manager().get_type( handler.type_idx ), handler.addr
+        for i in h_off[ handler_catch.get_offset() ] :
+          i.append( handler_catch )
 
     exceptions = []
     #print m.get_name(), h_off
     for i in h_off :
-        value = h_off[ i ][0]
-        z = [ value.get_start_addr() * 2, (value.get_start_addr() * 2) + (value.get_insn_count() * 2) - 1 ]
+      for value in h_off[ i ] :
+        try_value = value[0]
 
-        handler_catch = h_off[ i ][1]
+        z = [ try_value.get_start_addr() * 2, (try_value.get_start_addr() * 2) + (try_value.get_insn_count() * 2) - 1 ]
+
+        handler_catch = value[1]
         if handler_catch.get_size() <= 0 :
             z.append( [ "any", handler_catch.get_catch_all_addr() * 2 ] )
 
@@ -1506,9 +1517,6 @@ class FieldItem :
     def get_class_name(self) :
         return self._class
 
-    def get_class(self) :
-        return self._class
-
     def get_type(self) :
         return self._type
 
@@ -1519,11 +1527,10 @@ class FieldItem :
         return self._name
 
     def get_list(self) :
-        return [ self.get_class(), self.get_type(), self.get_name() ]
+        return [ self.get_class_name(), self.get_type(), self.get_name() ]
 
     def show(self) :
-        print "FIELD_ITEM", self._class, self._type, self._name,
-        self.class_idx, self.type_idx, self.name_idx
+        print "FIELD_ITEM", self._class, self._type, self._name, self.class_idx, self.type_idx, self.name_idx
 
     def get_obj(self) :
         return []
@@ -1571,17 +1578,21 @@ class MethodItem :
     def show(self) :
         print "METHOD_ITEM", self._name, self._proto, self._class, self.class_idx, self.proto_idx, self.name_idx
 
-    def get_class(self) :
-        return self._class
+    def get_class_name(self) :
+      return self._class
 
     def get_proto(self) :
         return self._proto
+
+    def get_descriptor(self) :
+      proto = self.get_proto()
+      return proto[0] + proto[1]
 
     def get_name(self) :
         return self._name
 
     def get_list(self) :
-        return [ self.get_class(), self.get_name(), self.get_proto() ]
+        return [ self.get_class_name(), self.get_name(), self.get_proto() ]
 
     def get_obj(self) :
         return []
@@ -1676,7 +1687,7 @@ class EncodedField :
         return writeuleb128( self.field_idx_diff ) + writeuleb128( self.access_flags )
 
     def show(self) :
-        print "\tENCODED_FIELD access_flags=%d (%s,%s,%s)" % (self.access_flags, self._class_name, self._name, self._proto)
+        print "\tENCODED_FIELD access_flags=%s(%d) (%s,%s,%s)" % (get_access_flags_string(self.access_flags), self.access_flags, self._class_name, self._name, self._proto)
         if self.static_init_value != None :
             print "\tvalue:", self.static_init_value.value
 
@@ -1752,15 +1763,10 @@ class EncodedMethod :
 
     def build_access_flags(self) :
         if self.access_flags_string == None :
-            self.access_flags_string = ""
-            for i in ACCESS_FLAGS_METHODS :
-                if (i[0] & self.access_flags) == i[0] :
-                    self.access_flags_string += i[1] + " "
+            self.access_flags_string = get_access_flags_string( self.access_flags )
 
             if self.access_flags_string == "" :
                 self.access_flags_string = "0x%x" % self.access_flags
-            else :
-                self.access_flags_string = self.access_flags_string[:-1]
 
     def show_info(self) :
         self.build_access_flags()
@@ -1769,7 +1775,7 @@ class EncodedMethod :
 
     def show(self) :
         colors = bytecode.disable_print_colors()
-        self.pretty_show() 
+        self.pretty_show()
         bytecode.enable_print_colors(colors)
 
     def pretty_show(self) :
@@ -1984,7 +1990,7 @@ class ClassItem :
         self.class_data_off = unpack("=I", buff.read(4))[0]
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
-        self._interfaces = None
+        self.interfaces = None
         self._class_data_item = None
         self._static_values = None
 
@@ -1996,22 +2002,24 @@ class ClassItem :
         self._sname = self.__CM.get_type( self.superclass_idx )
 
         if self.interfaces_off != 0 :
-            self._interfaces = self.__CM.get_type_list( self.interfaces_off )
+            self.interfaces = self.__CM.get_type_list( self.interfaces_off )
 
         if self.class_data_off != 0 :
             self._class_data_item = self.__CM.get_class_data_item( self.class_data_off )
             self._class_data_item.reload()
-    
+
         if self.static_values_off != 0 :
             self._static_values = self.__CM.get_encoded_array_item ( self.static_values_off )
             if self._class_data_item != None :
                 self._class_data_item.set_static_fields( self._static_values.value )
 
     def show(self) :
-        print "CLASS_ITEM", self._name, self._sname, self._interfaces,
-        self.class_idx, self.access_flags, self.superclass_idx,
-        self.interfaces_off, self.source_file_idx, self.annotations_off,
-        self.class_data_off, self.static_values_off
+        print "CLASS_ITEM", self._name, self._sname, \
+                            self.interfaces, self.class_idx, \
+                            self.access_flags, get_access_flags_string(self.access_flags), \
+                            self.superclass_idx, self.interfaces_off, \
+                            self.source_file_idx, self.annotations_off, \
+                            self.class_data_off, self.static_values_off
 
     def source(self) :
         self.__CM.decompiler_ob.display_all( self.get_name() )
@@ -2116,6 +2124,7 @@ class ClassDefItem :
 
     def show(self) :
         print "CLASS_DEF_ITEM"
+
         nb = 0
         for i in self.class_def :
             print nb,
@@ -2263,12 +2272,11 @@ DALVIK_OPCODES_EXPANDED = {
 def get_kind(cm, kind, value) :
   if kind == KIND_METH :
     method = cm.get_method_ref(value)
-    class_name = method.get_class()
+    class_name = method.get_class_name()
     name = method.get_name()
-    proto = method.get_proto()
+    descriptor = method.get_descriptor()
 
-    proto = proto[0] + proto[1]
-    return "%s->%s%s" % (class_name, name, proto)
+    return "%s->%s%s" % (class_name, name, descriptor)
   elif kind == KIND_STRING :
     return repr(cm.get_string(value))
   elif kind == KIND_FIELD :
@@ -3303,8 +3311,6 @@ class DCode :
         self.__insn = buff
         self.size = size
 
-        self.bytecodes = []
-
     def get_instructions(self) :
         #print "New method ....", size * calcsize( '<H' )
 
@@ -3353,12 +3359,12 @@ class DCode :
     def get_instruction(self, idx, off=None) :
         if off != None :
           idx = self.off_to_pos(off)
-        return self.bytecodes[idx]
+        return self.get_instructions()[idx]
 
     def off_to_pos(self, off) :
         idx = 0
         nb = 0
-        for i in self.bytecodes :
+        for i in self.get_instructions() :
             if idx == off :
                 return nb
             nb += 1
@@ -3376,7 +3382,7 @@ class DCode :
     def show(self) :
         nb = 0
         idx = 0
-        for i in self.bytecodes :
+        for i in self.get_instructions() :
             print nb, "0x%x" % idx,
             i.show(nb)
             print
@@ -3389,7 +3395,7 @@ class DCode :
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
     def get_raw(self) :
-        return ''.join(i.get_raw() for i in self.bytecodes)
+        return ''.join(i.get_raw() for i in self.get_instructions())
 
 class TryItem :
     def __init__(self, buff, cm) :
@@ -3894,7 +3900,7 @@ class ClassManager :
 
     def get_field(self, idx) :
         field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
-        return [ field.get_class(), field.get_type(), field.get_name() ]
+        return [ field.get_class_name(), field.get_type(), field.get_name() ]
 
     def get_field_ref(self, idx) :
         return self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
@@ -3999,6 +4005,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
         self.classes_names = None
         self.__cache_methods = None
+        self.__cached_methods_idx = None
 
     def get_class_manager(self) :
         return self.CM
@@ -4058,13 +4065,6 @@ class DalvikVMFormat(bytecode._Bytecode) :
                     yield e
         else:
             yield root
-
-    def _Exp(self, x) :
-        l = []
-        for i in x :
-            l.append(i)
-            l.append( self._Exp( i.get_obj() ) )
-        return l
 
     def get_cm_field(self, idx) :
         return self.CM.get_field(idx)
@@ -4142,10 +4142,15 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return len( self.get_methods() )
 
     def get_method_by_idx(self, idx) :
+      if self.__cached_methods_idx == None :
+        self.__cached_methods_idx = {}
         for i in self.classes.class_def :
           for j in i.get_methods() :
-            if j.get_idx() == idx :
-              return j
+            self.__cached_methods_idx[ j.get_idx() ] = j
+
+      try :
+        return self.__cached_methods_idx[ idx ]
+      except KeyError :
         return None
 
     def get_method_descriptor(self, class_name, method_name, descriptor) :
