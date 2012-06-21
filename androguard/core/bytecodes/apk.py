@@ -246,7 +246,7 @@ class APK :
         if builtin_magic :
             ms = magic.open(magic.MAGIC_NONE)
             ms.load()
-            
+
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = ms.buffer( buffer )
@@ -266,7 +266,8 @@ class APK :
         if ("Zip" in orig) or ("DBase" in orig) :
             val = androconf.is_android_raw( buffer )
             if val == "APK" :
-                return "Android application package file"
+                if androconf.is_valid_android_raw( buffer ) :
+                  return "Android application package file"
             elif val == "AXML" :
                 return "Android's binary XML"
 
@@ -275,7 +276,7 @@ class APK :
     def get_files_crc32(self) :
         if self.files_crc32 == {} :
             self.get_files_types()
-        
+
         return self.files_crc32
 
     def get_files_information(self) :

@@ -1045,12 +1045,12 @@ class DVMBasicBlock :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
                 idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method( idx_meth )
-                self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1] )
+                self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth )
 
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
                 type_info = self.__vm.get_cm_type( i.get_ref_kind() )
-                self.context.get_tainted_packages().push_info( type_info, TAINTED_PACKAGE_CREATE, idx, self, self.method, None, None )
+                self.context.get_tainted_packages().push_info( type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None )
 
             #elif "const-string" in i.get_name() :
             elif (op_value >= 0x1a and op_value <= 0x1b) :
@@ -1079,47 +1079,26 @@ class DVMBasicBlock :
 TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 TAINTED_STRING = 2
-class Path :
-    def __init__(self, info, info_obj=None) :
-        self.access_flag = info[0]
-        self.idx = info[1]
-        self.bb = info[2]
-        self.method = info[3]
-        self.info_obj = info_obj
 
-    def get_class_name(self) :
-        if isinstance(self.info_obj, list) :
-            return self.info_obj[0]
-        return self.info_obj.var[0]
+class PathVar :
+  def __init__(self, access, idx, dst_idx, info_obj) :
+    self.access_flag = access
+    self.idx = idx
+    self.dst_idx = dst_idx
+    self.info_obj = info_obj
 
-    def get_name(self) :
-        if isinstance(self.info_obj, list) :
-            return self.info_obj[1]
-        return self.info_obj.var[1]
+  def get_var_info(self) :
+    return self.info_obj.get_info()
 
-    def get_descriptor(self) :
-        if isinstance(self.info_obj, list) :
-            return self.info_obj[2]
-        return self.info_obj.var[2]
+  def get_access_flag(self) :
+    return self.access_flag
 
-    def get_access_flag(self) :
-        return self.access_flag
+  def get_dst(self, cm) :
+    method = cm.get_method_ref( self.dst_idx )
+    return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-    def get_idx(self) :
-        return self.idx
-
-    def get_bb(self) :
-        return self.bb
-
-    def get_method(self) :
-        return self.method
-
-class PathVar(Path) :
-    def __init__(self, access, idx, ref, info_obj) :
-      self.access_flag = access
-      self.idx = idx
-      self.method = ref
-      self.info_obj = info_obj
+  def get_idx(self) :
+    return self.idx
 
 class TaintedVariable :
     def __init__(self, var, _type) :
@@ -1193,8 +1172,8 @@ class TaintedVariables :
       for i in obj.get_paths() :
         access, idx = i[0]
         m_idx = i[1]
-        method = self.__vm.get_method_by_idx( m_idx )
-        z.append( PathVar(access, idx, method, obj ) )
+
+        z.append( PathVar(access, idx, m_idx, obj ) )
       return z
 
     # permission functions 
@@ -1302,49 +1281,6 @@ class TaintedVariables :
             self.add( var, _type )
             self.__vars[ _type ][ var ].push( access, idx, ref )
 
-class PathI(Path) :
-    def __init__(self, info) :
-        Path.__init__( self, info )
-        self.value = info[0]
-
-    def get_value(self) :
-        return self.value
-
-class TaintedInteger :
-    def __init__(self, info) :
-        self.info = PathI( info )
-
-    def get(self) :
-        return self.info
-
-class TaintedIntegers :
-    def __init__(self, _vm) :
-        self.__vm = _vm
-        self.__integers = []
-        self.__hash = {}
-
-    def get_method(self, method) :
-        try :
-            return self.__hash[ method ]
-        except KeyError :
-            return []
-
-    def push_info(self, ins, info) :
-        #print ins, ins.get_name(), ins.get_operands(), info
-
-        ti = TaintedInteger( info )
-        self.__integers.append( ti )
-
-        try :
-            self.__hash[ info[-1] ].append( ti )
-        except KeyError :
-            self.__hash[ info[-1] ] = []
-            self.__hash[ info[-1] ].append( ti )
-
-    def get_integers(self) :
-        for i in self.__integers :
-            yield i
-
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
 
@@ -1352,25 +1288,46 @@ TAINTED_PACKAGE = {
    TAINTED_PACKAGE_CREATE : "C",
    TAINTED_PACKAGE_CALL : "M"
 }
+def show_Path(vm, path) :
+  cm = vm.get_class_manager()
 
-def show_Path(paths) :
+  if isinstance(path, PathVar) :
+    dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
+    info_var = path.get_var_info()
+    print "%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
+                                          info_var,
+                                          path.get_idx(),
+                                          dst_class_name,
+                                          dst_method_name,
+                                          dst_descriptor)
+  else :
+    if path.get_access_flag() == TAINTED_PACKAGE_CALL :
+      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
+      dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
+
+      print "%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(), 
+                                                  src_class_name,
+                                                  src_method_name,
+                                                  src_descriptor,
+                                                  path.get_idx(),
+                                                  dst_class_name,
+                                                  dst_method_name,
+                                                  dst_descriptor)
+    else :
+      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
+      print "%d %s->%s%s (0x%x)" % (path.get_access_flag(), 
+                                    src_class_name,
+                                    src_method_name,
+                                    src_descriptor,
+                                    path.get_idx() )
+
+def show_Paths(vm, paths) :
     """
         Show paths of packages
         @param paths : a list of paths L{PathP}
     """
     for path in paths :
-        if isinstance(path, PathP) :
-            if path.get_access_flag() == TAINTED_PACKAGE_CALL :
-                print "%s %s %s (0x%x)  ---> %s %s %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                          path.get_idx(), \
-                                                          path.get_class_name(), path.get_name(), path.get_descriptor())
-            else :
-                print "%s %s %s (0x%x)  ---> %s" % (path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), \
-                                                    path.get_idx(), \
-                                                    path.get_class_name())
-
-        else :
-            print "%s %s %s ---> %s %s %s %s %x" % (path.get_class_name(), path.get_name(), path.get_descriptor(), path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_idx() )
+        show_Path( vm, path )
 
 def show_PathVariable(d, paths) :
     for path in paths :
@@ -1379,45 +1336,42 @@ def show_PathVariable(d, paths) :
       method = d.get_cm_method( m_idx )
       print access, idx, m_idx, method
 
-class PathP(Path) :
-    def __init__(self, access, idx, ref, ref2, ref3, ref4, class_name) :
-        self.access_flag = access
-        self.idx = idx
-        self.bb = ref
-        self.method = ref2
-        self.info_obj = ref3
+class PathP :
+  def __init__(self, access, idx, src_idx, dst_idx) :
+    self.access_flag = access
+    self.idx = idx
+    self.src_idx = src_idx
+    self.dst_idx = dst_idx
 
-        self.class_name = class_name
-        if access == TAINTED_PACKAGE_CALL :
-            self.name = ref3
-            self.descriptor = ref4
+  def get_access_flag(self) :
+    return self.access_flag
 
-    def get_class_name(self) :
-        return self.class_name
+  def get_dst(self, cm) :
+    method = cm.get_method_ref( self.dst_idx )
+    return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-    def get_name(self) :
-        return self.name
+  def get_src(self, cm) :
+    method = cm.get_method_ref( self.src_idx )
+    return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-    def get_descriptor(self) :
-        return self.descriptor
+  def get_idx(self) :
+    return self.idx
 
 class TaintedPackage :
-    def __init__(self, name) :
+    def __init__(self, vm, name) :
+        self.vm = vm
         self.name = name
         self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
 
     def get_name(self) :
         return self.name
 
-    # FIXME : remote it to use get_name
-    def get_info(self) :
-        return self.name
-
     def gets(self) :
         return self.paths
 
-    def push(self, access, idx, ref, ref2, ref3, ref4) :
-        p = PathP( access, idx, ref, ref2, ref3, ref4, self.get_name() )
+    #p = self.__packages[ class_name ].push( access, idx, method.get_idx(), idx_method )
+    def push(self, access, idx, src_idx, dst_idx) :
+        p = PathP( access, idx, src_idx, dst_idx )
         self.paths[ access ].append( p )
         return p
 
@@ -1436,7 +1390,9 @@ class TaintedPackage :
         m_descriptor = re.compile(descriptor)
 
         for path in self.paths[ TAINTED_PACKAGE_CALL ] :
-            if m_name.match( path.get_name() ) != None and m_descriptor.match( path.get_descriptor() ) != None :
+            _, dst_name, dst_descriptor = path.get_dst(self.vm.get_class_manager())
+
+            if m_name.match( dst_name ) != None and m_descriptor.match( dst_descriptor ) != None :
                 l.append( path )
         return l
 
@@ -1461,16 +1417,17 @@ class TaintedPackage :
     def get_methods(self) :
         return [ path for path in self.paths[ TAINTED_PACKAGE_CALL ] ]
 
-    def show(self, format) :
-        print self.name
+    def show(self) :
+        cm = self.vm.get_class_manager()
+        print self.get_name()
         for _type in self.paths :
             print "\t -->", _type
             if _type == TAINTED_PACKAGE_CALL :
-                for path in sorted(self.paths[ _type ], key=lambda x: getattr(x, format)()) :
-                    print "\t\t => %s %s <-- %s@%x in %s" % (path.get_name(), path.get_descriptor(), path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+              for path in self.paths[ _type ] :
+                print "\t\t => %s <-- %x in %s" % (path.get_dst( cm ), path.get_idx(), path.get_src(cm) )
             else :
-                for path in self.paths[ _type ] :
-                    print "\t\t => %s@%x in %s" % (path.get_bb().get_name(), path.get_idx(), path.get_method().get_name())
+              for path in self.paths[ _type ] :
+                print "\t\t => %x in %s" % (path.get_idx(), path.get_src( cm ))
 
 def show_Permissions( dx ) :
     """
@@ -1553,23 +1510,23 @@ class TaintedPackages :
 
     def _add_pkg(self, name) :
         if name not in self.__packages :
-            self.__packages[ name ] = TaintedPackage( name )
+            self.__packages[ name ] = TaintedPackage( self.__vm, name )
 
     #self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1] )
-    def push_info(self, class_name, access, idx, ref, ref2, ref3, ref4) :
+    def push_info(self, class_name, access, idx, method, idx_method) :
         self._add_pkg( class_name )
-        p = self.__packages[ class_name ].push( access, idx, ref, ref2, ref3, ref4 )
+        p = self.__packages[ class_name ].push( access, idx, method.get_idx(), idx_method )
 
         try :
-            self.__methods[ p.get_method() ][ class_name ].append( p )
+            self.__methods[ method ][ class_name ].append( p )
         except :
             try :
-                self.__methods[ p.get_method() ][ class_name ] = []
+                self.__methods[ method ][ class_name ] = []
             except :
-                self.__methods[ p.get_method() ] = {}
-                self.__methods[ p.get_method() ][ class_name ] = []
+                self.__methods[ method ] = {}
+                self.__methods[ method ][ class_name ] = []
 
-            self.__methods[ p.get_method() ][ class_name ].append( p )
+            self.__methods[ method ][ class_name ].append( p )
 
     def get_packages_by_method(self, method) :
         try :
@@ -1617,7 +1574,8 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             paths = m.get_methods()
             for j in paths :
-                if j.get_method().get_class_name() in classes and m.get_info() in classes :
+                dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
+                if dst_class_name in classes and m.get_name() in classes :
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL :
                         l.append( j )
         return l
@@ -1645,7 +1603,8 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             paths = m.get_methods()
             for j in paths :
-                if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+                dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
+                if dst_class_name in classes and m.get_name() not in classes :
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL :
                         l.append( j )
         return l
@@ -1660,17 +1619,17 @@ class TaintedPackages :
     
         l = []
         for m, _ in self.get_packages() :
-            if ex.match( m.get_info() ) != None :
+            if ex.match( m.get_name() ) != None :
                 l.extend( m.get_methods() )
         return l
 
     def search_unique_packages(self, package_name) :
         """
             @param package_name : a regexp for the name of the package
-        
+
         """
         ex = re.compile( package_name )
-    
+
         l = []
         d = {} 
         for m, _ in self.get_packages() :
@@ -1696,7 +1655,7 @@ class TaintedPackages :
             ex = re.compile( class_name )
 
             for m, _ in self.get_packages() :
-                if ex.match( m.get_info() ) != None :
+                if ex.match( m.get_name() ) != None :
                     l.extend( m.search_method( name, descriptor ) )
 
         return l
@@ -1711,7 +1670,7 @@ class TaintedPackages :
         l = []
 
         for m, _ in self.get_packages() :
-            if ex.match( m.get_info() ) != None :
+            if ex.match( m.get_name() ) != None :
                 l.extend( m.get_objects_paths() )
     
         return l
@@ -1772,12 +1731,15 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             paths = m.get_methods()
             for j in paths :
-                if j.get_method().get_class_name() in classes and m.get_info() not in classes :
+                src_class_name, src_method_name, src_descriptor = j.get_src( self.__vm.get_class_manager() )
+                dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
+                if src_class_name in classes and m.get_name() not in classes :
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL :
-                        tmp = j.get_descriptor()
+                        tmp = dst_descriptor
                         tmp = tmp[ : tmp.rfind(")") + 1 ]
+
                         #data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
-                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), tmp)
+                        data = "%s-%s-%s" % (m.get_name(), dst_method_name, tmp)
 
                         if data in DVM_PERMISSIONS_BY_ELEMENT :
                             if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn :
@@ -2154,11 +2116,9 @@ class VMAnalysis :
 
         self.tainted_variables = TaintedVariables( self.__vm )
         self.tainted_packages = TaintedPackages( self.__vm )
-        self.tainted_integers = TaintedIntegers( self.__vm )
 
         self.tainted = { "variables" : self.tainted_variables,
                          "packages" : self.tainted_packages,
-                         "integers" : self.tainted_integers,
                        }
 
         self.signature = None
@@ -2281,11 +2241,9 @@ class uVMAnalysis(VMAnalysis) :
     self.vm = vm
     self.tainted_variables = TaintedVariables( self.vm )
     self.tainted_packages = TaintedPackages( self.vm )
-    self.tainted_integers = TaintedIntegers( self.vm )
 
     self.tainted = { "variables" : self.tainted_variables,
                      "packages" : self.tainted_packages,
-                     "integers" : self.tainted_integers,
     }
 
     self.signature = None
