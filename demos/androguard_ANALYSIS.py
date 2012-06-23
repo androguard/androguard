@@ -67,7 +67,7 @@ def display_PERMISSION(a, x, classes) :
     perms_access = x.get_tainted_packages().get_permissions( [] )
     for perm in perms_access :
         print "PERM : ", perm
-        analysis.show_PathP( perms_access[ perm ] )
+        analysis.show_Paths( a, perms_access[ perm ] )
 
 def display_OBJECT_CREATED(a, x, class_name) :
     print "Search object", class_name
@@ -77,14 +77,14 @@ a = AndroguardS( TEST )
 x = analysis.uVMAnalysis( a.get_vm() )
 
 #print a.get_vm().get_strings()
-#print a.get_vm().get_regex_strings( "access" )
-#print a.get_vm().get_regex_strings( "(long).*2" )
-#print a.get_vm().get_regex_strings( ".*(t\_t).*" )
+print a.get_vm().get_regex_strings( "access" )
+print a.get_vm().get_regex_strings( "(long).*2" )
+print a.get_vm().get_regex_strings( ".*(t\_t).*" )
 
 classes = a.get_vm().get_classes_names()
 vm = a.get_vm()
 
-#display_CFG( a, x, classes )
+display_CFG( a, x, classes )
 display_STRINGS( vm, x, classes )
 display_FIELDS( vm, x, classes )
 display_PACKAGES( vm, x, classes )

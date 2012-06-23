@@ -143,7 +143,7 @@ class FillArrayData :
       return self.notes
 
     def get_op_value(self) :
-        return -1
+        return 0x0300
 
     def get_raw(self) :
         return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
@@ -206,7 +206,6 @@ class SparseSwitch :
             self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
             idx += 4
 
-
     def add_note(self, msg) :
       self.notes.append( msg )
 
@@ -214,7 +213,7 @@ class SparseSwitch :
       return self.notes
 
     def get_op_value(self) :
-        return -1
+        return 0x0200
 
     def get_raw(self) :
         return pack("=H", self.ident) + pack("=H", self.size) + \
@@ -277,7 +276,7 @@ class PackedSwitch :
       return self.notes
 
     def get_op_value(self) :
-        return -1
+        return 0x0100
 
     def get_raw(self) :
         return pack("=H", self.ident) + pack("=H", self.size) + \
@@ -356,8 +355,23 @@ def static_operand_instruction( instruction ) :
 
     return buff
 
+html_escape_table = {
+    "&": "&amp;",
+    '"': "&quot;",
+    "'": "&apos;",
+    ">": "&gt;",
+    "<": "&lt;",
+}
+
 def dot_buff(ins, idx) :
-    return ins.get_name() + " " + ins.get_output(idx)
+  op_value = ins.get_op_value()
+
+  if op_value == 0x300 :
+    return ins.get_name() + " " + ins.get_output(idx).replace("\"", "")
+  elif op_value == 0x1a :
+    return ins.get_name() + " " + ins.get_output(idx).replace("\"", "") #"".join(html_escape_table.get(c,c) for c in ins.get_output())
+
+  return ins.get_name() + " " + ins.get_output(idx)
 
 def readuleb128(buff) :
     result = ord( buff.read(1) )
@@ -3359,7 +3373,7 @@ class DCode :
     def get_instruction(self, idx, off=None) :
         if off != None :
           idx = self.off_to_pos(off)
-        return self.get_instructions()[idx]
+        return [ i for i in self.get_instructions()][idx]
 
     def off_to_pos(self, off) :
         idx = 0
@@ -3982,6 +3996,17 @@ class MapList :
         return self.CM
 
 class DalvikVMFormat(bytecode._Bytecode) :
+    """
+        This object can parse a classes.dex file of an Android application (APK).
+
+        :param buff: a string which represents the classes.dex file
+        :param decompiler: associate a decompiler object to display the java source code
+        :type buff: string
+        :type decompiler: object
+
+        :Example:
+          DalvikVMFormat( open("classes.dex", "rb").read() )
+    """
     def __init__(self, buff, decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
 
@@ -4008,17 +4033,25 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.__cached_methods_idx = None
 
     def get_class_manager(self) :
+        """
+            This function returns a ClassManager object which allow you to get
+            access to all index references (strings, methods, fields, ....)
+
+            :rtype: ClassManager object
+        """
         return self.CM
 
     def show(self) :
-        """Show the .class format into a human readable format"""
+        """
+          Show the all information in the object
+        """
         self.map_list.show()
 
     def save(self) :
         """
             Return the dex (with the modifications) into raw format
 
-            @rtype: string
+            :rtype: string
         """
         l = self.map_list.get_raw()
 
@@ -4056,6 +4089,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return dot_buff(ins, idx)
 
     def pretty_show(self) :
+        """
+          Show (but pretty !) the all information in the object
+        """
         self.map_list.pretty_show()
 
     def _iterFlatten(self, root):
@@ -4067,20 +4103,46 @@ class DalvikVMFormat(bytecode._Bytecode) :
             yield root
 
     def get_cm_field(self, idx) :
+        """
+          Get a specific field by using an index
+
+          :param idx: index of the field
+          :type idx: int
+        """
         return self.CM.get_field(idx)
 
     def get_cm_method(self, idx) :
+        """
+          Get a specific method by using an index
+
+          :param idx: index of the method
+          :type idx: int
+        """
         return self.CM.get_method(idx)
 
     def get_cm_string(self, idx) :
+        """
+          Get a specific string by using an index
+
+          :param idx: index of the string
+          :type idx: int
+        """
         return self.CM.get_raw_string( idx )
 
     def get_cm_type(self, idx) :
+        """
+          Get a specific type by using an index
+
+          :param idx: index of the type
+          :type idx: int
+        """
         return self.CM.get_type( idx )
 
     def get_classes_names(self) :
         """
             Return the names of classes
+
+            :rtype: a list of string
         """
         if self.classes_names == None :
             self.classes_names = [ i.get_name() for i in self.classes.class_def ]
@@ -4090,9 +4152,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return self.classes.class_def
 
     def get_method(self, name) :
-        """Return into a list all methods which corresponds to the regexp
+        """
+            Return a list all methods which corresponds to the regexp
 
-            @param name : the name of the method (a regexp)
+            :param name: the name of the method (a python regexp)
+            :rtype: a list with all method objects
         """
         prog = re.compile(name)
         l = []
@@ -4103,9 +4167,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return l
 
     def get_field(self, name) :
-        """Return into a list all fields which corresponds to the regexp
+        """
+            Return a list all fields which corresponds to the regexp
 
-            @param name : the name of the field (a regexp)
+            :param name: the name of the field (a python regexp)
+            :rtype: a list with all field objects
         """
         prog = re.compile(name)
         l = []
@@ -4122,7 +4188,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
             return []
 
     def get_fields(self) :
-        """Return all objects fields"""
+        """
+          Return all field objects
+
+          :rtype: a list of field objects
+        """
         l = []
         for i in self.classes.class_def :
             for j in i.get_fields() :
@@ -4131,7 +4201,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
 
     def get_methods(self) :
-        """Return all objects methods"""
+        """
+          Return all method objects
+
+          :rtype: a list of method objects
+        """
         l = []
         for i in self.classes.class_def :
             for j in i.get_methods() :
@@ -4139,6 +4213,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return l
 
     def get_len_methods(self) :
+        """
+          Return the number of methods
+
+          :rtype: int
+        """
         return len( self.get_methods() )
 
     def get_method_by_idx(self, idx) :
@@ -4157,10 +4236,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Return the specific method
 
-            @param class_name : the class name of the method
-            @param method_name : the name of the method
-            @param descriptor : the descriptor of the method
+            :param class_name: the class name of the method
+            :param method_name: the name of the method
+            :param descriptor: the descriptor of the method
 
+            :rtype: None or a method object
         """
         key = class_name + method_name + descriptor
 
@@ -4177,9 +4257,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
     def get_methods_class(self, class_name) :
         """
-            Return methods of a class
+            Return all methods of a specific class
 
-            @param class_name : the class name
+            :param class_name: the class name
+            :rtype: a list with method objects
         """
         l = []
         for i in self.classes.class_def :
@@ -4191,9 +4272,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
     def get_fields_class(self, class_name) :
         """
-            Return fields of a class
+            Return all fields of a specific class
 
-            @param class_name : the class name
+            :param class_name: the class name
+            :rtype: a list with field objects
         """
         l = []
         for i in self.classes.class_def :
@@ -4207,10 +4289,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Return the specific field
 
-            @param class_name : the class name of the field
-            @param field_name : the name of the field
-            @param descriptor : the descriptor of the field
+            :param class_name: the class name of the field
+            :param method_name: the name of the field
+            :param descriptor: the descriptor of the field
 
+            :rtype: None or a field object
         """
         for i in self.classes.class_def :
             if class_name == i.get_name() :
@@ -4219,23 +4302,20 @@ class DalvikVMFormat(bytecode._Bytecode) :
                         return j
         return None
 
-    def get_class_manager(self) :
-        """
-            Return directly the class manager
-
-            @rtype : L{ClassManager}
-        """
-        return self.map_list.get_class_manager()
-
     def get_strings(self) :
         """
             Return all strings
+
+            :rtype: a list with all strings
         """
         return [i.get() for i in self.strings]
 
     def get_regex_strings(self, regular_expressions) :
         """
-            Return all taget strings matched the regex in input
+            Return all target strings matched the regex
+
+            :param regular_expressions: the python regex
+            :rtype: a list of strings matching the regex expression
         """
         str_list = []
         if regular_expressions.count is None :
@@ -4271,6 +4351,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.CM.set_gvmanalysis( gvmanalysis )
 
     def create_xref(self, python_export=True) :
+        """
+            Create XREF for this object
+
+            :param python_export: export xref in each method
+        """
         gvm = self.CM.get_gvmanalysis()
 
         for _class in self.get_classes() :
@@ -4300,6 +4385,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
                             method.XREFto.add( xref_meth, gvm.nodes[ key ].edges[ xref ] )
 
     def create_dref(self, python_export=True) :
+        """
+            Create DREF for this object
+
+            :param python_export: export dref in each field
+        """
         vmx = self.CM.get_vmanalysis()
 
         for _class in self.get_classes() :
