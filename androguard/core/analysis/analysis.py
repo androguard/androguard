@@ -1574,10 +1574,10 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             paths = m.get_methods()
             for j in paths :
-                dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
-                if dst_class_name in classes and m.get_name() in classes :
-                    if j.get_access_flag() == TAINTED_PACKAGE_CALL :
-                        l.append( j )
+                if j.get_access_flag() == TAINTED_PACKAGE_CALL :
+                  dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
+                  if dst_class_name in classes and m.get_name() in classes :
+                    l.append( j )
         return l
 
     def get_internal_new_packages(self) :

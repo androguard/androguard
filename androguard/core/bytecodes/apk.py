@@ -281,10 +281,13 @@ class APK :
 
     def get_files_information(self) :
         if self.files == {} :
-            self.get_files_types()
+          self.get_files_types()
 
         for i in self.get_files() :
+          try :
             yield i, self.files[ i ], self.files_crc32[ i ]
+          except KeyError :
+            yield i, "", ""
 
     def get_raw(self) :
         """ 
