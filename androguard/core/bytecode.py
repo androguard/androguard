@@ -203,7 +203,7 @@ def method2format( output, _format="png", mx = None, raw = False ) :
     d = pydot.graph_from_dot_data( buff )
     if d :
         getattr(d, "write_" + _format)( output )
-
+      
 def method2png( output, mx = None, raw = False ) :
     """
         Export method to a png file format
