@@ -48,14 +48,7 @@ for method in a.get_methods() :
     print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_2).get_string()
     print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_3).get_string()
     print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_4).get_string()
-    #print "-> : \t", x.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string()
-    #print "-> : \t", x.get_method_signature(method, "L2" ).get_string() 
-
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_3).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_4).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_5).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L1).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L2).get_string()
-    #print "-> : \t", x.get_method_signature(method, predef_sign = SIGNATURE_L0_0_L3).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_HEX).get_string()
+    print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_SEQUENCE_BB).get_list()
 
     print

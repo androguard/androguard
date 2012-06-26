@@ -23,7 +23,8 @@ from androguard.core.bytecodes import dvm
 TAINTED_PACKAGE_INTERNAL_CALL = 2
 FIELD_ACCESS = { "R" : 0, "W" : 1 }
 PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1, TAINTED_PACKAGE_INTERNAL_CALL : 2 }
-class Sign : 
+
+class Sign :
     def __init__(self) :
         self.levels = {} 
         self.hlevels = []
@@ -45,9 +46,10 @@ class Sign :
       return self.levels[ "sequencebb" ]
 
 class Signature :
-    def __init__(self, tainted_information) :
-        self.tainted_packages = tainted_information.get_tainted_packages()
-        self.tainted_variables = tainted_information.get_tainted_variables()
+    def __init__(self, vmx) :
+        self.vmx = vmx
+        self.tainted_packages = self.vmx.get_tainted_packages()
+        self.tainted_variables = self.vmx.get_tainted_variables()
 
         self._cached_signatures = {}
         self._cached_fields = {}
@@ -63,13 +65,13 @@ class Signature :
                                     2 : ( "_get_strings_a",     "_get_fields_a",    "_get_packages_pa_1" ),
                                     3 : ( "_get_strings_a",     "_get_fields_a",    "_get_packages_pa_2" ),
                                 },
-                        
+
                         # strings
                         "L1" : [ "_get_strings_a1" ],
 
                         # exceptions
                         "L2" : [ "_get_exceptions" ],
-                        
+
                         # fill array data
                         "L3" : [ "_get_fill_array_data" ],
                     }
@@ -82,32 +84,11 @@ class Signature :
 
         for i in analysis_method.basic_blocks.get() :
           buff = ""
-          if len(i.get_ins()) > 5 :
-            for ins in i.get_ins() :
+          instructions = [j for j in i.get_instructions()]
+          if len(instructions) > 5 :
+            for ins in instructions :
               buff += ins.get_name()
           if buff != "" :
-            l.append( buff )
-
-        return l
-
-    def _get_sequence_bb2(self, analysis_method) :
-        l = []
-
-        buff = ""
-        nb = 0
-        for i in analysis_method.basic_blocks.get() :
-            if nb == 0 :
-                buff = ""
-
-            for ins in i.get_ins() :
-                buff += ins.get_name()
-                nb += 1
-
-            if nb > 5 :
-                l.append( buff )
-                nb = 0
-
-        if nb != 0 :
             l.append( buff )
 
         return l
@@ -116,7 +97,7 @@ class Signature :
         code = analysis_method.get_method().get_code()
         if code == None :
             return ""
-        
+
         buff = ""
         for i in code.get_bc().get() :
             buff += dvm.clean_name_instruction( i )
@@ -191,7 +172,7 @@ class Signature :
     def _get_fill_array_data(self, analysis_method) :
         buff = ""
         for b in analysis_method.basic_blocks.get() :
-            for i in b.ins :
+            for i in b.get_instructions() :
                 if i.get_name() == "FILL-ARRAY-DATA" :
                     buff_tmp = i.get_operands()
                     for j in range(0, len(buff_tmp)) :
@@ -296,11 +277,13 @@ class Signature :
                         break
 
                 if path.get_access_flag() == 1 :
-                    if path.get_class_name() in self.classes_names :
+                    dst_class_name, dst_method_name, dst_descriptor = path.get_dst( analysis_method.get_vm().get_class_manager() )
+
+                    if dst_class_name in self.classes_names :
                         l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ 2 ]) ) )
                     else :
                         if present == True :
-                            l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                            l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], dst_class_name, dst_method_name, dst_descriptor ) ) )
                         else :
                             l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                 else :
@@ -308,7 +291,7 @@ class Signature :
                         l.append( (path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
                     else :
                         l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
-        
+
         self._global_cached[ key ] = l
         return l
 
@@ -329,9 +312,9 @@ class Signature :
                     l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                     continue
 
-
                 if path.get_access_flag() == 1 :
-                    l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], path.get_class_name(), path.get_name(), path.get_descriptor()) ) )
+                    dst_class_name, dst_method_name, dst_descriptor = path.get_dst( analysis_method.get_vm().get_class_manager() )
+                    l.append( (path.get_idx(), "P%s{%s%s%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], dst_class_name, dst_method_name, dst_descriptor ) ) )
                 else :
                     l.append( (path.get_idx(), "P%s{%s}" % (PACKAGE_ACCESS[ path.get_access_flag() ], m) ) )
 
