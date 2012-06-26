@@ -8,6 +8,10 @@ sys.path.append(PATH_INSTALL)
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
 from androguard.core.analysis import analysis
+from androguard.core import androconf
+
+
+import hashlib
 
 def hexdump(src, length=8, off=0):
     result = []
@@ -24,30 +28,43 @@ class MDalvikVMFormat:
         self.vm = vm
         self.vmx = vmx
 
-    def fix_checksums(self) :
-      pass
-
     def modify_instruction(self, class_name, method_name, descriptor, offset, instructions) :
         pass
 
     def test_save(self) :
         original_buff = self.vm.get_buff()
 
-        import hashlib
         b1 = original_buff
 
-        method = self.vm.get_method_descriptor( "Ltests/androguard/TestActivity;", "pouet2", "()I" )
-        ins = method.get_instruction( 17 )
-        print ins
+        method = self.vm.get_method_descriptor(
+            "Lfr/t0t0/android/TestModifActivity;", "onCreate",
+            "(Landroid/os/Bundle;)V" )
+#        method.show()
+#        print hex(method.code_off)
 
-#        ins.BBBB = 11
+        instructions = [i for i in method.get_instructions()]
+        ins = instructions[3]
+#        print ins
+        ins.BBBB = 12
+#        instructions.insert(3, ins)
+        method.set_instructions( instructions )
+#        self.vm.header.file_size += ins.get_length()
 
         b2 = self.vm.save()
 
+#        self.check(b1, b2, 40)
+
+        return b2
+
+    def check(self, b1, b2, off) :
         if hashlib.md5( b1 ).hexdigest() != hashlib.md5( b2 ).hexdigest() :
             j = 0
             end = max(len(b1), len(b2))
             while j < end :
+                if j < off :
+                  j += 1
+                  continue
+
                 if j >= len(b1) :
                     print "OUT OF B1 @ OFFSET 0x%x(%d)" % (j,j)
                     break
@@ -59,9 +76,9 @@ class MDalvikVMFormat:
                 if b1[j] != b2[j] :
                     print "BEGIN @ OFFSET 0x%x" % j
                     print "ORIG : "
-                    print hexdump(b1[j - 10: j + 10], off=j-10) + "\n"
+                    print hexdump(b1[j - 8: j + 8], off=j-8) + "\n"
                     print "NEW : "
-                    print hexdump(b2[j - 10: j + 10], off=j-10) + "\n"
+                    print hexdump(b2[j - 8: j + 8], off=j-8) + "\n"
                     raise("ooo")
 
                 j += 1
@@ -69,12 +86,14 @@ class MDalvikVMFormat:
 
         print "OK"
 
-        return b2
 
-TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
+#TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
 #TEST = "examples/android/TestsAndroguard/bin/classes.dex"
+TEST = "/home/desnos/workspace/TestModif/bin/TestModif.apk"
 
 FILENAME = "./toto.apk"
+
+androconf.set_debug()
 
 a = apk.APK( TEST )
 j = dvm.DalvikVMFormat( a.get_dex() )

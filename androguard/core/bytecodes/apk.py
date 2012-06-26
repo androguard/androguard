@@ -97,13 +97,12 @@ class ChilkatZip :
     def read(self, elem) :
         e = self.zip.GetEntryByName( elem )
         s = chilkat.CkByteData()
-        
+
         e.Inflate( s )
         return s.getBytes()
 
 def sign_apk(filename, keystore, storepass) :
     from subprocess import Popen, PIPE, STDOUT
-  # jarsigner -verbose -sigalg MD5withRSA -digestalg SHA1 -keystore tmp/androguard.androtrace tmp/toto.apk alias_name
     compile = Popen([ androconf.CONF["PATH_JARSIGNER"],
                      "-sigalg", 
                      "MD5withRSA", 
@@ -124,7 +123,14 @@ def sign_apk(filename, keystore, storepass) :
 
 ######################################################## APK FORMAT ########################################################
 class APK :
-    """APK manages apk file format"""
+    """
+        This class can access to all elements in an APK file
+
+        :Example:
+          APK("myfile.apk")
+          
+          APK(open("myfile.apk", "rb").read(), raw=True)
+    """
     def __init__(self, filename, raw=False, mode="r") :
         """
             @param filename : specify the path of the file, or raw data
@@ -174,57 +180,61 @@ class APK :
     def get_AndroidManifest(self) :
         """
             Return the Android Manifest XML file
+
+            :rtype: xml object
         """
         return self.xml["AndroidManifest.xml"]
 
     def is_valid_APK(self) :
         """
-            Return true if APK is valid, false otherwise
+            Return true if the APK is valid, false otherwise
+
+            :rtype: boolean
         """
         return self.validAPK
 
-    #def _reload_apk(self) :
-    #    if len(files) == 1 :
-    #        if ".apk" in files[0] :
-    #            self.__raw = self.zip.read( files[0] )
-    #            if ZIPMODULE == 0 :
-    #                self.zip = ChilkatZip( self.__raw )
-    #            else :
-    #                self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
 
     def get_filename(self) :
         """
             Return the filename of the APK
+
+            :rtype: string
         """
         return self.filename
 
     def get_package(self) :
         """
             Return the name of the package
+
+            :rtype: string
         """
         return self.package
 
     def get_androidversion_code(self) :
         """
             Return the android version code
+            :rtype: string
         """
         return self.androidversion["Code"]
 
     def get_androidversion_name(self) :
         """
             Return the android version name 
+            :rtype: string
         """
         return self.androidversion["Name"]
 
     def get_files(self) :
         """
             Return the files inside the APK
+            :rtype: a list of strings
         """
         return self.zip.namelist()
 
     def get_files_types(self) :
         """
-            Return the files inside the APK with their types (by using python-magic)
+            Return the files inside the APK with their associated types (by using python-magic)
+            :rtype: a dictionnary
         """
         try : 
             import magic
@@ -250,19 +260,19 @@ class APK :
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = ms.buffer( buffer )
-                self.files[ i ] = self.patch_magic(buffer, self.files[ i ])
+                self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
         else :
             m = magic.Magic()
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = m.from_buffer( buffer )
-                self.files[ i ] = self.patch_magic(buffer, self.files[ i ])
+                self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
 
-        return self.files 
+        return self.files
 
-    def patch_magic(self, buffer, orig) :
+    def _patch_magic(self, buffer, orig) :
         if ("Zip" in orig) or ("DBase" in orig) :
             val = androconf.is_android_raw( buffer )
             if val == "APK" :
@@ -280,6 +290,10 @@ class APK :
         return self.files_crc32
 
     def get_files_information(self) :
+        """
+            Return the files inside the APK with their associated types and crc32
+            :rtype: string, string, int
+        """
         if self.files == {} :
           self.get_files_types()
 
@@ -292,12 +306,15 @@ class APK :
     def get_raw(self) :
         """ 
             Return raw bytes of the APK
+
+            :rtype: string
         """
         return self.__raw
 
     def get_file(self, filename) :
         """
             Return the raw data of the specified filename
+            :rtype: string
         """
         try :
             return self.zip.read( filename )
@@ -307,6 +324,7 @@ class APK :
     def get_dex(self) :
         """
             Return the raw data of the classes dex file
+            :rtype: string
         """
         return self.get_file( "classes.dex" )
 
@@ -314,8 +332,8 @@ class APK :
         """
             Return elements in xml files which match with the tag name and the specific attribute
 
-            @param tag_name : a string which specify the tag name
-            @param attribute : a string which specify the attribute
+            :param tag_name: a string which specify the tag name
+            :param attribute: a string which specify the attribute
         """
         l = []
         for i in self.xml :
@@ -326,7 +344,7 @@ class APK :
 
                 l.append( str( value ) )
         return l
-   
+
     def format_value(self, value) :
         if len(value) > 0 :
             if value[0] == "." : 
@@ -357,6 +375,8 @@ class APK :
     def get_main_activity(self) :
         """
             Return the name of the main activity
+
+            :rtype: string
         """
         for i in self.xml :
             x = set()
@@ -380,24 +400,28 @@ class APK :
     def get_activities(self) :
         """
             Return the android:name attribute of all activities
+            :rtype: a list of string
         """
         return self.get_elements("activity", "android:name")
 
     def get_services(self) :
         """
             Return the android:name attribute of all services
+            :rtype: a list of string
         """
         return self.get_elements("service", "android:name")
 
     def get_receivers(self) :
         """
             Return the android:name attribute of all receivers
+            :rtype: a list of string
         """
         return self.get_elements("receiver", "android:name")
 
     def get_providers(self) :
         """
             Return the android:name attribute of all providers
+            :rtype: a list of string
         """
         return self.get_elements("provider", "android:name")
 
