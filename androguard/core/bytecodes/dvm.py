@@ -637,25 +637,25 @@ class HeaderItem :
     def get_obj(self) :
       if self.map_off_obj == None :
         self.map_off_obj = self.__CM.get_item_by_offset( self.map_off )
-     
+
       if self.string_off_obj == None :
         self.string_off_obj = self.__CM.get_item_by_offset( self.string_ids_off )
-      
+
       if self.type_off_obj == None :
         self.type_off_obj = self.__CM.get_item_by_offset( self.type_ids_off )
-      
+
       if self.proto_off_obj == None :
         self.proto_off_obj = self.__CM.get_item_by_offset( self.proto_ids_off )
-      
+
       if self.field_off_obj == None :
         self.field_off_obj = self.__CM.get_item_by_offset( self.field_ids_off )
-      
+
       if self.method_off_obj == None :
         self.method_off_obj = self.__CM.get_item_by_offset( self.method_ids_off )
-      
+
       if self.class_off_obj == None :
         self.class_off_obj = self.__CM.get_item_by_offset( self.class_defs_off )
-      
+
       if self.data_off_obj == None :
         self.data_off_obj = self.__CM.get_item_by_offset( self.data_off )
 
@@ -2671,9 +2671,6 @@ def get_kind(cm, kind, value) :
   return None
 
 class Instruction(object) :
-  def __init__(self) :
-    self.notes = []
-
   def get_kind(self) :
     return DALVIK_OPCODES_FORMAT[ self.OP ][1][1]
 
@@ -2694,12 +2691,6 @@ class Instruction(object) :
 
   def get_translated_kind(self) :
     return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
-
-  def add_note(self, msg) :
-    self.notes.append( msg )
-
-  def get_notes(self) :
-    return self.notes
 
 class Instruction35c(Instruction) :
     def __init__(self, cm, buff) :
@@ -3695,6 +3686,7 @@ class DCode :
         self.__insn = buff
         self.size = size
 
+        self.notes = {}
         self._cached_instructions = []
 
     def set_instructions(self, instructions) :
@@ -3748,7 +3740,11 @@ class DCode :
     def add_inote(self, msg, idx, off=None) :
       if off != None :
         idx = self.off_to_pos(off)
-      self.bytecodes[ idx ].add_note(msg)
+
+      if idx not in self.notes :
+        self.notes[ idx ] = []
+
+      self.notes[ idx ].append(msg)
 
     def get_instruction(self, idx, off=None) :
         if off != None :
@@ -3785,7 +3781,7 @@ class DCode :
             nb += 1
 
     def pretty_show(self, m_a) :
-        bytecode.PrettyShow( m_a.basic_blocks.gets() )
+        bytecode.PrettyShow( m_a.basic_blocks.gets(), self.notes )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
     def get_raw(self) :
@@ -4551,12 +4547,14 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
         idx += length
 
+      self.header.file_size = idx
+
       last_idx = 0
       for i in l :
         idx = h[ i ]
         i.set_off( h[ i ] )
 
-        #print i, hex(h[ i ])
+#        print i, hex(h[ i ])
 
         last_idx = idx + s[ idx ]
 
