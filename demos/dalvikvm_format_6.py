@@ -42,17 +42,16 @@ class MDalvikVMFormat:
 #        method.show()
 #        print hex(method.code_off)
 
-        instructions = [i for i in method.get_instructions()]
-        ins = instructions[3]
+#        instructions = [i for i in method.get_instructions()]
+#        ins = instructions[3]
 #        print ins
-        ins.BBBB = 12
+#        ins.BBBB = 12
 #        instructions.insert(3, ins)
-        method.set_instructions( instructions )
-#        self.vm.header.file_size += ins.get_length()
+#        method.set_instructions( instructions )
 
         b2 = self.vm.save()
 
-#        self.check(b1, b2, 40)
+        self.check(b1, b2, 40)
 
         return b2
 

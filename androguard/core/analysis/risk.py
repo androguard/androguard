@@ -715,6 +715,32 @@ class RiskIndicator :
 
         val = output_values[ "output_malware_risk" ]
         return val
+    
+    def with_apk2(self, apk_file, analysis=None, analysis_method=None) :
+        if apk_file.is_valid_APK() :
+          pass
+
+        # APK
+          # BINARY 
+            # shared library
+            # executable
+            # dex
+            # apk
+            # jar
+            # shell script
+        # Perm
+            # SMS
+            # Call
+            # Money
+            # Internet
+            # Privacy
+            # Normal
+            # Dangerous
+            # Signature
+            # System
+            # Obfuscation
+        # API
+        return 0.0
 
     def with_apk(self, apk_file, analysis=None, analysis_method=None) :
         """

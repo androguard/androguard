@@ -70,9 +70,6 @@ def _Print(name, arg) :
 
     print buff
 
-def PrettyShow( basic_blocks ) :
-    PrettyShow1( basic_blocks )
-
 def PrettyShowEx( exceptions ) :
     if len(exceptions) > 0 :
         CONF["PRINT_FCT"]("Exceptions:\n")
@@ -88,7 +85,7 @@ def _PrintDefault(msg) :
   print_fct = CONF["PRINT_FCT"]
   print_fct(msg)
 
-def PrettyShow1( basic_blocks ) :
+def PrettyShow( basic_blocks, notes={} ) :
     idx = 0
     nb = 0
 
@@ -109,9 +106,8 @@ def PrettyShow1( basic_blocks ) :
         for ins in instructions :
         #for ins in i.ins :
 
-            notes = ins.get_notes()
-            if notes != [] :
-              for note in notes :
+            if nb in notes :
+              for note in notes[nb] :
                 _PrintNote(note, 1)
 
             print_fct("\t%s%-3d%s(%s%08x%s) " % (offset_color, nb, normal_color, offset_addr_color, idx, normal_color))
