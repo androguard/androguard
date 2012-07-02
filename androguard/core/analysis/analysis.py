@@ -976,6 +976,10 @@ class DVMBasicBlock :
         self.name = "%s-BB@0x%x" % (self.method.get_name(), self.start)
         self.exception_analysis = None
 
+        self.tainted_variables = self.context.get_tainted_variables()
+        self.tainted_packages = self.context.get_tainted_packages()
+
+
     def get_instructions(self) :
       tmp_ins = []
       idx = 0
@@ -1039,23 +1043,27 @@ class DVMBasicBlock :
             #if i.get_name() in DVM_FIELDS_ACCESS :
             if (op_value >= 0x52 and op_value <= 0x6d) :
                 desc = self.__vm.get_cm_field( i.get_ref_kind() )
-                self.context.get_tainted_variables().push_info( TAINTED_FIELD, desc, DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self.method )
+                if self.tainted_variables != None :
+                    self.tainted_variables.push_info( TAINTED_FIELD, desc, DVM_FIELDS_ACCESS[ i.get_name() ][0], idx, self.method )
 
             #elif "invoke" in i.get_name() :
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78) :
                 idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method( idx_meth )
-                self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth )
+                if self.tainted_packages != None :
+                    self.tainted_packages.push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth )
 
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
                 type_info = self.__vm.get_cm_type( i.get_ref_kind() )
-                self.context.get_tainted_packages().push_info( type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None )
+                if self.tainted_packages != None :
+                    self.tainted_packages.push_info( type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None )
 
             #elif "const-string" in i.get_name() :
             elif (op_value >= 0x1a and op_value <= 0x1b) :
                 string_name = self.__vm.get_cm_string( i.get_ref_kind() )
-                self.context.get_tainted_variables().push_info( TAINTED_STRING, string_name, "R", idx, self.method )
+                if self.tainted_variables != None :
+                    self.tainted_variables.push_info( TAINTED_STRING, string_name, "R", idx, self.method )
 
             elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c) :
                 code = self.method.get_code().get_bc()
@@ -2166,7 +2174,7 @@ class VMAnalysis :
             @param predef_sign : used a predefined signature
 
             @rtype : L{Sign}
-        """
+        """        
         if self.signature == None :
           self.signature = Signature( self )
 

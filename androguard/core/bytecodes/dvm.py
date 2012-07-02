@@ -26,28 +26,30 @@ from struct import pack, unpack, calcsize
 
 from androguard.core.androconf import CONF, debug
 
-######################################################## DEX FORMAT ########################################################
 DEX_FILE_MAGIC = 'dex\n035\x00'
+ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
+ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
+
 
 TYPE_MAP_ITEM = {
-                        0x0  : "TYPE_HEADER_ITEM",
-                        0x1  : "TYPE_STRING_ID_ITEM",
-                        0x2  : "TYPE_TYPE_ID_ITEM",
-                        0x3  : "TYPE_PROTO_ID_ITEM",
-                        0x4  : "TYPE_FIELD_ID_ITEM",
-                        0x5  : "TYPE_METHOD_ID_ITEM",
-                        0x6  : "TYPE_CLASS_DEF_ITEM",
-                        0x1000 : "TYPE_MAP_LIST",
-                        0x1001 : "TYPE_TYPE_LIST",
-                        0x1002 : "TYPE_ANNOTATION_SET_REF_LIST",
-                        0x1003 : "TYPE_ANNOTATION_SET_ITEM",
-                        0x2000 : "TYPE_CLASS_DATA_ITEM",
-                        0x2001 : "TYPE_CODE_ITEM",
-                        0x2002 : "TYPE_STRING_DATA_ITEM",
-                        0x2003 : "TYPE_DEBUG_INFO_ITEM",
-                        0x2004 : "TYPE_ANNOTATION_ITEM",
-                        0x2005 : "TYPE_ENCODED_ARRAY_ITEM",
-                        0x2006 : "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
+                        0x0  :      "TYPE_HEADER_ITEM",
+                        0x1  :      "TYPE_STRING_ID_ITEM",
+                        0x2  :      "TYPE_TYPE_ID_ITEM",
+                        0x3  :      "TYPE_PROTO_ID_ITEM",
+                        0x4  :      "TYPE_FIELD_ID_ITEM",
+                        0x5  :      "TYPE_METHOD_ID_ITEM",
+                        0x6  :      "TYPE_CLASS_DEF_ITEM",
+                        0x1000 :    "TYPE_MAP_LIST",
+                        0x1001 :    "TYPE_TYPE_LIST",
+                        0x1002 :    "TYPE_ANNOTATION_SET_REF_LIST",
+                        0x1003 :    "TYPE_ANNOTATION_SET_ITEM",
+                        0x2000 :    "TYPE_CLASS_DATA_ITEM",
+                        0x2001 :    "TYPE_CODE_ITEM",
+                        0x2002 :    "TYPE_STRING_DATA_ITEM",
+                        0x2003 :    "TYPE_DEBUG_INFO_ITEM",
+                        0x2004 :    "TYPE_ANNOTATION_ITEM",
+                        0x2005 :    "TYPE_ENCODED_ARRAY_ITEM",
+                        0x2006 :    "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                      }
 
 ACCESS_FLAGS = [ 
@@ -1106,16 +1108,24 @@ class DBGBytecode :
         self.format = []
 
     def get_op_value(self) :
-        return self.op_value.get_value()
+        return self.op_value
 
     def add(self, value, ttype) :
         self.format.append( (value, ttype) )
 
+    def get_value(self) :
+        if self.get_op_value() == DBG_START_LOCAL :
+            return self.CM.get_string(self.format[1][0])
+        elif self.get_op_value() == DBG_START_LOCAL_EXTENDED :
+            return self.CM.get_string(self.format[1][0])
+
+        return None
+
+    def get_format(self) :
+        return self.format
+
     def show(self) :
-      if self.get_op_value() == DBG_START_LOCAL :
-        print self.format, self.CM.get_string(self.format[1][0])
-      elif self.get_op_value() == DBG_START_LOCAL_EXTENDED :
-        print self.format, self.CM.get_string(self.format[1][0])
+      print self.format, self.get_value()
 
     def get_obj(self) :
         return []
@@ -1129,7 +1139,117 @@ class DBGBytecode :
                 buff += writesleb128( i[0] )
         return buff
 
-class DebugInfoItem2 :
+class DebugInfoItem :
+    def __init__(self, buff, cm) :
+        self.CM = cm
+
+        self.offset = buff.get_idx()
+
+        self.line_start = readuleb128( buff )
+        self.parameters_size = readuleb128( buff )
+
+        #print "line", self.line_start, "params", self.parameters_size
+
+        self.parameter_names = []
+        for i in xrange(0, self.parameters_size) :
+            self.parameter_names.append( readuleb128p1( buff ) )
+
+        self.bytecodes = []
+        bcode = DBGBytecode( self.CM, unpack("=B", buff.read(1))[0] )
+        self.bytecodes.append( bcode )
+
+        while bcode.get_op_value() != DBG_END_SEQUENCE :
+            bcode_value = bcode.get_op_value()
+
+            if bcode_value == DBG_ADVANCE_PC :
+                bcode.add( readuleb128( buff ), "u" )
+            elif bcode_value == DBG_ADVANCE_LINE :
+                bcode.add( readsleb128( buff ), "s" )
+            elif bcode_value == DBG_START_LOCAL :
+                bcode.add( readusleb128( buff ), "u" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+            elif bcode_value == DBG_START_LOCAL_EXTENDED :
+                bcode.add( readusleb128( buff ), "u" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+                bcode.add( readuleb128p1( buff ), "u1" )
+            elif bcode_value == DBG_END_LOCAL :
+                bcode.add( readusleb128( buff ), "u" )
+            elif bcode_value == DBG_RESTART_LOCAL :
+                bcode.add( readusleb128( buff ), "u" )
+            elif bcode_value == DBG_SET_PROLOGUE_END :
+                pass
+            elif bcode_value == DBG_SET_EPILOGUE_BEGIN :
+                pass
+            elif bcode_value == DBG_SET_FILE :
+                bcode.add( readuleb128p1( buff ), "u1" )
+            else : #bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END :
+                pass
+
+            bcode = DBGBytecode( self.CM, unpack("=B", buff.read(1))[0] )
+            self.bytecodes.append( bcode )
+
+    def reload(self) :
+        pass
+
+    def get_parameters_size(self) :
+        return self.parameters_size
+
+    def get_line_start(self) :
+        return self.line_start
+
+    def get_parameter_names(self) :
+        return self.parameter_names
+
+    def get_translated_parameter_names(self) :
+        l = []
+        for i in self.parameter_names :
+            if i == -1 :
+                l.append( None )
+            else :
+                l.append( self.CM.get_string( i ) )
+        return l
+
+    def get_bytecodes(self) :
+        return self.bytecodes
+
+    def show(self) :
+        print self.line_start, self.parameters_size, self.parameter_names
+        for i in self.parameter_names :
+          print self.CM.get_string( i )
+
+        for i in self.bytecodes :
+          i.show()
+
+    def get_raw(self) :
+        return [ bytecode.Buff( self.__offset, writeuleb128( self.line_start ) + \
+                                                            writeuleb128( self.parameters_size ) + \
+                                                            ''.join(writeuleb128(i) for i in self.parameter_names) + \
+                                                            ''.join(i.get_raw() for i in self.bytecodes) ) ]
+
+    def get_off(self) :
+        return self.offset
+
+VALUE_BYTE      = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
+VALUE_SHORT     = 0x02 # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
+VALUE_CHAR      = 0x03    # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
+VALUE_INT       = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
+VALUE_LONG      = 0x06    # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
+VALUE_FLOAT     = 0x10 # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
+VALUE_DOUBLE    = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
+VALUE_STRING    = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
+VALUE_TYPE      = 0x18    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
+VALUE_FIELD     = 0x19 # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
+VALUE_METHOD    = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
+VALUE_ENUM      = 0x1b    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
+VALUE_ARRAY     = 0x1c # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
+VALUE_ANNOTATION         = 0x1d # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
+VALUE_NULL      = 0x1e    # (none; must be 0)      (none)  null reference value
+VALUE_BOOLEAN   = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
+
+
+class DebugInfoItemEmpty :
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1164,96 +1284,6 @@ class DebugInfoItem2 :
 
     def get_length(self) :
       return len(self.__raw)
-
-class DebugInfoItem :
-    def __init__(self, buff, cm) :
-        self.CM = cm
-
-        self.line_start = readuleb128( buff )
-        self.parameters_size = readuleb128( buff )
-
-        print "line", self.line_start, "params", self.parameters_size
-
-        self.parameter_names = []
-        for i in xrange(0, self.parameters_size) :
-            self.parameter_names.append( readuleb128p1( buff ) )
-
-        self.bytecodes = []
-        bcode = DBGBytecode( self.CM, unpack("=B", buff.read(1))[0] )
-        self.bytecodes.append( bcode )
-
-        while bcode.get_op_value() != DBG_END_SEQUENCE :
-            bcode_value = bcode.get_op_value()
-
-            print "0x%x" % bcode.get_op_value()
-
-            if bcode_value == DBG_ADVANCE_PC :
-                bcode.add( readuleb128( buff ), "u" )
-            elif bcode_value == DBG_ADVANCE_LINE :
-                bcode.add( readsleb128( buff ), "s" )
-            elif bcode_value == DBG_START_LOCAL :
-                bcode.add( readusleb128( buff ), "u" )
-                bcode.add( readuleb128p1( buff ), "u1" )
-                bcode.add( readuleb128p1( buff ), "u1" )
-            elif bcode_value == DBG_START_LOCAL_EXTENDED :
-                bcode.add( readusleb128( buff ), "u" )
-                bcode.add( readuleb128p1( buff ), "u1" )
-                bcode.add( readuleb128p1( buff ), "u1" )
-                bcode.add( readuleb128p1( buff ), "u1" )
-            elif bcode_value == DBG_END_LOCAL :
-                bcode.add( readusleb128( buff ), "u" )
-            elif bcode_value == DBG_RESTART_LOCAL :
-                bcode.add( readusleb128( buff ), "u" )
-            elif bcode_value == DBG_SET_PROLOGUE_END :
-                pass
-            elif bcode_value == DBG_SET_EPILOGUE_BEGIN :
-                pass
-            elif bcode_value == DBG_SET_FILE :
-                bcode.add( readuleb128p1( buff ), "u1" )
-            else : #bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END :
-                pass
-
-            bcode = DBGBytecode( self.CM, unpack("=B", buff.read(1))[0] )
-            self.bytecodes.append( bcode )
-        self.show()
-
-    def reload(self) :
-        pass
-
-    def show(self) :
-        print self.line_start, self.parameters_size, self.parameter_names
-        for i in self.parameter_names :
-          print self.CM.get_string( i )
-
-        for i in self.bytecodes :
-          i.show()
-
-    def get_raw(self) :
-        return [ bytecode.Buff( self.__offset, writeuleb128( self.line_start ) + \
-                                                            writeuleb128( self.parameters_size ) + \
-                                                            ''.join(writeuleb128(i) for i in self.parameter_names) + \
-                                                            ''.join(i.get_raw() for i in self.bytecodes) ) ]
-
-    def get_off(self) :
-        return self.__offset.off
-
-VALUE_BYTE      = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
-VALUE_SHORT     = 0x02 # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
-VALUE_CHAR      = 0x03    # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
-VALUE_INT       = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
-VALUE_LONG      = 0x06    # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
-VALUE_FLOAT     = 0x10 # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
-VALUE_DOUBLE    = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
-VALUE_STRING    = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
-VALUE_TYPE      = 0x18    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
-VALUE_FIELD     = 0x19 # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
-VALUE_METHOD    = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
-VALUE_ENUM      = 0x1b    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
-VALUE_ARRAY     = 0x1c # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
-VALUE_ANNOTATION         = 0x1d # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
-VALUE_NULL      = 0x1e    # (none; must be 0)      (none)  null reference value
-VALUE_BOOLEAN   = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
-
 
 class EncodedArray :
     def __init__(self, buff, cm) :
@@ -2128,6 +2158,11 @@ class EncodedMethod :
             return self._code.get_instruction(idx, off)
         return None
 
+    def get_debug(self) :
+        if self._code == None :
+            return None
+        return self._code.get_debug()
+
     def get_descriptor(self) :
         """
           Return the descriptor of the method
@@ -2326,31 +2361,31 @@ class ClassItem :
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
         self.interfaces = None
-        self._class_data_item = None
-        self._static_values = None
+        self.class_data_item = None
+        self.static_values = None
 
-        self._name = None
-        self._sname = None
+        self.name = None
+        self.sname = None
 
     def reload(self) :
-        self._name = self.__CM.get_type( self.class_idx )
-        self._sname = self.__CM.get_type( self.superclass_idx )
+        self.name = self.__CM.get_type( self.class_idx )
+        self.sname = self.__CM.get_type( self.superclass_idx )
 
         if self.interfaces_off != 0 :
             self.interfaces = self.__CM.get_type_list( self.interfaces_off )
 
         if self.class_data_off != 0 :
-            self._class_data_item = self.__CM.get_class_data_item( self.class_data_off )
-            self._class_data_item.reload()
+            self.class_data_item = self.__CM.get_class_data_item( self.class_data_off )
+            self.class_data_item.reload()
 
         if self.static_values_off != 0 :
-            self._static_values = self.__CM.get_encoded_array_item ( self.static_values_off )
+            self.static_values = self.__CM.get_encoded_array_item ( self.static_values_off )
 
-            if self._class_data_item != None :
-                self._class_data_item.set_static_fields( self._static_values.value )
+            if self.class_data_item != None :
+                self.class_data_item.set_static_fields( self.static_values.value )
 
     def show(self) :
-        print "CLASS_ITEM", self._name, self._sname, \
+        print "CLASS_ITEM", self.name, self.sname, \
                             self.interfaces, self.class_idx, \
                             self.access_flags, get_access_flags_string(self.access_flags), \
                             self.superclass_idx, self.interfaces_off, \
@@ -2365,25 +2400,28 @@ class ClassItem :
         self.reload()
 
     def get_class_data(self) :
-        return self._class_data_item
+        return self.class_data_item
 
     def get_name(self) :
-        return self._name
+        return self.name
 
     def get_superclassname(self) :
-        return self._sname
+        return self.sname
+
+    def get_interfaces(self) :
+      return self.interfaces
 
     def get_info(self) :
-        return "%s:%s" % (self._name, self._sname)
+        return "%s:%s" % (self.name, self.sname)
 
     def get_methods(self) :
-        if self._class_data_item != None :
-            return self._class_data_item.get_methods()
+        if self.class_data_item != None :
+            return self.class_data_item.get_methods()
         return []
 
     def get_fields(self) :
-        if self._class_data_item != None :
-            return self._class_data_item.get_fields()
+        if self.class_data_item != None :
+            return self.class_data_item.get_fields()
         return []
 
     def get_obj(self) :
@@ -2612,46 +2650,15 @@ class EncodedCatchHandlerList :
         length += i.get_length()
       return length
 
-DALVIK_OPCODES_PAYLOAD = {
-    0x0100 : [PackedSwitch],
-    0x0200 : [SparseSwitch],
-    0x0300 : [FillArrayData],
-}
 
-DALVIK_OPCODES_EXPANDED = {
-    0x00ff : [],
-    0x01ff : [],
-    0x02ff : [],
-    0x03ff : [],
-    0x04ff : [],
-    0x05ff : [],
-
-    0x06ff : [],
-    0x07ff : [],
-    0x08ff : [],
-    0x09ff : [],
-    0x10ff : [],
-    0x11ff : [],
-    0x12ff : [],
-    0x13ff : [],
-
-    0x14ff : [],
-    0x15ff : [],
-    0x16ff : [],
-    0x17ff : [],
-    0x18ff : [],
-    0x19ff : [],
-    0x20ff : [],
-    0x21ff : [],
-
-
-    0x22ff : [],
-    0x23ff : [],
-    0x24ff : [],
-    0x25ff : [],
-    0x26ff : [],
-}
-
+KIND_METH           = 0
+KIND_STRING         = 1
+KIND_FIELD          = 2
+KIND_TYPE           = 3
+VARIES              = 4
+INLINE_METHOD       = 5
+VTABLE_OFFSET       = 6
+FIELD_OFFSET        = 7
 
 def get_kind(cm, kind, value) :
   if kind == KIND_METH :
@@ -2661,13 +2668,34 @@ def get_kind(cm, kind, value) :
     descriptor = method.get_descriptor()
 
     return "%s->%s%s" % (class_name, name, descriptor)
+  
   elif kind == KIND_STRING :
     return repr(cm.get_string(value))
+  
   elif kind == KIND_FIELD :
     class_name, proto, field_name = cm.get_field(value)
     return "%s->%s %s" % (class_name, field_name, proto)
+  
   elif kind == KIND_TYPE :
     return cm.get_type(value)
+
+  elif kind == VTABLE_OFFSET :
+    return "vtable[0x%x]" % value
+
+  elif kind == FIELD_OFFSET :
+    return "field[0x%x]" % value
+
+  elif kind == INLINE_METHOD :
+
+    buff = "inline[0x%x]" % value
+
+    # FIXME: depends of the android version ...
+    if len(INLINE_METHODS) > value :
+        elem = INLINE_METHODS[value]
+        buff += " %s->%s%s" % (elem[0], elem[1], elem[2])
+
+    return buff
+
   return None
 
 class Instruction(object) :
@@ -2691,6 +2719,25 @@ class Instruction(object) :
 
   def get_translated_kind(self) :
     return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
+
+class InstructionInvalid(Instruction) :
+    def __init__(self, cm, buff) :
+      super(InstructionInvalid, self).__init__()
+
+      i16 = unpack("=H", buff[0:2])[0]
+
+      #log_andro.debug("OP:%x %s" % (self.OP, args[0]))
+
+    def get_output(self, idx=-1) :
+      buff = ""
+      return buff
+
+    def get_length(self) :
+      return 2
+
+    def get_raw(self) :
+      return pack("=H", self.OP)
+
 
 class Instruction35c(Instruction) :
     def __init__(self, cm, buff) :
@@ -2892,6 +2939,34 @@ class Instruction21s(Instruction) :
 class Instruction22c(Instruction) :
     def __init__(self, cm, buff) :
       super(Instruction22c, self).__init__()
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.A = (i16 >> 8) & 0xf
+      self.B = (i16 >> 12) & 0xf
+      self.CCCC = unpack("=H", buff[2:4])[0]
+
+      #log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self, idx=-1) :
+      buff = ""
+      kind = get_kind(self.cm, self.get_kind(), self.CCCC)
+      buff += "v%d, v%d, %s" % (self.A, self.B, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.CCCC
+
+    def get_raw(self) :
+      return pack("=HH", (self.B << 12) | (self.A << 8) | (self.OP), self.CCCC)
+
+class Instruction22cs(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction22cs, self).__init__()
       self.cm = cm
 
       i16 = unpack("=H", buff[0:2])[0]
@@ -3373,10 +3448,309 @@ class Instruction32x(Instruction) :
     def get_raw(self) :
       return pack("=HHH", self.OP, self.AAAA, self.BBBB)
 
-KIND_METH = 0
-KIND_STRING = 1
-KIND_FIELD = 2
-KIND_TYPE = 3
+class Instruction20bc(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction20bc, self).__init__()
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=H", buff[2:4])[0]
+
+      #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+
+    def get_length(self) :
+      return 4
+
+    def get_output(self, idx=-1) :
+      buff = ""
+      buff += "%d, %d" % (self.AA, self.BBBB)
+      return buff
+
+    def get_raw(self) :
+      return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
+
+class Instruction35mi(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction35mi, self).__init__()
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.G = (i16 >> 8) & 0xf
+      self.A = (i16 >> 12) & 0xf
+      self.BBBB = unpack("=H", buff[2:4])[0]
+
+      i16 = unpack("=H", buff[4:6])[0]
+      self.C = i16 & 0xf
+      self.D = (i16 >> 4) & 0xf
+      self.E = (i16 >> 8) & 0xf
+      self.F = (i16 >> 12) & 0xf
+
+      #log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
+
+    def get_output(self, idx=-1) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+
+      if self.A == 1 :
+        buff += "v%d, %s" % (self.C, kind)
+      elif self.A == 2 :
+        buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+      elif self.A == 3 :
+        buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+      elif self.A == 4 :
+        buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, kind)
+      elif self.A == 5 :
+        buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, self.G, kind)
+
+      return buff
+
+    def get_length(self) :
+      return 6
+
+    def get_ref_kind(self) :
+      return self.BBBB
+
+    def get_raw(self) :
+      return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB, (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
+
+class Instruction35ms(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction35ms, self).__init__()
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.G = (i16 >> 8) & 0xf
+      self.A = (i16 >> 12) & 0xf
+      self.BBBB = unpack("=H", buff[2:4])[0]
+
+      i16 = unpack("=H", buff[4:6])[0]
+      self.C = i16 & 0xf
+      self.D = (i16 >> 4) & 0xf
+      self.E = (i16 >> 8) & 0xf
+      self.F = (i16 >> 12) & 0xf
+
+      #log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
+
+    def get_output(self, idx=-1) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+
+      if self.A == 1 :
+        buff += "v%d, %s" % (self.C, kind)
+      elif self.A == 2 :
+        buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+      elif self.A == 3 :
+        buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+      elif self.A == 4 :
+        buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, kind)
+      elif self.A == 5 :
+        buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F, self.G, kind)
+
+      return buff
+
+    def get_length(self) :
+      return 6
+
+    def get_ref_kind(self) :
+      return self.BBBB
+
+    def get_raw(self) :
+      return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB, (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
+
+class Instruction3rmi(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction3rmi, self).__init__()
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=H", buff[2:4])[0]
+      self.CCCC = unpack("=H", buff[4:6])[0]
+
+      self.NNNN = self.CCCC + self.AA - 1
+
+      #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self, idx=-1) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+
+      if self.CCCC == self.NNNN :
+        buff += "v%d, %s" % (self.CCCC, kind)
+      else :
+        buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBB
+
+    def get_raw(self) :
+      return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+
+class Instruction3rms(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction3rms, self).__init__()
+      self.cm = cm
+
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
+      self.AA = (i16 >> 8) & 0xff
+
+      self.BBBB = unpack("=H", buff[2:4])[0]
+      self.CCCC = unpack("=H", buff[4:6])[0]
+
+      self.NNNN = self.CCCC + self.AA - 1
+
+      #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+
+    def get_length(self) :
+      return 6
+
+    def get_output(self, idx=-1) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+
+      if self.CCCC == self.NNNN :
+        buff += "v%d, %s" % (self.CCCC, kind)
+      else :
+        buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBB
+
+    def get_raw(self) :
+      return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+
+class Instruction41c(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction41c, self).__init__()
+      self.cm = cm
+
+      self.OP = unpack("=H", buff[0:2])[0]
+      self.BBBBBBBB =  unpack("=I", buff[2:6])[0]
+      self.AAAA =  unpack("=H", buff[6:8])[0]
+
+      #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
+
+    def get_length(self) :
+      return 8
+
+    def get_output(self, idx=-1) :
+      kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
+
+      buff = ""
+      buff += "v%d, %s" % (self.AAAA, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBBBBBB
+
+    def get_raw(self) :
+      return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
+
+class Instruction40sc(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction40sc, self).__init__()
+      self.cm = cm
+
+      self.OP = unpack("=H", buff[0:2])[0]
+      self.BBBBBBBB =  unpack("=I", buff[2:6])[0]
+      self.AAAA =  unpack("=H", buff[6:8])[0]
+
+      #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
+
+    def get_length(self) :
+      return 8
+
+    def get_output(self, idx=-1) :
+      kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
+
+      buff = ""
+      buff += "%d, %s" % (self.AAAA, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBBBBBB
+
+    def get_raw(self) :
+      return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
+
+class Instruction52c(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction52c, self).__init__()
+      self.cm = cm
+
+      self.OP = unpack("=H", buff[0:2])[0]
+      self.CCCCCCCC =  unpack("=I", buff[2:6])[0]
+      self.AAAA =  unpack("=H", buff[6:8])[0]
+      self.BBBB =  unpack("=H", buff[8:10])[0]
+      
+      #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
+
+    def get_length(self) :
+      return 10
+
+    def get_output(self, idx=-1) :
+      kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
+
+      buff = ""
+      buff += "v%d, v%d, %s" % (self.AAAA, self.BBBB, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.CCCCCCCC
+
+    def get_raw(self) :
+      return pack("=HIHH", self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
+
+class Instruction5rc(Instruction) :
+    def __init__(self, cm, buff) :
+      super(Instruction5rc, self).__init__()
+      self.cm = cm
+
+      self.OP = unpack("=H", buff[0:2])[0]
+      self.BBBBBBBB = unpack("=I", buff[2:6])[0]
+      self.AAAA = unpack("=H", buff[6:8])[0]
+      self.CCCC = unpack("=H", buff[8:10])[0]
+
+      self.NNNN = self.CCCC + self.AAAA - 1
+
+      #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AAAA, self.BBBBBBBB, self.CCCC, self.NNNN))
+
+    def get_length(self) :
+      return 10
+
+    def get_output(self, idx=-1) :
+      buff = ""
+
+      kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
+
+      if self.CCCC == self.NNNN :
+        buff += "v%d, %s" % (self.CCCC, kind)
+      else :
+        buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
+      return buff
+
+    def get_ref_kind(self) :
+      return self.BBBBBBBB
+
+    def get_raw(self) :
+      return pack("=HIHH", self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
+
 
 DALVIK_OPCODES_FORMAT = {
   0x00 : [Instruction10x, [ "nop" ] ],
@@ -3637,47 +4011,152 @@ DALVIK_OPCODES_FORMAT = {
   0xe2 : [Instruction22b, [ "ushr-int/lit8" ] ],
 
 
-  # unused
-  0xe3 : [Instruction10x, [ "nop" ] ],
-  0xe4 : [Instruction10x, [ "nop" ] ],
-  0xe5 : [Instruction10x, [ "nop" ] ],
-  0xe6 : [Instruction10x, [ "nop" ] ],
-  0xe7 : [Instruction10x, [ "nop" ] ],
-  0xe8 : [Instruction10x, [ "nop" ] ],
-  0xe9 : [Instruction10x, [ "nop" ] ],
-  0xea : [Instruction10x, [ "nop" ] ],
-  0xeb : [Instruction10x, [ "nop" ] ],
-  0xec : [Instruction10x, [ "nop" ] ],
-  0xed : [Instruction10x, [ "nop" ] ],
-  0xee : [Instruction10x, [ "nop" ] ],
-  0xef : [Instruction10x, [ "nop" ] ],
-  0xf0 : [Instruction10x, [ "nop" ] ],
-  0xf1 : [Instruction10x, [ "nop" ] ],
-  0xf2 : [Instruction10x, [ "nop" ] ],
-  0xf3 : [Instruction10x, [ "nop" ] ],
-  0xf4 : [Instruction10x, [ "nop" ] ],
-  0xf5 : [Instruction10x, [ "nop" ] ],
-  0xf6 : [Instruction10x, [ "nop" ] ],
-  0xf7 : [Instruction10x, [ "nop" ] ],
-  0xf8 : [Instruction10x, [ "nop" ] ],
-  0xf9 : [Instruction10x, [ "nop" ] ],
-  0xfa : [Instruction10x, [ "nop" ] ],
-  0xfb : [Instruction10x, [ "nop" ] ],
-  0xfc : [Instruction10x, [ "nop" ] ],
-  0xfd : [Instruction10x, [ "nop" ] ],
-  0xfe : [Instruction10x, [ "nop" ] ],
+  # expanded opcodes
+  0xe3 : [Instruction22c, [ "iget-volatile", KIND_FIELD ] ],
+  0xe4 : [Instruction22c, [ "iput-volatile", KIND_FIELD ] ],
+  0xe5 : [Instruction21c, [ "sget-volatile", KIND_FIELD ] ],
+  0xe6 : [Instruction21c, [ "sput-volatile", KIND_FIELD ] ],
+  0xe7 : [Instruction22c, [ "iget-object-volatile", KIND_FIELD ] ],
+  0xe8 : [Instruction22c, [ "iget-wide-volatile", KIND_FIELD ] ],
+  0xe9 : [Instruction22c, [ "iput-wide-volatile", KIND_FIELD ] ],
+  0xea : [Instruction21c, [ "sget-wide-volatile", KIND_FIELD ] ],
+  0xeb : [Instruction21c, [ "sput-wide-volatile", KIND_FIELD ] ],
+
+  0xec : [Instruction10x,   [ "breakpoint" ] ],
+  0xed : [Instruction20bc,  [ "throw-verification-error", VARIES ] ],
+  0xee : [Instruction35mi,  [ "execute-inline", INLINE_METHOD ] ],
+  0xef : [Instruction3rmi,  [ "execute-inline/range", INLINE_METHOD ] ],
+  0xf0 : [Instruction35c,   [ "invoke-object-init/range", KIND_METH ] ],
+  0xf1 : [Instruction10x,   [ "return-void-barrier" ] ],
+
+  0xf2 : [Instruction22cs,  [ "iget-quick", FIELD_OFFSET ] ],
+  0xf3 : [Instruction22cs,  [ "iget-wide-quick", FIELD_OFFSET ] ],
+  0xf4 : [Instruction22cs,  [ "iget-object-quick", FIELD_OFFSET ] ],
+  0xf5 : [Instruction22cs,  [ "iput-quick", FIELD_OFFSET ] ],
+  0xf6 : [Instruction22cs,  [ "iput-wide-quick", FIELD_OFFSET ] ],
+  0xf7 : [Instruction22cs,  [ "iput-object-quick", FIELD_OFFSET ] ],
+  0xf8 : [Instruction35ms,  [ "invoke-virtual-quick", VTABLE_OFFSET ] ],
+  0xf9 : [Instruction3rms,  [ "invoke-virtual-quick/range", VTABLE_OFFSET ] ],
+  0xfa : [Instruction35ms,  [ "invoke-super-quick", VTABLE_OFFSET ] ],
+  0xfb : [Instruction3rms,  [ "invoke-super-quick/range", VTABLE_OFFSET ] ],
+  0xfc : [Instruction22c,   [ "iput-object-volatile", KIND_FIELD ] ],
+  0xfd : [Instruction21c,   [ "sget-object-volatile", KIND_FIELD ] ],
+  0xfe : [Instruction21c,   [ "sput-object-volatile", KIND_FIELD ] ],
+}
+
+DALVIK_OPCODES_PAYLOAD = {
+    0x0100 : [PackedSwitch],
+    0x0200 : [SparseSwitch],
+    0x0300 : [FillArrayData],
+}
+
+INLINE_METHODS = [ 
+    [ "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V" ],
+
+    [ "Ljava/lang/String;", "charAt", "(I)C" ],
+    [ "Ljava/lang/String;", "compareTo", "(Ljava/lang/String;)I" ],
+    [ "Ljava/lang/String;", "equals", "(Ljava/lang/Object;)Z" ],
+    [ "Ljava/lang/String;", "fastIndexOf", "(II)I" ],
+    [ "Ljava/lang/String;", "isEmpty", "()Z" ],
+    [ "Ljava/lang/String;", "length", "()I" ],
+
+    [ "Ljava/lang/Math;", "abs", "(I)I" ],
+    [ "Ljava/lang/Math;", "abs", "(J)J" ],
+    [ "Ljava/lang/Math;", "abs", "(F)F" ],
+    [ "Ljava/lang/Math;", "abs", "(D)D" ],
+    [ "Ljava/lang/Math;", "min", "(II)I" ],
+    [ "Ljava/lang/Math;", "max", "(II)I" ],
+    [ "Ljava/lang/Math;", "sqrt", "(D)D" ],
+    [ "Ljava/lang/Math;", "cos", "(D)D" ],
+    [ "Ljava/lang/Math;", "sin", "(D)D" ],
+
+    [ "Ljava/lang/Float;", "floatToIntBits", "(F)I" ],
+    [ "Ljava/lang/Float;", "floatToRawIntBits", "(F)I" ],
+    [ "Ljava/lang/Float;", "intBitsToFloat", "(I)F" ],
+    [ "Ljava/lang/Double;", "doubleToLongBits", "(D)J" ],
+    [ "Ljava/lang/Double;", "doubleToRawLongBits", "(D)J" ],
+    [ "Ljava/lang/Double;", "longBitsToDouble", "(J)D" ],
+]
+
+DALVIK_OPCODES_EXPANDED = {
+    0x00ff : [ Instruction41c, ["const-class/jumbo", KIND_TYPE ] ],
+    0x01ff : [ Instruction41c, ["check-cast/jumbo", KIND_TYPE ] ],
+
+    0x02ff : [ Instruction52c, ["instance-of/jumbo", KIND_TYPE ] ],
+
+    0x03ff : [ Instruction41c, ["new-instance/jumbo", KIND_TYPE ] ],
+
+    0x04ff : [ Instruction52c, ["new-array/jumbo", KIND_TYPE ] ],
+
+    0x05ff : [ Instruction5rc, ["filled-new-array/jumbo", KIND_TYPE ] ],
+
+    0x06ff : [ Instruction52c, ["iget/jumbo", KIND_FIELD ] ],
+    0x07ff : [ Instruction52c, ["iget-wide/jumbo", KIND_FIELD ] ],
+    0x08ff : [ Instruction52c, ["iget-object/jumbo", KIND_FIELD ] ],
+    0x09ff : [ Instruction52c, ["iget-boolean/jumbo", KIND_FIELD ] ],
+    0x0aff : [ Instruction52c, ["iget-byte/jumbo", KIND_FIELD ] ],
+    0x0bff : [ Instruction52c, ["iget-char/jumbo", KIND_FIELD ] ],
+    0x0cff : [ Instruction52c, ["iget-short/jumbo", KIND_FIELD ] ],
+    0x0dff : [ Instruction52c, ["iput/jumbo", KIND_FIELD ] ],
+    0x0eff : [ Instruction52c, ["iput-wide/jumbo", KIND_FIELD ] ],
+    0x0fff : [ Instruction52c, ["iput-object/jumbo", KIND_FIELD ] ],
+    0x10ff : [ Instruction52c, ["iput-boolean/jumbo", KIND_FIELD ] ],
+    0x11ff : [ Instruction52c, ["iput-byte/jumbo", KIND_FIELD ] ],
+    0x12ff : [ Instruction52c, ["iput-char/jumbo", KIND_FIELD ] ],
+    0x13ff : [ Instruction52c, ["iput-short/jumbo", KIND_FIELD ] ],
+
+    0x14ff : [ Instruction41c, ["sget/jumbo", KIND_FIELD ] ],
+    0x15ff : [ Instruction41c, ["sget-wide/jumbo", KIND_FIELD ] ],
+    0x16ff : [ Instruction41c, ["sget-object/jumbo", KIND_FIELD ] ],
+    0x17ff : [ Instruction41c, ["sget-boolean/jumbo", KIND_FIELD ] ],
+    0x18ff : [ Instruction41c, ["sget-byte/jumbo", KIND_FIELD ] ],
+    0x19ff : [ Instruction41c, ["sget-char/jumbo", KIND_FIELD ] ],
+    0x1aff : [ Instruction41c, ["sget-short/jumbo", KIND_FIELD ] ],
+    0x1bff : [ Instruction41c, ["sput/jumbo", KIND_FIELD ] ],
+    0x1cff : [ Instruction41c, ["sput-wide/jumbo", KIND_FIELD ] ],
+    0x1dff : [ Instruction41c, ["sput-object/jumbo", KIND_FIELD ] ],
+    0x1eff : [ Instruction41c, ["sput-boolean/jumbo", KIND_FIELD ] ],
+    0x1fff : [ Instruction41c, ["sput-byte/jumbo", KIND_FIELD ] ],
+    0x20ff : [ Instruction41c, ["sput-char/jumbo", KIND_FIELD ] ],
+    0x21ff : [ Instruction41c, ["sput-short/jumbo", KIND_FIELD ] ],
+
+
+    0x22ff : [ Instruction5rc, ["invoke-virtual/jumbo", KIND_METH ] ],
+    0x23ff : [ Instruction5rc, ["invoke-super/jumbo", KIND_METH ] ],
+    0x24ff : [ Instruction5rc, ["invoke-direct/jumbo", KIND_METH ] ],
+    0x25ff : [ Instruction5rc, ["invoke-static/jumbo", KIND_METH ] ],
+    0x26ff : [ Instruction5rc, ["invoke-interface/jumbo", KIND_METH ] ],
+
+    0xf2ff : [ Instruction5rc, ["invoke-object-init/jumbo", KIND_METH ] ],
+
+    0xf3ff : [ Instruction52c, ["iget-volatile/jumbo", KIND_FIELD ] ],
+    0xf4ff : [ Instruction52c, ["iget-wide-volatile/jumbo", KIND_FIELD ] ],
+    0xf5ff : [ Instruction52c, ["iget-object-volatile/jumbo ", KIND_FIELD ] ],
+    0xf6ff : [ Instruction52c, ["iput-volatile/jumbo", KIND_FIELD ] ],
+    0xf7ff : [ Instruction52c, ["iput-wide-volatile/jumbo", KIND_FIELD ] ],
+    0xf8ff : [ Instruction52c, ["iput-object-volatile/jumbo", KIND_FIELD ] ],
+    0xf9ff : [ Instruction41c, ["sget-volatile/jumbo", KIND_FIELD ] ],
+    0xfaff : [ Instruction41c, ["sget-wide-volatile/jumbo", KIND_FIELD ] ],
+    0xfbff : [ Instruction41c, ["sget-object-volatile/jumbo", KIND_FIELD ] ],
+    0xfcff : [ Instruction41c, ["sput-volatile/jumbo", KIND_FIELD ] ],
+    0xfdff : [ Instruction41c, ["sput-wide-volatile/jumbo", KIND_FIELD ] ],
+    0xfeff : [ Instruction41c, ["sput-object-volatile/jumbo", KIND_FIELD ] ],
+
+    0xffff : [ Instruction40sc, ["throw-verification-error/jumbo", VARIES ] ],
+
 }
 
 def get_instruction(cm, op_value, buff) :
-  #print "Parsing instruction %x" % op_value
-  return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
+  try :
+    return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
+  # 0xff
+  except KeyError :
+    return InstructionInvalid(cm, buff)
 
-# FIXME
 def get_expanded_instruction(cm, op_value, buff) :
-  return Instruction10x( cm, buff )
+  return DALVIK_OPCODES_EXPANDED[ op_value ][0]( cm, buff )
 
 def get_instruction_payload(op_value, buff) :
-  #print "Parsing instruction payload %x" % op_value
   return DALVIK_OPCODES_PAYLOAD[ op_value ][0]( buff )
 
 class DCode :
@@ -3709,24 +4188,27 @@ class DCode :
           op_value = unpack( '=B', self.__insn[idx] )[0]
           #print "First %x" % op_value
           if op_value in DALVIK_OPCODES_FORMAT :
+
+            #payload instructions or expanded instructions
             if op_value == 0x00 or op_value == 0xff:
               op_value = unpack( '=H', self.__insn[idx:idx+2] )[0]
               #print "Second %x" % op_value
+
               if op_value in DALVIK_OPCODES_PAYLOAD :
                 obj = get_instruction_payload( op_value, self.__insn[idx:] )
+
+              elif op_value in DALVIK_OPCODES_EXPANDED :
+                obj = get_expanded_instruction( self.__CM, op_value, self.__insn[idx:] )
+              
               else :
                 op_value = unpack( '=B', self.__insn[idx] )[0]
                 obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
+            
+            # classical instructions
             else :
               op_value = unpack( '=B', self.__insn[idx] )[0]
               obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
-          else :
-              op_value = unpack( '=H', self.__insn[idx:idx+2] )[0]
-              #print "Second %x" % op_value
-              if op_value in DALVIK_OPCODES_EXPANDED :
-                pass
-              obj = get_expanded_instruction( self.__CM, op_value, self.__insn[idx:] )
-
+                
 
           yield obj
           idx = idx + obj.get_length()
@@ -3870,6 +4352,9 @@ class DalvikCode :
 
     def _begin_show(self) :
       bytecode._PrintBanner() 
+
+    def get_debug(self) :
+        return self.__CM.get_debug_off( self.debug_info_off )
 
     def show(self) :
         self._begin_show()
@@ -4076,11 +4561,7 @@ class MapItem :
             self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM" :
-            #self.item = []
-            #for i in range(0, self.size) :
-             #   print "nb =", i
-             #   self.item.append( DebugInfoItem( buff, cm ) )
-            self.item = DebugInfoItem2( buff, cm )
+            self.item = DebugInfoItemEmpty( buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM" :
             self.item = [ EncodedArrayItem( buff, cm ) for i in xrange(0, self.size) ]
@@ -4126,7 +4607,7 @@ class MapItem :
             self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM" :
-            self.item = DebugInfoItem2( buff, cm )
+            self.item = DebugInfoItemEmpty( buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM" :
             self.item = [ EncodedArrayItem( buff, cm ) for i in xrange(0, self.size) ]
@@ -4154,8 +4635,7 @@ class MapItem :
                 for i in self.item :
                     i.show()
             else :
-                if isinstance(self.item, CodeItem) == False :
-                    self.item.show()
+                self.item.show()
 
     def pretty_show(self) :
         bytecode._Print( "\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[ self.type ])
@@ -4165,14 +4645,11 @@ class MapItem :
                 for i in self.item :
                     if isinstance(i, ClassDataItem) :
                         i.pretty_show()
-                    elif isinstance(self.item, CodeItem) == False :
+                    else :
                         i.show()
             else :
-                if isinstance(self.item, ClassDataItem) :
-                    self.item.pretty_show()
-                elif isinstance(self.item, CodeItem) == False :
-                    self.item.show()
-
+                self.item.show()
+                
     def get_obj(self) :
         return self.item
 
@@ -4198,7 +4675,8 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self) :
+    def __init__(self, buff) :
+        self.buff = buff
         self.decompiler_ob = None
         self.vmanalysis_ob = None
         self.gvmanalysis_ob = None
@@ -4384,6 +4862,12 @@ class ClassManager :
                 return i
         return idx
 
+    def get_debug_off(self, off) :
+        self.buff.set_idx( off )
+
+        return DebugInfoItem( self.buff, self ) 
+
+
 class MapList :
     def __init__(self, cm, off, buff) :
         self.CM = cm
@@ -4431,12 +4915,14 @@ class MapList :
     def show(self) :
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item :
-            i.show()
+            if i.item != self :
+                i.show()
 
     def pretty_show(self) :
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item :
-            i.pretty_show()
+            if i.item != self :
+                i.pretty_show()
 
     def get_obj(self) :
       return [ x.get_obj() for x in self.map_item ]
@@ -4449,6 +4935,21 @@ class MapList :
 
     def get_length(self) :
       return len(self.get_raw())
+
+
+class XREF : 
+    def __init__(self) :
+        self.items = []
+
+    def add(self, x, y):
+        self.items.append((x, y))
+
+class DREF : 
+    def __init__(self) :
+        self.items = []
+
+    def add(self, x, y):
+        self.items.append((x, y))
 
 class DalvikVMFormat(bytecode._Bytecode) :
     """
@@ -4465,10 +4966,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def __init__(self, buff, decompiler=None) :
         super(DalvikVMFormat, self).__init__( buff )
 
-        self.CM = ClassManager()
+        self.CM = ClassManager(self)
         self.CM.set_decompiler( decompiler )
 
-        self.__header = HeaderItem( 0, self, ClassManager() )
+
+        self._preload(buff)
+        self._load(buff)
+
+    def _preload(self, buff) :
+        pass
+
+    def _load(self, buff) :
+        self.__header = HeaderItem( 0, self, ClassManager(None) )
 
         if self.__header.map_off == 0 :
             bytecode.Warning( "no map list ..." )
@@ -4940,16 +5449,49 @@ class DalvikVMFormat(bytecode._Bytecode) :
                     for i in access["W"] :
                         field.DREFw.add( i, access["W"][i] )
 
-class XREF : 
-    def __init__(self) :
-        self.items = []
+class OdexHeaderItem :
+    def __init__(self, buff) :
+        buff.set_idx(8)
 
-    def add(self, x, y):
-        self.items.append((x, y))
+        self.dex_offset = unpack("=I", buff.read(4))[0]
+        self.dex_length = unpack("=I", buff.read(4))[0]
+        self.deps_offset = unpack("=I", buff.read(4))[0]
+        self.deps_length = unpack("=I", buff.read(4))[0]
+        self.aux_offset = unpack("=I", buff.read(4))[0]
+        self.aux_length = unpack("=I", buff.read(4))[0]
+        self.flags = unpack("=I", buff.read(4))[0]
+        self.padding = unpack("=I", buff.read(4))[0]
 
-class DREF : 
-    def __init__(self) :
-        self.items = []
+    def show(self) :
+        print "dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset, 
+                                                                                                                  self.dex_length,
+                                                                                                                  self.deps_offset,
+                                                                                                                  self.deps_length,
+                                                                                                                  self.aux_offset,
+                                                                                                                  self.aux_length,
+                                                                                                                  self.flags)
 
-    def add(self, x, y):
-        self.items.append((x, y))
+class DalvikOdexVMFormat(DalvikVMFormat) :
+    """
+        This class can parse an odex file
+
+        :param buff: a string which represents the odex file
+        :param decompiler: associate a decompiler object to display the java source code
+        :type buff: string
+        :type decompiler: object
+
+        :Example:
+          DalvikOdexVMFormat( open("classes.odex", "rb").read() )
+    """
+    def _preload(self, buff) :
+        magic = buff[:8]
+        if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36 :
+            self.__odex_header = OdexHeaderItem( self )
+            self.__odex_header.show()
+
+            self.set_idx( self.__odex_header.dex_offset )
+
+            self.set_buff( self.read( self.__odex_header.dex_length ) )
+
+            self.set_idx(0)
+

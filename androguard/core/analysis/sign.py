@@ -54,7 +54,6 @@ class Signature :
         self._cached_signatures = {}
         self._cached_fields = {}
         self._cached_packages = {}
-
         self._global_cached = {}
 
         self.levels = {
@@ -78,6 +77,11 @@ class Signature :
 
         self.classes_names = None
         self._init_caches()
+
+    def _get_method_info(self, m) :
+        m1 = m.get_method()
+        return "%s-%s-%s" % (m1.get_class_name(), m1.get_name(), m1.get_descriptor())
+
 
     def _get_sequence_bb(self, analysis_method) :
         l = []
@@ -214,7 +218,7 @@ class Signature :
 
 
     def _get_strings_a(self, analysis_method) :
-        key = "SA-%s" % analysis_method
+        key = "SA-%s" % self._get_method_info(analysis_method)
         if key in self._global_cached :
             return self._global_cached[ key ]
 
@@ -229,7 +233,7 @@ class Signature :
         return l
 
     def _get_fields_a(self, analysis_method) :
-        key = "FA-%s" % analysis_method
+        key = "FA-%s" % self._get_method_info(analysis_method)
         if key in self._global_cached :
             return self._global_cached[ key ]
 
@@ -257,7 +261,7 @@ class Signature :
         return "".join([ i[1] for i in l ])
 
     def _get_packages_pa_1(self, analysis_method, include_packages) :
-        key = "PA1-%s-%s" % (analysis_method, include_packages)
+        key = "PA1-%s-%s" % (self._get_method_info(analysis_method), include_packages)
         if key in self._global_cached :
             return self._global_cached[ key ]
 
@@ -321,7 +325,8 @@ class Signature :
         return l
 
     def get_method(self, analysis_method, signature_type, signature_arguments={}) :
-        key = "%s-%s-%s" % (analysis_method, signature_type, signature_arguments)
+        key = "%s-%s-%s" % (self._get_method_info(analysis_method), signature_type, signature_arguments)
+
         if key in self._cached_signatures :
             return self._cached_signatures[ key ]
 

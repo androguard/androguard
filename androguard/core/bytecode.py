@@ -354,10 +354,7 @@ class _Bytecode(object) :
         return self.__buff[ self.__idx : self.__idx + size ]
 
     def set_idx(self, idx) :
-        if isinstance(idx, SV) :
-            self.__idx = idx.value
-        else :
-            self.__idx = idx
+        self.__idx = idx
 
     def get_idx(self) :
         return self.__idx
@@ -373,6 +370,9 @@ class _Bytecode(object) :
 
     def length_buff(self) :
         return len( self.__buff )
+
+    def set_buff(self, buff) :
+        self.__buff = buff
 
     def save(self, filename) :
         fd = open(filename, "w")

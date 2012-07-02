@@ -51,10 +51,9 @@ option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with
 option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open an interactive shell to play more easily with objects', 'action' : 'count' }
 option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
-option_7 = { 'name' : ('-t', '--type_pretty'), 'help' : 'set the type of pretty print (0, 1) !', 'nargs' : 1 }
 option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_8]
 
 def save_session(l, filename) :
     """
@@ -139,7 +138,6 @@ def AnalyzeDex(filename, raw=False) :
 
     androconf.debug("VMAnalysis ...")
     dx = uVMAnalysis( d )
-    #dx = VMAnalysis( d )
 
     androconf.debug("GVMAnalysis ...")
     gx = GVMAnalysis( dx, None )
@@ -233,8 +231,8 @@ def main(options, arguments) :
     elif options.input != None :
         _a = AndroguardS( options.input )
 
-        if options.type_pretty != None :
-            CONF["PRETTY_SHOW"] = int( options.type_pretty )
+        if options.pretty != None :
+          init_print_colors()
 
         if options.display != None :
             if options.pretty != None :
