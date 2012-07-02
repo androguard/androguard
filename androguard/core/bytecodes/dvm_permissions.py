@@ -1,8 +1,4 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
+
 # Androguard is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -16,11 +12,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+# frameworks/base/core/res/AndroidManifest.xml
 ########################################## PERMISSIONS ########################################################
 DVM_PERMISSIONS = {
     "MANIFEST_PERMISSION" : {
 		"SEND_SMS" : [ "dangerous" , "send SMS messages" , "Allows application to send SMS messages. Malicious applications may cost you money by sending messages without your confirmation." ],
-		"CALL_PHONE" : [ "dangerous" , "directly call phone numbers" , "Allows the application to call phone numbers without your intervention. Malicious applications may cause unexpected calls on your phone bill. Note that this does not allow the application to call emergency numbers." ],
+    "SEND_SMS_NO_CONFIRMATION" : [ "dangerous", "send SMS messages", "send SMS messages via the Messaging app with no user input or confirmation" ],
+    "CALL_PHONE" : [ "dangerous" , "directly call phone numbers" , "Allows the application to call phone numbers without your intervention. Malicious applications may cause unexpected calls on your phone bill. Note that this does not allow the application to call emergency numbers." ],
 		"RECEIVE_SMS" : [ "dangerous" , "receive SMS" , "Allows application to receive and process SMS messages. Malicious applications may monitor your messages or delete them without showing them to you." ],
 		"RECEIVE_MMS" : [ "dangerous" , "receive MMS" , "Allows application to receive and process MMS messages. Malicious applications may monitor your messages or delete them without showing them to you." ],
 		"READ_SMS" : [ "dangerous" , "read SMS or MMS" , "Allows application to read SMS messages stored on your phone or SIM card. Malicious applications may read your confidential messages." ],
@@ -28,7 +26,12 @@ DVM_PERMISSIONS = {
 		"RECEIVE_WAP_PUSH" : [ "dangerous" , "receive WAP" , "Allows application to receive and process WAP messages. Malicious applications may monitor your messages or delete them without showing them to you." ],
 		"READ_CONTACTS" : [ "dangerous" , "read contact data" , "Allows an application to read all of the contact (address) data stored on your phone. Malicious applications can use this to send your data to other people." ],
 		"WRITE_CONTACTS" : [ "dangerous" , "write contact data" , "Allows an application to modify the contact (address) data stored on your phone. Malicious applications can use this to erase or modify your contact data." ],
-		"READ_CALENDAR" : [ "dangerous" , "read calendar events" , "Allows an application to read all of the calendar events stored on your phone. Malicious applications can use this to send your calendar events to other people." ],
+    "READ_PROFILE" : [ "dangerous", "read the user's personal profile data", "Allows an application to read the user's personal profile data."],
+    "WRITE_PROFILE" : [ "dangerous", "write the user's personal profile data", "Allows an application to write (but not read) the user's personal profile data."],
+    "READ_SOCIAL_STREAM" : [ "dangerous", "read from the user's social stream", "Allows an application to read from the user's social stream." ],
+    "WRITE_SOCIAL_STREAM" : [ "dangerous", "write the user's social stream", "Allows an application to write (but not read) the user's social stream data." ],
+    "READ_CALENDAR" : [ "dangerous" , "read calendar events" , "Allows an application to read all of the calendar events stored on your phone. Malicious applications can use this to send your calendar events to other people." ],
+
 		"WRITE_CALENDAR" : [ "dangerous" , "add or modify calendar events and send emails to guests" , "Allows an application to add or change the events on your calendar, which may send emails to guests. Malicious applications can use this to erase or modify your calendar events or to send emails to guests." ],
 		"READ_USER_DICTIONARY" : [ "dangerous" , "read user-defined dictionary" , "Allows an application to read any private words, names and phrases that the user may have stored in the user dictionary." ],
 		"WRITE_USER_DICTIONARY" : [ "normal" , "write to user-defined dictionary" , "Allows an application to write new words into the user dictionary." ],
@@ -156,6 +159,8 @@ DVM_PERMISSIONS = {
 		"ACCESS_CACHE_FILESYSTEM" : [ "signatureOrSystem" , "access the cache file system" , "Allows an application to read and write the cache file system." ],
 		"COPY_PROTECTED_DATA" : [ "signature" , "Allows to invoke default container service to copy content. Not for use by normal applications." , "Allows to invoke default container service to copy content. Not for use by normal applications." ],
 		"C2D_MESSAGE" : [ "signature" , "" , "" ],
+    
+    "ADD_VOICEMAIL" : [ "dangerous", "add voicemails into the system", "Allows an application to add voicemails into the system." ],
     },
 
     "MANIFEST_PERMISSION_GROUP" : 
