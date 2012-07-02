@@ -26,6 +26,7 @@ import codecs
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
 
+
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xml', 'nargs' : 1 }
 option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }

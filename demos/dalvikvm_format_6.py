@@ -86,9 +86,9 @@ class MDalvikVMFormat:
         print "OK"
 
 
-#TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
+TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
 #TEST = "examples/android/TestsAndroguard/bin/classes.dex"
-TEST = "/home/desnos/workspace/TestModif/bin/TestModif.apk"
+#TEST = "/home/desnos/workspace/TestModif/bin/TestModif.apk"
 
 FILENAME = "./toto.apk"
 

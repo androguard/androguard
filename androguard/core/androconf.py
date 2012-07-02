@@ -169,11 +169,13 @@ def is_android(filename) :
 def is_android_raw(raw) :
     val = None
     f_bytes = raw[:7]
-    
+
     if f_bytes[0:2] == "PK" :
         val = "APK"
     elif f_bytes[0:3] == "dex" :
         val = "DEX"
+    elif f_bytes[0:3] == "dey" :
+        val = "DEY"
     elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
         val = "ELF"
     elif f_bytes[0:4] == "\x03\x00\x08\x00" :

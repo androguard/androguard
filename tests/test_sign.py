@@ -2,7 +2,7 @@
 
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ def test(got, expected):
 
 
 a = AndroguardS( TEST_CASE )
-x = analysis.VMAnalysis( a.get_vm() )
+x = analysis.uVMAnalysis( a.get_vm() )
 
 for method in a.get_methods() :
     print method.get_class_name(), method.get_name(), method.get_descriptor()

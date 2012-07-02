@@ -27,33 +27,41 @@ from androguard.core.bytecodes import apk
 from androguard.core.analysis import risk
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
-option_1 = { 'name' : ('-a', '--analysis'), 'help' : 'perform analysis to calculate the risk', 'action' : 'count' }
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'perform analysis of each method', 'action' : 'count' }
-option_3 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_1 = { 'name' : ('-m', '--method'), 'help' : 'perform analysis of each method', 'action' : 'count' }
+option_2 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
+option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4]
+options = [option_0, option_1, option_2, option_3]
 
-def analyze_app(filename, ri, a, analysis, method) :
-    print filename, ri.with_apk( a, analysis, method )
+def display_result(res) :
+  for i in res :
+    print "\t", i
+    for j in res[i] :
+      print "\t\t", j, res[i][j]
 
-def analyze_dex(filename, ri, d, analysis, method) :
-    print filename, ri.with_dex( d, analysis_method=method )
+def analyze_app(filename, ri, a) :
+    print filename
+    display_result( ri.with_apk( a ) )
 
+def analyze_dex(filename, ri, d) :
+    print filename
+    display_result( ri.with_dex( d ) )
 
 def main(options, arguments) :
+    ri = risk.RiskIndicator()
+    ri.add_risk_analysis( risk.RedFlags() )
+    ri.add_risk_analysis( risk.FuzzyRisk() )
+
     if options.input != None :
-        ri = risk.RiskIndicator()
         ret_type = androconf.is_android( options.input ) 
         if ret_type == "APK" :
             a = apk.APK( options.input )
-            analyze_app( options.input, ri, a, options.analysis, options.method )
+            analyze_app( options.input, ri, a )
         elif ret_type == "DEX" :
-            analyze_dex( options.input, ri, open(options.input, "r").read(), options.analysis, options.method )
+            analyze_dex( options.input, ri, open(options.input, "r").read() )
 
-        
+
     elif options.directory != None :
-        ri = risk.RiskIndicator()
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :
                 for f in files :
@@ -66,12 +74,12 @@ def main(options, arguments) :
                     if ret_type == "APK"  :
                         try :
                             a = apk.APK( real_filename )
-                            analyze_app( real_filename, ri, a, options.analysis, options.method )
+                            analyze_app( real_filename, ri, a )
                         except Exception, e :
                             print e
 
                     elif ret_type == "DEX" :
-                        analyze_dex( real_filename, ri, open(real_filename, "r").read(), options.analysis, options.method )
+                        analyze_dex( real_filename, ri, open(real_filename, "r").read() )
 
     elif options.version != None :
         print "Androrisk version %s" % androconf.ANDROGUARD_VERSION

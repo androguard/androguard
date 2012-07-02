@@ -21,6 +21,7 @@ from androguard.core.bytecodes import jvm
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
 from androguard.core.analysis import analysis
+from androguard.core.analysis import ganalysis
 
 class BC :
     def __init__(self, bc) :
@@ -35,6 +36,13 @@ class BC :
     def analyze(self) :
         self.__a = analysis.uVMAnalysis( self.__bc )
         self.__bc.set_vmanalysis( self.__a )
+
+        self.__g = ganalysis.GVMAnalysis( self.__a, None )
+
+        self.__bc.set_gvmanalysis( self.__g )
+
+        self.__bc.create_xref()
+        self.__bc.create_dref()
 
     def _get(self, val, name) :
         l = []
@@ -100,29 +108,19 @@ class Androguard:
 
     def _analyze(self) :
         for i in self.__files :
-            #print "processing ", i
-            if ".class" in i :
-                bc = jvm.JVMFormat( self.__orig_raw[ i ] )
-            elif ".jar" in i :
-                x = jvm.JAR( i )
-                bc = x.get_classes()
-            elif ".dex" in i :
-                bc = dvm.DalvikVMFormat( self.__orig_raw[ i ] )
-            elif ".apk" in i :
+            ret_type = androconf.is_android( i )
+            if ret_type == "APK" :
                 x = apk.APK( i )
                 bc = dvm.DalvikVMFormat( x.get_dex() )
+            elif ret_type == "DEX" :
+                bc = dvm.DalvikVMFormat( open(i, "rb").read() )
+            elif ret_type == "DEY" :
+                bc = dvm.DalvikOdexVMFormat( open(i, "rb").read() )
+            elif ret_type == "ELF" :
+                from androguard.core.binaries import elf
+                bc = elf.ELF( open(i, "rb").read() )
             else :
-                ret_type = androconf.is_android( i )
-                if ret_type == "APK" :
-                    x = apk.APK( i )
-                    bc = dvm.DalvikVMFormat( x.get_dex() )
-                elif ret_type == "DEX" : 
-                    bc = dvm.DalvikVMFormat( open(i, "rb").read() )
-                elif ret_type == "ELF" :
-                    from androguard.core.binaries import elf
-                    bc = elf.ELF( open(i, "rb").read() )
-                else :
-                    raise( "Unknown bytecode" )
+                raise( "Unknown format" )
 
             if isinstance(bc, list) :
                 for j in bc :
