@@ -1446,7 +1446,8 @@ def show_Permissions( dx ) :
 
     for i in p :
         print i, ":"
-        show_Path( p[i] )
+        for j in p[i] :
+            show_Path( dx.get_vm(), j )
 
 def show_DynCode(dx) :
     """
@@ -1454,7 +1455,7 @@ def show_DynCode(dx) :
         @param dx : the analysis virtual machine
     """
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
-    show_Path( paths )
+    show_Path( dx.get_vm(), paths )
 
 def show_NativeMethods(dx) :
     """
@@ -1472,7 +1473,7 @@ def show_ReflectionCode(dx) :
         @param dx : the analysis virtual machine
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
-    show_Path( paths )
+    show_Path( dx.get_vm(), paths )
 
 def is_dyn_code(dx) :
     """
