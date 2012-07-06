@@ -334,7 +334,7 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
 
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
-BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed-switch$",  "sparse-switch$" ]
+BRANCH_DVM_OPCODES = [ "throw.", "if.", "goto", "goto.", "return", "return.", "packed-switch$",  "sparse-switch$" ]
 
 def clean_name_instruction( instruction ) :
     op_value = instruction.get_op_value()
@@ -513,19 +513,19 @@ def writesleb128(value) :
 def determineNext(i, end, m) :
     op_value = i.get_op_value()
 
-    # return*
-    if op_value >= 0x0e and op_value <= 0x11 :
+    # throw + return*
+    if (op_value == 0x27) or (0x0e <= op_value <= 0x11) :
         return [ -1 ]
     # goto
-    elif op_value >= 0x28 and op_value <= 0x2a :
+    elif 0x28 <= op_value <= 0x2a :
         off = i.get_ref_off() * 2
         return [ off + end ]
     # if
-    elif op_value >= 0x32 and op_value <= 0x3d :
+    elif 0x32 <= op_value <= 0x3d :
         off = i.get_ref_off() * 2
         return [ end + i.get_length(), off + (end) ]
     # sparse/packed
-    elif op_value == 0x2b or op_value == 0x2c :
+    elif op_value in (0x2b, 0x2c) :
         x = []
 
         x.append( end + i.get_length() )
@@ -2724,13 +2724,12 @@ class InstructionInvalid(Instruction) :
     def __init__(self, cm, buff) :
       super(InstructionInvalid, self).__init__()
 
-      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = unpack("=H", buff[0:2])[0]
 
       #log_andro.debug("OP:%x %s" % (self.OP, args[0]))
 
     def get_output(self, idx=-1) :
-      buff = ""
-      return buff
+      return ""
 
     def get_length(self) :
       return 2
@@ -2738,6 +2737,8 @@ class InstructionInvalid(Instruction) :
     def get_raw(self) :
       return pack("=H", self.OP)
 
+    def get_name(self) :
+      return "Invalid Instruction"
 
 class Instruction35c(Instruction) :
     def __init__(self, cm, buff) :
@@ -4208,7 +4209,6 @@ class DCode :
             else :
               op_value = unpack( '=B', self.__insn[idx] )[0]
               obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
-                
 
           yield obj
           idx = idx + obj.get_length()
