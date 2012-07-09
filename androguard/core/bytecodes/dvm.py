@@ -5471,6 +5471,24 @@ class OdexHeaderItem :
                                                                                                                   self.aux_length,
                                                                                                                   self.flags)
 
+class OdexDependencies :
+    def __init__(self, buff) :
+        self.modification_time = unpack("=I", buff.read(4))[0]
+        self.crc = unpack("=I", buff.read(4))[0]
+        self.dalvik_build = unpack("=I", buff.read(4))[0]
+        self.dependency_count = unpack("=I", buff.read(4))[0]
+        self.dependencies = []
+        self.dependency_checksums = []
+
+        for i in range(0, self.dependency_count) :
+            string_length = unpack("=I", buff.read(4))[0]
+            name_dependency = buff.read( string_length )[:-1]
+            self.dependencies.append( name_dependency )
+            self.dependency_checksums.append( buff.read(20) )
+
+    def get_dependencies(self) :
+        return self.dependencies
+
 class DalvikOdexVMFormat(DalvikVMFormat) :
     """
         This class can parse an odex file
@@ -5486,11 +5504,16 @@ class DalvikOdexVMFormat(DalvikVMFormat) :
     def _preload(self, buff) :
         magic = buff[:8]
         if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36 :
-            self.__odex_header = OdexHeaderItem( self )
+            self.odex_header = OdexHeaderItem( self )
 
-            self.set_idx( self.__odex_header.dex_offset )
 
-            self.set_buff( self.read( self.__odex_header.dex_length ) )
+            self.set_idx( self.odex_header.deps_offset )
+            self.dependencies = OdexDependencies( self )
 
+
+            self.set_idx( self.odex_header.dex_offset )
+            self.set_buff( self.read( self.odex_header.dex_length ) )
             self.set_idx(0)
 
+    def get_dependencies(self) :
+        return self.dependencies.get_dependencies()
