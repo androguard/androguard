@@ -5487,7 +5487,6 @@ class DalvikOdexVMFormat(DalvikVMFormat) :
         magic = buff[:8]
         if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36 :
             self.__odex_header = OdexHeaderItem( self )
-            self.__odex_header.show()
 
             self.set_idx( self.__odex_header.dex_offset )
 
