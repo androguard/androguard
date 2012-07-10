@@ -117,7 +117,7 @@ def PrettyShow( basic_blocks, notes={} ) :
             if ins == instructions[-1] and i.childs != [] :
                 print_fct(" ")
                 # packed/sparse-switch
-                if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1 :
+                if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) >= 1 :
                       values = i.get_special_ins(idx).get_values()
 
                       print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].name, branch_color))

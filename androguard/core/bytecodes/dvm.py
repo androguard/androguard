@@ -205,11 +205,11 @@ class SparseSwitch :
 
         idx = self.format_general_size
         for i in xrange(0, self.size) :
-            self.keys.append( unpack('=L', buff[idx:idx+4])[0] )
+            self.keys.append( unpack('=l', buff[idx:idx+4])[0] )
             idx += 4
 
         for i in xrange(0, self.size) :
-            self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
+            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
             idx += 4
 
     def add_note(self, msg) :
@@ -222,7 +222,7 @@ class SparseSwitch :
         return self.ident
 
     def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=L", i) for i in self.keys) + ''.join(pack("=L", i) for i in self.targets)
+        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
 
     def get_keys(self) :
         return self.keys
@@ -263,15 +263,18 @@ class PackedSwitch :
 
         self.ident = unpack("=H", buff[0:2])[0]
         self.size = unpack("=H", buff[2:4])[0]
-        self.first_key = unpack("=I", buff[4:8])[0]
+        self.first_key = unpack("=i", buff[4:8])[0]
 
         self.targets = []
 
         idx = self.format_general_size
 
-        max_size = min(self.size, len(buff) - idx - 8)
+        max_size = self.size
+        if (max_size * 4) > len(buff) :
+            max_size = len(buff) - idx - 8
+
         for i in xrange(0, max_size) :
-            self.targets.append( unpack('=L', buff[idx:idx+4])[0] )
+            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
             idx += 4
 
     def add_note(self, msg) :
@@ -284,7 +287,7 @@ class PackedSwitch :
         return self.ident
 
     def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + pack("=I", self.first_key) + ''.join(pack("=L", i) for i in self.targets)
+        return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
 
     def get_operands(self) :
         return [ self.first_key, self.targets ]
