@@ -895,6 +895,7 @@ class RedFlags :
                       "REFLECTION" :          0,      # presence of the reflection API
                       "NATIVE" :              0,      # presence of loading a shared library
                       "DYNAMIC" :             0,      # presence of loading dynamically a new dex file
+                      "CRYPTO" :              0,      # presence of crypto functions
                     },
                 #"OBFUSCATION" : {                       # presence of obfuscation techniques
                 #}
@@ -1010,6 +1011,7 @@ class RedFlags :
       flags["REFLECTION"] = int( analysis.is_reflection_code(dx) )
       flags["NATIVE"] = int( analysis.is_native_code(dx) )
       flags["DYNAMIC"] = int( analysis.is_dyn_code(dx) )
+      flags["CRYPTO"] = int( analysis.is_crypto_code(dx) )
 
 class MethodScore :
     def __init__(self, length, matches, android_entropy, java_entropy, permissions, similarity_matches) :
