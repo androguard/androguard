@@ -161,8 +161,6 @@ class APK :
         else :
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
         
-        # CHECK if there is only one embedded file
-        #self._reload_apk()
 
         for i in self.zip.namelist() :
             if i == "AndroidManifest.xml" :
@@ -176,6 +174,8 @@ class APK :
                     self.permissions.append( str( item.getAttribute("android:name") ) )
 
                 self.validAPK = True
+
+        self.get_files_types()
 
     def get_AndroidManifest(self) :
         """
@@ -469,26 +469,6 @@ class APK :
         """
         return self.get_elements( "uses-library", "android:name" )
 
-    def show(self) :
-        self.get_files_types()
-        
-        print "FILES: "
-        for i in self.get_files() :
-            try :
-                print "\t", i, self.files[i], "%x" % self.files_crc32[i]
-            except KeyError :
-                print "\t", i, "%x" % self.files_crc32[i]
-
-        print "PERMISSIONS: "
-        details_permissions = self.get_details_permissions()
-        for i in details_permissions :
-            print "\t", i, details_permissions[i]
-        print "MAIN ACTIVITY: ", self.get_main_activity()
-        print "ACTIVITIES: ", self.get_activities()
-        print "SERVICES: ", self.get_services()
-        print "RECEIVERS: ", self.get_receivers()
-        print "PROVIDERS: ", self.get_providers()
-
     def get_certificate(self, filename) :
         """
             Return a certificate object by giving the name in the apk file
@@ -515,6 +495,26 @@ class APK :
                         buffer = self.zip.read(item.filename)
                         zout.writestr(item, buffer)
         zout.close()
+
+    def show(self) :
+        self.get_files_types()
+        
+        print "FILES: "
+        for i in self.get_files() :
+            try :
+                print "\t", i, self.files[i], "%x" % self.files_crc32[i]
+            except KeyError :
+                print "\t", i, "%x" % self.files_crc32[i]
+
+        print "PERMISSIONS: "
+        details_permissions = self.get_details_permissions()
+        for i in details_permissions :
+            print "\t", i, details_permissions[i]
+        print "MAIN ACTIVITY: ", self.get_main_activity()
+        print "ACTIVITIES: ", self.get_activities()
+        print "SERVICES: ", self.get_services()
+        print "RECEIVERS: ", self.get_receivers()
+        print "PROVIDERS: ", self.get_providers()
 
 def show_Certificate(cert) :
     print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
