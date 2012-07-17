@@ -979,7 +979,6 @@ class DVMBasicBlock :
         self.tainted_variables = self.context.get_tainted_variables()
         self.tainted_packages = self.context.get_tainted_packages()
 
-
     def get_instructions(self) :
       tmp_ins = []
       idx = 0
@@ -1081,7 +1080,10 @@ class DVMBasicBlock :
         except :
             return None
 
-    def set_exception(self, exception_analysis) :
+    def get_exception_analysis(self) :
+        return self.exception_analysis
+
+    def set_exception_analysis(self, exception_analysis) :
         self.exception_analysis = exception_analysis
 
 TAINTED_LOCAL_VARIABLE = 0
@@ -1474,6 +1476,18 @@ def show_ReflectionCode(dx) :
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
     show_Path( dx.get_vm(), paths )
+
+def is_crypto_code(dx) :
+    """
+        Crypto code is present ?
+        @param dx : the analysis virtual machine
+        @rtype : boolean
+    """
+    paths = dx.get_tainted_packages().search_methods( "Ljavax/crypto/.", ".", ".")
+    if paths != [] :
+        return True
+
+    return False
 
 def is_dyn_code(dx) :
     """
@@ -1936,6 +1950,7 @@ class Exceptions :
 
     def get_exception(self, addr_start, addr_end) :
         for i in self.exceptions :
+#            print hex(i.start), hex(i.end), hex(addr_start), hex(addr_end), i.start >= addr_start and i.end <= addr_end, addr_end <= i.end and addr_start >= i.start
             if i.start >= addr_start and i.end <= addr_end :
                 return i
 
@@ -2003,7 +2018,7 @@ class MethodAnalysis :
 
         excepts = BO["Dexception"]( self.__vm, self.method )
         for i in excepts:
-            l.extend([i[0]])
+            l.extend( [i[0]] )
 
         idx = 0
         for i in instructions :
@@ -2036,7 +2051,7 @@ class MethodAnalysis :
 
         for i in self.basic_blocks.get() :
             # setup exception by basic block
-            i.set_exception( self.exceptions.get_exception( i.start, i.end ) )
+            i.set_exception_analysis( self.exceptions.get_exception( i.start, i.end - 1 ) )
 
         del instructions
         del h, l
