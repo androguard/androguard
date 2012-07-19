@@ -1674,9 +1674,10 @@ class TypeIdItem :
             i.reload()
 
     def get(self, idx) :
-        if idx > len(self.type) :
-            return self.type[-1].get_value()
-        return self.type[ idx ].get_value()
+        try :
+            return self.type[ idx ].get_value()
+        except IndexError :
+            return -1
 
     def show(self) :
         print "TYPE_ID_ITEM"
@@ -1697,6 +1698,24 @@ class TypeIdItem :
       for i in self.type :
         length += i.get_length()
       return length
+
+class InvalidProtoItem :
+    def __init__(self) :
+        self._shorty = "V"
+        self._return = "V"
+        self._params = "()"
+
+    def get_params(self) :
+        return self._params
+
+    def get_shorty(self) :
+        return self._shorty
+
+    def get_return_type(self) :
+        return self._return
+
+    def show(self) :
+        print "PROTO_ITEM", self._shorty, self._return, self._params
 
 class ProtoItem :
     def __init__(self, buff, cm) :
@@ -1726,8 +1745,7 @@ class ProtoItem :
         return self._return
 
     def show(self) :
-        print "PROTO_ITEM", self._shorty, self._return, self.shorty_idx,
-        self.return_type_idx, self.parameters_off
+        print "PROTO_ITEM", self._shorty, self._return, self.shorty_idx, self.return_type_idx, self.parameters_off
 
     def get_obj(self) :
         if self.parameters_off != 0 :
@@ -1759,7 +1777,10 @@ class ProtoIdItem :
       return self.offset
 
     def get(self, idx) :
-        return self.proto[ idx ]
+        try :
+            return self.proto[ idx ]
+        except IndexError :
+            return InvalidProtoItem()
 
     def reload(self) :
         for i in self.proto :
@@ -4213,6 +4234,10 @@ class DCode :
               op_value = unpack( '=B', self.__insn[idx] )[0]
               obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
 
+          else :
+              op_value = unpack( '=B', self.__insn[idx] )[0]
+              obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
+
           yield obj
           idx = idx + obj.get_length()
 
@@ -4783,22 +4808,32 @@ class ClassManager :
         if idx in self.hook_strings :
             return self.hook_strings[ idx ]
 
-        off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+        try :
+            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+        except IndexError :
+            bytecode.Warning( "unknown string item @ %d" % (idx) )
+            return "AG: invalid string"
+
         try :
             if self.recode_ascii_string :
                 return self.recode_ascii_string_meth( self.__strings_off[off].get() )
             return self.__strings_off[off].get()
         except KeyError :
             bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
-            return ""
+            return "AG: invalid string"
 
     def get_raw_string(self, idx) :
-        off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+        try :
+            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+        except IndexError :
+            bytecode.Warning( "unknown string item @ %d" % (idx) )
+            return "AG: invalid string"
+
         try :
             return self.__strings_off[off].get()
         except KeyError :
             bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
-            return ""
+            return "AG: invalid string"
 
     def get_type_list(self, off) :
         if off == 0 :
@@ -4817,6 +4852,8 @@ class ClassManager :
 
     def get_type(self, idx) :
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
+        if _type == -1 :
+            return "AG: invalid type"
         return self.get_string( _type )
 
     def get_type_ref(self, idx) :

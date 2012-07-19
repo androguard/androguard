@@ -81,6 +81,8 @@ CONF = {
     "PRINT_FCT" : sys.stdout.write,
 
     "LAZY_ANALYSIS" : False,
+
+    "MAGIC_PATH_FILE" : None,
 }
 
 def default_colors(obj) :
