@@ -231,7 +231,7 @@ class APK :
         """
         return self.zip.namelist()
 
-    def get_files_types(self) :
+    def get_files_types(self, magic_file=None) :
         """
             Return the files inside the APK with their associated types (by using python-magic)
             :rtype: a dictionnary
@@ -263,7 +263,7 @@ class APK :
                 self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
         else :
-            m = magic.Magic()
+            m = magic.Magic(magic_file=magic_file)
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = m.from_buffer( buffer )
