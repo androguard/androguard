@@ -131,7 +131,7 @@ class APK :
           
           APK(open("myfile.apk", "rb").read(), raw=True)
     """
-    def __init__(self, filename, raw=False, mode="r") :
+    def __init__(self, filename, raw=False, mode="r", magic_file=None) :
         """
             @param filename : specify the path of the file, or raw data
             @param raw : specify (boolean) if the filename is a path or raw data
@@ -148,6 +148,8 @@ class APK :
         self.files = {}
         self.files_crc32 = {}
 
+        self.magic_file = magic_file
+        
         if raw == True :
             self.__raw = filename
         else :
@@ -231,7 +233,7 @@ class APK :
         """
         return self.zip.namelist()
 
-    def get_files_types(self, magic_file=None) :
+    def get_files_types(self) :
         """
             Return the files inside the APK with their associated types (by using python-magic)
             :rtype: a dictionnary
@@ -263,7 +265,7 @@ class APK :
                 self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
                 self.files_crc32[ i ] = crc32( buffer )
         else :
-            m = magic.Magic(magic_file=magic_file)
+            m = magic.Magic(magic_file=self.magic_file)
             for i in self.get_files() :
                 buffer = self.zip.read( i )
                 self.files[ i ] = m.from_buffer( buffer )
