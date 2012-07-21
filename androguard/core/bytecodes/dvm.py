@@ -2232,6 +2232,10 @@ class EncodedMethod :
     def add_note(self, msg) :
         self.notes.append( msg )
 
+    def set_code_idx(self, idx) :
+        if self._code != None :
+            self._code.set_idx( idx )
+
 class ClassDataItem :
     def __init__(self, buff, cm) :
         self.__CM = cm
@@ -4192,6 +4196,10 @@ class DCode :
 
         self.notes = {}
         self._cached_instructions = []
+        self.idx = 0
+
+    def set_idx(self, idx) :
+        self.idx = idx
 
     def set_instructions(self, instructions) :
       self._cached_instructions = instructions
@@ -4205,7 +4213,7 @@ class DCode :
           return
 
         # Get instructions
-        idx = 0
+        idx = self.idx
         while idx < (self.size * calcsize( '=H' )) :
           obj = None
 
@@ -4350,7 +4358,7 @@ class DalvikCode :
         self.tries_size = unpack("=H", buff.read(2))[0]
         self.debug_info_off = unpack("=I", buff.read(4))[0]
         self.insns_size = unpack("=I", buff.read(4))[0]
-
+        
         ushort = calcsize( '=H' )
 
         self.code = DCode( self.__CM, self.insns_size, buff.read( self.insns_size * ushort ) )
@@ -4379,6 +4387,13 @@ class DalvikCode :
         return self.__off
 
     def _begin_show(self) :
+      debug("registers_size: %d" % self.registers_size)
+      debug("ins_size: %d" % self.ins_size)
+      debug("outs_size: %d" % self.outs_size)
+      debug("tries_size: %d" % self.tries_size)
+      debug("debug_info_off: %d" % self.debug_info_off)
+      debug("insns_size: %d" % self.insns_size)
+
       bytecode._PrintBanner() 
 
     def get_debug(self) :
@@ -4461,6 +4476,9 @@ class DalvikCode :
         length += self.handlers.get_length()
 
       return length
+
+    def set_idx(self, idx) :
+        self.code.set_idx(idx)
 
 class CodeItem :
     def __init__(self, size, buff, cm) :
