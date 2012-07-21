@@ -1935,7 +1935,10 @@ class ExceptionAnalysis :
         buff = "%x:%x\n" % (self.start, self.end)
 
         for i in self.exceptions :
-            buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
+            if i[2] == None :
+                buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
+            else :
+                buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
 
         return buff[:-1]
 
