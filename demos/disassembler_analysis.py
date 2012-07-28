@@ -5,17 +5,10 @@ import sys, hashlib
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-
 from androguard.core.androgen import AndroguardS
 from androguard.core.analysis import analysis
 
-#TEST  = 'examples/java/test/orig/Test1.class'
-#TEST  = 'examples/java/Demo1/orig/DES.class'
-#TEST  = 'examples/java/Demo1/orig/Util.class'
-#TEST = 'examples/android/Test/bin/classes.dex'
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
-#TEST = 'examples/android/TC/bin/classes.dex'
-#TEST = 'examples/android/Hello_Kitty/classes.dex'
 
 a = AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm() )

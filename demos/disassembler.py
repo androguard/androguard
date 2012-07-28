@@ -8,7 +8,6 @@ sys.path.append(PATH_INSTALL)
 from androguard.core.androgen import AndroguardS
 from androguard.core.analysis import analysis
 
-#TEST  = 'examples/java/test/orig/Test1.class'
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 a = AndroguardS( TEST )

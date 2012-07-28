@@ -9,11 +9,7 @@ from androguard.core.androgen import AndroguardS
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import dvm
 
-#TEST  = 'examples/java/test/orig/Test1.class'
-#TEST  = 'examples/java/Demo1/orig/DES.class'
-#TEST  = 'examples/java/Demo1/orig/Util.class'
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
-TEST = 'apks/crash/reusing-catch-testcase/br.gov.infraero_1496895122692848224.apk'
 
 a = AndroguardS( TEST )
 x = analysis.VMAnalysis( a.get_vm() )
@@ -28,9 +24,6 @@ for method in a.get_methods() :
       continue
 
     if method.get_code().tries_size <= 0 :
-      continue
-
-    if (method.get_name() != "replyFromServer") or (method.get_class_name() != "Lcom/db4o/cs/internal/messages/MReadObject;") : 
       continue
 
     print method.get_class_name(), method.get_name(), method.get_descriptor(), method.get_code().get_length(), method.get_code().registers_size
