@@ -1032,21 +1032,21 @@ class DebugInfoItem :
         return self.offset
 
 VALUE_BYTE      = 0x00    # (none; must be 0)      ubyte[1]         signed one-byte integer value
-VALUE_SHORT     = 0x02 # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
+VALUE_SHORT     = 0x02    # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
 VALUE_CHAR      = 0x03    # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
-VALUE_INT       = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
+VALUE_INT       = 0x04    # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
 VALUE_LONG      = 0x06    # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
-VALUE_FLOAT     = 0x10 # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
-VALUE_DOUBLE    = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
-VALUE_STRING    = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
+VALUE_FLOAT     = 0x10    # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
+VALUE_DOUBLE    = 0x11    # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
+VALUE_STRING    = 0x17    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
 VALUE_TYPE      = 0x18    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
-VALUE_FIELD     = 0x19 # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
-VALUE_METHOD    = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
+VALUE_FIELD     = 0x19    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
+VALUE_METHOD    = 0x1a    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
 VALUE_ENUM      = 0x1b    # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
-VALUE_ARRAY     = 0x1c # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
-VALUE_ANNOTATION         = 0x1d # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
+VALUE_ARRAY     = 0x1c    # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
+VALUE_ANNOTATION  = 0x1d  # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
 VALUE_NULL      = 0x1e    # (none; must be 0)      (none)  null reference value
-VALUE_BOOLEAN   = 0x1f   # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
+VALUE_BOOLEAN   = 0x1f    # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
 
 
 class DebugInfoItemEmpty :
@@ -1928,7 +1928,6 @@ class EncodedField :
         """
             Display where this field is read or written
         """
-
         try :
             bytecode._PrintSubBanner("DREF") 
             bytecode._PrintDRef("R", self.DREFr.items)
@@ -2047,15 +2046,24 @@ class EncodedMethod :
         bytecode._PrintSubBanner() 
 
     def show_info(self) :
+        """
+            Display the basic information about the method
+        """
         bytecode._PrintSubBanner("Method Information") 
         bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
  
     def show(self) :
+        """
+            Display the information about the method
+        """
         colors = bytecode.disable_print_colors()
         self.pretty_show()
         bytecode.enable_print_colors(colors)
 
     def pretty_show(self) :
+        """
+            Display the information (with a pretty print) about the method
+        """
         self.show_info()
         self.show_notes()
         if self.code != None :
@@ -2067,6 +2075,9 @@ class EncodedMethod :
                 self.show_xref()
 
     def show_xref(self) :
+        """
+            Display where the method is called or which method is called
+        """
         try :
             bytecode._PrintSubBanner("XREF") 
             bytecode._PrintXRef("F", self.XREFfrom.items)
@@ -2076,6 +2087,9 @@ class EncodedMethod :
             pass
 
     def show_notes(self) :
+      """
+          Display the notes about the method
+      """
       if self.notes != [] :
         bytecode._PrintSubBanner("Notes") 
         for i in self.notes :
