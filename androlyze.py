@@ -187,6 +187,11 @@ def AnalyzeElf(filename, raw=False) :
 
     return e
 
+def ExportElfToPython(e) :
+    for function in e.get_functions():
+        name = "FUNCTION_" + function.name
+        setattr( e, name, function )
+        
 def AnalyzeJAR(filename, raw=False) :
     """
         Analyze an java jar application and setup all stuff for a more quickly analysis !
@@ -209,11 +214,6 @@ def AnalyzeClasses( classes ) :
     d[i[0]] = JVMFormat( i[1] )
 
   return d
-
-def ExportElfToPython(e) :
-    for function in e.get_functions():
-        name = "FUNCTION_" + function.name
-        setattr( e, name, function )
 
 def sort_length_method(vm) :
     l = []
