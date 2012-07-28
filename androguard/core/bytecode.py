@@ -81,6 +81,11 @@ def _PrintXRef(tag, items) :
   for i in items :
     print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_idx() for j in i[1])))
 
+def _PrintDRef(tag, items) :
+  print_fct = CONF["PRINT_FCT"]
+  for i in items :
+    print_fct( "%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j for j in i[1]) ) )
+
 def _PrintDefault(msg) :
   print_fct = CONF["PRINT_FCT"]
   print_fct(msg)
@@ -116,6 +121,7 @@ def PrettyShow( basic_blocks, notes={} ) :
             op_value = ins.get_op_value()
             if ins == instructions[-1] and i.childs != [] :
                 print_fct(" ")
+
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1 :
                       values = i.get_special_ins(idx).get_values()

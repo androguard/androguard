@@ -957,6 +957,9 @@ DVM_FIELDS_ACCESS = {
    }
 
 class DVMBasicBlock :
+    """
+        
+    """
     def __init__(self, start, vm, method, context) :
         self.__vm = vm
         self.method = method
@@ -1067,14 +1070,19 @@ class DVMBasicBlock :
             elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c) :
                 code = self.method.get_code().get_bc()
                 self.special_ins[ idx ] = code.get_ins_off( idx + i.get_ref_off() * 2 )
-
-                if op_value == 0x26 and self.special_ins[ idx ] != None :
-                  key = "%x" % (self.start + idx)
-                  self.special_ins[ idx ].add_info( key )
       except :
         pass
+        #import traceback
+        #traceback.print_exc()
+        #raise("ooo") 
 
     def get_special_ins(self, idx) :
+        """
+            Return the associated instruction to a specific instruction (for example a packed/sparse switch)
+
+            :param idx: the index of the instruction
+            :rtype: None or an Instruction
+        """
         try :
             return self.special_ins[ idx ]
         except :
@@ -1126,11 +1134,10 @@ class TaintedVariable :
         return self.var
 
     def push(self, access, idx, ref) :
-        m_idx = ref.get_idx()
+        m_idx = ref.get_method_idx()
 
         if m_idx not in self.paths :
           self.paths[ m_idx ] = []
-
 
         self.paths[ m_idx ].append( (access, idx) )
 
@@ -1538,7 +1545,7 @@ class TaintedPackages :
     #self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1] )
     def push_info(self, class_name, access, idx, method, idx_method) :
         self._add_pkg( class_name )
-        p = self.__packages[ class_name ].push( access, idx, method.get_idx(), idx_method )
+        p = self.__packages[ class_name ].push( access, idx, method.get_method_idx(), idx_method )
 
         try :
             self.__methods[ method ][ class_name ].append( p )
