@@ -1,17 +1,11 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 
-import sys, os, time
-from xml.dom import minidom
-from optparse import OptionParser
-
+import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import apk, dvm
-from androguard.core import androconf
-
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'input directory', 'nargs' : 1 }
-options = [option_0]
+from androguard.core.bytecodes import apk
+from androguard.core.bytecodes import dvm
 
 def test(got, expected):
     if got == expected:
@@ -21,63 +15,19 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
     return (got == expected)
 
-def print_timing(func):
-    def wrapper(*arg):
-        t1 = time.time()
-        res = func(*arg)
-        t2 = time.time()
-        print '-> %0.8f s' % ((t2-t1)), 
-        return res
-    return wrapper
+def test_dex_save() :
+  pass
 
-@print_timing
-def open_dex(raw) :
-    d = dvm.DalvikVMFormat( raw )
-    return d
+def test_dex_
+TESTS = [ "" ]
 
-def main(options, arguments) :
-    for root, dirs, files in os.walk( options.input ) :
-        if files != [] :
-            for f in files :
-                real_filename = root
-                if real_filename[-1] != "/" :
-                    real_filename += "/"
-                real_filename += f
+for i in TESTS :
+    in1 = open( i, mode="rb" )
 
-                
-                file_type = androconf.is_android( real_filename )
+    ap = apk.AXMLPrinter( in1.read() )
+    minidom.parseString( ap.getBuff() )
 
-                if file_type != None : 
-                    try : 
-                        if file_type == "APK" :
-                            a = apk.APK( real_filename )
-
-                            if a.is_valid_APK() == False :
-                                print "FAILED", real_filename, file_type
-                                continue
-
-                            raw = a.get_dex()
-                        elif file_type == "DEX" :
-                            raw = open(real_filename, "rb").read()
-
-                        d = open_dex( raw )
-                        print "PASSED", real_filename, file_type
-                    except Exception, e :
-                        print "FAILED", real_filename, file_type
-                        import traceback
-                        traceback.print_exc()
-                else :
-                    print "BAD FILE FORMAT", real_filename
-
-
-if __name__ == "__main__" :
-    parser = OptionParser()
-    for option in options :
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
-
-                          
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)   
+    print "PASSED", i
+    #out = codecs.open("res.xml", "w", "utf-8")
+    #out.write( s )
+    #out.close()

@@ -124,200 +124,6 @@ def get_type(atype, size=None):
             res = atype
     return res
 
-NORMAL_DVM_INS = 0
-SPECIFIC_DVM_INS = 1
-
-class FillArrayData :
-    def __init__(self, buff) :
-        self.notes = []
-        self.info = []
-
-        self.format_general_size = calcsize("=HHI")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.element_width = unpack("=H", buff[2:4])[0]
-        self.size = unpack("=I", buff[4:8])[0]
-
-        self.data = buff[ self.format_general_size : self.format_general_size + (self.size * self.element_width) +1 ]
-
-    def add_info(self, msg) :
-      self.info.append( msg )
-
-    def add_note(self, msg) :
-      self.notes.append( msg )
-
-    def get_notes(self) :
-      return self.notes
-
-    def get_op_value(self) :
-        return self.ident
-
-    def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
-
-    def get_data(self) :
-        return self.data
-
-    def get_output(self, idx=-1) :
-        return self.get_output_formatted()
-
-    def get_operands(self) :
-        return self.data
-
-    def get_name(self) :
-        return "fill-array-data-payload"
-
-    def get_output_formatted(self) :
-        buff = ""
-
-        if len(self.info) != [] :
-          buff = ' '.join(i for i in self.info)
-          buff += ' '
-
-        buff += repr(self.data) + " | "
-
-        for i in xrange(0, len(self.data)) :
-          buff += "\\x%02x" % ord( self.data[i] )
-        return buff
-
-    def show_buff(self, pos) :
-        buff = self.get_name() + " "
-
-        for i in xrange(0, len(self.data)) :
-            buff += "\\x%02x" % ord( self.data[i] )
-        return buff
-
-    def show(self, pos) :
-        print self.show_buff(pos),
-
-    def get_length(self) :
-        return ((self.size * self.element_width + 1) / 2 + 4) * 2
-
-class SparseSwitch :
-    def __init__(self, buff) :
-        self.notes = []
-
-        self.format_general_size = calcsize("=HH")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
-
-        self.keys = []
-        self.targets = []
-
-        idx = self.format_general_size
-        for i in xrange(0, self.size) :
-            self.keys.append( unpack('=l', buff[idx:idx+4])[0] )
-            idx += 4
-
-        for i in xrange(0, self.size) :
-            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
-            idx += 4
-
-    def add_note(self, msg) :
-      self.notes.append( msg )
-
-    def get_notes(self) :
-      return self.notes
-
-    def get_op_value(self) :
-        return self.ident
-
-    def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
-
-    def get_keys(self) :
-        return self.keys
-
-    def get_targets(self) :
-        return self.targets
-
-    def get_operands(self) :
-        return [ self.keys, self.targets ]
-
-    def get_output(self, idx=-1) :
-      return " ".join("%x" % i for i in self.keys)
-
-    def get_values(self) :
-      return self.keys
-
-    def get_name(self) :
-        return "sparse-switch-payload"
-
-    def show_buff(self, pos) :
-        buff = self.get_name() + " "
-        for i in xrange(0, len(self.keys)) :
-            buff += "%x:%x " % (self.keys[i], self.targets[i])
-
-        return buff
-
-    def show(self, pos) :
-        print self.show_buff( pos ),
-
-    def get_length(self) :
-        return self.format_general_size + (self.size * calcsize('<L')) * 2
-
-class PackedSwitch :
-    def __init__(self, buff) :
-        self.notes = []
-
-        self.format_general_size = calcsize( "=HHI" )
-
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
-        self.first_key = unpack("=i", buff[4:8])[0]
-
-        self.targets = []
-
-        idx = self.format_general_size
-
-        max_size = self.size
-        if (max_size * 4) > len(buff) :
-            max_size = len(buff) - idx - 8
-
-        for i in xrange(0, max_size) :
-            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
-            idx += 4
-
-    def add_note(self, msg) :
-      self.notes.append( msg )
-
-    def get_notes(self) :
-      return self.notes
-
-    def get_op_value(self) :
-        return self.ident
-
-    def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
-
-    def get_operands(self) :
-        return [ self.first_key, self.targets ]
-
-    def get_output(self, idx=-1) :
-      return " ".join("%x" % (self.first_key+i) for i in range(0, len(self.targets)))
-
-    def get_values(self) :
-      return [(self.first_key+i) for i in range(0, len(self.targets))]
-
-    def get_targets(self) :
-        return self.targets
-
-    def get_name(self) :
-        return "packed-switch-payload"
-
-    def show_buff(self, pos) :
-        buff = self.get_name() + " "
-        buff += "%x:" % self.first_key
-
-        for i in self.targets :
-            buff += " %x" % i
-
-        return buff
-
-    def show(self, pos) :
-        print self.show_buff( pos ),
-
-    def get_length(self) :
-        return self.format_general_size + (self.size * calcsize('=L'))
 
 MATH_DVM_OPCODES = {        "add." : '+',
                             "div." : '/',
@@ -329,8 +135,6 @@ MATH_DVM_OPCODES = {        "add." : '+',
                             "shl." : "<<",
                             "shr." : ">>",
                     }
-
-INVOKE_DVM_OPCODES = [ "invoke." ]
 
 FIELD_READ_DVM_OPCODES = [ ".get" ]
 FIELD_WRITE_DVM_OPCODES = [ ".put" ]
@@ -589,13 +393,6 @@ def determineException(vm, m) :
 
     #print m.get_name(), exceptions 
     return exceptions
-
-def DVM_TOSTRING() :
-    return { "O" : MATH_DVM_OPCODES.keys(),
-             "I" : INVOKE_DVM_OPCODES,
-             "G" : FIELD_READ_DVM_OPCODES,
-             "P" : FIELD_WRITE_DVM_OPCODES,
-            }
 
 class HeaderItem :
     def __init__(self, size, buff, cm) :
@@ -867,6 +664,9 @@ class FieldAnnotation :
     def get_raw(self) :
         return self.get_obj()
 
+    def get_length(self) :
+        return len(self.get_raw())
+
 class MethodAnnotation :
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
@@ -1124,9 +924,6 @@ class DBGBytecode :
 
         return None
 
-    def get_format(self) :
-        return self.format
-
     def show(self) :
       print self.format, self.get_value()
 
@@ -1365,6 +1162,9 @@ class EncodedValue :
         else :
             bytecode.Exit( "Unknown value 0x%x" % self.__value_type )
 
+    def get_value(self) :
+      return self.value
+
     def _getintvalue(self, buf):
         ret = 0
         shift = 0
@@ -1492,6 +1292,9 @@ class EncodedArrayItem :
     def reload(self) :
         pass
 
+    def get_value(self) :
+      return self.value
+
     def show(self) :
         print "ENCODED_ARRAY_ITEM"
         self.value.show()
@@ -1584,49 +1387,6 @@ class StringIdItem :
     def show(self) :
         print "STRING_ID_ITEM", self.string_data_off
 
-class IdItem(object) :
-    def __init__(self, size, buff, cm, TClass) :
-        self.offset = buff.get_idx()
-
-        self.elem = []
-        for i in xrange(0, size) :
-            self.elem.append( TClass(buff, cm) )
-
-    def set_off(self, off) :
-      self.offset = off
-
-    def get_off(self) :
-      return self.offset
-
-    def gets(self) :
-        return self.elem
-
-    def get(self, idx) :
-        return self.elem[ idx ]
-
-    def reload(self) :
-        for i in self.elem :
-            i.reload()
-
-    def show(self) :
-        nb = 0
-        for i in self.elem :
-            print nb,
-            i.show()
-            nb = nb + 1
-
-    def get_obj(self) :
-        return [ i for i in self.elem ]
-
-    def get_raw(self) :
-        return ''.join(i.get_raw() for i in self.elem)
-
-    def get_length(self) :
-      length = 0
-      for i in self.elem :
-        length += i.get_length()
-      return length
-
 class TypeItem :
     def __init__(self, buff, cm) :
         self.__CM = cm
@@ -1699,24 +1459,6 @@ class TypeIdItem :
         length += i.get_length()
       return length
 
-class InvalidProtoItem :
-    def __init__(self) :
-        self._shorty = "V"
-        self._return = "V"
-        self._params = "()"
-
-    def get_params(self) :
-        return self._params
-
-    def get_shorty(self) :
-        return self._shorty
-
-    def get_return_type(self) :
-        return self._return
-
-    def show(self) :
-        print "PROTO_ITEM", self._shorty, self._return, self._params
-
 class ProtoItem :
     def __init__(self, buff, cm) :
         self.__CM = cm
@@ -1780,7 +1522,7 @@ class ProtoIdItem :
         try :
             return self.proto[ idx ]
         except IndexError :
-            return InvalidProtoItem()
+            return ProtoItemInvalid()
 
     def reload(self) :
         for i in self.proto :
@@ -1852,11 +1594,52 @@ class FieldItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class FieldIdItem(IdItem) :
+class FieldIdItem :
     def __init__(self, size, buff, cm) :
-        self.__CM = cm
+        self.offset = buff.get_idx()
 
-        super(FieldIdItem, self).__init__(size, buff, cm, FieldItem)
+        self.elem = []
+        for i in xrange(0, size) :
+            self.elem.append( FieldItem(buff, cm) )
+
+    def set_off(self, off) :
+      self.offset = off
+
+    def get_off(self) :
+      return self.offset
+
+    def gets(self) :
+        return self.elem
+
+    def get(self, idx) :
+        try :
+            return self.elem[ idx ]
+        except IndexError :
+            return FieldItemInvalid()
+
+    def reload(self) :
+        for i in self.elem :
+            i.reload()
+
+    def show(self) :
+        nb = 0
+        for i in self.elem :
+            print nb,
+            i.show()
+            nb = nb + 1
+
+    def get_obj(self) :
+        return [ i for i in self.elem ]
+
+    def get_raw(self) :
+        return ''.join(i.get_raw() for i in self.elem)
+
+    def get_length(self) :
+      length = 0
+      for i in self.elem :
+        length += i.get_length()
+      return length
+
 
 class MethodItem :
     def __init__(self, buff, cm) :
@@ -1923,7 +1706,10 @@ class MethodIdItem :
       return self.offset
 
     def get(self, idx) :
-        return self.methods[ idx ]
+        try :
+            return self.methods[ idx ]
+        except IndexError :
+            return MethodItemInvalid()
 
     def reload(self) :
         for i in self.methods :
@@ -1949,50 +1735,164 @@ class MethodIdItem :
         length += i.get_length()
       return length
 
+class ProtoItemInvalid :
+    def get_params(self) :
+        return "AG:IPI:invalid_params;"
+
+    def get_shorty(self) :
+        return "(AG:IPI:invalid_shorty)"
+
+    def get_return_type(self) :
+        return "(AG:IPI:invalid_return_type)"
+
+    def show(self) :
+        print "AG:IPI:invalid_proto_item", self.get_shorty(), self.get_return_type(), self.get_params()
+
+class FieldItemInvalid :
+    def get_class_name(self) :
+        return "AG:IFI:invalid_class_name;"
+
+    def get_type(self) :
+        return "(AG:IFI:invalid_type)"
+
+    def get_descriptor(self) :
+        return "(AG:IFI:invalid_descriptor)"
+
+    def get_name(self) :
+        return "AG:IFI:invalid_name"
+
+    def get_list(self) :
+        return [ self.get_class_name(), self.get_type(), self.get_name() ]
+
+    def show(self) :
+        print "AG:IFI:invalid_field_item"
+
+class MethodItemInvalid :
+    def get_class_name(self) :
+        return "AG:IMI:invalid_class_name;"
+
+    def get_descriptor(self) :
+      return "(AG:IMI:invalid_descriptor)"
+
+    def get_proto(self) :
+        return "()AG:IMI:invalid_proto"
+
+    def get_name(self) :
+        return "AG:IMI:invalid_name"
+
+    def get_list(self) :
+        return [ self.get_class_name(), self.get_name(), self.get_proto() ]
+
+    def show(self) :
+        print "AG:IMI:invalid_method_item"
+
 class EncodedField :
+    """
+        This class can parse an encoded_field of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded field
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
-        self.__CM = cm
+        self.CM = cm
 
         self.field_idx_diff = readuleb128( buff )
         self.access_flags = readuleb128( buff )
 
-        self.__field_idx = 0
+        self.field_idx = 0
 
-        self._name = None
-        self._proto = None
-        self._class_name = None
+        self.name = None
+        self.proto = None
+        self.class_name = None
 
-        self.static_init_value = None
+        self.init_value = None
+        self.access_flags_string = None
 
     def reload(self) :
-        name = self.__CM.get_field( self.__field_idx )
-        self._class_name = name[0]
-        self._name = name[2]
-        self._proto = ''.join(i for i in name[1])
+        name = self.CM.get_field( self.field_idx )
+        self.class_name = name[0]
+        self.name = name[2]
+        self.proto = ''.join(i for i in name[1])
 
     def set_init_value(self, value) :
-        self.static_init_value = value
+        """
+            Setup the init value object of the field
+          
+            :param value: the init value
+            :type value: :class:`EncodedValue`
+        """
+        self.init_value = value
 
-    def get_access_flags(self) :
-        return self.access_flags
+    def get_init_value(self) :
+      """
+          Return the init value object of the field
 
-    def get_access(self) :
-        return self.get_access_flags()
-
-    def get_class_name(self) :
-        return self._class_name
-
-    def get_descriptor(self) :
-        return self._proto
-
-    def get_name(self) :
-        return self._name
+          :rtype: :class:`EncodedValue`
+      """
+      return self.init_value
 
     def adjust_idx(self, val) :
-        self.__field_idx = self.field_idx_diff + val
+        self.field_idx = self.field_idx_diff + val
 
-    def get_idx(self) :
-        return self.__field_idx
+
+    def get_field_idx_diff(self) :
+        """
+            Return the index into the field_ids list for the identity of this field (includes the name and descriptor), 
+            represented as a difference from the index of previous element in the list
+            :rtype: int
+        """
+        return self.field_idx_diff
+
+    def get_field_idx(self) :
+        """
+            Return the real index of the method
+            :rtype: int
+        """
+        return self.field_idx
+
+    def get_access_flags(self) :
+        """
+          Return the access flags of the field
+
+          :rtype: int
+        """
+        return self.access_flags
+
+    def get_class_name(self) :
+        """
+            Return the class name of the field
+            :rtype: string
+        """
+        return self.class_name
+
+    def get_descriptor(self) :
+        """
+            Return the descriptor of the field
+            :rtype: string
+        """
+        return self.proto
+
+    def get_name(self) :
+        """
+            Return the name of the field
+            :rtype: string
+        """
+        return self.name
+
+    def get_access_flags_string(self) :
+        """
+            Return the access flags string of the field
+
+            :rtype: string
+        """
+        if self.access_flags_string == None :
+            self.access_flags_string = get_access_flags_string( self.get_access_flags() )
+
+            if self.access_flags_string == "" :
+                self.access_flags_string = "0x%x" % self.get_access_flags()
+        return self.access_flags_string
 
     def get_obj(self) :
         return []
@@ -2004,27 +1904,50 @@ class EncodedField :
       return len(self.get_raw())
 
     def show(self) :
-        print "\tENCODED_FIELD access_flags=%s(%d) (%s,%s,%s)" % (get_access_flags_string(self.access_flags), self.access_flags, self._class_name, self._name, self._proto)
-        if self.static_init_value != None :
-            print "\tvalue:", self.static_init_value.value
+        """
+            Display the information about the field
+        """
+        colors = bytecode.disable_print_colors()
+        self.pretty_show()
+        bytecode.enable_print_colors(colors)
+
+    def pretty_show(self) :
+        """
+            Display the information (with a pretty print) about the field
+        """
+        bytecode._PrintSubBanner("Field Information") 
+        bytecode._PrintDefault("%s->%s %s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
+
+        init_value = self.get_init_value()
+        if init_value != None :
+            bytecode._PrintDefault( "\tinit value: %s" % str( init_value.get_value() ) )
 
         self.show_dref()
 
     def show_dref(self) :
+        """
+            Display where this field is read or written
+        """
+
         try :
-            for i in self.DREFr.items :
-                print "R:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j for j in i[1] ]
-            for i in self.DREFw.items :
-                print "W:", i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), [ "%x" % j for j in i[1] ]
+            bytecode._PrintSubBanner("DREF") 
+            bytecode._PrintDRef("R", self.DREFr.items)
+            bytecode._PrintDRef("W", self.DREFw.items)
+            bytecode._PrintSubBanner() 
         except AttributeError:
             pass
 
 class EncodedMethod :
     """
-        This class represents a method in the dex file
+        This class can parse an encoded_method of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded method
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm) :
-        self.__CM = cm
+        self.CM = cm
 
         self.method_idx_diff = readuleb128( buff )  #: method index diff in the corresponding section
         self.access_flags = readuleb128( buff )     #: access flags of the method
@@ -2032,66 +1955,101 @@ class EncodedMethod :
 
         self.method_idx = 0
 
-        self._name = None
-        self._proto = None
-        self._class_name = None
+        self.name = None
+        self.proto = None
+        self.class_name = None
 
-        self._code = None
+        self.code = None
 
         self.access_flags_string = None
 
         self.notes = []
 
+    def adjust_idx(self, val) :
+        self.method_idx = self.method_idx_diff + val
+
+    def get_method_idx(self) :
+        """
+            Return the real index of the method
+            :rtype: int
+        """
+        return self.method_idx
+
+    def get_method_idx_diff(self) :
+      """
+          Return index into the method_ids list for the identity of this method (includes the name and descriptor), 
+          represented as a difference from the index of previous element in the lis
+          
+          :rtype: int
+      """
+      return self.method_idx_diff
+
+    def get_access_flags(self) :
+        """
+          Return the access flags of the method
+
+          :rtype: int
+        """
+        return self.access_flags
+
+    def get_code_off(self) :
+      """
+          Return the offset from the start of the file to the code structure for this method, 
+          or 0 if this method is either abstract or native
+
+          :rtype: int
+      """
+      return self.code_off
+
+    def get_access_flags_string(self) :
+        """
+            Return the access flags string of the method
+
+            :rtype: string
+        """
+        if self.access_flags_string == None :
+            self.access_flags_string = get_access_flags_string( self.get_access_flags() )
+
+            if self.access_flags_string == "" :
+                self.access_flags_string = "0x%x" % self.get_access_flags()
+        return self.access_flags_string
+
     def reload(self) :
-        v = self.__CM.get_method( self.method_idx )
+        v = self.CM.get_method( self.method_idx )
 
-        self._class_name = v[0]
-        self._name = v[1]
-        self._proto = ''.join(i for i in v[2])
+        self.class_name = v[0]
+        self.name = v[1]
+        self.proto = ''.join(i for i in v[2])
 
-        self._code = self.__CM.get_code( self.code_off )
-
-    def set_name(self, value) :
-        self.__CM.set_hook_method_name( self.method_idx, value )
-        self.reload()
-
-    def set_class_name(self, value) :
-        self.__CM.set_hook_method_class_name( self.method_idx, value )
-        self.reload()
+        self.code = self.CM.get_code( self.code_off )
 
     def get_locals(self) :
-        ret = self._proto.split(')')
+        ret = self.proto.split(')')
         params = ret[0][1:].split()
 
-        return self._code.registers_size-len(params) - 1
+        return self.code.get_registers_size() - len(params) - 1
 
     def each_params_by_register(self, nb, proto) :
-        bytecode._PrintSubBanner("Params") 
+        bytecode._PrintSubBanner("Params")
+
         ret = proto.split(')')
         params = ret[0][1:].split()
         if params :
-            bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb-len(params)-1))
+            bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb - len(params) - 1))
             j = 0
             for i in xrange(nb - len(params), nb) :
                 bytecode._PrintDefault("- v%d:%s\n" % (i, get_type(params[j])))
                 j += 1
         else :
             bytecode._PrintDefault("local registers: v%d...v%d\n" % (0, nb-1))
+
         bytecode._PrintDefault("- return:%s\n" % get_type(ret[1]))
         bytecode._PrintSubBanner() 
 
-    def build_access_flags(self) :
-        if self.access_flags_string == None :
-            self.access_flags_string = get_access_flags_string( self.access_flags )
-
-            if self.access_flags_string == "" :
-                self.access_flags_string = "0x%x" % self.access_flags
-
     def show_info(self) :
-        self.build_access_flags()
         bytecode._PrintSubBanner("Method Information") 
-        bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % (self._class_name, self._name, self._proto, self.access_flags_string))
-
+        bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
+ 
     def show(self) :
         colors = bytecode.disable_print_colors()
         self.pretty_show()
@@ -2100,12 +2058,12 @@ class EncodedMethod :
     def pretty_show(self) :
         self.show_info()
         self.show_notes()
-        if self._code != None :
-            self.each_params_by_register( self._code.registers_size, self._proto )
-            if self.__CM.get_vmanalysis() == None :
-                self._code.show()
+        if self.code != None :
+            self.each_params_by_register( self.code.get_registers_size(), self.get_descriptor() )
+            if self.CM.get_vmanalysis() == None :
+                self.code.show()
             else :
-                self._code.pretty_show( self.__CM.get_vmanalysis().get_method( self ) )
+                self.code.pretty_show( self.CM.get_vmanalysis().get_method( self ) )
                 self.show_xref()
 
     def show_xref(self) :
@@ -2125,116 +2083,145 @@ class EncodedMethod :
         bytecode._PrintSubBanner() 
 
     def source(self) :
-        self.__CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
-
-    def get_access_flags(self) :
         """
-          Return the access flags of the method
-
-          :rtype: int
+            Return the source code of this method
+            :rtype: string
         """
-        return self.access_flags
-
-    def get_access(self) :
-        return self.get_access_flags()
+        self.CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
 
     def get_length(self) :
         """
           Return the length of the associated code of the method
           :rtype: int
         """
-        if self._code != None :
-            return self._code.get_length()
+        if self.code != None :
+            return self.code.get_length()
         return 0
 
     def get_code(self) :
         """
           Return the code object associated to the method
-          :rtype: DalvikCode object
+          :rtype: :class:`DalvikCode` object
         """
-        return self._code
+        return self.code
 
     def get_instructions(self) :
         """
-          Return all instructions
-          :rtype: list of instructions
+            Get the instructions
+
+            :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
-        if self._code == None :
+        if self.code == None :
           return []
-        return self._code.get_bc().get_instructions()
+        return self.code.get_bc().get_instructions()
 
     def set_instructions(self, instructions) :
-        if self._code == None :
+        """
+            Set the instructions
+
+            :param instructions: the list of instructions
+            :type instructions: a list of :class:`Instruction`
+        """
+        if self.code == None :
           return []
-        return self._code.get_bc().set_instructions(instructions)
+        return self.code.get_bc().set_instructions(instructions)
 
     def get_instruction(self, idx, off=None) :
         """
-          Return an instruction at a specified index or offset
-          :param idx: index in the list of the instruction
-          :param off: offset in the list of the instruction
+            Get a particular instruction by using (default) the index of the address if specified
 
-          :type idx: int
-          :type off: int
-          :rtype: an instruction
+            :param idx: index of the instruction (the position in the list of the instruction)
+            :type idx: int
+            :param off: address of the instruction
+            :type off: int
+
+            :rtype: an :class:`Instruction` object
         """
         if self._code != None :
-            return self._code.get_instruction(idx, off)
+            return self.code.get_bc().get_instruction(idx, off)
         return None
 
     def get_debug(self) :
-        if self._code == None :
+        """
+          Return the debug object associated to this method
+
+          :rtype: :class:`DebugInfoItem`
+        """
+        if self.code == None :
             return None
-        return self._code.get_debug()
+        return self.code.get_debug()
 
     def get_descriptor(self) :
         """
           Return the descriptor of the method
           :rtype: string
         """
-        return self._proto
+        return self.proto
 
     def get_class_name(self) :
         """
           Return the class name of the method
           :rtype: string
         """
-        return self._class_name
+        return self.class_name
 
     def get_name(self) :
         """
           Return the name of the method
           :rtype: string
         """
-        return self._name
-
-    def adjust_idx(self, val) :
-        self.method_idx = self.method_idx_diff + val
-
-    def get_idx(self) :
-        return self.method_idx
-
-    def get_obj(self) :
-        return []
-
-    def get_raw(self) :
-        if self._code != None :
-          self.code_off = self._code.get_off()
-        return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
-
-    def get_size(self) :
-      return len(writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off ))
+        return self.name
 
     def add_inote(self, msg, idx, off=None) :
-        if self._code != None :  
-            self._code.add_inote(msg, idx, off)
+        """
+            Add a message to a specific instruction by using (default) the index of the address if specified
+
+            :param msg: the message
+            :type msg: string
+            :param idx: index of the instruction (the position in the list of the instruction)
+            :type idx: int
+            :param off: address of the instruction
+            :type off: int
+        """
+        if self.code != None :  
+            self.code.add_inote(msg, idx, off)
 
     def add_note(self, msg) :
+        """
+            Add a message to this method
+
+            :param msg: the message
+            :type msg: string
+        """
         self.notes.append( msg )
 
     def set_code_idx(self, idx) :
-        if self._code != None :
-            self._code.set_idx( idx )
+        """
+            Set the start address of the buffer to disassemble
+
+            :param idx: the index
+            :type idx: int
+        """
+        if self.code != None :
+            self.code.set_idx( idx )
+
+
+    def set_name(self, value) :
+        self.CM.set_hook_method_name( self.method_idx, value )
+        self.reload()
+
+    def set_class_name(self, value) :
+        self.CM.set_hook_method_class_name( self.method_idx, value )
+        self.reload()
+
+    def get_raw(self) :
+        if self.code != None :
+          self.code_off = self.code.get_off()
+
+        return writeuleb128( self.method_idx_diff ) + writeuleb128( self.access_flags ) + writeuleb128( self.code_off )
+
+    def get_size(self) :
+      return len(self.get_raw())
 
 class ClassDataItem :
     def __init__(self, buff, cm) :
@@ -2252,26 +2239,31 @@ class ClassDataItem :
         self.direct_methods = []
         self.virtual_methods = []
 
-        self.load_field( self.static_fields_size, self.static_fields, EncodedField, buff, cm )
-        self.load_field( self.instance_fields_size, self.instance_fields, EncodedField, buff, cm )
-        self.load_field( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
-        self.load_field( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
+        self.load_elements( self.static_fields_size, self.static_fields, EncodedField, buff, cm )
+        self.load_elements( self.instance_fields_size, self.instance_fields, EncodedField, buff, cm )
+        self.load_elements( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
+        self.load_elements( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
 
     def set_off(self, off) :
       self.offset = off
 
-    def set_static_fields(self, values) :
-        if values != None :
-            if len(values.values) <= len(self.static_fields) :
-                for i in xrange(0, len(values.values)) :
-                    self.static_fields[i].set_init_value( values.values[i] )
+    def set_static_fields(self, value) :
+        if value != None :
+            values = value.get_values()
+            if len(values) <= len(self.static_fields) :
+                for i in xrange(0, len(values)) :
+                    self.static_fields[i].set_init_value( values[i] )
 
-    def load_field(self, size, l, Type, buff, cm) :
+    def load_elements(self, size, l, Type, buff, cm) :
         prev = 0
         for i in xrange(0, size) :
             el = Type(buff, cm)
             el.adjust_idx( prev )
-            prev = el.get_idx()
+
+            if isinstance(el, EncodedField) :
+              prev = el.get_field_idx()
+            else :
+              prev = el.get_method_idx()
 
             l.append( el )
 
@@ -2410,7 +2402,7 @@ class ClassItem :
             self.static_values = self.__CM.get_encoded_array_item ( self.static_values_off )
 
             if self.class_data_item != None :
-                self.class_data_item.set_static_fields( self.static_values.value )
+                self.class_data_item.set_static_fields( self.static_values.get_value() )
 
     def show(self) :
         print "CLASS_ITEM", self.name, self.sname, \
@@ -2689,6 +2681,18 @@ VTABLE_OFFSET       = 6
 FIELD_OFFSET        = 7
 
 def get_kind(cm, kind, value) :
+  """
+    Return the value of the 'kind' argument
+
+    :param cm: a ClassManager object
+    :type cm: :class:`ClassManager`
+    :param kind: the type of the 'kind' argument
+    :type kind: int
+    :param value: the value of the 'kind' argument
+    :type value: int
+
+    :rtype: string
+  """      
   if kind == KIND_METH :
     method = cm.get_method_ref(value)
     class_name = method.get_class_name()
@@ -2727,37 +2731,124 @@ def get_kind(cm, kind, value) :
   return None
 
 class Instruction(object) :
-  def get_kind(self) :
-    return DALVIK_OPCODES_FORMAT[ self.OP ][1][1]
+    """
+        This class represents a dalvik instruction
+    """
+    def get_kind(self) :
+        """
+            Return the 'kind' argument of the instruction
 
-  def get_name(self) :
-    return DALVIK_OPCODES_FORMAT[ self.OP ][1][0]
+            :rtype: int
+        """
+        if self.OP > 0xff :
+          if self.OP >= 0xf2ff :
+            return DALVIK_OPCODES_OPTIMIZED[ self.OP ][1][1]
+          return DALVIK_OPCODES_EXTENDED_WIDTH[ self.OP ][1][1]
+        return DALVIK_OPCODES_FORMAT[ self.OP ][1][1]
 
-  def get_op_value(self) :
-    return self.OP
+    def get_name(self) :
+        """
+            Return the name of the instruction
 
-  def get_literals(self) :
-    return []
+            :rtype: string
+        """
+        if self.OP > 0xff :
+          if self.OP >= 0xf2ff :
+            return DALVIK_OPCODES_OPTIMIZED[ self.OP ][1][0]
+          return DALVIK_OPCODES_EXTENDED_WIDTH[ self.OP ][1][0]
+        return DALVIK_OPCODES_FORMAT[ self.OP ][1][0]
 
-  def show(self, idx) :
-    print self.get_name() + " " + self.get_output(idx),
+    def get_op_value(self) :
+        """
+            Return the value of the opcode
 
-  def show_buff(self, idx) :
-    return self.get_output(idx)
+            :rtype: int
+        """
+        return self.OP
 
-  def get_translated_kind(self) :
-    return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
+    def get_literals(self) :
+        """
+            Return the associated literals
+
+            :rtype: list of int
+        """
+        return []
+
+    def show(self, idx) :
+        """
+            Print the instruction
+        """    
+        print self.get_name() + " " + self.get_output(idx),
+
+    def show_buff(self, idx) :
+        """
+            Return the display of the instruction
+
+            :rtype: string
+        """    
+        return self.get_output(idx)
+
+    def get_translated_kind(self) :
+        """
+            Return the translated value of the 'kind' argument
+
+            :rtype: string
+        """    
+        return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
+
+    def get_output(self, idx=-1) :
+      """
+          Return an additional output of the instruction
+
+          :rtype: string
+      """ 
+      raise("not implemented")
+
+    def get_length(self) :
+      """
+          Return the length of the instruction
+
+          :rtype: int
+      """   
+      raise("not implemented")
+
+    def get_raw(self) :
+      """
+          Return the object in a raw format
+          :rtype: string
+      """ 
+      raise("not implemented")
+
+    def get_ref_kind(self) :
+      """
+          Return the value of the 'kind' argument
+
+          :rtype: value
+      """
+      raise("not implemented")
 
 class InstructionInvalid(Instruction) :
+    """
+        This class represents an invalid instruction
+    """
     def __init__(self, cm, buff) :
       super(InstructionInvalid, self).__init__()
 
-      self.OP = unpack("=H", buff[0:2])[0]
+      i16 = unpack("=H", buff[0:2])[0]
+      self.OP = i16 & 0xff
 
-      #log_andro.debug("OP:%x %s" % (self.OP, args[0]))
+      #debug("OP:%x" % (self.OP))
+
+    def get_name(self) :
+        """
+            Return the name of the instruction
+
+            :rtype: string
+        """
+        return "invalid"
 
     def get_output(self, idx=-1) :
-      return ""
+      return "(OP:%x)" % self.OP
 
     def get_length(self) :
       return 2
@@ -2765,10 +2856,247 @@ class InstructionInvalid(Instruction) :
     def get_raw(self) :
       return pack("=H", self.OP)
 
+
+class FillArrayData :
+    """
+        This class can parse a FillArrayData instruction
+
+        :param buff: a Buff object which represents a buffer where the instruction is stored
+    """
+    def __init__(self, buff) :
+        self.notes = []
+
+        self.format_general_size = calcsize("=HHI")
+        self.ident = unpack("=H", buff[0:2])[0]
+        self.element_width = unpack("=H", buff[2:4])[0]
+        self.size = unpack("=I", buff[4:8])[0]
+
+        self.data = buff[ self.format_general_size : self.format_general_size + (self.size * self.element_width) +1 ]
+
+    def add_note(self, msg) :
+      """
+        Add a note to this instruction
+
+        :param msg: the message
+        :type msg: objects (string)
+      """
+      self.notes.append( msg )
+
+    def get_notes(self) :
+      """
+        Get all notes from this instruction
+
+        :rtype: a list of objects
+      """
+      return self.notes
+
+    def get_op_value(self) :
+      """
+        Get the value of the opecode
+
+        :rtype: int
+      """      
+      return self.ident
+
+    def get_raw(self) :
+        """
+            Return the object in a raw format
+            :rtype: string
+        """ 
+        return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
+
+    def get_data(self) :
+        return self.data
+
+    def get_operands(self) :
+        return self.data
+
+    def get_output(self, idx=-1) :
+        """
+            Return an additional output of the instruction
+
+            :rtype: string
+        """ 
+        buff = ""
+
+        data = self.get_data()
+
+        buff += repr(data) + " | "
+        for i in xrange(0, len(data)) :
+          buff += "\\x%02x" % ord( data[i] )
+
+        return buff
+
     def get_name(self) :
-      return "Invalid Instruction"
+        return "fill-array-data-payload"
+
+    def show_buff(self, pos) :
+        """
+            Return the display of the instruction
+
+            :rtype: string
+        """     
+        buff = self.get_name() + " "
+
+        for i in xrange(0, len(self.data)) :
+            buff += "\\x%02x" % ord( self.data[i] )
+        return buff
+
+    def show(self, pos) :
+        """
+            Print the instruction
+        """   
+        print self.show_buff(pos),
+
+    def get_length(self) :
+        """
+            Return the length of the instruction
+
+            :rtype: int
+        """   
+        return ((self.size * self.element_width + 1) / 2 + 4) * 2
+
+class SparseSwitch :
+    """
+        This class can parse a SparseSwitch instruction
+
+        :param buff: a Buff object which represents a buffer where the instruction is stored
+    """
+    def __init__(self, buff) :
+        self.notes = []
+
+        self.format_general_size = calcsize("=HH")
+        self.ident = unpack("=H", buff[0:2])[0]
+        self.size = unpack("=H", buff[2:4])[0]
+
+        self.keys = []
+        self.targets = []
+
+        idx = self.format_general_size
+        for i in xrange(0, self.size) :
+            self.keys.append( unpack('=l', buff[idx:idx+4])[0] )
+            idx += 4
+
+        for i in xrange(0, self.size) :
+            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
+            idx += 4
+
+    def add_note(self, msg) :
+      self.notes.append( msg )
+
+    def get_notes(self) :
+      return self.notes
+
+    def get_op_value(self) :
+        return self.ident
+
+    def get_raw(self) :
+        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
+
+    def get_keys(self) :
+        return self.keys
+
+    def get_targets(self) :
+        return self.targets
+
+    def get_operands(self) :
+        return [ self.keys, self.targets ]
+
+    def get_output(self, idx=-1) :
+      return " ".join("%x" % i for i in self.keys)
+
+    def get_values(self) :
+      return self.keys
+
+    def get_name(self) :
+        return "sparse-switch-payload"
+
+    def show_buff(self, pos) :
+        buff = self.get_name() + " "
+        for i in xrange(0, len(self.keys)) :
+            buff += "%x:%x " % (self.keys[i], self.targets[i])
+
+        return buff
+
+    def show(self, pos) :
+        print self.show_buff( pos ),
+
+    def get_length(self) :
+        return self.format_general_size + (self.size * calcsize('<L')) * 2
+
+class PackedSwitch :
+    """
+        This class can parse a PackedSwitch instruction
+
+        :param buff: a Buff object which represents a buffer where the instruction is stored
+    """
+    def __init__(self, buff) :
+        self.notes = []
+
+        self.format_general_size = calcsize( "=HHI" )
+
+        self.ident = unpack("=H", buff[0:2])[0]
+        self.size = unpack("=H", buff[2:4])[0]
+        self.first_key = unpack("=i", buff[4:8])[0]
+
+        self.targets = []
+
+        idx = self.format_general_size
+
+        max_size = self.size
+        if (max_size * 4) > len(buff) :
+            max_size = len(buff) - idx - 8
+
+        for i in xrange(0, max_size) :
+            self.targets.append( unpack('=l', buff[idx:idx+4])[0] )
+            idx += 4
+
+    def add_note(self, msg) :
+      self.notes.append( msg )
+
+    def get_notes(self) :
+      return self.notes
+
+    def get_op_value(self) :
+        return self.ident
+
+    def get_raw(self) :
+        return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
+
+    def get_operands(self) :
+        return [ self.first_key, self.targets ]
+
+    def get_output(self, idx=-1) :
+      return " ".join("%x" % (self.first_key+i) for i in range(0, len(self.targets)))
+
+    def get_values(self) :
+      return [(self.first_key+i) for i in range(0, len(self.targets))]
+
+    def get_targets(self) :
+        return self.targets
+
+    def get_name(self) :
+        return "packed-switch-payload"
+
+    def show_buff(self, pos) :
+        buff = self.get_name() + " "
+        buff += "%x:" % self.first_key
+
+        for i in self.targets :
+            buff += " %x" % i
+
+        return buff
+
+    def show(self, pos) :
+        print self.show_buff( pos ),
+
+    def get_length(self) :
+        return self.format_general_size + (self.size * calcsize('=L'))
 
 class Instruction35c(Instruction) :
+    """
+        This class represents all instructions which have the 35c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction35c, self).__init__()
       self.cm = cm
@@ -2817,6 +3145,9 @@ class Instruction35c(Instruction) :
       return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB, (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 class Instruction10x(Instruction) :
+    """
+        This class represents all instructions which have the 10x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction10x, self).__init__()
 
@@ -2836,6 +3167,9 @@ class Instruction10x(Instruction) :
       return pack("=H", self.OP)
 
 class Instruction21h(Instruction) :
+    """
+        This class represents all instructions which have the 21h format
+    """
     def __init__(self, cm, buff) :
       super(Instruction21h, self).__init__()
 
@@ -2874,6 +3208,9 @@ class Instruction21h(Instruction) :
       return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction11n(Instruction) :
+    """
+        This class represents all instructions which have the 11n format
+    """
     def __init__(self, cm, buff) :
       super(Instruction11n, self).__init__()
 
@@ -2899,6 +3236,9 @@ class Instruction11n(Instruction) :
       return pack("=h", (self.B << 12) | (self.A << 8) | self.OP)
 
 class Instruction21c(Instruction) :
+    """
+        This class represents all instructions which have the 21c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction21c, self).__init__()
       self.cm = cm
@@ -2931,6 +3271,9 @@ class Instruction21c(Instruction) :
       return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction21s(Instruction) :
+    """
+        This class represents all instructions which have the 21s format
+    """
     def __init__(self, cm, buff) :
       super(Instruction21s, self).__init__()
 
@@ -2966,6 +3309,9 @@ class Instruction21s(Instruction) :
       return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction22c(Instruction) :
+    """
+        This class represents all instructions which have the 22c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22c, self).__init__()
       self.cm = cm
@@ -2994,6 +3340,9 @@ class Instruction22c(Instruction) :
       return pack("=HH", (self.B << 12) | (self.A << 8) | (self.OP), self.CCCC)
 
 class Instruction22cs(Instruction) :
+    """
+        This class represents all instructions which have the 22cs format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22cs, self).__init__()
       self.cm = cm
@@ -3022,6 +3371,9 @@ class Instruction22cs(Instruction) :
       return pack("=HH", (self.B << 12) | (self.A << 8) | (self.OP), self.CCCC)
 
 class Instruction31t(Instruction) :
+    """
+        This class represents all instructions which have the 31t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction31t, self).__init__()
       i16 = unpack("=H", buff[0:2])[0]
@@ -3047,6 +3399,9 @@ class Instruction31t(Instruction) :
       return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
 class Instruction31c(Instruction) :
+    """
+        This class represents all instructions which have the 31c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction31c, self).__init__()
       self.cm = cm
@@ -3072,12 +3427,20 @@ class Instruction31c(Instruction) :
       return self.BBBBBBBB 
 
     def get_string(self) :
+      """
+          Return the string associated to the 'kind' argument
+
+          :rtype: string
+      """
       return get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
 
     def get_raw(self) :
       return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
 class Instruction12x(Instruction) :
+    """
+        This class represents all instructions which have the 12x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction12x, self).__init__()
 
@@ -3100,6 +3463,9 @@ class Instruction12x(Instruction) :
       return pack("=H", (self.B << 12) | (self.A << 8) | (self.OP))
 
 class Instruction11x(Instruction) :
+    """
+        This class represents all instructions which have the 11x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction11x, self).__init__()
 
@@ -3121,6 +3487,9 @@ class Instruction11x(Instruction) :
       return pack("=H", (self.AA << 8) | self.OP)
 
 class Instruction51l(Instruction) :
+    """
+        This class represents all instructions which have the 51l format
+    """
     def __init__(self, cm, buff) :
       super(Instruction51l, self).__init__()
 
@@ -3157,6 +3526,9 @@ class Instruction51l(Instruction) :
       return pack("=Hq", (self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
 
 class Instruction31i(Instruction) :
+    """
+        This class represents all instructions which have the 3li format
+    """
     def __init__(self, cm, buff) :
       super(Instruction31i, self).__init__()
 
@@ -3195,6 +3567,9 @@ class Instruction31i(Instruction) :
       return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
 class Instruction22x(Instruction) :
+    """
+        This class represents all instructions which have the 22x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22x, self).__init__()
 
@@ -3218,6 +3593,9 @@ class Instruction22x(Instruction) :
       return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction23x(Instruction) :
+    """
+        This class represents all instructions which have the 23x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction23x, self).__init__()
 
@@ -3243,6 +3621,9 @@ class Instruction23x(Instruction) :
       return pack("=HH", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 class Instruction20t(Instruction) :
+    """
+        This class represents all instructions which have the 20t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction20t, self).__init__()
 
@@ -3267,6 +3648,9 @@ class Instruction20t(Instruction) :
       return pack("=Hh", self.OP, self.AAAA)
 
 class Instruction21t(Instruction) :
+    """
+        This class represents all instructions which have the 21t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction21t, self).__init__()
 
@@ -3293,6 +3677,9 @@ class Instruction21t(Instruction) :
       return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction10t(Instruction) :
+    """
+        This class represents all instructions which have the 10t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction10t, self).__init__()
 
@@ -3316,6 +3703,9 @@ class Instruction10t(Instruction) :
       return pack("=Bb", self.OP, self.AA)
 
 class Instruction22t(Instruction) :
+    """
+        This class represents all instructions which have the 22t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22t, self).__init__()
 
@@ -3342,6 +3732,9 @@ class Instruction22t(Instruction) :
       return pack("=Hh", (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 class Instruction22s(Instruction) :
+    """
+        This class represents all instructions which have the 22s format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22s, self).__init__()
 
@@ -3368,6 +3761,9 @@ class Instruction22s(Instruction) :
       return pack("=Hh", (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 class Instruction22b(Instruction) :
+    """
+        This class represents all instructions which have the 22b format
+    """
     def __init__(self, cm, buff) :
       super(Instruction22b, self).__init__()
 
@@ -3395,6 +3791,9 @@ class Instruction22b(Instruction) :
       return pack("=Hh", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 class Instruction30t(Instruction) :
+    """
+        This class represents all instructions which have the 30t format
+    """
     def __init__(self, cm, buff) :
       super(Instruction30t, self).__init__()
 
@@ -3420,6 +3819,9 @@ class Instruction30t(Instruction) :
       return pack("=Hi", self.OP, self.AAAAAAAA)
 
 class Instruction3rc(Instruction) :
+    """
+        This class represents all instructions which have the 3rc format
+    """
     def __init__(self, cm, buff) :
       super(Instruction3rc, self).__init__()
       self.cm = cm
@@ -3456,6 +3858,9 @@ class Instruction3rc(Instruction) :
       return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 class Instruction32x(Instruction) :
+    """
+        This class represents all instructions which have the 32x format
+    """
     def __init__(self, cm, buff) :
       super(Instruction32x, self).__init__()
 
@@ -3471,13 +3876,16 @@ class Instruction32x(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, v%d" % (self.AAAA, self.BBBBB)
+      buff += "v%d, v%d" % (self.AAAA, self.BBBB)
       return buff
 
     def get_raw(self) :
       return pack("=HHH", self.OP, self.AAAA, self.BBBB)
 
 class Instruction20bc(Instruction) :
+    """
+        This class represents all instructions which have the 20bc format
+    """
     def __init__(self, cm, buff) :
       super(Instruction20bc, self).__init__()
 
@@ -3501,6 +3909,9 @@ class Instruction20bc(Instruction) :
       return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction35mi(Instruction) :
+    """
+        This class represents all instructions which have the 35mi format
+    """
     def __init__(self, cm, buff) :
       super(Instruction35mi, self).__init__()
       self.cm = cm
@@ -3547,6 +3958,9 @@ class Instruction35mi(Instruction) :
       return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB, (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 class Instruction35ms(Instruction) :
+    """
+        This class represents all instructions which have the 35ms format
+    """
     def __init__(self, cm, buff) :
       super(Instruction35ms, self).__init__()
       self.cm = cm
@@ -3593,6 +4007,9 @@ class Instruction35ms(Instruction) :
       return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB, (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 class Instruction3rmi(Instruction) :
+    """
+        This class represents all instructions which have the 3rmi format
+    """
     def __init__(self, cm, buff) :
       super(Instruction3rmi, self).__init__()
       self.cm = cm
@@ -3629,6 +4046,9 @@ class Instruction3rmi(Instruction) :
       return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 class Instruction3rms(Instruction) :
+    """
+        This class represents all instructions which have the 3rms format
+    """
     def __init__(self, cm, buff) :
       super(Instruction3rms, self).__init__()
       self.cm = cm
@@ -3665,6 +4085,9 @@ class Instruction3rms(Instruction) :
       return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 class Instruction41c(Instruction) :
+    """
+        This class represents all instructions which have the 41c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction41c, self).__init__()
       self.cm = cm
@@ -3692,6 +4115,9 @@ class Instruction41c(Instruction) :
       return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
 
 class Instruction40sc(Instruction) :
+    """
+        This class represents all instructions which have the 40sc format
+    """
     def __init__(self, cm, buff) :
       super(Instruction40sc, self).__init__()
       self.cm = cm
@@ -3719,6 +4145,9 @@ class Instruction40sc(Instruction) :
       return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
 
 class Instruction52c(Instruction) :
+    """
+        This class represents all instructions which have the 52c format
+    """
     def __init__(self, cm, buff) :
       super(Instruction52c, self).__init__()
       self.cm = cm
@@ -3747,6 +4176,9 @@ class Instruction52c(Instruction) :
       return pack("=HIHH", self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
 
 class Instruction5rc(Instruction) :
+    """
+        This class represents all instructions which have the 5rc format
+    """
     def __init__(self, cm, buff) :
       super(Instruction5rc, self).__init__()
       self.cm = cm
@@ -4107,7 +4539,7 @@ INLINE_METHODS = [
     [ "Ljava/lang/Double;", "longBitsToDouble", "(J)D" ],
 ]
 
-DALVIK_OPCODES_EXPANDED = {
+DALVIK_OPCODES_EXTENDED_WIDTH = {
     0x00ff : [ Instruction41c, ["const-class/jumbo", KIND_TYPE ] ],
     0x01ff : [ Instruction41c, ["check-cast/jumbo", KIND_TYPE ] ],
 
@@ -4149,13 +4581,14 @@ DALVIK_OPCODES_EXPANDED = {
     0x20ff : [ Instruction41c, ["sput-char/jumbo", KIND_FIELD ] ],
     0x21ff : [ Instruction41c, ["sput-short/jumbo", KIND_FIELD ] ],
 
-
     0x22ff : [ Instruction5rc, ["invoke-virtual/jumbo", KIND_METH ] ],
     0x23ff : [ Instruction5rc, ["invoke-super/jumbo", KIND_METH ] ],
     0x24ff : [ Instruction5rc, ["invoke-direct/jumbo", KIND_METH ] ],
     0x25ff : [ Instruction5rc, ["invoke-static/jumbo", KIND_METH ] ],
     0x26ff : [ Instruction5rc, ["invoke-interface/jumbo", KIND_METH ] ],
+}
 
+DALVIK_OPCODES_OPTIMIZED = {
     0xf2ff : [ Instruction5rc, ["invoke-object-init/jumbo", KIND_METH ] ],
 
     0xf3ff : [ Instruction52c, ["iget-volatile/jumbo", KIND_FIELD ] ],
@@ -4172,90 +4605,147 @@ DALVIK_OPCODES_EXPANDED = {
     0xfeff : [ Instruction41c, ["sput-object-volatile/jumbo", KIND_FIELD ] ],
 
     0xffff : [ Instruction40sc, ["throw-verification-error/jumbo", VARIES ] ],
-
 }
 
-def get_instruction(cm, op_value, buff) :
+def get_instruction(cm, op_value, buff, odex=False) :
+  if not odex and (op_value >= 0xe3 and op_value <= 0xfe) :
+    return InstructionInvalid( cm, buff )
+
   try :
     return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
-  # 0xff
   except KeyError :
-    return InstructionInvalid(cm, buff)
+    return InstructionInvalid( cm, buff )
 
-def get_expanded_instruction(cm, op_value, buff) :
-  return DALVIK_OPCODES_EXPANDED[ op_value ][0]( cm, buff )
+def get_extented_instruction(cm, op_value, buff) :
+  return DALVIK_OPCODES_EXTENDED_WIDTH[ op_value ][0]( cm, buff )
+
+def get_optimize_instruction(cm, op_value, buff) :
+  return DALVIK_OPCODES_OPTIMIZED[ op_value ][0]( cm, buff )
 
 def get_instruction_payload(op_value, buff) :
   return DALVIK_OPCODES_PAYLOAD[ op_value ][0]( buff )
 
+class LinearSweepAlgorithm :
+    """
+        This class is used to disassemble a method. The algorithm used by this class is linear sweep.
+    """
+    def get_instructions(self, cm, size, insn, idx) :
+        """
+            :param cm: a ClassManager object
+            :type cm: :class:`ClassManager` object
+            :param size: the total size of the buffer
+            :type size: int
+            :param insn: a raw buffer where are the instructions
+            :type insn: string
+            :param idx: a start address in the buffer
+            :type idx: int
+
+            :rtype: a generator of :class:`Instruction` objects
+        """
+        self.odex = cm.get_odex_format()
+
+        # Get instructions
+        while idx < (size * calcsize( '=H' )) :
+          obj = None
+          classic_instruction = True
+
+          op_value = unpack( '=B', insn[idx] )[0]
+          
+          #payload instructions or extented/optimized instructions
+          if op_value == 0x00 or op_value == 0xff:
+            op_value = unpack( '=H', insn[idx:idx+2] )[0]
+
+            # payload instructions ?
+            if op_value in DALVIK_OPCODES_PAYLOAD :
+              obj = get_instruction_payload( op_value, insn[idx:] )
+              classic_instruction = False
+
+            elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH :
+              obj = get_extented_instruction( cm, op_value, insn[idx:] )
+              classic_instruction = False
+
+            # optimized instructions ?
+            elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED) :
+              obj = get_optimized_instruction( cm, op_value, insn[idx:] )
+              classic_instruction = False
+            
+          # classical instructions
+          if classic_instruction :
+            op_value = unpack( '=B', insn[idx] )[0]
+            obj = get_instruction( cm, op_value, insn[idx:], self.odex)
+
+          # emit instruction
+          yield obj
+          idx = idx + obj.get_length()
+
 class DCode :
+    """
+        This class represents the instructions of a method
+
+        :param class_manager: the ClassManager
+        :type class_manager: :class:`ClassManager` object
+        :param size: the total size of the buffer
+        :type size: int
+        :param buff: a raw buffer where are the instructions
+        :type buff: string
+    """
     def __init__(self, class_manager, size, buff) :
-        self.__CM = class_manager
-        self.__insn = buff
+        self.CM = class_manager
+        self.insn = buff
         self.size = size
 
         self.notes = {}
-        self._cached_instructions = []
+        self.cached_instructions = []
         self.idx = 0
 
     def set_idx(self, idx) :
+        """
+            Set the start address of the buffer
+
+            :param idx: the index
+            :type idx: int
+        """
         self.idx = idx
 
     def set_instructions(self, instructions) :
-      self._cached_instructions = instructions
+      """
+          Set the instructions
+
+          :param instructions: the list of instructions
+          :type instructions: a list of :class:`Instruction`
+      """
+      self.cached_instructions = instructions
 
     def get_instructions(self) :
-        #print "New method ....", size * calcsize( '<H' )
+        """
+            Get the instructions
 
-        if self._cached_instructions != [] :
-          for i in self._cached_instructions :
+            :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
+        """
+        # it is possible to a cache for instructions (avoid a new disasm)
+        if self.cached_instructions != [] :
+          for i in self.cached_instructions :
             yield i
           return
 
-        # Get instructions
-        idx = self.idx
-        while idx < (self.size * calcsize( '=H' )) :
-          obj = None
-
-          #print "idx = %x" % idx
-          op_value = unpack( '=B', self.__insn[idx] )[0]
-          #print "First %x" % op_value
-          if op_value in DALVIK_OPCODES_FORMAT :
-
-            #payload instructions or expanded instructions
-            if op_value == 0x00 or op_value == 0xff:
-              op_value = unpack( '=H', self.__insn[idx:idx+2] )[0]
-              #print "Second %x" % op_value
-
-              if op_value in DALVIK_OPCODES_PAYLOAD :
-                obj = get_instruction_payload( op_value, self.__insn[idx:] )
-
-              elif op_value in DALVIK_OPCODES_EXPANDED :
-                obj = get_expanded_instruction( self.__CM, op_value, self.__insn[idx:] )
-              
-              else :
-                op_value = unpack( '=B', self.__insn[idx] )[0]
-                obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
-            
-            # classical instructions
-            else :
-              op_value = unpack( '=B', self.__insn[idx] )[0]
-              obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
-
-          else :
-              op_value = unpack( '=B', self.__insn[idx] )[0]
-              obj = get_instruction( self.__CM, op_value, self.__insn[idx:] )
-
-          yield obj
-          idx = idx + obj.get_length()
+        lsa = LinearSweepAlgorithm()
+        for i in lsa.get_instructions( self.CM, self.size, self.insn, self.idx ) :
+            yield i
 
     def reload(self) :
         pass
 
-    def get(self) :
-      return self.get_instructions()
-
     def add_inote(self, msg, idx, off=None) :
+      """
+          Add a message to a specific instruction by using (default) the index of the address if specified
+
+          :param msg: the message
+          :type msg: string
+          :param idx: index of the instruction (the position in the list of the instruction)
+          :type idx: int
+          :param off: address of the instruction
+          :type off: int
+      """
       if off != None :
         idx = self.off_to_pos(off)
 
@@ -4265,11 +4755,29 @@ class DCode :
       self.notes[ idx ].append(msg)
 
     def get_instruction(self, idx, off=None) :
+        """
+            Get a particular instruction by using (default) the index of the address if specified
+
+            :param idx: index of the instruction (the position in the list of the instruction)
+            :type idx: int
+            :param off: address of the instruction
+            :type off: int
+
+            :rtype: an :class:`Instruction` object
+        """
         if off != None :
           idx = self.off_to_pos(off)
         return [ i for i in self.get_instructions()][idx]
 
     def off_to_pos(self, off) :
+        """
+            Get the position of an instruction by using the address
+
+            :param off: address of the instruction
+            :type off: int
+
+            :rtype: int
+        """
         idx = 0
         nb = 0
         for i in self.get_instructions() :
@@ -4280,6 +4788,14 @@ class DCode :
         return -1
 
     def get_ins_off(self, off) :
+        """
+            Get a particular instruction by using the address
+
+            :param off: address of the instruction
+            :type off: int
+
+            :rtype: an :class:`Instruction` object
+        """
         idx = 0
         for i in self.get_instructions() :
             if idx == off :
@@ -4288,6 +4804,9 @@ class DCode :
         return None
 
     def show(self) :
+        """
+            Display this object
+        """
         nb = 0
         idx = 0
         for i in self.get_instructions() :
@@ -4299,16 +4818,37 @@ class DCode :
             nb += 1
 
     def pretty_show(self, m_a) :
+        """
+            Display (with a pretty print) this object
+
+            :param m_a: :class:`MethodAnalysis` object
+        """
         bytecode.PrettyShow( m_a.basic_blocks.gets(), self.notes )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
     def get_raw(self) :
+        """
+            Return the raw buffer of this object
+            :rtype: string
+        """ 
         return ''.join(i.get_raw() for i in self.get_instructions())
 
     def get_length(self) :
+      """
+          Return the length of this object
+          :rtype: int
+      """ 
       return len(self.get_raw())
 
 class TryItem :
+    """
+        This class represents the try_item format
+
+        :param buff: a raw buffer where are the try_item format
+        :type buff: string
+        :param cm: the ClassManager
+        :type cm: :class:`ClassManager` object
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
 
@@ -4325,12 +4865,27 @@ class TryItem :
       return self.offset
 
     def get_start_addr(self) :
+        """
+            Get the start address of the block of code covered by this entry. The address is a count of 16-bit code units to the start of the first covered instruction.
+
+            :rtype: int
+        """
         return self.start_addr
 
     def get_insn_count(self) :
+        """
+            Get the number of 16-bit code units covered by this entry
+
+            :rtype: int
+        """
         return self.insn_count
 
     def get_handler_off(self) :
+        """
+            Get the offset in bytes from the start of the associated :class:`EncodedCatchHandlerList` to the :class:`EncodedCatchHandler` for this entry.
+
+            :rtype: int
+        """
         return self.handler_off
 
     def get_raw(self) :
@@ -4340,6 +4895,14 @@ class TryItem :
       return len(self.get_raw())
 
 class DalvikCode :
+    """
+        This class represents the instructions of a method
+
+        :param buff: a raw buffer where are the instructions
+        :type buff: string
+        :param cm: the ClassManager
+        :type cm: :class:`ClassManager` object
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -4374,6 +4937,75 @@ class DalvikCode :
 
             self.handlers = EncodedCatchHandlerList( buff, self.__CM )
 
+    def get_registers_size(self) :
+        """
+            Get the number of registers used by this code
+            :rtype: int
+        """
+        return self.registers_size
+
+    def get_ins_size(self) :
+      """
+          Get the number of words of incoming arguments to the method that this code is for
+          :rtype: int
+      """
+      return self.ins_size
+
+    def get_outs_size(self) :
+      """
+          Get the number of words of outgoing argument space required by this code for method invocation
+          :rtype: int
+      """
+      return self.outs_size
+
+    def get_tries_size(self) :
+        """
+            Get the number of :class:`TryItem` for this instance
+            :rtype: int
+        """
+        return self.tries_size
+
+    def get_debug_info_off(self) :
+      """
+          Get the offset from the start of the file to the debug info (line numbers + local variable info) sequence for this code, or 0 if there simply is no information
+          :rtype: int
+      """
+      return self.debug_info_off
+
+    def get_insns_size(self) :
+      """
+          Get the size of the instructions list, in 16-bit code units
+          :rtype: int
+      """
+      return self.insns_size
+
+    def get_handlers(self) :
+        """
+            Get the bytes representing a list of lists of catch types and associated handler addresses. 
+
+            :rtype: :class:`EncodedCatchHandlerList`
+        """
+        return self.handlers
+
+    def get_tries(self) :
+        """
+            Get the array indicating where in the code exceptions are caught and how to handle them
+
+            :rtype: a list of :class:`TryItem` objects
+        """
+        return self.tries
+
+    def get_debug(self) :
+        """
+            Return the associated debug object
+
+            :rtype: :class:`DebugInfoItem`
+        """
+        return self.__CM.get_debug_off( self.debug_info_off )
+
+    def set_idx(self, idx) :
+        self.code.set_idx(idx)
+
     def reload(self) :
         self.code.reload()
 
@@ -4382,9 +5014,6 @@ class DalvikCode :
 
     def get_bc(self) :
         return self.code
-
-    def get_off(self) :
-        return self.__off
 
     def _begin_show(self) :
       debug("registers_size: %d" % self.registers_size)
@@ -4395,9 +5024,6 @@ class DalvikCode :
       debug("insns_size: %d" % self.insns_size)
 
       bytecode._PrintBanner() 
-
-    def get_debug(self) :
-        return self.__CM.get_debug_off( self.debug_info_off )
 
     def show(self) :
         self._begin_show()
@@ -4438,16 +5064,17 @@ class DalvikCode :
 
         return buff
 
-    def get_tries_size(self) :
-        return self.tries_size
-
-    def get_handlers(self) :
-        return self.handlers
-
-    def get_tries(self) :
-        return self.tries
-
     def add_inote(self, msg, idx, off=None) :
+        """
+            Add a message to a specific instruction by using (default) the index of the address if specified
+
+            :param msg: the message
+            :type msg: string
+            :param idx: index of the instruction (the position in the list of the instruction)
+            :type idx: int
+            :param off: address of the instruction
+            :type off: int
+        """
         if self.code :
             return self.code.add_inote(msg, idx, off)
 
@@ -4477,8 +5104,8 @@ class DalvikCode :
 
       return length
 
-    def set_idx(self, idx) :
-        self.code.set_idx(idx)
+    def get_off(self) :
+        return self.__off
 
 class CodeItem :
     def __init__(self, size, buff, cm) :
@@ -4721,8 +5348,13 @@ class OffObj :
         self.off = o
 
 class ClassManager :
-    def __init__(self, buff) :
-        self.buff = buff
+    """
+       This class is used to access to all elements (strings, type, proto ...) of the dex format
+    """
+    def __init__(self, vm) :
+        self.vm = vm
+        self.buff = vm
+
         self.decompiler_ob = None
         self.vmanalysis_ob = None
         self.gvmanalysis_ob = None
@@ -4747,6 +5379,12 @@ class ClassManager :
 
         self.engine = []
         self.engine.append("python")
+
+        if self.vm != None :
+            self.odex_format = self.vm.get_format_type() == "ODEX"
+
+    def get_odex_format(self) :
+        return self.odex_format
 
     def get_obj_by_offset(self, offset) :
       return self.__obj_offset[ offset ]
@@ -4830,7 +5468,7 @@ class ClassManager :
             off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
         except IndexError :
             bytecode.Warning( "unknown string item @ %d" % (idx) )
-            return "AG: invalid string"
+            return "AG:IS: invalid string"
 
         try :
             if self.recode_ascii_string :
@@ -4838,20 +5476,20 @@ class ClassManager :
             return self.__strings_off[off].get()
         except KeyError :
             bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
-            return "AG: invalid string"
+            return "AG:IS: invalid string"
 
     def get_raw_string(self, idx) :
         try :
             off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
         except IndexError :
             bytecode.Warning( "unknown string item @ %d" % (idx) )
-            return "AG: invalid string"
+            return "AG:IS: invalid string"
 
         try :
             return self.__strings_off[off].get()
         except KeyError :
             bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
-            return "AG: invalid string"
+            return "AG:IS: invalid string"
 
     def get_type_list(self, off) :
         if off == 0 :
@@ -4871,7 +5509,7 @@ class ClassManager :
     def get_type(self, idx) :
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
         if _type == -1 :
-            return "AG: invalid type"
+            return "AG:ITI: invalid type"
         return self.get_string( _type )
 
     def get_type_ref(self, idx) :
@@ -4925,8 +5563,10 @@ class ClassManager :
 
         return DebugInfoItem( self.buff, self ) 
 
-
 class MapList :
+    """
+       This class can parse the "map_list" of the dex format
+    """
     def __init__(self, cm, off, buff) :
         self.CM = cm
 
@@ -4965,18 +5605,30 @@ class MapList :
       self.offset = off
 
     def get_item_type(self, ttype) :
+        """
+            Get a particular item type
+
+            :param ttype: a string which represents the desired type
+            :rtype: None or the item object
+        """
         for i in self.map_item :
             if TYPE_MAP_ITEM[ i.get_type() ] == ttype :
                 return i.get_item()
         return None
 
     def show(self) :
+        """
+            Print the MapList object
+        """
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item :
             if i.item != self :
                 i.show()
 
     def pretty_show(self) :
+        """
+            Print with a pretty display the MapList object
+        """
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item :
             if i.item != self :
@@ -4993,7 +5645,6 @@ class MapList :
 
     def get_length(self) :
       return len(self.get_raw())
-
 
 class XREF : 
     def __init__(self) :
@@ -5054,12 +5705,68 @@ class DalvikVMFormat(bytecode._Bytecode) :
         self.__cache_methods = None
         self.__cached_methods_idx = None
 
+    def get_classes_def_item(self) :
+        """
+            This function returns the class def item
+
+            :rtype: :class:`ClassDefItem` object
+        """
+        return self.classes
+
+    def get_methods_id_item(self) :
+        """
+            This function returns the method id item
+
+            :rtype: :class:`MethodIdItem` object
+        """
+        return self.methods
+
+    def get_fields_id_item(self) :
+        """
+            This function returns the field id item
+
+            :rtype: :class:`FieldIdItem` object
+        """
+        return self.fields
+
+    def get_codes_item(self) :
+        """
+            This function returns the code item
+
+            :rtype: :class:`CodeItem` object
+        """
+        return self.codes
+
+    def get_string_data_item(self) :
+        """
+            This function returns the string data item
+
+            :rtype: :class:`StringDataItem` object
+        """
+        return self.strings
+
+    def get_debug_info_item(self) :
+        """
+            This function returns the debug info item
+
+            :rtype: :class:`DebugInfoItem` object
+        """
+        return self.debug
+
+    def get_header_item(self) :
+        """
+            This function returns the header item
+
+            :rtype: :class:`HeaderItem` object
+        """
+        return self.header
+
     def get_class_manager(self) :
         """
             This function returns a ClassManager object which allow you to get
             access to all index references (strings, methods, fields, ....)
 
-            :rtype: ClassManager object
+            :rtype: :class:`ClassManager` object
         """
         return self.CM
 
@@ -5068,10 +5775,16 @@ class DalvikVMFormat(bytecode._Bytecode) :
           Show the all information in the object
         """
         self.map_list.show()
-    
+
+    def pretty_show(self) :
+        """
+          Show (but pretty !) the all information in the object
+        """
+        self.map_list.pretty_show()
+
     def save(self) :
       """
-          Return the dex (with the modifications) into raw format
+          Return the dex (with the modifications) into raw format (fix checksums)
 
           :rtype: string
       """
@@ -5142,6 +5855,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
       return self.fix_checksums(buff)
 
     def fix_checksums(self, buff) :
+      """
+          Fix a dex format buffer by setting all checksums
+
+          :rtype: string
+      """
       import zlib, hashlib
       signature = hashlib.sha1(buff[32:]).digest()
 
@@ -5150,27 +5868,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
       buff = buff[:8] + pack("=i", checksum) + buff[12:]
 
 
-      debug( "NEW SIGNATURE %s" % repr(signature))
-      debug( "NEW CHECKSUM %x" % checksum)
+      debug( "NEW SIGNATURE %s" % repr(signature) )
+      debug( "NEW CHECKSUM %x" % checksum )
 
       return buff
-
-    def dotbuff(self, ins, idx) :
-        return dot_buff(ins, idx)
-
-    def pretty_show(self) :
-        """
-          Show (but pretty !) the all information in the object
-        """
-        self.map_list.pretty_show()
-
-    def _iterFlatten(self, root):
-        if isinstance(root, (list, tuple)):
-            for element in root :
-                for e in self._iterFlatten(element) :
-                    yield e
-        else:
-            yield root
 
     def get_cm_field(self, idx) :
         """
@@ -5219,6 +5920,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return self.classes_names
 
     def get_classes(self) :
+        """
+          Return all classes
+          :rtype: a list of :class:`ClassItem` objects
+        """
         return self.classes.class_def
 
     def get_method(self, name) :
@@ -5226,7 +5931,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return a list all methods which corresponds to the regexp
 
             :param name: the name of the method (a python regexp)
-            :rtype: a list with all method objects
+            :rtype: a list with all :class:`EncodedMethod` objects
         """
         prog = re.compile(name)
         l = []
@@ -5241,7 +5946,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return a list all fields which corresponds to the regexp
 
             :param name: the name of the field (a python regexp)
-            :rtype: a list with all field objects
+            :rtype: a list with all :class:`EncodedField` objects
         """
         prog = re.compile(name)
         l = []
@@ -5252,6 +5957,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return l
 
     def get_all_fields(self) :
+        """
+            Return a list of field items
+
+            :rtype: a list of :class:`FieldItem` objects
+        """
         try :
             return self.fields.gets()
         except AttributeError :
@@ -5261,7 +5971,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
           Return all field objects
 
-          :rtype: a list of field objects
+          :rtype: a list of :class:`EncodedField` objects
         """
         l = []
         for i in self.classes.class_def :
@@ -5274,7 +5984,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
           Return all method objects
 
-          :rtype: a list of method objects
+          :rtype: a list of :class:`EncodedMethod` objects
         """
         l = []
         for i in self.classes.class_def :
@@ -5291,26 +6001,36 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return len( self.get_methods() )
 
     def get_method_by_idx(self, idx) :
-      if self.__cached_methods_idx == None :
-        self.__cached_methods_idx = {}
-        for i in self.classes.class_def :
-          for j in i.get_methods() :
-            self.__cached_methods_idx[ j.get_idx() ] = j
+        """
+          Return a specific method by using an index
+          :param idx: the index of the method
+          :type idx: int
 
-      try :
-        return self.__cached_methods_idx[ idx ]
-      except KeyError :
-        return None
+          :rtype: None or an :class:`EncodedMethod` object
+        """
+        if self.__cached_methods_idx == None :
+          self.__cached_methods_idx = {}
+          for i in self.classes.class_def :
+            for j in i.get_methods() :
+              self.__cached_methods_idx[ j.get_method_idx() ] = j
+
+        try :
+          return self.__cached_methods_idx[ idx ]
+        except KeyError :
+          return None
 
     def get_method_descriptor(self, class_name, method_name, descriptor) :
         """
             Return the specific method
 
             :param class_name: the class name of the method
+            :type class_name: string
             :param method_name: the name of the method
+            :type method_name: string
             :param descriptor: the descriptor of the method
+            :type descriptor: string
 
-            :rtype: None or a method object
+            :rtype: None or a :class:`EncodedMethod` object
         """
         key = class_name + method_name + descriptor
 
@@ -5330,7 +6050,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return all methods of a specific class
 
             :param class_name: the class name
-            :rtype: a list with method objects
+            :type class_name: string
+
+            :rtype: a list with :class:`EncodedMethod` objects
         """
         l = []
         for i in self.classes.class_def :
@@ -5345,7 +6067,9 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return all fields of a specific class
 
             :param class_name: the class name
-            :rtype: a list with field objects
+            :type class_name: string
+
+            :rtype: a list with :class:`EncodedField` objects
         """
         l = []
         for i in self.classes.class_def :
@@ -5360,10 +6084,13 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return the specific field
 
             :param class_name: the class name of the field
-            :param method_name: the name of the field
+            :type class_name: string
+            :param field_name: the name of the field
+            :type field_name: string
             :param descriptor: the descriptor of the field
+            :type descriptor: string
 
-            :rtype: None or a field object
+            :rtype: None or a :class:`EncodedField` object
         """
         for i in self.classes.class_def :
             if class_name == i.get_name() :
@@ -5376,7 +6103,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Return all strings
 
-            :rtype: a list with all strings
+            :rtype: a list with all strings used in the format (types, names ...)
         """
         return [i.get() for i in self.strings]
 
@@ -5385,6 +6112,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return all target strings matched the regex
 
             :param regular_expressions: the python regex
+            :type regular_expressions: string
             :rtype: a list of strings matching the regex expression
         """
         str_list = []
@@ -5396,35 +6124,19 @@ class DalvikVMFormat(bytecode._Bytecode) :
         return str_list
 
 
-    def get_type(self) :
-        return "DVM"
-    
-    def get_BRANCH_DVM_OPCODES(self) :
-        return BRANCH_DVM_OPCODES
+    def get_format_type(self) :
+        """
+            Return the type
 
-    def get_determineNext(self) :
-        return determineNext
-
-    def get_determineException(self) :
-        return determineException
-
-    def get_DVM_TOSTRING(self) :
-        return DVM_TOSTRING()
-
-    def set_decompiler(self, decompiler) :
-        self.CM.set_decompiler( decompiler )
-
-    def set_vmanalysis(self, vmanalysis) :
-        self.CM.set_vmanalysis( vmanalysis )
-
-    def set_gvmanalysis(self, gvmanalysis) :
-        self.CM.set_gvmanalysis( gvmanalysis )
+            :rtype: a string
+        """
+        return "DEX"
 
     def create_xref(self, python_export=True) :
         """
             Create XREF for this object
 
-            :param python_export: export xref in each method
+            :param python_export (boolean): export xref in each method
         """
         gvm = self.CM.get_gvmanalysis()
 
@@ -5458,7 +6170,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Create DREF for this object
 
-            :param python_export: export dref in each field
+            :param python_export (boolean): export dref in each field
         """
         vmx = self.CM.get_vmanalysis()
 
@@ -5507,7 +6219,36 @@ class DalvikVMFormat(bytecode._Bytecode) :
                     for i in access["W"] :
                         field.DREFw.add( i, access["W"][i] )
 
+    def dotbuff(self, ins, idx) :
+        return dot_buff(ins, idx)
+
+    def get_BRANCH_DVM_OPCODES(self) :
+        return BRANCH_DVM_OPCODES
+
+    def get_determineNext(self) :
+        return determineNext
+
+    def get_determineException(self) :
+        return determineException
+
+    def get_DVM_TOSTRING(self) :
+        return DVM_TOSTRING()
+
+    def set_decompiler(self, decompiler) :
+        self.CM.set_decompiler( decompiler )
+
+    def set_vmanalysis(self, vmanalysis) :
+        self.CM.set_vmanalysis( vmanalysis )
+
+    def set_gvmanalysis(self, gvmanalysis) :
+        self.CM.set_gvmanalysis( gvmanalysis )
+
 class OdexHeaderItem :
+    """
+        This class can parse the odex header
+
+        :param buff: a Buff object string which represents the odex dependencies
+    """
     def __init__(self, buff) :
         buff.set_idx(8)
 
@@ -5530,6 +6271,11 @@ class OdexHeaderItem :
                                                                                                                   self.flags)
 
 class OdexDependencies :
+    """
+        This class can parse the odex dependencies
+
+        :param buff: a Buff object string which represents the odex dependencies
+    """
     def __init__(self, buff) :
         self.modification_time = unpack("=I", buff.read(4))[0]
         self.crc = unpack("=I", buff.read(4))[0]
@@ -5545,6 +6291,11 @@ class OdexDependencies :
             self.dependency_checksums.append( buff.read(20) )
 
     def get_dependencies(self) :
+        """
+            Return the list of dependencies
+
+            :rtype: a list of strings
+        """
         return self.dependencies
 
 class DalvikOdexVMFormat(DalvikVMFormat) :
@@ -5574,4 +6325,17 @@ class DalvikOdexVMFormat(DalvikVMFormat) :
             self.set_idx(0)
 
     def get_dependencies(self) :
-        return self.dependencies.get_dependencies()
+        """
+            Return the odex dependencies object
+
+            :rtype: an OdexDependencies object
+        """
+        return self.dependencies
+
+    def get_format_type(self) :
+        """
+            Return the type
+
+            :rtype: a string
+        """
+        return "ODEX"
