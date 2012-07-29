@@ -1994,14 +1994,15 @@ for i in BO["BasicOPCODES"] :
 
 class MethodAnalysis :
     """
-       This class analyses in details a method of a class/dex file
+        This class analyses in details a method of a class/dex file
+
+        :param vm: the object which represent the dex file
+        :type vm: a :class:`DalvikVMFormat` object
+        :param method: the original method
+        :type method: a :class:`EncodedMethod` object
+        :param tv: a virtual object to get access to tainted information
     """
     def __init__(self, vm, method, tv) :
-        """
-            @param _vm :  a L{JVMFormat} or L{DalvikVMFormat} object
-            @param _method : a method object
-            @param tv : a dictionnary of tainted information
-        """
         self.__vm = vm
         self.method = method
 
@@ -2108,6 +2109,9 @@ class MethodAnalysis :
                     print "\t\t\t |---|", context.details
 
     def create_tags(self) :
+      """
+          Create the tags for the method
+      """
       self.tags = Tags()
       for i in self.tainted.get_tainted_packages().get_packages_by_method( self.method ) :
         self.tags.emit_by_classname( i )

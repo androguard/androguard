@@ -205,13 +205,16 @@ def method2format( output, _format="png", mx = None, raw = False ) :
     if d :
         getattr(d, "write_" + _format)( output )
       
-def method2png( output, mx = None, raw = False ) :
+def method2png( output, mx, raw = False ) :
     """
         Export method to a png file format
 
-        @param output : output filename
-        @param mx : specify the MethodAnalysis object
-        @param raw : use directly a dot raw buffer
+        :param output: output filename
+        :type output: string
+        :param mx: specify the MethodAnalysis object
+        :type mx: :class:`MethodAnalysis` object
+        :param raw: use directly a dot raw buffer
+        :type raw: string
     """
     buff = raw
     if raw == False :
@@ -219,13 +222,16 @@ def method2png( output, mx = None, raw = False ) :
 
     method2format( output, "png", mx, buff )
 
-def method2jpg( output, mx = None, raw = False ) :
+def method2jpg( output, mx, raw = False ) :
     """
         Export method to a jpg file format
 
-        @param output : output filename
-        @param mx : specify the MethodAnalysis object
-        @param raw : use directly a dot raw buffer
+        :param output: output filename
+        :type output: string
+        :param mx: specify the MethodAnalysis object
+        :type mx: :class:`MethodAnalysis` object
+        :param raw: use directly a dot raw buffer (optional)
+        :type raw: string
     """
     buff = raw
     if raw == False :
@@ -234,7 +240,6 @@ def method2jpg( output, mx = None, raw = False ) :
     method2format( output, "jpg", mx, buff )
 
 class SV :
-    """SV is used to handle more easily a value"""
     def __init__(self, size, buff) :
         self.__size = size
         self.__value = unpack(self.__size, buff)[0]
@@ -258,7 +263,6 @@ class SV :
         self.__value = attr
 
 class SVs :
-    """SVs is used to handle more easily a structure of different values"""
     def __init__(self, size, ntuple, buff) :
         self.__size = size
 
@@ -387,9 +391,10 @@ class _Bytecode(object) :
 
 def FormatClassToJava(input) :
     """
-       Transofmr a typical xml format class into java format
+       Transoform a typical xml format class into java format
 
-       @param input : the input class name
+       :param input: the input class name
+       :rtype: string
     """
     return "L" + input.replace(".", "/") + ";"
 
@@ -423,7 +428,7 @@ def ExportVMToPython(vm) :
     """
         Export classes/methods/fields' names in the python namespace
 
-        @param vm : a VM object (DalvikVMFormat, JVMFormat)
+        :param vm: a :class:`DalvikVMFormat` object
     """
     for _class in vm.get_classes() :
         ### Class
