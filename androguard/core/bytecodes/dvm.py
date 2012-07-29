@@ -582,6 +582,7 @@ class AnnotationSetItem :
     def get_annotation_off_item(self) :
         """ 
             Return the offset from the start of the file to an annotation
+
             :rtype: a list of :class:`AnnotationOffItem`
         """
         return self.annotation_off_item
@@ -715,6 +716,7 @@ class FieldAnnotation :
     def get_field_idx(self) :
       """
           Return the index into the field_ids list for the identity of the field being annotated
+
           :rtype: int
       """
       return self.get_field_idx
@@ -722,6 +724,7 @@ class FieldAnnotation :
     def get_annotations_off(self) :
       """
           Return the offset from the start of the file to the list of annotations for the field
+
           :rtype: int
       """
       return self.annotations_off
@@ -767,6 +770,7 @@ class MethodAnnotation :
     def get_method_idx(self) :
       """
           Return the index into the method_ids list for the identity of the method being annotated
+
           :rtype: int
       """
       return self.get_method_idx
@@ -774,6 +778,7 @@ class MethodAnnotation :
     def get_annotations_off(self) :
       """
           Return the offset from the start of the file to the list of annotations for the method
+
           :rtype: int
       """
       return self.annotations_off
@@ -819,6 +824,7 @@ class ParameterAnnotation :
     def get_method_idx(self) :
       """
           Return the index into the method_ids list for the identity of the method whose parameters are being annotated
+
           :rtype: int
       """
       return self.get_method_idx
@@ -826,6 +832,7 @@ class ParameterAnnotation :
     def get_annotations_off(self) :
       """
           Return the offset from the start of the file to the list of annotations for the method parameters
+
           :rtype: int
       """
       return self.annotations_off
@@ -884,6 +891,7 @@ class AnnotationsDirectoryItem :
       """
           Return the offset from the start of the file to the annotations made directly on the class, 
           or 0 if the class has no direct annotations
+
           :rtype: int
       """
       return self.class_annotations_off
@@ -892,6 +900,7 @@ class AnnotationsDirectoryItem :
     def get_annotated_fields_size(self) :
       """
           Return the count of fields annotated by this item
+
           :rtype: int
       """
       return self.annotated_fields_size
@@ -899,6 +908,7 @@ class AnnotationsDirectoryItem :
     def get_annotated_methods_size(self) :
       """
           Return the count of methods annotated by this item
+
           :rtype: int
       """
       return self.annotated_methods_size
@@ -906,6 +916,7 @@ class AnnotationsDirectoryItem :
     def get_annotated_parameters_size(self) :
       """
           Return the count of method parameter lists annotated by this item
+
           :rtype: int
       """
       return self.annotated_parameters_size
@@ -913,6 +924,7 @@ class AnnotationsDirectoryItem :
     def get_field_annotations(self) :
       """
           Return the list of associated field annotations
+
           :rtype: a list of :class:`FieldAnnotation`
       """
       return self.field_annotations
@@ -920,6 +932,7 @@ class AnnotationsDirectoryItem :
     def get_method_annotations(self) :
       """
           Return the list of associated method annotations
+
           :rtype: a list of :class:`MethodAnnotation`
       """
       return self.method_annotations
@@ -928,6 +941,7 @@ class AnnotationsDirectoryItem :
     def get_parameter_annotations(self) :
       """
           Return the list of associated method parameter annotations
+
           :rtype: a list of :class:`ParameterAnnotation`
       """
       return self.parameter_annotations
@@ -943,7 +957,7 @@ class AnnotationsDirectoryItem :
 
     def show(self) :
         bytecode._PrintSubBanner("Annotations Directory Item")
-        bytecode._PrintDefault("class_annotations_off=0x%x annotated_fields_size=%d annotated_methods_size=%d annotated_parameters_size=%d" % 
+        bytecode._PrintDefault("class_annotations_off=0x%x annotated_fields_size=%d annotated_methods_size=%d annotated_parameters_size=%d\n" % 
                               ( self.class_annotations_off, 
                                 self.annotated_fields_size,
                                 self.annotated_methods_size,
@@ -1002,6 +1016,7 @@ class TypeItem :
     def get_type_idx(self) :
       """
           Return the index into the type_ids list
+
           :rtype: int
       """
       return self.type_idx
@@ -1009,13 +1024,14 @@ class TypeItem :
     def get_string(self) :
         """
           Return the type string
+
           :rtype: string
         """
         return self.__CM.get_type( self.type_idx )
 
     def show(self) :
         bytecode._PrintSubBanner("Type Item")
-        bytecode._PrintDefault("type_idx=%d" % self.type_idx)
+        bytecode._PrintDefault("type_idx=%d\n" % self.type_idx)
 
     def get_obj(self) :
         return pack("=H", self.type_idx)
@@ -1055,6 +1071,7 @@ class TypeList :
     def get_pad(self) :
       """
           Return the alignment string
+
           :rtype: string
       """
       return self.pad
@@ -1062,13 +1079,15 @@ class TypeList :
     def get_type_list_off(self) :
         """
             Return the offset of the item
+
             :rtype: int
         """
         return self.offset + self.len_pad
 
     def get_string(self) :
         """
-            Return the concatenation of all strings 
+            Return the concatenation of all strings
+
             :rtype: string
         """
         return ' '.join(i.get_string() for i in self.list)
@@ -1076,6 +1095,7 @@ class TypeList :
     def get_size(self) :
       """
           Return the size of the list, in entries
+
           :rtype: int
       """
       return self.size
@@ -1083,6 +1103,7 @@ class TypeList :
     def get_list(self) :
       """
           Return the list of TypeItem
+
           :rtype: a list of :class:`TypeItem` objects
       """
       return self.list
@@ -1098,7 +1119,7 @@ class TypeList :
 
     def show(self) :
         bytecode._PrintSubBanner("Type List")
-        bytecode._PrintDefault("size=%d" % self.size)
+        bytecode._PrintDefault("size=%d\n" % self.size)
 
         for i in self.list :
             i.show()
@@ -1355,6 +1376,7 @@ class EncodedArray :
     def get_size(self) :
       """
           Return the number of elements in the array
+
           :rtype: int
       """
       return self.size
@@ -1362,14 +1384,15 @@ class EncodedArray :
     def get_values(self) :
         """
             Return a series of size encoded_value byte sequences in the format specified by this section, 
-            concatenated sequentially.
+            concatenated sequentially
+
             :rtype: a list of :class:`EncodedValue` objects
         """
         return self.values
 
     def show(self) :
         bytecode._PrintSubBanner("Encoded Array")
-        bytecode._PrintDefault("size=%d" % self.size)
+        bytecode._PrintDefault("size=%d\n" % self.size)
 
         for i in self.values :
             i.show()
@@ -1443,7 +1466,8 @@ class EncodedValue :
     def get_value(self) :
       """
           Return the bytes representing the value, variable in length and interpreted differently for different value_type bytes, 
-          though always little-endian.
+          though always little-endian
+
           :rtype: an object representing the value
       """
       return self.value
@@ -1465,7 +1489,7 @@ class EncodedValue :
 
     def show(self) :
         bytecode._PrintSubBanner("Encoded Value")
-        bytecode._PrintDefault("val=%x value_arg=%x value_type=%x" % (self.val, self.value_arg, self.value_type))
+        bytecode._PrintDefault("val=%x value_arg=%x value_type=%x\n" % (self.val, self.value_arg, self.value_type))
 
     def get_obj(self) :
         if isinstance(self.value, str) == False :
@@ -1515,7 +1539,7 @@ class AnnotationElement :
 
     def show(self) :
         bytecode._PrintSubBanner("Annotation Element")
-        bytecode._PrintDefault("name_idx=%d" % self.name_idx)
+        bytecode._PrintDefault("name_idx=%d\n" % self.name_idx)
         self.value.show()
 
     def get_obj(self) :
@@ -1548,7 +1572,8 @@ class EncodedAnnotation :
 
     def get_type_idx(self) :
       """
-          Return the type of the annotation. This must be a class (not array or primitive) type.
+          Return the type of the annotation. This must be a class (not array or primitive) type
+
           :rtype: int
       """
       return self.type_idx
@@ -1556,6 +1581,7 @@ class EncodedAnnotation :
     def get_size(self) :
       """
           Return the number of name-value mappings in this annotation
+
           :rtype:int
       """
       return self.size
@@ -1563,13 +1589,14 @@ class EncodedAnnotation :
     def get_elements(self) :
       """
           Return the elements of the annotation, represented directly in-line (not as offsets)
+
           :rtype: a list of :class:`AnnotationElement` objects
       """
       return self.elements
 
     def show(self) :
         bytecode._PrintSubBanner("Encoded Annotation")
-        bytecode._PrintDefault("type_idx=%d size=%d" % (self.type_idx, self.size))
+        bytecode._PrintDefault("type_idx=%d size=%d\n" % (self.type_idx, self.size))
 
         for i in self.elements :
             i.show()
@@ -1608,6 +1635,7 @@ class AnnotationItem :
     def get_visibility(self) :
       """
           Return the intended visibility of this annotation
+
           :rtype: int
       """
       return self.visibility
@@ -1615,6 +1643,7 @@ class AnnotationItem :
     def get_annotation(self) :
       """
           Return the encoded annotation contents
+
           :rtype: a :class:`EncodedAnnotation` object
       """
       return self.annotation
@@ -1630,7 +1659,7 @@ class AnnotationItem :
 
     def show(self) :
         bytecode._PrintSubBanner("Annotation Item")
-        bytecode._PrintDefault("visibility=%d" % self.visibility)
+        bytecode._PrintDefault("visibility=%d\n" % self.visibility)
         self.annotation.show()
 
     def get_obj(self) :
@@ -1664,6 +1693,7 @@ class EncodedArrayItem :
     def get_value(self) :
       """
           Return the bytes representing the encoded array value
+
           :rtype: a :class:`EncodedArray` object
       """
       return self.value
@@ -1722,6 +1752,7 @@ class StringDataItem :
     def get_utf16_size(self) :
       """
           Return the size of this string, in UTF-16 code units
+
           :rtype:int 
       """
       return self.utf16_size
@@ -1729,6 +1760,7 @@ class StringDataItem :
     def get_data(self) :
       """
           Return a series of MUTF-8 code units (a.k.a. octets, a.k.a. bytes) followed by a byte of value 0
+
           :rtype: string
       """
       return self.data
@@ -1776,6 +1808,7 @@ class StringIdItem :
     def get_string_data_off(self) :
         """
             Return the offset from the start of the file to the string data for this item
+
             :rtype: int
         """
         return self.string_data_off
@@ -1822,7 +1855,8 @@ class TypeIdItem :
 
     def get_descriptor_idx(self) :
         """
-            Return the index into the string_ids list for the descriptor string of this type.
+            Return the index into the string_ids list for the descriptor string of this type
+
             :rtype: int
         """
         return self.descriptor_idx
@@ -1830,6 +1864,7 @@ class TypeIdItem :
     def get_descriptor_idx_value(self) :
       """
           Return the string associated to the descriptor
+
           :rtype: string
       """
       return self.descriptor_idx_value
@@ -1871,6 +1906,7 @@ class TypeHIdItem :
     def get_type(self) :
       """
           Return the list of type_id_item
+
           :rtype: a list of :class:`TypeIdItem` objects
       """
       return self.type
@@ -1937,6 +1973,7 @@ class ProtoIdItem :
     def get_shorty_idx(self) :
         """
             Return the index into the string_ids list for the short-form descriptor string of this prototype
+
             :rtype: int
         """
         return self.shorty_idx
@@ -1944,6 +1981,7 @@ class ProtoIdItem :
     def get_return_type_idx(self) :
         """
             Return the index into the type_ids list for the return type of this prototype
+
             :rtype: int
         """
         return self.return_type_idx
@@ -1951,6 +1989,7 @@ class ProtoIdItem :
     def get_parameters_off(self) :
         """
             Return the offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has no parameters
+
             :rtype: int
         """
         return self.parameters_off
@@ -1958,6 +1997,7 @@ class ProtoIdItem :
     def get_shorty_idx_value(self) :
         """
             Return the string associated to the shorty_idx
+
             :rtype: string
         """
         return self.shorty_idx_value
@@ -1965,6 +2005,7 @@ class ProtoIdItem :
     def get_return_type_idx_value(self) :
         """
             Return the string associated to the return_type_idx
+
             :rtype: string
         """
         return self.return_type_idx_value
@@ -1972,6 +2013,7 @@ class ProtoIdItem :
     def get_parameters_off_value(self) :
         """
             Return the string associated to the parameters_off
+
             :rtype: string
         """
         return self.parameters_off_value
@@ -2075,6 +2117,7 @@ class FieldIdItem :
     def get_class_idx(self) :
       """
           Return the index into the type_ids list for the definer of this field
+
           :rtype: int
       """
       return self.class_idx
@@ -2082,6 +2125,7 @@ class FieldIdItem :
     def get_type_idx(self) :
       """
           Return the index into the type_ids list for the type of this field
+
           :rtype: int
       """
       return self.type_idx
@@ -2089,6 +2133,7 @@ class FieldIdItem :
     def get_name_idx(self) :
       """
           Return the index into the string_ids list for the name of this field
+
           :rtype: int
       """
       return self.name_idx
@@ -2096,6 +2141,7 @@ class FieldIdItem :
     def get_class_name(self) :
         """
             Return the class name of the field
+
             :rtype: string
         """
         return self.class_idx_value
@@ -2103,6 +2149,7 @@ class FieldIdItem :
     def get_type(self) :
         """
             Return the type of the field
+
             :rtype: string
         """
         return self.type_idx_value
@@ -2110,6 +2157,7 @@ class FieldIdItem :
     def get_descriptor(self) :
         """
             Return the descriptor of the field
+
             :rtype: string
         """
         return self.type_idx_value
@@ -2117,6 +2165,7 @@ class FieldIdItem :
     def get_name(self) :
         """
             Return the name of the field
+
             :rtype: string
         """
         return self.name_idx_value
@@ -2223,6 +2272,7 @@ class MethodIdItem :
     def get_class_idx(self) :
         """
             Return the index into the type_ids list for the definer of this method
+
             :rtype: int
         """
         return self.class_idx
@@ -2230,6 +2280,7 @@ class MethodIdItem :
     def get_proto_idx(self) :
         """
             Return the index into the proto_ids list for the prototype of this method
+
             :rtype: int
         """
         return self.proto_idx
@@ -2237,6 +2288,7 @@ class MethodIdItem :
     def get_name_idx(self) :
         """
             Return the index into the string_ids list for the name of this method
+
             :rtype: int
         """
         return self.name_idx
@@ -2244,6 +2296,7 @@ class MethodIdItem :
     def get_class_name(self) :
       """
           Return the class name of the method
+
           :rtype: string
       """      
       return self.class_idx_value
@@ -2251,6 +2304,7 @@ class MethodIdItem :
     def get_proto(self) :
         """
             Return the prototype of the method
+
             :rtype: string
         """      
         return self.proto_idx_value
@@ -2258,6 +2312,7 @@ class MethodIdItem :
     def get_descriptor(self) :
       """
           Return the descriptor
+
           :rtype: string
       """
       proto = self.get_proto()
@@ -2266,6 +2321,7 @@ class MethodIdItem :
     def get_name(self) :
         """
             Return the name of the method
+
             :rtype: string
         """
         return self.name_idx_value
@@ -2447,6 +2503,7 @@ class EncodedField :
         """
             Return the index into the field_ids list for the identity of this field (includes the name and descriptor), 
             represented as a difference from the index of previous element in the list
+
             :rtype: int
         """
         return self.field_idx_diff
@@ -2454,6 +2511,7 @@ class EncodedField :
     def get_field_idx(self) :
         """
             Return the real index of the method
+
             :rtype: int
         """
         return self.field_idx
@@ -2469,6 +2527,7 @@ class EncodedField :
     def get_class_name(self) :
         """
             Return the class name of the field
+
             :rtype: string
         """
         return self.class_name
@@ -2476,6 +2535,7 @@ class EncodedField :
     def get_descriptor(self) :
         """
             Return the descriptor of the field
+
             :rtype: string
         """
         return self.proto
@@ -2483,6 +2543,7 @@ class EncodedField :
     def get_name(self) :
         """
             Return the name of the field
+
             :rtype: string
         """
         return self.name
@@ -2576,6 +2637,7 @@ class EncodedMethod :
     def get_method_idx(self) :
         """
             Return the real index of the method
+
             :rtype: int
         """
         return self.method_idx
@@ -2705,6 +2767,7 @@ class EncodedMethod :
     def source(self) :
         """
             Return the source code of this method
+
             :rtype: string
         """
         self.CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
@@ -2712,6 +2775,7 @@ class EncodedMethod :
     def get_length(self) :
         """
           Return the length of the associated code of the method
+
           :rtype: int
         """
         if self.code != None :
@@ -2721,6 +2785,7 @@ class EncodedMethod :
     def get_code(self) :
         """
           Return the code object associated to the method
+
           :rtype: :class:`DalvikCode` object
         """
         return self.code
@@ -2774,6 +2839,7 @@ class EncodedMethod :
     def get_descriptor(self) :
         """
           Return the descriptor of the method
+
           :rtype: string
         """
         return self.proto
@@ -2781,6 +2847,7 @@ class EncodedMethod :
     def get_class_name(self) :
         """
           Return the class name of the method
+
           :rtype: string
         """
         return self.class_name
@@ -2788,6 +2855,7 @@ class EncodedMethod :
     def get_name(self) :
         """
           Return the name of the method
+
           :rtype: string
         """
         return self.name
@@ -2867,10 +2935,91 @@ class ClassDataItem :
         self.direct_methods = []
         self.virtual_methods = []
 
-        self.load_elements( self.static_fields_size, self.static_fields, EncodedField, buff, cm )
-        self.load_elements( self.instance_fields_size, self.instance_fields, EncodedField, buff, cm )
-        self.load_elements( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
-        self.load_elements( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
+        self._load_elements( self.static_fields_size, self.static_fields, EncodedField, buff, cm )
+        self._load_elements( self.instance_fields_size, self.instance_fields, EncodedField, buff, cm )
+        self._load_elements( self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm )
+        self._load_elements( self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm )
+
+    def get_static_fields_size(self) :
+      """
+          Return the number of static fields defined in this item
+
+          :rtype: int
+      """
+      return self.static_fields_size
+
+    def get_instance_fields_size(self) :
+      """
+          Return the number of instance fields defined in this item
+
+          :rtype: int
+      """
+      return self.instance_fields_size
+
+    def get_direct_methods_size(self) :
+      """
+          Return the number of direct methods defined in this item
+
+          :rtype: int
+      """
+      return self.direct_methods_size
+
+    def get_virtual_methods_size(self) :
+      """
+          Return the number of virtual methods defined in this item
+
+          :rtype: int
+      """
+      return self.virtual_methods_size
+
+    def get_static_fields(self) :
+      """
+          Return the defined static fields, represented as a sequence of encoded elements
+
+          :rtype: a list of :class:`EncodedField` objects
+      """
+      return self.static_fields
+
+    def get_instance_fields(self) :
+      """
+          Return the defined instance fields, represented as a sequence of encoded elements
+
+          :rtype: a list of :class:`EncodedField` objects
+      """
+      return self.instance_fields
+
+    def get_direct_methods(self) :
+      """
+          Return the defined direct (any of static, private, or constructor) methods, represented as a sequence of encoded elements
+
+          :rtype: a list of :class:`EncodedMethod` objects
+      """
+      return self.direct_methods
+
+    def get_virtual_methods(self) :
+      """
+          Return the defined virtual (none of static, private, or constructor) methods, represented as a sequence of encoded elements
+
+          :rtype: a list of :class:`EncodedMethod` objects
+      """
+      return self.virtual_methods
+
+    def get_methods(self) :
+        """
+            Return direct and virtual methods
+
+            :rtype: a list of :class:`EncodedMethod` objects
+        """
+        return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
+
+    def get_fields(self) :
+        """
+            Return static and instance fields
+
+            :rtype: a list of :class:`EncodedField` objects
+        """
+        return [ x for x in self.static_fields ] + [ x for x in self.instance_fields ]
+
 
     def set_off(self, off) :
       self.offset = off
@@ -2882,7 +3031,7 @@ class ClassDataItem :
                 for i in xrange(0, len(values)) :
                     self.static_fields[i].set_init_value( values[i] )
 
-    def load_elements(self, size, l, Type, buff, cm) :
+    def _load_elements(self, size, l, Type, buff, cm) :
         prev = 0
         for i in xrange(0, size) :
             el = Type(buff, cm)
@@ -2931,12 +3080,6 @@ class ClassDataItem :
         bytecode._PrintSubBanner("Virtual Methods")
         for i in self.virtual_methods :
             i.pretty_show()
-
-    def get_methods(self) :
-        return [ x for x in self.direct_methods ] + [ x for x in self.virtual_methods ]
-
-    def get_fields(self) :
-        return [ x for x in self.static_fields ] + [ x for x in self.instance_fields ]
 
     def get_obj(self) :
         return [ i for i in self.static_fields ] + \
@@ -3006,6 +3149,7 @@ class ClassDefItem :
 
         self.name = None
         self.sname = None
+        self.access_flags_string = None
 
     def reload(self) :
         self.name = self.__CM.get_type( self.class_idx )
@@ -3024,45 +3168,167 @@ class ClassDefItem :
             if self.class_data_item != None :
                 self.class_data_item.set_static_fields( self.static_values.get_value() )
 
-    def show(self) :
-        print "CLASS_ITEM", self.name, self.sname, \
-                            self.interfaces, self.class_idx, \
-                            self.access_flags, get_access_flags_string(self.access_flags), \
-                            self.superclass_idx, self.interfaces_off, \
-                            self.source_file_idx, self.annotations_off, \
-                            self.class_data_off, self.static_values_off
-
-    def source(self) :
-        self.__CM.decompiler_ob.display_all( self.get_name() )
-
-    def set_name(self, value) :
-        self.__CM.set_hook_class_name( self.class_idx, value )
-        self.reload()
-
-    def get_class_data(self) :
-        return self.class_data_item
-
-    def get_name(self) :
-        return self.name
-
-    def get_superclassname(self) :
-        return self.sname
-
-    def get_interfaces(self) :
-      return self.interfaces
-
-    def get_info(self) :
-        return "%s:%s" % (self.name, self.sname)
-
     def get_methods(self) :
+        """
+            Return all methods of this class
+
+            :rtype: a list of :class:`EncodedMethod` objects
+        """
         if self.class_data_item != None :
             return self.class_data_item.get_methods()
         return []
 
     def get_fields(self) :
+        """
+            Return all fields of this class
+
+            :rtype: a list of :class:`EncodedField` objects
+        """
         if self.class_data_item != None :
             return self.class_data_item.get_fields()
         return []
+
+    def get_class_idx(self) :
+        """
+            Return the index into the type_ids list for this class
+
+            :rtype: int
+        """
+        return self.class_idx
+
+    def get_access_flags(self) :
+        """
+            Return the access flags for the class (public, final, etc.)
+
+            :rtype: int
+        """
+        return self.access_flags
+
+    def get_superclass_idx(self) :
+        """
+            Return the index into the type_ids list for the superclass
+
+            :rtype: int
+        """
+        return self.superclass_idx
+
+    def get_interfaces_off(self) :
+        """
+            Return the offset from the start of the file to the list of interfaces, or 0 if there are none
+
+            :rtype: int
+        """
+        return self.interfaces_off
+
+    def get_source_file_idx(self) :
+        """
+            Return the index into the string_ids list for the name of the file containing the original 
+            source for (at least most of) this class, or the special value NO_INDEX to represent a lack of this information
+
+            :rtype: int
+        """
+        return self.source_file_idx
+
+    def get_annotations_off(self) :
+        """
+            Return the offset from the start of the file to the annotations structure for this class, 
+            or 0 if there are no annotations on this class.
+
+            :rtype: int
+        """
+        return self.annotations_off
+
+    def get_class_data_off(self) :
+        """
+            Return the offset from the start of the file to the associated class data for this item,
+            or 0 if there is no class data for this class
+
+            :rtype: int
+        """
+        return self.class_data_off
+
+    def get_static_values_off(self) :
+        """
+            Return the offset from the start of the file to the list of initial values for static fields,
+            or 0 if there are none (and all static fields are to be initialized with 0 or null)
+
+            :rtype: int 
+        """
+        return self.static_values_off
+
+
+    def get_class_data(self) :
+        """
+            Return the associated class_data_item
+
+            :rtype: a :class:`ClassDataItem` object
+        """
+        return self.class_data_item
+
+    def get_name(self) :
+        """
+            Return the name of this class
+
+            :rtype: int
+        """
+        return self.name
+
+    def get_superclassname(self) :
+        """
+            Return the name of the super class
+
+            :rtype: string
+        """
+        return self.sname
+
+    def get_interfaces(self) :
+      """
+          Return the name of the interface
+
+          :rtype: string
+      """
+      return self.interfaces
+
+    def get_access_flags_string(self) :
+        """
+            Return the access flags string of the class
+
+            :rtype: string
+        """
+        if self.access_flags_string == None :
+            self.access_flags_string = get_access_flags_string( self.get_access_flags() )
+
+            if self.access_flags_string == "" :
+                self.access_flags_string = "0x%x" % self.get_access_flags()
+        return self.access_flags_string
+
+    def show(self) :
+        bytecode._PrintSubBanner("Class Def Item")
+        bytecode._PrintDefault("name=%s, sname=%s, interfaces=%s, access_flags=%s\n" %
+                              ( self.name,
+                                self.sname,
+                                self.interfaces,
+                                self.get_access_flags_string()))
+        bytecode._PrintDefault("class_idx=%d, superclass_idx=%d, interfaces_off=%x, source_file_idx=%d, annotations_off=%x, class_data_off=%x, static_values_off=%x\n" %
+                              ( self.class_idx,
+                                self.superclass_idx,
+                                self.interfaces_off,
+                                self.source_file_idx,
+                                self.annotations_off,
+                                self.class_data_off,
+                                self.static_values_off))
+
+    def source(self) :
+        """
+            Return the source code of the entire class
+
+            :rtype: string
+        """
+        self.__CM.decompiler_ob.display_all( self.get_name() )
+
+    def set_name(self, value) :
+        self.__CM.set_hook_class_name( self.class_idx, value )
+        self.reload()
 
     def get_obj(self) :
       if self.interfaces_off != 0 :
@@ -3085,30 +3351,6 @@ class ClassDefItem :
               pack("=I", self.annotations_off) +    \
               pack("=I", self.class_data_off) +     \
               pack("=I", self.static_values_off)
-
-    def get_class_idx(self) :
-        return self.class_idx
-
-    def get_access_flags(self) :
-        return self.access_flags
-
-    def get_superclass_idx(self) :
-        return self.superclass_idx
-
-    def get_interfaces_off(self) :
-        return self.interfaces_off
-
-    def get_source_file_idx(self) :
-        return self.source_file_idx
-
-    def get_annotations_off(self): 
-        return self.annotations_off
-
-    def get_class_data_off(self) :
-        return self.class_data_off
-
-    def get_static_values_off(self) :
-        return self.static_values_off
 
     def get_raw(self) :
         return self.get_obj()
@@ -3165,13 +3407,8 @@ class ClassHDefItem :
             i.reload()
 
     def show(self) :
-        print "CLASS_DEF_ITEM"
-
-        nb = 0
         for i in self.class_def :
-            print nb,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return [ i for i in self.class_def ]
@@ -3186,29 +3423,56 @@ class ClassHDefItem :
       return length
 
 class EncodedTypeAddrPair :
+    """
+        This class can parse an encoded_type_addr_pair of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_type_addr_pair
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff) :
         self.type_idx = readuleb128( buff )
         self.addr = readuleb128( buff )
+
+    def get_type_idx(self) :
+        """
+            Return the index into the type_ids list for the type of the exception to catch
+
+            :rtype: int
+        """
+        return self.type_idx
+
+    def get_addr(self) :
+        """
+            Return the bytecode address of the associated exception handler
+
+            :rtype: int
+        """
+        return self.addr
 
     def get_obj(self) :
         return []
 
     def show(self) :
-        print "ENCODED_TYPE_ADDR_PAIR", self.type_idx, self.addr
+        bytecode._PrintSubBanner("Encoded Type Addr Pair")
+        bytecode._PrintDefault("type_idx=%d addr=%x\n" % (self.type_idx, self.addr))
 
     def get_raw(self) :
         return writeuleb128( self.type_idx ) + writeuleb128( self.addr )
-
-    def get_type_idx(self) :
-        return self.type_idx
-
-    def get_addr(self) :
-        return self.addr
 
     def get_length(self) :
       return len(self.get_raw())
 
 class EncodedCatchHandler :
+    """
+        This class can parse an encoded_catch_handler of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_catch_handler
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
 
@@ -3222,6 +3486,30 @@ class EncodedCatchHandler :
         if self.size <= 0 :
             self.catch_all_addr = readuleb128( buff )
 
+    def get_size(self) :
+        """
+            Return the number of catch types in this list
+
+            :rtype: int
+        """
+        return self.size
+
+    def get_handlers(self) :
+        """
+            Return the stream of abs(size) encoded items, one for each caught type, in the order that the types should be tested.
+
+            :rtype: a list of :class:`EncodedTypeAddrPair` objects
+        """
+        return self.handlers
+
+    def get_catch_all_addr(self) :
+        """
+            Return the bytecode address of the catch-all handler. This element is only present if size is non-positive.
+
+            :rtype: int
+        """
+        return self.catch_all_addr
+
     def get_off(self) :
       return self.offset
 
@@ -3229,9 +3517,14 @@ class EncodedCatchHandler :
       self.offset = off
 
     def show(self) :
-        print "ENCODED_CATCH_HANDLER size=0x%x" % self.size
+        bytecode._PrintSubBanner("Encoded Catch Handler")
+        bytecode._PrintDefault("size=%d\n" % self.size)
+
         for i in self.handlers :
             i.show()
+
+        if self.size <= 0 :
+            bytecode._PrintDefault("catch_all_addr=%x\n" % self.catch_all_addr)
 
     def get_raw(self) :
         buff = writesleb128( self.size ) + ''.join(i.get_raw() for i in self.handlers)
@@ -3240,15 +3533,6 @@ class EncodedCatchHandler :
             buff += writeuleb128( self.catch_all_addr )
 
         return buff
-
-    def get_handlers(self) :
-        return self.handlers
-
-    def get_size(self) :
-        return self.size
-
-    def get_catch_all_addr(self) :
-        return self.catch_all_addr
 
     def get_length(self) :
       length = len(writesleb128( self.size ))
@@ -3262,6 +3546,14 @@ class EncodedCatchHandler :
       return length
 
 class EncodedCatchHandlerList :
+    """
+        This class can parse an encoded_catch_handler_list of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_catch_handler_list
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
 
@@ -3271,8 +3563,27 @@ class EncodedCatchHandlerList :
         for i in xrange(0, self.size) :
             self.list.append( EncodedCatchHandler(buff, cm) )
 
+
+    def get_size(self) :
+      """
+          Return the size of this list, in entries
+
+          :rtype: int
+      """
+      return self.size
+
+    def get_list(self) :
+        """
+            Return the actual list of handler lists, represented directly (not as offsets), and concatenated sequentially
+
+            :rtype: a list of :class:`EncodedCatchHandler` objects
+        """
+        return self.list
+
     def show(self) :
-        print "ENCODED_CATCH_HANDLER_LIST size=0x%x" % self.size
+        bytecode._PrintSubBanner("Encoded Catch Handler List")
+        bytecode._PrintDefault("size=%d\n" % self.size)
+
         for i in self.list :
             i.show()
 
@@ -3287,9 +3598,6 @@ class EncodedCatchHandlerList :
 
     def get_raw(self) :
         return self.get_obj() + ''.join(i.get_raw() for i in self.list)
-
-    def get_list(self) :
-        return self.list
 
     def get_length(self) :
       length = len(self.get_obj())
@@ -3443,6 +3751,7 @@ class Instruction(object) :
     def get_raw(self) :
       """
           Return the object in a raw format
+
           :rtype: string
       """ 
       raise("not implemented")
@@ -3520,23 +3829,18 @@ class FillArrayData :
 
     def get_op_value(self) :
       """
-        Get the value of the opecode
+        Get the value of the opcode
 
         :rtype: int
       """      
       return self.ident
 
-    def get_raw(self) :
-        """
-            Return the object in a raw format
-            :rtype: string
-        """ 
-        return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
-
     def get_data(self) :
-        return self.data
+        """
+            Return the data of this instruction (the payload)
 
-    def get_operands(self) :
+            :rtype: string
+        """
         return self.data
 
     def get_output(self, idx=-1) :
@@ -3556,6 +3860,11 @@ class FillArrayData :
         return buff
 
     def get_name(self) :
+        """
+            Return the name of the instruction
+
+            :rtype: string
+        """
         return "fill-array-data-payload"
 
     def show_buff(self, pos) :
@@ -3584,6 +3893,9 @@ class FillArrayData :
         """   
         return ((self.size * self.element_width + 1) / 2 + 4) * 2
 
+    def get_raw(self) :
+        return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
+
 class SparseSwitch :
     """
         This class can parse a SparseSwitch instruction
@@ -3610,36 +3922,71 @@ class SparseSwitch :
             idx += 4
 
     def add_note(self, msg) :
+      """
+        Add a note to this instruction
+
+        :param msg: the message
+        :type msg: objects (string)
+      """
       self.notes.append( msg )
 
     def get_notes(self) :
+      """
+        Get all notes from this instruction
+
+        :rtype: a list of objects
+      """
       return self.notes
 
     def get_op_value(self) :
+        """
+          Get the value of the opcode
+
+          :rtype: int
+        """    
         return self.ident
 
-    def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
-
     def get_keys(self) :
+        """
+            Return the keys of the instruction
+
+            :rtype: a list of long
+        """
         return self.keys
 
+    def get_values(self) :
+      return self.get_keys()
+
     def get_targets(self) :
+        """
+            Return the targets (address) of the instruction
+
+            :rtype: a list of long
+        """
         return self.targets
 
-    def get_operands(self) :
-        return [ self.keys, self.targets ]
-
     def get_output(self, idx=-1) :
+      """
+          Return an additional output of the instruction
+
+          :rtype: string
+      """ 
       return " ".join("%x" % i for i in self.keys)
 
-    def get_values(self) :
-      return self.keys
-
     def get_name(self) :
+        """
+            Return the name of the instruction
+
+            :rtype: string
+        """
         return "sparse-switch-payload"
 
     def show_buff(self, pos) :
+        """
+            Return the display of the instruction
+
+            :rtype: string
+        """   
         buff = self.get_name() + " "
         for i in xrange(0, len(self.keys)) :
             buff += "%x:%x " % (self.keys[i], self.targets[i])
@@ -3647,10 +3994,16 @@ class SparseSwitch :
         return buff
 
     def show(self, pos) :
+        """
+            Print the instruction
+        """ 
         print self.show_buff( pos ),
 
     def get_length(self) :
         return self.format_general_size + (self.size * calcsize('<L')) * 2
+
+    def get_raw(self) :
+        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
 
 class PackedSwitch :
     """
@@ -3680,33 +4033,71 @@ class PackedSwitch :
             idx += 4
 
     def add_note(self, msg) :
+      """
+        Add a note to this instruction
+
+        :param msg: the message
+        :type msg: objects (string)
+      """
       self.notes.append( msg )
 
     def get_notes(self) :
+      """
+        Get all notes from this instruction
+
+        :rtype: a list of objects
+      """
       return self.notes
 
     def get_op_value(self) :
+        """
+          Get the value of the opcode
+
+          :rtype: int
+        """    
         return self.ident
 
-    def get_raw(self) :
-        return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
+    def get_keys(self) :
+        """
+            Return the keys of the instruction
 
-    def get_operands(self) :
-        return [ self.first_key, self.targets ]
-
-    def get_output(self, idx=-1) :
-      return " ".join("%x" % (self.first_key+i) for i in range(0, len(self.targets)))
+            :rtype: a list of long
+        """
+        return [(self.first_key+i) for i in range(0, len(self.targets))]
 
     def get_values(self) :
-      return [(self.first_key+i) for i in range(0, len(self.targets))]
+        return self.get_keys()
 
     def get_targets(self) :
+        """
+            Return the targets (address) of the instruction
+
+            :rtype: a list of long
+        """
         return self.targets
 
+    def get_output(self, idx=-1) :
+      """
+          Return an additional output of the instruction
+
+          :rtype: string
+      """ 
+      return " ".join("%x" % (self.first_key+i) for i in range(0, len(self.targets)))
+
     def get_name(self) :
+        """
+            Return the name of the instruction
+
+            :rtype: string
+        """
         return "packed-switch-payload"
 
     def show_buff(self, pos) :
+        """
+            Return the display of the instruction
+
+            :rtype: string
+        """ 
         buff = self.get_name() + " "
         buff += "%x:" % self.first_key
 
@@ -3716,10 +4107,17 @@ class PackedSwitch :
         return buff
 
     def show(self, pos) :
+        """
+            Print the instruction
+        """ 
         print self.show_buff( pos ),
 
     def get_length(self) :
         return self.format_general_size + (self.size * calcsize('=L'))
+
+    def get_raw(self) :
+        return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
+
 
 class Instruction35c(Instruction) :
     """
@@ -5457,6 +5855,7 @@ class DCode :
     def get_raw(self) :
         """
             Return the raw buffer of this object
+
             :rtype: string
         """ 
         return ''.join(i.get_raw() for i in self.get_instructions())
@@ -5464,6 +5863,7 @@ class DCode :
     def get_length(self) :
       """
           Return the length of this object
+
           :rtype: int
       """ 
       return len(self.get_raw())
@@ -5568,6 +5968,7 @@ class DalvikCode :
     def get_registers_size(self) :
         """
             Get the number of registers used by this code
+
             :rtype: int
         """
         return self.registers_size
@@ -5575,6 +5976,7 @@ class DalvikCode :
     def get_ins_size(self) :
       """
           Get the number of words of incoming arguments to the method that this code is for
+
           :rtype: int
       """
       return self.ins_size
@@ -5582,6 +5984,7 @@ class DalvikCode :
     def get_outs_size(self) :
       """
           Get the number of words of outgoing argument space required by this code for method invocation
+
           :rtype: int
       """
       return self.outs_size
@@ -5589,6 +5992,7 @@ class DalvikCode :
     def get_tries_size(self) :
         """
             Get the number of :class:`TryItem` for this instance
+
             :rtype: int
         """
         return self.tries_size
@@ -5596,6 +6000,7 @@ class DalvikCode :
     def get_debug_info_off(self) :
       """
           Get the offset from the start of the file to the debug info (line numbers + local variable info) sequence for this code, or 0 if there simply is no information
+          
           :rtype: int
       """
       return self.debug_info_off
@@ -5603,6 +6008,7 @@ class DalvikCode :
     def get_insns_size(self) :
       """
           Get the size of the instructions list, in 16-bit code units
+
           :rtype: int
       """
       return self.insns_size
@@ -6237,6 +6643,7 @@ class MapList :
             Get a particular item type
 
             :param ttype: a string which represents the desired type
+
             :rtype: None or the item object
         """
         for i in self.map_item :
@@ -6550,6 +6957,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def get_classes(self) :
         """
           Return all classes
+
           :rtype: a list of :class:`ClassDefItem` objects
         """
         return self.classes.class_def
@@ -6559,6 +6967,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return a list all methods which corresponds to the regexp
 
             :param name: the name of the method (a python regexp)
+
             :rtype: a list with all :class:`EncodedMethod` objects
         """
         prog = re.compile(name)
@@ -6574,6 +6983,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
             Return a list all fields which corresponds to the regexp
 
             :param name: the name of the field (a python regexp)
+
             :rtype: a list with all :class:`EncodedField` objects
         """
         prog = re.compile(name)
@@ -6741,6 +7151,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
             :param regular_expressions: the python regex
             :type regular_expressions: string
+            
             :rtype: a list of strings matching the regex expression
         """
         str_list = []

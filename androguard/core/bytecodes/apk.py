@@ -126,17 +126,22 @@ class APK :
     """
         This class can access to all elements in an APK file
 
+        :param filename: specify the path of the file, or raw data
+        :param raw: specify if the filename is a path or raw data (optional)
+        :param mode: specify the mode to open the file (optional)
+        :param magic_file: specify the magic file (optional)
+
+        :type filename: string
+        :type raw: boolean
+        :type mode: string
+        :type magic_file: string
+
         :Example:
           APK("myfile.apk")
           
           APK(open("myfile.apk", "rb").read(), raw=True)
     """
     def __init__(self, filename, raw=False, mode="r", magic_file=None) :
-        """
-            @param filename : specify the path of the file, or raw data
-            @param raw : specify (boolean) if the filename is a path or raw data
-            @param mode
-        """
         self.filename = filename
 
         self.xml = {}
@@ -215,6 +220,7 @@ class APK :
     def get_androidversion_code(self) :
         """
             Return the android version code
+
             :rtype: string
         """
         return self.androidversion["Code"]
@@ -222,6 +228,7 @@ class APK :
     def get_androidversion_name(self) :
         """
             Return the android version name 
+
             :rtype: string
         """
         return self.androidversion["Name"]
@@ -229,6 +236,7 @@ class APK :
     def get_files(self) :
         """
             Return the files inside the APK
+
             :rtype: a list of strings
         """
         return self.zip.namelist()
@@ -236,6 +244,7 @@ class APK :
     def get_files_types(self) :
         """
             Return the files inside the APK with their associated types (by using python-magic)
+
             :rtype: a dictionnary
         """
         try : 
@@ -294,6 +303,7 @@ class APK :
     def get_files_information(self) :
         """
             Return the files inside the APK with their associated types and crc32
+
             :rtype: string, string, int
         """
         if self.files == {} :
@@ -316,6 +326,7 @@ class APK :
     def get_file(self, filename) :
         """
             Return the raw data of the specified filename
+
             :rtype: string
         """
         try :
@@ -326,6 +337,7 @@ class APK :
     def get_dex(self) :
         """
             Return the raw data of the classes dex file
+
             :rtype: string
         """
         return self.get_file( "classes.dex" )
@@ -402,6 +414,7 @@ class APK :
     def get_activities(self) :
         """
             Return the android:name attribute of all activities
+
             :rtype: a list of string
         """
         return self.get_elements("activity", "android:name")
@@ -409,6 +422,7 @@ class APK :
     def get_services(self) :
         """
             Return the android:name attribute of all services
+
             :rtype: a list of string
         """
         return self.get_elements("service", "android:name")
@@ -416,6 +430,7 @@ class APK :
     def get_receivers(self) :
         """
             Return the android:name attribute of all receivers
+
             :rtype: a list of string
         """
         return self.get_elements("receiver", "android:name")
@@ -423,6 +438,7 @@ class APK :
     def get_providers(self) :
         """
             Return the android:name attribute of all providers
+
             :rtype: a list of string
         """
         return self.get_elements("provider", "android:name")
@@ -430,12 +446,16 @@ class APK :
     def get_permissions(self) :
         """
             Return permissions
+
+            :rtype: list of string
         """
         return self.permissions
 
     def get_details_permissions(self) :
         """
             Return permissions with details
+
+            :rtype: list of string
         """
         l = {}
 
@@ -456,18 +476,24 @@ class APK :
     def get_min_sdk_version(self) :
         """
             Return the android:minSdkVersion attribute
+
+            :rtype: string
         """
         return self.get_element( "uses-sdk", "android:minSdkVersion" )
 
     def get_target_sdk_version(self) :
         """
             Return the android:targetSdkVersion attribute
+
+            :rtype: string
         """
         return self.get_element( "uses-sdk", "android:targetSdkVersion" )
 
     def get_libraries(self) :
         """
             Return the android:name attributes for libraries
+
+            :rtype: list
         """
         return self.get_elements( "uses-library", "android:name" )
 
@@ -485,6 +511,17 @@ class APK :
         return success, cert
 
     def new_zip(self, filename, deleted_files=None, new_files={}) :
+        """
+            Create a new zip file
+
+            :param filename: the output filename of the zip
+            :param deleted_files: a regex pattern to remove specific file
+            :param new_files: a dictionnary of new files
+
+            :type filename: string
+            :type deleted_files: None or a string
+            :type new_files: a dictionnary (key:filename, value:content of the file)
+        """
         zout = zipfile.ZipFile (filename, 'w')
 
         for item in self.zip.infolist() :
