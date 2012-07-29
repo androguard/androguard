@@ -1251,7 +1251,7 @@ class TaintedVariables :
         try :
             for i in self.__vars[ TAINTED_STRING ] :
               for j in self.__vars[ TAINTED_STRING ][ i ].get_paths() :
-                if method.get_idx() == j[1] :
+                if method.get_method_idx() == j[1] :
                   if i not in z :
                     z[ i ] = []
                   z [ i ].append( j[0] )
@@ -1265,7 +1265,7 @@ class TaintedVariables :
         try :
             for i in self.__vars[ TAINTED_FIELD ] :
               for j in self.__vars[ TAINTED_FIELD ][ i ].get_paths() :
-                if method.get_idx() == j[1] :
+                if method.get_method_idx() == j[1] :
                   if i not in z :
                     z[ i ] = []
                   z [ i ].append( j[0] )
