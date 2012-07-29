@@ -55,26 +55,6 @@ option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissi
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_8]
 
-def save_session(l, filename) :
-    """
-        save your session !
-
-        @param l : a list of objects
-        @param filename : output filename to save the session
-    """
-    fd = open(filename, "w")
-    fd.write( dumps(l, -1) )
-    fd.close()
-
-def load_session(filename) :
-    """
-        load your session !
-
-        @param filename : the filename where the sessions has been saved
-        @rtype : the elements of your session
-    """
-    return loads( open(filename, "r").read() )
-
 def init_print_colors() :
     from IPython.utils import coloransi, io
     default_colors(coloransi.TermColors)
@@ -86,45 +66,67 @@ def interact() :
     init_print_colors()
     ipshell()
 
+def save_session(l, filename) :
+    """
+        save your session !
+
+        :param l: a list of objects
+        :type: a list of object
+        :param filename: output filename to save the session
+        :type filename: string
+
+        :Example:
+            save_session([a, vm, vmx], "msession.json")
+    """
+    fd = open(filename, "w")
+    fd.write( dumps(l, -1) )
+    fd.close()
+
+def load_session(filename) :
+    """
+        load your session !
+
+        :param filename: the filename where the session has been saved
+        :type filename: string
+        
+        :rtype: the elements of your session :)
+
+        :Example: 
+            a, vm, vmx = load_session("mysession.json")
+    """
+    return loads( open(filename, "r").read() )
+
 def AnalyzeAPK(filename, raw=False, decompiler=None) :
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
-        @param filename : the filename of the android application or a buffer which represents the application
-        @param raw : True is you would like to use a buffer
-        @param decompiler : ded, dex2jad, dad
+        :param filename: the filename of the android application or a buffer which represents the application
+        :type filename: string
+        :param raw: True is you would like to use a buffer (optional)
+        :type raw: boolean
+        :param decompiler: ded, dex2jad, dad (optional)
+        :type decompiler: string
         
-        @rtype : return the APK, DalvikVMFormat, and VMAnalysis objects
+        :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
     androconf.debug("APK ...")
     a = APK(filename, raw)
 
-    d, dx = AnalyzeDex( a.get_dex(), raw=True )
-
-    if decompiler != None :
-      androconf.debug("Decompiler ...")
-      decompiler = decompiler.lower()
-      if decompiler == "dex2jad" :
-        d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
-      elif decompiler == "ded" :
-        d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
-      elif decompiler == "dad" :
-        d.set_decompiler( DecompilerDAD( d, dx ) )
-      else :
-        print "Unknown decompiler, use default", decompiler
-        d.set_decompiler( DecompilerDAD( d, dx ) )
+    d, dx = AnalyzeDex( a.get_dex(), raw=True, decompiler=decompiler )
 
     return a, d, dx
 
 
-def AnalyzeDex(filename, raw=False) :
+def AnalyzeDex(filename, raw=False, decompiler=None) :
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
-        @param filename : the filename of the android dex file or a buffer which represents the dex file
-        @param raw : True is you would like to use a buffe
+        :param filename: the filename of the android dex file or a buffer which represents the dex file
+        :type filename: string
+        :param raw: True is you would like to use a buffer (optional)
+        :type raw: boolean
 
-        @rtype : return the DalvikVMFormat, and VMAnalysis objects
+        :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
     androconf.debug("DalvikVMFormat ...")
     d = None
@@ -139,11 +141,13 @@ def AnalyzeDex(filename, raw=False) :
     androconf.debug("VMAnalysis ...")
     dx = uVMAnalysis( d )
 
-    androconf.debug("GVMAnalysis ...")
+    androconf.debug("GVMAnais ...")
     gx = GVMAnalysis( dx, None )
 
     d.set_vmanalysis( dx )
     d.set_gvmanalysis( gx )
+
+    RunDecompiler( d, dx, decompiler )
 
     androconf.debug("XREF ...")
     d.create_xref()
@@ -152,28 +156,29 @@ def AnalyzeDex(filename, raw=False) :
 
     return d, dx
 
-def AAnalyzeDex(filename, raw=False, decompiler="dad") :
+def RunDecompiler(d, dx, decompiler) :
     """
-        Analyze an android dex file and setup all stuff for a more quickly analysis !
+        Run the decompiler on a specific analysis
 
-        @param filename : the filename of the android dex file or a buffer which represents the dex file
-        @param raw : True is you would like to use a buffe
-        @param decompiler : ded, dex2jad, dad
-
-        @rtype : return the DalvikVMFormat, and VMAnalysis objects
+        :param d: the DalvikVMFormat object
+        :type d: :class:`DalvikVMFormat` object
+        :param dx: the analysis of the format
+        :type dx: :class:`VMAnalysis` object 
+        :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
+        :type decompiler: string
     """
-    d, dx = AnalyzeDex( filename, raw )
-
-    androconf.debug("Decompiler ...")
-    decompiler = decompiler.lower()
-    if decompiler == "dex2jad" :
+    if decompiler != None :
+      androconf.debug("Decompiler ...")
+      decompiler = decompiler.lower()
+      if decompiler == "dex2jad" :
         d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
-    elif decompiler == "ded" :
-        d.set_decompiler ( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
-    elif decompiler == "dad" :
+      elif decompiler == "ded" :
+        d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+      elif decompiler == "dad" :
         d.set_decompiler( DecompilerDAD( d, dx ) )
-   
-    return d, dx
+      else :
+        print "Unknown decompiler, use DAD decompiler by default"
+        d.set_decompiler( DecompilerDAD( d, dx ) )
 
 def AnalyzeElf(filename, raw=False) :
     from androguard.core.binaries.elf import ELF 
@@ -193,14 +198,6 @@ def ExportElfToPython(e) :
         setattr( e, name, function )
         
 def AnalyzeJAR(filename, raw=False) :
-    """
-        Analyze an java jar application and setup all stuff for a more quickly analysis !
-
-        @param filename : the filename of the jar or a buffer which represents the application
-        @param raw : True is you would like to use a buffer
-        
-        @rtype : return the JAR, JVMFormat classes
-    """
     androconf.debug("JAR ...")
     a = JAR(filename, raw)
 
@@ -214,15 +211,6 @@ def AnalyzeClasses( classes ) :
     d[i[0]] = JVMFormat( i[1] )
 
   return d
-
-def sort_length_method(vm) :
-    l = []
-    for m in vm.get_methods() :
-        code = m.get_code()
-        if code != None :
-            l.append( (code.get_length(), (m.get_class_name(), m.get_name(), m.get_descriptor()) ) )
-    l.sort(reverse=True)
-    return l
 
 def main(options, arguments) :
     if options.shell != None :
