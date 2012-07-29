@@ -395,6 +395,14 @@ def determineException(vm, m) :
     return exceptions
 
 class HeaderItem :
+    """
+        This class can parse an header_item of a dex file
+
+        :param buff: a string which represents a Buff object of the header_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
@@ -512,10 +520,11 @@ class HeaderItem :
         return self.get_obj()
 
     def get_length(self) :
-      return len(self.get_obj())
+      return len(self.get_raw())
 
     def show(self) :
-        print "HEADER", self.magic, self.checksum, self.signature
+        bytecode._PrintSubBanner("Header Item")
+        bytecode._PrintDefault("magic=%s, checksum=%s, signature=%s\n" % (self.magic, self.checksum, self.signature))
 
     def set_off(self, off) :
       self.offset = off
@@ -524,12 +533,21 @@ class HeaderItem :
       return self.offset
 
 class AnnotationOffItem :
+    """
+        This class can parse an annotation_off_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_off_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self,  buff, cm) :
         self.__CM = cm
         self.annotation_off = unpack("=I", buff.read( 4 ) )[0]
 
     def show(self) :
-        print "ANNOTATION_OFF_ITEM annotation_off=0x%x" % self.annotation_off
+        bytecode._PrintSubBanner("Annotation Off Item")
+        bytecode._PrintDefault("annotation_off=0x%x\n" % self.annotation_off)
 
     def get_obj(self) :
         if self.annotation_off != 0 :
@@ -544,6 +562,14 @@ class AnnotationOffItem :
       return len(self.get_obj())
 
 class AnnotationSetItem :
+    """
+        This class can parse an annotation_set_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_set_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
         self.offset = buff.get_idx()
@@ -552,6 +578,13 @@ class AnnotationSetItem :
         self.size = unpack("=I", buff.read( 4 ) )[0]
         for i in xrange(0, self.size) :
             self.annotation_off_item.append( AnnotationOffItem(buff, cm) )
+
+    def get_annotation_off_item(self) :
+        """ 
+            Return the offset from the start of the file to an annotation
+            :rtype: a list of :class:`AnnotationOffItem`
+        """
+        return self.annotation_off_item
 
     def set_off(self, off) :
       self.offset = off
@@ -562,16 +595,10 @@ class AnnotationSetItem :
     def reload(self) :
         pass
 
-    def get_annotation_off_item(self) :
-        return self.annotation_off_item
-
     def show(self) :
-        print "ANNOTATION_SET_ITEM"
-        nb = 0
+        bytecode._PrintSubBanner("Annotation Set Item")
         for i in self.annotation_off_item :
-            print nb,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return pack("=I", self.size)
@@ -588,12 +615,30 @@ class AnnotationSetItem :
       return length
 
 class AnnotationSetRefItem :
+    """
+        This class can parse an annotation_set_ref_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_set_ref_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self,  buff, cm) :
         self.__CM = cm
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
 
+    def get_annotations_off(self) :
+      """
+          Return the offset from the start of the file to the referenced annotation set or 
+          0 if there are no annotations for this element.
+
+          :rtype: int
+      """
+      return self.annotations_off
+
     def show(self) :
-        print "ANNOTATION_SET_REF_ITEM annotations_off=0x%x" % self.annotations_off
+        bytecode._PrintSubBanner("Annotation Set Ref Item")
+        bytecode._PrintDefault("annotation_off=0x%x\n" % self.annotation_off)
 
     def get_obj(self) :
         if self.annotations_off != 0 :
@@ -605,6 +650,14 @@ class AnnotationSetRefItem :
         return self.get_obj()
 
 class AnnotationSetRefList :
+    """
+        This class can parse an annotation_set_ref_list_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_set_ref_list_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
 
@@ -614,6 +667,14 @@ class AnnotationSetRefList :
         self.size = unpack("=I", buff.read( 4 ) )[0]
         for i in xrange(0, self.size) :
             self.list.append( AnnotationSetRefItem(buff, cm) )
+
+    def get_list(self) :
+      """
+          Return elements of the list
+
+          :rtype: :class:`AnnotationSetRefItem`
+      """
+      return self.list
 
     def get_off(self) :
       return self.offset
@@ -625,12 +686,9 @@ class AnnotationSetRefList :
         pass
 
     def show(self) :
-        print "ANNOTATION_SET_REF_LIST"
-        nb = 0
+        bytecode._PrintSubBanner("Annotation Set Ref List Item")
         for i in self.list :
-            print nb,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return [ i for i in self.list ]
@@ -639,12 +697,34 @@ class AnnotationSetRefList :
         return pack("=I", self.size) + ''.join(i.get_raw() for i in self.list)
 
 class FieldAnnotation :
+    """
+        This class can parse a field_annotation of a dex file
+
+        :param buff: a string which represents a Buff object of the field_annotation
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
         
         self.__CM = cm
         self.field_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
+
+    def get_field_idx(self) :
+      """
+          Return the index into the field_ids list for the identity of the field being annotated
+          :rtype: int
+      """
+      return self.get_field_idx
+
+    def get_annotations_off(self) :
+      """
+          Return the offset from the start of the file to the list of annotations for the field
+          :rtype: int
+      """
+      return self.annotations_off
 
     def set_off(self, off) :
       self.offset = off
@@ -653,7 +733,8 @@ class FieldAnnotation :
       return self.offset
 
     def show(self) :
-        print "FIELD_ANNOTATION field_idx=0x%x annotations_off=0x%x" % (self.field_idx, self.annotations_off)
+        bytecode._PrintSubBanner("Field Annotation")
+        bytecode._PrintDefault( "field_idx=0x%x annotations_off=0x%x\n" % (self.field_idx, self.annotations_off) )
 
     def get_obj(self) :
         if self.annotations_off != 0 :
@@ -668,12 +749,34 @@ class FieldAnnotation :
         return len(self.get_raw())
 
 class MethodAnnotation :
+    """
+        This class can parse a method_annotation of a dex file
+
+        :param buff: a string which represents a Buff object of the method_annotation
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
 
         self.__CM = cm
         self.method_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
+
+    def get_method_idx(self) :
+      """
+          Return the index into the method_ids list for the identity of the method being annotated
+          :rtype: int
+      """
+      return self.get_method_idx
+
+    def get_annotations_off(self) :
+      """
+          Return the offset from the start of the file to the list of annotations for the method
+          :rtype: int
+      """
+      return self.annotations_off
 
     def set_off(self, off) :
       self.offset = off
@@ -682,7 +785,8 @@ class MethodAnnotation :
       return self.offset
 
     def show(self) :
-        print "METHOD_ANNOTATION method_idx=0x%x annotations_off=0x%x" % ( self.method_idx, self.annotations_off)
+        bytecode._PrintSubBanner("Method Annotation")
+        bytecode._PrintDefault( "method_idx=0x%x annotations_off=0x%x\n" % (self.method_idx, self.annotations_off) )
 
     def get_obj(self) :
         if self.annotations_off != 0 :
@@ -697,12 +801,34 @@ class MethodAnnotation :
       return len(self.get_raw())
 
 class ParameterAnnotation :
+    """
+        This class can parse a parameter_annotation of a dex file
+
+        :param buff: a string which represents a Buff object of the parameter_annotation
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
         
         self.__CM = cm
         self.method_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
+
+    def get_method_idx(self) :
+      """
+          Return the index into the method_ids list for the identity of the method whose parameters are being annotated
+          :rtype: int
+      """
+      return self.get_method_idx
+
+    def get_annotations_off(self) :
+      """
+          Return the offset from the start of the file to the list of annotations for the method parameters
+          :rtype: int
+      """
+      return self.annotations_off
 
     def set_off(self, off) :
       self.offset = off
@@ -711,7 +837,8 @@ class ParameterAnnotation :
       return self.offset
 
     def show(self) :
-        print "PARAMETER_ANNOTATION method_idx=0x%x annotations_off=0x%x" % (self.method_idx, self.annotations_off)
+        bytecode._PrintSubBanner("Parameter Annotation")
+        bytecode._PrintDefault( "method_idx=0x%x annotations_off=0x%x\n" % (self.method_idx, self.annotations_off) )
 
     def get_obj(self) :
         if self.annotations_off != 0 :
@@ -723,18 +850,26 @@ class ParameterAnnotation :
         return self.get_obj()
 
 class AnnotationsDirectoryItem :
+    """
+        This class can parse an annotations_directory_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotations_directory_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
         self.offset = buff.get_idx()
 
         self.class_annotations_off = unpack("=I", buff.read(4))[0]
-        self.fields_size = unpack("=I", buff.read(4))[0]
+        self.annotated_fields_size = unpack("=I", buff.read(4))[0]
         self.annotated_methods_size = unpack("=I", buff.read(4))[0]
         self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
 
         self.field_annotations = []
-        for i in xrange(0, self.fields_size) :
+        for i in xrange(0, self.annotated_fields_size) :
             self.field_annotations.append( FieldAnnotation( buff, cm ) )
 
         self.method_annotations = []
@@ -744,6 +879,58 @@ class AnnotationsDirectoryItem :
         self.parameter_annotations = []
         for i in xrange(0, self.annotated_parameters_size) :
             self.parameter_annotations.append( ParameterAnnotation( buff, cm ) )
+
+    def get_class_annotations_off(self) :
+      """
+          Return the offset from the start of the file to the annotations made directly on the class, 
+          or 0 if the class has no direct annotations
+          :rtype: int
+      """
+      return self.class_annotations_off
+
+
+    def get_annotated_fields_size(self) :
+      """
+          Return the count of fields annotated by this item
+          :rtype: int
+      """
+      return self.annotated_fields_size
+
+    def get_annotated_methods_size(self) :
+      """
+          Return the count of methods annotated by this item
+          :rtype: int
+      """
+      return self.annotated_methods_size
+
+    def get_annotated_parameters_size(self) :
+      """
+          Return the count of method parameter lists annotated by this item
+          :rtype: int
+      """
+      return self.annotated_parameters_size
+
+    def get_field_annotations(self) :
+      """
+          Return the list of associated field annotations
+          :rtype: a list of :class:`FieldAnnotation`
+      """
+      return self.field_annotations
+
+    def get_method_annotations(self) :
+      """
+          Return the list of associated method annotations
+          :rtype: a list of :class:`MethodAnnotation`
+      """
+      return self.method_annotations
+
+
+    def get_parameter_annotations(self) :
+      """
+          Return the list of associated method parameter annotations
+          :rtype: a list of :class:`ParameterAnnotation`
+      """
+      return self.parameter_annotations
 
     def set_off(self, off) :
       self.offset = off
@@ -755,7 +942,13 @@ class AnnotationsDirectoryItem :
         pass
 
     def show(self) :
-        print "ANNOTATIONS_DIRECTORY_ITEM"
+        bytecode._PrintSubBanner("Annotations Directory Item")
+        bytecode._PrintDefault("class_annotations_off=0x%x annotated_fields_size=%d annotated_methods_size=%d annotated_parameters_size=%d" % 
+                              ( self.class_annotations_off, 
+                                self.annotated_fields_size,
+                                self.annotated_methods_size,
+                                self.annotated_parameters_size))
+
         for i in self.field_annotations :
             i.show()
 
@@ -770,7 +963,7 @@ class AnnotationsDirectoryItem :
           self.class_annotations_off = self.__CM.get_obj_by_offset( self.class_annotations_off ).get_off() 
 
         return pack("=I", self.class_annotations_off) +     \
-               pack("=I", self.fields_size) +               \
+               pack("=I", self.annotated_fields_size) +               \
                pack("=I", self.annotated_methods_size) +    \
                pack("=I", self.annotated_parameters_size)
 
@@ -793,17 +986,36 @@ class AnnotationsDirectoryItem :
 
       return length
 
+class TypeItem :
+    """
+        This class can parse a type_item of a dex file
 
-class TypeLItem :
+        :param buff: a string which represents a Buff object of the type_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
         self.type_idx = unpack("=H", buff.read(2))[0]
 
-    def show(self) :
-        print "TYPE_LITEM", self.type_idx
+    def get_type_idx(self) :
+      """
+          Return the index into the type_ids list
+          :rtype: int
+      """
+      return self.type_idx
 
     def get_string(self) :
+        """
+          Return the type string
+          :rtype: string
+        """
         return self.__CM.get_type( self.type_idx )
+
+    def show(self) :
+        bytecode._PrintSubBanner("Type Item")
+        bytecode._PrintDefault("type_idx=%d" % self.type_idx)
 
     def get_obj(self) :
         return pack("=H", self.type_idx)
@@ -815,6 +1027,14 @@ class TypeLItem :
       return len(self.get_obj())
 
 class TypeList :
+    """
+        This class can parse a type_list of a dex file
+
+        :param buff: a string which represents a Buff object of the type_list
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -830,7 +1050,42 @@ class TypeList :
 
         self.list = []
         for i in xrange(0, self.size) :
-            self.list.append( TypeLItem( buff, cm ) )
+            self.list.append( TypeItem( buff, cm ) )
+
+    def get_pad(self) :
+      """
+          Return the alignment string
+          :rtype: string
+      """
+      return self.pad
+
+    def get_type_list_off(self) :
+        """
+            Return the offset of the item
+            :rtype: int
+        """
+        return self.offset + self.len_pad
+
+    def get_string(self) :
+        """
+            Return the concatenation of all strings 
+            :rtype: string
+        """
+        return ' '.join(i.get_string() for i in self.list)
+
+    def get_size(self) :
+      """
+          Return the size of the list, in entries
+          :rtype: int
+      """
+      return self.size
+
+    def get_list(self) :
+      """
+          Return the list of TypeItem
+          :rtype: a list of :class:`TypeItem` objects
+      """
+      return self.list
 
     def set_off(self, off) :
       self.offset = off
@@ -841,19 +1096,12 @@ class TypeList :
     def reload(self) :
         pass
 
-    def get_type_list_off(self) :
-        return self.offset + self.len_pad
-
-    def get_string(self) :
-        return ' '.join(i.get_string() for i in self.list)
-
     def show(self) :
-        print "TYPE_LIST"
-        nb = 0
+        bytecode._PrintSubBanner("Type List")
+        bytecode._PrintDefault("size=%d" % self.size)
+
         for i in self.list :
-            print nb, self.offset + self.len_pad,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return self.pad + pack("=I", self.size)
@@ -1086,6 +1334,14 @@ class DebugInfoItemEmpty :
       return len(self.__raw)
 
 class EncodedArray :
+    """
+        This class can parse an encoded_array of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_array
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
         self.offset = buff.get_idx()
@@ -1096,13 +1352,27 @@ class EncodedArray :
         for i in xrange(0, self.size) :
             self.values.append( EncodedValue(buff, cm) )
 
-    def show(self) :
-        print "ENCODED_ARRAY"
-        for i in self.values :
-            i.show()
+    def get_size(self) :
+      """
+          Return the number of elements in the array
+          :rtype: int
+      """
+      return self.size
 
     def get_values(self) :
+        """
+            Return a series of size encoded_value byte sequences in the format specified by this section, 
+            concatenated sequentially.
+            :rtype: a list of :class:`EncodedValue` objects
+        """
         return self.values
+
+    def show(self) :
+        bytecode._PrintSubBanner("Encoded Array")
+        bytecode._PrintDefault("size=%d" % self.size)
+
+        for i in self.values :
+            i.show()
 
     def get_obj(self) :
         return writeuleb128( self.size )
@@ -1118,52 +1388,71 @@ class EncodedArray :
       return length
 
 class EncodedValue :
+    """
+        This class can parse an encoded_value of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_value
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
         self.val = unpack("=B", buff.read(1))[0]
-        self.__value_arg = self.val >> 5
-        self.__value_type = self.val & 0x1f
+        self.value_arg = self.val >> 5
+        self.value_type = self.val & 0x1f
 
         self.raw_value = None
         self.value = ""
 
         #  TODO: parse floats/doubles correctly
-        if self.__value_type >= VALUE_SHORT and self.__value_type < VALUE_STRING :
-            self.value, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
-        elif self.__value_type == VALUE_STRING :
-            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        if self.value_type >= VALUE_SHORT and self.value_type < VALUE_STRING :
+            self.value, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+        elif self.value_type == VALUE_STRING :
+            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_raw_string(id)
-        elif self.__value_type == VALUE_TYPE :
-            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        elif self.value_type == VALUE_TYPE :
+            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_type(id)
-        elif self.__value_type == VALUE_FIELD :
-            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        elif self.value_type == VALUE_FIELD :
+            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_field(id)
-        elif self.__value_type == VALUE_METHOD :
-            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        elif self.value_type == VALUE_METHOD :
+            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_method(id)
-        elif self.__value_type == VALUE_ENUM :
-            id, self.raw_value = self._getintvalue(buff.read( self.__value_arg + 1 ))
+        elif self.value_type == VALUE_ENUM :
+            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_field(id)
-        elif self.__value_type == VALUE_ARRAY :
+        elif self.value_type == VALUE_ARRAY :
             self.value = EncodedArray( buff, cm )
-        elif self.__value_type == VALUE_ANNOTATION :
+        elif self.value_type == VALUE_ANNOTATION :
             self.value = EncodedAnnotation( buff, cm )
-        elif self.__value_type == VALUE_BYTE :
+        elif self.value_type == VALUE_BYTE :
             self.value = buff.read( 1 )
-        elif self.__value_type == VALUE_NULL :
+        elif self.value_type == VALUE_NULL :
             self.value = None
-        elif self.__value_type == VALUE_BOOLEAN :
-            if self.__value_arg:
+        elif self.value_type == VALUE_BOOLEAN :
+            if self.value_arg:
                 self.value = True
             else:
                 self.value = False
         else :
-            bytecode.Exit( "Unknown value 0x%x" % self.__value_type )
+            bytecode.Exit( "Unknown value 0x%x" % self.value_type )
 
     def get_value(self) :
+      """
+          Return the bytes representing the value, variable in length and interpreted differently for different value_type bytes, 
+          though always little-endian.
+          :rtype: an object representing the value
+      """
       return self.value
+
+    def get_value_type(self) :
+      return self.value_type
+    
+    def get_value_arg(self) :
+      return self.value_arg
 
     def _getintvalue(self, buf):
         ret = 0
@@ -1175,7 +1464,8 @@ class EncodedValue :
         return ret, buf
 
     def show(self) :
-        print "ENCODED_VALUE", self.val, self.__value_arg, self.__value_type
+        bytecode._PrintSubBanner("Encoded Value")
+        bytecode._PrintDefault("val=%x value_arg=%x value_type=%x" % (self.val, self.value_arg, self.value_type))
 
     def get_obj(self) :
         if isinstance(self.value, str) == False :
@@ -1195,14 +1485,37 @@ class EncodedValue :
         return len(pack("=B", self.val)) + len(object_to_str( self.raw_value ))
 
 class AnnotationElement :
+    """
+        This class can parse an annotation_element of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_element
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
         self.name_idx = readuleb128( buff )
         self.value = EncodedValue( buff, cm )
 
+    def get_name_idx(self) :
+      """
+          Return the element name, represented as an index into the string_ids section
+          :rytpe: int
+      """
+      return self.name_idx
+
+    def get_value(self) :
+      """
+          Return the element value (EncodedValue)
+          ;rytpe: a :class:`EncodedValue` object
+      """
+      return self.value
+
     def show(self) :
-        print "ANNOTATION_ELEMENT", self.name_idx
+        bytecode._PrintSubBanner("Annotation Element")
+        bytecode._PrintDefault("name_idx=%d" % self.name_idx)
         self.value.show()
 
     def get_obj(self) :
@@ -1215,6 +1528,14 @@ class AnnotationElement :
       return len(self.get_obj()) + self.value.get_length()
 
 class EncodedAnnotation :
+    """
+        This class can parse an encoded_annotation of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_annotation
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1225,8 +1546,31 @@ class EncodedAnnotation :
         for i in xrange(0, self.size) :
             self.elements.append( AnnotationElement( buff, cm ) )
 
+    def get_type_idx(self) :
+      """
+          Return the type of the annotation. This must be a class (not array or primitive) type.
+          :rtype: int
+      """
+      return self.type_idx
+
+    def get_size(self) :
+      """
+          Return the number of name-value mappings in this annotation
+          :rtype:int
+      """
+      return self.size
+
+    def get_elements(self) :
+      """
+          Return the elements of the annotation, represented directly in-line (not as offsets)
+          :rtype: a list of :class:`AnnotationElement` objects
+      """
+      return self.elements
+
     def show(self) :
-        print "ENCODED_ANNOTATION", self.type_idx, self.size
+        bytecode._PrintSubBanner("Encoded Annotation")
+        bytecode._PrintDefault("type_idx=%d size=%d" % (self.type_idx, self.size))
+
         for i in self.elements :
             i.show()
 
@@ -1245,6 +1589,14 @@ class EncodedAnnotation :
       return length
 
 class AnnotationItem :
+    """
+        This class can parse an annotation_item of a dex file
+
+        :param buff: a string which represents a Buff object of the annotation_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1252,6 +1604,20 @@ class AnnotationItem :
 
         self.visibility = unpack("=B", buff.read(1))[0]
         self.annotation = EncodedAnnotation(buff, cm)
+
+    def get_visibility(self) :
+      """
+          Return the intended visibility of this annotation
+          :rtype: int
+      """
+      return self.visibility
+
+    def get_annotation(self) :
+      """
+          Return the encoded annotation contents
+          :rtype: a :class:`EncodedAnnotation` object
+      """
+      return self.annotation
 
     def set_off(self, off) :
       self.offset = off
@@ -1263,7 +1629,8 @@ class AnnotationItem :
         pass
 
     def show(self) :
-        print "ANNOATATION_ITEM", self.visibility
+        bytecode._PrintSubBanner("Annotation Item")
+        bytecode._PrintDefault("visibility=%d" % self.visibility)
         self.annotation.show()
 
     def get_obj(self) :
@@ -1280,11 +1647,26 @@ class AnnotationItem :
       return length
 
 class EncodedArrayItem :
+    """
+        This class can parse an encoded_array_item of a dex file
+
+        :param buff: a string which represents a Buff object of the encoded_array_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
         self.offset = buff.get_idx()
         self.value = EncodedArray( buff, cm )
+
+    def get_value(self) :
+      """
+          Return the bytes representing the encoded array value
+          :rtype: a :class:`EncodedArray` object
+      """
+      return self.value
 
     def set_off(self, off) :
       self.offset = off
@@ -1296,7 +1678,7 @@ class EncodedArrayItem :
       return self.value
 
     def show(self) :
-        print "ENCODED_ARRAY_ITEM"
+        bytecode._PrintSubBanner("Encoded Array Item")
         self.value.show()
 
     def get_obj(self) :
@@ -1312,6 +1694,14 @@ class EncodedArrayItem :
       return self.offset
 
 class StringDataItem :
+    """
+        This class can parse a string_data_item of a dex file
+
+        :param buff: a string which represents a Buff object of the string_data_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1329,6 +1719,20 @@ class StringDataItem :
                 self.utf16_size += 1
                 self.data += i
 
+    def get_utf16_size(self) :
+      """
+          Return the size of this string, in UTF-16 code units
+          :rtype:int 
+      """
+      return self.utf16_size
+
+    def get_data(self) :
+      """
+          Return a series of MUTF-8 code units (a.k.a. octets, a.k.a. bytes) followed by a byte of value 0
+          :rtype: string
+      """
+      return self.data
+
     def set_off(self, off) :
       self.offset = off
 
@@ -1342,7 +1746,8 @@ class StringDataItem :
         return self.data[:-1]
 
     def show(self) :
-        print "STRING_DATA_ITEM", "%d %s" % ( self.utf16_size, repr( self.data ) )
+        bytecode._PrintSubBanner("String Data Item")
+        bytecode._PrintDefault("utf16_size=%d data=%s\n" % (self.utf16_size, repr( self.data )))
 
     def get_obj(self) :
         return []
@@ -1354,11 +1759,26 @@ class StringDataItem :
       return len(writeuleb128( self.utf16_size )) + len(self.data)
 
 class StringIdItem :
+    """
+        This class can parse a string_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the string_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
         self.offset = buff.get_idx()
 
         self.string_data_off = unpack("=I", buff.read(4))[0]
+
+    def get_string_data_off(self) :
+        """
+            Return the offset from the start of the file to the string data for this item
+            :rtype: int
+        """
+        return self.string_data_off
 
     def set_off(self, off) :
       self.offset = off
@@ -1369,8 +1789,9 @@ class StringIdItem :
     def reload(self) :
       pass
 
-    def get_data_off(self) :
-        return self.string_data_off
+    def show(self) :
+        bytecode._PrintSubBanner("String Id Item")
+        bytecode._PrintDefault("string_data_off=%x\n" % self.string_data_off)
 
     def get_obj(self) :
         if self.string_data_off != 0 :
@@ -1384,27 +1805,44 @@ class StringIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-    def show(self) :
-        print "STRING_ID_ITEM", self.string_data_off
+class TypeIdItem :
+    """
+        This class can parse a type_id_item of a dex file
 
-class TypeItem :
+        :param buff: a string which represents a Buff object of the type_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
-        self.val = unpack("=I", buff.read( 4 ) )[0]
-        self._name = None
+        self.descriptor_idx = unpack("=I", buff.read( 4 ) )[0]
+        self.descriptor_idx_value = None
+
+    def get_descriptor_idx(self) :
+        """
+            Return the index into the string_ids list for the descriptor string of this type.
+            :rtype: int
+        """
+        return self.descriptor_idx
+
+    def get_descriptor_idx_value(self) :
+      """
+          Return the string associated to the descriptor
+          :rtype: string
+      """
+      return self.descriptor_idx_value
 
     def reload(self) :
-        self._name = self.__CM.get_string( self.val )
+        self.descriptor_idx_value = self.__CM.get_string( self.descriptor_idx )
 
     def show(self) :
-        print "TYPE_ITEM", self.val, self._name
-
-    def get_value(self) :
-        return self.val
+        bytecode._PrintSubBanner("Type Id Item")
+        bytecode._PrintDefault("descriptor_idx=%d descriptor_idx_value=%s\n" % (self.descriptor_idx, self.descriptor_idx_value))
 
     def get_obj(self) :
-        return pack("=I", self.val)
+        return pack("=I", self.descriptor_idx)
 
     def get_raw(self) :
         return self.get_obj()
@@ -1412,16 +1850,36 @@ class TypeItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class TypeIdItem :
+class TypeHIdItem :
+    """
+        This class can parse a list of type_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the list of type_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
         self.offset = buff.get_idx()
 
         self.type = []
-
         for i in xrange(0, size) :
-            self.type.append( TypeItem( buff, cm ) )
+            self.type.append( TypeIdItem( buff, cm ) )
+
+    def get_type(self) :
+      """
+          Return the list of type_id_item
+          :rtype: a list of :class:`TypeIdItem` objects
+      """
+      return self.type
+
+    def get(self, idx) :
+        try :
+            return self.type[ idx ].get_descriptor_idx()
+        except IndexError :
+            return -1
 
     def set_off(self, off) :
       self.offset = off
@@ -1433,19 +1891,10 @@ class TypeIdItem :
         for i in self.type :
             i.reload()
 
-    def get(self, idx) :
-        try :
-            return self.type[ idx ].get_value()
-        except IndexError :
-            return -1
-
     def show(self) :
-        print "TYPE_ID_ITEM"
-        nb = 0
+        bytecode._PrintSubBanner("Type List Item")
         for i in self.type :
-            print nb,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return [ i for i in self.type ]
@@ -1459,7 +1908,15 @@ class TypeIdItem :
         length += i.get_length()
       return length
 
-class ProtoItem :
+class ProtoIdItem :
+    """
+        This class can parse a proto_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the proto_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1468,27 +1925,64 @@ class ProtoItem :
         self.parameters_off = unpack("=I", buff.read(4))[0]
 
 
-        self._shorty = None
-        self._return = None
-        self._params = None
+        self.shorty_idx_value = None
+        self.return_type_idx_value = None
+        self.parameters_off_value = None
 
     def reload(self) :
-        self._shorty = self.__CM.get_string( self.shorty_idx )
-        self._return = self.__CM.get_type( self.return_type_idx )
-        self._params = self.__CM.get_type_list( self.parameters_off )
+        self.shorty_idx_value = self.__CM.get_string( self.shorty_idx )
+        self.return_type_idx_value = self.__CM.get_type( self.return_type_idx )
+        self.parameters_off_value = self.__CM.get_type_list( self.parameters_off )
 
-    def get_params(self) :
-        return self._params
+    def get_shorty_idx(self) :
+        """
+            Return the index into the string_ids list for the short-form descriptor string of this prototype
+            :rtype: int
+        """
+        return self.shorty_idx
 
-    def get_shorty(self) :
-        return self._shorty
+    def get_return_type_idx(self) :
+        """
+            Return the index into the type_ids list for the return type of this prototype
+            :rtype: int
+        """
+        return self.return_type_idx
 
-    def get_return_type(self) :
-        return self._return
+    def get_parameters_off(self) :
+        """
+            Return the offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has no parameters
+            :rtype: int
+        """
+        return self.parameters_off
+
+    def get_shorty_idx_value(self) :
+        """
+            Return the string associated to the shorty_idx
+            :rtype: string
+        """
+        return self.shorty_idx_value
+
+    def get_return_type_idx_value(self) :
+        """
+            Return the string associated to the return_type_idx
+            :rtype: string
+        """
+        return self.return_type_idx_value
+
+    def get_parameters_off_value(self) :
+        """
+            Return the string associated to the parameters_off
+            :rtype: string
+        """
+        return self.parameters_off_value
 
     def show(self) :
-        print "PROTO_ITEM", self._shorty, self._return, self.shorty_idx, self.return_type_idx, self.parameters_off
+        bytecode._PrintSubBanner("Proto Item")
+        bytecode._PrintDefault("shorty_idx=%d return_type_idx=%d parameters_off=%d\n" % (self.shorty_idx, self.return_type_idx, self.parameters_off))
+        bytecode._PrintDefault("shorty_idx_value=%s return_type_idx_value=%s parameters_off_value=%s\n" % 
+                                (self.shorty_idx_value, self.return_type_idx_value, self.parameters_off_value))
 
+        
     def get_obj(self) :
         if self.parameters_off != 0 :
           self.parameters_off = self.__CM.get_obj_by_offset( self.parameters_off ).get_off()
@@ -1501,7 +1995,15 @@ class ProtoItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class ProtoIdItem :
+class ProtoHIdItem :
+    """
+        This class can parse a list of proto_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the list of proto_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
@@ -1510,7 +2012,7 @@ class ProtoIdItem :
         self.proto = []
 
         for i in xrange(0, size) :
-            self.proto.append( ProtoItem(buff, cm) )
+            self.proto.append( ProtoIdItem(buff, cm) )
 
     def set_off(self, off) :
       self.offset = off
@@ -1522,19 +2024,16 @@ class ProtoIdItem :
         try :
             return self.proto[ idx ]
         except IndexError :
-            return ProtoItemInvalid()
+            return ProtoIdItemInvalid()
 
     def reload(self) :
         for i in self.proto :
             i.reload()
 
     def show(self) :
-        print "PROTO_ID_ITEM"
-        nb = 0
+        bytecode._PrintSubBanner("Proto List Item")
         for i in self.proto :
-            print nb,
             i.show()
-            nb = nb + 1
 
     def get_obj(self) :
         return [ i for i in self.proto ]
@@ -1548,7 +2047,15 @@ class ProtoIdItem :
         length += i.get_length()
       return length
 
-class FieldItem :
+class FieldIdItem :
+    """
+        This class can parse a field_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the field_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1556,32 +2063,71 @@ class FieldItem :
         self.type_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self._class = None
-        self._type = None
-        self._name = None
+        self.class_idx_value = None
+        self.type_idx_value = None
+        self.name_idx_value = None
 
     def reload(self) :
-        self._class = self.__CM.get_type( self.class_idx )
-        self._type = self.__CM.get_type( self.type_idx )
-        self._name = self.__CM.get_string( self.name_idx )
+        self.class_idx_value = self.__CM.get_type( self.class_idx )
+        self.type_idx_value = self.__CM.get_type( self.type_idx )
+        self.name_idx_value = self.__CM.get_string( self.name_idx )
+
+    def get_class_idx(self) :
+      """
+          Return the index into the type_ids list for the definer of this field
+          :rtype: int
+      """
+      return self.class_idx
+
+    def get_type_idx(self) :
+      """
+          Return the index into the type_ids list for the type of this field
+          :rtype: int
+      """
+      return self.type_idx
+
+    def get_name_idx(self) :
+      """
+          Return the index into the string_ids list for the name of this field
+          :rtype: int
+      """
+      return self.name_idx
 
     def get_class_name(self) :
-        return self._class
+        """
+            Return the class name of the field
+            :rtype: string
+        """
+        return self.class_idx_value
 
     def get_type(self) :
-        return self._type
+        """
+            Return the type of the field
+            :rtype: string
+        """
+        return self.type_idx_value
 
     def get_descriptor(self) :
-        return self._type
+        """
+            Return the descriptor of the field
+            :rtype: string
+        """
+        return self.type_idx_value
 
     def get_name(self) :
-        return self._name
+        """
+            Return the name of the field
+            :rtype: string
+        """
+        return self.name_idx_value
 
     def get_list(self) :
         return [ self.get_class_name(), self.get_type(), self.get_name() ]
 
     def show(self) :
-        print "FIELD_ITEM", self._class, self._type, self._name, self.class_idx, self.type_idx, self.name_idx
+        bytecode._PrintSubBanner("Field Id Item")
+        bytecode._PrintDefault("class_idx=%d type_idx=%d name_idx=%d\n" % (self.class_idx, self.type_idx, self.name_idx))
+        bytecode._PrintDefault("class_idx_value=%s type_idx_value=%s name_idx_value=%s\n" % (self.class_idx_value, self.type_idx_value, self.name_idx_value))
 
     def get_obj(self) :
       return  pack("=H", self.class_idx) + \
@@ -1594,13 +2140,21 @@ class FieldItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class FieldIdItem :
+class FieldHIdItem :
+    """
+        This class can parse a list of field_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the list of field_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.offset = buff.get_idx()
 
         self.elem = []
         for i in xrange(0, size) :
-            self.elem.append( FieldItem(buff, cm) )
+            self.elem.append( FieldIdItem(buff, cm) )
 
     def set_off(self, off) :
       self.offset = off
@@ -1615,7 +2169,7 @@ class FieldIdItem :
         try :
             return self.elem[ idx ]
         except IndexError :
-            return FieldItemInvalid()
+            return FieldIdItemInvalid()
 
     def reload(self) :
         for i in self.elem :
@@ -1641,7 +2195,15 @@ class FieldIdItem :
       return length
 
 
-class MethodItem :
+class MethodIdItem :
+    """
+        This class can parse a method_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the method_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1649,36 +2211,72 @@ class MethodItem :
         self.proto_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self._class = None
-        self._proto = None
-        self._name = None
+        self.class_idx_value = None
+        self.proto_idx_value = None
+        self.name_idx_value = None
 
     def reload(self) :
-        self._class = self.__CM.get_type( self.class_idx )
-        self._proto = self.__CM.get_proto( self.proto_idx )
-        self._name = self.__CM.get_string( self.name_idx )
+        self.class_idx_value = self.__CM.get_type( self.class_idx )
+        self.proto_idx_value = self.__CM.get_proto( self.proto_idx )
+        self.name_idx_value = self.__CM.get_string( self.name_idx )
 
-    def get_type(self) :
+    def get_class_idx(self) :
+        """
+            Return the index into the type_ids list for the definer of this method
+            :rtype: int
+        """
+        return self.class_idx
+
+    def get_proto_idx(self) :
+        """
+            Return the index into the proto_ids list for the prototype of this method
+            :rtype: int
+        """
         return self.proto_idx
 
-    def show(self) :
-        print "METHOD_ITEM", self._name, self._proto, self._class, self.class_idx, self.proto_idx, self.name_idx
+    def get_name_idx(self) :
+        """
+            Return the index into the string_ids list for the name of this method
+            :rtype: int
+        """
+        return self.name_idx
 
     def get_class_name(self) :
-      return self._class
+      """
+          Return the class name of the method
+          :rtype: string
+      """      
+      return self.class_idx_value
 
     def get_proto(self) :
-        return self._proto
+        """
+            Return the prototype of the method
+            :rtype: string
+        """      
+        return self.proto_idx_value
 
     def get_descriptor(self) :
+      """
+          Return the descriptor
+          :rtype: string
+      """
       proto = self.get_proto()
       return proto[0] + proto[1]
 
     def get_name(self) :
-        return self._name
+        """
+            Return the name of the method
+            :rtype: string
+        """
+        return self.name_idx_value
 
     def get_list(self) :
         return [ self.get_class_name(), self.get_name(), self.get_proto() ]
+
+    def show(self) :
+        bytecode._PrintSubBanner("Method Id Item")
+        bytecode._PrintDefault("class_idx=%d proto_idx=%d name_idx=%d\n" % (self.class_idx, self.proto_idx, self.name_idx))
+        bytecode._PrintDefault("class_idx_value=%s proto_idx_value=%s name_idx_value=%s\n" % (self.class_idx_value, self.proto_idx_value, self.name_idx_value))
 
     def get_obj(self) :
         return pack("H", self.class_idx) + pack("H", self.proto_idx) + pack("I", self.name_idx)
@@ -1689,7 +2287,15 @@ class MethodItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class MethodIdItem :
+class MethodHIdItem :
+    """
+        This class can parse a list of method_id_item of a dex file
+
+        :param buff: a string which represents a Buff object of the list of method_id_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
@@ -1697,7 +2303,7 @@ class MethodIdItem :
 
         self.methods = []
         for i in xrange(0, size) :
-            self.methods.append( MethodItem(buff, cm) )
+            self.methods.append( MethodIdItem(buff, cm) )
 
     def set_off(self, off) :
       self.offset = off
@@ -1709,7 +2315,7 @@ class MethodIdItem :
         try :
             return self.methods[ idx ]
         except IndexError :
-            return MethodItemInvalid()
+            return MethodIdItemInvalid()
 
     def reload(self) :
         for i in self.methods :
@@ -1735,7 +2341,7 @@ class MethodIdItem :
         length += i.get_length()
       return length
 
-class ProtoItemInvalid :
+class ProtoIdItemInvalid :
     def get_params(self) :
         return "AG:IPI:invalid_params;"
 
@@ -1748,7 +2354,7 @@ class ProtoItemInvalid :
     def show(self) :
         print "AG:IPI:invalid_proto_item", self.get_shorty(), self.get_return_type(), self.get_params()
 
-class FieldItemInvalid :
+class FieldIdItemInvalid :
     def get_class_name(self) :
         return "AG:IFI:invalid_class_name;"
 
@@ -1767,7 +2373,7 @@ class FieldItemInvalid :
     def show(self) :
         print "AG:IFI:invalid_field_item"
 
-class MethodItemInvalid :
+class MethodIdItemInvalid :
     def get_class_name(self) :
         return "AG:IMI:invalid_class_name;"
 
@@ -1920,7 +2526,7 @@ class EncodedField :
 
         init_value = self.get_init_value()
         if init_value != None :
-            bytecode._PrintDefault( "\tinit value: %s" % str( init_value.get_value() ) )
+            bytecode._PrintDefault( "\tinit value: %s\n" % str( init_value.get_value() ) )
 
         self.show_dref()
 
@@ -1940,7 +2546,7 @@ class EncodedMethod :
     """
         This class can parse an encoded_method of a dex file
 
-        :param buff: a string which represents a Buff object of the encoded method
+        :param buff: a string which represents a Buff object of the encoded_method
         :type buff: Buff object
         :param cm: a ClassManager object
         :type cm: :class:`ClassManager`
@@ -2238,6 +2844,14 @@ class EncodedMethod :
       return len(self.get_raw())
 
 class ClassDataItem :
+    """
+        This class can parse a class_data_item of a dex file
+
+        :param buff: a string which represents a Buff object of the class_data_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -2295,42 +2909,26 @@ class ClassDataItem :
             i.reload()
 
     def show(self) :
-        print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
-                (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
-
-        print "SF"
-        for i in self.static_fields :
-            i.show()
-
-        print "IF"
-        for i in self.instance_fields :
-            i.show()
-
-        print "DM"
-        for i in self.direct_methods :
-            i.show()
-
-        print "VM"
-        for i in self.virtual_methods :
-            i.show()
+        self.pretty_show()
 
     def pretty_show(self) :
-        print "CLASS_DATA_ITEM static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d" % \
-                (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size)
+        bytecode._PrintSubBanner("Class Data Item")
+        bytecode._PrintDefault("static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d\n" % \
+                (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size))
 
-        print "SF"
+        bytecode._PrintSubBanner("Static Fields")
         for i in self.static_fields :
             i.show()
 
-        print "IF"
+        bytecode._PrintSubBanner("Instance Fields")
         for i in self.instance_fields :
             i.show()
 
-        print "DM"
+        bytecode._PrintSubBanner("Direct Methods")
         for i in self.direct_methods :
             i.pretty_show()
 
-        print "VM"
+        bytecode._PrintSubBanner("Virtual Methods")
         for i in self.virtual_methods :
             i.pretty_show()
 
@@ -2381,7 +2979,15 @@ class ClassDataItem :
     def get_off(self) :
       return self.offset
 
-class ClassItem :
+class ClassDefItem :
+    """
+        This class can parse a class_def_item of a dex file
+
+        :param buff: a string which represents a Buff object of the class_def_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -2510,7 +3116,15 @@ class ClassItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class ClassDefItem :
+class ClassHDefItem :
+    """
+        This class can parse a list of class_def_item of a dex file
+
+        :param buff: a string which represents a Buff object of the list of class_def_item
+        :type buff: Buff object
+        :param cm: a ClassManager object
+        :type cm: :class:`ClassManager`
+    """
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
@@ -2521,7 +3135,7 @@ class ClassDefItem :
         for i in xrange(0, size) :
             idx = buff.get_idx()
 
-            class_def = ClassItem( buff, cm )
+            class_def = ClassDefItem( buff, cm )
             self.class_def.append( class_def )
 
             buff.set_idx( idx + calcsize("=IIIIIIII") )
@@ -5212,19 +5826,19 @@ class MapItem :
             self.item = CodeItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_TYPE_ID_ITEM" :
-            self.item = TypeIdItem( self.size, buff, cm )
+            self.item = TypeHIdItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_PROTO_ID_ITEM" :
-            self.item = ProtoIdItem( self.size, buff, cm )
+            self.item = ProtoHIdItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_FIELD_ID_ITEM" :
-            self.item = FieldIdItem( self.size, buff, cm )
+            self.item = FieldHIdItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_METHOD_ID_ITEM" :
-            self.item = MethodIdItem( self.size, buff, cm )
+            self.item = MethodHIdItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CLASS_DEF_ITEM" :
-            self.item = ClassDefItem( self.size, buff, cm )
+            self.item = ClassHDefItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_HEADER_ITEM" :
             self.item = HeaderItem( self.size, buff, cm )
@@ -5479,7 +6093,7 @@ class ClassManager :
             return self.hook_strings[ idx ]
 
         try :
-            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_string_data_off()
         except IndexError :
             bytecode.Warning( "unknown string item @ %d" % (idx) )
             return "AG:IS: invalid string"
@@ -5494,7 +6108,7 @@ class ClassManager :
 
     def get_raw_string(self, idx) :
         try :
-            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_data_off()
+            off = self.__manage_item[ "TYPE_STRING_ID_ITEM" ][idx].get_string_data_off()
         except IndexError :
             bytecode.Warning( "unknown string item @ %d" % (idx) )
             return "AG:IS: invalid string"
@@ -5536,7 +6150,7 @@ class ClassManager :
             proto = self.__manage_item[ "TYPE_PROTO_ID_ITEM" ].get( idx )
             self.__cached_proto[ idx ] = proto
 
-        return [ proto.get_params(), proto.get_return_type() ]
+        return [ proto.get_parameters_off_value(), proto.get_return_type_idx_value() ]
 
     def get_field(self, idx) :
         field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
@@ -5936,7 +6550,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def get_classes(self) :
         """
           Return all classes
-          :rtype: a list of :class:`ClassItem` objects
+          :rtype: a list of :class:`ClassDefItem` objects
         """
         return self.classes.class_def
 
