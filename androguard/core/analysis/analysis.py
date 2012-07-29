@@ -1081,6 +1081,7 @@ class DVMBasicBlock :
             Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
             :param idx: the index of the instruction
+
             :rtype: None or an Instruction
         """
         try :
@@ -1449,7 +1450,8 @@ class TaintedPackage :
 def show_Permissions( dx ) :
     """
         Show where permissions are used in a specific application
-        @param dx : the analysis virtual machine
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
     """
     p = dx.get_permissions( [] )
 
@@ -1461,7 +1463,8 @@ def show_Permissions( dx ) :
 def show_DynCode(dx) :
     """
         Show where dynamic code is used
-        @param dx : the analysis virtual machine
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
     """
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
     show_Path( dx.get_vm(), paths )
@@ -1469,7 +1472,8 @@ def show_DynCode(dx) :
 def show_NativeMethods(dx) :
     """
         Show the native methods
-        @param dx : the analysis virtual machine
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
     """
     d = dx.get_vm()
     for i in d.get_methods() :
@@ -1479,7 +1483,8 @@ def show_NativeMethods(dx) :
 def show_ReflectionCode(dx) :
     """
         Show the reflection code 
-        @param dx : the analysis virtual machine
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
     show_Path( dx.get_vm(), paths )
@@ -1487,8 +1492,9 @@ def show_ReflectionCode(dx) :
 def is_crypto_code(dx) :
     """
         Crypto code is present ?
-        @param dx : the analysis virtual machine
-        @rtype : boolean
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype : boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljavax/crypto/.", ".", ".")
     if paths != [] :
@@ -1499,8 +1505,9 @@ def is_crypto_code(dx) :
 def is_dyn_code(dx) :
     """
         Dynamic code loading is present ?
-        @param dx : the analysis virtual machine
-        @rtype : boolean
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype : boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
     if paths != [] :
@@ -1511,8 +1518,9 @@ def is_dyn_code(dx) :
 def is_reflection_code(dx) :
     """
         Reflection is present ?
-        @param dx : the analysis virtual machine
-        @rtype : boolean
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype : boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
     if paths != [] :
@@ -1523,8 +1531,9 @@ def is_reflection_code(dx) :
 def is_native_code(dx) :
     """
         Native code is present ?
-        @param dx : the analysis virtual machine
-        @rtype : boolean
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype : boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/System;", "loadLibrary", ".")
     if paths != [] :
@@ -2137,15 +2146,15 @@ from sign import Signature
 
 class VMAnalysis :
     """
-       This class analyses a class file or a dex file
+       This class analyses a dex file
 
-       @param _vm : a virtual machine object
+       :param _vm: the object which represent the dex file
+       :type _vm: a :class:`DalvikVMFormat` object
+
+       :Example:
+            VMAnalysis( DalvikVMFormat( open("toto.dex", "r").read() ) )
     """
     def __init__(self, _vm) :
-        """
-            @param _vm : a L{JVMFormat} or L{DalvikFormatVM}
-        """
-
         self.__vm = _vm
 
         self.tainted_variables = TaintedVariables( self.__vm )
@@ -2176,8 +2185,10 @@ class VMAnalysis :
         """
             Return an analysis method
 
-            @param method : a classical method object
-            @rtype : L{MethodAnalysis}
+            :param method: a classical method object
+            :type method: an :class:`EncodedMethod` object
+
+            :rtype: a :class:`MethodAnalysis` object
         """
         return self.hmethods[ method ]
 
@@ -2185,7 +2196,7 @@ class VMAnalysis :
         """
            Return each analysis method
 
-           @rtype : L{MethodAnalysis}
+           :rtype: a :class:`MethodAnalysis` object
         """
         for i in self.hmethods :
             yield self.hmethods[i]
@@ -2194,12 +2205,19 @@ class VMAnalysis :
         """
             Return a specific signature for a specific method
 
-            @param method : a reference to method from a vm class
-            @param grammar_type : the type of the signature
-            @param options : the options of the signature
-            @param predef_sign : used a predefined signature
+            :param method: a reference to method from a vm class
+            :type method: a :class:`EncodedMethod` object
 
-            @rtype : L{Sign}
+            :param grammar_type: the type of the signature (optional)
+            :type grammar_type: string
+
+            :param options: the options of the signature (optional)
+            :param options: dict
+
+            :param predef_sign: used a predefined signature (optional)
+            :type predef_sign: string
+
+            :rtype: a :class:`Sign` object
         """        
         if self.signature == None :
           self.signature = Signature( self )
@@ -2222,8 +2240,12 @@ class VMAnalysis :
 
     def get_permissions(self, permissions_needed) :
         """
-            @param permissions_needed : a list of restricted permissions to get ([] returns all permissions)
-            @rtype : a dictionnary of permissions' paths
+            Return the permissions used
+
+            :param permissions_needed: a list of restricted permissions to get ([] returns all permissions)
+            :type permissions_needed: list
+            
+            :rtype: a dictionnary of permissions paths
         """
         permissions = {}
 
@@ -2242,7 +2264,7 @@ class VMAnalysis :
         """
            Return the tainted variables
 
-           @rtype : L{TaintedVariables}
+           :rtype: a :class:`TaintedVariables` object
         """
         return self.tainted_variables
 
@@ -2250,7 +2272,7 @@ class VMAnalysis :
         """
            Return the tainted packages
 
-           @rtype : L{TaintedPackages}
+           :rtype: a :class:`TaintedPackages` object
         """
         return self.tainted_packages
 
@@ -2261,16 +2283,28 @@ class VMAnalysis :
         """
            Return a specific tainted field
 
-           @param class_name : the name of the class
-           @param name : the name of the field
-           @param descriptor : the descriptor of the field
+           :param class_name: the name of the class
+           :param name: the name of the field
+           :param descriptor: the descriptor of the field
+           :type class_name: string
+           :type name: string
+           :type descriptor: string
 
-           @rtype : L{TaintedVariable}
+           :rtype: a :class:`TaintedVariable` object
         """
         return self.get_tainted_variables().get_field( class_name, name, descriptor )
 
 
 class uVMAnalysis(VMAnalysis) :
+  """
+     This class analyses a dex file but on the fly (quicker !)
+
+     :param _vm: the object which represent the dex file
+     :type _vm: a :class:`DalvikVMFormat` object
+
+     :Example:
+          uVMAnalysis( DalvikVMFormat( open("toto.dex", "r").read() ) )
+  """
   def __init__(self, vm) :
     self.vm = vm
     self.tainted_variables = TaintedVariables( self.vm )
@@ -2304,10 +2338,5 @@ class uVMAnalysis(VMAnalysis) :
     return self.tainted_packages
 
   def get_tainted_variables(self) :
-        """
-           Return the tainted variables
-
-           @rtype : L{TaintedVariables}
-        """
         self._resolve()
         return self.tainted_variables
