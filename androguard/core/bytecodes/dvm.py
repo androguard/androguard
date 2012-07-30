@@ -17,14 +17,10 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from androguard.core import bytecode
-
-from androguard.core.bytecode import object_to_str
-from androguard.core.bytecode import FormatClassToPython, FormatNameToPython, FormatDescriptorToPython
+from androguard.core.androconf import CONF, debug
 
 import sys, re
 from struct import pack, unpack, calcsize
-
-from androguard.core.androconf import CONF, debug
 
 DEX_FILE_MAGIC = 'dex\n035\x00'
 ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
@@ -1498,15 +1494,15 @@ class EncodedValue :
 
     def get_raw(self) :
         if self.raw_value == None :
-            return pack("=B", self.val) + object_to_str( self.value )
+            return pack("=B", self.val) + bytecode.object_to_str( self.value )
         else :
-            return pack("=B", self.val) + object_to_str( self.raw_value )
+            return pack("=B", self.val) + bytecode.object_to_str( self.raw_value )
 
     def get_length(self) :
       if self.raw_value == None :
-        return len(pack("=B", self.val)) + len(object_to_str( self.value ))
+        return len(pack("=B", self.val)) + len(bytecode.object_to_str( self.value ))
       else :
-        return len(pack("=B", self.val)) + len(object_to_str( self.raw_value ))
+        return len(pack("=B", self.val)) + len(bytecode.object_to_str( self.raw_value ))
 
 class AnnotationElement :
     """
@@ -5633,14 +5629,36 @@ DALVIK_OPCODES_OPTIMIZED = {
     0xffff : [ Instruction40sc, ["throw-verification-error/jumbo", VARIES ] ],
 }
 
-def get_instruction(cm, op_value, buff, odex=False) :
-  if not odex and (op_value >= 0xe3 and op_value <= 0xfe) :
-    return InstructionInvalid( cm, buff )
+class Unresolved(Instruction) :
+  def __init__(self, data) :
+    self.data = data
 
+  def get_name(self) :
+    return "unresolved"
+
+  def get_op_value(self) :
+    return ord(self.data[0])
+
+  def get_output(self, idx=-1) :
+    return repr(self.data)
+
+  def get_length(self) :
+    return len(self.data)
+
+  def get_raw(self) :
+    return self.buff
+
+def get_instruction(cm, op_value, buff, odex=False) :
   try :
-    return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
-  except KeyError :
-    return InstructionInvalid( cm, buff )
+    if not odex and (op_value >= 0xe3 and op_value <= 0xfe) :
+      return InstructionInvalid( cm, buff )
+
+    try :
+      return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
+    except KeyError :
+      return InstructionInvalid( cm, buff )
+  except :
+      return Unresolved( buff )
 
 def get_extented_instruction(cm, op_value, buff) :
   return DALVIK_OPCODES_EXTENDED_WIDTH[ op_value ][0]( cm, buff )
@@ -5670,15 +5688,18 @@ class LinearSweepAlgorithm :
         """
         self.odex = cm.get_odex_format()
 
+        max_idx = size * calcsize( '=H' )
         # Get instructions
-        while idx < (size * calcsize( '=H' )) :
+        while idx < max_idx :
           obj = None
           classic_instruction = True
 
           op_value = unpack( '=B', insn[idx] )[0]
-          
+
+          #print "%x %x" % (op_value, idx)
+
           #payload instructions or extented/optimized instructions
-          if op_value == 0x00 or op_value == 0xff:
+          if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx) :
             op_value = unpack( '=H', insn[idx:idx+2] )[0]
 
             # payload instructions ?
@@ -5694,7 +5715,7 @@ class LinearSweepAlgorithm :
             elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED) :
               obj = get_optimized_instruction( cm, op_value, insn[idx:] )
               classic_instruction = False
-            
+          
           # classical instructions
           if classic_instruction :
             op_value = unpack( '=B', insn[idx] )[0]
@@ -7151,7 +7172,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
             :param regular_expressions: the python regex
             :type regular_expressions: string
-            
+
             :rtype: a list of strings matching the regex expression
         """
         str_list = []
@@ -7191,7 +7212,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
                         xref = gvm.nodes_id[ i ]
                         xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
                         if xref_meth != None :
-                            name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                            name = bytecode.FormatClassToPython( xref_meth.get_class_name() ) + "__" + \
+                            bytecode.FormatNameToPython( xref_meth.get_name() ) + "__" + \
+                            bytecode.FormatDescriptorToPython( xref_meth.get_descriptor() )
+
                             if python_export == True :
                                 setattr( method.XREFfrom, name, xref_meth )
                             method.XREFfrom.add( xref_meth, xref.edges[ gvm.nodes[ key ] ] )
@@ -7200,7 +7224,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
                         xref = gvm.nodes_id[ i ]
                         xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
                         if xref_meth != None :
-                            name = FormatClassToPython( xref_meth.get_class_name() ) + "__" + FormatNameToPython( xref_meth.get_name() ) + "__" + FormatDescriptorToPython( xref_meth.get_descriptor() )
+                            name = bytecode.FormatClassToPython( xref_meth.get_class_name() ) + "__" + \
+                            bytecode.FormatNameToPython( xref_meth.get_name() ) + "__" + \
+                            bytecode.FormatDescriptorToPython( xref_meth.get_descriptor() )
+                            
                             if python_export == True :
                                 setattr( method.XREFto, name, xref_meth )
                             method.XREFto.add( xref_meth, gvm.nodes[ key ].edges[ xref ] )
@@ -7231,7 +7258,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
                         if access_val == 'R' :
                             dref_meth = self.get_method_by_idx( m_idx )
-                            name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
+                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
+                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            
                             if python_export == True :
                                 setattr( field.DREFr, name, dref_meth )
 
@@ -7243,7 +7273,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
                         else :
                             dref_meth = self.get_method_by_idx( m_idx )
-                            name = FormatClassToPython( dref_meth.get_class_name() ) + "__" + FormatNameToPython( dref_meth.get_name() ) + "__" + FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
+                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
+                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
+                            
                             if python_export == True :
                                 setattr( field.DREFw, name, dref_meth )
 

@@ -1157,10 +1157,6 @@ class TaintedVariable :
     def get_paths_length(self) :
         return len(self.paths)
 
-    def show_paths(self) :
-        for path in self.paths :
-            print path.get_access_flag(), path.get_method().get_class_name(), path.get_method().get_name(), path.get_method().get_descriptor(), path.get_bb().get_name(), "%x" % (path.get_bb().start + path.get_idx() )
-
 class TaintedVariables :
     def __init__(self, _vm) :
         self.__vm = _vm
@@ -1342,17 +1338,17 @@ def show_Path(vm, path) :
 def show_Paths(vm, paths) :
     """
         Show paths of packages
-        @param paths : a list of paths L{PathP}
+        :param paths: a list of paths L{PathP}
     """
     for path in paths :
         show_Path( vm, path )
 
-def show_PathVariable(d, paths) :
+def show_PathVariable(vm, paths) :
     for path in paths :
       access, idx = path[0]
       m_idx = path[1]
-      method = d.get_cm_method( m_idx )
-      print access, idx, m_idx, method
+      method = vm.get_cm_method( m_idx )
+      print "%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1])
 
 class PathP :
   def __init__(self, access, idx, src_idx, dst_idx) :
@@ -1848,6 +1844,12 @@ TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
 }
 
 class Tags :
+  """
+      Handle specific tags
+      
+      :param patterns:
+      :params reverse:
+  """
   def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID) :
     self.tags = set()
    
@@ -2115,6 +2117,14 @@ class MethodAnalysis :
       self.tags = Tags()
       for i in self.tainted.get_tainted_packages().get_packages_by_method( self.method ) :
         self.tags.emit_by_classname( i )
+
+    def get_tags(self) :
+      """
+          Return the tags of the method
+
+          :rtype: a :class:`Tags` object
+      """
+      return self.tags
 
 SIGNATURE_L0_0 = "L0_0"
 SIGNATURE_L0_1 = "L0_1"
