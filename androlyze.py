@@ -181,7 +181,9 @@ def RunDecompiler(d, dx, decompiler) :
         d.set_decompiler( DecompilerDAD( d, dx ) )
 
 def AnalyzeElf(filename, raw=False) :
+    # avoid to install smiasm for everybody
     from androguard.core.binaries.elf import ELF 
+
     e = None
     if raw == False:
         e = ELF( open(filename, "rb").read() )
