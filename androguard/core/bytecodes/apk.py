@@ -375,8 +375,12 @@ class APK :
         """
             Return element in xml files which match with the tag name and the specific attribute
 
-            @param tag_name : a string which specify the tag name
-            @param attribute : a string which specify the attribute
+            :param tag_name: specify the tag name
+            :type tag_name: string
+            :param attribute: specify the attribute
+            :type attribute: string
+
+            :rtype: string
         """
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :

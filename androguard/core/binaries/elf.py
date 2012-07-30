@@ -23,6 +23,9 @@ from miasm.arch import arm_arch
 from miasm.core import bin_stream
 
 
+from androguard.core import bytecode
+from androguard.core.androconf import CONF, debug
+
 def disasm_at_addr(in_str, ad_to_dis, symbol_pool) :
     kargs = {}
     all_bloc = asmbloc.dis_bloc_all(arm_arch.arm_mn, in_str, ad_to_dis, set(),
@@ -30,13 +33,11 @@ def disasm_at_addr(in_str, ad_to_dis, symbol_pool) :
                                         dontdis_retcall = False,
                                         follow_call = False,
                                         **kargs)
-    print all_bloc
-
     for i in all_bloc :
-        print i.label
+        bytecode._PrintDefault("%s\n" % i.label)
         for j in i.lines :
-            print "\t", type(j), j #.getname(), j.args2str()
-        print
+            bytecode._PrintDefault("\t %s\n" % j)
+        bytecode._PrintDefault("\n")
 
 class Function :
     def __init__(self, cm, name, info) :
@@ -45,10 +46,10 @@ class Function :
         self.info = info
 
     def show(self) :
-        print self.name, hex(self.info.value)
-
+        bytecode._PrintSubBanner("Function")
+        bytecode._PrintDefault("name=%s addr=0x%x\n" % (self.name, self.info.value))
+        
         self.cm.disasm_at_addr( self.info.value )
-        #self.cm.disasm_at_addr( self.info.value )
 
 class ClassManager :
     def __init__(self, in_str, symbol_pool) :
