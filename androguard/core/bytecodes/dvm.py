@@ -137,7 +137,7 @@ FIELD_WRITE_DVM_OPCODES = [ ".put" ]
 
 BREAK_DVM_OPCODES = [ "invoke.", "move.", ".put", "if." ]
 
-BRANCH_DVM_OPCODES = [ "throw", "throw.", "if.", "goto", "goto.", "return", "return.", "packed-switch$",  "sparse-switch$" ]
+BRANCH_DVM_OPCODES = [ "if.", "goto", "goto.", "return", "return.", "packed-switch$",  "sparse-switch$" ]
 
 def clean_name_instruction( instruction ) :
     op_value = instruction.get_op_value()
