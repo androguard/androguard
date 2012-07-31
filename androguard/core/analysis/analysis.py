@@ -2041,6 +2041,8 @@ class MethodAnalysis :
         excepts = BO["Dexception"]( self.__vm, self.method )
         for i in excepts:
             l.extend( [i[0]] )
+            for handler in i[2:] :
+                l.append( handler[1] )
 
         idx = 0
         for i in instructions :
