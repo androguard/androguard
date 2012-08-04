@@ -6605,6 +6605,8 @@ class ClassManager :
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( class_def.get_class_idx() )
         self.set_hook_string( _type, value )
 
+        self.vm._delete_python_export_class( class_def )
+
         class_def.reload()
 
         # FIXME
@@ -6616,7 +6618,6 @@ class ClassManager :
         for i in class_def.get_fields() :
           i.reload()
 
-        self.vm._delete_python_export_class( class_def )
         self.vm._create_python_export_class( class_def )
 
     def set_hook_method_name(self, encoded_method, value) :
@@ -7357,7 +7358,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
         if _class != None :
             ### Class
             name = "CLASS_" + bytecode.FormatClassToPython( _class.get_name() )
-            setattr( self, name, _class )
+            if delete :
+              delattr( self, name )
+              return
+            else :
+              setattr( self, name, _class )
 
             ### Methods
             m = {}
@@ -7370,18 +7375,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 if len(m[i]) == 1 :
                     j = m[i][0]
                     name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() )
-                    if delete :
-                      delattr( _class, name )
-                    else :
-                      setattr( _class, name, j )
+                    setattr( _class, name, j )
                 else :
                     for j in m[i] :
                         name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-
-                        if delete :
-                          delattr( _class, name )
-                        else :
-                          setattr( _class, name, j )
+                        setattr( _class, name, j )
 
             ### Fields
             f = {}
@@ -7394,18 +7392,11 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 if len(f[i]) == 1 :
                     j = f[i][0]
                     name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() )
-
-                    if delete :
-                      delattr( _class, name )
-                    else :
-                      setattr( _class, name, j )
+                    setattr( _class, name, j )
                 else :
                     for j in f[i] :
                         name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        if delete :
-                          delattr( _class, name )
-                        else :
-                          setattr( _class, name, j )
+                        setattr( _class, name, j )
 
 
     def dotbuff(self, ins, idx) :
