@@ -135,8 +135,8 @@ def AnalyzeDex(filename, raw=False, decompiler=None) :
     else :
         d = DalvikVMFormat( filename )
 
-    androconf.debug("EXPORT VM to python namespace")
-    ExportVMToPython( d )
+    androconf.debug("Export VM to python namespace")
+    d.create_python_export()
 
     androconf.debug("VMAnalysis ...")
     dx = uVMAnalysis( d )
@@ -188,7 +188,7 @@ def AnalyzeElf(filename, raw=False) :
     if raw == False:
         e = ELF( open(filename, "rb").read() )
     else:
-        e = ELF( raw )
+        e = ELF( filename )
 
     ExportElfToPython( e )
 

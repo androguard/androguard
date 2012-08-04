@@ -1190,7 +1190,8 @@ class DBGBytecode :
         return None
 
     def show(self) :
-      print self.format, self.get_value()
+      bytecode._PrintSubBanner("DBGBytecode")
+      bytecode._PrintDefault("op_value=%x format=%s value=%s\n" % (self.op_value, str(self.format), self.get_value()))
 
     def get_obj(self) :
         return []
@@ -1280,9 +1281,12 @@ class DebugInfoItem :
         return self.bytecodes
 
     def show(self) :
-        print self.line_start, self.parameters_size, self.parameter_names
+        bytecode._PrintSubBanner("Debug Info Item")
+        bytecode._PrintDefault("line_start=%d parameters_size=%d\n" % (self.line_start, self.parameters_size))
+        nb = 0
         for i in self.parameter_names :
-          print self.CM.get_string( i )
+          bytecode._PrintDefault("parameter_names[%d]=%s\n" % (nb, self.CM.get_string( i )))
+          nb += 1
 
         for i in self.bytecodes :
           i.show()
@@ -2889,13 +2893,8 @@ class EncodedMethod :
         if self.code != None :
             self.code.set_idx( idx )
 
-
     def set_name(self, value) :
-        self.CM.set_hook_method_name( self.method_idx, value )
-        self.reload()
-
-    def set_class_name(self, value) :
-        self.CM.set_hook_method_class_name( self.method_idx, value )
+        self.CM.set_hook_method_name( self, value )
         self.reload()
 
     def get_raw(self) :
@@ -3323,8 +3322,7 @@ class ClassDefItem :
         self.__CM.decompiler_ob.display_all( self.get_name() )
 
     def set_name(self, value) :
-        self.__CM.set_hook_class_name( self.class_idx, value )
-        self.reload()
+        self.__CM.set_hook_class_name( self, value )
 
     def get_obj(self) :
       if self.interfaces_off != 0 :
@@ -3383,6 +3381,12 @@ class ClassHDefItem :
 
     def get_off(self) :
       return self.offset
+
+    def get_class_idx(self, idx) :
+      for i in self.class_def :
+          if i.get_class_idx() == idx :
+            return i 
+      return None
 
     def get_method(self, name_class, name_method) :
         l = []
@@ -6580,11 +6584,11 @@ class ClassManager :
         return [ proto.get_parameters_off_value(), proto.get_return_type_idx_value() ]
 
     def get_field(self, idx) :
-        field = self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
+        field = self.__manage_item[ "TYPE_FIELD_ID_ITEM" ].get( idx )
         return [ field.get_class_name(), field.get_type(), field.get_name() ]
 
     def get_field_ref(self, idx) :
-        return self.__manage_item[ "TYPE_FIELD_ID_ITEM"].get( idx )
+        return self.__manage_item[ "TYPE_FIELD_ID_ITEM" ].get( idx )
 
     def get_method(self, idx) :
         method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
@@ -6593,16 +6597,44 @@ class ClassManager :
     def get_method_ref(self, idx) :
         return self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
 
-    def set_hook_method_class_name(self, idx, value) :
-        method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-        _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( method.class_idx )
+    def set_hook_class_name(self, class_def, value) :
+        _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( class_def.get_class_idx() )
         self.set_hook_string( _type, value )
+
+        class_def.reload()
+
+        # FIXME
+        self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].reload()
+
+        for i in class_def.get_methods() :
+          i.reload()
+
+        for i in class_def.get_fields() :
+          i.reload()
+
+        self.vm._create_python_export_class( class_def )
+
+    def set_hook_method_name(self, encoded_method, value) :
+        method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( encoded_method.get_method_idx() )
+        self.set_hook_string( method.get_name_idx(), value )
+
+        class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( method.get_class_idx() )
+        if class_def != None :
+          try :
+            name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() )
+            delattr( class_def, name )
+          except AttributeError:
+            name += "_" + bytecode.FormatDescriptorToPython( encoded_method.get_descriptor() )
+            delattr( class_def, name )
+
+          name = "METHOD_" + bytecode.FormatNameToPython( value )
+          setattr( class_def, name, encoded_method )
+
+
+        print method, method.get_class_idx()
+
         method.reload()
 
-    def set_hook_method_name(self, idx, value) :
-        method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
-        self.set_hook_string( method.name_idx, value )
-        method.reload()
 
     def set_hook_string(self, idx, value) :
         self.hook_strings[ idx ] = value
@@ -7290,6 +7322,55 @@ class DalvikVMFormat(bytecode._Bytecode) :
                         field.DREFr.add( i, access["R"][i] )
                     for i in access["W"] :
                         field.DREFw.add( i, access["W"][i] )
+
+    def create_python_export(self) :
+        """
+            Export classes/methods/fields' names in the python namespace
+        """
+        for _class in self.get_classes() :
+          self._create_python_export_class(_class)
+
+    def _create_python_export_class(self, _class) :
+        if _class != None :
+            ### Class
+            name = "CLASS_" + bytecode.FormatClassToPython( _class.get_name() )
+            setattr( self, name, _class )
+
+            ### Methods
+            m = {}
+            for method in _class.get_methods() :
+                if method.get_name() not in m :
+                    m[ method.get_name() ] = []
+                m[ method.get_name() ].append( method )
+
+            for i in m :
+                if len(m[i]) == 1 :
+                    j = m[i][0]
+                    name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() )
+                    setattr( _class, name, j )
+                else :
+                    for j in m[i] :
+                        name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
+                        setattr( _class, name, j )
+
+            ### Fields
+            f = {}
+            for field in _class.get_fields() :
+                if field.get_name() not in f :
+                    f[ field.get_name() ] = []
+                f[ field.get_name() ].append( field )
+
+            for i in f :
+                if len(f[i]) == 1 :
+                    j = f[i][0]
+                    name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() )
+                    setattr( _class, name, j )
+                else :
+                    for j in f[i] :
+                        name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
+                        setattr( _class, name, j )
+
+
 
     def dotbuff(self, ins, idx) :
         return dot_buff(ins, idx)
