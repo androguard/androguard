@@ -1157,6 +1157,9 @@ class TaintedVariable :
     def get_paths_length(self) :
         return len(self.paths)
 
+    def show_paths(self, vm) :
+        show_PathVariable( vm, self.get_paths() )
+
 class TaintedVariables :
     def __init__(self, _vm) :
         self.__vm = _vm
@@ -2309,7 +2312,6 @@ class VMAnalysis :
            :rtype: a :class:`TaintedVariable` object
         """
         return self.get_tainted_variables().get_field( class_name, name, descriptor )
-
 
 class uVMAnalysis(VMAnalysis) :
   """
