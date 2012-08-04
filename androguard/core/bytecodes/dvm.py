@@ -2561,6 +2561,10 @@ class EncodedField :
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
+    def set_name(self, value) :
+        self.CM.set_hook_field_name( self, value )
+        self.reload()
+
     def get_obj(self) :
         return []
 
@@ -6612,6 +6616,7 @@ class ClassManager :
         for i in class_def.get_fields() :
           i.reload()
 
+        self.vm._delete_python_export_class( class_def )
         self.vm._create_python_export_class( class_def )
 
     def set_hook_method_name(self, encoded_method, value) :
@@ -6630,10 +6635,25 @@ class ClassManager :
           name = "METHOD_" + bytecode.FormatNameToPython( value )
           setattr( class_def, name, encoded_method )
 
-
-        print method, method.get_class_idx()
-
         method.reload()
+
+    def set_hook_field_name(self, encoded_field, value) :
+        field = self.__manage_item[ "TYPE_FIELD_ID_ITEM" ].get( encoded_field.get_field_idx() )
+        self.set_hook_string( field.get_name_idx(), value )
+
+        class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( field.get_class_idx() )
+        if class_def != None :
+          try :
+            name = "FIELD_" + bytecode.FormatNameToPython( encoded_field.get_name() )
+            delattr( class_def, name )
+          except AttributeError:
+            name += "_" + bytecode.FormatDescriptorToPython( encoded_field.get_descriptor() )
+            delattr( class_def, name )
+
+          name = "FIELD_" + bytecode.FormatNameToPython( value )
+          setattr( class_def, name, encoded_field )
+
+        field.reload()
 
 
     def set_hook_string(self, idx, value) :
@@ -7330,7 +7350,10 @@ class DalvikVMFormat(bytecode._Bytecode) :
         for _class in self.get_classes() :
           self._create_python_export_class(_class)
 
-    def _create_python_export_class(self, _class) :
+    def _delete_python_export_class(self, _class) :
+      self._create_python_export_class( _class, True)
+
+    def _create_python_export_class(self, _class, delete=False) :
         if _class != None :
             ### Class
             name = "CLASS_" + bytecode.FormatClassToPython( _class.get_name() )
@@ -7347,11 +7370,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 if len(m[i]) == 1 :
                     j = m[i][0]
                     name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
+                    if delete :
+                      delattr( _class, name )
+                    else :
+                      setattr( _class, name, j )
                 else :
                     for j in m[i] :
                         name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
+
+                        if delete :
+                          delattr( _class, name )
+                        else :
+                          setattr( _class, name, j )
 
             ### Fields
             f = {}
@@ -7364,12 +7394,18 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 if len(f[i]) == 1 :
                     j = f[i][0]
                     name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
+
+                    if delete :
+                      delattr( _class, name )
+                    else :
+                      setattr( _class, name, j )
                 else :
                     for j in f[i] :
                         name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
-
+                        if delete :
+                          delattr( _class, name )
+                        else :
+                          setattr( _class, name, j )
 
 
     def dotbuff(self, ins, idx) :
