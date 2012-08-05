@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'androguard',
-    version = '1.2',
+    version = '1.5',
     packages = find_packages(),
     scripts = ['androaxml.py', 'androcsign.py', 'androdiff.py', 'androgexf.py',
                'androlyze.py', 'andromercury.py', 'androrisk.py', 'androsign.py',
