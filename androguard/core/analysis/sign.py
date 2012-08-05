@@ -103,7 +103,7 @@ class Signature :
             return ""
 
         buff = ""
-        for i in code.get_bc().get() :
+        for i in code.get_bc().get_instructions() :
             buff += dvm.clean_name_instruction( i )
             buff += dvm.static_operand_instruction( i )
 
