@@ -169,6 +169,13 @@ class Condition(object):
         writer.write_short_circuit_condition(self.isnot, self.isand,
                                              self.cond1, self.cond2)
 
+    def __str__(self):
+        if self.isnot:
+            ret = '!%s %s %s'
+        else:
+            ret = '%s %s %s'
+        return ret % (self.cond1, ['||', '&&'][self.isand], self.cond2)
+
 
 class ShortCircuitBlock(CondBlock):
     def __init__(self, name, cond):
@@ -267,6 +274,7 @@ def build_node_from_block(block, block_to_node, vmap, gen_ret):
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
         if opcode == 0x1f:  # check-cast
+            idx += ins.get_length()
             continue
         _ins = INSTRUCTION_SET.get(ins.get_name().lower())
         if _ins is None:
