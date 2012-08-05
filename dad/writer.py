@@ -76,6 +76,7 @@ class Writer(object):
             params = self.method.lparams
         else:
             params = self.method.lparams[1:]
+        proto = ''
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
                         p_type, param in zip(self.method.params_type, params)])
@@ -229,9 +230,7 @@ class Writer(object):
         follow = switch.switch_follow
         values = switch.switch.get_values()
         cases = filter(lambda x: x in self.graph, switch.cases)
-        print 'CASES:', cases
-        print 'Value:', values
-        if follow in cases:
+        if follow in cases and len(values) == len(cases) + 1:
             cases.remove(follow)
         self.switch_follow.append(follow)
         default = len(values) < len(cases)
