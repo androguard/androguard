@@ -350,7 +350,7 @@ def construct(basicblocks, vmap, exceptions):
     elif len(lexit_nodes) < 1:
         # A method can have no return if it has throw statement(s) or if its
         # body is a while(1) whitout break/return.
-        log('No exit node found !', 'log')
+        log('No exit node found !', 'debug')
         graph.set_exit(graph.get_rpo()[-1])
     else:
         graph.set_exit(lexit_nodes[0])

@@ -169,13 +169,14 @@ class DvClass():
         if num in self.methods:
             self.methods[num].process()
             self.code.append(self.methods[num].get_source())
+            self.methods[num].show_source()
         elif self.subclasses.values():
             for klass in self.subclasses.values():
                 klass.select_meth(num)
         else:
             util.log('Method %s not found.' % num, 'error')
 
-    def show_code(self):
+    def show_source(self):
         if not self.inner and self.package:
             util.log('package %s;\n' % self.package, 'log')
 
@@ -200,7 +201,7 @@ class DvClass():
 
         util.log('', 'log')
         for klass in self.subclasses.values():
-            klass.show_code()
+            klass.show_source()
 
         for ins in self.code:
             util.log(ins, 'log')
@@ -249,7 +250,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         MACHINE = DvMachine(sys.argv[1])
     else:
-        MACHINE = DvMachine(FILES[-1])
+        MACHINE = DvMachine(FILES[0])
 
     from pprint import pprint
     TMP = util.PprintStream()
@@ -267,7 +268,7 @@ if __name__ == '__main__':
         util.log('\n\nDump of code:', 'log')
         util.log('===========================', 'log')
         for CLS in MACHINE.classes.values():
-            CLS.show_code()
+            CLS.show_source()
             util.log('===========================', 'log')
     else:
         CLS = MACHINE.get_class(CLS_NAME)
@@ -287,4 +288,4 @@ if __name__ == '__main__':
                 CLS.select_meth(int(METH))
             util.log('\n\nDump of code:', 'log')
             util.log('===========================', 'log')
-            CLS.show_code()
+            CLS.show_source()
