@@ -9,30 +9,9 @@
 
 Androguard (Android Guard) is primarily a tool written in full python to 
 play with :
-    - .dex (DalvikVM)
+    - DEX, ODEX
     - APK
     - Android's binary xml
-    - .class (JavaVM)
-    - JAR
-
-Androguard has the following features :
-    Map and manipulate (read/write) DEX/CLASS/APK/JAR files into full Python objects,
-    Native support of DEX code in a c++ library,
-    Access to the static analysis of your code 
-        (basic blocks, instructions, permissions (with database from http://www.android-permissions.org/) ...) 
-        and create your own static analysis tool,
-    Check if an android application is present in a database (malwares, goodwares ?),
-    Open source database of android malware (this opensource database is done on my free time, of course my free time is limited, so if you want to help, you are welcome !),
-    Diffing of android applications,
-    Measure the efficiency of obfuscators (proguard, ...),
-    Determine if your application has been pirated (plagiarism/rip-off indicator),
-    Risk indicator of malicious application,
-    Reverse engineering of applications (goodwares, malwares),
-    Transform Android's binary xml (like AndroidManifest.xml) into classic xml,
-    Visualize your application with gephi (gexf format), or with cytoscape (xgmml format), or PNG/DOT output,
-    Patch JVM classes, add native library dependencies,
-    Dump the jvm process to find classes into memory,
-    ....
 
 2 -] Usage
 

@@ -1526,14 +1526,16 @@ class AnnotationElement :
     def get_name_idx(self) :
       """
           Return the element name, represented as an index into the string_ids section
-          :rytpe: int
+          
+          :rtype: int
       """
       return self.name_idx
 
     def get_value(self) :
       """
           Return the element value (EncodedValue)
-          ;rytpe: a :class:`EncodedValue` object
+
+          :rtype: a :class:`EncodedValue` object
       """
       return self.value
 
@@ -2774,7 +2776,7 @@ class EncodedMethod :
 
             :rtype: string
         """
-        self.CM.decompiler_ob.display_source( self.get_class_name(), self.get_name(), self.get_descriptor() )
+        self.CM.decompiler_ob.display_source( self )
 
     def get_length(self) :
         """
@@ -3323,7 +3325,7 @@ class ClassDefItem :
 
             :rtype: string
         """
-        self.__CM.decompiler_ob.display_all( self.get_name() )
+        self.__CM.decompiler_ob.display_all( self )
 
     def set_name(self, value) :
         self.__CM.set_hook_class_name( self, value )
