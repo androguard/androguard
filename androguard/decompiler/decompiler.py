@@ -269,12 +269,10 @@ class DecompilerDAD :
         self.vm = vm
         self.vmx = vmx
 
-    def display_source(self, class_name, method_name, method_descriptor) :
-        m = self.vm.get_method_descriptor( class_name, method_name, method_descriptor )
+    def display_source(self, m) :
         mx = self.vmx.get_method( m )
         
         from dad import decompile 
-
 
         z = decompile.DvMethod( mx )
         z.process()
@@ -284,5 +282,18 @@ class DecompilerDAD :
         result = highlight(z.get_source(), lexer, formatter)
         print result
     
+    def display_all(self, _class) :
+        from dad import decompile
+
+        c = decompile.DvClass( _class, self.vmx )
+        c.process()
+
+        c.show_source()
+
+        #lexer = get_lexer_by_name("java", stripall=True)
+        #formatter = TerminalFormatter()
+        #result = highlight(c.show_source(), lexer, formatter)
+        #print result
+
     def get_all(self, class_name) :
         pass

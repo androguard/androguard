@@ -73,12 +73,6 @@ class ELF :
         
         self.create_functions()
 
-#        for k, v in self.e.sh.symtab.symbols.items():
-#            if v.size != 0 :
-#                print k, type(v), hex(v.value), v.size, v.other, v.info
-#                if k == "rootshell" : 
-#                    disasm_at_addr( in_str, v.value, symbol_pool )
-
     def create_symbol_pool(self) :
         dll_dyn_funcs = get_import_address_elf(self.E)
         self.symbol_pool = asmbloc.asm_symbol_pool()

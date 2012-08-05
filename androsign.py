@@ -60,8 +60,6 @@ def main(options, arguments) :
                 else :
                     print "INVALID"
             except Exception, e :
-                import traceback
-                traceback.print_exc()
                 print "ERROR", e
 
         elif ret_type == "DEX" :
