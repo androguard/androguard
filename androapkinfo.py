@@ -41,7 +41,7 @@ def display_dvm_info(apk) :
     print "Native code:", analysis.is_native_code(vmx)
     print "Dynamic code:", analysis.is_dyn_code(vmx)
     print "Reflection code:", analysis.is_reflection_code(vmx)
-    
+
     for i in vmx.get_methods() :
       i.create_tags()
       if not i.tags.empty() :
@@ -62,9 +62,7 @@ def main(options, arguments) :
                     print "INVALID"
             except Exception, e :
                 print "ERROR", e
-                import traceback
-                traceback.print_exc()
-
+                
     elif options.directory != None :
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :
