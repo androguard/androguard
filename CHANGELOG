@@ -1,9 +1,0 @@
-1.0 :
-- Embedded DED, DEX2JAR + JAD decompilers
-- Plagiarism/Diffing tools for android application by using Elsim
-- Open source database of android malware
-- improve analysis/risk algorithms
-- improve Dalvik bytecodes analysis
-- support mercury project to analyze apps from emulator/device
-- XREF and DREF
-- Alpha Native decompiler for android application: DAD
