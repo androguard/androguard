@@ -163,7 +163,7 @@ class DexViewer :
         width = 0
         idx = i.start
         label = ""
-        for ins in i.ins :
+        for ins in i.get_instructions() :
             c_label = "%x %s\n" % (idx, self.vm.dotbuff(ins, idx))
             idx += ins.get_length()
             label += c_label
