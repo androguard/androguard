@@ -1125,6 +1125,7 @@ class TaintedVariable :
         self.type = _type
 
         self.paths = {}
+        self.__cache = []
 
     def get_type(self) :
         return self.type
@@ -1150,9 +1151,14 @@ class TaintedVariable :
                 yield i, j, k, v
 
     def get_paths(self) :
+        if self.__cache != [] :
+            return self.__cache
+
         for i in self.paths :
           for j in self.paths[ i ] :
-              yield j, i
+              self.__cache.append( [j, i] )
+              #yield j, i
+        return self.__cache
 
     def get_paths_length(self) :
         return len(self.paths)
@@ -1168,6 +1174,9 @@ class TaintedVariables :
            TAINTED_FIELD : {},
            TAINTED_STRING : {},
         }
+
+        self.__cache_field_by_method = {}
+        self.__cache_string_by_method = {}
 
     # functions to get particulars elements
     def get_string(self, s) :
@@ -1247,31 +1256,31 @@ class TaintedVariables :
     # specifics functions
     def get_strings_by_method(self, method) :
         z = {}
-        try :
-            for i in self.__vars[ TAINTED_STRING ] :
-              for j in self.__vars[ TAINTED_STRING ][ i ].get_paths() :
-                if method.get_method_idx() == j[1] :
-                  if i not in z :
-                    z[ i ] = []
-                  z [ i ].append( j[0] )
-        except KeyError :
-            return {}
 
-        return z
+        try :
+            for i in self.__cache_string_by_method[ method.get_method_idx() ] :
+                z[ i ] = []
+                for j in i.get_paths() :
+                    if method.get_method_idx() == j[1] :
+                        z[i].append( j[0] )
+
+            return z
+        except :
+            return z
+
 
     def get_fields_by_method(self, method) :
         z = {}
-        try :
-            for i in self.__vars[ TAINTED_FIELD ] :
-              for j in self.__vars[ TAINTED_FIELD ][ i ].get_paths() :
-                if method.get_method_idx() == j[1] :
-                  if i not in z :
-                    z[ i ] = []
-                  z [ i ].append( j[0] )
-        except KeyError :
-            return {}
 
-        return z
+        try :
+            for i in self.__cache_field_by_method[ method.get_method_idx() ] :
+                z[ i ] = []
+                for j in i.get_paths() :
+                    if method.get_method_idx() == j[1] :
+                        z[i].append( j[0] )
+            return z
+        except :
+            return z
 
     def add(self, var, _type, _method=None) :
         if _type == TAINTED_FIELD :
@@ -1294,9 +1303,23 @@ class TaintedVariables :
             key = var[0] + var[1] + var[2]
             self.__vars[ _type ][ key ].push( access, idx, ref )
 
+            method_idx = ref.get_method_idx()
+            if method_idx not in self.__cache_field_by_method :
+                self.__cache_field_by_method[ method_idx ] = set()
+
+            self.__cache_field_by_method[ method_idx ].add( self.__vars[ TAINTED_FIELD ][ key ] )
+
+
         elif _type == TAINTED_STRING :
             self.add( var, _type )
             self.__vars[ _type ][ var ].push( access, idx, ref )
+
+            method_idx = ref.get_method_idx()
+
+            if method_idx not in self.__cache_string_by_method :
+                self.__cache_string_by_method[ method_idx ] = set()
+
+            self.__cache_string_by_method[ method_idx ].add( self.__vars[ TAINTED_STRING ][ var ] )
 
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
