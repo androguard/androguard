@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
-# All rights reserved.
+# Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+# All Rights Reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -29,75 +27,101 @@ TYPE_DESCRIPTOR = {
     'F': 'float',
     'D': 'double',
     'STR': 'String',
-    'StringBuilder': 'String'
+    'StringBuilder': 'String',
 }
 
 ACCESS_FLAGS_CLASSES = {
-    0x1   : 'public',
-    0x2   : 'private',
-    0x4   : 'protected',
-    0x8   : 'static',
-    0x10  : 'final',
-    0x200 : 'interface',
-    0x400 : 'abstract',
+    0x1:    'public',
+    0x2:    'private',
+    0x4:    'protected',
+    0x8:    'static',
+    0x10:   'final',
+    0x200:  'interface',
+    0x400:  'abstract',
     0x1000: 'synthetic',
     0x2000: 'annotation',
-    0x4000: 'enum'
+    0x4000: 'enum',
 }
 
 ACCESS_FLAGS_FIELDS = {
-    0x1   : 'public',
-    0x2   : 'private',
-    0x4   : 'protected',
-    0x8   : 'static',
-    0x10  : 'final',
-    0x40  : 'volatile',
-    0x80  : 'transient',
+    0x1:    'public',
+    0x2:    'private',
+    0x4:    'protected',
+    0x8:    'static',
+    0x10:   'final',
+    0x40:   'volatile',
+    0x80:   'transient',
     0x1000: 'synthetic',
-    0x4000: 'enum'
+    0x4000: 'enum',
 }
 
 ACCESS_FLAGS_METHODS = {
-    0x1    : 'public',
-    0x2    : 'private',
-    0x4    : 'protected',
-    0x8    : 'static',
-    0x10   : 'final',
-    0x20   : 'synchronized',
-    0x40   : 'bridge',
-    0x80   : 'varargs',
-    0x100  : 'native',
-    0x400  : 'abstract',
-    0x800  : 'strict',
-    0x1000 : 'synthetic',
-    0x10000: '', # ACC_CONSTRUCTOR
-    0x20000: 'synchronized'
+    0x1:     'public',
+    0x2:     'private',
+    0x4:     'protected',
+    0x8:     'static',
+    0x10:    'final',
+    0x20:    'synchronized',
+    0x40:    'bridge',
+    0x80:    'varargs',
+    0x100:   'native',
+    0x400:   'abstract',
+    0x800:   'strict',
+    0x1000:  'synthetic',
+    # ACC_CONSTRUCTOR
+    0x10000: '',
+    0x20000: 'synchronized',
 }
 
 TYPE_LEN = {
     'J': 2,
-    'D': 2
+    'D': 2,
 }
 
 DEBUG_MODES = {
-    'off':  -1,
+    'off': (-1),
     'error': 0,
     'log':   1,
-    'debug': 2
+    'debug': 2,
 }
 
 DEBUG_LEVEL = 'log'
 
 
-class wrap_stream(object):
+class PprintStream(object):
+    '''
+    Create an object to be used by pprint
+    '''
     def __init__(self):
         self.val = []
-    def write(self, s):
-        self.val.append(s)
+
+    def write(self, obj):
+        self.val.append(obj)
+
     def clean(self):
         self.val = []
+
     def __str__(self):
         return ''.join(self.val)
+
+
+def build_path(graph, node1, node2, path=None):
+    '''
+    Build the path from node1 to node2.
+    The path is composed of all the nodes between node1 and node2,
+    node1 excluded. Although if there is a loop starting from node1, it will be
+    included in the path.
+    '''
+    if path is None:
+        path = []
+    if node1 is node2:
+        return path
+    path.append(node2)
+    for pred in graph.preds(node2):
+        if pred in path:
+            continue
+        build_path(graph, node1, pred, path)
+    return path
 
 
 def merge_inner(clsdict):
@@ -112,22 +136,21 @@ def merge_inner(clsdict):
         samelist = True
         classlist = clsdict.keys()
         for classname in classlist:
-            parts_name = classname.split('$')
-            if len(parts_name) > 2:
-                parts_name = ['$'.join(parts_name[:-1]), parts_name[-1]]
+            parts_name = classname.rsplit('$', 1)
             if len(parts_name) > 1:
                 mainclass, innerclass = parts_name
-                innerclass = innerclass[:-1] # remove ';' of the name
+                innerclass = innerclass[:-1]  # remove ';' of the name
                 mainclass += ';'
                 if mainclass in clsdict:
-                    clsdict[mainclass].add_subclass(innerclass, clsdict[classname])
+                    clsdict[mainclass].add_subclass(innerclass,
+                                                    clsdict[classname])
                     clsdict[classname].name = innerclass
                     done[classname] = clsdict[classname]
                     del clsdict[classname]
                     samelist = False
                 elif mainclass in done:
                     cls = done[mainclass]
-                    cls.add_subclass(innerclass, clsdict[classname]) 
+                    cls.add_subclass(innerclass, clsdict[classname])
                     clsdict[classname].name = innerclass
                     done[classname] = done[mainclass]
                     del clsdict[classname]
@@ -143,14 +166,15 @@ def get_type_size(param):
 
 def get_type(atype, size=None):
     '''
-    Retrieve the type of a descriptor (e.g : I)
+    Retrieve the java type of a descriptor (e.g : I)
     '''
-    if atype.startswith('java.lang'):
-        atype = atype.replace('java.lang.', '')
-    res = TYPE_DESCRIPTOR.get(atype.lstrip('java.lang'))
+    res = TYPE_DESCRIPTOR.get(atype)
     if res is None:
         if atype[0] == 'L':
-            res = atype[1:-1].replace('/', '.')
+            if atype.startswith('Ljava/lang'):
+                res = atype[1:-1].lstrip('java/lang/').replace('/', '.')
+            else:
+                res = atype[1:-1].replace('/', '.')
         elif atype[0] == '[':
             if size is None:
                 res = '%s[]' % get_type(atype[1:])
@@ -172,21 +196,29 @@ def get_params_type(descriptor):
     return []
 
 
-def log(s, mode):
-    def _log(s):
-        print '%s' % s
-    def _log_debug(s):
-        print 'DEBUG: %s' % s
-    def _log_error(s):
-        print 'ERROR: %s' % s
-        exit()
+def create_png(basicblocks, graph, dir_name='graphs2'):
+    meth = basicblocks[0].get_method()
+    m_name = ''.join([x for x in meth.get_name() if x.isalnum()])
+    name = meth.get_class_name().split('/')[-1][:-1] + '#' + m_name
+    graph.draw(name, dir_name)
+
+
+def log(string, mode):
+    def _log(log_string):
+        print '%s' % log_string
+
+    def _log_debug(dbg_str):
+        print 'DEBUG: %s' % dbg_str
+
+    def _log_error(err_str):
+        exit('ERROR: %s' % err_str)
     if mode is None:
         return
     mode = DEBUG_MODES.get(mode)
     if mode <= DEBUG_MODES[DEBUG_LEVEL]:
         if mode == DEBUG_MODES['log']:
-            _log(s)
+            _log(string)
         elif mode == DEBUG_MODES['debug']:
-            _log_debug(s)
+            _log_debug(string)
         elif mode == DEBUG_MODES['error']:
-            _log_error(s)
+            _log_error(string)
