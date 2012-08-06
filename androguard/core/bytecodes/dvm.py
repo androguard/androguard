@@ -521,6 +521,16 @@ class HeaderItem :
     def show(self) :
         bytecode._PrintSubBanner("Header Item")
         bytecode._PrintDefault("magic=%s, checksum=%s, signature=%s\n" % (self.magic, self.checksum, self.signature))
+        bytecode._PrintDefault("file_size=%x, header_size=%x, endian_tag=%x\n" % (self.file_size, self.header_size, self.endian_tag))
+        bytecode._PrintDefault("link_size=%x, link_off=%x\n" % (self.link_size, self.link_off))
+        bytecode._PrintDefault("map_off=%x\n" % (self.map_off))
+        bytecode._PrintDefault("string_ids_size=%x, string_ids_off=%x\n" % (self.string_ids_size, self.string_ids_off))
+        bytecode._PrintDefault("type_ids_size=%x, type_ids_off=%x\n" % (self.type_ids_size, self.type_ids_off))
+        bytecode._PrintDefault("proto_ids_size=%x, proto_ids_off=%x\n" % (self.proto_ids_size, self.proto_ids_off))
+        bytecode._PrintDefault("field_ids_size=%x, field_ids_off=%x\n" % (self.field_ids_size, self.field_ids_off))
+        bytecode._PrintDefault("method_ids_size=%x, method_ids_off=%x\n" % (self.method_ids_size, self.method_ids_off))
+        bytecode._PrintDefault("class_defs_size=%x, class_defs_off=%x\n" % (self.class_defs_size, self.class_defs_off))
+        bytecode._PrintDefault("data_size=%x, data_off=%x\n" % (self.data_size, self.data_off))
 
     def set_off(self, off) :
       self.offset = off
@@ -4265,7 +4275,7 @@ class Instruction11n(Instruction) :
       return [ self.B ]
 
     def get_raw(self) :
-      return pack("=h", (self.B << 12) | (self.A << 8) | self.OP)
+      return pack("=H", (self.B << 12) | (self.A << 8) | self.OP)
 
 class Instruction21c(Instruction) :
     """
@@ -6912,7 +6922,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
           for j in i :
             if isinstance(j, AnnotationsDirectoryItem) :
               if idx % 4 != 0 :
-                idx = idx + (idx % 4)
+                idx = idx + (4 - (idx % 4))
 
             l.append( j )
 
@@ -6923,10 +6933,14 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
             length += c_length
 
+            #debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
+
+          debug("SAVE" + str(i[0]) + " @ 0x%x" % idx)
+
         else :
           if isinstance(i, MapList) :
             if idx % 4 != 0 :
-              idx = idx + (idx % 4)
+              idx = idx + (4 - (idx % 4))
 
           l.append( i )
           h[ i ] = idx
@@ -6935,6 +6949,8 @@ class DalvikVMFormat(bytecode._Bytecode) :
           length = i.get_length()
 
           s[ idx ] = length
+
+          debug("SAVE" + str(i) + " @ 0x%x" % idx)
 
         idx += length
 
