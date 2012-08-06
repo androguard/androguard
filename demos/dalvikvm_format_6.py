@@ -66,11 +66,11 @@ class MDalvikVMFormat:
 
                 if j >= len(b1) :
                     print "OUT OF B1 @ OFFSET 0x%x(%d)" % (j,j)
-                    break
+                    raise("ooo")
 
                 if j >= len(b2) :
                     print "OUT OF B2 @ OFFSET 0x%x(%d)" % (j,j)
-                    break
+                    raise("ooo")
 
                 if b1[j] != b2[j] :
                     print "BEGIN @ OFFSET 0x%x" % j
@@ -87,6 +87,8 @@ class MDalvikVMFormat:
 
 
 TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
+#TEST = "/home/desnos/workspace/Invalid/bin/Invalid.apk"
+
 #TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 #TEST = "/home/desnos/workspace/TestModif/bin/TestModif.apk"
 
