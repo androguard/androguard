@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.instruction import Constant
-from dad.util import build_path
+from dad.util import build_path, common_dom
 
 
 def dominance_frontier(graph, immdoms):
@@ -131,9 +130,8 @@ def update_chain(graph, loc, du, ud):
                 elif def_ins.has_side_effect():
                     continue
                 else:
-                    node = graph.get_node_from_loc(def_loc)
                     update_chain(graph, def_loc, du, ud)
-                    node.remove_ins(def_ins)
+                    graph.remove_ins(def_loc)
 
 
 def dead_code_elimination(graph, du, ud):
@@ -165,12 +163,14 @@ def dead_code_elimination(graph, du, ud):
                         # deleted instruction.
                         # Then remove the instruction.
                         update_chain(graph, i, du, ud)
-                        node.remove_ins(ins)
+                        graph.remove_ins(i)
 
 
 def clear_path_node(graph, reg, loc1, loc2):
     for loc in xrange(loc1, loc2):
         ins = graph.get_ins_from_loc(loc)
+        if ins is None:
+            continue
         if ins.get_lhs() == reg or ins.has_side_effect():
             return False
     return True
@@ -192,13 +192,13 @@ def clear_path(graph, reg, loc1, loc2):
 
     # If instructions are in different nodes, we also have to check the nodes
     # in the path between the two locations.
-    # We try to return as early as possible to avoir unnecessary computations.
+    # We try to return as early as possible to avoid unnecessary computations.
     if not clear_path_node(graph, reg, loc1, node1.ins_range[1]):
         return False
     path = build_path(graph, node1, node2)
     for node in path:
         locs = node.ins_range
-        if not clear_path_node(graph, reg, locs[0], locs[1]):
+        if not clear_path_node(graph, reg, locs[0], min(loc2, locs[1])):
             return False
     return True
 
@@ -214,65 +214,78 @@ def register_propagation(graph, du, ud):
     We have to be careful to the side effects some instructions may have.
     To do the propagation, we use the computed DU and UD chains.
     '''
-    for node in graph.get_rpo():
-        for i, ins in node.get_loc_with_ins():
-            # We make sure the ins has not been deleted since the start of the
-            # iteration
-            if ins not in node.get_ins():
-                continue
-            for var in ins.get_used_vars():
-                # Get the list of locations this variable is defined at.
-                locs = ud.get((var, i), ())
-                # If the variable is uniquely defined for this instruction
-                # it may be eligible for propagation.
-                if len(locs) == 1:
-                    loc = iter(locs).next()
-                    # Methods parameters are defined with a location of -1.
-                    if loc == -1:
-                        continue
-                    orig_ins = graph.get_ins_from_loc(loc)
-
-                    # We only try to propagate constants and definition points
-                    # which are used at only one location.
-                    if len(du.get((var, loc), ())) > 1:
-                        if not isinstance(orig_ins.get_rhs(), Constant):
+    change = True
+    while change:
+        change = False
+        for node in graph.get_rpo():
+            for i, ins in node.get_loc_with_ins():
+                # We make sure the ins has not been deleted since the start of
+                # the iteration
+                if ins not in node.get_ins():
+                    continue
+                for var in ins.get_used_vars():
+                    # Get the list of locations this variable is defined at.
+                    locs = ud.get((var, i), ())
+                    # If the variable is uniquely defined for this instruction
+                    # it may be eligible for propagation.
+                    if len(locs) == 1:
+                        loc = iter(locs).next()
+                        # Methods parameters are defined with a location of -1.
+                        if loc == -1:
                             continue
+                        orig_ins = graph.get_ins_from_loc(loc)
 
-                    # We defined some instructions as not propagable. Actually
-                    # this is the case only for array creation (new foo[x])
-                    propag = orig_ins.is_propagable()
-                    # We check that the propagation is safe for all the
-                    # variables that are used in the instruction.
-                    # The propagation is not safe if there is a side effect
-                    # along the path from the definition of the variable
-                    # to its use in the instruction, or if the variable may be
-                    # redifined along this path.
-                    for var2 in orig_ins.get_used_vars():
-                        # loc is the location of the defined variable
-                        # i is the location of the current instruction
-                        if propag and not clear_path(graph, var2, loc + 1, i):
-                            propag = False
-                    if propag:
-                        ins.modify_rhs(var, orig_ins.get_rhs())
-                        ud[(var, i)].remove(loc)
+                        # We only try to propagate constants and definition
+                        # points which are used at only one location.
+                        if len(du.get((var, loc), ())) > 1:
+                            if not orig_ins.get_rhs().is_const():
+                                continue
+
+                        # We defined some instructions as not propagable.
+                        # Actually this is the case only for array creation
+                        # (new foo[x])
+                        propag = orig_ins.is_propagable()
+                        # We check that the propagation is safe for all the
+                        # variables that are used in the instruction.
+                        # The propagation is not safe if there is a side effect
+                        # along the path from the definition of the variable
+                        # to its use in the instruction, or if the variable may
+                        # be redifined along this path.
                         for var2 in orig_ins.get_used_vars():
-                            # We update the UD chain of the variables we
-                            # propagate. We also have to take the definition
-                            # points of all the variables used by the
-                            # instruction and update the DU chain with this
-                            # information.
-                            old_ud = ud.get((var2, loc))
-                            ud.setdefault((var2, i), set()).update(old_ud)
-                            ud.pop((var2, loc))
+                            # loc is the location of the defined variable
+                            # i is the location of the current instruction
+                            if propag and not clear_path(graph, var2,
+                                                         loc + 1, i):
+                                propag = False
+                        # We also check that the instruction itself is
+                        # propagable. If the instruction has a side effect it
+                        # cannot be propagated if there is another side effect
+                        # along the path
+                        if (propag and orig_ins.has_side_effect() and
+                                    not clear_path(graph, None, loc + 1, i)):
+                            propag = False
+                        if propag:
+                            ins.modify_rhs(var, orig_ins.get_rhs())
+                            ud[(var, i)].remove(loc)
+                            for var2 in orig_ins.get_used_vars():
+                                # We update the UD chain of the variables we
+                                # propagate. We also have to take the
+                                # definition points of all the variables used
+                                # by the instruction and update the DU chain
+                                # with this information.
+                                old_ud = ud.get((var2, loc))
+                                ud.setdefault((var2, i), set()).update(old_ud)
+                                ud.pop((var2, loc))
 
-                            for def_loc in old_ud:
-                                du.get((var2, def_loc)).remove(loc)
-                                du.get((var2, def_loc)).add(i)
+                                for def_loc in old_ud:
+                                    du.get((var2, def_loc)).remove(loc)
+                                    du.get((var2, def_loc)).add(i)
 
-                        new_du = du.get((var, loc))
-                        new_du.remove(i)
-                        if len(new_du) == 0:
-                            graph.get_node_from_loc(loc).remove_ins(orig_ins)
+                            new_du = du.get((var, loc))
+                            new_du.remove(i)
+                            if len(new_du) == 0:
+                                graph.remove_ins(loc)
+                                change = True
 
 
 def immediate_dominator(graph):
@@ -280,20 +293,11 @@ def immediate_dominator(graph):
     Create a mapping of the nodes of a graph with their corresponding immediate
     dominator
     '''
-    def common_dom(cur, pred):
-        if not (cur and pred):
-            return cur or pred
-        while cur is not pred:
-            while cur.num < pred.num:
-                pred = idom[pred]
-            while cur.num > pred.num:
-                cur = idom[cur]
-        return cur
     idom = dict([(n, None) for n in graph])
     for node in graph.get_rpo():
         for pred in graph.preds(node):
             if pred.num < node.num:
-                idom[node] = common_dom(idom[node], pred)
+                idom[node] = common_dom(idom, idom[node], pred)
     return idom
 
 

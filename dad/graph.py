@@ -97,12 +97,17 @@ class Graph():
             self.loc_to_node[(start_node, end_node)] = node
 
     def get_ins_from_loc(self, loc):
-        return self.loc_to_ins[loc]
+        return self.loc_to_ins.get(loc)
 
     def get_node_from_loc(self, loc):
         for (start, end), node in self.loc_to_node.iteritems():
             if start <= loc <= end:
                 return node
+
+    def remove_ins(self, loc):
+        ins = self.get_ins_from_loc(loc)
+        self.get_node_from_loc(loc).remove_ins(ins)
+        self.loc_to_ins.pop(loc)
 
     def split_if_nodes(self):
         '''
@@ -172,12 +177,9 @@ class Graph():
                     suc = self.sucs(node)[0]
                     if len(node.get_ins()) == 0:
                         suc = self.edges.get(node)[0]
+                        node_map = {node: suc}
                         for pred in self.preds(node):
-                            if pred.is_cond():
-                                if pred.true is node:
-                                    pred.set_true(suc)
-                                else:
-                                    pred.set_false(suc)
+                            pred.update_attribute_with(node_map)
                             self.add_edge(pred, suc)
                         redo = True
                         if node is self.entry:
