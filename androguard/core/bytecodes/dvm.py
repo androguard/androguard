@@ -5771,6 +5771,7 @@ class DCode :
 
           :rtype: string
       """
+      return self.insn
 
     def set_insn(self, insn) :
       """
@@ -6930,7 +6931,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
       h = {}
       s = {}
       h_r = {}
-      
+
       idx = 0
       for i in self.map_list.get_obj() :
         length = 0
