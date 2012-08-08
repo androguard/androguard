@@ -5765,6 +5765,23 @@ class DCode :
         self.cached_instructions = []
         self.idx = 0
 
+    def get_insn(self) :
+      """
+          Get the insn buffer
+
+          :rtype: string
+      """
+
+    def set_insn(self, insn) :
+      """
+          Set a new raw buffer to disassemble
+
+          :param insn: the buffer
+          :type insn: string
+      """
+      self.insn = insn
+      self.size = len(self.insn)
+
     def set_idx(self, idx) :
         """
             Set the start address of the buffer
@@ -6913,7 +6930,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
       h = {}
       s = {}
       h_r = {}
-
+      
       idx = 0
       for i in self.map_list.get_obj() :
         length = 0

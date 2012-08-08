@@ -87,11 +87,6 @@ class MDalvikVMFormat:
 
 
 TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
-#TEST = "/home/desnos/workspace/Invalid/bin/Invalid.apk"
-
-#TEST = "examples/android/TestsAndroguard/bin/classes.dex"
-#TEST = "/home/desnos/workspace/TestModif/bin/TestModif.apk"
-
 FILENAME = "./toto.apk"
 
 androconf.set_debug()
@@ -108,4 +103,4 @@ new_dex = m.test_save()
 a.new_zip(  filename=FILENAME,
             deleted_files="(META-INF/.)", new_files = {
             "classes.dex" : new_dex } )
-apk.sign_apk( FILENAME, "/home/desnos/androguard/tmp/androguard.androtrace", "tototo" )
+apk.sign_apk( FILENAME, "./keystore/keystore1", "tototo" )

@@ -180,8 +180,7 @@ class GVMAnalysis :
                 for path in m.get_paths() :
                     if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
                         src_class_name, src_method_name, src_descriptor = path.get_src( self.vm.get_class_manager() )
-                        dst_class_name, dst_method_name, dst_descriptor = path.get_dst( self.vm.get_class_manager() )
-                        n1 = self._get_exist_node( dst_class_name, dst_method_name, dst_descriptor )
+                        n1 = self._get_exist_node( src_class_name, src_method_name, src_descriptor )
                         n2 = self._get_new_node( dst_class_name, dst_method_name, dst_descriptor + " " + "DEXCLASSLOADER",
                                                  "DEXCLASSLOADER" )
 
