@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 
 import sys
 
@@ -38,4 +38,6 @@ new_dex = vm.save()
 a.new_zip( filename=FILENAME_OUTPUT, 
            deleted_files="(META-INF/.)", 
            new_files = { "classes.dex" : new_dex } )
+
+# Please configure your keystore !! :) follow the tutorial on android website
 apk.sign_apk( FILENAME_OUTPUT, "./keystore/keystore1", "tototo" )
