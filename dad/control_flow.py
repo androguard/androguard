@@ -18,7 +18,7 @@
 
 from dad.basic_blocks import Condition, ShortCircuitBlock, LoopBlock
 from dad.node import Interval
-from dad.util import log, build_path
+from dad.util import log, common_dom
 from dad.graph import Graph
 
 
@@ -91,9 +91,8 @@ def derived_sequence(graph):
         interv_graph, interv_of_head = intervals(graph)
         deriv_interv.append(interv_of_head)
 
-        if len(interv_graph) == 1:
-            single_node = True
-        else:
+        single_node = len(interv_graph) == 1
+        if not single_node:
             deriv_seq.append(interv_graph)
 
         graph = interv_graph
@@ -203,53 +202,36 @@ def if_struct(graph, idoms):
             if len(ldominates) > 0:
                 n = max(ldominates, key=lambda x: x.num)
                 node.set_if_follow(n)
-                for x in unresolved:
-                    x.set_if_follow(n)
-                unresolved = set()
+                for x in unresolved.copy():
+                    if node.num < x.num < n.num:
+                        x.set_if_follow(n)
+                        unresolved.remove(x)
             else:
                 unresolved.add(node)
-    if len(unresolved) > 0:
-        for node in unresolved:
-            follows = [n for n in (node.loop_follow, node.switch_follow) if n]
-            if len(follows) >= 1:
-                follow = min(follows, key=lambda x: x.num)
-                node.set_if_follow(follow)
+    return unresolved
 
 
 def switch_struct(graph, idoms):
     unresolved = set()
     for node in graph.post_order():
         if node.is_switch():
-            # TODO: Deal with unstructured switch
-            #for suc in node.succs:
-            #    if immDom[suc] is not node:
-            #        n = commonImmedDom(node.succs, immDom)
-            #    else:
-            #        n = node
+            m = node
+            for suc in graph.sucs(node):
+                if idoms[suc] is not node:
+                    m = common_dom(idoms, node, suc)
             ldominates = []
             for n, dom in idoms.iteritems():
-                if node is dom and node not in graph.sucs(n):
-                                                        # len(n.preds) >= 2:
+                if m is dom and len(graph.preds(n)) > 1:
                     ldominates.append(n)
             if len(ldominates) > 0:
-                j = ldominates.pop()
-                for d in ldominates:
-                    nd = len(graph.preds(d))
-                    nj = len(graph.preds(j))
-                    if nd > nj:
-                        j = d
-                    elif nd == nj and d.num > j.num:
-                        j = d
-                node.set_switch_follow(j)
+                n = max(ldominates, key=lambda x: x.num)
+                node.set_switch_follow(n)
                 for x in unresolved:
-                    x.set_switch_follow(j)
-                path = build_path(graph, node, j)
-                path.remove(j)
-                for n in path:
-                    n.set_switch_follow(j)
+                    x.set_switch_follow(n)
                 unresolved = set()
             else:
                 unresolved.add(node)
+            node.order_cases()
 
 
 def short_circuit_struct(graph, node_map):
@@ -270,6 +252,9 @@ def short_circuit_struct(graph, node_map):
         condition = Condition(node1, node2, is_and, is_not)
 
         new_node = ShortCircuitBlock(new_name, condition)
+        for old_n, new_n in node_map.iteritems():
+            if new_n in (node1, node2):
+                node_map[old_n] = new_node
         node_map[node1] = new_node
         node_map[node2] = new_node
         new_node.copy_from(node1)
@@ -277,11 +262,7 @@ def short_circuit_struct(graph, node_map):
         graph.add_node(new_node)
 
         for pred in lpreds:
-            if pred.is_cond():
-                if pred.true in (node1, node2):
-                    node_map.get(pred, pred).set_true(new_node)
-                if pred.false in (node1, node2):
-                    node_map.get(pred, pred).set_false(new_node)
+            pred.update_attribute_with(node_map)
             graph.add_edge(node_map.get(pred, pred), new_node)
         for dest in ldests:
             graph.add_edge(new_node, node_map.get(dest, dest))
@@ -293,7 +274,7 @@ def short_circuit_struct(graph, node_map):
     while change:
         change = False
         done = set()
-        for node in graph.get_rpo()[:]:
+        for node in graph.post_order():
             if node.is_cond() and node not in done:
                 then = node.true
                 els = node.false
@@ -340,11 +321,6 @@ def while_block_struct(graph, node_map):
             lsuccs = graph.sucs(node)
 
             for pred in lpreds:
-                if pred.is_cond():
-                    if node is pred.true:
-                        node_map.get(pred, pred).set_true(new_node)
-                    if node is pred.false:
-                        node_map.get(pred, pred).set_false(new_node)
                 graph.add_edge(node_map.get(pred, pred), new_node)
 
             for suc in lsuccs:
@@ -353,8 +329,8 @@ def while_block_struct(graph, node_map):
                 graph.set_entry(new_node)
 
             if node.is_cond():
-                new_node.set_true(node_map.get(node.true, node.true))
-                new_node.set_false(node_map.get(node.false, node.false))
+                new_node.set_true(node.true)
+                new_node.set_false(node.false)
 
             graph.add_node(new_node)
             graph.remove_node(node)
@@ -367,13 +343,23 @@ def identify_structures(graph, idoms):
     Gi, Li = derived_sequence(graph)
     switch_struct(graph, idoms)
     loop_struct(Gi, Li)
-    if_struct(graph, idoms)
     node_map = {}
     short_circuit_struct(graph, node_map)
+    for n, dom in idoms.iteritems():
+        idoms[n] = node_map.get(dom, dom)
+    if_unresolved = if_struct(graph, idoms)
     while_block_struct(graph, node_map)
+    loop_starts = []
     for node in graph.get_rpo():
         node.update_attribute_with(node_map)
         if node.is_start_loop():
-            loop_type(graph, node, node.latch, node.loop_nodes)
-            loop_follow(graph, node, node.latch, node.loop_nodes)
+            loop_starts.append(node)
+    for node in loop_starts:
+        loop_type(graph, node, node.latch, node.loop_nodes)
+        loop_follow(graph, node, node.latch, node.loop_nodes)
+    for node in if_unresolved:
+        follows = [n for n in (node.loop_follow, node.switch_follow) if n]
+        if len(follows) >= 1:
+            follow = min(follows, key=lambda x: x.num)
+            node.set_if_follow(follow)
     del node_map

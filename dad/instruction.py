@@ -27,6 +27,9 @@ class IRForm(object):
     def is_cond(self):
         return False
 
+    def is_const(self):
+        return False
+
     def is_propagable(self):
         return True
 
@@ -71,6 +74,9 @@ class Constant(IRForm):
     def is_call(self):
         return False
 
+    def is_const(self):
+        return True
+
     def has_side_effect(self):
         return False
 
@@ -80,7 +86,9 @@ class Constant(IRForm):
                 writer.write_constant('false')
             else:
                 writer.write_constant('true')
-        if to_int:
+        elif self.type == 'class':
+            writer.write_base_class(self.cst)
+        elif to_int:
             writer.write_constant(self.cst2)
         else:
             writer.write_constant(self.cst)
@@ -90,6 +98,9 @@ class BaseClass(IRForm):
     def __init__(self, name):
         self.v = 'c%s' % name
         self.cls = name
+
+    def is_const(self):
+        return True
 
     def write(self, writer):
         writer.write_base_class(self.cls)
@@ -145,6 +156,9 @@ class Param(IRForm):
 class ThisParam(Param):
     def __init__(self, value, atype):
         super(ThisParam, self).__init__(value, atype)
+
+    def is_const(self):
+        return True
 
     def get_used_vars(self):
         return []
@@ -206,6 +220,9 @@ class MoveResultExpression(IRForm):
 
     def is_call(self):
         return self.var_map[self.rhs].is_call()
+
+    def has_side_effect(self):
+        return self.var_map[self.rhs].has_side_effect()
 
     def get_used_vars(self):
         return self.var_map[self.rhs].get_used_vars()
@@ -567,8 +584,8 @@ class FillArrayExpression(ArrayExpression):
         self.var_map[reg.v] = reg
         self.value = value
 
-#    def has_side_effect(self):
-#        return True
+    def is_propagable(self):
+        return False
 
     def get_rhs(self):
         return self.reg
