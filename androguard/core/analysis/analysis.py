@@ -1409,7 +1409,6 @@ class TaintedPackage :
     def gets(self) :
         return self.paths
 
-    #p = self.__packages[ class_name ].push( access, idx, method.get_idx(), idx_method )
     def push(self, access, idx, src_idx, dst_idx) :
         p = PathP( access, idx, src_idx, dst_idx )
         self.paths[ access ].append( p )
@@ -1489,7 +1488,7 @@ def show_DynCode(dx) :
         :type dx: a :class:`VMAnalysis` object
     """
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
-    show_Path( dx.get_vm(), paths )
+    show_Paths( dx.get_vm(), paths )
 
 def show_NativeMethods(dx) :
     """
@@ -1509,7 +1508,7 @@ def show_ReflectionCode(dx) :
         :type dx: a :class:`VMAnalysis` object
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
-    show_Path( dx.get_vm(), paths )
+    show_Paths( dx.get_vm(), paths )
 
 def is_crypto_code(dx) :
     """
