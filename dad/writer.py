@@ -20,8 +20,6 @@ from dad.util import get_type, log, ACCESS_FLAGS_METHODS
 from dad.opcode_ins import Op
 from dad.instruction import Constant, ThisParam, BinaryCompExpression
 
-SPACE = ' '
-
 
 class Writer(object):
     def __init__(self, graph, method):
@@ -34,6 +32,7 @@ class Writer(object):
         self.latch_node = [None]
         self.if_follow = [None]
         self.switch_follow = [None]
+        self.next_case = None
         self.skip = False
 
     def __str__(self):
@@ -45,17 +44,26 @@ class Writer(object):
     def dec_ind(self, i=1):
         self.ind -= (4 * i)
 
+    def space(self):
+        if self.skip:
+            self.skip = False
+            return ''
+        return ' ' * self.ind
+
     def write_ind(self):
         if self.skip:
             self.skip = False
         else:
-            self._write(SPACE * self.ind)
+            self._write(self.space())
 
     def _write(self, s):
         self.buffer.append(s)
 
     def end_ins(self):
         self._write(';\n')
+
+    def write_ins(self, ins):
+        ins.write(self)
 
     def write_method(self):
         acc = []
@@ -71,7 +79,7 @@ class Writer(object):
         else:
             name = self.method.name
             proto = '%s %s %s(' % (' '.join(acc), self.method.type, name)
-        self._write('%s%s' % (SPACE * self.ind, proto))
+        self._write('%s%s' % (self.space(), proto))
         if 0x8 in self.method.access:
             params = self.method.lparams
         else:
@@ -81,15 +89,15 @@ class Writer(object):
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
                         p_type, param in zip(self.method.params_type, params)])
         self._write('%s)' % proto)
-        if self.method.graph is None:
+        if self.graph is None:
             return self._write(';')
-        self._write('\n%s{\n' % (SPACE * self.ind))
+        self._write('\n%s{\n' % self.space())
         self.inc_ind()
 #        for v, var in self.method.var_to_name.iteritems():
 #            var.write_decl(self)
-        self.write_node(self.method.graph.get_entry())
+        self.write_node(self.graph.get_entry())
         self.dec_ind()
-        self._write('%s}' % (SPACE * self.ind))
+        self._write('%s}\n' % self.space())
 
     def write_node(self, node):
         if node in (self.if_follow[-1], self.switch_follow[-1],
@@ -100,9 +108,6 @@ class Writer(object):
         self.visited_nodes.add(node)
         node.write(self)
 
-    def write_ins(self, ins):
-        ins.write(self)
-
     def write_loop_node(self, loop):
         follow = loop.get_loop_follow()
         if follow is None and not loop.looptype.endless():
@@ -111,14 +116,14 @@ class Writer(object):
             if loop.true is follow:
                 loop.neg()
                 loop.true, loop.false = loop.false, loop.true
-            self._write('%swhile (' % (SPACE * self.ind))
+            self._write('%swhile (' % self.space())
             loop.write_cond(self)
             self._write(') {\n')
         elif loop.looptype.posttest():
-            self._write('%sdo {\n' % (SPACE * self.ind))
+            self._write('%sdo {\n' % self.space())
             self.latch_node.append(loop.latch)
         elif loop.looptype.endless():
-            self._write('%swhile(true) {\n' % (SPACE * self.ind))
+            self._write('%swhile(true) {\n' % self.space())
         self.inc_ind()
         self.loop_follow.append(follow)
         if loop.looptype.pretest():
@@ -129,17 +134,17 @@ class Writer(object):
         self.loop_follow.pop()
         self.dec_ind()
         if loop.looptype.pretest():
-            self._write('%s}\n' % (SPACE * self.ind))
+            self._write('%s}\n' % self.space())
         elif loop.looptype.posttest():
             self.latch_node.pop()
-            self._write('%s} while(' % (SPACE * self.ind))
+            self._write('%s} while(' % self.space())
             loop.latch.write_cond(self)
             self._write(');\n')
         else:
             self.inc_ind()
             self.write_node(loop.latch)
             self.dec_ind()
-            self._write('%s}\n' % (SPACE * self.ind))
+            self._write('%s}\n' % self.space())
         if follow is not None:
             if follow not in self.visited_nodes:
                 self.write_node(follow)
@@ -149,72 +154,56 @@ class Writer(object):
         if cond.false is self.loop_follow[-1]:
             cond.neg()
             cond.true, cond.false = cond.false, cond.true
-            self._write('%sif(' % (SPACE * self.ind))
+            self._write('%sif(' % self.space())
             cond.write_cond(self)
             self._write(') {\n')
             self.inc_ind()
-            self._write('%sbreak;\n' % (SPACE * self.ind))
+            self._write('%sbreak;\n' % self.space())
             self.dec_ind()
-            self._write('%s}\n' % (SPACE * self.ind))
+            self._write('%s}\n' % self.space())
             self.write_node(cond.false)
-            return
-        is_else = True
-        if follow is not None:
-            if cond.true is follow:
+        elif follow is not None:
+            is_else = not (follow in (cond.true, cond.false))
+            if (cond.true in (follow, self.next_case)
+                                                or cond.num > cond.true.num):
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
-                is_else = False
             self.if_follow.append(follow)
             if not cond.true in self.visited_nodes:
-                self._write('%sif(' % (SPACE * self.ind))
+                self._write('%sif(' % self.space())
                 cond.write_cond(self)
                 self._write(') {\n')
                 self.inc_ind()
                 self.write_node(cond.true)
                 self.dec_ind()
             if is_else and not cond.false in self.visited_nodes:
-                self._write('%s} else {\n' % (SPACE * self.ind))
+                self._write('%s} else {\n' % self.space())
                 self.inc_ind()
                 self.write_node(cond.false)
                 self.dec_ind()
             self.if_follow.pop()
-            self._write('%s}\n' % (SPACE * self.ind))
+            self._write('%s}\n' % self.space())
             if follow not in self.visited_nodes:
                 self.write_node(follow)
         else:
-            # No follow node. If one of the branch loop to a header node
-            # this is not an if-then-else
-            if cond.true.num < cond.num or cond.false.num < cond.num:
-                cond.neg()
-                cond.true, cond.false = cond.false, cond.true
-                self._write('%sif (' % (SPACE * self.ind))
-                cond.write_cond(self)
-                self._write(') {\n')
-                self.inc_ind()
-                self.write_node(cond.true)
-                self.dec_ind()
-                self._write('%s}\n' % (SPACE * self.ind))
-            else:
-                self._write('%sif (' % (SPACE * self.ind))
-                cond.write_cond(self)
-                self._write(') {\n')
-                self.inc_ind()
-                self.write_node(cond.true)
-                self.dec_ind()
-                self._write('%s} else {\n' % (SPACE * self.ind))
-                self.inc_ind()
-                self.write_node(cond.false)
-                self.dec_ind()
-                self._write('%s}\n' % (SPACE * self.ind))
+            self._write('%sif (' % self.space())
+            cond.write_cond(self)
+            self._write(') {\n')
+            self.inc_ind()
+            self.write_node(cond.true)
+            self.dec_ind()
+            self._write('%s} else {\n' % self.space())
+            self.inc_ind()
+            self.write_node(cond.false)
+            self.dec_ind()
+            self._write('%s}\n' % self.space())
 
     def write_short_circuit_condition(self, nnot, aand, cond1, cond2):
         if nnot:
             cond1.neg()
         self._write('(')
         cond1.write_cond(self)
-        self._write(')')
-        self._write(' %s ' % ['||', '&&'][aand])
-        self._write('(')
+        self._write(') %s (' % ['||', '&&'][aand])
         cond2.write_cond(self)
         self._write(')')
 
@@ -224,34 +213,37 @@ class Writer(object):
             for ins in lins[:-1]:
                 self.write_ins(ins)
         switch_ins = switch.get_ins()[-1]
-        self._write('%sswitch(' % (SPACE * self.ind))
+        self._write('%sswitch(' % self.space())
         self.write_ins(switch_ins)
         self._write(') {\n')
         follow = switch.switch_follow
-        values = switch.switch.get_values()
-        cases = filter(lambda x: x in self.graph, switch.cases)
-        if follow in cases and len(values) == len(cases) + 1:
-            cases.remove(follow)
+        cases = switch.cases
         self.switch_follow.append(follow)
-        default = len(values) < len(cases)
-        for i, n in enumerate(values):
+        default = switch.default
+        for i, node in enumerate(cases):
+            if node in self.visited_nodes:
+                continue
             self.inc_ind()
-            self._write('%scase %d:\n' % (SPACE * self.ind, values[i]))
-            self.inc_ind()
-            if default:
-                self.write_node(cases[i + 1])
+            for case in switch.node_to_case[node]:
+                self._write('%scase %d:\n' % (self.space(), case))
+            if i + 1 < len(cases):
+                self.next_case = cases[i + 1]
             else:
-                self.write_node(cases[i])
-            self._write('%sbreak;\n' % (SPACE * self.ind))
-            self.dec_ind(2)
-        if len(values) < len(cases):
+                self.next_case = None
+            if node is default:
+                self._write('%sdefault:\n' % self.space())
+                default = None
             self.inc_ind()
-            self._write('%sdefault:\n' % (SPACE * self.ind))
-            self.inc_ind()
-            self.write_node(cases[0])
-            self._write('%sbreak;\n' % (SPACE * self.ind))
+            self.write_node(node)
+            self._write('%sbreak;\n' % self.space())
             self.dec_ind(2)
-        self._write('%s}\n' % (SPACE * self.ind))
+        if default not in (None, follow):
+            self.inc_ind()
+            self._write('%sdefault:\n' % self.space())
+            self.inc_ind()
+            self.write_node(default)
+            self.dec_ind(2)
+        self._write('%s}\n' % self.space())
         self.switch_follow.pop()
         if follow not in self.visited_nodes:
             self.write_node(follow)
@@ -420,7 +412,8 @@ class Writer(object):
         self.write_ind()
         array.write(self)
         self._write(' = {')
-        self._write('%r' % value.get_data())
+        data = value.get_data()
+        self._write(', '.join(['%d' % ord(c) for c in data[:-1]]))
         self._write('}')
         self.end_ins()
 

@@ -124,6 +124,17 @@ def build_path(graph, node1, node2, path=None):
     return path
 
 
+def common_dom(idom, cur, pred):
+    if not (cur and pred):
+        return cur or pred
+    while cur is not pred:
+        while cur.num < pred.num:
+            pred = idom[pred]
+        while cur.num > pred.num:
+            cur = idom[cur]
+    return cur
+
+
 def merge_inner(clsdict):
     '''
     Merge the inner class(es) of a class :

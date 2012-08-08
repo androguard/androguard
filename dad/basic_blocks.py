@@ -92,6 +92,8 @@ class SwitchBlock(BasicBlock):
         super(SwitchBlock, self).__init__(name, block_ins)
         self.switch = switch
         self.cases = []
+        self.default = None
+        self.node_to_case = {}
 
     def add_case(self, case):
         self.cases.append(case)
@@ -107,6 +109,16 @@ class SwitchBlock(BasicBlock):
     def update_attribute_with(self, n_map):
         super(SwitchBlock, self).update_attribute_with(n_map)
         self.cases = [n_map.get(n, n) for n in self.cases]
+        for n1, n2 in n_map.iteritems():
+            if n1 in self.node_to_case:
+                self.node_to_case[n2] = self.node_to_case.pop(n1)
+
+    def order_cases(self):
+        values = self.switch.get_values()
+        if len(values) < len(self.cases):
+            self.default = self.cases.pop(0)
+        for case, node in zip(values, self.cases):
+            self.node_to_case.setdefault(node, []).append(case)
 
     def __str__(self):
         return '%d-Switch(%s)' % (self.num, self.name)
@@ -123,6 +135,11 @@ class CondBlock(BasicBlock):
 
     def set_false(self, node):
         self.false = node
+
+    def update_attribute_with(self, n_map):
+        super(CondBlock, self).update_attribute_with(n_map)
+        self.true = n_map.get(self.true, self.true)
+        self.false = n_map.get(self.false, self.false)
 
     def neg(self):
         if len(self.ins) > 1:
@@ -217,6 +234,10 @@ class LoopBlock(CondBlock):
 
     def write_cond(self, writer):
         self.cond.write_cond(writer)
+
+    def update_attribute_with(self, n_map):
+        super(LoopBlock, self).update_attribute_with(n_map)
+        self.cond.update_attribute_with(n_map)
 
     def __str__(self):
         if self.looptype.pretest():

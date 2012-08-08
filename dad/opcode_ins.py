@@ -297,7 +297,7 @@ def conststringjumbo(ins, vmap):
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     util.log('ConstClass : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.get_string(), 'class')
+    cst = Constant(util.get_type(ins.get_string()), 'class')
     a = get_variables(vmap, ins.AA)
     exp = AssignExpression(a, cst)
     return exp
@@ -999,7 +999,7 @@ def invokestatic(ins, vmap, ret):
     nbargs = ins.A
     largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
     args = get_variables(vmap, *largs)[:nbargs]
-    base = BaseClass(cls_name)
+    base = BaseClass(util.get_type(cls_name))
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                     param_type, nbargs, args)
     return AssignExpression(ret.new(), exp)
