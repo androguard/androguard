@@ -135,11 +135,13 @@ class APK :
         :param raw: specify if the filename is a path or raw data (optional)
         :param mode: specify the mode to open the file (optional)
         :param magic_file: specify the magic file (optional)
+        :param zipmodule: specify the type of zip module to use (0:chilkat, 1:zipfile, 2:patch zipfile)
 
         :type filename: string
         :type raw: boolean
         :type mode: string
         :type magic_file: string
+        :type zipmodule: int
 
         :Example:
           APK("myfile.apk")
@@ -167,9 +169,6 @@ class APK :
             self.__raw = fd.read()
             fd.close()
 
-
-        #
-        #self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
         if zipmodule == 0 :
             self.zip = ChilkatZip( self.__raw )
         elif zipmodule == 2 :
