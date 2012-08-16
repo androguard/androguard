@@ -169,6 +169,8 @@ class APK :
             self.__raw = fd.read()
             fd.close()
 
+        self.zipmodule = zipmodule
+
         if zipmodule == 0 :
             self.zip = ChilkatZip( self.__raw )
         elif zipmodule == 2 :
@@ -535,7 +537,13 @@ class APK :
             :type deleted_files: None or a string
             :type new_files: a dictionnary (key:filename, value:content of the file)
         """
-        zout = zipfile.ZipFile (filename, 'w')
+        if self.zipmodule == 2 :
+            from androguard.patch import zipfile
+            zout = zipfile.ZipFile (filename, 'w')
+        else :
+            import zipfile
+            zout = zipfile.ZipFile (filename, 'w')
+
 
         for item in self.zip.infolist() :
            
