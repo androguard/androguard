@@ -22,12 +22,17 @@ from androguard.core import androconf
 from androguard.core.bytecode import SV
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 
-import zipfile, StringIO
+import StringIO
 from struct import pack, unpack
 from xml.dom import minidom
 from xml.sax.saxutils import escape
 from zlib import crc32
 import re
+
+# 0: chilkat
+# 1: default python zipfile module
+# 2: patch zipfile module
+ZIPMODULE = 1
 
 import sys
 if sys.hexversion < 0x2070000 :
@@ -141,7 +146,7 @@ class APK :
           
           APK(open("myfile.apk", "rb").read(), raw=True)
     """
-    def __init__(self, filename, raw=False, mode="r", magic_file=None) :
+    def __init__(self, filename, raw=False, mode="r", magic_file=None, zipmodule=ZIPMODULE) :
         self.filename = filename
 
         self.xml = {}
@@ -163,11 +168,16 @@ class APK :
             fd.close()
 
 
-        if ZIPMODULE == 0 :
+        #
+        #self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
+        if zipmodule == 0 :
             self.zip = ChilkatZip( self.__raw )
-        else :
+        elif zipmodule == 2 :
+            from androguard.patch import zipfile
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
-        
+        else :
+            import zipfile
+            self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
 
         for i in self.zip.namelist() :
             if i == "AndroidManifest.xml" :
