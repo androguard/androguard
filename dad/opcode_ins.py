@@ -329,9 +329,9 @@ def checkcast(ins, vmap):
 # instance-of vA, vB ( 4b, 4b )
 def instanceof(ins, vmap):
     util.log('InstanceOf : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.A)
-    b = BaseClass(util.get_type(ins.get_translated_kind()))
-    exp = BinaryExpression('instanceof', a, b)
+    a, b = get_variables(vmap, ins.A, ins.B)
+    c = BaseClass(util.get_type(ins.get_translated_kind()))
+    exp = BinaryExpression('instanceof', b, c)
     return AssignExpression(a, exp)
 
 
@@ -1096,7 +1096,8 @@ def invokestaticrange(ins, vmap, ret):
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
-    exp = InvokeRangeInstruction(cls_name, name, ret_type,
+    base = BaseClass(util.get_type(cls_name))
+    exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                 param_type, nbargs, args)
     return AssignExpression(ret.new(), exp)
 
