@@ -177,6 +177,8 @@ class Graph():
                     suc = self.sucs(node)[0]
                     if len(node.get_ins()) == 0:
                         suc = self.edges.get(node)[0]
+                        if node is suc:
+                            continue
                         node_map = {node: suc}
                         for pred in self.preds(node):
                             pred.update_attribute_with(node_map)
@@ -353,7 +355,6 @@ def construct(basicblocks, vmap, exceptions):
         # A method can have no return if it has throw statement(s) or if its
         # body is a while(1) whitout break/return.
         log('No exit node found !', 'debug')
-        graph.set_exit(graph.get_rpo()[-1])
     else:
         graph.set_exit(lexit_nodes[0])
 

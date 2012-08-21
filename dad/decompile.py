@@ -286,13 +286,12 @@ if __name__ == '__main__':
              'examples/android/gtalksms/bin/classes.dex',
              'examples/dalvik/test/bin/classes.dex',
              'examples/obfu/classes_tc_dasho.dex',
-             'zost/goodware/com.fireteen.wboss-5.apk',
             )
     import sys
     if len(sys.argv) > 1:
         MACHINE = DvMachine(sys.argv[1])
     else:
-        MACHINE = DvMachine(FILES[-1])
+        MACHINE = DvMachine(FILES[0])
 
     from pprint import pprint
     TMP = util.PprintStream()
