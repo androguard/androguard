@@ -34,6 +34,7 @@ class Writer(object):
         self.switch_follow = [None]
         self.next_case = None
         self.skip = False
+        self.need_break = True
 
     def __str__(self):
         return ''.join(self.buffer)
@@ -127,8 +128,7 @@ class Writer(object):
         self.inc_ind()
         self.loop_follow.append(follow)
         if loop.looptype.pretest():
-            if loop.true not in self.visited_nodes:
-                self.write_node(loop.true)
+            self.write_node(loop.true)
         else:
             self.write_node(loop.cond)
         self.loop_follow.pop()
@@ -146,8 +146,7 @@ class Writer(object):
             self.dec_ind()
             self._write('%s}\n' % self.space())
         if follow is not None:
-            if follow not in self.visited_nodes:
-                self.write_node(follow)
+            self.write_node(follow)
 
     def write_cond_node(self, cond):
         follow = cond.get_if_follow()
@@ -183,8 +182,7 @@ class Writer(object):
                 self.dec_ind()
             self.if_follow.pop()
             self._write('%s}\n' % self.space())
-            if follow not in self.visited_nodes:
-                self.write_node(follow)
+            self.write_node(follow)
         else:
             self._write('%sif (' % self.space())
             cond.write_cond(self)
@@ -209,9 +207,8 @@ class Writer(object):
 
     def write_switch_node(self, switch):
         lins = switch.get_ins()
-        if len(lins) > 1:
-            for ins in lins[:-1]:
-                self.write_ins(ins)
+        for ins in lins[:-1]:
+            self.write_ins(ins)
         switch_ins = switch.get_ins()[-1]
         self._write('%sswitch(' % self.space())
         self.write_ins(switch_ins)
@@ -235,7 +232,10 @@ class Writer(object):
                 default = None
             self.inc_ind()
             self.write_node(node)
-            self._write('%sbreak;\n' % self.space())
+            if self.need_break:
+                self._write('%sbreak;\n' % self.space())
+            else:
+                self.need_break = True
             self.dec_ind(2)
         if default not in (None, follow):
             self.inc_ind()
@@ -245,8 +245,7 @@ class Writer(object):
             self.dec_ind(2)
         self._write('%s}\n' % self.space())
         self.switch_follow.pop()
-        if follow not in self.visited_nodes:
-            self.write_node(follow)
+        self.write_node(follow)
 
     def write_statement_node(self, stmt):
         sucs = self.graph.sucs(stmt)
@@ -255,10 +254,10 @@ class Writer(object):
         if len(sucs) == 0:
             return
         follow = sucs[0]
-        if follow not in self.visited_nodes:
-            self.write_node(follow)
+        self.write_node(follow)
 
     def write_return_node(self, ret):
+        self.need_break = False
         for ins in ret.get_ins():
             self.write_ins(ins)
 
@@ -346,9 +345,10 @@ class Writer(object):
         self._write('new %s' % get_type(atype))
 
     def write_invoke(self, name, base, args):
-        if isinstance(base, ThisParam) and self.constructor and len(args) == 0:
-            self.skip = True
-            return
+        if isinstance(base, ThisParam) and name == '<init>'\
+            and self.constructor and len(args) == 0:
+                self.skip = True
+                return
         base.write(self)
         if name != '<init>':
             self._write('.%s' % name)
@@ -484,12 +484,10 @@ def string(s):
     # Based on http://stackoverflow.com/a/1676407
     ret = ['"']
     for c in s[1:-1]:
-        if c == '\n':
-            to_add = '\\\n'
-        elif ord(c) < 32 or 0x80 <= ord(c) <= 0xff:
+        if ord(c) < 32 or 0x80 <= ord(c) <= 0xff:
             to_add = '\\x%02x' % ord(c)
         elif c in '\\"':
-            to_add = '\\%c' % c
+            to_add = '%c' % c
         else:
             to_add = c
         ret.append(to_add)

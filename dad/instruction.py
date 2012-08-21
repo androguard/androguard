@@ -30,6 +30,9 @@ class IRForm(object):
     def is_const(self):
         return False
 
+    def is_ident(self):
+        return False
+
     def is_propagable(self):
         return True
 
@@ -43,7 +46,11 @@ class IRForm(object):
         return []
 
     def modify_rhs(self, old, new):
-        self.var_map[old] = new
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            from dad.util import log
+            log('modify_rhs not implemented %s' % self, 'error')
 
     def remove_defined_var(self):
         pass
@@ -122,6 +129,9 @@ class Variable(IRForm):
     def has_side_effect(self):
         return False
 
+    def is_ident(self):
+        return True
+
     def write(self, writer):
         writer.write_variable(self.v)
 
@@ -146,6 +156,9 @@ class Param(IRForm):
     def has_side_effect(self):
         return False
 
+    def is_ident(self):
+        return True
+
     def write(self, writer):
         writer.write_param(self.v)
 
@@ -162,6 +175,9 @@ class ThisParam(Param):
 
     def get_used_vars(self):
         return []
+
+    def is_ident(self):
+        return True
 
     def write(self, writer):
         writer.write_this()
@@ -237,6 +253,12 @@ class MoveResultExpression(IRForm):
         m = self.var_map
         writer.write_move_result(m[self.lhs], m[self.rhs])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            self.var_map[self.rhs].modify_rhs(old, new)
+
 
 class MoveExpression(IRForm):
     def __init__(self, lhs, rhs):
@@ -264,6 +286,14 @@ class MoveExpression(IRForm):
         m = self.var_map
         writer.write_move(m[self.lhs], m[self.rhs])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            rhs = self.var_map[self.rhs]
+            if not (rhs.is_const() or rhs.is_ident()):
+                rhs.modify_rhs(old, new)
+
 
 class ArrayStoreInstruction(IRForm):
     def __init__(self, rhs, array, index):
@@ -288,6 +318,17 @@ class ArrayStoreInstruction(IRForm):
         m = self.var_map
         writer.write_astore(m[self.array], m[self.index], m[self.rhs])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arr = self.var_map[self.array]
+            idx = self.var_map[self.index]
+            rhs = self.var_map[self.rhs]
+            for arg in (arr, idx, rhs):
+                if not (arg.is_const() or arg.is_ident()):
+                    arg.modify_rhs(old, new)
+
 
 class StaticInstruction(IRForm):
     def __init__(self, rhs, klass, ftype, name):
@@ -310,6 +351,12 @@ class StaticInstruction(IRForm):
     def write(self, writer):
         m = self.var_map
         writer.write_put_static(self.cls, self.name, m[self.rhs])
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            self.var_map[self.rhs].modify_rhs(old, new)
 
 
 class InstanceInstruction(IRForm):
@@ -339,6 +386,17 @@ class InstanceInstruction(IRForm):
         m = self.var_map
         writer.write_put_instance(m[self.lhs], self.name, m[self.rhs])
 
+    def modify_rhs(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            v_m[old] = new
+        else:
+            lhs = v_m[self.lhs]
+            rhs = v_m[self.rhs]
+            for arg in (lhs, rhs):
+                if not (arg.is_const() or arg.is_ident()):
+                    arg.modify_rhs(old, new)
+
 
 class NewInstance(IRForm):
     def __init__(self, ins_type):
@@ -356,6 +414,9 @@ class NewInstance(IRForm):
 
     def write(self, writer):
         writer.write_new(self.type)
+
+    def modify_rhs(self, old, new):
+        pass
 
 
 class InvokeInstruction(IRForm):
@@ -384,6 +445,24 @@ class InvokeInstruction(IRForm):
 
     def has_side_effect(self):
         return True
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            arg = self.var_map[old]
+            if not (arg.is_ident() or arg.is_const()):
+                arg.modify_rhs(old, new)
+            else:
+                self.var_map[old] = new
+        else:
+            base = self.var_map[self.base]
+            if not (base.is_ident() or base.is_const()):
+                base.modify_rhs(old, new)
+            for arg in self.args:
+                cnt = self.var_map[arg]
+                if cnt.is_ident() or cnt.is_const():
+                    continue
+                else:
+                    self.var_map[arg].modify_rhs(old, new)
 
     def get_used_vars(self):
         m = self.var_map
@@ -445,6 +524,14 @@ class ReturnInstruction(IRForm):
         else:
             writer.write_return(self.var_map[self.arg])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg = self.var_map[self.arg]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.modify_rhs(old, new)
+
 
 class NopExpression(IRForm):
     def __init__(self):
@@ -473,6 +560,14 @@ class SwitchExpression(IRForm):
     def write(self, writer):
         writer.write_switch(self.var_map[self.src])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            src = self.var_map[self.src]
+            if not (src.is_const() or src.is_ident()):
+                src.modify_rhs(old, new)
+
 
 class CheckCastExpression(IRForm):
     def __init__(self, arg, _type):
@@ -486,6 +581,14 @@ class CheckCastExpression(IRForm):
 
     def write(self, writer):
         writer.write_check_cast(self.var_map[self.arg], self.type)
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg = self.var_map[self.arg]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.modify_rhs(old, new)
 
 
 class ArrayExpression(IRForm):
@@ -511,6 +614,16 @@ class ArrayLoadExpression(ArrayExpression):
         m = self.var_map
         writer.write_aload(m[self.array], m[self.idx])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arr = self.var_map[self.array]
+            idx = self.var_map[self.idx]
+            for arg in (arr, idx):
+                if not (arg.is_const() or arg.is_ident()):
+                    arg.modify_rhs(old, new)
+
 
 class ArrayLengthExpression(ArrayExpression):
     def __init__(self, array):
@@ -527,6 +640,14 @@ class ArrayLengthExpression(ArrayExpression):
 
     def write(self, writer):
         writer.write_alength(self.var_map[self.array])
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arr = self.var_map[self.array]
+            if not (arr.is_const() or arr.is_ident()):
+                arr.modify_rhs(old, new)
 
 
 class NewArrayExpression(ArrayExpression):
@@ -546,6 +667,14 @@ class NewArrayExpression(ArrayExpression):
     def write(self, writer):
         writer.write_new_array(self.type, self.var_map[self.size])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            asize = self.var_map[self.size]
+            if not (asize.is_const() or asize.is_ident()):
+                asize.modify_rhs(old, new)
+
 
 class FilledArrayExpression(ArrayExpression):
     def __init__(self, asize, atype, args):
@@ -557,6 +686,9 @@ class FilledArrayExpression(ArrayExpression):
         for arg in args:
             self.var_map[arg.v] = arg
             self.args.append(arg.v)
+
+    def remove_wide_var(self, var):
+        pass
 
     def is_propagable(self):
         return False
@@ -607,6 +739,12 @@ class RefExpression(IRForm):
     def get_used_vars(self):
         m = self.var_map
         return m[self.ref].get_used_vars()
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            self.var_map[self.ref].modify_rhs(old, new)
 
 
 class MonitorEnterExpression(RefExpression):
@@ -661,6 +799,16 @@ class BinaryExpression(IRForm):
         m = self.var_map
         writer.write_binary_expression(self.op, m[self.arg1], m[self.arg2])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg1 = self.var_map[self.arg1]
+            arg2 = self.var_map[self.arg2]
+            for arg in (arg1, arg2):
+                if not (arg.is_ident() or arg.is_const()):
+                    arg.modify_rhs(old, new)
+
 
 class BinaryCompExpression(BinaryExpression):
     def __init__(self, op, arg1, arg2):
@@ -697,6 +845,14 @@ class UnaryExpression(IRForm):
 
     def write(self, writer):
         writer.write_unary_expression(self.op, self.var_map[self.arg])
+
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg = self.var_map[self.arg]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.modify_rhs(old, new)
 
 
 class CastExpression(UnaryExpression):
@@ -752,6 +908,16 @@ class ConditionalExpression(IRForm):
         m = self.var_map
         writer.write_cond_expression(self.op, m[self.arg1], m[self.arg2])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg1 = self.var_map[self.arg1]
+            arg2 = self.var_map[self.arg2]
+            for arg in (arg1, arg2):
+                if not (arg.is_ident() or arg.is_const()):
+                    arg.modify_rhs(old, new)
+
 
 class ConditionalZExpression(IRForm):
     def __init__(self, op, arg):
@@ -776,6 +942,14 @@ class ConditionalZExpression(IRForm):
     def write(self, writer):
         writer.write_condz_expression(self.op, self.var_map[self.arg])
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg = self.var_map[self.arg]
+            if not (arg.is_ident() or arg.is_const()):
+                arg.modify_rhs(old, new)
+
 
 class InstanceExpression(IRForm):
     def __init__(self, arg, klass, ftype, name):
@@ -796,6 +970,14 @@ class InstanceExpression(IRForm):
     def write(self, writer):
         writer.write_get_instance(self.var_map[self.arg], self.name)
 
+    def modify_rhs(self, old, new):
+        if old in self.var_map:
+            self.var_map[old] = new
+        else:
+            arg = self.var_map[self.arg]
+            if not (arg.is_ident() or arg.is_const()):
+                arg.modify_rhs(old, new)
+
 
 class StaticExpression(IRForm):
     def __init__(self, cls_name, field_type, field_name):
@@ -809,3 +991,6 @@ class StaticExpression(IRForm):
 
     def write(self, writer):
         writer.write_get_static(self.cls, self.name)
+
+    def modify_rhs(self, old, new):
+        pass

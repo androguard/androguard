@@ -136,10 +136,10 @@ def update_chain(graph, loc, du, ud):
 
 def dead_code_elimination(graph, du, ud):
     '''
-    Run a dead code elimination algorithm.
+    Run a dead code elimination pass.
     Instructions are checked to be dead. If it is the case, we remove them and
     we update the DU & UD chains of its variables to check for further dead
-    instructions
+    instructions.
     '''
     for node in graph.get_rpo():
         for i, ins in node.get_loc_with_ins():
@@ -341,20 +341,22 @@ def build_def_use(graph, lparams):
     old_entry = graph.get_entry()
     old_exit = graph.get_exit()
     new_entry = DummyNode('entry')
-    new_exit = DummyNode('exit')
     graph.add_node(new_entry)
-    graph.add_node(new_exit)
     graph.add_edge(new_entry, old_entry)
-    graph.add_edge(old_exit, new_exit)
     graph.set_entry(new_entry)
-    graph.rpo.append(new_exit)
+    if old_exit:
+        new_exit = DummyNode('exit')
+        graph.add_node(new_exit)
+        graph.add_edge(old_exit, new_exit)
+        graph.rpo.append(new_exit)
 
     analysis = BasicReachDef(graph, set(lparams))
     analysis.run()
 
     # The analysis is done, We can now remove the two special nodes.
     graph.remove_node(new_entry)
-    graph.remove_node(new_exit)
+    if old_exit:
+        graph.remove_node(new_exit)
     graph.set_entry(old_entry)
 
     UD = {}

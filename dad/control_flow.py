@@ -70,7 +70,9 @@ def intervals(graph):
             interval_graph.add_edge(e1, interv_of_head[e2])
 
     interval_graph.set_entry(graph.get_entry().interval)
-    interval_graph.set_exit(graph.get_exit().interval)
+    graph_exit = graph.get_exit()
+    if graph_exit:
+        interval_graph.set_exit(graph_exit.interval)
 
     return interval_graph, interv_of_head
 
@@ -234,7 +236,7 @@ def switch_struct(graph, idoms):
             node.order_cases()
 
 
-def short_circuit_struct(graph, node_map):
+def short_circuit_struct(graph, idom, node_map):
     def MergeNodes(node1, node2, is_and, is_not):
         lpreds = set()
         ldests = set()
@@ -257,6 +259,9 @@ def short_circuit_struct(graph, node_map):
                 node_map[old_n] = new_node
         node_map[node1] = new_node
         node_map[node2] = new_node
+        idom[new_node] = idom[node1]
+        idom.pop(node1)
+        idom.pop(node2)
         new_node.copy_from(node1)
 
         graph.add_node(new_node)
@@ -339,16 +344,25 @@ def while_block_struct(graph, node_map):
         graph.reset_rpo()
 
 
+def update_dom(idoms, node_map):
+    for n, dom in idoms.iteritems():
+        idoms[n] = node_map.get(dom, dom)
+
+
 def identify_structures(graph, idoms):
     Gi, Li = derived_sequence(graph)
     switch_struct(graph, idoms)
     loop_struct(Gi, Li)
     node_map = {}
-    short_circuit_struct(graph, node_map)
-    for n, dom in idoms.iteritems():
-        idoms[n] = node_map.get(dom, dom)
+
+    short_circuit_struct(graph, idoms, node_map)
+    update_dom(idoms, node_map)
+
     if_unresolved = if_struct(graph, idoms)
+
     while_block_struct(graph, node_map)
+    update_dom(idoms, node_map)
+
     loop_starts = []
     for node in graph.get_rpo():
         node.update_attribute_with(node_map)
@@ -357,6 +371,7 @@ def identify_structures(graph, idoms):
     for node in loop_starts:
         loop_type(graph, node, node.latch, node.loop_nodes)
         loop_follow(graph, node, node.latch, node.loop_nodes)
+
     for node in if_unresolved:
         follows = [n for n in (node.loop_follow, node.switch_follow) if n]
         if len(follows) >= 1:
