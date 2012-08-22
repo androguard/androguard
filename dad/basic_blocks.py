@@ -37,8 +37,9 @@ class BasicBlock(Node):
             self.loc_ins = zip(range(*self.ins_range), self.ins)
         return self.loc_ins
 
-    def remove_ins(self, ins):
+    def remove_ins(self, loc, ins):
         self.ins.remove(ins)
+        self.loc_ins.remove((loc, ins))
 
     def add_ins(self, new_ins_list):
         for new_ins in new_ins_list:
