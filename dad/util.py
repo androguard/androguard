@@ -86,6 +86,7 @@ DEBUG_MODES = {
 }
 
 DEBUG_LEVEL = 'log'
+INCREASE_STACK_RECURSION_LIMIT = False
 
 
 class PprintStream(object):

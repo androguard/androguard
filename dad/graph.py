@@ -106,7 +106,7 @@ class Graph():
 
     def remove_ins(self, loc):
         ins = self.get_ins_from_loc(loc)
-        self.get_node_from_loc(loc).remove_ins(ins)
+        self.get_node_from_loc(loc).remove_ins(loc, ins)
         self.loc_to_ins.pop(loc)
 
     def split_if_nodes(self):

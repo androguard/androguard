@@ -142,7 +142,7 @@ def dead_code_elimination(graph, du, ud):
     instructions.
     '''
     for node in graph.get_rpo():
-        for i, ins in node.get_loc_with_ins():
+        for i, ins in node.get_loc_with_ins()[:]:
             reg = ins.get_lhs()
             if reg is not None:
                 # If the definition is not used, we check that the instruction
@@ -218,7 +218,7 @@ def register_propagation(graph, du, ud):
     while change:
         change = False
         for node in graph.get_rpo():
-            for i, ins in node.get_loc_with_ins():
+            for i, ins in node.get_loc_with_ins()[:]:
                 # We make sure the ins has not been deleted since the start of
                 # the iteration
                 if ins not in node.get_ins():
@@ -274,12 +274,17 @@ def register_propagation(graph, du, ud):
                                 # by the instruction and update the DU chain
                                 # with this information.
                                 old_ud = ud.get((var2, loc))
-                                ud.setdefault((var2, i), set()).update(old_ud)
+                                # If the instruction use the same variable
+                                # multiple times, the second+ time the ud chain
+                                # will be None because already treated.
+                                if old_ud is None:
+                                    continue
+                                ud.setdefault((var2, i), []).extend(old_ud)
                                 ud.pop((var2, loc))
 
                                 for def_loc in old_ud:
                                     du.get((var2, def_loc)).remove(loc)
-                                    du.get((var2, def_loc)).add(i)
+                                    du.get((var2, def_loc)).append(i)
 
                             new_du = du.get((var, loc))
                             new_du.remove(i)
@@ -369,7 +374,6 @@ def build_def_use(graph, lparams):
                 # e.g: a 'double' stored in v3 is also present in v4, so a call
                 # to foo(v3), will in fact call foo(v3, v4).
                 if var not in analysis.def_to_loc:
-                    ins.remove_wide_var(var)
                     continue
                 ldefs = analysis.defs[node]
                 prior_def = -1
@@ -377,16 +381,16 @@ def build_def_use(graph, lparams):
                     if prior_def < v < i:
                         prior_def = v
                 if prior_def >= 0:
-                    UD.setdefault((var, i), set()).add(prior_def)
+                    UD.setdefault((var, i), []).append(prior_def)
                 else:
                     intersect = analysis.def_to_loc[var].intersection(
                                                             analysis.R[node])
-                    UD.setdefault((var, i), set()).update(intersect)
+                    UD.setdefault((var, i), []).extend(intersect)
     DU = {}
     for var_loc, defs_loc in UD.items():
         var, loc = var_loc
         for def_loc in defs_loc:
-            DU.setdefault((var, def_loc), set()).add(loc)
+            DU.setdefault((var, def_loc), []).append(loc)
 
 #    dom_frontier = dominance_frontier(graph, immdoms)
 #    phi_placement(graph, lparams, dom_frontier)

@@ -193,9 +193,6 @@ class AssignExpression(IRForm):
         self.rhs = rhs
         self.var_map[lhs.v] = lhs
 
-    def remove_wide_var(self, var):
-        self.rhs.remove_wide_var(var)
-
     def is_propagable(self):
         return self.rhs.is_propagable()
 
@@ -308,11 +305,10 @@ class ArrayStoreInstruction(IRForm):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
-        lused_vars.update(m[self.array].get_used_vars())
-        lused_vars.update(m[self.index].get_used_vars())
-        lused_vars.update(m[self.rhs].get_used_vars())
-        return list(lused_vars)
+        lused_vars = m[self.array].get_used_vars()
+        lused_vars.extend(m[self.index].get_used_vars())
+        lused_vars.extend(m[self.rhs].get_used_vars())
+        return lused_vars
 
     def write(self, writer):
         m = self.var_map
@@ -374,10 +370,9 @@ class InstanceInstruction(IRForm):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
-        lused_vars.update(m[self.lhs].get_used_vars())
-        lused_vars.update(m[self.rhs].get_used_vars())
-        return list(lused_vars)
+        lused_vars = m[self.lhs].get_used_vars()
+        lused_vars.extend(m[self.rhs].get_used_vars())
+        return lused_vars
 
     def get_lhs(self):
         return None
@@ -436,10 +431,6 @@ class InvokeInstruction(IRForm):
     def get_type(self):
         return self.rtype
 
-    def remove_wide_var(self, var):
-        self.args = filter(lambda x: x != var, self.args)
-        self.var_map.pop(var)
-
     def is_call(self):
         return True
 
@@ -466,11 +457,11 @@ class InvokeInstruction(IRForm):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
+        lused_vars = []
         for a in self.args:
-            lused_vars.update(m[a].get_used_vars())
-        lused_vars.update(m[self.base].get_used_vars())
-        return list(lused_vars)
+            lused_vars.extend(m[a].get_used_vars())
+        lused_vars.extend(m[self.base].get_used_vars())
+        return lused_vars
 
     def write(self, writer):
         m = self.var_map
@@ -605,10 +596,9 @@ class ArrayLoadExpression(ArrayExpression):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
-        lused_vars.update(m[self.array].get_used_vars())
-        lused_vars.update(m[self.idx].get_used_vars())
-        return list(lused_vars)
+        lused_vars = m[self.array].get_used_vars()
+        lused_vars.extend(m[self.idx].get_used_vars())
+        return lused_vars
 
     def write(self, writer):
         m = self.var_map
@@ -687,9 +677,6 @@ class FilledArrayExpression(ArrayExpression):
             self.var_map[arg.v] = arg
             self.args.append(arg.v)
 
-    def remove_wide_var(self, var):
-        pass
-
     def is_propagable(self):
         return False
 
@@ -697,11 +684,11 @@ class FilledArrayExpression(ArrayExpression):
         return True
 
     def get_used_vars(self):
-        lused_vars = set()
+        lused_vars = []
         for arg in self.args:
-            lused_vars.update(self.var_map[arg].get_used_vars())
-        lused_vars.add(self.size)
-        return list(lused_vars)
+            lused_vars.extend(self.var_map[arg].get_used_vars())
+        lused_vars.append(self.size)
+        return lused_vars
 
     def write(self, writer):
         m = self.var_map
@@ -790,10 +777,9 @@ class BinaryExpression(IRForm):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
-        lused_vars.update(m[self.arg1].get_used_vars())
-        lused_vars.update(m[self.arg2].get_used_vars())
-        return list(lused_vars)
+        lused_vars = m[self.arg1].get_used_vars()
+        lused_vars.extend(m[self.arg2].get_used_vars())
+        return lused_vars
 
     def write(self, writer):
         m = self.var_map
@@ -896,10 +882,9 @@ class ConditionalExpression(IRForm):
 
     def get_used_vars(self):
         m = self.var_map
-        lused_vars = set()
-        lused_vars.update(m[self.arg1].get_used_vars())
-        lused_vars.update(m[self.arg2].get_used_vars())
-        return list(lused_vars)
+        lused_vars = m[self.arg1].get_used_vars()
+        lused_vars.extend(m[self.arg2].get_used_vars())
+        return lused_vars
 
     def neg(self):
         self.op = CONDS[self.op]
