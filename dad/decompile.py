@@ -280,12 +280,11 @@ class DvMachine():
 
 if __name__ == '__main__':
     if util.INCREASE_STACK_RECURSION_LIMIT:
-        from resource import setrlimit
-        setrlimit(resource.RLIMIT_STACK, (2 ** 29, -1))
+        from resource import setrlimit, RLIMIT_STACK
+        setrlimit(RLIMIT_STACK, (2 ** 29, -1))
         sys.setrecursionlimit(10 ** 6)
 
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
-    import sys
     if len(sys.argv) > 1:
         MACHINE = DvMachine(sys.argv[1])
     else:
