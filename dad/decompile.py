@@ -279,10 +279,14 @@ class DvMachine():
 
 
 if __name__ == '__main__':
-    if util.INCREASE_STACK_RECURSION_LIMIT:
-        from resource import setrlimit, RLIMIT_STACK
-        setrlimit(RLIMIT_STACK, (2 ** 29, -1))
-        sys.setrecursionlimit(10 ** 6)
+    # Uncomment to increase the size of the stack.
+    # I don't know why, but if the block is `activated` in an if-statement it
+    # doesn't work.
+    """
+    from resource import setrlimit, RLIMIT_STACK
+    setrlimit(RLIMIT_STACK, (2 ** 29, -1))
+    sys.setrecursionlimit(10 ** 6)
+    """
 
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
