@@ -113,7 +113,7 @@ def update_chain(graph, loc, du, ud):
     ins = graph.get_ins_from_loc(loc)
     for var in ins.get_used_vars():
         # We get the definition points of the current variable
-        for def_loc in ud.get((var, loc), ()):
+        for def_loc in set(ud.get((var, loc), ())):
             # We remove the use of the variable at loc from the DU chain of
             # the variable definition located at def_loc
             du.get((var, def_loc)).remove(loc)
