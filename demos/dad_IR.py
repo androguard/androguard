@@ -5,55 +5,31 @@ sys.path.append('./')
 
 from pprint import pprint
 
-from androguard.core.bytecodes import dvm
+from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis.analysis import uVMAnalysis
+from dad.decompile import DvMethod
 from dad.basic_blocks import GenInvokeRetName
 from dad.opcode_ins import INSTRUCTION_SET
 from dad.util import log
 
-TEST = './examples/dalvik/test/bin/classes.dex'
+TEST = '../DroidDream/magicspiral.apk'
 
-vm = dvm.DalvikVMFormat(open(TEST).read())
+vm = dvm.DalvikVMFormat(apk.APK(TEST).get_dex())
 vma = uVMAnalysis(vm)
 
-method = vm.get_method('test_base')[0]
+method = vm.get_method('crypt')[0]
 method.show()
 
 amethod = vma.get_method(method)
-basic_blocks = amethod.basic_blocks.bb
+dvmethod = DvMethod(amethod)
 
-return_generator = GenInvokeRetName() # generator of instructions' return var
-vmap = {} # map of variables {var: IForm of var}
-lins = [] # list of ins in IRForm
-for bb in basic_blocks:
-    idx = bb.get_start()
-    for ins in bb.get_instructions():
-        opcode = ins.get_op_value()
-        #check-cast
-        if opcode == 0x1f :
-            idx += ins.get_length()
-            continue
-        _ins = INSTRUCTION_SET.get(ins.get_name().lower())
-        # _ins is one of the function in dad/opcode_ins.py
-        if _ins is None:
-            log('Unknown ins : %s.' % _ins.get_name().lower(), 'error')
-        # fill-array-data
-        if opcode == 0x26:
-            fillarray = bb.get_special_ins(idx)
-            lins.append(_ins(ins, vmap, fillarray))
-        # invoke-kind[/range]
-        elif (0x6e <= opcode <= 0x72 or 0x74 <= opcode <= 0x78):
-            lins.append(_ins(ins, vmap, return_generator))
-        # filled-new-array[/range]
-        elif 0x24 <= opcode <= 0x25:
-            lins.append(_ins(ins, vmap, return_generator.new()))
-        # move-result*
-        elif 0xa <= opcode <= 0xc:
-            lins.append(_ins(ins, vmap, return_generator.last()))
-        else:
-            lins.append(_ins(ins, vmap))
-        idx += ins.get_length()
-    name = bb.get_name()
+dvmethod.process() # build IR Form / control flow...
 
-print 'List of ins in IRForm:'
-pprint(lins)
+graph = dvmethod.graph
+
+print 'Entry block : %s\n' % graph.get_entry()
+
+for block in graph: # graph.get_rpo() to iterate in reverse post order
+    print 'Block : %s' % block
+    for ins in block.get_ins():
+        print '  - %s' % ins
