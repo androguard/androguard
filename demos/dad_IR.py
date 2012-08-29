@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 sys.path.append('./')
 
@@ -6,7 +8,6 @@ from pprint import pprint
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis.analysis import uVMAnalysis
 from dad.basic_blocks import GenInvokeRetName
-from dad.decompile import DvMethod
 from dad.opcode_ins import INSTRUCTION_SET
 from dad.util import log
 
@@ -15,8 +16,11 @@ TEST = './examples/dalvik/test/bin/classes.dex'
 vm = dvm.DalvikVMFormat(open(TEST).read())
 vma = uVMAnalysis(vm)
 
-method = vma.get_method(vm.get_method('test_base')[0])
-basic_blocks = method.basic_blocks.bb
+method = vm.get_method('test_base')[0]
+method.show()
+
+amethod = vma.get_method(method)
+basic_blocks = amethod.basic_blocks.bb
 
 return_generator = GenInvokeRetName() # generator of instructions' return var
 vmap = {} # map of variables {var: IForm of var}

@@ -2706,21 +2706,21 @@ class EncodedMethod :
 
         self.code = self.CM.get_code( self.code_off )
 
-    def get_locals(self) :
+    def get_locals(self):
         ret = self.proto.split(')')
         params = ret[0][1:].split()
 
         return self.code.get_registers_size() - len(params) - 1
 
-    def each_params_by_register(self, nb, proto) :
+    def each_params_by_register(self, nb, proto):
         bytecode._PrintSubBanner("Params")
 
         ret = proto.split(')')
         params = ret[0][1:].split()
-        if params :
+        if params:
             bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb - len(params) - 1))
             j = 0
-            for i in xrange(nb - len(params), nb) :
+            for i in xrange(nb - len(params), nb):
                 bytecode._PrintDefault("- v%d:%s\n" % (i, get_type(params[j])))
                 j += 1
         else :
@@ -5872,7 +5872,7 @@ class DCode :
             idx += i.get_length()
         return -1
 
-    def get_ins_off(self, off) :
+    def get_ins_off(self, off):
         """
             Get a particular instruction by using the address
 
@@ -7514,7 +7514,8 @@ class OdexDependencies :
         """
         return self.dependencies
 
-class DalvikOdexVMFormat(DalvikVMFormat) :
+
+class DalvikOdexVMFormat(DalvikVMFormat):
     """
         This class can parse an odex file
 
@@ -7526,21 +7527,19 @@ class DalvikOdexVMFormat(DalvikVMFormat) :
         :Example:
           DalvikOdexVMFormat( open("classes.odex", "rb").read() )
     """
-    def _preload(self, buff) :
+    def _preload(self, buff):
         magic = buff[:8]
-        if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36 :
-            self.odex_header = OdexHeaderItem( self )
+        if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36:
+            self.odex_header = OdexHeaderItem(self)
 
+            self.set_idx(self.odex_header.deps_offset)
+            self.dependencies = OdexDependencies(self)
 
-            self.set_idx( self.odex_header.deps_offset )
-            self.dependencies = OdexDependencies( self )
-
-
-            self.set_idx( self.odex_header.dex_offset )
-            self.set_buff( self.read( self.odex_header.dex_length ) )
+            self.set_idx(self.odex_header.dex_offset)
+            self.set_buff(self.read(self.odex_header.dex_length))
             self.set_idx(0)
 
-    def get_dependencies(self) :
+    def get_dependencies(self):
         """
             Return the odex dependencies object
 
@@ -7548,7 +7547,7 @@ class DalvikOdexVMFormat(DalvikVMFormat) :
         """
         return self.dependencies
 
-    def get_format_type(self) :
+    def get_format_type(self):
         """
             Return the type
 
