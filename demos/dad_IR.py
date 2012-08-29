@@ -3,14 +3,9 @@
 import sys
 sys.path.append('./')
 
-from pprint import pprint
-
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis.analysis import uVMAnalysis
 from dad.decompile import DvMethod
-from dad.basic_blocks import GenInvokeRetName
-from dad.opcode_ins import INSTRUCTION_SET
-from dad.util import log
 
 TEST = '../DroidDream/magicspiral.apk'
 
