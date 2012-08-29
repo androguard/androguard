@@ -6,6 +6,7 @@ sys.path.append('./')
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis.analysis import uVMAnalysis
 from dad.decompile import DvMethod
+from dad.visitor_template import Visitor
 
 TEST = '../DroidDream/magicspiral.apk'
 
@@ -28,3 +29,6 @@ for block in graph: # graph.get_rpo() to iterate in reverse post order
     print 'Block : %s' % block
     for ins in block.get_ins():
         print '  - %s' % ins
+
+visitor = Visitor(graph)
+graph.get_entry().visit(visitor)
