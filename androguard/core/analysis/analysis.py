@@ -1057,7 +1057,8 @@ class DVMBasicBlock :
 
             #elif "new-instance" in i.get_name() :
             elif op_value == 0x22 :
-                type_info = self.__vm.get_cm_type( i.get_ref_kind() )
+                idx_type = i.get_ref_kind()
+                type_info = self.__vm.get_cm_type( idx_type )
                 if self.tainted_packages != None :
                     self.tainted_packages.push_info( type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None )
 
@@ -1397,11 +1398,12 @@ class PathP :
   def get_idx(self) :
     return self.idx
 
-class TaintedPackage :
-    def __init__(self, vm, name) :
+
+class TaintedPackage:
+    def __init__(self, vm, name):
         self.vm = vm
         self.name = name
-        self.paths = { TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : [] }
+        self.paths = {TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : []}
 
     def get_name(self) :
         return self.name
@@ -1453,20 +1455,23 @@ class TaintedPackage :
             x += len(self.paths[ i ])
         return x
 
-    def get_methods(self) :
-        return [ path for path in self.paths[ TAINTED_PACKAGE_CALL ] ]
+    def get_methods(self):
+        return [path for path in self.paths[TAINTED_PACKAGE_CALL]]
+
+    def get_new(self):
+        return [path for path in self.paths[TAINTED_PACKAGE_CREATE]]
 
     def show(self) :
         cm = self.vm.get_class_manager()
         print self.get_name()
-        for _type in self.paths :
+        for _type in self.paths:
             print "\t -->", _type
-            if _type == TAINTED_PACKAGE_CALL :
-              for path in self.paths[ _type ] :
-                print "\t\t => %s <-- %x in %s" % (path.get_dst( cm ), path.get_idx(), path.get_src(cm) )
-            else :
-              for path in self.paths[ _type ] :
-                print "\t\t => %x in %s" % (path.get_idx(), path.get_src( cm ))
+            if _type == TAINTED_PACKAGE_CALL:
+                for path in self.paths[_type]:
+                    print "\t\t => %s <-- %x in %s" % (path.get_dst(cm), path.get_idx(), path.get_src(cm))
+            else:
+                for path in self.paths[_type]:
+                    print "\t\t => %x in %s" % (path.get_idx(), path.get_src(cm))
 
 def show_Permissions( dx ) :
     """
@@ -1611,9 +1616,9 @@ class TaintedPackages :
 
         return l
 
-    def get_packages(self) :
-        for i in self.__packages :
-            yield self.__packages[ i ], i
+    def get_packages(self):
+        for i in self.__packages:
+            yield self.__packages[i], i
 
     def get_internal_packages_from_package(self, package) :
         classes = self.__vm.get_classes_names()
@@ -1637,36 +1642,42 @@ class TaintedPackages :
                 if j.get_access_flag() == TAINTED_PACKAGE_CALL :
                   dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
                   if dst_class_name in classes and m.get_name() in classes :
-                    l.append( j )
+                    l.append(j)
         return l
 
-    def get_internal_new_packages(self) :
+    def get_internal_new_packages(self):
         """
-            @rtype : return a list of the internal packages called in the application
+            :rtype: return a list of the internal packages created in the application
         """
         classes = self.__vm.get_classes_names()
-        l = []
-        for m, _ in self.get_packages() :
-            paths = m.get_methods()
-            for j in paths :
-                if j.get_method().get_class_name() in classes and m.get_info() in classes :
-                    if j.get_access_flag() == TAINTED_PACKAGE_CREATE :
-                        l.append( j )
+        l = {}
+        for m, _ in self.get_packages():
+            paths = m.get_new()
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                if src_class_name in classes and m.get_name() in classes:
+                    if j.get_access_flag() == TAINTED_PACKAGE_CREATE:
+                        try:
+                            l[m.get_name()].append(j)
+                        except:
+                            l[m.get_name()] = []
+                            l[m.get_name()].append(j)
         return l
-       
-    def get_external_packages(self) :
+
+    def get_external_packages(self):
         """
-        @rtype : return a list of the external packages called in the application
+            :rtype: return a list of the external packages called in the application
         """
         classes = self.__vm.get_classes_names()
         l = []
-        for m, _ in self.get_packages() :
+        for m, _ in self.get_packages():
             paths = m.get_methods()
-            for j in paths :
-                dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
-                if dst_class_name in classes and m.get_name() not in classes :
-                    if j.get_access_flag() == TAINTED_PACKAGE_CALL :
-                        l.append( j )
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
+                if src_class_name in classes and dst_class_name not in classes:
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                        l.append(j)
         return l
 
     def search_packages(self, package_name) :
