@@ -55,16 +55,16 @@ class Writer(object):
         if self.skip:
             self.skip = False
         else:
-            self._write(self.space())
+            self.write(self.space())
 
-    def _write(self, s):
+    def write(self, s):
         self.buffer.append(s)
 
     def end_ins(self):
-        self._write(';\n')
+        self.write(';\n')
 
-    def write_ins(self, ins):
-        ins.write(self)
+    def visit_ins(self, ins):
+        ins.visit(self)
 
     def write_method(self):
         acc = []
@@ -80,7 +80,7 @@ class Writer(object):
         else:
             name = self.method.name
             proto = '%s %s %s(' % (' '.join(acc), self.method.type, name)
-        self._write('%s%s' % (self.space(), proto))
+        self.write('%s%s' % (self.space(), proto))
         if 0x8 in self.method.access:
             params = self.method.lparams
         else:
@@ -89,27 +89,27 @@ class Writer(object):
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
                         p_type, param in zip(self.method.params_type, params)])
-        self._write('%s)' % proto)
+        self.write('%s)' % proto)
         if self.graph is None:
-            return self._write(';')
-        self._write('\n%s{\n' % self.space())
+            return self.write(';')
+        self.write('\n%s{\n' % self.space())
         self.inc_ind()
 #        for v, var in self.method.var_to_name.iteritems():
-#            var.write_decl(self)
-        self.write_node(self.graph.get_entry())
+#            var.visit_decl(self)
+        self.visit_node(self.graph.get_entry())
         self.dec_ind()
-        self._write('%s}\n' % self.space())
+        self.write('%s}\n' % self.space())
 
-    def write_node(self, node):
+    def visit_node(self, node):
         if node in (self.if_follow[-1], self.switch_follow[-1],
                     self.loop_follow[-1], self.latch_node[-1]):
             return
         if node in self.visited_nodes:
             return
         self.visited_nodes.add(node)
-        node.write(self)
+        node.visit(self)
 
-    def write_loop_node(self, loop):
+    def visit_loop_node(self, loop):
         follow = loop.get_loop_follow()
         if follow is None and not loop.looptype.endless():
             log('Loop has no follow !', 'error')
@@ -117,50 +117,50 @@ class Writer(object):
             if loop.true is follow:
                 loop.neg()
                 loop.true, loop.false = loop.false, loop.true
-            self._write('%swhile (' % self.space())
-            loop.write_cond(self)
-            self._write(') {\n')
+            self.write('%swhile (' % self.space())
+            loop.visit_cond(self)
+            self.write(') {\n')
         elif loop.looptype.posttest():
-            self._write('%sdo {\n' % self.space())
+            self.write('%sdo {\n' % self.space())
             self.latch_node.append(loop.latch)
         elif loop.looptype.endless():
-            self._write('%swhile(true) {\n' % self.space())
+            self.write('%swhile(true) {\n' % self.space())
         self.inc_ind()
         self.loop_follow.append(follow)
         if loop.looptype.pretest():
-            self.write_node(loop.true)
+            self.visit_node(loop.true)
         else:
-            self.write_node(loop.cond)
+            self.visit_node(loop.cond)
         self.loop_follow.pop()
         self.dec_ind()
         if loop.looptype.pretest():
-            self._write('%s}\n' % self.space())
+            self.write('%s}\n' % self.space())
         elif loop.looptype.posttest():
             self.latch_node.pop()
-            self._write('%s} while(' % self.space())
-            loop.latch.write_cond(self)
-            self._write(');\n')
+            self.write('%s} while(' % self.space())
+            loop.latch.visit_cond(self)
+            self.write(');\n')
         else:
             self.inc_ind()
-            self.write_node(loop.latch)
+            self.visit_node(loop.latch)
             self.dec_ind()
-            self._write('%s}\n' % self.space())
+            self.write('%s}\n' % self.space())
         if follow is not None:
-            self.write_node(follow)
+            self.visit_node(follow)
 
-    def write_cond_node(self, cond):
+    def visit_cond_node(self, cond):
         follow = cond.get_if_follow()
         if cond.false is self.loop_follow[-1]:
             cond.neg()
             cond.true, cond.false = cond.false, cond.true
-            self._write('%sif(' % self.space())
-            cond.write_cond(self)
-            self._write(') {\n')
+            self.write('%sif(' % self.space())
+            cond.visit_cond(self)
+            self.write(') {\n')
             self.inc_ind()
-            self._write('%sbreak;\n' % self.space())
+            self.write('%sbreak;\n' % self.space())
             self.dec_ind()
-            self._write('%s}\n' % self.space())
-            self.write_node(cond.false)
+            self.write('%s}\n' % self.space())
+            self.visit_node(cond.false)
         elif follow is not None:
             is_else = not (follow in (cond.true, cond.false))
             if (cond.true in (follow, self.next_case)
@@ -169,50 +169,50 @@ class Writer(object):
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
             if not cond.true in self.visited_nodes:
-                self._write('%sif(' % self.space())
-                cond.write_cond(self)
-                self._write(') {\n')
+                self.write('%sif(' % self.space())
+                cond.visit_cond(self)
+                self.write(') {\n')
                 self.inc_ind()
-                self.write_node(cond.true)
+                self.visit_node(cond.true)
                 self.dec_ind()
             if is_else and not cond.false in self.visited_nodes:
-                self._write('%s} else {\n' % self.space())
+                self.write('%s} else {\n' % self.space())
                 self.inc_ind()
-                self.write_node(cond.false)
+                self.visit_node(cond.false)
                 self.dec_ind()
             self.if_follow.pop()
-            self._write('%s}\n' % self.space())
-            self.write_node(follow)
+            self.write('%s}\n' % self.space())
+            self.visit_node(follow)
         else:
-            self._write('%sif (' % self.space())
-            cond.write_cond(self)
-            self._write(') {\n')
+            self.write('%sif (' % self.space())
+            cond.visit_cond(self)
+            self.write(') {\n')
             self.inc_ind()
-            self.write_node(cond.true)
+            self.visit_node(cond.true)
             self.dec_ind()
-            self._write('%s} else {\n' % self.space())
+            self.write('%s} else {\n' % self.space())
             self.inc_ind()
-            self.write_node(cond.false)
+            self.visit_node(cond.false)
             self.dec_ind()
-            self._write('%s}\n' % self.space())
+            self.write('%s}\n' % self.space())
 
-    def write_short_circuit_condition(self, nnot, aand, cond1, cond2):
+    def visit_short_circuit_condition(self, nnot, aand, cond1, cond2):
         if nnot:
             cond1.neg()
-        self._write('(')
-        cond1.write_cond(self)
-        self._write(') %s (' % ['||', '&&'][aand])
-        cond2.write_cond(self)
-        self._write(')')
+        self.write('(')
+        cond1.visit_cond(self)
+        self.write(') %s (' % ['||', '&&'][aand])
+        cond2.visit_cond(self)
+        self.write(')')
 
-    def write_switch_node(self, switch):
+    def visit_switch_node(self, switch):
         lins = switch.get_ins()
         for ins in lins[:-1]:
-            self.write_ins(ins)
+            self.visit_ins(ins)
         switch_ins = switch.get_ins()[-1]
-        self._write('%sswitch(' % self.space())
-        self.write_ins(switch_ins)
-        self._write(') {\n')
+        self.write('%sswitch(' % self.space())
+        self.visit_ins(switch_ins)
+        self.write(') {\n')
         follow = switch.switch_follow
         cases = switch.cases
         self.switch_follow.append(follow)
@@ -222,262 +222,262 @@ class Writer(object):
                 continue
             self.inc_ind()
             for case in switch.node_to_case[node]:
-                self._write('%scase %d:\n' % (self.space(), case))
+                self.write('%scase %d:\n' % (self.space(), case))
             if i + 1 < len(cases):
                 self.next_case = cases[i + 1]
             else:
                 self.next_case = None
             if node is default:
-                self._write('%sdefault:\n' % self.space())
+                self.write('%sdefault:\n' % self.space())
                 default = None
             self.inc_ind()
-            self.write_node(node)
+            self.visit_node(node)
             if self.need_break:
-                self._write('%sbreak;\n' % self.space())
+                self.write('%sbreak;\n' % self.space())
             else:
                 self.need_break = True
             self.dec_ind(2)
         if default not in (None, follow):
             self.inc_ind()
-            self._write('%sdefault:\n' % self.space())
+            self.write('%sdefault:\n' % self.space())
             self.inc_ind()
-            self.write_node(default)
+            self.visit_node(default)
             self.dec_ind(2)
-        self._write('%s}\n' % self.space())
+        self.write('%s}\n' % self.space())
         self.switch_follow.pop()
-        self.write_node(follow)
+        self.visit_node(follow)
 
-    def write_statement_node(self, stmt):
+    def visit_statement_node(self, stmt):
         sucs = self.graph.sucs(stmt)
         for ins in stmt.get_ins():
-            self.write_ins(ins)
+            self.visit_ins(ins)
         if len(sucs) == 0:
             return
         follow = sucs[0]
-        self.write_node(follow)
+        self.visit_node(follow)
 
-    def write_return_node(self, ret):
+    def visit_return_node(self, ret):
         self.need_break = False
         for ins in ret.get_ins():
-            self.write_ins(ins)
+            self.visit_ins(ins)
 
-    def write_throw_node(self, throw):
+    def visit_throw_node(self, throw):
         for ins in throw.get_ins():
-            self.write_ins(ins)
+            self.visit_ins(ins)
 
-#    def write_decl(self, var):
-#        self._write('%sdecl v%s' % (SPACE * self.ind, var))
+#    def visit_decl(self, var):
+#        self.write('%sdecl v%s' % (SPACE * self.ind, var))
 #        self.end_ins()
 
-    def write_constant(self, cst):
+    def visit_constant(self, cst):
         if isinstance(cst, str):
-            return self._write(string('%s' % cst))
-        self._write('%s' % cst)
+            return self.write(string('%s' % cst))
+        self.write('%s' % cst)
 
-    def write_base_class(self, cls):
-        self._write(cls)
+    def visit_base_class(self, cls):
+        self.write(cls)
 
-    def write_variable(self, var):
+    def visit_variable(self, var):
         if isinstance(var, str):
-            return self._write(var)
-        self._write('v%d' % var)
+            return self.write(var)
+        self.write('v%d' % var)
 
-    def write_param(self, param):
-        self._write('p%s' % param)
+    def visit_param(self, param):
+        self.write('p%s' % param)
 
-    def write_this(self):
-        self._write('this')
+    def visit_this(self):
+        self.write('this')
 
-    def write_assign(self, lhs, rhs):
+    def visit_assign(self, lhs, rhs):
         self.write_ind()
         if lhs is None:
-            rhs.write(self)
+            rhs.visit(self)
             if not self.skip:
                 self.end_ins()
             return
-        lhs.write(self)
-        self._write(' = ')
-        rhs.write(self)
+        lhs.visit(self)
+        self.write(' = ')
+        rhs.visit(self)
         self.end_ins()
 
-    def write_move_result(self, lhs, rhs):
+    def visit_move_result(self, lhs, rhs):
         self.write_ind()
-        lhs.write(self)
-        self._write(' = ')
-        rhs.write(self)
+        lhs.visit(self)
+        self.write(' = ')
+        rhs.visit(self)
         self.end_ins()
 
-    def write_move(self, lhs, rhs):
+    def visit_move(self, lhs, rhs):
         if lhs is rhs:
             return
         self.write_ind()
-        lhs.write(self)
-        self._write(' = ')
-        rhs.write(self)
+        lhs.visit(self)
+        self.write(' = ')
+        rhs.visit(self)
         self.end_ins()
 
-    def write_astore(self, array, index, rhs):
+    def visit_astore(self, array, index, rhs):
         self.write_ind()
-        array.write(self)
-        self._write('[')
+        array.visit(self)
+        self.write('[')
         if isinstance(index, Constant):
-            index.write(self, 'I')
+            index.visit(self, 'I')
         else:
-            index.write(self)
-        self._write('] = ')
-        rhs.write(self)
+            index.visit(self)
+        self.write('] = ')
+        rhs.visit(self)
         self.end_ins()
 
-    def write_put_static(self, cls, name, rhs):
+    def visit_put_static(self, cls, name, rhs):
         self.write_ind()
-        self._write('%s.%s = ' % (cls, name))
-        rhs.write(self)
+        self.write('%s.%s = ' % (cls, name))
+        rhs.visit(self)
         self.end_ins()
 
-    def write_put_instance(self, lhs, name, rhs):
+    def visit_put_instance(self, lhs, name, rhs):
         self.write_ind()
-        lhs.write(self)
-        self._write('.%s = ' % name)
-        rhs.write(self)
+        lhs.visit(self)
+        self.write('.%s = ' % name)
+        rhs.visit(self)
         self.end_ins()
 
-    def write_new(self, atype):
-        self._write('new %s' % get_type(atype))
+    def visit_new(self, atype):
+        self.write('new %s' % get_type(atype))
 
-    def write_invoke(self, name, base, args):
+    def visit_invoke(self, name, base, args):
         if isinstance(base, ThisParam) and name == '<init>'\
             and self.constructor and len(args) == 0:
                 self.skip = True
                 return
-        base.write(self)
+        base.visit(self)
         if name != '<init>':
-            self._write('.%s' % name)
-        self._write('(')
+            self.write('.%s' % name)
+        self.write('(')
         comma = False
         for arg in args:
             if comma:
-                self._write(', ')
+                self.write(', ')
             comma = True
-            arg.write(self)
-        self._write(')')
+            arg.visit(self)
+        self.write(')')
 
-    def write_return_void(self):
+    def visit_return_void(self):
         self.write_ind()
-        self._write('return')
+        self.write('return')
         self.end_ins()
 
-    def write_return(self, arg):
+    def visit_return(self, arg):
         self.write_ind()
-        self._write('return ')
-        arg.write(self)
+        self.write('return ')
+        arg.visit(self)
         self.end_ins()
 
-    def write_nop(self):
+    def visit_nop(self):
         pass
 
-    def write_switch(self, arg):
-        arg.write(self)
+    def visit_switch(self, arg):
+        arg.visit(self)
 
-    def write_check_cast(self, arg, atype):
-        self._write('(checkcast)(')
-        arg.write(self)
-        self._write(', %s)' % atype)
+    def visit_check_cast(self, arg, atype):
+        self.write('(checkcast)(')
+        arg.visit(self)
+        self.write(', %s)' % atype)
 
-    def write_aload(self, array, index):
-        array.write(self)
-        self._write('[')
-        index.write(self)
-        self._write(']')
+    def visit_aload(self, array, index):
+        array.visit(self)
+        self.write('[')
+        index.visit(self)
+        self.write(']')
 
-    def write_alength(self, array):
-        array.write(self)
-        self._write('.length')
+    def visit_alength(self, array):
+        array.visit(self)
+        self.write('.length')
 
-    def write_new_array(self, atype, size):
-        self._write('new %s[' % get_type(atype[1:]))
-        size.write(self)
-        self._write(']')
+    def visit_new_array(self, atype, size):
+        self.write('new %s[' % get_type(atype[1:]))
+        size.visit(self)
+        self.write(']')
 
-    def write_filled_new_array(self, atype, size, args):
-        self._write('filled-new-array(type=')
-        atype.write(self)
-        self._write(', size=')
-        size.write(self)
+    def visit_filled_new_array(self, atype, size, args):
+        self.write('filled-new-array(type=')
+        atype.visit(self)
+        self.write(', size=')
+        size.visit(self)
         for arg in args:
-            self._write(', arg=')
-            arg.write(self)
-        self._write(')')
+            self.write(', arg=')
+            arg.visit(self)
+        self.write(')')
 
-    def write_fill_array(self, array, value):
+    def visit_fill_array(self, array, value):
         self.write_ind()
-        array.write(self)
-        self._write(' = {')
+        array.visit(self)
+        self.write(' = {')
         data = value.get_data()
-        self._write(', '.join(['%d' % ord(c) for c in data[:-1]]))
-        self._write('}')
+        self.write(', '.join(['%d' % ord(c) for c in data[:-1]]))
+        self.write('}')
         self.end_ins()
 
-    def write_monitor_enter(self, ref):
+    def visit_monitor_enter(self, ref):
         self.write_ind()
-        self._write('synchronized(')
-        ref.write(self)
-        self._write(') {\n')
+        self.write('synchronized(')
+        ref.visit(self)
+        self.write(') {\n')
         self.inc_ind()
 
-    def write_monitor_exit(self, ref):
+    def visit_monitor_exit(self, ref):
         self.dec_ind()
         self.write_ind()
-        self._write('}\n')
+        self.write('}\n')
 
-    def write_throw(self, ref):
+    def visit_throw(self, ref):
         self.write_ind()
-        self._write('throw ')
-        ref.write(self)
+        self.write('throw ')
+        ref.visit(self)
         self.end_ins()
 
-    def write_binary_expression(self, op, arg1, arg2):
-        self._write('(')
-        arg1.write(self)
-        self._write(' %s ' % op)
-        arg2.write(self)
-        self._write(')')
+    def visit_binary_expression(self, op, arg1, arg2):
+        self.write('(')
+        arg1.visit(self)
+        self.write(' %s ' % op)
+        arg2.visit(self)
+        self.write(')')
 
-    def write_unary_expression(self, op, arg):
-        self._write('(%s ' % op)
-        arg.write(self)
-        self._write(')')
+    def visit_unary_expression(self, op, arg):
+        self.write('(%s ' % op)
+        arg.visit(self)
+        self.write(')')
 
-    def write_cast(self, op, arg):
-        self._write('(%s ' % op)
-        arg.write(self)
-        self._write(')')
+    def visit_cast(self, op, arg):
+        self.write('(%s ' % op)
+        arg.visit(self)
+        self.write(')')
 
-    def write_cond_expression(self, op, arg1, arg2):
-        arg1.write(self)
-        self._write(' %s ' % op)
-        arg2.write(self)
+    def visit_cond_expression(self, op, arg1, arg2):
+        arg1.visit(self)
+        self.write(' %s ' % op)
+        arg2.visit(self)
 
-    def write_condz_expression(self, op, arg):
+    def visit_condz_expression(self, op, arg):
         if isinstance(arg, BinaryCompExpression):
             arg.op = op
-            return arg.write(self)
+            return arg.visit(self)
         atype = arg.get_type()
         if atype == 'Z':
             if op is Op.EQUAL:
-                self._write('!')
-                arg.write(self)
+                self.write('!')
+                arg.visit(self)
             else:
-                arg.write(self)
+                arg.visit(self)
         else:
-            arg.write(self)
-            self._write(' %s 0' % op)
+            arg.visit(self)
+            self.write(' %s 0' % op)
 
-    def write_get_instance(self, arg, name):
-        arg.write(self)
-        self._write('.%s' % name)
+    def visit_get_instance(self, arg, name):
+        arg.visit(self)
+        self.write('.%s' % name)
 
-    def write_get_static(self, cls, name):
-        self._write('%s.%s' % (cls, name))
+    def visit_get_static(self, cls, name):
+        self.write('%s.%s' % (cls, name))
 
 
 def string(s):
