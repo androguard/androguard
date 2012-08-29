@@ -59,8 +59,8 @@ class StatementBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(StatementBlock, self).__init__(name, block_ins)
 
-    def write(self, writer):
-        writer.write_statement_node(self)
+    def visit(self, visitor):
+        visitor.visit_statement_node(self)
 
     def __str__(self):
         return '%d-Statement(%s)' % (self.num, self.name)
@@ -70,8 +70,8 @@ class ReturnBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(ReturnBlock, self).__init__(name, block_ins)
 
-    def write(self, writer):
-        writer.write_return_node(self)
+    def visit(self, visitor):
+        visitor.visit_return_node(self)
 
     def __str__(self):
         return '%d-Return(%s)' % (self.num, self.name)
@@ -81,8 +81,8 @@ class ThrowBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(ThrowBlock, self).__init__(name, block_ins)
 
-    def write(self, writer):
-        writer.write_throw_node(self)
+    def visit(self, visitor):
+        visitor.visit_throw_node(self)
 
     def __str__(self):
         return '%d-Throw(%s)' % (self.num, self.name)
@@ -99,8 +99,8 @@ class SwitchBlock(BasicBlock):
     def add_case(self, case):
         self.cases.append(case)
 
-    def write(self, writer):
-        writer.write_switch_node(self)
+    def visit(self, visitor):
+        visitor.visit_switch_node(self)
 
     def copy_from(self, node):
         super(SwitchBlock, self).copy_from(node)
@@ -147,13 +147,13 @@ class CondBlock(BasicBlock):
             raise ('Condition should have only 1 instruction !')
         self.ins[0].neg()
 
-    def write(self, writer):
-        writer.write_cond_node(self)
+    def visit(self, visitor):
+        visitor.visit_cond_node(self)
 
-    def write_cond(self, writer):
+    def visit_cond(self, visitor):
         if len(self.ins) > 1:
             raise ('Condition should have only 1 instruction !')
-        writer.write_ins(self.ins[0])
+        visitor.visit_ins(self.ins[0])
 
     def __str__(self):
         return '%d-If(%s)' % (self.num, self.name)
@@ -183,8 +183,8 @@ class Condition(object):
         loc_ins.extend(self.cond2.get_loc_with_ins())
         return loc_ins
 
-    def write(self, writer):
-        writer.write_short_circuit_condition(self.isnot, self.isand,
+    def visit(self, visitor):
+        visitor.visit_short_circuit_condition(self.isnot, self.isand,
                                              self.cond1, self.cond2)
 
     def __str__(self):
@@ -209,8 +209,8 @@ class ShortCircuitBlock(CondBlock):
     def neg(self):
         self.cond.neg()
 
-    def write_cond(self, writer):
-        self.cond.write(writer)
+    def visit_cond(self, visitor):
+        self.cond.visit(visitor)
 
     def __str__(self):
         return '%d-SC(%s)' % (self.num, self.cond)
@@ -230,11 +230,11 @@ class LoopBlock(CondBlock):
     def get_loc_with_ins(self):
         return self.cond.get_loc_with_ins()
 
-    def write(self, writer):
-        writer.write_loop_node(self)
+    def visit(self, visitor):
+        visitor.visit_loop_node(self)
 
-    def write_cond(self, writer):
-        self.cond.write_cond(writer)
+    def visit_cond(self, visitor):
+        self.cond.visit_cond(visitor)
 
     def update_attribute_with(self, n_map):
         super(LoopBlock, self).update_attribute_with(n_map)
