@@ -271,4 +271,3 @@ class Visitor(object):
 
     def visit_get_static(self, cls, name):
         pass
-

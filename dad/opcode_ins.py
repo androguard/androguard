@@ -1729,7 +1729,7 @@ def remlong2addr(ins, vmap):
 
 # and-long/2addr vA, vB ( 4b, 4b )
 def andlong2addr(ins, vmap):
-    util.log('AddLong2Addr : %s' % ins.get_output(), 'debug')
+    util.log('AndLong2Addr : %s' % ins.get_output(), 'debug')
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = BinaryExpression2Addr(Op.AND, a, b)
     exp.type = 'J'
@@ -2010,7 +2010,7 @@ def remintlit8(ins, vmap):
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def andintlit8(ins, vmap):
-    util.log('AddIntLit8 : %s' % ins.get_output(), 'debug')
+    util.log('AndIntLit8 : %s' % ins.get_output(), 'debug')
     cst = Constant(ins.CC, 'I')
     a, b = get_variables(vmap, ins.AA, ins.BB)
     exp = BinaryExpressionLit(Op.ADD, b, cst)
