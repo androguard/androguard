@@ -489,8 +489,7 @@ class InvokeStaticInstruction(InvokeInstruction):
                                                     rtype, ptype, nbargs, args)
 
     def get_used_vars(self):
-        res = set(a for a in self.args)
-        return list(res)
+        return list(set(self.args))
 
 
 class ReturnInstruction(IRForm):
@@ -928,7 +927,7 @@ class ConditionalZExpression(IRForm):
         self.op = CONDS[self.op]
 
     def visit(self, visitor):
-       return visitor.visit_condz_expression(self.op, self.var_map[self.arg])
+        return visitor.visit_condz_expression(self.op, self.var_map[self.arg])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:

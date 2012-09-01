@@ -131,9 +131,8 @@ class DvClass():
         self.package = pckg[1:].replace('/', '.')
         self.name = name[:-1]
 
-        lmethods = [(meth.get_method_idx(), DvMethod(vma.get_method(meth)))
-                        for meth in dvclass.get_methods()]
-        self.methods = dict(lmethods)
+        self.methods = {meth.get_method_idx(): DvMethod(vma.get_method(meth))
+                                            for meth in dvclass.get_methods()}
         self.fields = {}
         for field in dvclass.get_fields():
             self.fields[field.get_name()] = field
@@ -255,9 +254,8 @@ class DvMachine():
     def __init__(self, name):
         vm = AndroguardS(name).get_vm()
         vma = analysis.uVMAnalysis(vm)
-        ldict = [(dvclass.get_name(), DvClass(dvclass, vma))
-                    for dvclass in vm.get_classes()]
-        self.classes = dict(ldict)
+        self.classes = {dvclass.get_name(): DvClass(dvclass, vma)
+                                        for dvclass in vm.get_classes()}
         util.merge_inner(self.classes)
 
     def process(self):
