@@ -73,8 +73,7 @@ class Node(object):
         self.if_follow = n_map.get(self.if_follow, self.if_follow)
         self.loop_follow = n_map.get(self.loop_follow, self.loop_follow)
         self.switch_follow = n_map.get(self.switch_follow, self.switch_follow)
-        loop_nodes = set([n_map.get(n, n) for n in self.loop_nodes])
-        self.loop_nodes = list(loop_nodes)
+        self.loop_nodes = list({n_map.get(n, n) for n in self.loop_nodes})
 
     def is_cond(self):
         return self.type == 0

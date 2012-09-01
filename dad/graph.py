@@ -26,9 +26,8 @@ class Graph():
     def __init__(self):
         self.entry = None
         self.exit = None
-        self.nodes = set([])
+        self.nodes = set()
         self.rpo = []
-        self.reverse_rpo = []
         self.edges = {}
         self.reverse_edges = {}
         self.loc_to_ins = None
@@ -55,9 +54,6 @@ class Graph():
     def get_rpo(self):
         return self.rpo
 
-    def get_reverse_rpo(self):
-        return self.reverse_rpo
-
     def add_node(self, node):
         self.nodes.add(node)
 
@@ -81,8 +77,6 @@ class Graph():
         self.nodes.remove(node)
         if node in self.rpo:
             self.rpo.remove(node)
-        if node in self.reverse_rpo:
-            self.reverse_rpo.remove(node)
         del node
 
     def number_ins(self):
@@ -197,7 +191,7 @@ class Graph():
                         redo = True
                         self.remove_node(suc)
 
-    def compute_rpo(self, reverse=False):
+    def compute_rpo(self):
         '''
         Number the nodes in reverse post order.
         An RPO traversal visit as many predecessors of a node as possible
@@ -208,28 +202,19 @@ class Graph():
             if node in visit:
                 return
             visit.add(node)
-            for suc in succs(node):
+            for suc in self.sucs(node):
                 traverse(suc, visit, res)
             res.insert(0, node)
         visit = set()
         res = []
-        start = self.entry
-        succs = self.sucs
-        if reverse:
-            start = self.exit
-            succs = self.preds
-        traverse(start, visit, res)
+        traverse(self.entry, visit, res)
         for i, n in enumerate(res, 1):
-            if reverse:
-                self.reverse_rpo.append(n)
-            else:
-                n.num = i
-                self.rpo.append(n)
+            n.num = i
+            self.rpo.append(n)
 
     def reset_rpo(self):
-        self.rpo, self.reverse_rpo = [], []
+        self.rpo = []
         self.compute_rpo()
-        self.compute_rpo(True)
 
     def post_order(self, start=None, visited=None, res=None):
         '''
@@ -357,7 +342,5 @@ def construct(basicblocks, vmap, exceptions):
         log('No exit node found !', 'debug')
     else:
         graph.set_exit(lexit_nodes[0])
-
-    graph.compute_rpo(reverse=True)
 
     return graph
