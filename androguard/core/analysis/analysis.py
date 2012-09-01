@@ -1593,18 +1593,18 @@ class TaintedPackages :
 
             self.__methods[ method ][ class_name ].append( p )
 
-    def get_packages_by_method(self, method) :
-        try :
-            return self.__methods[ method ]
-        except KeyError :
+    def get_packages_by_method(self, method):
+        try:
+            return self.__methods[method]
+        except KeyError:
             return {}
 
-    def get_package(self, name) :
-        return self.__packages[ name ]
+    def get_package(self, name):
+        return self.__packages[name]
 
     def get_packages_by_bb(self, bb):
         """
-            @rtype : return a list of packaged used in a basic block
+            :rtype: return a list of packaged used in a basic block
         """
         l = []
         for i in self.__packages :
@@ -1620,28 +1620,31 @@ class TaintedPackages :
         for i in self.__packages:
             yield self.__packages[i], i
 
-    def get_internal_packages_from_package(self, package) :
+    def get_internal_packages_from_package(self, package):
         classes = self.__vm.get_classes_names()
         l = []
-        for m, _ in self.get_packages() :
+        for m, _ in self.get_packages():
             paths = m.get_methods()
-            for j in paths :
-                if j.get_method().get_class_name() == package and j.get_class_name() in classes :
-                    l.append( j )
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
+
+                if src_class_name == package and dst_class_name in classes:
+                    l.append(j)
         return l
 
-    def get_internal_packages(self) :
+    def get_internal_packages(self):
         """
-            @rtype : return a list of the internal packages called in the application
+            :rtype: return a list of the internal packages called in the application
         """
         classes = self.__vm.get_classes_names()
         l = []
-        for m, _ in self.get_packages() :
+        for m, _ in self.get_packages():
             paths = m.get_methods()
-            for j in paths :
-                if j.get_access_flag() == TAINTED_PACKAGE_CALL :
-                  dst_class_name, _, _ = j.get_dst( self.__vm.get_class_manager() )
-                  if dst_class_name in classes and m.get_name() in classes :
+            for j in paths:
+                if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                  dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
+                  if dst_class_name in classes and m.get_name() in classes:
                     l.append(j)
         return l
 
@@ -1680,24 +1683,23 @@ class TaintedPackages :
                         l.append(j)
         return l
 
-    def search_packages(self, package_name) :
+    def search_packages(self, package_name):
         """
-            @param package_name : a regexp for the name of the package
-        
-            @rtype : a list of called packages' paths
+            :param package_name: a regexp for the name of the package
+
+            :rtype: a list of called packages' paths
         """
-        ex = re.compile( package_name )
-    
+        ex = re.compile(package_name)   
+
         l = []
-        for m, _ in self.get_packages() :
-            if ex.match( m.get_name() ) != None :
-                l.extend( m.get_methods() )
+        for m, _ in self.get_packages():
+            if ex.search(m.get_name()) != None:
+                l.extend(m.get_methods())
         return l
 
     def search_unique_packages(self, package_name) :
         """
-            @param package_name : a regexp for the name of the package
-
+            :param package_name: a regexp for the name of the package
         """
         ex = re.compile( package_name )
 
@@ -1726,7 +1728,7 @@ class TaintedPackages :
             ex = re.compile( class_name )
 
             for m, _ in self.get_packages() :
-                if ex.match( m.get_name() ) != None :
+                if ex.search( m.get_name() ) != None :
                     l.extend( m.search_method( name, descriptor ) )
 
         return l
@@ -1741,7 +1743,7 @@ class TaintedPackages :
         l = []
 
         for m, _ in self.get_packages() :
-            if ex.match( m.get_name() ) != None :
+            if ex.search( m.get_name() ) != None :
                 l.extend( m.get_objects_paths() )
     
         return l
