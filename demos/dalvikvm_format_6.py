@@ -87,6 +87,7 @@ class MDalvikVMFormat:
 
 
 TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
+#TEST = "apks/malwares/smszombie/40F3F16742CD8AC8598BF859A23AC290.apk"
 FILENAME = "./toto.apk"
 
 androconf.set_debug()
