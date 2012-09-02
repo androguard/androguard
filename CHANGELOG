@@ -1,4 +1,10 @@
-1.5.1: 
+1.5.1:
+ DAD:
+  - Propagatation pass has been updated
+  - Switches with fallthrough are handled
+ Core:
+  - fix and add the zipmodule python
+  - fix bugs in search of packages
   - fix bugs in show_*
   - fix bug in ganalysis.py
 
