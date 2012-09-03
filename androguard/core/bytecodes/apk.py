@@ -126,8 +126,9 @@ def sign_apk(filename, keystore, storepass) :
                     stdout=PIPE, stderr=STDOUT)
     stdout, stderr = compile.communicate()
 
+
 ######################################################## APK FORMAT ########################################################
-class APK :
+class APK:
     """
         This class can access to all elements in an APK file
 
@@ -145,10 +146,9 @@ class APK :
 
         :Example:
           APK("myfile.apk")
-          
           APK(open("myfile.apk", "rb").read(), raw=True)
     """
-    def __init__(self, filename, raw=False, mode="r", magic_file=None, zipmodule=ZIPMODULE) :
+    def __init__(self, filename, raw=False, mode="r", magic_file=None, zipmodule=ZIPMODULE):
         self.filename = filename
 
         self.xml = {}
@@ -161,19 +161,19 @@ class APK :
         self.files_crc32 = {}
 
         self.magic_file = magic_file
-        
-        if raw == True :
+
+        if raw == True:
             self.__raw = filename
-        else :
-            fd = open( filename, "rb" )
+        else:
+            fd = open(filename, "rb")
             self.__raw = fd.read()
             fd.close()
 
         self.zipmodule = zipmodule
 
-        if zipmodule == 0 :
+        if zipmodule == 0:
             self.zip = ChilkatZip( self.__raw )
-        elif zipmodule == 2 :
+        elif zipmodule == 2:
             from androguard.patch import zipfile
             self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
         else :
