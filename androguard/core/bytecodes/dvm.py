@@ -6953,7 +6953,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
             #debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
 
-          debug("SAVE" + str(i[0]) + " @ 0x%x" % idx)
+          debug("SAVE " + str(i[0]) + " @ 0x%x" % idx)
 
         else :
           if isinstance(i, MapList) :
@@ -6968,7 +6968,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
 
           s[ idx ] = length
 
-          debug("SAVE" + str(i) + " @ 0x%x" % idx)
+          debug("SAVE " + str(i) + " @ 0x%x" % idx)
 
         idx += length
 
