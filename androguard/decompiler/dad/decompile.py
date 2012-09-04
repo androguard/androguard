@@ -20,7 +20,7 @@ import sys
 sys.path.append('./')
 
 import util
-from androguard.code.androgen import AndroguardS
+from androguard.core.androgen import AndroguardS
 from androguard.core.analysis import analysis
 from graph import construct
 from dataflow import (immediate_dominator, build_def_use,

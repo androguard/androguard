@@ -272,7 +272,7 @@ class DecompilerDAD :
     def display_source(self, m) :
         mx = self.vmx.get_method( m )
         
-        from dad import decompile 
+        from androguard.decompiler.dad import decompile 
 
         z = decompile.DvMethod( mx )
         z.process()
@@ -283,7 +283,7 @@ class DecompilerDAD :
         print result
     
     def display_all(self, _class) :
-        from dad import decompile
+        from androguard.decompiler.dad import decompile
 
         c = decompile.DvClass( _class, self.vmx )
         c.process()

@@ -78,7 +78,6 @@ class MDalvikVMFormat:
                     print hexdump(b1[j - 8: j + 8], off=j-8) + "\n"
                     print "NEW : "
                     print hexdump(b2[j - 8: j + 8], off=j-8) + "\n"
-                    raise("ooo")
 
                 j += 1
 
@@ -86,8 +85,8 @@ class MDalvikVMFormat:
         print "OK"
 
 
-TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
-#TEST = "apks/malwares/smszombie/40F3F16742CD8AC8598BF859A23AC290.apk"
+#TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
+TEST = "apks/malwares/smszombie/40F3F16742CD8AC8598BF859A23AC290.apk"
 FILENAME = "./toto.apk"
 
 androconf.set_debug()
