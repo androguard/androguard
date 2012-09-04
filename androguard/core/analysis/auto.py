@@ -44,6 +44,7 @@ class AndroAuto(object):
     def worker(idx, q):
       debug("Running worker-%d" % idx)
       while True:
+        a, d, dx = None, None, None
         try:
           filename, fileraw = q.get()
           id_file = zlib.adler32(fileraw)
@@ -56,8 +57,6 @@ class AndroAuto(object):
           filter_file_ret, filter_file_type = myandro.filter_file(log, fileraw)
           if filter_file_ret:
             debug("(worker-%d) analysing %s" % (id_file, filter_file_type))
-
-            a, d, dx = None, None, None
 
             if filter_file_type == "APK":
               a = myandro.create_apk(log, fileraw)
@@ -82,6 +81,7 @@ class AndroAuto(object):
             myandro.analysis_app(log, a, d, dx)
 
           myandro.finish(log)
+          del a, d, dx
           q.task_done()
         except Exception, why:
           myandro.crash(log, why)
