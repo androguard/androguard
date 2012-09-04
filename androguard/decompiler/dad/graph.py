@@ -17,9 +17,9 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 import pydot
-from dad.basic_blocks import (build_node_from_block, StatementBlock,
+from basic_blocks import (build_node_from_block, StatementBlock,
                               CondBlock, GenInvokeRetName)
-from dad.util import log
+from util import log
 
 
 class Graph():

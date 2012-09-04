@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.util import get_type, log, ACCESS_FLAGS_METHODS
-from dad.opcode_ins import Op
-from dad.instruction import Constant, ThisParam, BinaryCompExpression
+from util import get_type, log, ACCESS_FLAGS_METHODS
+from opcode_ins import Op
+from instruction import Constant, ThisParam, BinaryCompExpression
 
 
 class Writer(object):
