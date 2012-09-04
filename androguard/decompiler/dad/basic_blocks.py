@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.opcode_ins import INSTRUCTION_SET
-from dad.instruction import Variable
-from dad.node import Node
-from dad.util import log
+from opcode_ins import INSTRUCTION_SET
+from instruction import Variable
+from node import Node
+from util import log
 
 
 class BasicBlock(Node):
