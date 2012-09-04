@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.util import build_path, common_dom
+from util import build_path, common_dom
 
 
 def dominance_frontier(graph, immdoms):

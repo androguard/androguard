@@ -19,15 +19,15 @@
 import sys
 sys.path.append('./')
 
-from androguard.core.androgen import AndroguardS
+import util
+from androguard.code.androgen import AndroguardS
 from androguard.core.analysis import analysis
-from dad.graph import construct
-from dad import util
-from dad.dataflow import (immediate_dominator, build_def_use,
+from graph import construct
+from dataflow import (immediate_dominator, build_def_use,
                           dead_code_elimination, register_propagation)
-from dad.control_flow import identify_structures
-from dad.instruction import Param, ThisParam
-from dad.writer import Writer
+from control_flow import identify_structures
+from instruction import Param, ThisParam
+from writer import Writer
 
 
 class DvMethod():

@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.basic_blocks import Condition, ShortCircuitBlock, LoopBlock
-from dad.node import Interval
-from dad.util import log, common_dom
-from dad.graph import Graph
+from basic_blocks import Condition, ShortCircuitBlock, LoopBlock
+from node import Interval
+from util import log, common_dom
+from graph import Graph
 
 
 def intervals(graph):
