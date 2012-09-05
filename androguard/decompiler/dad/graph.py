@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import pydot
 from basic_blocks import (build_node_from_block, StatementBlock,
                               CondBlock, GenInvokeRetName)
 from util import log
@@ -233,6 +232,7 @@ class Graph():
         return res
 
     def draw(self, name, dname, draw_branches=True):
+        import pydot
         g = pydot.Dot()
         g.set_node_defaults(**{'color': 'lightgray', 'style': 'filled',
                     'shape': 'box', 'fontname': 'Courier', 'fontsize': '10'})
