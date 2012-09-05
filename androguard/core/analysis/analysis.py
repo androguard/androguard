@@ -956,11 +956,11 @@ DVM_FIELDS_ACCESS = {
       "sput-short" : "W",
    }
 
-class DVMBasicBlock :
+class DVMBasicBlock:
     """
-        
+        A simple basic block of a dalvik method
     """
-    def __init__(self, start, vm, method, context) :
+    def __init__(self, start, vm, method, context):
         self.__vm = vm
         self.method = method
         self.context = context
@@ -982,41 +982,62 @@ class DVMBasicBlock :
         self.tainted_variables = self.context.get_tainted_variables()
         self.tainted_packages = self.context.get_tainted_packages()
 
-    def get_instructions(self) :
+    def get_instructions(self):
+      """
+        Get all instructions from a basic block.
+
+        :rtype: Return all instructions in the current basic block
+      """
       tmp_ins = []
       idx = 0
-      for i in self.method.get_instructions() :
-        if idx >= self.start and idx < self.end :
-          tmp_ins.append( i )
+      for i in self.method.get_instructions():
+        if idx >= self.start and idx < self.end:
+          tmp_ins.append(i)
 
         idx += i.get_length()
       return tmp_ins
 
-    def get_nb_instructions(self) :
+    def get_nb_instructions(self):
         return self.nb_instructions
 
-    def get_method(self) :
+    def get_method(self):
         return self.method
 
-    def get_name(self) :
+    def get_name(self):
         return self.name
 
-    def get_start(self) :
+    def get_start(self):
         return self.start
 
-    def get_end(self) :
+    def get_end(self):
         return self.end
 
-    def get_last(self) :
+    def get_last(self):
         return self.get_instructions()[-1]
 
-    def set_fathers(self, f) :
-        self.fathers.append( f )
+    def get_next(self):
+        """
+            Get next basic blocks
 
-    def get_last_length(self) :
+            :rtype: a list of the next basic blocks
+        """
+        return self.childs
+
+    def get_prev(self):
+        """
+            Get previous basic blocks
+
+            :rtype: a list of the previous basic blocks
+        """
+        return self.fathers
+
+    def set_fathers(self, f):
+        self.fathers.append(f)
+
+    def get_last_length(self):
       return self.last_length
 
-    def set_childs(self, values) :
+    def set_childs(self, values):
         #print self, self.start, self.end, values
         if values == [] :
             next_block = self.context.get_basic_block( self.end + 1 )
@@ -1033,7 +1054,7 @@ class DVMBasicBlock :
             if c[2] != None :
                 c[2].set_fathers( ( c[1], c[0], self ) )
 
-    def push(self, i) :
+    def push(self, i):
       try :
             self.nb_instructions += 1
             idx = self.end
@@ -1073,11 +1094,8 @@ class DVMBasicBlock :
                 self.special_ins[ idx ] = code.get_ins_off( idx + i.get_ref_off() * 2 )
       except :
         pass
-        #import traceback
-        #traceback.print_exc()
-        #raise("ooo") 
 
-    def get_special_ins(self, idx) :
+    def get_special_ins(self, idx):
         """
             Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
@@ -1085,15 +1103,15 @@ class DVMBasicBlock :
 
             :rtype: None or an Instruction
         """
-        try :
-            return self.special_ins[ idx ]
-        except :
+        try:
+            return self.special_ins[idx]
+        except:
             return None
 
-    def get_exception_analysis(self) :
+    def get_exception_analysis(self):
         return self.exception_analysis
 
-    def set_exception_analysis(self, exception_analysis) :
+    def set_exception_analysis(self, exception_analysis):
         self.exception_analysis = exception_analysis
 
 TAINTED_LOCAL_VARIABLE = 0
@@ -1918,63 +1936,61 @@ class Tags :
   def empty(self) :
     return self.tags == set()
 
-class BasicBlocks :
-    def __init__(self, _vm, tv) :
+
+class BasicBlocks:
+    """
+        This class represents all basic blocks of a method
+    """
+    def __init__(self, _vm, tv):
         self.__vm = _vm
         self.tainted = tv
 
         self.bb = []
 
     def push(self, bb):
-        self.bb.append( bb )
+        self.bb.append(bb)
 
-    def pop(self, idx) :
-        return self.bb.pop( idx )
+    def pop(self, idx):
+        return self.bb.pop(idx)
 
-    def get_basic_block(self, idx) :
-        for i in self.bb :
-            if idx >= i.get_start() and idx < i.get_end() :
+    def get_basic_block(self, idx):
+        for i in self.bb:
+            if idx >= i.get_start() and idx < i.get_end():
                 return i
         return None
 
-    def get_tainted_integers(self) :
-        try :
+    def get_tainted_integers(self):
+        try:
           return self.tainted.get_tainted_integers()
-        except :
+        except:
           return None
 
-    def get_tainted_packages(self) :
-        try :
+    def get_tainted_packages(self):
+        try:
           return self.tainted.get_tainted_packages()
-        except : 
+        except:
           return None
 
-    def get_tainted_variables(self) :
-        try :
+    def get_tainted_variables(self):
+        try:
           return self.tainted.get_tainted_variables()
-        except :
+        except:
           return None
 
-    def get_random(self) :
+    def get(self):
         """
-            @rtype : return a random basic block
+            :rtype: return each basic block (:class:`DVMBasicBlock` object)
         """
-        return self.bb[ random.randint(0, len(self.bb) - 1) ]
-
-    def get(self) :
-        """
-            @rtype : return each basic block
-        """
-        for i in self.bb :
+        for i in self.bb:
             yield i
 
-    def gets(self) :
+    def gets(self):
         """
-            @rtype : a list of basic blocks
+            :rtype: a list of basic blocks (:class:`DVMBasicBlock` objects)
         """
         return self.bb
 
-    def get_basic_block_pos(self, idx) :
+    def get_basic_block_pos(self, idx):
         return self.bb[idx]
 
 class ExceptionAnalysis :
@@ -2037,12 +2053,12 @@ class MethodAnalysis :
         This class analyses in details a method of a class/dex file
 
         :param vm: the object which represent the dex file
-        :type vm: a :class:`DalvikVMFormat` object
         :param method: the original method
-        :type method: a :class:`EncodedMethod` object
         :param tv: a virtual object to get access to tainted information
+        :type vm: a :class:`DalvikVMFormat` object
+        :type method: a :class:`EncodedMethod` object
     """
-    def __init__(self, vm, method, tv) :
+    def __init__(self, vm, method, tv):
         self.__vm = vm
         self.method = method
 
@@ -2118,9 +2134,14 @@ class MethodAnalysis :
         del instructions
         del h, l
 
+    def get_basic_blocks(self):
+        """
+            :rtype: a :class:`BasicBlocks` object
+        """
+        return self.basic_blocks
     def get_length(self) :
         """
-            @rtype : an integer which is the length of the code
+            :rtype: an integer which is the length of the code
         """
         return self.get_code().get_length()
 

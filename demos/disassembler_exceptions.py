@@ -30,7 +30,7 @@ for method in a.get_methods() :
 
     idx = 0
     for i in g.basic_blocks.get() :
-        print "\t %s %x %x" % (i.name, i.start, i.end), '[ CHILDS = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ FATHERS = ', ', '.join( j[2].get_name() for j in i.fathers ), ']'
+        print "\t %s %x %x" % (i.name, i.start, i.end), '[ NEXT = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ PREV = ', ', '.join( j[2].get_name() for j in i.fathers ), ']'
 
         for ins in i.get_instructions() :
             print "\t\t %x" % idx, ins.get_name(), ins.get_output()
