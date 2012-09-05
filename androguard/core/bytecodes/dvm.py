@@ -6096,6 +6096,14 @@ class DalvikCode :
         """
         return self.__CM.get_debug_off( self.debug_info_off )
 
+    def get_bc(self) :
+        """
+            Return the associated code object
+
+            :rtype: :class:`DCode`
+        """
+        return self.code
+
     def set_idx(self, idx) :
         self.code.set_idx(idx)
 
@@ -6105,8 +6113,7 @@ class DalvikCode :
     def get_length(self) :
         return self.insns_size
 
-    def get_bc(self) :
-        return self.code
+
 
     def _begin_show(self) :
       debug("registers_size: %d" % self.registers_size)
