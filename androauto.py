@@ -42,7 +42,7 @@ def main(options, arguments):
     settings = {
       "my": auto.DirectoryAndroAnalysis(options.directory),
       "log": AndroLog,
-      "max_fetcher": 2,
+      "max_fetcher": 3,
     }
 
     aa = auto.AndroAuto(settings)

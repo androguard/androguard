@@ -1,4 +1,4 @@
-# This file is part of Androguard.
+  # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
@@ -29,6 +29,11 @@ from androguard.core.androconf import debug
 
 
 class AndroAuto(object):
+  """
+    The main class which analyse automatically android apps
+    :param settings: the settings of the analysis
+    :type settings: dict
+  """
   def __init__(self, settings):
     self.settings = settings
 
@@ -43,6 +48,7 @@ class AndroAuto(object):
 
     def worker(idx, q):
       debug("Running worker-%d" % idx)
+
       while True:
         a, d, dx = None, None, None
         try:
@@ -53,30 +59,29 @@ class AndroAuto(object):
 
           log = self.settings["log"](id_file, filename)
 
+          is_analysis_dex, is_analysis_adex = True, True
           debug("(worker-%d) filtering file %d" % (idx, id_file))
           filter_file_ret, filter_file_type = myandro.filter_file(log, fileraw)
           if filter_file_ret:
-            debug("(worker-%d) analysing %s" % (id_file, filter_file_type))
+            debug("(worker-%d) analysis %s" % (id_file, filter_file_type))
 
             if filter_file_type == "APK":
               a = myandro.create_apk(log, fileraw)
-              myandro.analysis_apk(log, a)
+              is_analysis_dex = myandro.analysis_apk(log, a)
               fileraw = a.get_dex()
               filter_file_type = "DEX"
 
-            if filter_file_type == "DEX":
+            if is_analysis_dex and filter_file_type == "DEX":
               d = myandro.create_dex(log, fileraw)
-              dx = myandro.create_adex(log, d)
+              is_analysis_adex = myandro.analysis_dex(log, d)
 
-              myandro.analysis_dex(log, d)
-              myandro.analysis_dex(log, dx)
-
-            elif filter_file_type == "DEY":
+            elif is_analysis_dex and filter_file_type == "DEY":
               d = myandro.create_dey(log, fileraw)
-              dx = myandro.create_adex(log, d)
+              is_analysis_adex = myandro.analysis_dey(log, d)
 
-              myandro.analysis_dex(log, d)
-              myandro.analysis_dex(log, dx)
+            if is_analysis_adex and d:
+              dx = myandro.create_adex(log, d)
+              myandro.analysis_adex(log, dx)
 
             myandro.analysis_app(log, a, d, dx)
 
@@ -131,13 +136,16 @@ class DefaultAndroAnalysis(object):
     return analysis.uVMAnalysis(dexobj)
 
   def analysis_apk(self, log, apkobj):
-    pass
+    return True
 
   def analysis_dex(self, log, dexobj):
-    pass
+    return True
+
+  def analysis_dey(self, log, deyobj):
+    return True
 
   def analysis_adex(self, log, adexobj):
-    pass
+    return True
 
   def analysis_app(self, log, apkobj, dexobj, adexobj):
     pass

@@ -4155,8 +4155,6 @@ class Instruction35c(Instruction) :
       self.E = (i16 >> 8) & 0xf
       self.F = (i16 >> 12) & 0xf
 
-      #log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
-
     def get_output(self, idx=-1) :
       buff = ""
 
