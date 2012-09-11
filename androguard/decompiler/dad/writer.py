@@ -344,7 +344,7 @@ class Writer(object):
     def visit_new(self, atype):
         self.write('new %s' % get_type(atype))
 
-    def visit_invoke(self, name, base, args):
+    def visit_invoke(self, name, base, ptype, rtype, args):
         if isinstance(base, ThisParam) and name == '<init>'\
             and self.constructor and len(args) == 0:
                 self.skip = True
