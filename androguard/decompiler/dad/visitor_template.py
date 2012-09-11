@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from dad.util import log
-from dad.instruction import Constant, BinaryCompExpression
+from util import log
+from instruction import Constant, BinaryCompExpression
 
 
 class Visitor(object):

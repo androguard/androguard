@@ -5,8 +5,8 @@ sys.path.append('./')
 
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis.analysis import uVMAnalysis
-from dad.decompile import DvMethod
-from dad.visitor_template import Visitor
+from androguard.decompiler.dad.decompile import DvMethod
+from androguard.decompiler.dad.visitor_template import Visitor
 
 TEST = '../DroidDream/magicspiral.apk'
 

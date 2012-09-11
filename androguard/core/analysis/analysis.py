@@ -1383,7 +1383,7 @@ def show_Path(vm, path) :
 def show_Paths(vm, paths) :
     """
         Show paths of packages
-        :param paths: a list of paths L{PathP}
+        :param paths: a list of :class:`PathP` objects
     """
     for path in paths :
         show_Path( vm, path )
@@ -1416,6 +1416,11 @@ class PathP :
   def get_idx(self) :
     return self.idx
 
+  def get_src_idx(self):
+    return self.src_idx
+
+  def get_dst_idx(self):
+    return self.dst_idx
 
 class TaintedPackage:
     def __init__(self, vm, name):
@@ -1491,7 +1496,7 @@ class TaintedPackage:
                 for path in self.paths[_type]:
                     print "\t\t => %x in %s" % (path.get_idx(), path.get_src(cm))
 
-def show_Permissions( dx ) :
+def show_Permissions(dx) :
     """
         Show where permissions are used in a specific application
         :param dx : the analysis virtual machine
@@ -1538,7 +1543,7 @@ def is_crypto_code(dx) :
         Crypto code is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
-        :rtype : boolean
+        :rtype: boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljavax/crypto/.", ".", ".")
     if paths != [] :
@@ -1551,7 +1556,7 @@ def is_dyn_code(dx) :
         Dynamic code loading is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
-        :rtype : boolean
+        :rtype: boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
     if paths != [] :
@@ -1564,7 +1569,7 @@ def is_reflection_code(dx) :
         Reflection is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
-        :rtype : boolean
+        :rtype: boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
     if paths != [] :
@@ -1577,7 +1582,7 @@ def is_native_code(dx) :
         Native code is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
-        :rtype : boolean
+        :rtype: boolean
     """
     paths = dx.get_tainted_packages().search_methods( "Ljava/lang/System;", "loadLibrary", ".")
     if paths != [] :

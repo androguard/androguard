@@ -466,7 +466,7 @@ class InvokeInstruction(IRForm):
     def visit(self, visitor):
         m = self.var_map
         largs = [m[arg] for arg in self.args]
-        return visitor.visit_invoke(self.name, m[self.base], largs)
+        return visitor.visit_invoke(self.name, m[self.base], self.rtype, self.ptype, largs)
 
 
 class InvokeRangeInstruction(InvokeInstruction):
