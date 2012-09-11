@@ -1,4 +1,4 @@
-  # This file is part of Androguard.
+# This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
@@ -30,7 +30,8 @@ from androguard.core.androconf import debug
 
 class AndroAuto(object):
   """
-    The main class which analyse automatically android apps
+    The main class which analyse automatically android apps by calling methods
+    from a specific object
     :param settings: the settings of the analysis
     :type settings: dict
   """
@@ -38,12 +39,21 @@ class AndroAuto(object):
     self.settings = settings
 
   def dump(self):
+    """
+      Dump the analysis
+    """
     self.settings["my"].dump()
 
   def dump_file(self, filename):
+    """
+      Dump the analysis in a filename
+    """
     self.settings["my"].dump_file(filename)
 
   def go(self):
+    """
+      Launch the analysis
+    """
     myandro = self.settings["my"]
 
     def worker(idx, q):
@@ -113,10 +123,28 @@ class AndroAuto(object):
 
 
 class DefaultAndroAnalysis(object):
+  """
+    This class can be used as a template in order to analyse apps
+  """
   def fetcher(self, q):
+    """
+      This method is called to fetch a new app in order to analyse it. The queue
+      must be fill with the following format: (filename, raw)
+
+      :param q: the Queue to put new app
+    """
     pass
 
   def filter_file(self, log, fileraw):
+    """
+      This method is called in order to filer a specific app
+
+      :param log: an object which corresponds to a unique app
+      :param fileraw: the raw app (a string)
+
+      :rtype: a set with 2 elements, the return value (boolean) if it is necessary to
+      continue the analysis and the file type
+    """
     file_type = androconf.is_android_raw(fileraw)
     if file_type == "APK" or file_type == "DEX" or file_type == "DEY":
       if file_type == "APK":
@@ -127,43 +155,143 @@ class DefaultAndroAnalysis(object):
     return (False, None)
 
   def create_apk(self, log, fileraw):
+    """
+      This method is called in order to create a new APK object
+
+      :param log: an object which corresponds to a unique app
+      :param fileraw: the raw apk (a string)
+
+      :rtype: an :class:`APK` object
+    """
     return apk.APK(fileraw, raw=True, zipmodule=2)
 
   def create_dex(self, log, dexraw):
+    """
+      This method is called in order to create a DalvikVMFormat object
+
+      :param log: an object which corresponds to a unique app
+      :param dexraw: the raw classes.dex (a string)
+
+      :rtype: a :class:`DalvikVMFormat` object
+    """
     return dvm.DalvikVMFormat(dexraw)
 
+  def create_dey(self, log, deyraw):
+    """
+      This method is called in order to create a DalvikOdexVMFormat object
+
+      :param log: an object which corresponds to a unique app
+      :param dexraw: the raw odex file (a string)
+
+      :rtype: a :class:`DalvikOdexVMFormat` object
+    """
+    return dvm.DalvikOdexVMFormat(deyraw)
+
   def create_adex(self, log, dexobj):
+    """
+      This method is called in order to create a VMAnalysis object
+
+      :param log: an object which corresponds to a unique app
+      :param dexobj: a :class:`DalvikVMFormat` object
+
+      :rytpe: a :class:`VMAnalysis` object
+    """
     return analysis.uVMAnalysis(dexobj)
 
   def analysis_apk(self, log, apkobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param apkobj: a :class:`APK` object
+
+      :rtype: a boolean
+    """
     return True
 
   def analysis_dex(self, log, dexobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param dexobj: a :class:`DalvikVMFormat` object
+
+      :rtype: a boolean
+    """
     return True
 
   def analysis_dey(self, log, deyobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param deyobj: a :class:`DalvikOdexVMFormat` object
+
+      :rtype: a boolean
+    """
     return True
 
   def analysis_adex(self, log, adexobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param adexobj: a :class:`VMAnalysis` object
+
+      :rtype: a boolean
+    """
     return True
 
   def analysis_app(self, log, apkobj, dexobj, adexobj):
+    """
+      This method is called if you wish to analyse the final app
+
+      :param log: an object which corresponds to a unique app
+      :param apkobj: a :class:`APK` object
+      :param dexobj: a :class:`DalvikVMFormat` object
+      :param adexobj: a :class:`VMAnalysis` object
+    """
     pass
 
   def finish(self, log):
+    """
+      This method is called before the end of the analysis
+
+      :param log: an object which corresponds to a unique app
+    """
     pass
 
   def crash(self, log, why):
+    """
+      This method is called if a crash appends
+
+      :param log: an object which corresponds to a unique app
+      :param why: the string exception
+    """
     pass
 
   def dump(self):
+    """
+      This method is called to dump the result
+
+      :param log: an object which corresponds to a unique app
+    """
     pass
 
   def dump_file(self, filename):
+    """
+      This method is called to dump the result in a file
+
+      :param log: an object which corresponds to a unique app
+      :param filename: the filename to dump the result
+    """
     pass
 
 
 class DirectoryAndroAnalysis(DefaultAndroAnalysis):
+  """
+    A simple class example to analyse a directory
+  """
   def __init__(self, directory):
     self.directory = directory
     self.collect = []

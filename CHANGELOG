@@ -1,3 +1,7 @@
+1.6:
+  - fix doc
+  - add auto analysis
+  - comunity
 1.5.1:
  DAD:
   - Propagatation pass has been updated
