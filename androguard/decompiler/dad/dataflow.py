@@ -198,7 +198,7 @@ def clear_path(graph, reg, loc1, loc2):
     path = build_path(graph, node1, node2)
     for node in path:
         locs = node.ins_range
-        if not clear_path_node(graph, reg, locs[0], min(loc2, locs[1])):
+        if not clear_path_node(graph, reg, locs[0], max(loc2, locs[1])):
             return False
     return True
 
