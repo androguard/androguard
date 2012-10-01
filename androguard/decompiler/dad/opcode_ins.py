@@ -279,7 +279,7 @@ def constwidehigh16(ins, vmap):
 # const-string vAA ( 8b )
 def conststring(ins, vmap):
     util.log('ConstString : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.get_string(), 'STR')
+    cst = Constant(ins.get_raw_string(), 'STR')
     a = get_variables(vmap, ins.AA)
     exp = AssignExpression(a, cst)
     return exp
@@ -288,7 +288,7 @@ def conststring(ins, vmap):
 # const-string/jumbo vAA ( 8b )
 def conststringjumbo(ins, vmap):
     util.log('ConstStringJumbo %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.get_string(), 'STR')
+    cst = Constant(ins.get_raw_string(), 'STR')
     a = get_variables(vmap, ins.AA)
     exp = AssignExpression(a, cst)
     return exp
