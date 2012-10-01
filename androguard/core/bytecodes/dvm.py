@@ -3631,6 +3631,7 @@ VARIES              = 4
 INLINE_METHOD       = 5
 VTABLE_OFFSET       = 6
 FIELD_OFFSET        = 7
+KIND_RAW_STRING     = 8
 
 def get_kind(cm, kind, value) :
   """
@@ -3644,37 +3645,39 @@ def get_kind(cm, kind, value) :
     :type value: int
 
     :rtype: string
-  """      
-  if kind == KIND_METH :
+  """ 
+  if kind == KIND_METH:
     method = cm.get_method_ref(value)
     class_name = method.get_class_name()
     name = method.get_name()
     descriptor = method.get_descriptor()
 
     return "%s->%s%s" % (class_name, name, descriptor)
-  
-  elif kind == KIND_STRING :
+
+  elif kind == KIND_STRING:
     return repr(cm.get_string(value))
-  
-  elif kind == KIND_FIELD :
+
+  elif kind == KIND_RAW_STRING:
+    return cm.get_string(value)
+
+  elif kind == KIND_FIELD:
     class_name, proto, field_name = cm.get_field(value)
     return "%s->%s %s" % (class_name, field_name, proto)
-  
-  elif kind == KIND_TYPE :
+
+  elif kind == KIND_TYPE:
     return cm.get_type(value)
 
-  elif kind == VTABLE_OFFSET :
+  elif kind == VTABLE_OFFSET:
     return "vtable[0x%x]" % value
 
-  elif kind == FIELD_OFFSET :
+  elif kind == FIELD_OFFSET:
     return "field[0x%x]" % value
 
-  elif kind == INLINE_METHOD :
-
+  elif kind == INLINE_METHOD:
     buff = "inline[0x%x]" % value
 
     # FIXME: depends of the android version ...
-    if len(INLINE_METHODS) > value :
+    if len(INLINE_METHODS) > value:
         elem = INLINE_METHODS[value]
         buff += " %s->%s%s" % (elem[0], elem[1], elem[2])
 
@@ -4307,6 +4310,9 @@ class Instruction21c(Instruction) :
     def get_string(self) :
       return get_kind(self.cm, self.get_kind(), self.BBBB)
    
+    def get_raw_string(self) :
+      return get_kind(self.cm, KIND_RAW_STRING, self.BBBB)
+
     def get_raw(self) :
       return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
 
