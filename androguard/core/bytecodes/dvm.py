@@ -5749,7 +5749,7 @@ class LinearSweepAlgorithm :
           yield obj
           idx = idx + obj.get_length()
 
-class DCode :
+class DCode:
     """
         This class represents the instructions of a method
 
@@ -6012,7 +6012,7 @@ class DalvikCode :
         self.tries_size = unpack("=H", buff.read(2))[0]
         self.debug_info_off = unpack("=I", buff.read(4))[0]
         self.insns_size = unpack("=I", buff.read(4))[0]
-        
+       
         ushort = calcsize( '=H' )
 
         self.code = DCode( self.__CM, self.insns_size, buff.read( self.insns_size * ushort ) )

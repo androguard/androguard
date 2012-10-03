@@ -84,8 +84,8 @@ class DecompilerDex2Jad :
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
 
-    def display_source(self, class_name, method_name, method_descriptor) :
-        print self.get_source( class_name, method_name )
+    def display_source(self, method) :
+        print self.get_source( method.get_class_name(), method.get_name() )
 
     def get_all(self, class_name) :
         if class_name not in self.classes :
@@ -97,8 +97,8 @@ class DecompilerDex2Jad :
         
         return result
 
-    def display_all(self, class_name) :
-        print self.get_all( class_name )
+    def display_all(self, _class) :
+        print self.get_all( _class.get_name() )
 
 class DecompilerDed :
     def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh") :
@@ -155,8 +155,8 @@ class DecompilerDed :
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
 
-    def display_source(self, class_name, method_name, method_descriptor) :
-        print self.get_source( class_name, method_name )
+    def display_source(self, method) :
+        print self.get_source( method.get_class_name(), method.get_name() )
 
     def get_all(self, class_name) :
         if class_name not in self.classes :
@@ -167,8 +167,8 @@ class DecompilerDed :
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
     
-    def display_all(self, class_name) :
-        print self.get_all( class_name )
+    def display_all(self, _class) :
+        print self.get_all( _class.get_name() )
 
 class MethodFilter(Filter):
     def __init__(self, **options):
