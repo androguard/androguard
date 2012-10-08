@@ -106,16 +106,16 @@ def export_xgmml_cfg(g, fd) :
             fill = "#87ceeb"
 
         if i.start == 0 :
-            fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\"/>\n" % (escape(name), i.get_ins()[-1].get_name()))
+            fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\"/>\n" % (escape(name), i.get_instructions()[-1].get_name()))
             width = 3
             fill = "#ff0000"
 
             METHODS_ID[ class_name + name + descriptor ] = len(NODES_ID)
         else :
-            fd.write("<att type=\"string\" name=\"node.label\" value=\"0x%x\\n%s\"/>\n" % (i.start, i.get_ins()[-1].get_name()))
+            fd.write("<att type=\"string\" name=\"node.label\" value=\"0x%x\\n%s\"/>\n" % (i.start, i.get_instructions()[-1].get_name()))
 
         size = 0
-        for tmp_ins in i.get_ins() :
+        for tmp_ins in i.get_instructions() :
             size += (tmp_ins.get_length() / 2)
 
 

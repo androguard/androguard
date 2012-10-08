@@ -106,23 +106,23 @@ class ChilkatZip :
         e.Inflate( s )
         return s.getBytes()
 
-def sign_apk(filename, keystore, storepass) :
+
+def sign_apk(filename, keystore, storepass):
     from subprocess import Popen, PIPE, STDOUT
-    compile = Popen([ androconf.CONF["PATH_JARSIGNER"],
-                     "-sigalg", 
-                     "MD5withRSA", 
-                     "-digestalg", 
-                     "SHA1", 
+    compile = Popen([androconf.CONF["PATH_JARSIGNER"],
+                     "-sigalg",
+                     "MD5withRSA",
+                     "-digestalg",
+                     "SHA1",
 
-                     "-storepass", 
-                     storepass,  
+                     "-storepass",
+                     storepass,
 
-                     "-keystore", 
-                     keystore, 
+                     "-keystore",
+                     keystore,
 
-                     filename, 
-
-                     "alias_name" ], 
+                     filename,
+                     "alias_name"],
                     stdout=PIPE, stderr=STDOUT)
     stdout, stderr = compile.communicate()
 
@@ -172,30 +172,30 @@ class APK:
         self.zipmodule = zipmodule
 
         if zipmodule == 0:
-            self.zip = ChilkatZip( self.__raw )
+            self.zip = ChilkatZip(self.__raw)
         elif zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
-        else :
+            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
+        else:
             import zipfile
-            self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ), mode=mode )
+            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
 
-        for i in self.zip.namelist() :
-            if i == "AndroidManifest.xml" :
-                self.xml[i] = minidom.parseString( AXMLPrinter( self.zip.read( i ) ).getBuff() )
+        for i in self.zip.namelist():
+            if i == "AndroidManifest.xml":
+                self.xml[i] = minidom.parseString(AXMLPrinter(self.zip.read(i)).getBuff())
 
-                self.package = self.xml[i].documentElement.getAttribute( "package" )
-                self.androidversion["Code"] = self.xml[i].documentElement.getAttribute( "android:versionCode" )
-                self.androidversion["Name"] = self.xml[i].documentElement.getAttribute( "android:versionName")
+                self.package = self.xml[i].documentElement.getAttribute("package")
+                self.androidversion["Code"] = self.xml[i].documentElement.getAttribute("android:versionCode")
+                self.androidversion["Name"] = self.xml[i].documentElement.getAttribute("android:versionName")
 
-                for item in self.xml[i].getElementsByTagName('uses-permission') :
-                    self.permissions.append( str( item.getAttribute("android:name") ) )
+                for item in self.xml[i].getElementsByTagName('uses-permission'):
+                    self.permissions.append(str(item.getAttribute("android:name")))
 
                 self.validAPK = True
 
         self.get_files_types()
 
-    def get_AndroidManifest(self) :
+    def get_AndroidManifest(self):
         """
             Return the Android Manifest XML file
 
@@ -252,97 +252,98 @@ class APK:
         """
         return self.zip.namelist()
 
-    def get_files_types(self) :
+    def get_files_types(self):
         """
             Return the files inside the APK with their associated types (by using python-magic)
 
             :rtype: a dictionnary
         """
-        try : 
+        try:
             import magic
-        except ImportError :
-            for i in self.get_files() :
-                buffer = self.zip.read( i )
-                self.files_crc32[ i ] = crc32( buffer )
+        except ImportError:
+            # no lib magic !
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files_crc32[i] = crc32(buffer)
             return self.files
 
-        if self.files != {} :
+        if self.files != {}:
             return self.files
 
         builtin_magic = 0
-        try :
-            getattr(magic, "Magic")
-        except AttributeError :
+        try:
+            getattr(magic, "MagicException")
+        except AttributeError:
             builtin_magic = 1
-                
-        if builtin_magic :
+
+        if builtin_magic:
             ms = magic.open(magic.MAGIC_NONE)
             ms.load()
 
-            for i in self.get_files() :
-                buffer = self.zip.read( i )
-                self.files[ i ] = ms.buffer( buffer )
-                self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
-                self.files_crc32[ i ] = crc32( buffer )
-        else :
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files[i] = ms.buffer(buffer)
+                self.files[i] = self._patch_magic(buffer, self.files[i])
+                self.files_crc32[i] = crc32(buffer)
+        else:
             m = magic.Magic(magic_file=self.magic_file)
-            for i in self.get_files() :
-                buffer = self.zip.read( i )
-                self.files[ i ] = m.from_buffer( buffer )
-                self.files[ i ] = self._patch_magic(buffer, self.files[ i ])
-                self.files_crc32[ i ] = crc32( buffer )
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files[i] = m.from_buffer(buffer)
+                self.files[i] = self._patch_magic(buffer, self.files[i])
+                self.files_crc32[i] = crc32(buffer)
 
         return self.files
 
-    def _patch_magic(self, buffer, orig) :
-        if ("Zip" in orig) or ("DBase" in orig) :
-            val = androconf.is_android_raw( buffer )
-            if val == "APK" :
-                if androconf.is_valid_android_raw( buffer ) :
+    def _patch_magic(self, buffer, orig):
+        if ("Zip" in orig) or ("DBase" in orig):
+            val = androconf.is_android_raw(buffer)
+            if val == "APK":
+                if androconf.is_valid_android_raw(buffer):
                   return "Android application package file"
-            elif val == "AXML" :
+            elif val == "AXML":
                 return "Android's binary XML"
 
         return orig
 
-    def get_files_crc32(self) :
-        if self.files_crc32 == {} :
+    def get_files_crc32(self):
+        if self.files_crc32 == {}:
             self.get_files_types()
 
         return self.files_crc32
 
-    def get_files_information(self) :
+    def get_files_information(self):
         """
             Return the files inside the APK with their associated types and crc32
 
             :rtype: string, string, int
         """
-        if self.files == {} :
+        if self.files == {}:
           self.get_files_types()
 
-        for i in self.get_files() :
-          try :
-            yield i, self.files[ i ], self.files_crc32[ i ]
-          except KeyError :
+        for i in self.get_files():
+          try:
+            yield i, self.files[i], self.files_crc32[i]
+          except KeyError:
             yield i, "", ""
 
-    def get_raw(self) :
-        """ 
+    def get_raw(self):
+        """
             Return raw bytes of the APK
 
             :rtype: string
         """
         return self.__raw
 
-    def get_file(self, filename) :
+    def get_file(self, filename):
         """
             Return the raw data of the specified filename
 
             :rtype: string
         """
-        try :
-            return self.zip.read( filename )
-        except KeyError :
+        try:
+            return self.zip.read(filename)
+        except KeyError:
             return ""
 
     def get_dex(self) :
