@@ -483,7 +483,7 @@ class Writer(object):
 def string(s):
     # Based on http://stackoverflow.com/a/1676407
     ret = ['"']
-    for c in s[1:-1]:
+    for c in s:
         if ord(c) < 32 or 0x80 <= ord(c) <= 0xff:
             to_add = '\\x%02x' % ord(c)
         elif c in '\\"':
