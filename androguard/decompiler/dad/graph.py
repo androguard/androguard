@@ -18,7 +18,7 @@
 
 from basic_blocks import (build_node_from_block, StatementBlock,
                               CondBlock, GenInvokeRetName)
-from util import log
+from util import log, common_dom
 
 
 class Graph():
@@ -251,6 +251,28 @@ class Graph():
                     edge.set_color('blue')
                     g.add_edge(edge)
         g.write_png('%s/%s.png' % (dname, name))
+
+    def immediate_dominators(self):
+        '''
+        Create a mapping of the nodes of a graph with their corresponding
+        immediate dominator
+        '''
+        idom = {n: None for n in self.nodes}
+        for node in self.get_rpo():
+            for pred in self.preds(node):
+                if pred.num < node.num:
+                    idom[node] = common_dom(idom, idom[node], pred)
+        return idom
+
+    def dominator_tree(self, immediate_dominators):
+        dom_tree = Graph()
+        for n, idom_n in immediate_dominators.items():
+            dom_tree.add_node(n)
+            if idom_n:
+                dom_tree.add_edge(idom_n, n)
+        dom_tree.set_entry(self.entry)
+        dom_tree.set_exit(self.exit)
+        return dom_tree
 
     def __len__(self):
         return len(self.nodes)
