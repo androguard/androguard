@@ -415,14 +415,13 @@ class NewInstance(IRForm):
 
 
 class InvokeInstruction(IRForm):
-    def __init__(self, clsname, name, base, rtype, ptype, nbargs, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args):
         super(InvokeInstruction, self).__init__()
         self.cls = clsname
         self.name = name
         self.base = base.v
         self.rtype = rtype
         self.ptype = ptype
-        self.nbargs = nbargs
         self.args = [arg.v for arg in args]
         self.var_map[base.v] = base
         for arg in args:
@@ -466,27 +465,28 @@ class InvokeInstruction(IRForm):
     def visit(self, visitor):
         m = self.var_map
         largs = [m[arg] for arg in self.args]
-        return visitor.visit_invoke(self.name, m[self.base], self.rtype, self.ptype, largs)
+        return visitor.visit_invoke(self.name, m[self.base], self.rtype,
+                                    self.ptype, largs)
 
 
 class InvokeRangeInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, rtype, ptype, nbargs, args):
+    def __init__(self, clsname, name, rtype, ptype, args):
         base = args.pop(0)
         super(InvokeRangeInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, nbargs, args)
+                                                    rtype, ptype, args)
 
 
 class InvokeDirectInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, base, rtype, ptype, nbargs, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args):
         super(InvokeDirectInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, nbargs, args)
+                                                    rtype, ptype, args)
 
 
 class InvokeStaticInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, base, rtype, ptype, nbargs, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args):
         # TODO: check base class name and current class name
         super(InvokeStaticInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, nbargs, args)
+                                                    rtype, ptype, args)
 
     def get_used_vars(self):
         return list(set(self.args))

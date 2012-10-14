@@ -44,15 +44,13 @@ class BasicBlock(Node):
     def add_ins(self, new_ins_list):
         for new_ins in new_ins_list:
             self.ins.append(new_ins)
+        self.ins_range[1] += len(new_ins_list)
 
     def number_ins(self, num):
         last_ins_num = num + len(self.ins)
-        self.ins_range = (num, last_ins_num)
+        self.ins_range = [num, last_ins_num]
         self.loc_ins = None
         return last_ins_num
-
-    def process(self, memory, varrs, ind, ifollow, nfollow):
-        log('Process not done : %s' % self, 'debug')
 
 
 class StatementBlock(BasicBlock):
@@ -110,9 +108,9 @@ class SwitchBlock(BasicBlock):
     def update_attribute_with(self, n_map):
         super(SwitchBlock, self).update_attribute_with(n_map)
         self.cases = [n_map.get(n, n) for n in self.cases]
-        for n1, n2 in n_map.iteritems():
-            if n1 in self.node_to_case:
-                self.node_to_case[n2] = self.node_to_case.pop(n1)
+        for node1, node2 in n_map.iteritems():
+            if node1 in self.node_to_case:
+                self.node_to_case[node2] = self.node_to_case.pop(node1)
 
     def order_cases(self):
         values = self.switch.get_values()
@@ -268,7 +266,7 @@ class TryBlock(BasicBlock):
 class CatchBlock(BasicBlock):
     def __init__(self, name, block_ins, typeh):
         super(CatchBlock, self).__init__(name, block_ins)
-        self.exceptionType = typeh
+        self.exception_type = typeh
 
     def __str__(self):
         return 'Catch(%s)' % self.name
@@ -277,6 +275,7 @@ class CatchBlock(BasicBlock):
 class GenInvokeRetName(object):
     def __init__(self):
         self.num = 0
+        self.ret = None
 
     def new(self):
         self.num += 1
@@ -344,20 +343,3 @@ def build_node_from_block(block, block_to_node, vmap, gen_ret):
         node.set_stmt()
     block_to_node[block] = node
     return node
-
-
-def build_exception(node, block, block_to_node):
-    log('Exceptions :', 'debug')
-    for exception in block.exception_analysis.exceptions:
-        log('  => %s' % exception, 'debug')
-        catch_node = block_to_node.get(exception[-1])
-        if catch_node is None:
-            catch_node = Node(block.get_name())
-            catch_block = CatchBlock(catch_node, exception[-1],
-                                    exception[0])
-            block_to_node[exception[-1]] = catch_node
-            catch_node.set_content(catch_block)
-            #nodegraph.append(catchNode)
-        catch_node.num += 1
-        node.add_catch(catch_node)
-        node.add_node(catch_node)

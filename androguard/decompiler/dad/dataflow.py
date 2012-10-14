@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from util import build_path, common_dom
+from util import build_path
 
 
 def dominance_frontier(graph, immdoms):
@@ -192,13 +192,13 @@ def clear_path(graph, reg, loc1, loc2):
 
     # If instructions are in different nodes, we also have to check the nodes
     # in the path between the two locations.
-    # We try to return as early as possible to avoid unnecessary computations.
     if not clear_path_node(graph, reg, loc1, node1.ins_range[1]):
         return False
     path = build_path(graph, node1, node2)
     for node in path:
         locs = node.ins_range
-        if not clear_path_node(graph, reg, locs[0], max(loc2, locs[1])):
+        end_loc = loc2 if (locs[0] <= loc2 <= locs[1]) else locs[1]
+        if not clear_path_node(graph, reg, locs[0], end_loc):
             return False
     return True
 
@@ -228,94 +228,76 @@ def register_propagation(graph, du, ud):
                     locs = ud.get((var, i), ())
                     # If the variable is uniquely defined for this instruction
                     # it may be eligible for propagation.
-                    if len(locs) == 1:
-                        loc = iter(locs).next()
-                        # Methods parameters are defined with a location of -1.
-                        if loc == -1:
+                    if len(locs) != 1:
+                        continue
+
+                    loc = locs[0]
+                    # Methods parameters are defined with a location of -1.
+                    if loc == -1:
+                        continue
+                    orig_ins = graph.get_ins_from_loc(loc)
+
+                    # We only try to propagate constants and definition
+                    # points which are used at only one location.
+                    if len(du.get((var, loc), ())) > 1:
+                        if not orig_ins.get_rhs().is_const():
                             continue
-                        orig_ins = graph.get_ins_from_loc(loc)
 
-                        # We only try to propagate constants and definition
-                        # points which are used at only one location.
-                        if len(du.get((var, loc), ())) > 1:
-                            if not orig_ins.get_rhs().is_const():
-                                continue
+                    # We defined some instructions as not propagable.
+                    # Actually this is the case only for array creation
+                    # (new foo[x])
+                    if not orig_ins.is_propagable():
+                        continue
+                    # We check that the propagation is safe for all the
+                    # variables that are used in the instruction.
+                    # The propagation is not safe if there is a side effect
+                    # along the path from the definition of the variable
+                    # to its use in the instruction, or if the variable may
+                    # be redifined along this path.
+                    safe = True
+                    for var2 in orig_ins.get_used_vars():
+                        # loc is the location of the defined variable
+                        # i is the location of the current instruction
+                        if not clear_path(graph, var2, loc + 1, i):
+                            safe = False
+                            break
+                    if not safe:
+                        continue
 
-                        # We defined some instructions as not propagable.
-                        # Actually this is the case only for array creation
-                        # (new foo[x])
-                        propag = orig_ins.is_propagable()
-                        # We check that the propagation is safe for all the
-                        # variables that are used in the instruction.
-                        # The propagation is not safe if there is a side effect
-                        # along the path from the definition of the variable
-                        # to its use in the instruction, or if the variable may
-                        # be redifined along this path.
-                        for var2 in orig_ins.get_used_vars():
-                            # loc is the location of the defined variable
-                            # i is the location of the current instruction
-                            if propag and not clear_path(graph, var2,
-                                                         loc + 1, i):
-                                propag = False
-                        # We also check that the instruction itself is
-                        # propagable. If the instruction has a side effect it
-                        # cannot be propagated if there is another side effect
-                        # along the path
-                        if (propag and orig_ins.has_side_effect() and
-                                    not clear_path(graph, None, loc + 1, i)):
-                            propag = False
-                        if propag:
-                            ins.modify_rhs(var, orig_ins.get_rhs())
-                            ud[(var, i)].remove(loc)
-                            for var2 in orig_ins.get_used_vars():
-                                # We update the UD chain of the variables we
-                                # propagate. We also have to take the
-                                # definition points of all the variables used
-                                # by the instruction and update the DU chain
-                                # with this information.
-                                old_ud = ud.get((var2, loc))
-                                # If the instruction use the same variable
-                                # multiple times, the second+ time the ud chain
-                                # will be None because already treated.
-                                if old_ud is None:
-                                    continue
-                                ud.setdefault((var2, i), []).extend(old_ud)
-                                ud.pop((var2, loc))
+                    # We also check that the instruction itself is
+                    # propagable. If the instruction has a side effect it
+                    # cannot be propagated if there is another side effect
+                    # along the path
+                    if orig_ins.has_side_effect():
+                        if not clear_path(graph, None, loc + 1, i):
+                            continue
 
-                                for def_loc in old_ud:
-                                    du.get((var2, def_loc)).remove(loc)
-                                    du.get((var2, def_loc)).append(i)
+                    ins.modify_rhs(var, orig_ins.get_rhs())
+                    ud[(var, i)].remove(loc)
+                    for var2 in orig_ins.get_used_vars():
+                        # We update the UD chain of the variables we
+                        # propagate. We also have to take the
+                        # definition points of all the variables used
+                        # by the instruction and update the DU chain
+                        # with this information.
+                        old_ud = ud.get((var2, loc))
+                        # If the instruction use the same variable
+                        # multiple times, the second+ time the ud chain
+                        # will be None because already treated.
+                        if old_ud is None:
+                            continue
+                        ud.setdefault((var2, i), []).extend(old_ud)
+                        ud.pop((var2, loc))
 
-                            new_du = du.get((var, loc))
-                            new_du.remove(i)
-                            if len(new_du) == 0:
-                                graph.remove_ins(loc)
-                                change = True
+                        for def_loc in old_ud:
+                            du.get((var2, def_loc)).remove(loc)
+                            du.get((var2, def_loc)).append(i)
 
-
-def immediate_dominator(graph):
-    '''
-    Create a mapping of the nodes of a graph with their corresponding immediate
-    dominator
-    '''
-    idom = dict([(n, None) for n in graph])
-    for node in graph.get_rpo():
-        for pred in graph.preds(node):
-            if pred.num < node.num:
-                idom[node] = common_dom(idom, idom[node], pred)
-    return idom
-
-
-def dominator_tree(graph, immediate_dominators):
-    from dad.graph import Graph
-    dom_tree = Graph()
-    for n, idom_n in immediate_dominators.items():
-        dom_tree.add_node(n)
-        if idom_n:
-            dom_tree.add_edge(idom_n, n)
-    dom_tree.set_entry(graph.get_entry())
-    dom_tree.set_exit(graph.get_exit())
-    return dom_tree
+                    new_du = du.get((var, loc))
+                    new_du.remove(i)
+                    if len(new_du) == 0:
+                        graph.remove_ins(loc)
+                        change = True
 
 
 class DummyNode(object):
@@ -392,6 +374,4 @@ def build_def_use(graph, lparams):
         for def_loc in defs_loc:
             DU.setdefault((var, def_loc), []).append(loc)
 
-#    dom_frontier = dominance_frontier(graph, immdoms)
-#    phi_placement(graph, lparams, dom_frontier)
     return UD, DU

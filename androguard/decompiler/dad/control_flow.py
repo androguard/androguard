@@ -27,20 +27,20 @@ def intervals(graph):
     Compute the intervals of the graph
     Returns
         interval_graph: a graph of the intervals of G
-        interv_of_head: a dict of (header node, interval)
+        interv_heads: a dict of (header node, interval)
     '''
     interval_graph = Graph()  # graph of intervals
     heads = set([graph.get_entry()])  # set of header nodes
-    interv_of_head = {}  # interv_of_head[i] = interval of header i
+    interv_heads = {}  # interv_heads[i] = interval of header i
     processed = dict([(i, False) for i in graph])
     edges = {}
 
     while heads:
-        n = heads.pop()
+        head = heads.pop()
 
-        if not processed[n]:
-            processed[n] = True
-            interv_of_head[n] = Interval(n)
+        if not processed[head]:
+            processed[head] = True
+            interv_heads[head] = Interval(head)
 
             # Check if if there is a node which has all its predecessor in the
             # current interval. If there is, add that node to the interval and
@@ -48,33 +48,33 @@ def intervals(graph):
             change = True
             while change:
                 change = False
-                for m in graph.get_rpo()[1:]:
-                    if all([p in interv_of_head[n] for p in graph.preds(m)]):
-                        change |= interv_of_head[n].add_node(m)
+                for node in graph.get_rpo()[1:]:
+                    if all(p in interv_heads[head] for p in graph.preds(node)):
+                        change |= interv_heads[head].add_node(node)
 
             # At this stage, a node which is not in the interval, but has one
             # of its predecessor in it, is the header of another interval. So
             # we add all such nodes to the header list.
-            for m in graph:
-                if m not in interv_of_head[n] and m not in heads:
-                    if any([p in interv_of_head[n] for p in graph.preds(m)]):
-                        edges.setdefault(interv_of_head[n], []).append(m)
-                        heads.add(m)
+            for node in graph:
+                if node not in interv_heads[head] and node not in heads:
+                    if any(p in interv_heads[head] for p in graph.preds(node)):
+                        edges.setdefault(interv_heads[head], []).append(node)
+                        heads.add(node)
 
-            interval_graph.add_node(interv_of_head[n])
-            interv_of_head[n].compute_end(graph)
+            interval_graph.add_node(interv_heads[head])
+            interv_heads[head].compute_end(graph)
 
     # Edges is a mapping of 'Interval -> [header nodes of interval successors]'
-    for e1, heads in edges.items():
-        for e2 in heads:
-            interval_graph.add_edge(e1, interv_of_head[e2])
+    for interval, heads in edges.items():
+        for head in heads:
+            interval_graph.add_edge(interval, interv_heads[head])
 
     interval_graph.set_entry(graph.get_entry().interval)
     graph_exit = graph.get_exit()
     if graph_exit:
         interval_graph.set_exit(graph_exit.interval)
 
-    return interval_graph, interv_of_head
+    return interval_graph, interv_heads
 
 
 def derived_sequence(graph):
@@ -90,8 +90,8 @@ def derived_sequence(graph):
 
     while not single_node:
 
-        interv_graph, interv_of_head = intervals(graph)
-        deriv_interv.append(interv_of_head)
+        interv_graph, interv_heads = intervals(graph)
+        deriv_interv.append(interv_heads)
 
         single_node = len(interv_graph) == 1
         if not single_node:
@@ -99,22 +99,23 @@ def derived_sequence(graph):
 
         graph = interv_graph
         if 0:
-            graph.draw(graph.entry.name, 'dad_graphs/intervals')
+            graph.draw(graph.entry.name, 'tmp/dad/intervals/')
         graph.compute_rpo()
 
     return deriv_seq, deriv_interv
 
 
-def mark_loop(graph, start, end, L):
+def mark_loop(graph, start, end, interval):
     log('MARKLOOP : %s END : %s' % (start, end), 'debug')
 
     def mark_loop_rec(end):
-        if not end in nodes_in_loop:
-            nodes_in_loop.append(end)
-            for node in graph.preds(end):
-                if headnode.num < node.num <= endnode.num:
-                    if node in L[start]:
-                        mark_loop_rec(node)
+        if end in nodes_in_loop:
+            return
+        nodes_in_loop.append(end)
+        for node in graph.preds(end):
+            if headnode.num < node.num <= endnode.num:
+                if node in interval[start]:
+                    mark_loop_rec(node)
 
     headnode = start.get_head()
     endnode = end.get_end()
@@ -126,7 +127,7 @@ def mark_loop(graph, start, end, L):
     return nodes_in_loop
 
 
-def loop_type(graph, start, end, nodes_in_loop):
+def loop_type(start, end, nodes_in_loop):
     start = start.get_head()
     end = end.get_end()
     if end.is_cond():
@@ -147,7 +148,7 @@ def loop_type(graph, start, end, nodes_in_loop):
             start.set_loop_endless()
 
 
-def loop_follow(graph, start, end, nodes_in_loop):
+def loop_follow(start, end, nodes_in_loop):
     head = start.get_head()
     follow = None
     if start.looptype.pretest():
@@ -179,15 +180,16 @@ def loop_follow(graph, start, end, nodes_in_loop):
     log('Follow of loop: %s' % head.get_loop_follow(), 'debug')
 
 
-def loop_struct(Gi, Li):
-    first_graph = Gi[0]
-    for i, graph in enumerate(Gi):
-        L = Li[i]
-        for head in sorted(L.keys(), key=lambda x: x.num):
+def loop_struct(graphs_list, intervals_list):
+    first_graph = graphs_list[0]
+    for i, graph in enumerate(graphs_list):
+        interval = intervals_list[i]
+        for head in sorted(interval.keys(), key=lambda x: x.num):
             loop_nodes = set()
             for node in graph.preds(head):
                 if node.interval is head.interval:
-                    loop_nodes.update(mark_loop(first_graph, head, node, L))
+                    lnodes = mark_loop(first_graph, head, node, interval)
+                    loop_nodes.update(lnodes)
                     head.get_head().set_loop_nodes(loop_nodes)
 #                    loop_type(first_graph, head, node, loop_nodes)
 #                    loop_follow(first_graph, head, node, loop_nodes)
@@ -329,7 +331,7 @@ def while_block_struct(graph, node_map):
                 graph.add_edge(node_map.get(pred, pred), new_node)
 
             for suc in lsuccs:
-                    graph.add_edge(new_node, node_map.get(suc, suc))
+                graph.add_edge(new_node, node_map.get(suc, suc))
             if entry:
                 graph.set_entry(new_node)
 
@@ -369,12 +371,11 @@ def identify_structures(graph, idoms):
         if node.is_start_loop():
             loop_starts.append(node)
     for node in loop_starts:
-        loop_type(graph, node, node.latch, node.loop_nodes)
-        loop_follow(graph, node, node.latch, node.loop_nodes)
+        loop_type(node, node.latch, node.loop_nodes)
+        loop_follow(node, node.latch, node.loop_nodes)
 
     for node in if_unresolved:
         follows = [n for n in (node.loop_follow, node.switch_follow) if n]
         if len(follows) >= 1:
             follow = min(follows, key=lambda x: x.num)
             node.set_if_follow(follow)
-    del node_map

@@ -170,14 +170,12 @@ class Interval(Node):
         head.interval = self
 
     def __contains__(self, item):
-        # If the interval contains only nodes, check if the item is one of them
+        # If the interval contains nodes, check if the item is one of them
         if item in self.content:
             return True
-        # If the interval contains intervals, we need to check them all
-        for nodes in filter(lambda x: isinstance(x, Interval), self.content):
-            if item in nodes:
-                return True
-        return False
+        # If the interval contains intervals, we need to check them
+        return any(item in node for node in self.content
+                                if isinstance(node, Interval))
 
     def add_node(self, node):
         if node in self.content:
