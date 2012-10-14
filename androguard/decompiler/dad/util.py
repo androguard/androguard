@@ -78,14 +78,6 @@ TYPE_LEN = {
     'D': 2,
 }
 
-DEBUG_MODES = {
-    'off': (-1),
-    'error': 0,
-    'log':   1,
-    'debug': 2,
-}
-
-DEBUG_LEVEL = 'log'
 INCREASE_STACK_RECURSION_LIMIT = False
 
 
@@ -215,22 +207,34 @@ def create_png(basicblocks, graph, dir_name='graphs2'):
     graph.draw(name, dir_name)
 
 
-def log(string, mode):
-    def _log(log_string):
+class Log(object):
+    def __init__(self, debug_level):
+        self.dbg_modes = {
+            'error': (0, self._log_error),
+            'log':   (1, self._log),
+            'debug': (2, self._log_debug),
+        }
+        if debug_level is None:
+            self.dbg = None
+        else:
+            self.dbg = self.dbg_modes[debug_level][0]
+
+    def _log(self, log_string):
         print '%s' % log_string
 
-    def _log_debug(dbg_str):
+    def _log_debug(self, dbg_str):
         print 'DEBUG: %s' % dbg_str
 
-    def _log_error(err_str):
+    def _log_error(self, err_str):
         exit('ERROR: %s' % err_str)
-    if mode is None:
-        return
-    mode = DEBUG_MODES.get(mode)
-    if mode <= DEBUG_MODES[DEBUG_LEVEL]:
-        if mode == DEBUG_MODES['log']:
-            _log(string)
-        elif mode == DEBUG_MODES['debug']:
-            _log_debug(string)
-        elif mode == DEBUG_MODES['error']:
-            _log_error(string)
+
+    def __call__(self, string, mode):
+        if self.dbg is None or mode is None:
+            return
+        mode, fun = self.dbg_modes.get(mode)
+        if mode <= self.dbg:
+            fun(string)
+
+
+#log = Log('debug')
+log = Log('log')

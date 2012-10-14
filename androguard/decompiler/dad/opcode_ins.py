@@ -927,6 +927,19 @@ def sputshort(ins, vmap):
     return StaticInstruction(a, klass, ftype, name)
 
 
+def get_args(vmap, param_type, largs):
+    num_param = 0
+    args = []
+    for type_ in param_type:
+        param = largs[num_param]
+        args.append(param)
+        num_param += util.get_type_size(type_)
+
+    if len(param_type) == 1:
+        return [get_variables(vmap, *args)]
+    return get_variables(vmap, *args)
+
+
 # invoke-virtual {vD, vE, vF, vG, vA} ( 4b each )
 def invokevirtual(ins, vmap, ret):
     util.log('InvokeVirtual : %s' % ins.get_output(), 'debug')
@@ -936,12 +949,11 @@ def invokevirtual(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.A - 1
     largs = [ins.D, ins.E, ins.F, ins.G]
-    args = get_variables(vmap, *largs)[:nbargs]
+    args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, nbargs, args)
+                            param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -959,7 +971,7 @@ def invokesuper(ins, vmap, ret):
     args = get_variables(vmap, *largs)[:nbargs]
     superclass = BaseClass('super')
     exp = InvokeInstruction(cls_name, name, superclass, ret_type,
-                            param_type, nbargs, args)
+                            param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -972,18 +984,12 @@ def invokedirect(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-#    nbargs = ins.A
-    nbargs = ins.A - 1
-#    largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
     largs = [ins.D, ins.E, ins.F, ins.G]
-    args = get_variables(vmap, *largs)[:nbargs]
+    args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     ret.set_to(c)
-#    exp = InvokeDirectInstruction(cls_name, name, ret_type,
-#                                    param_type, nbargs, args)
-#    return AssignExpression(c, exp)
     exp = InvokeDirectInstruction(cls_name, name, c, ret_type,
-                            param_type, nbargs, args)
+                            param_type, args)
     return AssignExpression(c, exp)
 
 
@@ -996,12 +1002,13 @@ def invokestatic(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.A
+    #nbargs = len(param_type)
     largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
-    args = get_variables(vmap, *largs)[:nbargs]
+    #args = get_variables(vmap, *largs)[:nbargs]
+    args = get_args(vmap, param_type, largs)
     base = BaseClass(util.get_type(cls_name))
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                    param_type, nbargs, args)
+                                    param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -1019,7 +1026,7 @@ def invokeinterface(ins, vmap, ret):
     args = get_variables(vmap, *largs)[:nbargs]
     c = get_variables(vmap, ins.C)
     exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, nbargs, args)
+                            param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -1032,13 +1039,12 @@ def invokevirtualrange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.AA
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                 param_type, nbargs, args)
+                                 param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -1051,13 +1057,12 @@ def invokesuperrange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.AA
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, nbargs, args)
+                                param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -1070,7 +1075,6 @@ def invokedirectrange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.AA
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
@@ -1078,7 +1082,7 @@ def invokedirectrange(ins, vmap, ret):
     c = get_variables(vmap, ins.CCCC)
     ret.set_to(c)
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, nbargs, args)
+                                param_type, args)
     return AssignExpression(c, exp)
 
 
@@ -1091,14 +1095,13 @@ def invokestaticrange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.AA
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
     base = BaseClass(util.get_type(cls_name))
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                param_type, nbargs, args)
+                                param_type, args)
     return AssignExpression(ret.new(), exp)
 
 
@@ -1111,13 +1114,12 @@ def invokeinterfacerange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     ret_type = util.get_type(ret_type)
     param_type = util.get_params_type(param_type)
-    nbargs = ins.AA
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, nbargs, args)
+                                param_type, args)
     return AssignExpression(ret.new(), exp)
 
 

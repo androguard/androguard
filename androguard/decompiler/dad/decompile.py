@@ -23,8 +23,7 @@ import util
 from androguard.core.androgen import AndroguardS
 from androguard.core.analysis import analysis
 from graph import construct
-from dataflow import (immediate_dominator, build_def_use,
-                          dead_code_elimination, register_propagation)
+from dataflow import build_def_use, dead_code_elimination, register_propagation
 from control_flow import identify_structures
 from instruction import Param, ThisParam
 from writer import Writer
@@ -71,7 +70,7 @@ class DvMethod():
         util.log('METHOD : %s' % self.name, 'debug')
         if 0:
             from androguard.core import bytecode
-            bytecode.method2png('/tmp/graphs/%s#%s.png' % \
+            bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
                 (self.method.get_class_name().split('/')[-1][:-1], self.name),
                                                         self.metha)
 
@@ -81,8 +80,7 @@ class DvMethod():
             return
 
         if 0:
-            util.create_png(self.basic_blocks, graph, '/tmp/blocks')
-                                                #'dad_graphs/blocks')
+            util.create_png(self.basic_blocks, graph, '/tmp/dad/blocks')
 
         defs, uses = build_def_use(graph, self.lparams)
         dead_code_elimination(graph, uses, defs)
@@ -90,20 +88,19 @@ class DvMethod():
 
         # After the DCE pass, some nodes may be empty, so we can simplify the
         # graph to delete these nodes.
-        # We start by restructuring the the graph by spliting the conditional
-        # nodes into a pre-header and a header part.
+        # We start by restructuring the graph by spliting the conditional nodes
+        # into a pre-header and a header part.
+        graph.split_if_nodes()
         # We then simplify the graph by merging multiple statement nodes into
         # a single statement node when possible. This also delete empty nodes.
-        graph.split_if_nodes()
         graph.simplify()
         graph.reset_rpo()
 
-        idoms = immediate_dominator(graph)
+        idoms = graph.immediate_dominators()
         identify_structures(graph, idoms)
 
         if 0:
-            util.create_png(self.basic_blocks, graph, '/tmp/structured')
-                                               #     'dad_graphs/structured')
+            util.create_png(self.basic_blocks, graph, '/tmp/dad/structured')
 
         self.writer = Writer(graph, self)
         self.writer.write_method()
@@ -253,15 +250,19 @@ class DvClass():
 class DvMachine():
     def __init__(self, name):
         vm = AndroguardS(name).get_vm()
-        vma = analysis.uVMAnalysis(vm)
-        self.classes = {dvclass.get_name(): DvClass(dvclass, vma)
-                                        for dvclass in vm.get_classes()}
-        util.merge_inner(self.classes)
+        self.vma = analysis.uVMAnalysis(vm)
+        self.classes = {dvclass.get_name(): dvclass
+                                for dvclass in vm.get_classes()}
+        #util.merge_inner(self.classes)
 
     def process(self):
         for name, klass in self.classes.iteritems():
             util.log('Processing class: %s' % name, 'log')
-            self.classes[name].process()
+            if isinstance(klass, DvClass):
+                klass.process()
+            else:
+                dvclass = self.classes[name] = DvClass(klass, self.vma)
+                dvclass.process()
 
     def get_classes(self):
         return self.classes.keys()
@@ -269,7 +270,10 @@ class DvMachine():
     def get_class(self, class_name):
         for name, klass in self.classes.iteritems():
             if class_name in name:
-                return self.classes[name]
+                if isinstance(klass, DvClass):
+                    return klass
+                dvclass = self.classes[name] = DvClass(klass, self.vma)
+                return dvclass
 
     def show_source(self):
         for klass in self.classes.values():
@@ -280,11 +284,11 @@ if __name__ == '__main__':
     # Uncomment to increase the size of the stack.
     # I don't know why, but if the block is `activated` in an if-statement it
     # doesn't work.
-    """
+    #"""
     from resource import setrlimit, RLIMIT_STACK
     setrlimit(RLIMIT_STACK, (2 ** 29, -1))
     sys.setrecursionlimit(10 ** 6)
-    """
+    #"""
 
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
