@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -16,11 +17,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from util import log
-from instruction import Constant, BinaryCompExpression
+import sys
+sys.path.append('./')
+
+from androguard.core.bytecodes import apk, dvm
+from androguard.core.analysis.analysis import uVMAnalysis
+from androguard.decompiler.dad.decompile import DvMethod
+from androguard.decompiler.dad.util import log
+from androguard.decompiler.dad.instruction import Constant, BinaryCompExpression
 
 
-class Visitor(object):
+class PrintVisitor(object):
     def __init__(self, graph):
         self.graph = graph
         self.visited_nodes = set()
@@ -31,7 +38,7 @@ class Visitor(object):
         self.next_case = None
 
     def visit_ins(self, ins):
-        ins.visit(self)
+        return ins.visit(self)
 
     def visit_node(self, node):
         if node in (self.if_follow[-1], self.switch_follow[-1],
@@ -43,6 +50,7 @@ class Visitor(object):
         node.visit(self)
 
     def visit_loop_node(self, loop):
+        print '- Loop node', loop.num
         follow = loop.get_loop_follow()
         if follow is None and not loop.looptype.endless():
             log('Loop has no follow !', 'error')
@@ -50,10 +58,13 @@ class Visitor(object):
             if loop.true is follow:
                 loop.neg()
                 loop.true, loop.false = loop.false, loop.true
-            loop.visit_cond(self)
+            cnd = loop.visit_cond(self)
+            print 'while(%s) {' % cnd
         elif loop.looptype.posttest():
+            print 'do {'
             self.latch_node.append(loop.latch)
         elif loop.looptype.endless():
+            print 'while(true) {'
             pass
         self.loop_follow.append(follow)
         if loop.looptype.pretest():
@@ -62,16 +73,19 @@ class Visitor(object):
             self.visit_node(loop.cond)
         self.loop_follow.pop()
         if loop.looptype.pretest():
-            pass
+            print '}'
         elif loop.looptype.posttest():
+            print '} while(',
             self.latch_node.pop()
             loop.latch.visit_cond(self)
+            print ')'
         else:
             self.visit_node(loop.latch)
         if follow is not None:
             self.visit_node(follow)
 
     def visit_cond_node(self, cond):
+        print '- Cond node', cond.num
         follow = cond.get_if_follow()
         if cond.false is self.loop_follow[-1]:
             cond.neg()
@@ -86,10 +100,13 @@ class Visitor(object):
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
             if not cond.true in self.visited_nodes:
-                cond.visit_cond(self)
+                cnd = cond.visit_cond(self)
+                print 'if (%s) {' % cnd
                 self.visit_node(cond.true)
             if is_else and not cond.false in self.visited_nodes:
+                print '} else {'
                 self.visit_node(cond.false)
+            print '}'
             self.if_follow.pop()
             self.visit_node(follow)
         else:
@@ -131,6 +148,7 @@ class Visitor(object):
         self.visit_node(follow)
 
     def visit_statement_node(self, stmt):
+        print '- Statement node', stmt.num
         sucs = self.graph.sucs(stmt)
         for ins in stmt.get_ins():
             self.visit_ins(ins)
@@ -140,6 +158,7 @@ class Visitor(object):
         self.visit_node(follow)
 
     def visit_return_node(self, ret):
+        print '- Return node', ret.num
         for ins in ret.get_ins():
             self.visit_ins(ins)
 
@@ -148,51 +167,57 @@ class Visitor(object):
             self.visit_ins(ins)
 
     def visit_constant(self, cst):
-        pass
+        return cst
 
     def visit_base_class(self, cls):
-        pass
+        return cls
 
     def visit_variable(self, var):
-        pass
+        return 'v%s' % var
 
     def visit_param(self, param):
-        pass
+        return 'p%s' % param
 
     def visit_this(self):
-        pass
+        return 'this'
 
     def visit_assign(self, lhs, rhs):
         if lhs is None:
             rhs.visit(self)
             return
-        lhs.visit(self)
-        rhs.visit(self)
+        l = lhs.visit(self)
+        r = rhs.visit(self)
+        print '%s = %s;' % (l, r)
 
     def visit_move_result(self, lhs, rhs):
-        lhs.visit(self)
-        rhs.visit(self)
+        l = lhs.visit(self)
+        r = rhs.visit(self)
+        print '%s = %s;' % (l, r)
 
     def visit_move(self, lhs, rhs):
         if lhs is rhs:
             return
-        lhs.visit(self)
-        rhs.visit(self)
+        l = lhs.visit(self)
+        r = rhs.visit(self)
+        print '%s = %s;' % (l, r)
 
     def visit_astore(self, array, index, rhs):
-        array.visit(self)
+        arr = array.visit(self)
         if isinstance(index, Constant):
-            index.visit(self, 'I')
+            idx = index.visit(self, 'I')
         else:
-            index.visit(self)
-        rhs.visit(self)
+            idx = index.visit(self)
+        r = rhs.visit(self)
+        print '%s[%s] = %s' % (arr, idx, r)
 
     def visit_put_static(self, cls, name, rhs):
-        rhs.visit(self)
+        r = rhs.visit(self)
+        return '%s.%s = %s' % (cls, name, r)
 
     def visit_put_instance(self, lhs, name, rhs):
-        lhs.visit(self)
-        rhs.visit(self)
+        l = lhs.visit(self)
+        r = rhs.visit(self)
+        return '%s.%s = %s' % (l, name, r)
 
     def visit_new(self, atype):
         pass
@@ -203,10 +228,11 @@ class Visitor(object):
             arg.visit(self)
 
     def visit_return_void(self):
-        pass
+        print 'return;'
 
     def visit_return(self, arg):
-        arg.visit(self)
+        a = arg.visit(self)
+        print 'return %s;' % a
 
     def visit_nop(self):
         pass
@@ -218,11 +244,13 @@ class Visitor(object):
         arg.visit(self)
 
     def visit_aload(self, array, index):
-        array.visit(self)
-        index.visit(self)
+        arr = array.visit(self)
+        idx = index.visit(self)
+        return '%s[%s]' % (arr, idx)
 
     def visit_alength(self, array):
-        array.visit(self)
+        res = array.visit(self)
+        return '%s.length' % res
 
     def visit_new_array(self, atype, size):
         size.visit(self)
@@ -246,18 +274,21 @@ class Visitor(object):
         ref.visit(self)
 
     def visit_binary_expression(self, op, arg1, arg2):
-        arg1.visit(self)
-        arg2.visit(self)
+        val1 = arg1.visit(self)
+        val2 = arg2.visit(self)
+        return '%s %s %s' % (val1, op, val2)
 
     def visit_unary_expression(self, op, arg):
         arg.visit(self)
 
     def visit_cast(self, op, arg):
-        arg.visit(self)
+        a = arg.visit(self)
+        return '(%s %s)' % (op, a)
 
     def visit_cond_expression(self, op, arg1, arg2):
-        arg1.visit(self)
-        arg2.visit(self)
+        val1 = arg1.visit(self)
+        val2 = arg2.visit(self)
+        return '%s %s %s' % (val1, op, val2)
 
     def visit_condz_expression(self, op, arg):
         if isinstance(arg, BinaryCompExpression):
@@ -270,4 +301,30 @@ class Visitor(object):
         arg.visit(self)
 
     def visit_get_static(self, cls, name):
-        pass
+        return '%s.%s' % (cls, name)
+
+TEST = '../DroidDream/magicspiral.apk'
+
+vm = dvm.DalvikVMFormat(apk.APK(TEST).get_dex())
+vma = uVMAnalysis(vm)
+
+method = vm.get_method('crypt')[0]
+method.show()
+
+amethod = vma.get_method(method)
+dvmethod = DvMethod(amethod)
+
+dvmethod.process() # build IR Form / control flow...
+
+graph = dvmethod.graph
+
+print 'Entry block : %s\n' % graph.get_entry()
+
+for block in graph: # graph.get_rpo() to iterate in reverse post order
+    print 'Block : %s' % block
+    for ins in block.get_ins():
+        print '  - %s' % ins
+print
+
+visitor = PrintVisitor(graph)
+graph.get_entry().visit(visitor)
