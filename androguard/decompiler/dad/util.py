@@ -78,8 +78,6 @@ TYPE_LEN = {
     'D': 2,
 }
 
-INCREASE_STACK_RECURSION_LIMIT = False
-
 
 class PprintStream(object):
     '''
