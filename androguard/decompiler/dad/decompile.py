@@ -20,8 +20,8 @@ import sys
 sys.path.append('./')
 
 import util
-from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
+from androguard.core.bytecodes import dvm
 from graph import construct
 from dataflow import build_def_use, dead_code_elimination, register_propagation
 from control_flow import identify_structures
@@ -128,10 +128,9 @@ class DvClass():
         self.package = pckg[1:].replace('/', '.')
         self.name = name[:-1]
 
-        self.methods = {}
-        for meth in dvclass.get_methods():
-            self.methods[meth.get_method_idx()] = DvMethod(vma.get_method(meth))
-
+        self.methods = dict((meth.get_method_idx(),
+                             DvMethod(vma.get_method(meth)))
+                            for meth in dvclass.get_methods())
         self.fields = {}
         for field in dvclass.get_fields():
             self.fields[field.get_name()] = field
@@ -251,12 +250,10 @@ class DvClass():
 
 class DvMachine():
     def __init__(self, name):
-        vm = dvm.DalvikVMFormat(open(name, "rb").read())
+        vm = dvm.DalvikVMFormat(open(name, 'rb').read())
         self.vma = analysis.uVMAnalysis(vm)
-        self.classes = {}
-
-        for dvclass in vm.get_classes():
-            self.classes[dvclass.get_name()] = dvclass
+        self.classes = dict((dvclass.get_name(), dvclass)
+                            for dvclass in vm.get_classes())
         #util.merge_inner(self.classes)
 
     def process(self):
@@ -286,13 +283,11 @@ class DvMachine():
 
 if __name__ == '__main__':
     # Uncomment to increase the size of the stack.
-    # I don't know why, but if the block is `activated` in an if-statement it
-    # doesn't work.
-    #"""
+    """
     from resource import setrlimit, RLIMIT_STACK
     setrlimit(RLIMIT_STACK, (2 ** 29, -1))
     sys.setrecursionlimit(10 ** 6)
-    #"""
+    """
 
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
