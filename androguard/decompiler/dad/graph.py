@@ -257,7 +257,9 @@ class Graph():
         Create a mapping of the nodes of a graph with their corresponding
         immediate dominator
         '''
-        idom = {n: None for n in self.nodes}
+        idom = {}
+        for n in self.nodes:
+            idom[n] = None
         for node in self.get_rpo():
             for pred in self.preds(node):
                 if pred.num < node.num:
