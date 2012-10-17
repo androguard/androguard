@@ -288,12 +288,10 @@ class DecompilerDAD :
         c = decompile.DvClass( _class, self.vmx )
         c.process()
 
-        c.show_source()
-
-        #lexer = get_lexer_by_name("java", stripall=True)
-        #formatter = TerminalFormatter()
-        #result = highlight(c.show_source(), lexer, formatter)
-        #print result
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(c.get_source(), lexer, formatter)
+        print result
 
     def get_all(self, class_name) :
         pass

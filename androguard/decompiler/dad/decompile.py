@@ -20,7 +20,7 @@ import sys
 sys.path.append('./')
 
 import util
-from androguard.core.androgen import AndroguardS
+from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
 from graph import construct
 from dataflow import build_def_use, dead_code_elimination, register_propagation
@@ -128,8 +128,10 @@ class DvClass():
         self.package = pckg[1:].replace('/', '.')
         self.name = name[:-1]
 
-        self.methods = {meth.get_method_idx(): DvMethod(vma.get_method(meth))
-                                            for meth in dvclass.get_methods()}
+        self.methods = {}
+        for meth in dvclass.get_methods():
+            self.methods[meth.get_method_idx()] = DvMethod(vma.get_method(meth))
+
         self.fields = {}
         for field in dvclass.get_fields():
             self.fields[field.get_name()] = field
@@ -249,10 +251,12 @@ class DvClass():
 
 class DvMachine():
     def __init__(self, name):
-        vm = AndroguardS(name).get_vm()
+        vm = dvm.DalvikVMFormat(open(name, "rb").read())
         self.vma = analysis.uVMAnalysis(vm)
-        self.classes = {dvclass.get_name(): dvclass
-                                for dvclass in vm.get_classes()}
+        self.classes = {}
+
+        for dvclass in vm.get_classes():
+            self.classes[dvclass.get_name()] = dvclass
         #util.merge_inner(self.classes)
 
     def process(self):
