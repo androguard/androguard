@@ -20,6 +20,7 @@
 class IRForm(object):
     def __init__(self):
         self.var_map = {}
+        self.type = None
 
     def is_call(self):
         return False
@@ -222,11 +223,12 @@ class AssignExpression(IRForm):
 
 
 class MoveResultExpression(IRForm):
-    def __init__(self, lhs, rhs):
+    def __init__(self, lhs, rhs, type):
         super(MoveResultExpression, self).__init__()
         self.lhs = lhs.v
         self.rhs = rhs.v
         self.var_map.update([(lhs.v, lhs), (rhs.v, rhs)])
+        self.type = type
 
     def is_propagable(self):
         return self.var_map[self.rhs].is_propagable()
@@ -293,12 +295,13 @@ class MoveExpression(IRForm):
 
 
 class ArrayStoreInstruction(IRForm):
-    def __init__(self, rhs, array, index):
+    def __init__(self, rhs, array, index, type):
         super(ArrayStoreInstruction, self).__init__()
         self.rhs = rhs.v
         self.array = array.v
         self.index = index.v
         self.var_map.update([(rhs.v, rhs), (array.v, array), (index.v, index)])
+        self.type = type
 
     def has_side_effect(self):
         return True
@@ -587,11 +590,12 @@ class ArrayExpression(IRForm):
 
 
 class ArrayLoadExpression(ArrayExpression):
-    def __init__(self, arg, index):
+    def __init__(self, arg, index, type):
         super(ArrayLoadExpression, self).__init__()
         self.array = arg.v
         self.idx = index.v
         self.var_map.update([(arg.v, arg), (index.v, index)])
+        self.type = type
 
     def get_used_vars(self):
         m = self.var_map
@@ -758,12 +762,13 @@ class ThrowExpression(RefExpression):
 
 
 class BinaryExpression(IRForm):
-    def __init__(self, op, arg1, arg2):
+    def __init__(self, op, arg1, arg2, type):
         super(BinaryExpression, self).__init__()
         self.op = op
         self.arg1 = arg1.v
         self.arg2 = arg2.v
         self.var_map.update([(arg1.v, arg1), (arg2.v, arg2)])
+        self.type = type
 
     # TODO: return the max type of arg1 & arg2
     def get_type(self):
@@ -797,8 +802,8 @@ class BinaryExpression(IRForm):
 
 
 class BinaryCompExpression(BinaryExpression):
-    def __init__(self, op, arg1, arg2):
-        super(BinaryCompExpression, self).__init__(op, arg1, arg2)
+    def __init__(self, op, arg1, arg2, type):
+        super(BinaryCompExpression, self).__init__(op, arg1, arg2, type)
 
     def visit(self, visitor):
         m = self.var_map
@@ -807,13 +812,13 @@ class BinaryCompExpression(BinaryExpression):
 
 
 class BinaryExpression2Addr(BinaryExpression):
-    def __init__(self, op, dest, arg):
-        super(BinaryExpression2Addr, self).__init__(op, dest, arg)
+    def __init__(self, op, dest, arg, type):
+        super(BinaryExpression2Addr, self).__init__(op, dest, arg, type)
 
 
 class BinaryExpressionLit(BinaryExpression):
     def __init__(self, op, arg1, arg2):
-        super(BinaryExpressionLit, self).__init__(op, arg1, arg2)
+        super(BinaryExpressionLit, self).__init__(op, arg1, arg2, 'I')
 
 
 class UnaryExpression(IRForm):

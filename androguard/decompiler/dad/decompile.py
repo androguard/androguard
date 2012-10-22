@@ -21,7 +21,7 @@ sys.path.append('./')
 
 import util
 from androguard.core.analysis import analysis
-from androguard.core.bytecodes import dvm
+from androguard.core.androgen import AndroguardS
 from graph import construct
 from dataflow import build_def_use, dead_code_elimination, register_propagation
 from control_flow import identify_structures
@@ -250,7 +250,7 @@ class DvClass():
 
 class DvMachine():
     def __init__(self, name):
-        vm = dvm.DalvikVMFormat(open(name, 'rb').read())
+        vm = AndroguardS(name).get_vm()
         self.vma = analysis.uVMAnalysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
