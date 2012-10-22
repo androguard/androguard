@@ -74,6 +74,47 @@ def get_variables(vmap, *variables):
     return res
 
 
+def assign_const(dest_reg, cst, vmap):
+    return AssignExpression(get_variables(vmap, dest_reg), cst)
+
+
+def assign_cmp(val_a, val_b, val_c, cmp_type, vmap):
+    reg_a, reg_b, reg_c = get_variables(vmap, val_a, val_b, val_c)
+    exp = BinaryCompExpression(Op.CMP, reg_b, reg_c, cmp_type)
+    return AssignExpression(reg_a, exp)
+
+
+def load_array_exp(val_a, val_b, val_c, ar_type, vmap):
+    reg_a, reg_b, reg_c = get_variables(vmap, val_a, val_b, val_c)
+    return AssignExpression(reg_a, ArrayLoadExpression(reg_b, reg_c, ar_type))
+
+
+def store_array_inst(val_a, val_b, val_c, ar_type, vmap):
+    reg_a, reg_b, reg_c = get_variables(vmap, val_a, val_b, val_c)
+    return ArrayStoreInstruction(reg_a, reg_b, reg_c, ar_type)
+
+
+def assign_cast_exp(val_a, val_b, val_op, op_type, vmap):
+    reg_a, reg_b = get_variables(vmap, val_a, val_b)
+    return AssignExpression(reg_a, CastExpression(val_op, op_type, reg_b))
+
+
+def assign_binary_exp(ins, val_op, op_type, vmap):
+    reg_a, reg_b, reg_c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
+    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b, reg_c,
+                                                                op_type))
+
+def assign_binary_2addr_exp(ins, val_op, op_type, vmap):
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
+                                                                     op_type))
+
+def assign_lit(op_type, val_cst, val_a, val_b, vmap):
+    cst = Constant(val_cst, 'I')
+    var_a, var_b = get_variables(vmap, val_a, val_b) 
+    return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
+    
+
 # nop
 def nop(ins, vmap):
     return NopExpression()
@@ -82,92 +123,88 @@ def nop(ins, vmap):
 # move vA, vB ( 4b, 4b )
 def move(ins, vmap):
     util.log('Move %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move/from16 vAA, vBBBB ( 8b, 16b )
 def movefrom16(ins, vmap):
     util.log('MoveFrom16 %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move/16 vAAAA, vBBBB ( 16b, 16b )
 def move16(ins, vmap):
     util.log('Move16 %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AAAA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-wide vA, vB ( 4b, 4b )
 def movewide(ins, vmap):
     util.log('MoveWide %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/from16 vAA, vBBBB ( 8b, 16b )
 def movewidefrom16(ins, vmap):
     util.log('MoveWideFrom16 : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/16 vAAAA, vBBBB ( 16b, 16b )
 def movewide16(ins, vmap):
     util.log('MoveWide16 %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AAAA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-object vA, vB ( 4b, 4b )
 def moveobject(ins, vmap):
     util.log('MoveObject %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-object/from16 vAA, vBBBB ( 8b, 16b )
 def moveobjectfrom16(ins, vmap):
     util.log('MoveObjectFrom16 : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-object/16 vAAAA, vBBBB ( 16b, 16b )
 def moveobject16(ins, vmap):
     util.log('MoveObject16 : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AAAA, ins.BBBB)
-    return MoveExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
+    return MoveExpression(reg_a, reg_b)
 
 
 # move-result vAA ( 8b )
 def moveresult(ins, vmap, ret):
-    util.log('MoveResult : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return MoveResultExpression(a, ret)
+    util.log('MoveResult : %s' % ins.get_output(), 'debug') 
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret, None)
 
 
 # move-result-wide vAA ( 8b )
 def moveresultwide(ins, vmap, ret):
-    util.log('MoveResultWide : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return MoveResultExpression(a, ret)
+    util.log('MoveResultWide : %s' % ins.get_output(), 'debug') 
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'W')
 
 
 # move-result-object vAA ( 8b )
 def moveresultobject(ins, vmap, ret):
-    util.log('MoveResultObject : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return MoveResultExpression(a, ret)
+    util.log('MoveResultObject : %s' % ins.get_output(), 'debug') 
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'O')
 
 
 # move-exception vAA ( 8b )
 def moveexception(ins, vmap):
-    util.log('MoveException : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return RefExpression(a)
+    util.log('MoveException : %s' % ins.get_output(), 'debug') 
+    return RefExpression(get_variables(vmap, ins.AA))
 
 
 # return-void
@@ -179,60 +216,49 @@ def returnvoid(ins, vmap):
 # return vAA ( 8b )
 def return_reg(ins, vmap):
     util.log('Return : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ReturnInstruction(a)
+    return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-wide vAA ( 8b )
 def returnwide(ins, vmap):
     util.log('ReturnWide : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ReturnInstruction(a)
+    return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-object vAA ( 8b )
 def returnobject(ins, vmap):
-    util.log('ReturnObject : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ReturnInstruction(a)
+    util.log('ReturnObject : %s' % ins.get_output(), 'debug') 
+    return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # const/4 vA, #+B ( 4b, 4b )
 def const4(ins, vmap):
     util.log('Const4 : %s' % ins.get_output(), 'debug')
     cst = Constant(ins.B, 'I')
-    a = get_variables(vmap, ins.A)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.A, cst, vmap)
 
 
 # const/16 vAA, #+BBBB ( 8b, 16b )
 def const16(ins, vmap):
     util.log('Const16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.BBBB, 'I')
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    cst = Constant(ins.BBBB, 'I') 
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const vAA, #+BBBBBBBB ( 8b, 32b )
 def const(ins, vmap):
     util.log('Const : %s' % ins.get_output(), 'debug')
     value = unpack("=f", pack("=i", ins.BBBBBBBB))[0]
-    cst = Constant(value, 'F', ins.BBBBBBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    cst = Constant(value, 'F', ins.BBBBBBBB) 
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
 def consthigh16(ins, vmap):
     util.log('ConstHigh16 : %s' % ins.get_output(), 'debug')
     value = unpack('=f', '\x00\x00' + pack('=h', ins.BBBB))[0]
-    cst = Constant(value, 'F', ins.BBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    cst = Constant(value, 'F', ins.BBBB) 
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/16 vAA, #+BBBB ( 8b, 16b )
@@ -240,9 +266,7 @@ def constwide16(ins, vmap):
     util.log('ConstWide16 : %s' % ins.get_output(), 'debug')
     value = unpack('=d', pack('=d', ins.BBBB))[0]
     cst = Constant(value, 'J', ins.BBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/32 vAA, #+BBBBBBBB ( 8b, 32b )
@@ -250,9 +274,7 @@ def constwide32(ins, vmap):
     util.log('ConstWide32 : %s' % ins.get_output(), 'debug')
     value = unpack('=d', pack('=d', ins.BBBBBBBB))[0]
     cst = Constant(value, 'J', ins.BBBBBBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
@@ -260,9 +282,7 @@ def constwide(ins, vmap):
     util.log('ConstWide : %s' % ins.get_output(), 'debug')
     value = unpack('=d', pack('=q', ins.BBBBBBBBBBBBBBBB))[0]
     cst = Constant(value, 'D', ins.BBBBBBBBBBBBBBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
@@ -271,43 +291,34 @@ def constwidehigh16(ins, vmap):
     value = unpack('=d',
                     '\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
     cst = Constant(value, 'D', ins.BBBB)
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-string vAA ( 8b )
 def conststring(ins, vmap):
     util.log('ConstString : %s' % ins.get_output(), 'debug')
     cst = Constant(ins.get_raw_string(), 'STR')
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-string/jumbo vAA ( 8b )
 def conststringjumbo(ins, vmap):
     util.log('ConstStringJumbo %s' % ins.get_output(), 'debug')
     cst = Constant(ins.get_raw_string(), 'STR')
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     util.log('ConstClass : %s' % ins.get_output(), 'debug')
     cst = Constant(util.get_type(ins.get_string()), 'class')
-    a = get_variables(vmap, ins.AA)
-    exp = AssignExpression(a, cst)
-    return exp
+    return assign_const(ins.AA, cst, vmap)
 
 
 # monitor-enter vAA ( 8b )
 def monitorenter(ins, vmap):
-    util.log('MonitorEnter : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return MonitorEnterExpression(a)
+    util.log('MonitorEnter : %s' % ins.get_output(), 'debug') 
+    return MonitorEnterExpression(get_variables(vmap, ins.AA))
 
 
 # monitor-exit vAA ( 8b )
@@ -320,36 +331,32 @@ def monitorexit(ins, vmap):
 # check-cast vAA ( 8b )
 def checkcast(ins, vmap):
     util.log('CheckCast: %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    cast_type = util.get_type(ins.get_translated_kind())
-    exp = CheckCastExpression(a, cast_type)
-    return exp
+    cast_type = util.get_type(ins.get_translated_kind()) 
+    return CheckCastExpression(get_variables(vmap, ins.AA), cast_type)
 
 
 # instance-of vA, vB ( 4b, 4b )
 def instanceof(ins, vmap):
     util.log('InstanceOf : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    c = BaseClass(util.get_type(ins.get_translated_kind()))
-    exp = BinaryExpression('instanceof', b, c)
-    return AssignExpression(a, exp)
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    reg_c = BaseClass(util.get_type(ins.get_translated_kind()))
+    exp = BinaryExpression('instanceof', reg_b, reg_c, None)
+    return AssignExpression(reg_a, exp)
 
 
 # array-length vA, vB ( 4b, 4b )
 def arraylength(ins, vmap):
     util.log('ArrayLength: %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = ArrayLengthExpression(b)
-    return AssignExpression(a, exp)
+    reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
+    return AssignExpression(reg_a, ArrayLengthExpression(reg_b))
 
 
 # new-instance vAA ( 8b )
 def newinstance(ins, vmap):
     util.log('NewInstance : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    ins_type = ins.cm.get_type(ins.BBBB)
-    exp = NewInstance(ins_type)
-    return AssignExpression(a, exp)
+    reg_a = get_variables(vmap, ins.AA)
+    ins_type = ins.cm.get_type(ins.BBBB) 
+    return AssignExpression(reg_a, NewInstance(ins_type))
 
 
 # new-array vA, vB ( 8b, size )
@@ -379,9 +386,8 @@ def fillednewarrayrange(ins, vmap, ret):
 
 # fill-array-data vAA, +BBBBBBBB ( 8b, 32b )
 def fillarraydata(ins, vmap, value):
-    util.log('FillArrayData : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return FillArrayExpression(a, value)
+    util.log('FillArrayData : %s' % ins.get_output(), 'debug') 
+    return FillArrayExpression(get_variables(vmap, ins.AA), value)
 
 
 # fill-array-data-payload vAA, +BBBBBBBB ( 8b, 32b )
@@ -392,9 +398,8 @@ def fillarraydatapayload(ins, vmap):
 
 # throw vAA ( 8b )
 def throw(ins, vmap):
-    util.log('Throw : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ThrowExpression(a)
+    util.log('Throw : %s' % ins.get_output(), 'debug') 
+    return ThrowExpression(get_variables(vmap, ins.AA))
 
 
 # goto +AA ( 8b )
@@ -415,60 +420,45 @@ def goto32(ins, vmap):
 # packed-switch vAA, +BBBBBBBB ( reg to test, 32b )
 def packedswitch(ins, vmap):
     util.log('PackedSwitch : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
-    return SwitchExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
+    return SwitchExpression(reg_a, reg_b)
 
 
 # sparse-switch vAA, +BBBBBBBB ( reg to test, 32b )
 def sparseswitch(ins, vmap):
     util.log('SparseSwitch : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
-    return SwitchExpression(a, b)
+    reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
+    return SwitchExpression(reg_a, reg_b)
 
 
 # cmpl-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmplfloat(ins, vmap):
     util.log('CmpglFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryCompExpression(Op.CMP, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpg-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpgfloat(ins, vmap):
     util.log('CmpgFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryCompExpression(Op.CMP, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpl-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpldouble(ins, vmap):
     util.log('CmplDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryCompExpression(Op.CMP, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmpg-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpgdouble(ins, vmap):
     util.log('CmpgDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryCompExpression(Op.CMP, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmp-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmplong(ins, vmap):
     util.log('CmpLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryCompExpression(Op.CMP, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_cmp(ins.AA, ins.BB, ins.CC, 'J', vmap)
 
 
 # if-eq vA, vB, +CCCC ( 4b, 4b, 16b )
@@ -516,149 +506,122 @@ def ifle(ins, vmap):
 # if-eqz vAA, +BBBB ( 8b, 16b )
 def ifeqz(ins, vmap):
     util.log('IfEqz : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.EQUAL, a)
+    return ConditionalZExpression(Op.EQUAL, get_variables(vmap, ins.AA))
 
 
 # if-nez vAA, +BBBB ( 8b, 16b )
 def ifnez(ins, vmap):
-    util.log('IfNez : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.NEQUAL, a)
+    util.log('IfNez : %s' % ins.get_output(), 'debug') 
+    return ConditionalZExpression(Op.NEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-ltz vAA, +BBBB ( 8b, 16b )
 def ifltz(ins, vmap):
-    util.log('IfLtz : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.LOWER, a)
+    util.log('IfLtz : %s' % ins.get_output(), 'debug') 
+    return ConditionalZExpression(Op.LOWER, get_variables(vmap, ins.AA))
 
 
 # if-gez vAA, +BBBB ( 8b, 16b )
 def ifgez(ins, vmap):
-    util.log('IfGez : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.GEQUAL, a)
+    util.log('IfGez : %s' % ins.get_output(), 'debug') 
+    return ConditionalZExpression(Op.GEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-gtz vAA, +BBBB ( 8b, 16b )
 def ifgtz(ins, vmap):
-    util.log('IfGtz : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.GREATER, a)
+    util.log('IfGtz : %s' % ins.get_output(), 'debug') 
+    return ConditionalZExpression(Op.GREATER, get_variables(vmap, ins.AA))
 
 
 # if-lez vAA, +BBBB (8b, 16b )
 def iflez(ins, vmap):
-    util.log('IfLez : %s' % ins.get_output(), 'debug')
-    a = get_variables(vmap, ins.AA)
-    return ConditionalZExpression(Op.LEQUAL, a)
+    util.log('IfLez : %s' % ins.get_output(), 'debug') 
+    return ConditionalZExpression(Op.LEQUAL, get_variables(vmap, ins.AA))
 
 
 #TODO: check type for all aget
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
 def aget(ins, vmap):
     util.log('AGet : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aget-wide vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetwide(ins, vmap):
     util.log('AGetWide : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aget-object vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetobject(ins, vmap):
     util.log('AGetObject : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aget-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetboolean(ins, vmap):
     util.log('AGetBoolean : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aget-byte vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetbyte(ins, vmap):
     util.log('AGetByte : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aget-char vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetchar(ins, vmap):
     util.log('AGetChar : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aget-short vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetshort(ins, vmap):
     util.log('AGetShort : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = ArrayLoadExpression(b, c)
-    return AssignExpression(a, exp)
+    return load_array_exp(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # aput vAA, vBB, vCC
 def aput(ins, vmap):
     util.log('APut : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aput-wide vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputwide(ins, vmap):
     util.log('APutWide : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aput-object vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputobject(ins, vmap):
     util.log('APutObject : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aput-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputboolean(ins, vmap):
     util.log('APutBoolean : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aput-byte vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputbyte(ins, vmap):
     util.log('APutByte : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aput-char vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputchar(ins, vmap):
     util.log('APutChar : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aput-short vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputshort(ins, vmap):
     util.log('APutShort : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return ArrayStoreInstruction(a, b, c)
+    return store_array_inst(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # iget vA, vB ( 4b, 4b )
@@ -1180,894 +1143,590 @@ def negdouble(ins, vmap):
 # int-to-long vA, vB ( 4b, 4b )
 def inttolong(ins, vmap):
     util.log('IntToLong : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(long)', 'J', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # int-to-float vA, vB ( 4b, 4b )
 def inttofloat(ins, vmap):
     util.log('IntToFloat : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(float)', 'F', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-double vA, vB ( 4b, 4b )
 def inttodouble(ins, vmap):
     util.log('IntToDouble : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(double)', 'D', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # long-to-int vA, vB ( 4b, 4b )
 def longtoint(ins, vmap):
     util.log('LongToInt : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(int)', 'I', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # long-to-float vA, vB ( 4b, 4b )
 def longtofloat(ins, vmap):
     util.log('LongToFloat : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(float)', 'F', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # long-to-double vA, vB ( 4b, 4b )
 def longtodouble(ins, vmap):
     util.log('LongToDouble : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(double)', 'D', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # float-to-int vA, vB ( 4b, 4b )
 def floattoint(ins, vmap):
     util.log('FloatToInt : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(int)', 'I', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # float-to-long vA, vB ( 4b, 4b )
 def floattolong(ins, vmap):
     util.log('FloatToLong : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(long)', 'J', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # float-to-double vA, vB ( 4b, 4b )
 def floattodouble(ins, vmap):
     util.log('FloatToDouble : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(double)', 'D', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # double-to-int vA, vB ( 4b, 4b )
 def doubletoint(ins, vmap):
     util.log('DoubleToInt : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(int)', 'I', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # double-to-long vA, vB ( 4b, 4b )
 def doubletolong(ins, vmap):
     util.log('DoubleToLong : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(long)', 'J', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # double-to-float vA, vB ( 4b, 4b )
 def doubletofloat(ins, vmap):
     util.log('DoubleToFloat : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(float)', 'F', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-byte vA, vB ( 4b, 4b )
 def inttobyte(ins, vmap):
     util.log('IntToByte : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(byte)', 'B', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(byte)', 'B', vmap)
 
 
 # int-to-char vA, vB ( 4b, 4b )
 def inttochar(ins, vmap):
     util.log('IntToChar : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(char)', 'C', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(char)', 'C', vmap)
 
 
 # int-to-short vA, vB ( 4b, 4b )
 def inttoshort(ins, vmap):
     util.log('IntToShort : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = CastExpression('(short)', 'S', b)
-    return AssignExpression(a, exp)
+    return assign_cast_exp(ins.A, ins.B, '(short)', 'S', vmap)
 
 
 # add-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def addint(ins, vmap):
     util.log('AddInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.ADD, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def subint(ins, vmap):
     util.log('SubInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.SUB, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def mulint(ins, vmap):
     util.log('MulInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MUL, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def divint(ins, vmap):
     util.log('DivInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.DIV, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def remint(ins, vmap):
     util.log('RemInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MOD, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def andint(ins, vmap):
     util.log('AndInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.AND, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def orint(ins, vmap):
     util.log('OrInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.OR, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def xorint(ins, vmap):
     util.log('XorInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.XOR, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def shlint(ins, vmap):
     util.log('ShlInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.INTSHL, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def shrint(ins, vmap):
     util.log('ShrInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.INTSHR, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def ushrint(ins, vmap):
     util.log('UShrInt : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.INTSHR, b, c)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def addlong(ins, vmap):
     util.log('AddLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.ADD, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def sublong(ins, vmap):
     util.log('SubLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.SUB, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def mullong(ins, vmap):
     util.log('MulLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MUL, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def divlong(ins, vmap):
     util.log('DivLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.DIV, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def remlong(ins, vmap):
     util.log('RemLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MOD, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MOD, 'J', vmap)
 
 
 # and-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def andlong(ins, vmap):
     util.log('AndLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.AND, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def orlong(ins, vmap):
     util.log('OrLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.OR, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def xorlong(ins, vmap):
     util.log('XorLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.XOR, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def shllong(ins, vmap):
     util.log('ShlLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.LONGSHL, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def shrlong(ins, vmap):
     util.log('ShrLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.LONGSHR, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def ushrlong(ins, vmap):
     util.log('UShrLong : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.LONGSHR, b, c)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def addfloat(ins, vmap):
     util.log('AddFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.ADD, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def subfloat(ins, vmap):
     util.log('SubFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.SUB, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def mulfloat(ins, vmap):
     util.log('MulFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MUL, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def divfloat(ins, vmap):
     util.log('DivFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.DIV, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def remfloat(ins, vmap):
     util.log('RemFloat : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MOD, b, c)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def adddouble(ins, vmap):
     util.log('AddDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.ADD, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def subdouble(ins, vmap):
     util.log('SubDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.SUB, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def muldouble(ins, vmap):
     util.log('MulDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MUL, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def divdouble(ins, vmap):
     util.log('DivDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.DIV, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def remdouble(ins, vmap):
     util.log('RemDouble : %s' % ins.get_output(), 'debug')
-    a, b, c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    exp = BinaryExpression(Op.MOD, b, c)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/2addr vA, vB ( 4b, 4b )
 def addint2addr(ins, vmap):
     util.log('AddInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.ADD, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int/2addr vA, vB ( 4b, 4b )
 def subint2addr(ins, vmap):
     util.log('SubInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.SUB, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int/2addr vA, vB ( 4b, 4b )
 def mulint2addr(ins, vmap):
     util.log('MulInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MUL, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int/2addr vA, vB ( 4b, 4b )
 def divint2addr(ins, vmap):
     util.log('DivInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.DIV, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int/2addr vA, vB ( 4b, 4b )
 def remint2addr(ins, vmap):
     util.log('RemInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MOD, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int/2addr vA, vB ( 4b, 4b )
 def andint2addr(ins, vmap):
     util.log('AndInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.AND, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int/2addr vA, vB ( 4b, 4b )
 def orint2addr(ins, vmap):
     util.log('OrInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.OR, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int/2addr vA, vB ( 4b, 4b )
 def xorint2addr(ins, vmap):
     util.log('XorInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.XOR, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int/2addr vA, vB ( 4b, 4b )
 def shlint2addr(ins, vmap):
     util.log('ShlInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.INTSHL, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int/2addr vA, vB ( 4b, 4b )
 def shrint2addr(ins, vmap):
     util.log('ShrInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.INTSHR, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int/2addr vA, vB ( 4b, 4b )
 def ushrint2addr(ins, vmap):
     util.log('UShrInt2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.INTSHR, a, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long/2addr vA, vB ( 4b, 4b )
 def addlong2addr(ins, vmap):
     util.log('AddLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.ADD, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long/2addr vA, vB ( 4b, 4b )
 def sublong2addr(ins, vmap):
     util.log('SubLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.SUB, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long/2addr vA, vB ( 4b, 4b )
 def mullong2addr(ins, vmap):
     util.log('MulLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MUL, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long/2addr vA, vB ( 4b, 4b )
 def divlong2addr(ins, vmap):
     util.log('DivLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.DIV, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long/2addr vA, vB ( 4b, 4b )
 def remlong2addr(ins, vmap):
     util.log('RemLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MUL, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
 
 
 # and-long/2addr vA, vB ( 4b, 4b )
 def andlong2addr(ins, vmap):
     util.log('AndLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.AND, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long/2addr vA, vB ( 4b, 4b )
 def orlong2addr(ins, vmap):
     util.log('OrLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.OR, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long/2addr vA, vB ( 4b, 4b )
 def xorlong2addr(ins, vmap):
     util.log('XorLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.XOR, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long/2addr vA, vB ( 4b, 4b )
 def shllong2addr(ins, vmap):
     util.log('ShlLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.LONGSHL, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long/2addr vA, vB ( 4b, 4b )
 def shrlong2addr(ins, vmap):
     util.log('ShrLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.LONGSHR, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long/2addr vA, vB ( 4b, 4b )
 def ushrlong2addr(ins, vmap):
     util.log('UShrLong2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.LONGSHR, a, b)
-    exp.type = 'J'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float/2addr vA, vB ( 4b, 4b )
 def addfloat2addr(ins, vmap):
     util.log('AddFloat2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.ADD, a, b)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float/2addr vA, vB ( 4b, 4b )
 def subfloat2addr(ins, vmap):
     util.log('SubFloat2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.SUB, a, b)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float/2addr vA, vB ( 4b, 4b )
 def mulfloat2addr(ins, vmap):
     util.log('MulFloat2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MUL, a, b)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float/2addr vA, vB ( 4b, 4b )
 def divfloat2addr(ins, vmap):
     util.log('DivFloat2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.DIV, a, b)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float/2addr vA, vB ( 4b, 4b )
 def remfloat2addr(ins, vmap):
     util.log('RemFloat2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MOD, a, b)
-    exp.type = 'F'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double/2addr vA, vB ( 4b, 4b )
 def adddouble2addr(ins, vmap):
     util.log('AddDouble2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.ADD, a, b)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double/2addr vA, vB ( 4b, 4b )
 def subdouble2addr(ins, vmap):
     util.log('subDouble2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.SUB, a, b)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double/2addr vA, vB ( 4b, 4b )
 def muldouble2addr(ins, vmap):
     util.log('MulDouble2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MUL, a, b)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double/2addr vA, vB ( 4b, 4b )
 def divdouble2addr(ins, vmap):
     util.log('DivDouble2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.DIV, a, b)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double/2addr vA, vB ( 4b, 4b )
 def remdouble2addr(ins, vmap):
     util.log('RemDouble2Addr : %s' % ins.get_output(), 'debug')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpression2Addr(Op.MOD, a, b)
-    exp.type = 'D'
-    return AssignExpression(a, exp)
+    return assign_binary_2addr_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def addintlit16(ins, vmap):
     util.log('AddIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.ADD, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.ADD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # rsub-int vA, vB, #+CCCC ( 4b, 4b, 16b )
 def rsubint(ins, vmap):
     util.log('RSubInt : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.SUB, cst, b)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.SUB, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # mul-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def mulintlit16(ins, vmap):
     util.log('MulIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.MUL, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.MUL, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # div-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def divintlit16(ins, vmap):
     util.log('DivIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.DIV, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.DIV, ins.CCCC, ins.A, ins.B, vmap) 
 
 
 # rem-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def remintlit16(ins, vmap):
     util.log('RemIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.MOD, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.MOD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # and-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def andintlit16(ins, vmap):
     util.log('AndIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.AND, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.AND, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # or-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def orintlit16(ins, vmap):
     util.log('OrIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.OR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.OR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # xor-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def xorintlit16(ins, vmap):
     util.log('XorIntLit16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CCCC, 'I')
-    a, b = get_variables(vmap, ins.A, ins.B)
-    exp = BinaryExpressionLit(Op.XOR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.XOR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # add-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def addintlit8(ins, vmap):
     util.log('AddIntLit8 : %s' % ins.get_output(), 'debug')
-    # TODO: generalize this to other operators ?
-    if ins.CC < 0:
-        literal = -ins.CC
-        op = Op.SUB
-    else:
-        literal = ins.CC
-        op = Op.ADD
-    cst = Constant(literal, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(op, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    literal, op = [(ins.CC, Op.ADD), (-ins.CC, Op.SUB)][ins.CC < 0]
+    return assign_lit(op, literal, ins.AA, ins.BB, vmap)
 
 
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def rsubintlit8(ins, vmap):
     util.log('RSubIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.SUB, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.SUB, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def mulintlit8(ins, vmap):
     util.log('MulIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.MUL, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.MUL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def divintlit8(ins, vmap):
     util.log('DivIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.DIV, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.DIV, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # rem-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def remintlit8(ins, vmap):
     util.log('RemIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.MOD, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.MOD, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def andintlit8(ins, vmap):
     util.log('AndIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.ADD, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.AND, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # or-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def orintlit8(ins, vmap):
     util.log('OrIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b, = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.OR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.OR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # xor-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def xorintlit8(ins, vmap):
     util.log('XorIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b, = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.XOR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.XOR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shl-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def shlintlit8(ins, vmap):
     util.log('ShlIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b, = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.INTSHL, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.INTSHL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def shrintlit8(ins, vmap):
     util.log('ShrIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b, = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.INTSHR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # ushr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def ushrintlit8(ins, vmap):
     util.log('UShrIntLit8 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.CC, 'I')
-    a, b, = get_variables(vmap, ins.AA, ins.BB)
-    exp = BinaryExpressionLit(Op.INTSHR, b, cst)
-    exp.type = 'I'
-    return AssignExpression(a, exp)
+    return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 INSTRUCTION_SET = {
