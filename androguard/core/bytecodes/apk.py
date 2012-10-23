@@ -265,6 +265,7 @@ class APK:
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
+                self.files[i] = "Unknown"
             return self.files
 
         if self.files != {}:

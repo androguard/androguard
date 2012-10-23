@@ -20,13 +20,27 @@ import sys
 sys.path.append('./')
 
 import util
+from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
-from androguard.core.androgen import AndroguardS
+from androguard.core import androconf
 from graph import construct
 from dataflow import build_def_use, dead_code_elimination, register_propagation
 from control_flow import identify_structures
 from instruction import Param, ThisParam
 from writer import Writer
+
+
+def auto_vm(filename):
+    ret = androconf.is_android(filename)
+    if ret == "APK":
+        a = apk.APK(filename)
+        return dvm.DalvikVMFormat(a.get_dex())
+    elif ret == "DEX":
+        return dvm.DalvikVMFormat(open(filename, "rb").read())
+    elif ret == "ODEX":
+        return dvm.DalvikOdexVMFormat(open(filename, "rb").read())
+
+    return None
 
 
 class DvMethod():
@@ -250,7 +264,7 @@ class DvClass():
 
 class DvMachine():
     def __init__(self, name):
-        vm = AndroguardS(name).get_vm()
+        vm = auto_vm(name)
         self.vma = analysis.uVMAnalysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
