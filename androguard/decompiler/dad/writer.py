@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from util import get_type, log, ACCESS_FLAGS_METHODS
-from opcode_ins import Op
-from instruction import Constant, ThisParam, BinaryCompExpression
+import logging
+from androguard.decompiler.dad.util import get_type, ACCESS_FLAGS_METHODS
+from androguard.decompiler.dad.opcode_ins import Op
+from androguard.decompiler.dad.instruction import (Constant, ThisParam,
+                                                   BinaryCompExpression)
+
+
+logger = logging.getLogger('dad.writer')
 
 
 class Writer(object):
@@ -112,7 +117,7 @@ class Writer(object):
     def visit_loop_node(self, loop):
         follow = loop.get_loop_follow()
         if follow is None and not loop.looptype.endless():
-            log('Loop has no follow !', 'error')
+            logger.error('Loop has no follow !')
         if loop.looptype.pretest():
             if loop.true is follow:
                 loop.neg()
@@ -345,8 +350,8 @@ class Writer(object):
         self.write('new %s' % get_type(atype))
 
     def visit_invoke(self, name, base, ptype, rtype, args):
-        if isinstance(base, ThisParam) and name == '<init>'\
-            and self.constructor and len(args) == 0:
+        if isinstance(base, ThisParam):
+            if name == '<init>' and self.constructor and len(args) == 0:
                 self.skip = True
                 return
         base.visit(self)

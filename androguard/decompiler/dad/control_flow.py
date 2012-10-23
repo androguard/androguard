@@ -16,10 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from basic_blocks import Condition, ShortCircuitBlock, LoopBlock
-from node import Interval
-from util import log, common_dom
-from graph import Graph
+import logging
+from androguard.decompiler.dad.basic_blocks import (Condition,
+                                                    ShortCircuitBlock,
+                                                    LoopBlock)
+from androguard.decompiler.dad.graph import Graph
+from androguard.decompiler.dad.node import Interval
+from androguard.decompiler.dad.util import common_dom
+
+
+logger = logging.getLogger('dad.control_flow')
 
 
 def intervals(graph):
@@ -106,7 +112,7 @@ def derived_sequence(graph):
 
 
 def mark_loop(graph, start, end, interval):
-    log('MARKLOOP : %s END : %s' % (start, end), 'debug')
+    logger.debug('MARKLOOP : %s END : %s', start, end)
 
     def mark_loop_rec(end):
         if end in nodes_in_loop:
@@ -176,8 +182,8 @@ def loop_follow(start, end, nodes_in_loop):
     head.set_loop_follow(follow)
     for node in nodes_in_loop:
         node.set_loop_follow(follow)
-    log('Start of loop %s' % head, 'debug')
-    log('Follow of loop: %s' % head.get_loop_follow(), 'debug')
+    logger.debug('Start of loop %s', head)
+    logger.debug('Follow of loop: %s', head.get_loop_follow())
 
 
 def loop_struct(graphs_list, intervals_list):

@@ -19,27 +19,28 @@
 import sys
 sys.path.append('./')
 
-import util
-from androguard.core.bytecodes import apk, dvm
+import logging
+import androguard.core.androconf as androconf
+import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
-from androguard.core import androconf
-from graph import construct
-from dataflow import build_def_use, dead_code_elimination, register_propagation
-from control_flow import identify_structures
-from instruction import Param, ThisParam
-from writer import Writer
+from androguard.core.bytecodes import apk, dvm
+from androguard.decompiler.dad.control_flow import identify_structures
+from androguard.decompiler.dad.dataflow import (build_def_use,
+                                                dead_code_elimination,
+                                                register_propagation)
+from androguard.decompiler.dad.graph import construct
+from androguard.decompiler.dad.instruction import Param, ThisParam
+from androguard.decompiler.dad.writer import Writer
 
 
 def auto_vm(filename):
     ret = androconf.is_android(filename)
-    if ret == "APK":
-        a = apk.APK(filename)
-        return dvm.DalvikVMFormat(a.get_dex())
-    elif ret == "DEX":
-        return dvm.DalvikVMFormat(open(filename, "rb").read())
-    elif ret == "ODEX":
-        return dvm.DalvikOdexVMFormat(open(filename, "rb").read())
-
+    if ret == 'APK':
+        return dvm.DalvikVMFormat(apk.APK(filename).get_dex())
+    elif ret == 'DEX':
+        return dvm.DalvikVMFormat(open(filename, 'rb').read())
+    elif ret == 'ODEX':
+        return dvm.DalvikOdexVMFormat(open(filename, 'rb').read())
     return None
 
 
@@ -52,6 +53,7 @@ class DvMethod():
         self.basic_blocks = [bb for bb in methanalysis.basic_blocks.get()]
         self.var_to_name = {}
         self.writer = None
+        self.graph = None
 
         access = self.method.get_access_flags()
         self.access = [flag for flag in util.ACCESS_FLAGS_METHODS
@@ -64,9 +66,8 @@ class DvMethod():
 
         code = self.method.get_code()
         if code is None:
-            util.log('No code : %s %s' % (self.name,
-                                            self.method.get_class_name()),
-                                            'debug')
+            logger.debug('No code : %s %s', self.name,
+                                             self.method.get_class_name())
         else:
             start = code.registers_size - code.ins_size
             if 0x8 not in self.access:
@@ -81,7 +82,7 @@ class DvMethod():
                 num_param += util.get_type_size(ptype)
 
     def process(self):
-        util.log('METHOD : %s' % self.name, 'debug')
+        logger.debug('METHOD : %s', self.name)
         if 0:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
@@ -160,12 +161,12 @@ class DvClass():
         self.interfaces = dvclass.interfaces
         self.superclass = dvclass.get_superclassname()
 
-        util.log('Class : %s' % self.name, 'log')
-        util.log('Methods added :', 'log')
+        logger.info('Class : %s', self.name)
+        logger.info('Methods added :')
         for index, meth in self.methods.iteritems():
-            util.log('%s (%s, %s)' % (index, meth.method.get_class_name(),
-                                   meth.name), 'log')
-        util.log('', 'log')
+            logger.info('%s (%s, %s)', index, meth.method.get_class_name(),
+                                        meth.name)
+        logger.info('')
 
     def add_subclass(self, innername, dvclass):
         self.subclasses[innername] = dvclass
@@ -183,7 +184,7 @@ class DvClass():
         if num in meths:
             meths[num].process()
         else:
-            util.log('Method %s not found.' % num, 'error')
+            logger.error('Method %s not found.', num)
 
     def get_source(self):
         source = []
@@ -253,9 +254,6 @@ class DvClass():
         for meth in self.methods:
             self.process_method(meth)
 
-    def __str__(self):
-        return 'Class name : %s.' % self.name
-
     def __repr__(self):
         if not self.subclasses:
             return 'Class(%s)' % self.name
@@ -272,7 +270,7 @@ class DvMachine():
 
     def process(self):
         for name, klass in self.classes.iteritems():
-            util.log('Processing class: %s' % name, 'log')
+            logger.info('Processing class: %s', name)
             if isinstance(klass, DvClass):
                 klass.process()
             else:
@@ -295,14 +293,21 @@ class DvMachine():
             klass.show_source()
 
 
+logger = logging.getLogger('dad')
+
+
 if __name__ == '__main__':
+    logger.setLevel(logging.INFO)
+    console_hdlr = logging.StreamHandler()
+    console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    logger.addHandler(console_hdlr)
+
     # Uncomment to increase the size of the stack.
     """
     from resource import setrlimit, RLIMIT_STACK
     setrlimit(RLIMIT_STACK, (2 ** 29, -1))
     sys.setrecursionlimit(10 ** 6)
     """
-
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
         MACHINE = DvMachine(sys.argv[1])
@@ -311,35 +316,33 @@ if __name__ == '__main__':
 
     from pprint import pprint
     TMP = util.PprintStream()
-    util.log('===========================', 'log')
-    util.log('Classes :', 'log')
     pprint(MACHINE.get_classes(), TMP)
-    util.log(TMP, 'log')
-    util.log('===========================', 'log')
+    logger.info('\n===========================\nClasses:\n%s\n'
+                '===========================', TMP)
 
     CLS_NAME = raw_input('Choose a class: ')
     if CLS_NAME == '*':
         MACHINE.process()
-        util.log('\n\nSource:', 'log')
-        util.log('===========================', 'log')
+        logger.info('\n\nSource:')
+        logger.info('===========================')
         MACHINE.show_source()
-        util.log('===========================', 'log')
+        logger.info('===========================')
     else:
         CLS = MACHINE.get_class(CLS_NAME)
         if CLS is None:
-            util.log('%s not found.' % CLS_NAME, 'error')
+            logger.error('%s not found.', CLS_NAME)
         else:
-            util.log('======================', 'log')
+            logger.info('======================')
             TMP.clean()
             pprint(CLS.get_methods(), TMP)
-            util.log(TMP, 'log')
-            util.log('======================', 'log')
+            logger.info(TMP)
+            logger.info('======================')
             METH = raw_input('Method: ')
             if METH == '*':
-                util.log('CLASS = %s' % CLS, 'log')
+                logger.info('CLASS = %s', CLS)
                 CLS.process()
             else:
                 CLS.process_method(int(METH))
-            util.log('\n\nSource:', 'log')
-            util.log('===========================', 'log')
+            logger.info('\n\nSource:')
+            logger.info('===========================')
             CLS.show_source()

@@ -50,8 +50,9 @@ class IRForm(object):
         if old in self.var_map:
             self.var_map[old] = new
         else:
-            from dad.util import log
-            log('modify_rhs not implemented %s' % self, 'error')
+            import logging
+            logger = logging.getLogger('dad.instruction')
+            logger.error('modify_rhs not implemented %s', self)
 
     def remove_defined_var(self):
         pass
@@ -68,6 +69,7 @@ class IRForm(object):
 
 class Constant(IRForm):
     def __init__(self, value, atype, int_value=None):
+        super(Constant, self).__init__()
         self.v = 'c%s' % value
         self.cst = value
         if int_value is None:
@@ -104,6 +106,7 @@ class Constant(IRForm):
 
 class BaseClass(IRForm):
     def __init__(self, name):
+        super(BaseClass, self).__init__()
         self.v = 'c%s' % name
         self.cls = name
 
@@ -116,6 +119,7 @@ class BaseClass(IRForm):
 
 class Variable(IRForm):
     def __init__(self, value):
+        super(Variable, self).__init__()
         self.v = value
 
     def get_type(self):
@@ -142,6 +146,7 @@ class Variable(IRForm):
 
 class Param(IRForm):
     def __init__(self, value, atype):
+        super(Param, self).__init__()
         self.v = value
         self.type = atype
 
@@ -249,8 +254,8 @@ class MoveResultExpression(IRForm):
         return self.lhs
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_move_result(m[self.lhs], m[self.rhs])
+        v_m = self.var_map
+        return visitor.visit_move_result(v_m[self.lhs], v_m[self.rhs])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -282,8 +287,8 @@ class MoveExpression(IRForm):
         return self.lhs
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_move(m[self.lhs], m[self.rhs])
+        v_m = self.var_map
+        return visitor.visit_move(v_m[self.lhs], v_m[self.rhs])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -307,15 +312,16 @@ class ArrayStoreInstruction(IRForm):
         return True
 
     def get_used_vars(self):
-        m = self.var_map
-        lused_vars = m[self.array].get_used_vars()
-        lused_vars.extend(m[self.index].get_used_vars())
-        lused_vars.extend(m[self.rhs].get_used_vars())
+        v_m = self.var_map
+        lused_vars = v_m[self.array].get_used_vars()
+        lused_vars.extend(v_m[self.index].get_used_vars())
+        lused_vars.extend(v_m[self.rhs].get_used_vars())
         return lused_vars
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_astore(m[self.array], m[self.index], m[self.rhs])
+        v_m = self.var_map
+        return visitor.visit_astore(v_m[self.array],
+                                    v_m[self.index], v_m[self.rhs])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -348,8 +354,8 @@ class StaticInstruction(IRForm):
         return None
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_put_static(self.cls, self.name, m[self.rhs])
+        v_m = self.var_map
+        return visitor.visit_put_static(self.cls, self.name, v_m[self.rhs])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -372,17 +378,18 @@ class InstanceInstruction(IRForm):
         return True
 
     def get_used_vars(self):
-        m = self.var_map
-        lused_vars = m[self.lhs].get_used_vars()
-        lused_vars.extend(m[self.rhs].get_used_vars())
+        v_m = self.var_map
+        lused_vars = v_m[self.lhs].get_used_vars()
+        lused_vars.extend(v_m[self.rhs].get_used_vars())
         return lused_vars
 
     def get_lhs(self):
         return None
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_put_instance(m[self.lhs], self.name, m[self.rhs])
+        v_m = self.var_map
+        return visitor.visit_put_instance(v_m[self.lhs],
+                                          self.name, v_m[self.rhs])
 
     def modify_rhs(self, old, new):
         v_m = self.var_map
@@ -458,17 +465,17 @@ class InvokeInstruction(IRForm):
                     self.var_map[arg].modify_rhs(old, new)
 
     def get_used_vars(self):
-        m = self.var_map
+        v_m = self.var_map
         lused_vars = []
-        for a in self.args:
-            lused_vars.extend(m[a].get_used_vars())
-        lused_vars.extend(m[self.base].get_used_vars())
+        for arg in self.args:
+            lused_vars.extend(v_m[arg].get_used_vars())
+        lused_vars.extend(v_m[self.base].get_used_vars())
         return lused_vars
 
     def visit(self, visitor):
-        m = self.var_map
-        largs = [m[arg] for arg in self.args]
-        return visitor.visit_invoke(self.name, m[self.base], self.rtype,
+        v_m = self.var_map
+        largs = [v_m[arg] for arg in self.args]
+        return visitor.visit_invoke(self.name, v_m[self.base], self.rtype,
                                     self.ptype, largs)
 
 
@@ -544,11 +551,11 @@ class SwitchExpression(IRForm):
     def __init__(self, src, branch):
         super(SwitchExpression, self).__init__()
         self.src = src.v
+        self.branch = branch
         self.var_map[src.v] = src
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.src].get_used_vars()
+        return self.var_map[self.src].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_switch(self.var_map[self.src])
@@ -598,14 +605,14 @@ class ArrayLoadExpression(ArrayExpression):
         self.type = type
 
     def get_used_vars(self):
-        m = self.var_map
-        lused_vars = m[self.array].get_used_vars()
-        lused_vars.extend(m[self.idx].get_used_vars())
+        v_m = self.var_map
+        lused_vars = v_m[self.array].get_used_vars()
+        lused_vars.extend(v_m[self.idx].get_used_vars())
         return lused_vars
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_aload(m[self.array], m[self.idx])
+        v_m = self.var_map
+        return visitor.visit_aload(v_m[self.array], v_m[self.idx])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -628,8 +635,7 @@ class ArrayLengthExpression(ArrayExpression):
         return 'I'
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.array].get_used_vars()
+        return self.var_map[self.array].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_alength(self.var_map[self.array])
@@ -654,8 +660,7 @@ class NewArrayExpression(ArrayExpression):
         return False
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.size].get_used_vars()
+        return self.var_map[self.size].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_new_array(self.type, self.var_map[self.size])
@@ -694,9 +699,9 @@ class FilledArrayExpression(ArrayExpression):
         return lused_vars
 
     def visit(self, visitor):
-        m = self.var_map
-        largs = [m[arg] for arg in self.args]
-        return visitor.visit_filled_new_array(self.type, m[self.size], largs)
+        v_m = self.var_map
+        largs = [v_m[arg] for arg in self.args]
+        return visitor.visit_filled_new_array(self.type, v_m[self.size], largs)
 
 
 class FillArrayExpression(ArrayExpression):
@@ -713,8 +718,7 @@ class FillArrayExpression(ArrayExpression):
         return self.reg
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.reg].get_used_vars()
+        return self.var_map[self.reg].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_fill_array(self.var_map[self.reg], self.value)
@@ -727,8 +731,7 @@ class RefExpression(IRForm):
         self.var_map[ref.v] = ref
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.ref].get_used_vars()
+        return self.var_map[self.ref].get_used_vars()
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -775,20 +778,20 @@ class BinaryExpression(IRForm):
         return None
 
     def has_side_effect(self):
-        m = self.var_map
-        res = m[self.arg1].has_side_effect() or m[self.arg2].has_side_effect()
-        return res
+        v_m = self.var_map
+        return (v_m[self.arg1].has_side_effect() or
+                v_m[self.arg2].has_side_effect())
 
     def get_used_vars(self):
-        m = self.var_map
-        lused_vars = m[self.arg1].get_used_vars()
-        lused_vars.extend(m[self.arg2].get_used_vars())
+        v_m = self.var_map
+        lused_vars = v_m[self.arg1].get_used_vars()
+        lused_vars.extend(v_m[self.arg2].get_used_vars())
         return lused_vars
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_binary_expression(self.op, m[self.arg1],
-                                                        m[self.arg2])
+        v_m = self.var_map
+        return visitor.visit_binary_expression(self.op, v_m[self.arg1],
+                                                        v_m[self.arg2])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -806,9 +809,9 @@ class BinaryCompExpression(BinaryExpression):
         super(BinaryCompExpression, self).__init__(op, arg1, arg2, type)
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_cond_expression(self.op, m[self.arg1],
-                                                      m[self.arg2])
+        v_m = self.var_map
+        return visitor.visit_cond_expression(self.op, v_m[self.arg1],
+                                                      v_m[self.arg2])
 
 
 class BinaryExpression2Addr(BinaryExpression):
@@ -832,8 +835,7 @@ class UnaryExpression(IRForm):
         return self.var_map[self.arg].get_type()
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.arg].get_used_vars()
+        return self.var_map[self.arg].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_unary_expression(self.op, self.var_map[self.arg])
@@ -887,18 +889,18 @@ class ConditionalExpression(IRForm):
         return True
 
     def get_used_vars(self):
-        m = self.var_map
-        lused_vars = m[self.arg1].get_used_vars()
-        lused_vars.extend(m[self.arg2].get_used_vars())
+        v_m = self.var_map
+        lused_vars = v_m[self.arg1].get_used_vars()
+        lused_vars.extend(v_m[self.arg2].get_used_vars())
         return lused_vars
 
     def neg(self):
         self.op = CONDS[self.op]
 
     def visit(self, visitor):
-        m = self.var_map
-        return visitor.visit_cond_expression(self.op, m[self.arg1],
-                                                      m[self.arg2])
+        v_m = self.var_map
+        return visitor.visit_cond_expression(self.op, v_m[self.arg1],
+                                                      v_m[self.arg2])
 
     def modify_rhs(self, old, new):
         if old in self.var_map:
@@ -925,8 +927,7 @@ class ConditionalZExpression(IRForm):
         return True
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.arg].get_used_vars()
+        return self.var_map[self.arg].get_used_vars()
 
     def neg(self):
         self.op = CONDS[self.op]
@@ -956,8 +957,7 @@ class InstanceExpression(IRForm):
         return self.ftype
 
     def get_used_vars(self):
-        m = self.var_map
-        return m[self.arg].get_used_vars()
+        return self.var_map[self.arg].get_used_vars()
 
     def visit(self, visitor):
         return visitor.visit_get_instance(self.var_map[self.arg], self.name)
