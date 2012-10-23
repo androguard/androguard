@@ -17,24 +17,30 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 import util
+import logging
 from struct import pack, unpack
-from instruction import (ArrayLengthExpression, ArrayLoadExpression,
-                             ArrayStoreInstruction, AssignExpression,
-                             BaseClass, BinaryCompExpression, BinaryExpression,
-                             BinaryExpression2Addr, BinaryExpressionLit,
-                             CastExpression, CheckCastExpression,
-                             ConditionalExpression, ConditionalZExpression,
-                             Constant, FillArrayExpression,
-                             FilledArrayExpression, InstanceExpression,
-                             InstanceInstruction, InvokeInstruction,
-                             InvokeDirectInstruction, InvokeRangeInstruction,
-                             InvokeStaticInstruction, MonitorEnterExpression,
-                             MonitorExitExpression, MoveExpression,
-                             MoveResultExpression, NewArrayExpression,
-                             NewInstance, NopExpression, RefExpression,
-                             ThrowExpression, Variable, ReturnInstruction,
-                             StaticExpression, StaticInstruction,
-                             SwitchExpression, UnaryExpression)
+from androguard.decompiler.dad.instruction import (ArrayLengthExpression,
+                            ArrayLoadExpression, ArrayStoreInstruction,
+                            AssignExpression, BaseClass, BinaryCompExpression,
+                            BinaryExpression, BinaryExpression2Addr,
+                            BinaryExpressionLit, CastExpression,
+                            CheckCastExpression, ConditionalExpression,
+                            ConditionalZExpression, Constant,
+                            FillArrayExpression, FilledArrayExpression,
+                            InstanceExpression, InstanceInstruction,
+                            InvokeInstruction, InvokeDirectInstruction,
+                            InvokeRangeInstruction, InvokeStaticInstruction,
+                            MonitorEnterExpression, MonitorExitExpression,
+                            MoveExpression, MoveResultExpression,
+                            NewArrayExpression, NewInstance, NopExpression,
+                            RefExpression, ThrowExpression, Variable,
+                            ReturnInstruction, StaticExpression,
+                            StaticInstruction, SwitchExpression,
+                            UnaryExpression)
+
+
+logger = logging.getLogger('dad.opcode_ins')
+
 
 EXPR = 0
 INST = 1
@@ -101,19 +107,21 @@ def assign_cast_exp(val_a, val_b, val_op, op_type, vmap):
 
 def assign_binary_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b, reg_c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b, reg_c,
-                                                                op_type))
+    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b,
+                                                    reg_c, op_type))
+
 
 def assign_binary_2addr_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
-    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
-                                                                     op_type))
+    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a,
+                                                         reg_b, op_type))
+
 
 def assign_lit(op_type, val_cst, val_a, val_b, vmap):
     cst = Constant(val_cst, 'I')
-    var_a, var_b = get_variables(vmap, val_a, val_b) 
+    var_a, var_b = get_variables(vmap, val_a, val_b)
     return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
-    
+
 
 # nop
 def nop(ins, vmap):
@@ -122,148 +130,148 @@ def nop(ins, vmap):
 
 # move vA, vB ( 4b, 4b )
 def move(ins, vmap):
-    util.log('Move %s' % ins.get_output(), 'debug')
+    logger.debug('Move %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move/from16 vAA, vBBBB ( 8b, 16b )
 def movefrom16(ins, vmap):
-    util.log('MoveFrom16 %s' % ins.get_output(), 'debug')
+    logger.debug('MoveFrom16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move/16 vAAAA, vBBBB ( 16b, 16b )
 def move16(ins, vmap):
-    util.log('Move16 %s' % ins.get_output(), 'debug')
+    logger.debug('Move16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide vA, vB ( 4b, 4b )
 def movewide(ins, vmap):
-    util.log('MoveWide %s' % ins.get_output(), 'debug')
+    logger.debug('MoveWide %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/from16 vAA, vBBBB ( 8b, 16b )
 def movewidefrom16(ins, vmap):
-    util.log('MoveWideFrom16 : %s' % ins.get_output(), 'debug')
+    logger.debug('MoveWideFrom16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/16 vAAAA, vBBBB ( 16b, 16b )
 def movewide16(ins, vmap):
-    util.log('MoveWide16 %s' % ins.get_output(), 'debug')
+    logger.debug('MoveWide16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object vA, vB ( 4b, 4b )
 def moveobject(ins, vmap):
-    util.log('MoveObject %s' % ins.get_output(), 'debug')
+    logger.debug('MoveObject %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object/from16 vAA, vBBBB ( 8b, 16b )
 def moveobjectfrom16(ins, vmap):
-    util.log('MoveObjectFrom16 : %s' % ins.get_output(), 'debug')
+    logger.debug('MoveObjectFrom16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object/16 vAAAA, vBBBB ( 16b, 16b )
 def moveobject16(ins, vmap):
-    util.log('MoveObject16 : %s' % ins.get_output(), 'debug')
+    logger.debug('MoveObject16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-result vAA ( 8b )
 def moveresult(ins, vmap, ret):
-    util.log('MoveResult : %s' % ins.get_output(), 'debug') 
+    logger.debug('MoveResult : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret, None)
 
 
 # move-result-wide vAA ( 8b )
 def moveresultwide(ins, vmap, ret):
-    util.log('MoveResultWide : %s' % ins.get_output(), 'debug') 
+    logger.debug('MoveResultWide : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'W')
 
 
 # move-result-object vAA ( 8b )
 def moveresultobject(ins, vmap, ret):
-    util.log('MoveResultObject : %s' % ins.get_output(), 'debug') 
+    logger.debug('MoveResultObject : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'O')
 
 
 # move-exception vAA ( 8b )
 def moveexception(ins, vmap):
-    util.log('MoveException : %s' % ins.get_output(), 'debug') 
+    logger.debug('MoveException : %s', ins.get_output())
     return RefExpression(get_variables(vmap, ins.AA))
 
 
 # return-void
 def returnvoid(ins, vmap):
-    util.log('ReturnVoid', 'debug')
+    logger.debug('ReturnVoid')
     return ReturnInstruction(None)
 
 
 # return vAA ( 8b )
 def return_reg(ins, vmap):
-    util.log('Return : %s' % ins.get_output(), 'debug')
+    logger.debug('Return : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-wide vAA ( 8b )
 def returnwide(ins, vmap):
-    util.log('ReturnWide : %s' % ins.get_output(), 'debug')
+    logger.debug('ReturnWide : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-object vAA ( 8b )
 def returnobject(ins, vmap):
-    util.log('ReturnObject : %s' % ins.get_output(), 'debug') 
+    logger.debug('ReturnObject : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # const/4 vA, #+B ( 4b, 4b )
 def const4(ins, vmap):
-    util.log('Const4 : %s' % ins.get_output(), 'debug')
+    logger.debug('Const4 : %s', ins.get_output())
     cst = Constant(ins.B, 'I')
     return assign_const(ins.A, cst, vmap)
 
 
 # const/16 vAA, #+BBBB ( 8b, 16b )
 def const16(ins, vmap):
-    util.log('Const16 : %s' % ins.get_output(), 'debug')
-    cst = Constant(ins.BBBB, 'I') 
+    logger.debug('Const16 : %s', ins.get_output())
+    cst = Constant(ins.BBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const vAA, #+BBBBBBBB ( 8b, 32b )
 def const(ins, vmap):
-    util.log('Const : %s' % ins.get_output(), 'debug')
+    logger.debug('Const : %s', ins.get_output())
     value = unpack("=f", pack("=i", ins.BBBBBBBB))[0]
-    cst = Constant(value, 'F', ins.BBBBBBBB) 
+    cst = Constant(value, 'F', ins.BBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
 
 
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
 def consthigh16(ins, vmap):
-    util.log('ConstHigh16 : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstHigh16 : %s', ins.get_output())
     value = unpack('=f', '\x00\x00' + pack('=h', ins.BBBB))[0]
-    cst = Constant(value, 'F', ins.BBBB) 
+    cst = Constant(value, 'F', ins.BBBB)
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/16 vAA, #+BBBB ( 8b, 16b )
 def constwide16(ins, vmap):
-    util.log('ConstWide16 : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstWide16 : %s', ins.get_output())
     value = unpack('=d', pack('=d', ins.BBBB))[0]
     cst = Constant(value, 'J', ins.BBBB)
     return assign_const(ins.AA, cst, vmap)
@@ -271,7 +279,7 @@ def constwide16(ins, vmap):
 
 # const-wide/32 vAA, #+BBBBBBBB ( 8b, 32b )
 def constwide32(ins, vmap):
-    util.log('ConstWide32 : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstWide32 : %s', ins.get_output())
     value = unpack('=d', pack('=d', ins.BBBBBBBB))[0]
     cst = Constant(value, 'J', ins.BBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
@@ -279,7 +287,7 @@ def constwide32(ins, vmap):
 
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
 def constwide(ins, vmap):
-    util.log('ConstWide : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstWide : %s', ins.get_output())
     value = unpack('=d', pack('=q', ins.BBBBBBBBBBBBBBBB))[0]
     cst = Constant(value, 'D', ins.BBBBBBBBBBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
@@ -287,7 +295,7 @@ def constwide(ins, vmap):
 
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
 def constwidehigh16(ins, vmap):
-    util.log('ConstWideHigh16 : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstWideHigh16 : %s', ins.get_output())
     value = unpack('=d',
                     '\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
     cst = Constant(value, 'D', ins.BBBB)
@@ -296,48 +304,48 @@ def constwidehigh16(ins, vmap):
 
 # const-string vAA ( 8b )
 def conststring(ins, vmap):
-    util.log('ConstString : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstString : %s', ins.get_output())
     cst = Constant(ins.get_raw_string(), 'STR')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-string/jumbo vAA ( 8b )
 def conststringjumbo(ins, vmap):
-    util.log('ConstStringJumbo %s' % ins.get_output(), 'debug')
+    logger.debug('ConstStringJumbo %s', ins.get_output())
     cst = Constant(ins.get_raw_string(), 'STR')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
-    util.log('ConstClass : %s' % ins.get_output(), 'debug')
+    logger.debug('ConstClass : %s', ins.get_output())
     cst = Constant(util.get_type(ins.get_string()), 'class')
     return assign_const(ins.AA, cst, vmap)
 
 
 # monitor-enter vAA ( 8b )
 def monitorenter(ins, vmap):
-    util.log('MonitorEnter : %s' % ins.get_output(), 'debug') 
+    logger.debug('MonitorEnter : %s', ins.get_output())
     return MonitorEnterExpression(get_variables(vmap, ins.AA))
 
 
 # monitor-exit vAA ( 8b )
 def monitorexit(ins, vmap):
-    util.log('MonitorExit : %s' % ins.get_output(), 'debug')
+    logger.debug('MonitorExit : %s', ins.get_output())
     a = get_variables(vmap, ins.AA)
     return MonitorExitExpression(a)
 
 
 # check-cast vAA ( 8b )
 def checkcast(ins, vmap):
-    util.log('CheckCast: %s' % ins.get_output(), 'debug')
-    cast_type = util.get_type(ins.get_translated_kind()) 
+    logger.debug('CheckCast: %s', ins.get_output())
+    cast_type = util.get_type(ins.get_translated_kind())
     return CheckCastExpression(get_variables(vmap, ins.AA), cast_type)
 
 
 # instance-of vA, vB ( 4b, 4b )
 def instanceof(ins, vmap):
-    util.log('InstanceOf : %s' % ins.get_output(), 'debug')
+    logger.debug('InstanceOf : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     reg_c = BaseClass(util.get_type(ins.get_translated_kind()))
     exp = BinaryExpression('instanceof', reg_b, reg_c, None)
@@ -346,22 +354,22 @@ def instanceof(ins, vmap):
 
 # array-length vA, vB ( 4b, 4b )
 def arraylength(ins, vmap):
-    util.log('ArrayLength: %s' % ins.get_output(), 'debug')
+    logger.debug('ArrayLength: %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return AssignExpression(reg_a, ArrayLengthExpression(reg_b))
 
 
 # new-instance vAA ( 8b )
 def newinstance(ins, vmap):
-    util.log('NewInstance : %s' % ins.get_output(), 'debug')
+    logger.debug('NewInstance : %s', ins.get_output())
     reg_a = get_variables(vmap, ins.AA)
-    ins_type = ins.cm.get_type(ins.BBBB) 
+    ins_type = ins.cm.get_type(ins.BBBB)
     return AssignExpression(reg_a, NewInstance(ins_type))
 
 
 # new-array vA, vB ( 8b, size )
 def newarray(ins, vmap):
-    util.log('NewArray : %s' % ins.get_output(), 'debug')
+    logger.debug('NewArray : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = NewArrayExpression(b, ins.cm.get_type(ins.CCCC))
     return AssignExpression(a, exp)
@@ -369,7 +377,7 @@ def newarray(ins, vmap):
 
 # filled-new-array {vD, vE, vF, vG, vA} ( 4b each )
 def fillednewarray(ins, vmap, ret):
-    util.log('FilledNewArray : %s' % ins.get_output(), 'debug')
+    logger.debug('FilledNewArray : %s', ins.get_output())
     a, b, c, d, e, f, g = get_variables(vmap, ins.A, ins.BBBB, ins.C, ins.D,
                                                     ins.E, ins.F, ins.G)
     exp = FilledArrayExpression(a, c, [d, e, f, g, a])
@@ -378,7 +386,7 @@ def fillednewarray(ins, vmap, ret):
 
 # filled-new-array/range {vCCCC..vNNNN} ( 16b )
 def fillednewarrayrange(ins, vmap, ret):
-    util.log('FilledNewArrayRange : %s' % ins.get_output(), 'debug')
+    logger.debug('FilledNewArrayRange : %s', ins.get_output())
     a, b, c, n = get_variables(vmap, ins.AA, ins.BBBB, ins.CCCC, ins.NNNN)
     exp = FilledArrayExpression(a, b, [c, n])
     return AssignExpression(ret, exp)
@@ -386,19 +394,19 @@ def fillednewarrayrange(ins, vmap, ret):
 
 # fill-array-data vAA, +BBBBBBBB ( 8b, 32b )
 def fillarraydata(ins, vmap, value):
-    util.log('FillArrayData : %s' % ins.get_output(), 'debug') 
+    logger.debug('FillArrayData : %s', ins.get_output())
     return FillArrayExpression(get_variables(vmap, ins.AA), value)
 
 
 # fill-array-data-payload vAA, +BBBBBBBB ( 8b, 32b )
 def fillarraydatapayload(ins, vmap):
-    util.log('FillArrayDataPayload : %s' % ins.get_output(), 'debug')
+    logger.debug('FillArrayDataPayload : %s', ins.get_output())
     return FillArrayExpression(None)
 
 
 # throw vAA ( 8b )
 def throw(ins, vmap):
-    util.log('Throw : %s' % ins.get_output(), 'debug') 
+    logger.debug('Throw : %s', ins.get_output())
     return ThrowExpression(get_variables(vmap, ins.AA))
 
 
@@ -419,214 +427,214 @@ def goto32(ins, vmap):
 
 # packed-switch vAA, +BBBBBBBB ( reg to test, 32b )
 def packedswitch(ins, vmap):
-    util.log('PackedSwitch : %s' % ins.get_output(), 'debug')
+    logger.debug('PackedSwitch : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
     return SwitchExpression(reg_a, reg_b)
 
 
 # sparse-switch vAA, +BBBBBBBB ( reg to test, 32b )
 def sparseswitch(ins, vmap):
-    util.log('SparseSwitch : %s' % ins.get_output(), 'debug')
+    logger.debug('SparseSwitch : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBBBBBB)
     return SwitchExpression(reg_a, reg_b)
 
 
 # cmpl-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmplfloat(ins, vmap):
-    util.log('CmpglFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('CmpglFloat : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpg-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpgfloat(ins, vmap):
-    util.log('CmpgFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('CmpgFloat : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpl-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpldouble(ins, vmap):
-    util.log('CmplDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('CmplDouble : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmpg-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmpgdouble(ins, vmap):
-    util.log('CmpgDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('CmpgDouble : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmp-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def cmplong(ins, vmap):
-    util.log('CmpLong : %s' % ins.get_output(), 'debug')
+    logger.debug('CmpLong : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'J', vmap)
 
 
 # if-eq vA, vB, +CCCC ( 4b, 4b, 16b )
 def ifeq(ins, vmap):
-    util.log('IfEq : %s' % ins.get_output(), 'debug')
+    logger.debug('IfEq : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.EQUAL, a, b)
 
 
 # if-ne vA, vB, +CCCC ( 4b, 4b, 16b )
 def ifne(ins, vmap):
-    util.log('IfNe : %s' % ins.get_output(), 'debug')
+    logger.debug('IfNe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.NEQUAL, a, b)
 
 
 # if-lt vA, vB, +CCCC ( 4b, 4b, 16b )
 def iflt(ins, vmap):
-    util.log('IfLt : %s' % ins.get_output(), 'debug')
+    logger.debug('IfLt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.LOWER, a, b)
 
 
 # if-ge vA, vB, +CCCC ( 4b, 4b, 16b )
 def ifge(ins, vmap):
-    util.log('IfGe : %s' % ins.get_output(), 'debug')
+    logger.debug('IfGe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.GEQUAL, a, b)
 
 
 # if-gt vA, vB, +CCCC ( 4b, 4b, 16b )
 def ifgt(ins, vmap):
-    util.log('IfGt : %s' % ins.get_output(), 'debug')
+    logger.debug('IfGt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.GREATER, a, b)
 
 
 # if-le vA, vB, +CCCC ( 4b, 4b, 16b )
 def ifle(ins, vmap):
-    util.log('IfLe : %s' % ins.get_output(), 'debug')
+    logger.debug('IfLe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.LEQUAL, a, b)
 
 
 # if-eqz vAA, +BBBB ( 8b, 16b )
 def ifeqz(ins, vmap):
-    util.log('IfEqz : %s' % ins.get_output(), 'debug')
+    logger.debug('IfEqz : %s', ins.get_output())
     return ConditionalZExpression(Op.EQUAL, get_variables(vmap, ins.AA))
 
 
 # if-nez vAA, +BBBB ( 8b, 16b )
 def ifnez(ins, vmap):
-    util.log('IfNez : %s' % ins.get_output(), 'debug') 
+    logger.debug('IfNez : %s', ins.get_output())
     return ConditionalZExpression(Op.NEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-ltz vAA, +BBBB ( 8b, 16b )
 def ifltz(ins, vmap):
-    util.log('IfLtz : %s' % ins.get_output(), 'debug') 
+    logger.debug('IfLtz : %s', ins.get_output())
     return ConditionalZExpression(Op.LOWER, get_variables(vmap, ins.AA))
 
 
 # if-gez vAA, +BBBB ( 8b, 16b )
 def ifgez(ins, vmap):
-    util.log('IfGez : %s' % ins.get_output(), 'debug') 
+    logger.debug('IfGez : %s', ins.get_output())
     return ConditionalZExpression(Op.GEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-gtz vAA, +BBBB ( 8b, 16b )
 def ifgtz(ins, vmap):
-    util.log('IfGtz : %s' % ins.get_output(), 'debug') 
+    logger.debug('IfGtz : %s', ins.get_output())
     return ConditionalZExpression(Op.GREATER, get_variables(vmap, ins.AA))
 
 
 # if-lez vAA, +BBBB (8b, 16b )
 def iflez(ins, vmap):
-    util.log('IfLez : %s' % ins.get_output(), 'debug') 
+    logger.debug('IfLez : %s', ins.get_output())
     return ConditionalZExpression(Op.LEQUAL, get_variables(vmap, ins.AA))
 
 
 #TODO: check type for all aget
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
 def aget(ins, vmap):
-    util.log('AGet : %s' % ins.get_output(), 'debug')
+    logger.debug('AGet : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aget-wide vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetwide(ins, vmap):
-    util.log('AGetWide : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetWide : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aget-object vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetobject(ins, vmap):
-    util.log('AGetObject : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetObject : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aget-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetboolean(ins, vmap):
-    util.log('AGetBoolean : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetBoolean : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aget-byte vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetbyte(ins, vmap):
-    util.log('AGetByte : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetByte : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aget-char vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetchar(ins, vmap):
-    util.log('AGetChar : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetChar : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aget-short vAA, vBB, vCC ( 8b, 8b, 8b )
 def agetshort(ins, vmap):
-    util.log('AGetShort : %s' % ins.get_output(), 'debug')
+    logger.debug('AGetShort : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # aput vAA, vBB, vCC
 def aput(ins, vmap):
-    util.log('APut : %s' % ins.get_output(), 'debug')
+    logger.debug('APut : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aput-wide vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputwide(ins, vmap):
-    util.log('APutWide : %s' % ins.get_output(), 'debug')
+    logger.debug('APutWide : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aput-object vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputobject(ins, vmap):
-    util.log('APutObject : %s' % ins.get_output(), 'debug')
+    logger.debug('APutObject : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aput-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputboolean(ins, vmap):
-    util.log('APutBoolean : %s' % ins.get_output(), 'debug')
+    logger.debug('APutBoolean : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aput-byte vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputbyte(ins, vmap):
-    util.log('APutByte : %s' % ins.get_output(), 'debug')
+    logger.debug('APutByte : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aput-char vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputchar(ins, vmap):
-    util.log('APutChar : %s' % ins.get_output(), 'debug')
+    logger.debug('APutChar : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aput-short vAA, vBB, vCC ( 8b, 8b, 8b )
 def aputshort(ins, vmap):
-    util.log('APutShort : %s' % ins.get_output(), 'debug')
+    logger.debug('APutShort : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # iget vA, vB ( 4b, 4b )
 def iget(ins, vmap):
-    util.log('IGet : %s' % ins.get_output(), 'debug')
+    logger.debug('IGet : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -636,7 +644,7 @@ def iget(ins, vmap):
 
 # iget-wide vA, vB ( 4b, 4b )
 def igetwide(ins, vmap):
-    util.log('IGetWide : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -646,7 +654,7 @@ def igetwide(ins, vmap):
 
 # iget-object vA, vB ( 4b, 4b )
 def igetobject(ins, vmap):
-    util.log('IGetObject : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -656,7 +664,7 @@ def igetobject(ins, vmap):
 
 # iget-boolean vA, vB ( 4b, 4b )
 def igetboolean(ins, vmap):
-    util.log('IGetBoolean : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -666,7 +674,7 @@ def igetboolean(ins, vmap):
 
 # iget-byte vA, vB ( 4b, 4b )
 def igetbyte(ins, vmap):
-    util.log('IGetByte : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -676,7 +684,7 @@ def igetbyte(ins, vmap):
 
 # iget-char vA, vB ( 4b, 4b )
 def igetchar(ins, vmap):
-    util.log('IGetChar : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -686,7 +694,7 @@ def igetchar(ins, vmap):
 
 # iget-short vA, vB ( 4b, 4b )
 def igetshort(ins, vmap):
-    util.log('IGetShort : %s' % ins.get_output(), 'debug')
+    logger.debug('IGetShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -696,7 +704,7 @@ def igetshort(ins, vmap):
 
 # iput vA, vB ( 4b, 4b )
 def iput(ins, vmap):
-    util.log('IPut %s' % ins.get_output(), 'debug')
+    logger.debug('IPut %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -705,7 +713,7 @@ def iput(ins, vmap):
 
 # iput-wide vA, vB ( 4b, 4b )
 def iputwide(ins, vmap):
-    util.log('IPutWide %s' % ins.get_output(), 'debug')
+    logger.debug('IPutWide %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -714,7 +722,7 @@ def iputwide(ins, vmap):
 
 # iput-object vA, vB ( 4b, 4b )
 def iputobject(ins, vmap):
-    util.log('IPutObject %s' % ins.get_output(), 'debug')
+    logger.debug('IPutObject %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -723,7 +731,7 @@ def iputobject(ins, vmap):
 
 # iput-boolean vA, vB ( 4b, 4b )
 def iputboolean(ins, vmap):
-    util.log('IPutBoolean %s' % ins.get_output(), 'debug')
+    logger.debug('IPutBoolean %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -732,7 +740,7 @@ def iputboolean(ins, vmap):
 
 # iput-byte vA, vB ( 4b, 4b )
 def iputbyte(ins, vmap):
-    util.log('IPutByte %s' % ins.get_output(), 'debug')
+    logger.debug('IPutByte %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -741,7 +749,7 @@ def iputbyte(ins, vmap):
 
 # iput-char vA, vB ( 4b, 4b )
 def iputchar(ins, vmap):
-    util.log('IPutChar %s' % ins.get_output(), 'debug')
+    logger.debug('IPutChar %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -750,7 +758,7 @@ def iputchar(ins, vmap):
 
 # iput-short vA, vB ( 4b, 4b )
 def iputshort(ins, vmap):
-    util.log('IPutShort %s' % ins.get_output(), 'debug')
+    logger.debug('IPutShort %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -759,7 +767,7 @@ def iputshort(ins, vmap):
 
 # sget vAA ( 8b )
 def sget(ins, vmap):
-    util.log('SGet : %s' % ins.get_output(), 'debug')
+    logger.debug('SGet : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -769,7 +777,7 @@ def sget(ins, vmap):
 
 # sget-wide vAA ( 8b )
 def sgetwide(ins, vmap):
-    util.log('SGetWide : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetWide : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -779,7 +787,7 @@ def sgetwide(ins, vmap):
 
 # sget-object vAA ( 8b )
 def sgetobject(ins, vmap):
-    util.log('SGetObject : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetObject : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -789,7 +797,7 @@ def sgetobject(ins, vmap):
 
 # sget-boolean vAA ( 8b )
 def sgetboolean(ins, vmap):
-    util.log('SGetBoolean : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetBoolean : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -799,7 +807,7 @@ def sgetboolean(ins, vmap):
 
 # sget-byte vAA ( 8b )
 def sgetbyte(ins, vmap):
-    util.log('SGetByte : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetByte : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -809,7 +817,7 @@ def sgetbyte(ins, vmap):
 
 # sget-char vAA ( 8b )
 def sgetchar(ins, vmap):
-    util.log('SGetChar : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetChar : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -819,7 +827,7 @@ def sgetchar(ins, vmap):
 
 # sget-short vAA ( 8b )
 def sgetshort(ins, vmap):
-    util.log('SGetShort : %s' % ins.get_output(), 'debug')
+    logger.debug('SGetShort : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
@@ -829,7 +837,7 @@ def sgetshort(ins, vmap):
 
 # sput vAA ( 8b )
 def sput(ins, vmap):
-    util.log('SPut : %s' % ins.get_output(), 'debug')
+    logger.debug('SPut : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -838,7 +846,7 @@ def sput(ins, vmap):
 
 # sput-wide vAA ( 8b )
 def sputwide(ins, vmap):
-    util.log('SPutWide : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -847,7 +855,7 @@ def sputwide(ins, vmap):
 
 # sput-object vAA ( 8b )
 def sputobject(ins, vmap):
-    util.log('SPutObject : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -856,7 +864,7 @@ def sputobject(ins, vmap):
 
 # sput-boolean vAA ( 8b )
 def sputboolean(ins, vmap):
-    util.log('SPutBoolean : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -865,7 +873,7 @@ def sputboolean(ins, vmap):
 
 # sput-wide vAA ( 8b )
 def sputbyte(ins, vmap):
-    util.log('SPutByte : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -874,7 +882,7 @@ def sputbyte(ins, vmap):
 
 # sput-char vAA ( 8b )
 def sputchar(ins, vmap):
-    util.log('SPutChar : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -883,7 +891,7 @@ def sputchar(ins, vmap):
 
 # sput-short vAA ( 8b )
 def sputshort(ins, vmap):
-    util.log('SPutShort : %s' % ins.get_output(), 'debug')
+    logger.debug('SPutShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
@@ -905,7 +913,7 @@ def get_args(vmap, param_type, largs):
 
 # invoke-virtual {vD, vE, vF, vG, vA} ( 4b each )
 def invokevirtual(ins, vmap, ret):
-    util.log('InvokeVirtual : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeVirtual : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -922,7 +930,7 @@ def invokevirtual(ins, vmap, ret):
 
 # invoke-super {vD, vE, vF, vG, vA} ( 4b each )
 def invokesuper(ins, vmap, ret):
-    util.log('InvokeSuper : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeSuper : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -940,7 +948,7 @@ def invokesuper(ins, vmap, ret):
 
 # invoke-direct {vD, vE, vF, vG, vA} ( 4b each )
 def invokedirect(ins, vmap, ret):
-    util.log('InvokeDirect : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeDirect : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -958,7 +966,7 @@ def invokedirect(ins, vmap, ret):
 
 # invoke-static {vD, vE, vF, vG, vA} ( 4b each )
 def invokestatic(ins, vmap, ret):
-    util.log('InvokeStatic : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeStatic : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -977,7 +985,7 @@ def invokestatic(ins, vmap, ret):
 
 # invoke-interface {vD, vE, vF, vG, vA} ( 4b each )
 def invokeinterface(ins, vmap, ret):
-    util.log('InvokeInterface : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeInterface : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -995,7 +1003,7 @@ def invokeinterface(ins, vmap, ret):
 
 # invoke-virtual/range {vCCCC..vNNNN} ( 16b each )
 def invokevirtualrange(ins, vmap, ret):
-    util.log('InvokeVirtualRange : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeVirtualRange : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -1013,7 +1021,7 @@ def invokevirtualrange(ins, vmap, ret):
 
 # invoke-super/range {vCCCC..vNNNN} ( 16b each )
 def invokesuperrange(ins, vmap, ret):
-    util.log('InvokeSuperRange : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeSuperRange : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -1031,7 +1039,7 @@ def invokesuperrange(ins, vmap, ret):
 
 # invoke-direct/range {vCCCC..vNNNN} ( 16b each )
 def invokedirectrange(ins, vmap, ret):
-    util.log('InvokeDirectRange : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeDirectRange : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -1051,7 +1059,7 @@ def invokedirectrange(ins, vmap, ret):
 
 # invoke-static/range {vCCCC..vNNNN} ( 16b each )
 def invokestaticrange(ins, vmap, ret):
-    util.log('InvokeStaticRange : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeStaticRange : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -1070,7 +1078,7 @@ def invokestaticrange(ins, vmap, ret):
 
 # invoke-interface/range {vCCCC..vNNNN} ( 16b each )
 def invokeinterfacerange(ins, vmap, ret):
-    util.log('InvokeInterfaceRange : %s' % ins.get_output(), 'debug')
+    logger.debug('InvokeInterfaceRange : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
     name = method.get_name()
@@ -1088,7 +1096,7 @@ def invokeinterfacerange(ins, vmap, ret):
 
 # neg-int vA, vB ( 4b, 4b )
 def negint(ins, vmap):
-    util.log('NegInt : %s' % ins.get_output(), 'debug')
+    logger.debug('NegInt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b)
     exp.type = 'I'
@@ -1097,7 +1105,7 @@ def negint(ins, vmap):
 
 # not-int vA, vB ( 4b, 4b )
 def notint(ins, vmap):
-    util.log('NotInt : %s' % ins.get_output(), 'debug')
+    logger.debug('NotInt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NOT, b)
     exp.type = 'I'
@@ -1106,7 +1114,7 @@ def notint(ins, vmap):
 
 # neg-long vA, vB ( 4b, 4b )
 def neglong(ins, vmap):
-    util.log('NegLong : %s' % ins.get_output(), 'debug')
+    logger.debug('NegLong : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b)
     exp.type = 'J'
@@ -1115,7 +1123,7 @@ def neglong(ins, vmap):
 
 # not-long vA, vB ( 4b, 4b )
 def notlong(ins, vmap):
-    util.log('NotLong : %s' % ins.get_output(), 'debug')
+    logger.debug('NotLong : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NOT, b)
     exp.type = 'J'
@@ -1124,7 +1132,7 @@ def notlong(ins, vmap):
 
 # neg-float vA, vB ( 4b, 4b )
 def negfloat(ins, vmap):
-    util.log('NegFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('NegFloat : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b)
     exp.type = 'F'
@@ -1133,7 +1141,7 @@ def negfloat(ins, vmap):
 
 # neg-double vA, vB ( 4b, 4b )
 def negdouble(ins, vmap):
-    util.log('NegDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('NegDouble : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b)
     exp.type = 'D'
@@ -1142,590 +1150,590 @@ def negdouble(ins, vmap):
 
 # int-to-long vA, vB ( 4b, 4b )
 def inttolong(ins, vmap):
-    util.log('IntToLong : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # int-to-float vA, vB ( 4b, 4b )
 def inttofloat(ins, vmap):
-    util.log('IntToFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-double vA, vB ( 4b, 4b )
 def inttodouble(ins, vmap):
-    util.log('IntToDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # long-to-int vA, vB ( 4b, 4b )
 def longtoint(ins, vmap):
-    util.log('LongToInt : %s' % ins.get_output(), 'debug')
+    logger.debug('LongToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # long-to-float vA, vB ( 4b, 4b )
 def longtofloat(ins, vmap):
-    util.log('LongToFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('LongToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # long-to-double vA, vB ( 4b, 4b )
 def longtodouble(ins, vmap):
-    util.log('LongToDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('LongToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # float-to-int vA, vB ( 4b, 4b )
 def floattoint(ins, vmap):
-    util.log('FloatToInt : %s' % ins.get_output(), 'debug')
+    logger.debug('FloatToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # float-to-long vA, vB ( 4b, 4b )
 def floattolong(ins, vmap):
-    util.log('FloatToLong : %s' % ins.get_output(), 'debug')
+    logger.debug('FloatToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # float-to-double vA, vB ( 4b, 4b )
 def floattodouble(ins, vmap):
-    util.log('FloatToDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('FloatToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # double-to-int vA, vB ( 4b, 4b )
 def doubletoint(ins, vmap):
-    util.log('DoubleToInt : %s' % ins.get_output(), 'debug')
+    logger.debug('DoubleToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # double-to-long vA, vB ( 4b, 4b )
 def doubletolong(ins, vmap):
-    util.log('DoubleToLong : %s' % ins.get_output(), 'debug')
+    logger.debug('DoubleToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # double-to-float vA, vB ( 4b, 4b )
 def doubletofloat(ins, vmap):
-    util.log('DoubleToFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('DoubleToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-byte vA, vB ( 4b, 4b )
 def inttobyte(ins, vmap):
-    util.log('IntToByte : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToByte : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(byte)', 'B', vmap)
 
 
 # int-to-char vA, vB ( 4b, 4b )
 def inttochar(ins, vmap):
-    util.log('IntToChar : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToChar : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(char)', 'C', vmap)
 
 
 # int-to-short vA, vB ( 4b, 4b )
 def inttoshort(ins, vmap):
-    util.log('IntToShort : %s' % ins.get_output(), 'debug')
+    logger.debug('IntToShort : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(short)', 'S', vmap)
 
 
 # add-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def addint(ins, vmap):
-    util.log('AddInt : %s' % ins.get_output(), 'debug')
+    logger.debug('AddInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def subint(ins, vmap):
-    util.log('SubInt : %s' % ins.get_output(), 'debug')
+    logger.debug('SubInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def mulint(ins, vmap):
-    util.log('MulInt : %s' % ins.get_output(), 'debug')
+    logger.debug('MulInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def divint(ins, vmap):
-    util.log('DivInt : %s' % ins.get_output(), 'debug')
+    logger.debug('DivInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def remint(ins, vmap):
-    util.log('RemInt : %s' % ins.get_output(), 'debug')
+    logger.debug('RemInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def andint(ins, vmap):
-    util.log('AndInt : %s' % ins.get_output(), 'debug')
+    logger.debug('AndInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def orint(ins, vmap):
-    util.log('OrInt : %s' % ins.get_output(), 'debug')
+    logger.debug('OrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def xorint(ins, vmap):
-    util.log('XorInt : %s' % ins.get_output(), 'debug')
+    logger.debug('XorInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def shlint(ins, vmap):
-    util.log('ShlInt : %s' % ins.get_output(), 'debug')
+    logger.debug('ShlInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def shrint(ins, vmap):
-    util.log('ShrInt : %s' % ins.get_output(), 'debug')
+    logger.debug('ShrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int vAA, vBB, vCC ( 8b, 8b, 8b )
 def ushrint(ins, vmap):
-    util.log('UShrInt : %s' % ins.get_output(), 'debug')
+    logger.debug('UShrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def addlong(ins, vmap):
-    util.log('AddLong : %s' % ins.get_output(), 'debug')
+    logger.debug('AddLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def sublong(ins, vmap):
-    util.log('SubLong : %s' % ins.get_output(), 'debug')
+    logger.debug('SubLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def mullong(ins, vmap):
-    util.log('MulLong : %s' % ins.get_output(), 'debug')
+    logger.debug('MulLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def divlong(ins, vmap):
-    util.log('DivLong : %s' % ins.get_output(), 'debug')
+    logger.debug('DivLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def remlong(ins, vmap):
-    util.log('RemLong : %s' % ins.get_output(), 'debug')
+    logger.debug('RemLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'J', vmap)
 
 
 # and-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def andlong(ins, vmap):
-    util.log('AndLong : %s' % ins.get_output(), 'debug')
+    logger.debug('AndLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def orlong(ins, vmap):
-    util.log('OrLong : %s' % ins.get_output(), 'debug')
+    logger.debug('OrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def xorlong(ins, vmap):
-    util.log('XorLong : %s' % ins.get_output(), 'debug')
+    logger.debug('XorLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def shllong(ins, vmap):
-    util.log('ShlLong : %s' % ins.get_output(), 'debug')
+    logger.debug('ShlLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def shrlong(ins, vmap):
-    util.log('ShrLong : %s' % ins.get_output(), 'debug')
+    logger.debug('ShrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long vAA, vBB, vCC ( 8b, 8b, 8b )
 def ushrlong(ins, vmap):
-    util.log('UShrLong : %s' % ins.get_output(), 'debug')
+    logger.debug('UShrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def addfloat(ins, vmap):
-    util.log('AddFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('AddFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def subfloat(ins, vmap):
-    util.log('SubFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('SubFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def mulfloat(ins, vmap):
-    util.log('MulFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('MulFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def divfloat(ins, vmap):
-    util.log('DivFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('DivFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float vAA, vBB, vCC ( 8b, 8b, 8b )
 def remfloat(ins, vmap):
-    util.log('RemFloat : %s' % ins.get_output(), 'debug')
+    logger.debug('RemFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def adddouble(ins, vmap):
-    util.log('AddDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('AddDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def subdouble(ins, vmap):
-    util.log('SubDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('SubDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def muldouble(ins, vmap):
-    util.log('MulDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('MulDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def divdouble(ins, vmap):
-    util.log('DivDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('DivDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double vAA, vBB, vCC ( 8b, 8b, 8b )
 def remdouble(ins, vmap):
-    util.log('RemDouble : %s' % ins.get_output(), 'debug')
+    logger.debug('RemDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/2addr vA, vB ( 4b, 4b )
 def addint2addr(ins, vmap):
-    util.log('AddInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AddInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int/2addr vA, vB ( 4b, 4b )
 def subint2addr(ins, vmap):
-    util.log('SubInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('SubInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int/2addr vA, vB ( 4b, 4b )
 def mulint2addr(ins, vmap):
-    util.log('MulInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('MulInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int/2addr vA, vB ( 4b, 4b )
 def divint2addr(ins, vmap):
-    util.log('DivInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('DivInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int/2addr vA, vB ( 4b, 4b )
 def remint2addr(ins, vmap):
-    util.log('RemInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('RemInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int/2addr vA, vB ( 4b, 4b )
 def andint2addr(ins, vmap):
-    util.log('AndInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AndInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int/2addr vA, vB ( 4b, 4b )
 def orint2addr(ins, vmap):
-    util.log('OrInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('OrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int/2addr vA, vB ( 4b, 4b )
 def xorint2addr(ins, vmap):
-    util.log('XorInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('XorInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int/2addr vA, vB ( 4b, 4b )
 def shlint2addr(ins, vmap):
-    util.log('ShlInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('ShlInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int/2addr vA, vB ( 4b, 4b )
 def shrint2addr(ins, vmap):
-    util.log('ShrInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('ShrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int/2addr vA, vB ( 4b, 4b )
 def ushrint2addr(ins, vmap):
-    util.log('UShrInt2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('UShrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long/2addr vA, vB ( 4b, 4b )
 def addlong2addr(ins, vmap):
-    util.log('AddLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AddLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long/2addr vA, vB ( 4b, 4b )
 def sublong2addr(ins, vmap):
-    util.log('SubLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('SubLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long/2addr vA, vB ( 4b, 4b )
 def mullong2addr(ins, vmap):
-    util.log('MulLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('MulLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long/2addr vA, vB ( 4b, 4b )
 def divlong2addr(ins, vmap):
-    util.log('DivLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('DivLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long/2addr vA, vB ( 4b, 4b )
 def remlong2addr(ins, vmap):
-    util.log('RemLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('RemLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
 
 
 # and-long/2addr vA, vB ( 4b, 4b )
 def andlong2addr(ins, vmap):
-    util.log('AndLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AndLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long/2addr vA, vB ( 4b, 4b )
 def orlong2addr(ins, vmap):
-    util.log('OrLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('OrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long/2addr vA, vB ( 4b, 4b )
 def xorlong2addr(ins, vmap):
-    util.log('XorLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('XorLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long/2addr vA, vB ( 4b, 4b )
 def shllong2addr(ins, vmap):
-    util.log('ShlLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('ShlLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long/2addr vA, vB ( 4b, 4b )
 def shrlong2addr(ins, vmap):
-    util.log('ShrLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('ShrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long/2addr vA, vB ( 4b, 4b )
 def ushrlong2addr(ins, vmap):
-    util.log('UShrLong2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('UShrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float/2addr vA, vB ( 4b, 4b )
 def addfloat2addr(ins, vmap):
-    util.log('AddFloat2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AddFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float/2addr vA, vB ( 4b, 4b )
 def subfloat2addr(ins, vmap):
-    util.log('SubFloat2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('SubFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float/2addr vA, vB ( 4b, 4b )
 def mulfloat2addr(ins, vmap):
-    util.log('MulFloat2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('MulFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float/2addr vA, vB ( 4b, 4b )
 def divfloat2addr(ins, vmap):
-    util.log('DivFloat2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('DivFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float/2addr vA, vB ( 4b, 4b )
 def remfloat2addr(ins, vmap):
-    util.log('RemFloat2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('RemFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double/2addr vA, vB ( 4b, 4b )
 def adddouble2addr(ins, vmap):
-    util.log('AddDouble2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('AddDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double/2addr vA, vB ( 4b, 4b )
 def subdouble2addr(ins, vmap):
-    util.log('subDouble2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('subDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double/2addr vA, vB ( 4b, 4b )
 def muldouble2addr(ins, vmap):
-    util.log('MulDouble2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('MulDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double/2addr vA, vB ( 4b, 4b )
 def divdouble2addr(ins, vmap):
-    util.log('DivDouble2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('DivDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double/2addr vA, vB ( 4b, 4b )
 def remdouble2addr(ins, vmap):
-    util.log('RemDouble2Addr : %s' % ins.get_output(), 'debug')
+    logger.debug('RemDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def addintlit16(ins, vmap):
-    util.log('AddIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('AddIntLit16 : %s', ins.get_output())
     return assign_lit(Op.ADD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # rsub-int vA, vB, #+CCCC ( 4b, 4b, 16b )
 def rsubint(ins, vmap):
-    util.log('RSubInt : %s' % ins.get_output(), 'debug')
+    logger.debug('RSubInt : %s', ins.get_output())
     return assign_lit(Op.SUB, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # mul-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def mulintlit16(ins, vmap):
-    util.log('MulIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('MulIntLit16 : %s', ins.get_output())
     return assign_lit(Op.MUL, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # div-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def divintlit16(ins, vmap):
-    util.log('DivIntLit16 : %s' % ins.get_output(), 'debug')
-    return assign_lit(Op.DIV, ins.CCCC, ins.A, ins.B, vmap) 
+    logger.debug('DivIntLit16 : %s', ins.get_output())
+    return assign_lit(Op.DIV, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # rem-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def remintlit16(ins, vmap):
-    util.log('RemIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('RemIntLit16 : %s', ins.get_output())
     return assign_lit(Op.MOD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # and-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def andintlit16(ins, vmap):
-    util.log('AndIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('AndIntLit16 : %s', ins.get_output())
     return assign_lit(Op.AND, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # or-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def orintlit16(ins, vmap):
-    util.log('OrIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('OrIntLit16 : %s', ins.get_output())
     return assign_lit(Op.OR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # xor-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
 def xorintlit16(ins, vmap):
-    util.log('XorIntLit16 : %s' % ins.get_output(), 'debug')
+    logger.debug('XorIntLit16 : %s', ins.get_output())
     return assign_lit(Op.XOR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # add-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def addintlit8(ins, vmap):
-    util.log('AddIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('AddIntLit8 : %s', ins.get_output())
     literal, op = [(ins.CC, Op.ADD), (-ins.CC, Op.SUB)][ins.CC < 0]
     return assign_lit(op, literal, ins.AA, ins.BB, vmap)
 
 
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def rsubintlit8(ins, vmap):
-    util.log('RSubIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('RSubIntLit8 : %s', ins.get_output())
     return assign_lit(Op.SUB, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def mulintlit8(ins, vmap):
-    util.log('MulIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('MulIntLit8 : %s', ins.get_output())
     return assign_lit(Op.MUL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def divintlit8(ins, vmap):
-    util.log('DivIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('DivIntLit8 : %s', ins.get_output())
     return assign_lit(Op.DIV, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # rem-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def remintlit8(ins, vmap):
-    util.log('RemIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('RemIntLit8 : %s', ins.get_output())
     return assign_lit(Op.MOD, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def andintlit8(ins, vmap):
-    util.log('AndIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('AndIntLit8 : %s', ins.get_output())
     return assign_lit(Op.AND, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # or-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def orintlit8(ins, vmap):
-    util.log('OrIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('OrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.OR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # xor-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def xorintlit8(ins, vmap):
-    util.log('XorIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('XorIntLit8 : %s', ins.get_output())
     return assign_lit(Op.XOR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shl-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def shlintlit8(ins, vmap):
-    util.log('ShlIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('ShlIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def shrintlit8(ins, vmap):
-    util.log('ShrIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('ShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # ushr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def ushrintlit8(ins, vmap):
-    util.log('UShrIntLit8 : %s' % ins.get_output(), 'debug')
+    logger.debug('UShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 

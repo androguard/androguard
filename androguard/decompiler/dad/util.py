@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
+logger = logging.getLogger('dad.util')
+
 TYPE_DESCRIPTOR = {
     'V': 'void',
     'Z': 'boolean',
@@ -184,7 +188,7 @@ def get_type(atype, size=None):
                 res = '%s[%s]' % (get_type(atype[1:]), size)
         else:
             res = atype
-            log('Unknown descriptor: "%s".' % atype, 'debug')
+            logger.debug('Unknown descriptor: "%s".', atype)
     return res
 
 
@@ -200,39 +204,6 @@ def get_params_type(descriptor):
 
 def create_png(basicblocks, graph, dir_name='graphs2'):
     meth = basicblocks[0].get_method()
-    m_name = ''.join([x for x in meth.get_name() if x.isalnum()])
+    m_name = ''.join(x for x in meth.get_name() if x.isalnum())
     name = meth.get_class_name().split('/')[-1][:-1] + '#' + m_name
     graph.draw(name, dir_name)
-
-
-class Log(object):
-    def __init__(self, debug_level):
-        self.dbg_modes = {
-            'error': (0, self._log_error),
-            'log':   (1, self._log),
-            'debug': (2, self._log_debug),
-        }
-        if debug_level is None:
-            self.dbg = None
-        else:
-            self.dbg = self.dbg_modes[debug_level][0]
-
-    def _log(self, log_string):
-        print '%s' % log_string
-
-    def _log_debug(self, dbg_str):
-        print 'DEBUG: %s' % dbg_str
-
-    def _log_error(self, err_str):
-        exit('ERROR: %s' % err_str)
-
-    def __call__(self, string, mode):
-        if self.dbg is None or mode is None:
-            return
-        mode, fun = self.dbg_modes.get(mode)
-        if mode <= self.dbg:
-            fun(string)
-
-
-#log = Log('debug')
-log = Log('log')
