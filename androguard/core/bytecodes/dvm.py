@@ -4237,10 +4237,10 @@ class Instruction21h(Instruction) :
     def get_output(self, idx=-1) :
       buff = ""
      
-      buff += "v%d, #+%d" % (self.AA, self.BBBB)
+      buff += "v%d, %d" % (self.AA, self.BBBB)
 
       if self.formatted_operands != [] :
-        buff += " // %s" % (str(self.formatted_operands))
+        buff += " # %s" % (str(self.formatted_operands))
 
       return buff
 
@@ -4269,7 +4269,7 @@ class Instruction11n(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, #+%d" % (self.A, self.B)
+      buff += "v%d, %d" % (self.A, self.B)
       return buff
 
     def get_literals(self) :
@@ -4341,10 +4341,10 @@ class Instruction21s(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, #+%d" % (self.AA, self.BBBB)
+      buff += "v%d, %d" % (self.AA, self.BBBB)
 
       if self.formatted_operands != [] :
-        buff += " // %s" % str(self.formatted_operands)
+        buff += " # %s" % str(self.formatted_operands)
 
       return buff
 
@@ -4558,10 +4558,10 @@ class Instruction51l(Instruction) :
     def get_output(self, idx=-1) :
       buff = ""
 
-      buff += "v%d, #+%d" % (self.AA, self.BBBBBBBBBBBBBBBB)
+      buff += "v%d, %d" % (self.AA, self.BBBBBBBBBBBBBBBB)
 
       if self.formatted_operands != [] :
-        buff += " // %s" % str(self.formatted_operands)
+        buff += " # %s" % str(self.formatted_operands)
 
       return buff
 
@@ -4599,10 +4599,10 @@ class Instruction31i(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, #+%d" % (self.AA, self.BBBBBBBB)
+      buff += "v%d, %d" % (self.AA, self.BBBBBBBB)
 
       if self.formatted_operands != [] :
-        buff += " // %s" % str(self.formatted_operands)
+        buff += " # %s" % str(self.formatted_operands)
 
       return buff
 
@@ -4797,7 +4797,7 @@ class Instruction22s(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, v%d, #+%d" % (self.A, self.B, self.CCCC)
+      buff += "v%d, v%d, %d" % (self.A, self.B, self.CCCC)
       return buff
 
     def get_literals(self) :
@@ -4827,7 +4827,7 @@ class Instruction22b(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, v%d, #+%d" % (self.AA, self.BB, self.CC)
+      buff += "v%d, v%d, %d" % (self.AA, self.BB, self.CC)
       return buff
 
     def get_literals(self) :
