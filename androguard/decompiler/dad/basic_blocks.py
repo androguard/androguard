@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from opcode_ins import INSTRUCTION_SET
 from instruction import Variable
 from node import Node
-from util import log
+
+
+logger = logging.getLogger('dad.basic_blocks')
 
 
 class BasicBlock(Node):
@@ -299,7 +302,7 @@ def build_node_from_block(block, block_to_node, vmap, gen_ret):
             continue
         _ins = INSTRUCTION_SET.get(ins.get_name().lower())
         if _ins is None:
-            log('Unknown instruction : %s.' % _ins.get_name().lower(), 'error')
+            logger.error('Unknown instruction : %s.', _ins.get_name().lower())
         # fill-array-data
         if opcode == 0x26:
             fillaray = block.get_special_ins(idx)

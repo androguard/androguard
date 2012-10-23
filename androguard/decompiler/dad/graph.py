@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from basic_blocks import (build_node_from_block, StatementBlock,
-                              CondBlock, GenInvokeRetName)
-from util import log, common_dom
+import logging
+from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
+                                                    StatementBlock, CondBlock,
+                                                    GenInvokeRetName)
+from androguard.decompiler.dad.util import common_dom
+
+
+logger = logging.getLogger('dad.graph')
 
 
 class Graph():
@@ -301,7 +306,7 @@ def bfs(start):
 def construct(basicblocks, vmap, exceptions):
     # Native methods... no blocks.
     if len(basicblocks) < 1:
-        return log('Native Method.', 'debug')
+        return logger.debug('Native Method.')
 
     # Exceptions are not yet handled. An exception block has no parent, so
     # we can skip them by doing a BFS on the basic blocks.
@@ -356,12 +361,12 @@ def construct(basicblocks, vmap, exceptions):
 
     if len(lexit_nodes) > 1:
         # Not sure that this case is possible...
-        log('Multiple exit nodes found !', 'error')
+        logger.error('Multiple exit nodes found !')
         graph.set_exit(graph.get_rpo()[-1])
     elif len(lexit_nodes) < 1:
         # A method can have no return if it has throw statement(s) or if its
         # body is a while(1) whitout break/return.
-        log('No exit node found !', 'debug')
+        logger.debug('No exit node found !')
     else:
         graph.set_exit(lexit_nodes[0])
 
