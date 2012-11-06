@@ -292,7 +292,7 @@ class GenInvokeRetName(object):
         return self.ret
 
 
-def build_node_from_block(block, block_to_node, vmap, gen_ret):
+def build_node_from_block(block, vmap, gen_ret):
     lins = []
     idx = block.get_start()
     for ins in block.get_instructions():
@@ -334,6 +334,7 @@ def build_node_from_block(block, block_to_node, vmap, gen_ret):
     elif 0x32 <= opcode <= 0x3d:
         node = CondBlock(name, lins)
         node.set_cond()
+        node.off_last_ins = ins.get_ref_off()
     # throw
     elif opcode == 0x27:
         node = ThrowBlock(name, lins)
@@ -344,5 +345,4 @@ def build_node_from_block(block, block_to_node, vmap, gen_ret):
             lins.pop()
         node = StatementBlock(name, lins)
         node.set_stmt()
-    block_to_node[block] = node
     return node

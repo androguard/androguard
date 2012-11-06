@@ -977,7 +977,7 @@ def invokestatic(ins, vmap, ret):
     largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
     #args = get_variables(vmap, *largs)[:nbargs]
     args = get_args(vmap, param_type, largs)
-    base = BaseClass(util.get_type(cls_name))
+    base = BaseClass(cls_name)
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                     param_type, args)
     return AssignExpression(ret.new(), exp)
@@ -1070,7 +1070,7 @@ def invokestaticrange(ins, vmap, ret):
     args = get_variables(vmap, *largs)
     if len(largs) == 1:
         args = [args]
-    base = BaseClass(util.get_type(cls_name))
+    base = BaseClass(cls_name)
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                 param_type, args)
     return AssignExpression(ret.new(), exp)

@@ -46,28 +46,26 @@ def auto_vm(filename):
 
 class DvMethod():
     def __init__(self, methanalysis):
-        self.method = methanalysis.get_method()
+        method = methanalysis.get_method()
         self.metha = methanalysis
-        self.name = self.method.get_name()
+        self.cls_name = method.get_class_name()
+        self.name = method.get_name()
         self.lparams = []
-        self.basic_blocks = [bb for bb in methanalysis.basic_blocks.get()]
         self.var_to_name = {}
         self.writer = None
-        self.graph = None
 
-        access = self.method.get_access_flags()
+        access = method.get_access_flags()
         self.access = [flag for flag in util.ACCESS_FLAGS_METHODS
                                      if flag & access]
-        desc = self.method.get_descriptor()
+        desc = method.get_descriptor()
         self.type = util.get_type(desc.split(')')[-1])
         self.params_type = util.get_params_type(desc)
 
         self.exceptions = methanalysis.exceptions.exceptions
 
-        code = self.method.get_code()
+        code = method.get_code()
         if code is None:
-            logger.debug('No code : %s %s', self.name,
-                                             self.method.get_class_name())
+            logger.debug('No code : %s %s', self.name, self.cls_name)
         else:
             start = code.registers_size - code.ins_size
             if 0x8 not in self.access:
@@ -86,20 +84,22 @@ class DvMethod():
         if 0:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
-                (self.method.get_class_name().split('/')[-1][:-1], self.name),
-                                                        self.metha)
+                (self.cls_name.split('/')[-1][:-1], self.name), self.metha)
 
-        graph = construct(self.basic_blocks, self.var_to_name, self.exceptions)
-        self.graph = graph
-        if graph is None:
-            return
+        basic_blocks = self.metha.get_basic_blocks().gets()[:1]
+        # Native methods... no blocks.
+        if len(basic_blocks) < 1:
+            return logger.debug('Native Method.')
+
+        graph = construct(basic_blocks[0], self.var_to_name, self.exceptions)
 
         if 0:
-            util.create_png(self.basic_blocks, graph, '/tmp/dad/blocks')
+            util.create_png(self.cls_name, self.name, graph, '/tmp/dad/blocks')
 
         defs, uses = build_def_use(graph, self.lparams)
         dead_code_elimination(graph, uses, defs)
         register_propagation(graph, uses, defs)
+        del uses, defs
 
         # After the DCE pass, some nodes may be empty, so we can simplify the
         # graph to delete these nodes.
@@ -115,17 +115,18 @@ class DvMethod():
         identify_structures(graph, idoms)
 
         if 0:
-            util.create_png(self.basic_blocks, graph, '/tmp/dad/structured')
+            util.create_png(self.cls_name, self.name, graph,
+                                                    '/tmp/dad/structured')
 
         self.writer = Writer(graph, self)
         self.writer.write_method()
 
     def show_source(self):
-        if self.writer is not None:
+        if self.writer:
             print self.writer
 
     def get_source(self):
-        if self.writer is not None:
+        if self.writer:
             return '%s' % self.writer
         return ''
 
@@ -143,8 +144,8 @@ class DvClass():
         self.package = pckg[1:].replace('/', '.')
         self.name = name[:-1]
 
-        self.methods = dict((meth.get_method_idx(),
-                             DvMethod(vma.get_method(meth)))
+        self.vma = vma
+        self.methods = dict((meth.get_method_idx(), meth)
                             for meth in dvclass.get_methods())
         self.fields = {}
         for field in dvclass.get_fields():
@@ -164,8 +165,7 @@ class DvClass():
         logger.info('Class : %s', self.name)
         logger.info('Methods added :')
         for index, meth in self.methods.iteritems():
-            logger.info('%s (%s, %s)', index, meth.method.get_class_name(),
-                                        meth.name)
+            logger.info('%s (%s, %s)', index, self.name, meth.name)
         logger.info('')
 
     def add_subclass(self, innername, dvclass):
@@ -173,16 +173,17 @@ class DvClass():
         dvclass.inner = True
 
     def get_methods(self, meths=None):
-        if meths is None:
-            meths = self.methods.copy()
-        for klass in self.subclasses.values():
-            meths.update(klass.get_methods())
-        return meths
+        return self.methods
 
     def process_method(self, num):
-        meths = self.get_methods()
-        if num in meths:
-            meths[num].process()
+        methods = self.methods
+        if num in methods:
+            method = methods[num]
+            if not isinstance(method, DvMethod):
+                method.set_instructions([i for i in method.get_instructions()])
+                method = methods[num] = DvMethod(self.vma.get_method(method))
+            method.process()
+            method.metha.method.set_instructions([])
         else:
             logger.error('Method %s not found.', num)
 
@@ -198,9 +199,9 @@ class DvClass():
             if self.superclass is not None:
                 self.prototype += ' extends %s' % self.superclass
         if self.interfaces is not None:
-            self.interfaces = self.interfaces[1:-1].split(' ')
+            interfaces = self.interfaces[1:-1].split(' ')
             self.prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in self.interfaces])
+                        [n[1:-1].replace('/', '.') for n in interfaces])
 
         source.append('%s {\n' % self.prototype)
         for field in self.fields.values():
@@ -214,7 +215,8 @@ class DvClass():
             source.append(klass.get_source())
 
         for num, method in self.methods.iteritems():
-            source.append(method.get_source())
+            if isinstance(method, DvMethod):
+                source.append(method.get_source())
         source.append('}\n')
         return ''.join(source)
 
@@ -229,9 +231,9 @@ class DvClass():
             if self.superclass is not None:
                 self.prototype += ' extends %s' % self.superclass
         if self.interfaces is not None:
-            self.interfaces = self.interfaces[1:-1].split(' ')
+            interfaces = self.interfaces[1:-1].split(' ')
             self.prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in self.interfaces])
+                        [n[1:-1].replace('/', '.') for n in interfaces])
 
         print '%s {\n' % self.prototype
         for field in self.fields.values():
@@ -245,7 +247,8 @@ class DvClass():
             klass.show_source()
 
         for num, method in self.methods.iteritems():
-            method.show_source()
+            if isinstance(method, DvMethod):
+                method.show_source()
         print '}\n'
 
     def process(self):
@@ -294,36 +297,31 @@ class DvMachine():
 
 
 logger = logging.getLogger('dad')
+sys.setrecursionlimit(5000)
 
 
-if __name__ == '__main__':
-    logger.setLevel(logging.INFO)
-    console_hdlr = logging.StreamHandler()
+def main():
+    #logger.setLevel(logging.DEBUG)
+    console_hdlr = logging.StreamHandler(sys.stdout)
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(console_hdlr)
 
-    # Uncomment to increase the size of the stack.
-    """
-    from resource import setrlimit, RLIMIT_STACK
-    setrlimit(RLIMIT_STACK, (2 ** 29, -1))
-    sys.setrecursionlimit(10 ** 6)
-    """
     FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
         MACHINE = DvMachine(sys.argv[1])
     else:
         MACHINE = DvMachine(FILE)
 
-    from pprint import pprint
-    TMP = util.PprintStream()
-    pprint(MACHINE.get_classes(), TMP)
-    logger.info('\n===========================\nClasses:\n%s\n'
-                '===========================', TMP)
+    logger.info('========================')
+    logger.info('Classes:')
+    for class_name in MACHINE.get_classes():
+        logger.info(' %s', class_name)
+    logger.info('========================')
 
     CLS_NAME = raw_input('Choose a class: ')
     if CLS_NAME == '*':
         MACHINE.process()
-        logger.info('\n\nSource:')
+        logger.info('Source:')
         logger.info('===========================')
         MACHINE.show_source()
         logger.info('===========================')
@@ -333,9 +331,8 @@ if __name__ == '__main__':
             logger.error('%s not found.', CLS_NAME)
         else:
             logger.info('======================')
-            TMP.clean()
-            pprint(CLS.get_methods(), TMP)
-            logger.info(TMP)
+            for method_id, method in CLS.get_methods().items():
+                logger.info('%d: %s', method_id, method.name)
             logger.info('======================')
             METH = raw_input('Method: ')
             if METH == '*':
@@ -343,6 +340,9 @@ if __name__ == '__main__':
                 CLS.process()
             else:
                 CLS.process_method(int(METH))
-            logger.info('\n\nSource:')
+            logger.info('Source:')
             logger.info('===========================')
             CLS.show_source()
+
+if __name__ == '__main__':
+    main()
