@@ -301,7 +301,7 @@ sys.setrecursionlimit(5000)
 
 
 def main():
-    #logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     console_hdlr = logging.StreamHandler(sys.stdout)
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(console_hdlr)
