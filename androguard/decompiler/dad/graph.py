@@ -291,26 +291,21 @@ class Graph():
 
 
 def bfs(start):
-    queue = [start]
-    nodes = []
-    nodes.append(start)
-    while queue:
-        node = queue.pop(0)
-        for child in node.childs:
-            if child[-1] not in nodes:
-                nodes.append(child[-1])
-                queue.append(child[-1])
-    return nodes
+    to_visit = [start]
+    visited = set([start])
+    while to_visit:
+        node = to_visit.pop(0)
+        yield node
+        for _, _, child in node.childs:
+            if child not in visited:
+                to_visit.append(child)
+                visited.add(child)
 
 
-def construct(basicblocks, vmap, exceptions):
-    # Native methods... no blocks.
-    if len(basicblocks) < 1:
-        return logger.debug('Native Method.')
-
+def construct(start_block, vmap, exceptions):
     # Exceptions are not yet handled. An exception block has no parent, so
     # we can skip them by doing a BFS on the basic blocks.
-    bfs_blocks = bfs(basicblocks[0])
+    bfs_blocks = bfs(start_block)
 
     graph = Graph()
     gen_ret = GenInvokeRetName()
@@ -320,19 +315,19 @@ def construct(basicblocks, vmap, exceptions):
     for block in bfs_blocks:
         node = block_to_node.get(block)
         if node is None:
-            node = build_node_from_block(block, block_to_node, vmap, gen_ret)
-        for child in block.childs:
-            child_block = child[-1]
+            node = build_node_from_block(block, vmap, gen_ret)
+            block_to_node[block] = node
+        for _, _, child_block in block.childs:
             child_node = block_to_node.get(child_block)
             if child_node is None:
-                child_node = build_node_from_block(child_block, block_to_node,
-                                                               vmap, gen_ret)
+                child_node = build_node_from_block(child_block, vmap, gen_ret)
+                block_to_node[child_block] = child_node
             graph.add_edge(node, child_node)
             if node.is_switch():
                 node.add_case(child_node)
             if node.is_cond():
-                if_target = ((block.end / 2) - (block.last_length / 2)
-                            + block.get_instructions()[-1].get_ref_off())
+                if_target = ((block.end / 2) - (block.last_length / 2) +
+                             node.off_last_ins)
                 child_addr = child_block.start / 2
                 if if_target == child_addr:
                     node.set_true(child_node)
@@ -348,7 +343,8 @@ def construct(basicblocks, vmap, exceptions):
 
         graph.add_node(node)
 
-    graph.set_entry(block_to_node[basicblocks[0]])
+    graph.set_entry(block_to_node[start_block])
+    del block_to_node, bfs_blocks
 
     graph.compute_rpo()
     graph.number_ins()
