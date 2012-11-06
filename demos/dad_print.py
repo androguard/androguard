@@ -23,7 +23,6 @@ sys.path.append('./')
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis.analysis import uVMAnalysis
 from androguard.decompiler.dad.decompile import DvMethod
-from androguard.decompiler.dad.util import log
 from androguard.decompiler.dad.instruction import Constant, BinaryCompExpression
 
 
@@ -53,7 +52,7 @@ class PrintVisitor(object):
         print '- Loop node', loop.num
         follow = loop.get_loop_follow()
         if follow is None and not loop.looptype.endless():
-            log('Loop has no follow !', 'error')
+            exit('Loop has no follow !', 'error')
         if loop.looptype.pretest():
             if loop.true is follow:
                 loop.neg()

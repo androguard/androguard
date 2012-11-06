@@ -25,7 +25,6 @@ from androguard.core.analysis.analysis import uVMAnalysis
 from androguard.decompiler.dad.decompile import DvMethod
 from androguard.decompiler.dad.instruction import (Constant,
                                                    BinaryCompExpression)
-from androguard.decompiler.dad.util import log
 
 
 class DemoEmulator(object):

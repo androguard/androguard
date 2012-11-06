@@ -17,9 +17,9 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from opcode_ins import INSTRUCTION_SET
-from instruction import Variable
-from node import Node
+from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
+from androguard.decompiler.dad.instruction import Variable
+from androguard.decompiler.dad.node import Node
 
 
 logger = logging.getLogger('dad.basic_blocks')
@@ -293,7 +293,7 @@ class GenInvokeRetName(object):
 
 
 def build_node_from_block(block, vmap, gen_ret):
-    lins = []
+    ins, lins = None, []
     idx = block.get_start()
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
