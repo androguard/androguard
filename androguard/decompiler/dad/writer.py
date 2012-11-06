@@ -80,7 +80,7 @@ class Writer(object):
                 continue
             acc.append(ACCESS_FLAGS_METHODS.get(i))
         if self.constructor:
-            name = get_type(self.method.method.class_name).split('.')[-1]
+            name = get_type(self.method.cls_name).split('.')[-1]
             proto = '%s %s(' % (' '.join(acc), name)
         else:
             name = self.method.name

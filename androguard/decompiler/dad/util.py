@@ -83,23 +83,6 @@ TYPE_LEN = {
 }
 
 
-class PprintStream(object):
-    '''
-    Create an object to be used by pprint
-    '''
-    def __init__(self):
-        self.val = []
-
-    def write(self, obj):
-        self.val.append(obj)
-
-    def clean(self):
-        self.val = []
-
-    def __str__(self):
-        return ''.join(self.val)
-
-
 def build_path(graph, node1, node2, path=None):
     '''
     Build the path from node1 to node2.
@@ -202,8 +185,7 @@ def get_params_type(descriptor):
     return []
 
 
-def create_png(basicblocks, graph, dir_name='graphs2'):
-    meth = basicblocks[0].get_method()
-    m_name = ''.join(x for x in meth.get_name() if x.isalnum())
-    name = meth.get_class_name().split('/')[-1][:-1] + '#' + m_name
+def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
+    m_name = ''.join(x for x in meth_name if x.isalnum())
+    name = ''.join(cls_name.split('/')[-1][:-1], '#', m_name)
     graph.draw(name, dir_name)
