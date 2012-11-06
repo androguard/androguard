@@ -47,12 +47,13 @@ def auto_vm(filename):
 class DvMethod():
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
-        self.metha = methanalysis
+        self.start_block = next(methanalysis.get_basic_blocks().get(), None)
         self.cls_name = method.get_class_name()
         self.name = method.get_name()
         self.lparams = []
         self.var_to_name = {}
         self.writer = None
+        self.graph = None
 
         access = method.get_access_flags()
         self.access = [flag for flag in util.ACCESS_FLAGS_METHODS
@@ -78,20 +79,20 @@ class DvMethod():
                 self.lparams.append(param)
                 self.var_to_name.setdefault(param, Param(param, ptype))
                 num_param += util.get_type_size(ptype)
-
-    def process(self):
-        logger.debug('METHOD : %s', self.name)
         if 0:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
-                (self.cls_name.split('/')[-1][:-1], self.name), self.metha)
+                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
-        basic_blocks = self.metha.get_basic_blocks().gets()[:1]
+    def process(self):
+        logger.debug('METHOD : %s', self.name)
+
         # Native methods... no blocks.
-        if len(basic_blocks) < 1:
+        if self.start_block is None:
             return logger.debug('Native Method.')
 
-        graph = construct(basic_blocks[0], self.var_to_name, self.exceptions)
+        graph = construct(self.start_block, self.var_to_name, self.exceptions)
+        self.graph = graph
 
         if 0:
             util.create_png(self.cls_name, self.name, graph, '/tmp/dad/blocks')
@@ -120,6 +121,7 @@ class DvMethod():
 
         self.writer = Writer(graph, self)
         self.writer.write_method()
+        del graph
 
     def show_source(self):
         if self.writer:
@@ -147,9 +149,8 @@ class DvClass():
         self.vma = vma
         self.methods = dict((meth.get_method_idx(), meth)
                             for meth in dvclass.get_methods())
-        self.fields = {}
-        for field in dvclass.get_fields():
-            self.fields[field.get_name()] = field
+        self.fields = dict((field.get_name(), field)
+                           for field in dvclass.get_fields())
         self.subclasses = {}
         self.code = []
         self.inner = False
@@ -172,7 +173,7 @@ class DvClass():
         self.subclasses[innername] = dvclass
         dvclass.inner = True
 
-    def get_methods(self, meths=None):
+    def get_methods(self):
         return self.methods
 
     def process_method(self, num):
@@ -181,11 +182,19 @@ class DvClass():
             method = methods[num]
             if not isinstance(method, DvMethod):
                 method.set_instructions([i for i in method.get_instructions()])
-                method = methods[num] = DvMethod(self.vma.get_method(method))
-            method.process()
-            method.metha.method.set_instructions([])
+                meth = methods[num] = DvMethod(self.vma.get_method(method))
+                meth.process()
+                method.set_instructions([])
+            else:
+                method.process()
         else:
             logger.error('Method %s not found.', num)
+
+    def process(self):
+        for klass in self.subclasses.values():
+            klass.process()
+        for meth in self.methods:
+            self.process_method(meth)
 
     def get_source(self):
         source = []
@@ -214,7 +223,7 @@ class DvClass():
         for klass in self.subclasses.values():
             source.append(klass.get_source())
 
-        for num, method in self.methods.iteritems():
+        for _, method in self.methods.iteritems():
             if isinstance(method, DvMethod):
                 source.append(method.get_source())
         source.append('}\n')
@@ -246,16 +255,10 @@ class DvClass():
         for klass in self.subclasses.values():
             klass.show_source()
 
-        for num, method in self.methods.iteritems():
+        for _, method in self.methods.iteritems():
             if isinstance(method, DvMethod):
                 method.show_source()
         print '}\n'
-
-    def process(self):
-        for klass in self.subclasses.values():
-            klass.process()
-        for meth in self.methods:
-            self.process_method(meth)
 
     def __repr__(self):
         if not self.subclasses:
@@ -271,15 +274,6 @@ class DvMachine():
                             for dvclass in vm.get_classes())
         #util.merge_inner(self.classes)
 
-    def process(self):
-        for name, klass in self.classes.iteritems():
-            logger.info('Processing class: %s', name)
-            if isinstance(klass, DvClass):
-                klass.process()
-            else:
-                dvclass = self.classes[name] = DvClass(klass, self.vma)
-                dvclass.process()
-
     def get_classes(self):
         return self.classes.keys()
 
@@ -291,8 +285,25 @@ class DvMachine():
                 dvclass = self.classes[name] = DvClass(klass, self.vma)
                 return dvclass
 
+    def process(self):
+        for name, klass in self.classes.iteritems():
+            logger.info('Processing class: %s', name)
+            if isinstance(klass, DvClass):
+                klass.process()
+            else:
+                dvclass = self.classes[name] = DvClass(klass, self.vma)
+                dvclass.process()
+
     def show_source(self):
         for klass in self.classes.values():
+            klass.show_source()
+
+    def process_and_show(self):
+        for name, klass in self.classes.iteritems():
+            logger.info('Processing class: %s', name)
+            if not isinstance(klass, DvClass):
+                klass = DvClass(klass, self.vma)
+            klass.process()
             klass.show_source()
 
 
@@ -306,43 +317,39 @@ def main():
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(console_hdlr)
 
-    FILE = 'examples/android/TestsAndroguard/bin/classes.dex'
+    default_file = 'examples/android/TestsAndroguard/bin/classes.dex'
     if len(sys.argv) > 1:
-        MACHINE = DvMachine(sys.argv[1])
+        machine = DvMachine(sys.argv[1])
     else:
-        MACHINE = DvMachine(FILE)
+        machine = DvMachine(default_file)
 
     logger.info('========================')
     logger.info('Classes:')
-    for class_name in MACHINE.get_classes():
+    for class_name in machine.get_classes():
         logger.info(' %s', class_name)
     logger.info('========================')
 
-    CLS_NAME = raw_input('Choose a class: ')
-    if CLS_NAME == '*':
-        MACHINE.process()
-        logger.info('Source:')
-        logger.info('===========================')
-        MACHINE.show_source()
-        logger.info('===========================')
+    cls_name = raw_input('Choose a class: ')
+    if cls_name == '*':
+        machine.process_and_show()
     else:
-        CLS = MACHINE.get_class(CLS_NAME)
-        if CLS is None:
-            logger.error('%s not found.', CLS_NAME)
+        cls = machine.get_class(cls_name)
+        if cls is None:
+            logger.error('%s not found.', cls_name)
         else:
             logger.info('======================')
-            for method_id, method in CLS.get_methods().items():
+            for method_id, method in cls.get_methods().items():
                 logger.info('%d: %s', method_id, method.name)
             logger.info('======================')
-            METH = raw_input('Method: ')
-            if METH == '*':
-                logger.info('CLASS = %s', CLS)
-                CLS.process()
+            meth = raw_input('Method: ')
+            if meth == '*':
+                logger.info('CLASS = %s', cls)
+                cls.process()
             else:
-                CLS.process_method(int(METH))
+                cls.process_method(int(meth))
             logger.info('Source:')
             logger.info('===========================')
-            CLS.show_source()
+            cls.show_source()
 
 if __name__ == '__main__':
     main()

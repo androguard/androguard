@@ -195,6 +195,14 @@ class Graph():
                         redo = True
                         self.remove_node(suc)
 
+    def _traverse(self, node, visit, res):
+        if node in visit:
+            return
+        visit.add(node)
+        for suc in self.sucs(node):
+            self._traverse(suc, visit, res)
+        res.insert(0, node)
+
     def compute_rpo(self):
         '''
         Number the nodes in reverse post order.
@@ -202,16 +210,9 @@ class Graph():
         before visiting the node itself.
         If reverse is True, the RPO is done on the reverse graph.
         '''
-        def traverse(node, visit, res):
-            if node in visit:
-                return
-            visit.add(node)
-            for suc in self.sucs(node):
-                traverse(suc, visit, res)
-            res.insert(0, node)
         visit = set()
         res = []
-        traverse(self.entry, visit, res)
+        self._traverse(self.entry, visit, res)
         for i, n in enumerate(res, 1):
             n.num = i
             self.rpo.append(n)
