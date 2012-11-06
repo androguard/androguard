@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from util import build_path
+from androguard.decompiler.dad.util import build_path
 
 
 def dominance_frontier(graph, immdoms):
@@ -207,10 +207,10 @@ def register_propagation(graph, du, ud):
     '''
     Propagate the temporary registers between instructions and remove them if
     necessary.
-    We process the nodes of the graph in post order. For each instruction in
-    the node, we look at the variables that it uses. For each of these
-    variables we look where it is defined and if we can replace it with its
-    definition.
+    We process the nodes of the graph in reverse post order. For each
+    instruction in the node, we look at the variables that it uses. For each of
+    these variables we look where it is defined and if we can replace it with
+    its definition.
     We have to be careful to the side effects some instructions may have.
     To do the propagation, we use the computed DU and UD chains.
     '''

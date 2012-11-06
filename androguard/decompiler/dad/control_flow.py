@@ -111,25 +111,24 @@ def derived_sequence(graph):
     return deriv_seq, deriv_interv
 
 
+def mark_loop_rec(graph, node, s_num, e_num, interval, nodes_in_loop):
+    if node in nodes_in_loop:
+        return
+    nodes_in_loop.append(node)
+    for pred in graph.preds(node):
+        if s_num < pred.num <= e_num and pred in interval:
+            mark_loop_rec(graph, pred, s_num, e_num, interval, nodes_in_loop)
+
+
 def mark_loop(graph, start, end, interval):
     logger.debug('MARKLOOP : %s END : %s', start, end)
-
-    def mark_loop_rec(end):
-        if end in nodes_in_loop:
-            return
-        nodes_in_loop.append(end)
-        for node in graph.preds(end):
-            if headnode.num < node.num <= endnode.num:
-                if node in interval[start]:
-                    mark_loop_rec(node)
-
-    headnode = start.get_head()
-    endnode = end.get_end()
-    nodes_in_loop = [headnode]
-    mark_loop_rec(endnode)
-    headnode.set_start_loop()
-    endnode.set_end_loop()
-    headnode.set_latch_node(endnode)
+    head = start.get_head()
+    latch = end.get_end()
+    nodes_in_loop = [head]
+    mark_loop_rec(graph, latch, head.num, latch.num, interval, nodes_in_loop)
+    head.set_start_loop()
+    latch.set_end_loop()
+    head.set_latch_node(latch)
     return nodes_in_loop
 
 
@@ -194,11 +193,9 @@ def loop_struct(graphs_list, intervals_list):
             loop_nodes = set()
             for node in graph.preds(head):
                 if node.interval is head.interval:
-                    lnodes = mark_loop(first_graph, head, node, interval)
+                    lnodes = mark_loop(first_graph, head, node, head.interval)
                     loop_nodes.update(lnodes)
                     head.get_head().set_loop_nodes(loop_nodes)
-#                    loop_type(first_graph, head, node, loop_nodes)
-#                    loop_follow(first_graph, head, node, loop_nodes)
 
 
 def if_struct(graph, idoms):
