@@ -10,7 +10,7 @@ from androguard.core.androconf import CONF
 from androguard.core.analysis import analysis, ganalysis
 
 
-CONF["LAZY_ANALYSIS"] = True
+#CONF["LAZY_ANALYSIS"] = True
 
 TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
 

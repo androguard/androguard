@@ -18,22 +18,30 @@
 
 from subprocess import Popen, PIPE, STDOUT
 
-import tempfile, os
+import tempfile
+import os
 
 from androguard.core.androconf import rrmdir
+from androguard.decompiler.dad import decompile
 
-from pygments.filter import Filter
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import HtmlFormatter, TerminalFormatter
-from pygments.token import Token, Text, STANDARD_TYPES
+PYGMENTS = True
+try:
+    from pygments.filter import Filter
+    from pygments import highlight
+    from pygments.lexers import get_lexer_by_name
+    from pygments.formatters import HtmlFormatter, TerminalFormatter
+    from pygments.token import Token, Text, STANDARD_TYPES
+except ImportError:
+    PYGMENTS = False
+    class Filter:
+        pass
 
 class DecompilerDex2Jad :
-    def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad") :
+    def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/") :
         self.classes = {}
         self.classes_failed = []
         
-        pathtmp = os.getcwd() + "/tmp/"
+        pathtmp = tmp_dir
         if not os.path.exists(pathtmp) :
             os.makedirs( pathtmp )
 
@@ -74,38 +82,45 @@ class DecompilerDex2Jad :
     
         rrmdir( pathclasses )
 
-    def get_source(self, class_name, method_name) :
-        if class_name not in self.classes :
+    def get_source_method(self, method):
+        class_name = method.get_class_name()
+        method_name = method.get_name()
+
+        if class_name not in self.classes:
             return ""
 
-        lexer = get_lexer_by_name("java", stripall=True)
-        lexer.add_filter(MethodFilter(method_name=method_name))
-        formatter = TerminalFormatter()
-        result = highlight(self.classes[class_name], lexer, formatter)
-        return result
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            lexer.add_filter(MethodFilter(method_name=method_name))
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
 
-    def display_source(self, method) :
-        print self.get_source( method.get_class_name(), method.get_name() )
+        return self.classes[class_name]
+
+    def display_source(self, method):
+        print self.get_source_method(method)
 
     def get_all(self, class_name) :
         if class_name not in self.classes :
             return ""
 
-        lexer = get_lexer_by_name("java", stripall=True)
-        formatter = TerminalFormatter()
-        result = highlight(self.classes[class_name], lexer, formatter)
-        
-        return result
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+        return self.classes[class_name]
 
     def display_all(self, _class) :
         print self.get_all( _class.get_name() )
 
 class DecompilerDed :
-    def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh") :
+    def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh", tmp_dir="/tmp/") :
         self.classes = {}
         self.classes_failed = []
 
-        pathtmp = os.getcwd() + "/tmp/"
+        pathtmp = tmp_dir
         if not os.path.exists(pathtmp) :
             os.makedirs( pathtmp )
 
@@ -145,8 +160,11 @@ class DecompilerDed :
       
         rrmdir( dirname )
 
-    def get_source(self, class_name, method_name) :
-        if class_name not in self.classes :
+    def get_source_method(self, method):
+        class_name = method.get_class_name()
+        method_name = method.get_name()
+
+        if class_name not in self.classes:
             return ""
 
         lexer = get_lexer_by_name("java", stripall=True)
@@ -156,7 +174,7 @@ class DecompilerDed :
         return result
 
     def display_source(self, method) :
-        print self.get_source( method.get_class_name(), method.get_name() )
+        print self.get_source_method(method)
 
     def get_all(self, class_name) :
         if class_name not in self.classes :
@@ -214,36 +232,6 @@ class MethodFilter(Filter):
                     self.present = False
                 
             if self.present :
-               # if self.get_desc == False :
-               #     if ttype is Token.Operator and value == ")" :
-               #         self.get_desc = True
-               #         
-               #         item_desc = -1
-               #         for i in range(len(l)-1, 0, -1) :
-               #             if l[i][1] == "(" :
-               #                 item_desc = i
-               #                 break
-               #         desc = ''.join(i[1] for i in l[item_desc+1:-1] )
-               #         desc = desc.split()
-               #         print "DESC", desc, 
-                        
-               #         equivalent = True
-
-               #         if len(self.descriptor) != len(desc) :
-               #             equivalent = False
-               #         else :
-               #             for i in range(0, len(self.descriptor)) :
-               #                 if self.descriptor[i] != desc[i] :
-               #                     equivalent = False
-               #                     break
-
-               #         print equivalent
-               #         if equivalent == False :
-               #             self.get_desc = False
-               #             self.present = False
-               #             l = []
-
-                #print "ADD", (ttype, value) 
                 l.append( (ttype, value) )
 
             a.append( (ttype, value) )
@@ -260,38 +248,49 @@ class MethodFilter(Filter):
                         break
             
             rep.extend( l[:item_end+1] )
-            #return l[:item_end+1]
             
         return rep
 
-class DecompilerDAD :
-    def __init__(self, vm, vmx) :
+
+class DecompilerDAD:
+    def __init__(self, vm, vmx):
         self.vm = vm
         self.vmx = vmx
 
-    def display_source(self, m) :
-        mx = self.vmx.get_method( m )
-        
-        from androguard.decompiler.dad import decompile 
-
-        z = decompile.DvMethod( mx )
+    def get_source_method(self, m):
+        mx = self.vmx.get_method(m)
+        z = decompile.DvMethod(mx)
         z.process()
 
-        lexer = get_lexer_by_name("java", stripall=True)
-        formatter = TerminalFormatter()
-        result = highlight(z.get_source(), lexer, formatter)
-        print result
-    
-    def display_all(self, _class) :
-        from androguard.decompiler.dad import decompile
+        result = z.get_source()
 
-        c = decompile.DvClass( _class, self.vmx )
+        return result
+
+    def display_source(self, m):
+        result = self.get_source_method(m)
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            formatter = TerminalFormatter()
+            result = highlight(result, lexer, formatter)
+        print result
+
+    def get_source_class(self, _class):
+        c = decompile.DvClass(_class, self.vmx)
         c.process()
 
-        lexer = get_lexer_by_name("java", stripall=True)
-        formatter = TerminalFormatter()
-        result = highlight(c.get_source(), lexer, formatter)
+        result = c.get_source()
+
+        return result
+
+    def display_all(self, _class):
+        result = self.get_source_class(_class)
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            formatter = TerminalFormatter()
+            result = highlight(result, lexer, formatter)
         print result
 
-    def get_all(self, class_name) :
+    def get_all(self, class_name):
         pass

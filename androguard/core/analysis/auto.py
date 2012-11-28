@@ -79,7 +79,15 @@ class AndroAuto(object):
               a = myandro.create_apk(log, fileraw)
               is_analysis_dex = myandro.analysis_apk(log, a)
               fileraw = a.get_dex()
-              filter_file_type = "DEX"
+              filter_file_type = androconf.is_android_raw(fileraw)
+
+            elif filter_file_type == "AXML":
+              ax = myandro.create_axml(log, fileraw)
+              myandro.analysis_axml(log, ax)
+
+            elif filter_file_type == "ARSC":
+              ax = myandro.create_arsc(log, fileraw)
+              myandro.analysis_arsc(log, ax)
 
             if is_analysis_dex and filter_file_type == "DEX":
               d = myandro.create_dex(log, fileraw)
@@ -146,13 +154,35 @@ class DefaultAndroAnalysis(object):
       continue the analysis and the file type
     """
     file_type = androconf.is_android_raw(fileraw)
-    if file_type == "APK" or file_type == "DEX" or file_type == "DEY":
+    if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
       if file_type == "APK":
         if androconf.is_valid_android_raw(fileraw):
           return (True, "APK")
       else:
         return (True, file_type)
     return (False, None)
+
+  def create_axml(self, log, fileraw):
+    """
+      This method is called in order to create a new AXML object
+
+      :param log: an object which corresponds to a unique app
+      :param fileraw: the raw axml (a string)
+
+      :rtype: an :class:`APK` object
+    """
+    return apk.AXMLPrinter(fileraw)
+
+  def create_arsc(self, log, fileraw):
+    """
+      This method is called in order to create a new ARSC object
+
+      :param log: an object which corresponds to a unique app
+      :param fileraw: the raw arsc (a string)
+
+      :rtype: an :class:`APK` object
+    """
+    return apk.ARSCParser(fileraw)
 
   def create_apk(self, log, fileraw):
     """
@@ -197,6 +227,28 @@ class DefaultAndroAnalysis(object):
       :rytpe: a :class:`VMAnalysis` object
     """
     return analysis.uVMAnalysis(dexobj)
+
+  def analysis_axml(self, log, axmlobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param axmlobj: a :class:`AXMLPrinter` object
+
+      :rtype: a boolean
+    """
+    return True
+
+  def analysis_arsc(self, log, arscobj):
+    """
+      This method is called in order to know if the analysis must continue
+
+      :param log: an object which corresponds to a unique app
+      :param arscobj: a :class:`ARSCParser` object
+
+      :rtype: a boolean
+    """
+    return True
 
   def analysis_apk(self, log, apkobj):
     """

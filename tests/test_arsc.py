@@ -49,22 +49,23 @@ class AndroLog:
     traceback.print_exc()
 
 
-class MyDEXAnalysis(auto.DirectoryAndroAnalysis):
+class MyARSCAnalysis(auto.DirectoryAndroAnalysis):
   def __init__(self, directory):
-    super(MyDEXAnalysis, self).__init__(directory)
+    super(MyARSCAnalysis, self).__init__(directory)
 
   def filter_file(self, log, fileraw):
-    ret, file_type = super(MyDEXAnalysis, self).filter_file(log, fileraw)
-    if file_type != "APK" and file_type != "DEX" and file_type != "DEY":
+    ret, file_type = super(MyARSCAnalysis, self).filter_file(log, fileraw)
+    if file_type != "APK" and file_type != "ARSC":
       return (False, None)
     return (ret, file_type)
 
-  def analysis_dex(self, log, dex):
-    log.dump("%s" % str(dex))
+  def analysis_arsc(self, log, arsc):
+    log.dump("%s" % str(arsc))
     return False
 
-  def analysis_dey(self, log, dey):
-    log.dump("%s" % str(dey))
+  def analysis_apk(self, log, apk):
+    if apk.is_valid_APK():
+      log.dump("%s" % str(apk.get_android_resources()))
     return False
 
   def crash(self, log, why):
@@ -77,9 +78,9 @@ def main(options, arguments):
 
   if options.directory:
     settings = {
-      "my": MyDEXAnalysis(options.directory),
+      "my": MyARSCAnalysis(options.directory),
       "log": AndroLog,
-      "max_fetcher": 3,
+      "max_fetcher": 1,
     }
 
     aa = auto.AndroAuto(settings)
