@@ -17,9 +17,10 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from androguard.core import bytecode
-from androguard.core.androconf import CONF, debug
+from androguard.core.androconf import CONF, debug, is_android_raw
 
-import sys, re
+import sys
+import re
 from struct import pack, unpack, calcsize
 
 DEX_FILE_MAGIC = 'dex\n035\x00'
@@ -2780,13 +2781,16 @@ class EncodedMethod :
           bytecode._PrintNote(i)
         bytecode._PrintSubBanner() 
 
-    def source(self) :
+    def source(self):
         """
             Return the source code of this method
 
             :rtype: string
         """
-        self.CM.decompiler_ob.display_source( self )
+        self.CM.decompiler_ob.display_source(self)
+
+    def get_source(self):
+      return self.CM.decompiler_ob.get_source_method(self)
 
     def get_length(self) :
         """
@@ -3335,7 +3339,10 @@ class ClassDefItem :
 
             :rtype: string
         """
-        self.__CM.decompiler_ob.display_all( self )
+        self.__CM.decompiler_ob.display_all(self)
+
+    def get_source(self):
+      return self.__CM.decompiler_ob.get_source_class(self)
 
     def set_name(self, value) :
         self.__CM.set_hook_class_name( self, value )
@@ -4684,7 +4691,7 @@ class Instruction20t(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "%x" % (self.AAAA)
+      buff += "%+x" % (self.AAAA)
       return buff
 
     def get_ref_off(self) :
@@ -4713,7 +4720,7 @@ class Instruction21t(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, +%d" % (self.AA, self.BBBB)
+      buff += "v%d, %+x" % (self.AA, self.BBBB)
       return buff
 
     def get_ref_off(self) :
@@ -4737,9 +4744,9 @@ class Instruction10t(Instruction) :
     def get_length(self) :
       return 2
 
-    def get_output(self, idx=-1) :
+    def get_output(self, idx=-1):
       buff = ""
-      buff += "%x" % (self.AA)
+      buff += "%+x" % (self.AA)
       return buff
 
     def get_ref_off(self) :
@@ -4768,7 +4775,7 @@ class Instruction22t(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "v%d, v%d, +%d" % (self.A, self.B, self.CCCC)
+      buff += "v%d, v%d, %+x" % (self.A, self.B, self.CCCC)
       return buff
 
     def get_ref_off(self) :
@@ -4855,7 +4862,7 @@ class Instruction30t(Instruction) :
 
     def get_output(self, idx=-1) :
       buff = ""
-      buff += "%x" % (self.AAAAAAAA)
+      buff += "%+x" % (self.AAAAAAAA)
       return buff
 
     def get_ref_off(self) :
@@ -5712,9 +5719,12 @@ class LinearSweepAlgorithm :
         """
         self.odex = cm.get_odex_format()
 
-        max_idx = size * calcsize( '=H' )
+        max_idx = size * calcsize('=H')
+        if max_idx > len(insn):
+          max_idx = len(insn)
+
         # Get instructions
-        while idx < max_idx :
+        while idx < max_idx:
           obj = None
           classic_instruction = True
 
@@ -5899,7 +5909,7 @@ class DCode:
         nb = 0
         idx = 0
         for i in self.get_instructions() :
-            print nb, "0x%x" % idx,
+            print "%-8d(%08x)" % (nb, idx),
             i.show(nb)
             print
 
@@ -6018,7 +6028,7 @@ class DalvikCode :
         self.code = DCode( self.__CM, self.insns_size, buff.read( self.insns_size * ushort ) )
 
         if (self.insns_size % 2 == 1) :
-            self.__padding = unpack("=H", buff.read(2))[0]
+            self.padding = unpack("=H", buff.read(2))[0]
 
         self.tries = []
         self.handlers = None 
@@ -6117,8 +6127,6 @@ class DalvikCode :
     def get_length(self) :
         return self.insns_size
 
-
-
     def _begin_show(self) :
       debug("registers_size: %d" % self.registers_size)
       debug("ins_size: %d" % self.ins_size)
@@ -6160,7 +6168,7 @@ class DalvikCode :
                 code_raw
 
         if (self.insns_size % 2 == 1) :
-            buff += pack("=H", self.__padding)
+            buff += pack("=H", self.padding)
 
         if self.tries_size > 0 :
             buff += ''.join(i.get_raw() for i in self.tries)
@@ -6198,7 +6206,7 @@ class DalvikCode :
       length += self.code.get_length()
 
       if (self.insns_size % 2 == 1) :
-           length += len(pack("=H", self.__padding))
+           length += len(pack("=H", self.padding))
 
       if self.tries_size > 0 :
         for i in self.tries :
@@ -7119,7 +7127,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
             Return a list of field items
 
-            :rtype: a list of :class:`FieldItem` objects
+            :rtype: a list of :class:`FieldIdItem` objects
         """
         try :
             return self.fields.gets()
@@ -7458,25 +7466,96 @@ class DalvikVMFormat(bytecode._Bytecode) :
     def get_determineException(self) :
         return determineException
 
-    def get_DVM_TOSTRING(self) :
+    def get_DVM_TOSTRING(self):
         return DVM_TOSTRING()
 
-    def set_decompiler(self, decompiler) :
-        self.CM.set_decompiler( decompiler )
+    def set_decompiler(self, decompiler):
+        self.CM.set_decompiler(decompiler)
 
-    def set_vmanalysis(self, vmanalysis) :
-        self.CM.set_vmanalysis( vmanalysis )
+    def set_vmanalysis(self, vmanalysis):
+        self.CM.set_vmanalysis(vmanalysis)
 
-    def set_gvmanalysis(self, gvmanalysis) :
-        self.CM.set_gvmanalysis( gvmanalysis )
+    def set_gvmanalysis(self, gvmanalysis):
+        self.CM.set_gvmanalysis(gvmanalysis)
 
-class OdexHeaderItem :
+    def disassemble(self, offset, size):
+      """
+        Disassembles a given offset in the DEX file
+
+        :param dex: the filename of the android dex file
+        :type filename: string
+        :param offset: offset to disassemble in the file (from the beginning of the file)
+        :type offset: int
+        :param size:
+        :type size:
+      """
+      for i in DCode(self.CM, size, self.get_buff()[offset:offset + size]).get_instructions():
+        yield i
+
+    def get_classes_hierarchy(self):
+        ids = {}
+        present = {}
+        r_ids = {}
+        to_add = {}
+        els = []
+
+        for current_class in self.get_classes():
+            s_name = current_class.get_superclassname()[1:-1]
+            c_name = current_class.get_name()[1:-1]
+
+            if s_name not in ids:
+                ids[s_name] = len(ids) + 1
+                r_ids[ids[s_name]] = s_name
+
+            if c_name not in ids:
+                ids[c_name] = len(ids) + 1
+
+            els.append([ids[c_name], ids[s_name], c_name])
+            present[ids[c_name]] = True
+
+        for i in els:
+            if i[1] not in present:
+                to_add[i[1]] = r_ids[i[1]]
+
+        for i in to_add:
+            els.append([i, 0, to_add[i]])
+
+        treeMap = {}
+        Root = bytecode.Node(0, "Root")
+        treeMap[Root.id] = Root
+        for element in els:
+         nodeId, parentId, title = element
+         if not nodeId in treeMap:
+             treeMap[nodeId] = bytecode.Node(nodeId, title)
+         else:
+             treeMap[nodeId].id = nodeId
+             treeMap[nodeId].title = title
+
+         if not parentId in treeMap:
+             treeMap[parentId] = bytecode.Node(0, '')
+         treeMap[parentId].children.append(treeMap[nodeId])
+
+        def print_map(node, l, lvl=0):
+         for n in node.children:
+             if lvl == 0:
+                l.append("%s" % (n.title))
+             else:
+                l.append("%s %s" % ('\t' * lvl, n.title))
+             if len(n.children) > 0:
+                 print_map(n, l, lvl + 1)
+
+        l = []
+        print_map(Root, l)
+        return l
+
+
+class OdexHeaderItem:
     """
         This class can parse the odex header
 
         :param buff: a Buff object string which represents the odex dependencies
     """
-    def __init__(self, buff) :
+    def __init__(self, buff):
         buff.set_idx(8)
 
         self.dex_offset = unpack("=I", buff.read(4))[0]
@@ -7488,8 +7567,8 @@ class OdexHeaderItem :
         self.flags = unpack("=I", buff.read(4))[0]
         self.padding = unpack("=I", buff.read(4))[0]
 
-    def show(self) :
-        print "dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset, 
+    def show(self):
+        print "dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset,
                                                                                                                   self.dex_length,
                                                                                                                   self.deps_offset,
                                                                                                                   self.deps_length,
@@ -7497,13 +7576,14 @@ class OdexHeaderItem :
                                                                                                                   self.aux_length,
                                                                                                                   self.flags)
 
-class OdexDependencies :
+
+class OdexDependencies:
     """
         This class can parse the odex dependencies
 
         :param buff: a Buff object string which represents the odex dependencies
     """
-    def __init__(self, buff) :
+    def __init__(self, buff):
         self.modification_time = unpack("=I", buff.read(4))[0]
         self.crc = unpack("=I", buff.read(4))[0]
         self.dalvik_build = unpack("=I", buff.read(4))[0]
@@ -7511,13 +7591,13 @@ class OdexDependencies :
         self.dependencies = []
         self.dependency_checksums = []
 
-        for i in range(0, self.dependency_count) :
+        for i in range(0, self.dependency_count):
             string_length = unpack("=I", buff.read(4))[0]
-            name_dependency = buff.read( string_length )[:-1]
-            self.dependencies.append( name_dependency )
-            self.dependency_checksums.append( buff.read(20) )
+            name_dependency = buff.read(string_length)[:-1]
+            self.dependencies.append(name_dependency)
+            self.dependency_checksums.append(buff.read(20))
 
-    def get_dependencies(self) :
+    def get_dependencies(self):
         """
             Return the list of dependencies
 
@@ -7565,3 +7645,22 @@ class DalvikOdexVMFormat(DalvikVMFormat):
             :rtype: a string
         """
         return "ODEX"
+
+
+def auto(filename, raw=None):
+  """
+      :param filename:
+      :param raw:
+      :type filename:
+      :type raw:
+  """
+  data_raw = raw
+  if raw == None:
+    data_raw = open(filename, "rb").read()
+    ret_type = is_android_raw(data_raw[:10])
+    if ret_type == "DEX":
+      return DalvikVMFormat(data_raw)
+    elif ret_type == "ODEX":
+      return DalvikOdexVMFormat(data_raw)
+
+  return None
