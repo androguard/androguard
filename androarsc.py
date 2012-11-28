@@ -40,20 +40,22 @@ def main(options, arguments) :
         ret_type = androconf.is_android(options.input)
         if ret_type == "APK":
             a = apk.APK(options.input)
-            buff = a.xml["AndroidManifest.xml"].toprettyxml(encoding="utf-8")
-            a.get_activities()
-        elif ".xml" in options.input:
-            ap = apk.AXMLPrinter(open(options.input, "rb").read())
-            buff = minidom.parseString(ap.get_buff()).toprettyxml(encoding="utf-8")
+            print a.get_android_resources()
+        elif ".arsc" in options.input:
+            ap = apk.ARSCParser(open(options.input, "rb").read())
+
+            print ap.get_string_resources()
+            #print minidom.parseString(ap.get_publics_resources()).toprettyxml(encoding="utf-8")
+            #print minidom.parseString(ap.get_strings_resources()).toprettyxml(encoding="utf-8")
         else:
             print "Unknown file type"
             return
 
-        if options.output != None :
+        if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
-            fd.write( buff )
+            fd.write(buff)
             fd.close()
-        else :
+        else:
             print buff
 
     elif options.version != None :

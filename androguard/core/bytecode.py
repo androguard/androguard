@@ -306,13 +306,30 @@ class MethodBC(object) :
     def show(self, value) :
         getattr(self, "show_" + value)()
 
-class BuffHandle :
-    def __init__(self, buff) :
+
+class BuffHandle:
+    def __init__(self, buff):
         self.__buff = buff
         self.__idx = 0
 
+    def size(self):
+        return len(self.__buff)
+
+    def set_idx(self, idx):
+        self.__idx = idx
+
+    def get_idx(self):
+        return self.__idx
+
+    def readNullString(self, size):
+        data = self.read(size)
+        return data
+
     def read_b(self, size) :
         return self.__buff[ self.__idx : self.__idx + size ]
+
+    def read_at(self, offset, size):
+        return self.__buff[ offset : offset + size ]
 
     def read(self, size) :
         if isinstance(size, SV) :
@@ -422,3 +439,9 @@ def FormatDescriptorToPython(input) :
     i = i.replace("$", "")
 
     return i
+
+class Node:
+ def __init__(self, n, s):
+     self.id = n
+     self.title = s
+     self.children = []

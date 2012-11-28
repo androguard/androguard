@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2010, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 import sys, os, logging, types, random, string
 
-ANDROGUARD_VERSION = "1.7"
+ANDROGUARD_VERSION = "1.9"
 
 def get_ascii_string(s) :
     try :
@@ -45,17 +45,19 @@ class Color:
     Bold = "\033[1m"
 
 CONF = {
-    "BIN_DED" : "ded.sh",
-    "PATH_DED" : "./decompiler/ded/",
-    "PATH_DEX2JAR" : "./decompiler/dex2jar/",
-    "BIN_DEX2JAR" : "dex2jar.sh",
-    "PATH_JAD" : "./decompiler/jad/",
-    "BIN_JAD" : "jad",
-    "PRETTY_SHOW" : 1,
+    "BIN_DED": "ded.sh",
+    "PATH_DED": "./decompiler/ded/",
+    "PATH_DEX2JAR": "./decompiler/dex2jar/",
+    "BIN_DEX2JAR": "dex2jar.sh",
+    "PATH_JAD": "./decompiler/jad/",
+    "BIN_JAD": "jad",
+    "PRETTY_SHOW": 1,
+
+    "TMP_DIRECTORY": "/tmp/",
 
     # Full python or mix python/c++ (native)
     #"ENGINE" : "automatic",
-    "ENGINE" : "python",
+    "ENGINE": "python",
 
     "RECODE_ASCII_STRING" : False,
     "RECODE_ASCII_STRING_METH" : get_ascii_string,
@@ -168,20 +170,22 @@ def is_android(filename) :
     fd.close()
     return val
 
-def is_android_raw(raw) :
+def is_android_raw(raw):
     val = None
     f_bytes = raw[:7]
 
-    if f_bytes[0:2] == "PK" :
+    if f_bytes[0:2] == "PK":
         val = "APK"
-    elif f_bytes[0:3] == "dex" :
+    elif f_bytes[0:3] == "dex":
         val = "DEX"
-    elif f_bytes[0:3] == "dey" :
+    elif f_bytes[0:3] == "dey":
         val = "DEY"
-    elif f_bytes[0:7] == "\x7fELF\x01\x01\x01" :
+    elif f_bytes[0:7] == "\x7fELF\x01\x01\x01":
         val = "ELF"
-    elif f_bytes[0:4] == "\x03\x00\x08\x00" :
+    elif f_bytes[0:4] == "\x03\x00\x08\x00":
         val = "AXML"
+    elif f_bytes[0:4] == "\x02\x00\x0C\x00":
+        val = "ARSC"
 
     return val
 

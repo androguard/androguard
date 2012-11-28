@@ -141,7 +141,7 @@ def AnalyzeDex(filename, raw=False, decompiler=None) :
     androconf.debug("VMAnalysis ...")
     dx = uVMAnalysis( d )
 
-    androconf.debug("GVMAnais ...")
+    androconf.debug("GVMAnalysis ...")
     gx = GVMAnalysis( dx, None )
 
     d.set_vmanalysis( dx )
@@ -171,9 +171,9 @@ def RunDecompiler(d, dx, decompiler) :
       androconf.debug("Decompiler ...")
       decompiler = decompiler.lower()
       if decompiler == "dex2jad" :
-        d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"] ) )
+        d.set_decompiler( DecompilerDex2Jad( d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"] ) )
       elif decompiler == "ded" :
-        d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"] ) )
+        d.set_decompiler( DecompilerDed( d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"], androconf.CONF["TMP_DIRECTORY"]) )
       elif decompiler == "dad" :
         d.set_decompiler( DecompilerDAD( d, dx ) )
       else :

@@ -140,7 +140,7 @@ class DemoEmulator(object):
         return self.mem[name]
 
 
-TEST = '../DroidDream/magicspiral.apk'
+TEST = './apks/pacsec/magicspiral.apk'
 
 vm = dvm.DalvikVMFormat(apk.APK(TEST).get_dex())
 vma = uVMAnalysis(vm)
