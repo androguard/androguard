@@ -33,8 +33,8 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2]
 
 
-def main(options, arguments) :
-    if options.input != None :
+def main(options, arguments):
+    if options.input != None:
         buff = ""
 
         ret_type = androconf.is_android(options.input)
@@ -43,10 +43,8 @@ def main(options, arguments) :
             print a.get_android_resources()
         elif ".arsc" in options.input:
             ap = apk.ARSCParser(open(options.input, "rb").read())
-
-            print ap.get_string_resources()
-            #print minidom.parseString(ap.get_publics_resources()).toprettyxml(encoding="utf-8")
-            #print minidom.parseString(ap.get_strings_resources()).toprettyxml(encoding="utf-8")
+            for i in ap.get_packages_names():
+                print minidom.parseString(ap.get_public_resources(i)).toprettyxml(encoding="utf-8")
         else:
             print "Unknown file type"
             return
@@ -58,8 +56,8 @@ def main(options, arguments) :
         else:
             print buff
 
-    elif options.version != None :
-        print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
+    elif options.version != None:
+        print "Androarsc version %s" % androconf.ANDROGUARD_VERSION
 
 if __name__ == "__main__" :
     parser = OptionParser()

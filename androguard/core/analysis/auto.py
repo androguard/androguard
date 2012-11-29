@@ -60,7 +60,7 @@ class AndroAuto(object):
       debug("Running worker-%d" % idx)
 
       while True:
-        a, d, dx = None, None, None
+        a, d, dx, axmlobj, arscobj = None, None, None, None, None
         try:
           filename, fileraw = q.get()
           id_file = zlib.adler32(fileraw)
@@ -82,12 +82,12 @@ class AndroAuto(object):
               filter_file_type = androconf.is_android_raw(fileraw)
 
             elif filter_file_type == "AXML":
-              ax = myandro.create_axml(log, fileraw)
-              myandro.analysis_axml(log, ax)
+              axmlobj = myandro.create_axml(log, fileraw)
+              myandro.analysis_axml(log, axmlobj)
 
             elif filter_file_type == "ARSC":
-              ax = myandro.create_arsc(log, fileraw)
-              myandro.analysis_arsc(log, ax)
+              arscobj = myandro.create_arsc(log, fileraw)
+              myandro.analysis_arsc(log, arscobj)
 
             if is_analysis_dex and filter_file_type == "DEX":
               d = myandro.create_dex(log, fileraw)
@@ -104,12 +104,12 @@ class AndroAuto(object):
             myandro.analysis_app(log, a, d, dx)
 
           myandro.finish(log)
-          del a, d, dx
-          q.task_done()
         except Exception, why:
           myandro.crash(log, why)
           myandro.finish(log)
-          q.task_done()
+
+        del a, d, dx, axmlobj, arscobj
+        q.task_done()
 
     q = Queue.Queue(self.settings["max_fetcher"])
     for i in range(self.settings["max_fetcher"]):
@@ -346,7 +346,6 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
   """
   def __init__(self, directory):
     self.directory = directory
-    self.collect = []
 
   def fetcher(self, q):
     for root, dirs, files in os.walk(self.directory, followlinks=True):
@@ -358,10 +357,3 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
           real_filename += f
           q.put((real_filename, open(real_filename, "rb").read()))
     return False
-
-  def analysis_app(self, log, apkobj, dexobj, adexobj):
-    self.collect.append([apkobj, dexobj, adexobj])
-
-  def dump(self):
-    for i in self.collect:
-      print i

@@ -212,6 +212,8 @@ def get_debug() :
 
 def warning(x):
     log_runtime.warning(x)
+    import traceback
+    traceback.print_exc()
 
 def error(x) :
     log_runtime.error(x)
