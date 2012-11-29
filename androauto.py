@@ -47,7 +47,6 @@ def main(options, arguments):
 
     aa = auto.AndroAuto(settings)
     aa.go()
-    aa.dump()
 
 if __name__ == "__main__":
     parser = OptionParser()
