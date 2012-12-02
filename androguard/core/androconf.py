@@ -159,6 +159,8 @@ def is_android(filename) :
         @param filename : the filename
         @rtype : "APK", "DEX", "ELF", None 
     """
+    if not filename:
+        return None
 
     fd = open( filename, "r")
     val = None
