@@ -79,7 +79,7 @@ def main(options, arguments):
     settings = {
       "my": MyAXMLAnalysis(options.directory),
       "log": AndroLog,
-      "max_fetcher": 1,
+      "max_fetcher": 3,
     }
 
     aa = auto.AndroAuto(settings)
