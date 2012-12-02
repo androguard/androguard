@@ -724,7 +724,7 @@ class StringBlock:
         if end_zero != -1:
             data = data[:end_zero]
 
-        return data.decode("utf-16", errors='replace')
+        return data.decode("utf-16", 'replace')
 
     def decode2(self, array, offset, length):
         data = ""
@@ -733,7 +733,7 @@ class StringBlock:
             t_data = pack("=b", self.m_strings[offset + i])
             data += unicode(t_data, errors='ignore')
 
-        return data.decode("utf-8", errors='replace')
+        return data.decode("utf-8", 'replace')
 
     def getVarint(self, array, offset):
         val = array[offset]
@@ -1528,7 +1528,7 @@ class ARSCResTablePackage:
         #print "ARSCResTablePackage", hex(self.start), hex(self.id), hex(self.mResId), repr(self.name.decode("utf-16", errors='replace')), hex(self.typeStrings), hex(self.lastPublicType), hex(self.keyStrings), hex(self.lastPublicKey)
 
     def get_name(self):
-        name = self.name.decode("utf-16", errors='replace')
+        name = self.name.decode("utf-16", 'replace')
         name = name[:name.find("\x00")]
         return name
 
