@@ -1,0 +1,22 @@
+{ "name": "APK (Androguard)",
+  "scopeName": "source.uapk",
+  "fileTypes": [""],
+  "patterns": [
+    {
+      "match": "^(classes\\.dex)",
+      "name": "keyword.control",
+      "comment": "classes.dex"
+    },
+    {
+      "match": "^(AndroidManifest\\.xml)",
+      "name": "entity.name",
+      "comment": "AndroidManifest.xml"
+    },
+    {
+      "match": "^(resources\\.arsc)",
+      "name": "entity.other",
+      "comment": "resources.arsc"
+    }
+  ],
+  "uuid": "75ba8e42-b55b-4823-b4aa-e4e407da9d8c"
+}
