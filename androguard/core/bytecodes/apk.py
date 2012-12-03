@@ -1348,7 +1348,12 @@ class ARSCParser:
         return self.packages.keys()
 
     def get_locales(self, package_name):
+        self._analyse()
         return self.values[package_name].keys()
+
+    def get_types(self, package_name, locale):
+        self._analyse()
+        return self.values[package_name][locale].keys()
 
     def get_public_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
