@@ -1,0 +1,32 @@
+{ "name": "Dalvik Classes (Androguard)",
+  "scopeName": "source.ag",
+  "fileTypes": [""],
+  "patterns": [
+    {
+      "match": "^([\\w\\d\\_\/\\$]+)",
+      "name": "markup.bold",
+      "comment": "package"
+    },
+    {
+      "match": "^(\\s*[\\w\\d\\_\/\\$]+)(\\s*)(extends)(\\s*)(.)*",
+      "name": "markup.italic",
+      "comment": "current class"
+    },
+    {
+      "match": "^(\\s*(method\\:))(\\s*)((\\<init\\>)|(\\<clinit\\>))([\\w\\d\\_\/\\$\\[\\]\\(\\)\\s\\:\\;\\.]+)", 
+      "name": "support.constant",
+      "comment": "init/clinit method"
+    },
+    {
+      "match": "^(\\s*(method\\:))([\\w\\d\\_\/\\$\\[\\]\\(\\)\\s\\:\\;\\.]+)",
+      "name": "support.function",
+      "comment": "method"
+    },
+    {
+      "match": "^(\\s*(field\\:))([\\w\\d\\_\/\\$\\[\\]\\(\\)\\s\\:\\;\\.\\']+)",
+      "name": "support.other",
+      "comment": "field"
+    }
+  ],
+  "uuid": "75ba8e42-b55b-4823-b4aa-e4e407da9c8d"
+}

@@ -1,0 +1,5 @@
+[
+  {
+      "keys": ["ctrl+f5"], "command": "ag"
+  }
+]

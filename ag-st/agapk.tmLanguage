@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>fileTypes</key>
+	<array>
+		<string></string>
+	</array>
+	<key>name</key>
+	<string>APK (Androguard)</string>
+	<key>patterns</key>
+	<array>
+		<dict>
+			<key>comment</key>
+			<string>classes.dex</string>
+			<key>match</key>
+			<string>^(classes\.dex)</string>
+			<key>name</key>
+			<string>keyword.control</string>
+		</dict>
+		<dict>
+			<key>comment</key>
+			<string>AndroidManifest.xml</string>
+			<key>match</key>
+			<string>^(AndroidManifest\.xml)</string>
+			<key>name</key>
+			<string>entity.name</string>
+		</dict>
+		<dict>
+			<key>comment</key>
+			<string>resources.arsc</string>
+			<key>match</key>
+			<string>^(resources\.arsc)</string>
+			<key>name</key>
+			<string>entity.other</string>
+		</dict>
+	</array>
+	<key>scopeName</key>
+	<string>source.uapk</string>
+	<key>uuid</key>
+	<string>75ba8e42-b55b-4823-b4aa-e4e407da9d8c</string>
+</dict>
+</plist>
