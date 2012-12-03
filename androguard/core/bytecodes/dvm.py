@@ -6007,10 +6007,10 @@ class DalvikCode :
     def __init__(self, buff, cm) :
         self.__CM = cm
 
-        self.padding = ""
+        self.int_padding = ""
         off = buff.get_idx()
         while off % 4 != 0 :
-            self.padding += '\00'
+            self.int_padding += '\00'
             off += 1
         buff.set_idx( off )
 
@@ -6158,7 +6158,7 @@ class DalvikCode :
         self.insns_size = (len(code_raw) / 2) + (len(code_raw) % 2)
 
 
-        buff = self.padding
+        buff = self.int_padding
         buff += pack("=H", self.registers_size) + \
                 pack("=H", self.ins_size) + \
                 pack("=H", self.outs_size) + \
@@ -6195,7 +6195,7 @@ class DalvikCode :
             return self.code.get_instruction(idx, off)
 
     def get_size(self) :
-      length = len(self.padding)
+      length = len(self.int_padding)
 
       length += len( pack("=H", self.registers_size) + \
                      pack("=H", self.ins_size) + \

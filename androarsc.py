@@ -51,11 +51,21 @@ def main(options, arguments):
             print "Unknown file type"
             return
 
-        package = options.package or arscobj.get_packages_names()[0]
-        ttype = options.type or "public"
-        locale = options.locale or '\x00\x00'
+        if not options.package and not options.type and not options.locale:
+            buff = ""
+            for package in arscobj.get_packages_names():
+                buff += package + "\n"
+                for locale in arscobj.get_locales(package):
+                    buff += "\t" + repr(locale) + "\n"
+                    for ttype in arscobj.get_types(package, locale):
+                        buff += "\t\t" + ttype + "\n"
 
-        buff = minidom.parseString(getattr(arscobj, "get_" + ttype + "_resources")(package, locale)).toprettyxml(encoding="utf-8")
+        else:
+            package = options.package or arscobj.get_packages_names()[0]
+            ttype = options.type or "public"
+            locale = options.locale or '\x00\x00'
+
+            buff = minidom.parseString(getattr(arscobj, "get_" + ttype + "_resources")(package, locale)).toprettyxml(encoding="utf-8")
 
         if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
