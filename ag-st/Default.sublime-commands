@@ -1,0 +1,14 @@
+[
+  {
+      "keys": ["ctrl+f5"],
+      "command": "ag"
+  },
+  {
+      "keys": ["f5"],
+      "command": "ag_sc"
+  },
+  {
+      "keys": ["ctrl+f6"],
+      "command": "ag_ref"
+  }
+]
