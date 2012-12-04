@@ -176,6 +176,7 @@ def get_axml_info(apk_object):
 
     return i_buffer
 
+
 def get_arsc_info(arsc_obj):
     return "pouet"
 
