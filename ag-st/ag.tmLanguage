@@ -16,7 +16,7 @@
 			<key>match</key>
 			<string>^([\w\d\_/\$]+)</string>
 			<key>name</key>
-			<string>markup.bold</string>
+			<string>storage.package</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -24,31 +24,31 @@
 			<key>match</key>
 			<string>^(\s*[\w\d\_/\$]+)(\s*)(extends)(\s*)(.)*</string>
 			<key>name</key>
-			<string>markup.italic</string>
+			<string>storage.class</string>
 		</dict>
 		<dict>
 			<key>comment</key>
 			<string>init/clinit method</string>
 			<key>match</key>
-			<string>^(\s*(method\:))(\s*)((\&lt;init\&gt;)|(\&lt;clinit\&gt;))([\w\d\_/\$\[\]\(\)\s\:\;\.]+)</string>
+			<string>^(\s*(method\:))(\s*)((\&lt;init\&gt;)|(\&lt;clinit\&gt;))(.)+</string>
 			<key>name</key>
-			<string>support.constant</string>
+			<string>support</string>
 		</dict>
 		<dict>
 			<key>comment</key>
 			<string>method</string>
 			<key>match</key>
-			<string>^(\s*(method\:))([\w\d\_/\$\[\]\(\)\s\:\;\.]+)</string>
+			<string>^(\s*(method\:))(.)+</string>
 			<key>name</key>
-			<string>support.function</string>
+			<string>support.function.classicmethod</string>
 		</dict>
 		<dict>
 			<key>comment</key>
 			<string>field</string>
 			<key>match</key>
-			<string>^(\s*(field\:))([\w\d\_/\$\[\]\(\)\s\:\;\.\']+)</string>
+			<string>^(\s*(field\:))(.)+</string>
 			<key>name</key>
-			<string>support.other</string>
+			<string>variable</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
