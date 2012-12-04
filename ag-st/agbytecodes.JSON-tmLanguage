@@ -5,9 +5,6 @@
     {
       "match": "\\s*(#).*$\\n?",
       "name": "comment.line.number-sign.smali",
-      "captures": {
-        "1": { "name": "punctuation.definition.comment.smali" }
-      },
       "comment": "comment"
     },
     {

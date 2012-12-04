@@ -3,18 +3,13 @@
   "fileTypes": [""],
   "patterns": [
     {
-      "match": "^(classes\\.dex)",
-      "name": "keyword.control",
-      "comment": "classes.dex"
-    },
-    {
-      "match": "^(AndroidManifest\\.xml)",
-      "name": "entity.name",
-      "comment": "AndroidManifest.xml"
-    },
-    {
-      "match": "^(resources\\.arsc)",
-      "name": "entity.other",
+      "match": "^((classes\\.dex)|(AndroidManifest\\.xml)|(resources\\.arsc))",
+      "name": "keyword.resources",
+      "captures": {
+        "1": { "name": "keyword.classes" },
+        "2": { "name": "keyword.androidmanifest" },
+        "3": { "name": "keyword.resources" }
+      },
       "comment": "resources.arsc"
     }
   ],

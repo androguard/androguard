@@ -11,14 +11,6 @@
 	<key>patterns</key>
 	<array>
 		<dict>
-			<key>captures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>punctuation.definition.comment.smali</string>
-				</dict>
-			</dict>
 			<key>comment</key>
 			<string>comment</string>
 			<key>match</key>
@@ -115,6 +107,6 @@
 	<key>scopeName</key>
 	<string>source.agbt</string>
 	<key>uuid</key>
-	<string>75ba8e42-b55b-4823-b4aa-e4e407da9c8c</string>
+	<string>75ba8e42-b55b-4823-b4aa-e4e407da9c8e</string>
 </dict>
 </plist>
