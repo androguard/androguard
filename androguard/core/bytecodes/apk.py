@@ -21,8 +21,6 @@ from androguard.core import bytecode
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 
-import functools
-
 import StringIO
 from struct import pack, unpack
 from xml.sax.saxutils import escape
@@ -574,18 +572,33 @@ class APK:
         zout.close()
 
     def get_android_manifest_axml(self):
+        """
+            Return the :class:`AXMLPrinter` object which corresponds to the AndroidManifest.xml file
+
+            :rtype: :class:`AXMLPrinter`
+        """
         try:
             return self.axml["AndroidManifest.xml"]
         except KeyError:
             return None
 
     def get_android_manifest_xml(self):
+        """
+            Return the xml object which corresponds to the AndroidManifest.xml file
+
+            :rtype: object
+        """
         try:
             return self.xml["AndroidManifest.xml"]
         except KeyError:
             return None
 
     def get_android_resources(self):
+        """
+            Return the :class:`ARSCParser` object which corresponds to the resources.arsc file
+
+            :rtype: :class:`ARSCParser`
+        """
         try:
             return self.arsc["resources.arsc"]
         except KeyError:
@@ -595,19 +608,19 @@ class APK:
             except KeyError:
                 return None
 
-    def show(self) :
+    def show(self):
         self.get_files_types()
-        
+
         print "FILES: "
-        for i in self.get_files() :
-            try :
+        for i in self.get_files():
+            try:
                 print "\t", i, self.files[i], "%x" % self.files_crc32[i]
-            except KeyError :
+            except KeyError:
                 print "\t", i, "%x" % self.files_crc32[i]
 
         print "PERMISSIONS: "
         details_permissions = self.get_details_permissions()
-        for i in details_permissions :
+        for i in details_permissions:
             print "\t", i, details_permissions[i]
         print "MAIN ACTIVITY: ", self.get_main_activity()
         print "ACTIVITIES: ", self.get_activities()
@@ -615,7 +628,8 @@ class APK:
         print "RECEIVERS: ", self.get_receivers()
         print "PROVIDERS: ", self.get_providers()
 
-def show_Certificate(cert) :
+
+def show_Certificate(cert):
     print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
     print "Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(), cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
 
