@@ -177,8 +177,22 @@ def get_axml_info(apk_object):
     return i_buffer
 
 
-def get_arsc_info(arsc_obj):
-    return "pouet"
+def get_arsc_info(arscobj):
+    buff = ""
+    for package in arscobj.get_packages_names():
+        buff += package + ":\n"
+        for locale in arscobj.get_locales(package):
+            buff += "\t" + repr(locale) + ":\n"
+            for ttype in arscobj.get_types(package, locale):
+                buff += "\t\t" + ttype + ":\n"
+                try:
+                    tmp_buff = getattr(arscobj, "get_" + ttype + "_resources")(package, locale).decode("utf-8", 'replace').split("\n")
+                    for i in tmp_buff:
+                        buff += "\t\t\t" + i + "\n"
+                except AttributeError:
+                    pass
+
+    return buff
 
 
 def get_sourcecode_method(dex_object, ana_object, method):
@@ -321,7 +335,7 @@ class AgDoubleClick(sublime_plugin.TextCommand):
                     at = AnalyseAXMLThread(sublime.active_window().new_file(), filename + "-AndroidManifest", apk_object)
                     at.run()
                 elif x == "resources.arsc":
-                    at = AnalyseARSCThread(sublime.active_window().new_file(), filename + "-resources", apk_object)
+                    at = AnalyseARSCThread(sublime.active_window().new_file(), filename + "-resources", apk_object.get_file(x))
                     at.run()
                 elif ".xml" in x:
                     at = AnalyseAXMLSimpleThread(sublime.active_window().new_file(), filename + "-%s" + x, apk_object.get_file(x))
@@ -422,9 +436,9 @@ class AnalyseAXMLSimpleThread:
 
 
 class AnalyseARSCThread:
-    def __init__(self, view, filename, apk_object):
+    def __init__(self, view, filename, raw_object):
         self.view = view
-        self.apk_object = apk_object
+        self.raw_object = raw_object
         self.filename = filename
         #threading.Thread.__init__(self)
 
@@ -436,13 +450,14 @@ class AnalyseARSCThread:
         self.view.sel().clear()
         #self.view.set_syntax_file("Packages/ag-st/agapk.tmLanguage")
 
-        i_buffer = get_arsc_info(self.apk_object.get_android_resources())
+        arscobj = apk.ARSCParser(self.raw_object)
+        i_buffer = get_arsc_info(arscobj)
 
         self.view.replace(edit, sublime.Region(0, self.view.size()), i_buffer)
         self.view.end_edit(edit)
         self.view.set_read_only(True)
 
-        AG_ARSC_ID[self.view.id()] = self.apk_object
+        AG_ARSC_ID[self.view.id()] = arscobj
 
         if self.view.id() not in AG_SC:
             AG_SC[self.view.id()] = False
@@ -609,7 +624,7 @@ class AgCommand(sublime_plugin.WindowCommand):
         at = AnalyseAXMLSimpleThread(self.window.new_file(), filename, open(filename, "rb").read())
         at.run()
     elif ret == "ARSC":
-        at = AnalyseAXMLSimpleThread(self.window.new_file(), filename, open(filename, "rb").read())
+        at = AnalyseARSCThread(self.window.new_file(), filename, open(filename, "rb").read())
         at.run()
 
     #thread = AnalyseThread(self.window.new_file(), filename, open(filename, "rb").read())
@@ -644,8 +659,8 @@ class AgStrings(sublime_plugin.WindowCommand):
 
         view = sublime.active_window().new_file()
 
-        view.set_name("test.strings")
-        #view.set_syntax_file("Packages/ag-st/agbytecodes.tmLanguage")
+        filename = FILENAMES[self.view.id()]
+        view.set_name("%s.strings" % filename)
 
         view.set_scratch(True)
         edit = view.begin_edit()

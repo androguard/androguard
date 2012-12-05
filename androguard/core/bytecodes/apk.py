@@ -30,7 +30,6 @@ from zlib import crc32
 import re
 
 from xml.dom import minidom
-import xml.parsers.expat
 
 # 0: chilkat
 # 1: default python zipfile module
@@ -191,7 +190,7 @@ class APK:
                 self.axml[i] = AXMLPrinter(self.zip.read(i))
                 try:
                     self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                except xml.parsers.expat.ExpatError:
+                except:
                     self.xml[i] = None
 
                 if self.xml[i] != None:
@@ -557,21 +556,19 @@ class APK:
             :type deleted_files: None or a string
             :type new_files: a dictionnary (key:filename, value:content of the file)
         """
-        if self.zipmodule == 2 :
+        if self.zipmodule == 2:
             from androguard.patch import zipfile
-            zout = zipfile.ZipFile (filename, 'w')
-        else :
+            zout = zipfile.ZipFile(filename, 'w')
+        else:
             import zipfile
-            zout = zipfile.ZipFile (filename, 'w')
+            zout = zipfile.ZipFile(filename, 'w')
 
-
-        for item in self.zip.infolist() :
-           
-            if deleted_files != None :
-                if re.match(deleted_files, item.filename) == None :
-                    if item.filename in new_files :
+        for item in self.zip.infolist():
+            if deleted_files != None:
+                if re.match(deleted_files, item.filename) == None:
+                    if item.filename in new_files:
                         zout.writestr(item, new_files[item.filename])
-                    else :
+                    else:
                         buffer = self.zip.read(item.filename)
                         zout.writestr(item, buffer)
         zout.close()
@@ -1384,6 +1381,34 @@ class ARSCParser:
             pass
 
         buff += '</resources>\n'
+
+        return buff.encode('utf-8')
+
+    def get_strings_resources(self):
+        self._analyse()
+
+        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
+
+        buff += "<packages>\n"
+        for package_name in self.get_packages_names():
+            buff += "<package name=\"%s\">\n" % package_name
+
+            for locale in self.get_locales(package_name):
+                buff += "<locale value=%s>\n" % repr(locale)
+
+                buff += '<resources>\n'
+                try:
+                    for i in self.values[package_name][locale]["string"]:
+                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                except KeyError:
+                    pass
+
+                buff += '</resources>\n'
+                buff += '</locale>\n'
+
+            buff += "</package>\n"
+
+        buff += "</packages>\n"
 
         return buff.encode('utf-8')
 

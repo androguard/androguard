@@ -65,7 +65,7 @@ def main(options, arguments):
             ttype = options.type or "public"
             locale = options.locale or '\x00\x00'
 
-            buff = minidom.parseString(getattr(arscobj, "get_" + ttype + "_resources")(package, locale)).toprettyxml(encoding="utf-8")
+            buff = minidom.parseString(getattr(arscobj, "get_" + ttype + "_resources")(package, locale)).toprettyxml()
 
         if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
