@@ -4,7 +4,7 @@
   "patterns": [
     {
       "match": "\\s*(#).*$\\n?",
-      "name": "comment.line.number-sign.smali",
+      "name": "comment",
       "comment": "comment"
     },
     {
@@ -46,12 +46,16 @@
     },
     {
       "match": "(v\\d+)",
-      "name": "variable.smali",
+      "name": "variable",
       "comment": "register"
     },
-    { "name": "string.quoted.single.smali",
-      "begin": "\\'",
-      "end": "\\'"
+    { "name": "string.quoted.single",
+      "begin": "(\\')",
+      "end": "(\\')"
+    },
+    { "name": "string.quoted.double",
+      "begin": "(\")",
+      "end": "(\")"
     }
   ],
   "uuid": "75ba8e42-b55b-4823-b4aa-e4e407da9c8e"
