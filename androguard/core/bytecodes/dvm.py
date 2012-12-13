@@ -4297,7 +4297,7 @@ class Instruction21c(Instruction) :
       self.OP = i16 & 0xff
       self.AA = (i16 >> 8) & 0xff
 
-      self.BBBB = unpack("=h", buff[2:4])[0]
+      self.BBBB = unpack("=H", buff[2:4])[0]
       #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self) :
@@ -4321,7 +4321,7 @@ class Instruction21c(Instruction) :
       return get_kind(self.cm, KIND_RAW_STRING, self.BBBB)
 
     def get_raw(self) :
-      return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
+      return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
 
 class Instruction21s(Instruction) :
     """
@@ -4451,7 +4451,8 @@ class Instruction31t(Instruction) :
     def get_raw(self) :
       return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
-class Instruction31c(Instruction) :
+
+class Instruction31c(Instruction):
     """
         This class represents all instructions which have the 31c format
     """
@@ -4463,7 +4464,7 @@ class Instruction31c(Instruction) :
       self.OP = i16 & 0xff
       self.AA = (i16 >> 8) & 0xff
 
-      self.BBBBBBBB = unpack("=i", buff[2:6])[0]
+      self.BBBBBBBB = unpack("=I", buff[2:6])[0]
       #log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self) :
@@ -4476,8 +4477,8 @@ class Instruction31c(Instruction) :
       buff += "v%d, %s" % (self.AA, kind)
       return buff
 
-    def get_ref_kind(self) :
-      return self.BBBBBBBB 
+    def get_ref_kind(self):
+      return self.BBBBBBBB
 
     def get_string(self) :
       """
@@ -4487,8 +4488,11 @@ class Instruction31c(Instruction) :
       """
       return get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
 
+    def get_raw_string(self) :
+      return get_kind(self.cm, KIND_RAW_STRING, self.BBBBBBBB)
+
     def get_raw(self) :
-      return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
+      return pack("=HH", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
 class Instruction12x(Instruction) :
     """

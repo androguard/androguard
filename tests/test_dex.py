@@ -61,10 +61,21 @@ class MyDEXAnalysis(auto.DirectoryAndroAnalysis):
 
   def analysis_dex(self, log, dex):
     log.dump("%s" % str(dex))
+    for method in dex.get_methods():
+      idx = 0
+      for i in method.get_instructions():
+        i.get_name(), i.show_buff(idx)
+        idx += i.get_length()
+
     return False
 
   def analysis_dey(self, log, dey):
     log.dump("%s" % str(dey))
+    for method in dey.get_methods():
+      idx = 0
+      for i in method.get_instructions():
+        i.get_name(), i.show_buff(idx)
+        idx += i.get_length()
     return False
 
   def crash(self, log, why):

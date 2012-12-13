@@ -16,7 +16,7 @@
 			<key>match</key>
 			<string>\s*(#).*$\n?</string>
 			<key>name</key>
-			<string>comment.line.number-sign.smali</string>
+			<string>comment</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -97,11 +97,19 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>\'</string>
+			<string>(\')</string>
 			<key>end</key>
-			<string>\'</string>
+			<string>(\')</string>
 			<key>name</key>
-			<string>string.quoted.single.smali</string>
+			<string>string.quoted.single</string>
+		</dict>
+		<dict>
+			<key>begin</key>
+			<string>(")</string>
+			<key>end</key>
+			<string>(")</string>
+			<key>name</key>
+			<string>string.quoted.double</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
