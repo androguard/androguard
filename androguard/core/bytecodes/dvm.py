@@ -4492,7 +4492,7 @@ class Instruction31c(Instruction):
       return get_kind(self.cm, KIND_RAW_STRING, self.BBBBBBBB)
 
     def get_raw(self) :
-      return pack("=HH", (self.AA << 8) | self.OP, self.BBBBBBBB)
+      return pack("=HI", (self.AA << 8) | self.OP, self.BBBBBBBB)
 
 class Instruction12x(Instruction) :
     """
