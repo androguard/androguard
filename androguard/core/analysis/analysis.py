@@ -1518,7 +1518,8 @@ def show_DynCode(dx) :
     paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
     show_Paths( dx.get_vm(), paths )
 
-def show_NativeMethods(dx) :
+
+def show_NativeMethods(dx):
     """
         Show the native methods
         :param dx : the analysis virtual machine
@@ -1529,7 +1530,8 @@ def show_NativeMethods(dx) :
         if i.get_access_flags() & 0x100 :
             print i.get_class_name(), i.get_name(), i.get_descriptor()
 
-def show_ReflectionCode(dx) :
+
+def show_ReflectionCode(dx):
     """
         Show the reflection code 
         :param dx : the analysis virtual machine
@@ -1546,12 +1548,14 @@ def is_crypto_code(dx):
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods("Ljavax/crypto/.", ".", ".")
-    if paths != []:
+    if dx.get_tainted_packages().search_methods("Ljavax/crypto/.",
+                                                ".",
+                                                "."):
         return True
 
-    paths = dx.get_tainted_packages().search_methods("Ljava/security/spec/.", ".", ".")
-    if paths != []:
+    if dx.get_tainted_packages().search_methods("Ljava/security/spec/.",
+                                                ".",
+                                                "."):
         return True
 
     return False
@@ -1559,13 +1563,29 @@ def is_crypto_code(dx):
 
 def is_dyn_code(dx):
     """
-        Dynamic code loading is present ?
+        Dalvik Dynamic code loading is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;", ".", ".")
-    if paths != []:
+    if dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
+                                                ".",
+                                                "."):
+        return True
+
+    if dx.get_tainted_packages().search_methods("Ljava/security/ClassLoader;",
+                                                "defineClass",
+                                                "."):
+        return True
+
+    if dx.get_tainted_packages().search_methods("Ljava/security/SecureClassLoader;",
+                                                "defineClass",
+                                                "."):
+        return True
+
+    if dx.get_tainted_packages().search_methods("Ljava/net/URLClassLoader;",
+                                                ".",
+                                                "."):
         return True
 
     return False
@@ -1578,13 +1598,19 @@ def is_reflection_code(dx):
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;", ".", ".")
-    if paths != []:
+    if dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;",
+                                                ".",
+                                                "."):
         return True
 
-    paths = dx.get_tainted_packages().search_methods("Ljava/lang/Class;",
-                                                     "forName", ".")
-    if paths != []:
+    if dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Field;",
+                                                ".",
+                                                "."):
+        return True
+
+    if dx.get_tainted_packages().search_methods("Ljava/lang/Class;",
+                                                "forName",
+                                                "."):
         return True
 
     return False
@@ -1597,11 +1623,18 @@ def is_native_code(dx):
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods( "Ljava/lang/System;", "loadLibrary", ".")
-    if paths != [] :
+    if dx.get_tainted_packages().search_methods("Ljava/lang/System;",
+                                                "load.",
+                                                "."):
+        return True
+
+    if dx.get_tainted_packages().search_methods("Ljava/lang/Runtime;",
+                                                "load.",
+                                                "."):
         return True
 
     return False
+
 
 class TaintedPackages :
     def __init__(self, _vm) :
