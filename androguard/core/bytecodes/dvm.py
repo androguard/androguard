@@ -17,10 +17,11 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from androguard.core import bytecode
-from androguard.core.androconf import CONF, debug, is_android_raw
+from androguard.core.androconf import CONF, debug, warning, is_android_raw
 
 import sys
 import re
+import struct
 from struct import pack, unpack, calcsize
 
 DEX_FILE_MAGIC = 'dex\n035\x00'
@@ -29,42 +30,42 @@ ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
 
 
 TYPE_MAP_ITEM = {
-                        0x0  :      "TYPE_HEADER_ITEM",
-                        0x1  :      "TYPE_STRING_ID_ITEM",
-                        0x2  :      "TYPE_TYPE_ID_ITEM",
-                        0x3  :      "TYPE_PROTO_ID_ITEM",
-                        0x4  :      "TYPE_FIELD_ID_ITEM",
-                        0x5  :      "TYPE_METHOD_ID_ITEM",
-                        0x6  :      "TYPE_CLASS_DEF_ITEM",
-                        0x1000 :    "TYPE_MAP_LIST",
-                        0x1001 :    "TYPE_TYPE_LIST",
-                        0x1002 :    "TYPE_ANNOTATION_SET_REF_LIST",
-                        0x1003 :    "TYPE_ANNOTATION_SET_ITEM",
-                        0x2000 :    "TYPE_CLASS_DATA_ITEM",
-                        0x2001 :    "TYPE_CODE_ITEM",
-                        0x2002 :    "TYPE_STRING_DATA_ITEM",
-                        0x2003 :    "TYPE_DEBUG_INFO_ITEM",
-                        0x2004 :    "TYPE_ANNOTATION_ITEM",
-                        0x2005 :    "TYPE_ENCODED_ARRAY_ITEM",
-                        0x2006 :    "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
+                        0x0:      "TYPE_HEADER_ITEM",
+                        0x1:      "TYPE_STRING_ID_ITEM",
+                        0x2:      "TYPE_TYPE_ID_ITEM",
+                        0x3:      "TYPE_PROTO_ID_ITEM",
+                        0x4:      "TYPE_FIELD_ID_ITEM",
+                        0x5:      "TYPE_METHOD_ID_ITEM",
+                        0x6:      "TYPE_CLASS_DEF_ITEM",
+                        0x1000:    "TYPE_MAP_LIST",
+                        0x1001:    "TYPE_TYPE_LIST",
+                        0x1002:    "TYPE_ANNOTATION_SET_REF_LIST",
+                        0x1003:    "TYPE_ANNOTATION_SET_ITEM",
+                        0x2000:    "TYPE_CLASS_DATA_ITEM",
+                        0x2001:    "TYPE_CODE_ITEM",
+                        0x2002:    "TYPE_STRING_DATA_ITEM",
+                        0x2003:    "TYPE_DEBUG_INFO_ITEM",
+                        0x2004:    "TYPE_ANNOTATION_ITEM",
+                        0x2005:    "TYPE_ENCODED_ARRAY_ITEM",
+                        0x2006:    "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
                      }
 
-ACCESS_FLAGS = [ 
-    (0x1    , 'public'),
-    (0x2    , 'private'),
-    (0x4    , 'protected'),
-    (0x8    , 'static'),
-    (0x10   , 'final'),
-    (0x20   , 'synchronized'),
-    (0x40   , 'bridge'),
-    (0x80   , 'varargs'),
-    (0x100  , 'native'),
-    (0x200  , 'interface'),
-    (0x400  , 'abstract'),
-    (0x800  , 'strict'),
-    (0x1000 , 'synthetic'),
-    (0x4000 , 'enum'),
-    (0x8000 , 'unused'),
+ACCESS_FLAGS = [
+    (0x1, 'public'),
+    (0x2, 'private'),
+    (0x4, 'protected'),
+    (0x8, 'static'),
+    (0x10, 'final'),
+    (0x20, 'synchronized'),
+    (0x40, 'bridge'),
+    (0x80, 'varargs'),
+    (0x100, 'native'),
+    (0x200, 'interface'),
+    (0x400, 'abstract'),
+    (0x800, 'strict'),
+    (0x1000, 'synthetic'),
+    (0x4000, 'enum'),
+    (0x8000, 'unused'),
     (0x10000, 'constructor'),
     (0x20000, 'synchronized'),
 ]
@@ -195,7 +196,7 @@ def readuleb128(buff) :
                 if cur > 0x7f :
                     cur = ord( buff.read(1) )
                     if cur > 0x0f :
-                      raise("prout")
+                      warning("possible error while decoding number")
                     result |= cur << 28
 
     return result
@@ -1530,6 +1531,7 @@ class AnnotationElement :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.name_idx = readuleb128( buff )
         self.value = EncodedValue( buff, cm )
@@ -1575,6 +1577,7 @@ class EncodedAnnotation :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.type_idx = readuleb128( buff )
         self.size = readuleb128( buff )
@@ -1818,7 +1821,7 @@ class StringIdItem :
 
         self.string_data_off = unpack("=I", buff.read(4))[0]
 
-    def get_string_data_off(self) :
+    def get_string_data_off(self):
         """
             Return the offset from the start of the file to the string data for this item
 
@@ -1862,6 +1865,7 @@ class TypeIdItem :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.descriptor_idx = unpack("=I", buff.read( 4 ) )[0]
         self.descriptor_idx_value = None
@@ -1968,6 +1972,7 @@ class ProtoIdItem :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.shorty_idx = unpack("=I", buff.read(4))[0]
         self.return_type_idx = unpack("=I", buff.read(4))[0]
@@ -2113,6 +2118,7 @@ class FieldIdItem :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.class_idx = unpack("=H", buff.read(2))[0]
         self.type_idx = unpack("=H", buff.read(2))[0]
@@ -2268,6 +2274,7 @@ class MethodIdItem :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.class_idx = unpack("=H", buff.read(2))[0]
         self.proto_idx = unpack("=H", buff.read(2))[0]
@@ -2472,6 +2479,7 @@ class EncodedField :
     """
     def __init__(self, buff, cm) :
         self.CM = cm
+        self.offset = buff.get_idx()
 
         self.field_idx_diff = readuleb128( buff )
         self.access_flags = readuleb128( buff )
@@ -2620,7 +2628,7 @@ class EncodedField :
         except AttributeError:
             pass
 
-class EncodedMethod :
+class EncodedMethod:
     """
         This class can parse an encoded_method of a dex file
 
@@ -2631,6 +2639,7 @@ class EncodedMethod :
     """
     def __init__(self, buff, cm) :
         self.CM = cm
+        self.offset = buff.get_idx()
 
         self.method_idx_diff = readuleb128( buff )  #: method index diff in the corresponding section
         self.access_flags = readuleb128( buff )     #: access flags of the method
@@ -3148,6 +3157,7 @@ class ClassDefItem :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.class_idx = unpack("=I", buff.read(4))[0]
         self.access_flags = unpack("=I", buff.read(4))[0]
@@ -3808,7 +3818,7 @@ class InstructionInvalid(Instruction) :
 
             :rtype: string
         """
-        return "invalid"
+        return "AG:invalid_instruction"
 
     def get_output(self, idx=-1) :
       return "(OP:%x)" % self.OP
@@ -5151,6 +5161,7 @@ class Instruction41c(Instruction) :
 
       self.OP = unpack("=H", buff[0:2])[0]
       self.BBBBBBBB =  unpack("=I", buff[2:6])[0]
+
       self.AAAA =  unpack("=H", buff[6:8])[0]
 
       #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
@@ -5664,51 +5675,56 @@ DALVIK_OPCODES_OPTIMIZED = {
     0xffff : [ Instruction40sc, ["throw-verification-error/jumbo", VARIES ] ],
 }
 
-class Unresolved(Instruction) :
-  def __init__(self, data) :
+class Unresolved(Instruction):
+  def __init__(self, data):
     self.data = data
 
-  def get_name(self) :
+  def get_name(self):
     return "unresolved"
 
-  def get_op_value(self) :
+  def get_op_value(self):
     return ord(self.data[0])
 
-  def get_output(self, idx=-1) :
+  def get_output(self, idx=-1):
     return repr(self.data)
 
-  def get_length(self) :
+  def get_length(self):
     return len(self.data)
 
-  def get_raw(self) :
+  def get_raw(self):
     return self.buff
 
-def get_instruction(cm, op_value, buff, odex=False) :
-  try :
-    if not odex and (op_value >= 0xe3 and op_value <= 0xfe) :
-      return InstructionInvalid( cm, buff )
 
-    try :
-      return DALVIK_OPCODES_FORMAT[ op_value ][0]( cm, buff )
-    except KeyError :
-      return InstructionInvalid( cm, buff )
-  except :
-      return Unresolved( buff )
+def get_instruction(cm, op_value, buff, odex=False):
+  try:
+    if not odex and (op_value >= 0xe3 and op_value <= 0xfe):
+      return InstructionInvalid(cm, buff)
 
-def get_extented_instruction(cm, op_value, buff) :
-  return DALVIK_OPCODES_EXTENDED_WIDTH[ op_value ][0]( cm, buff )
+    try:
+      return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
+    except KeyError:
+      return InstructionInvalid(cm, buff)
+  except:
+      return Unresolved(buff)
 
-def get_optimize_instruction(cm, op_value, buff) :
-  return DALVIK_OPCODES_OPTIMIZED[ op_value ][0]( cm, buff )
+
+def get_extented_instruction(cm, op_value, buff):
+  return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0]( cm, buff )
+
+
+def get_optimized_instruction(cm, op_value, buff) :
+  return DALVIK_OPCODES_OPTIMIZED[op_value][0]( cm, buff )
+
 
 def get_instruction_payload(op_value, buff) :
-  return DALVIK_OPCODES_PAYLOAD[ op_value ][0]( buff )
+  return DALVIK_OPCODES_PAYLOAD[op_value][0]( buff )
+
 
 class LinearSweepAlgorithm :
     """
         This class is used to disassemble a method. The algorithm used by this class is linear sweep.
     """
-    def get_instructions(self, cm, size, insn, idx) :
+    def get_instructions(self, cm, size, insn, idx):
         """
             :param cm: a ClassManager object
             :type cm: :class:`ClassManager` object
@@ -5732,32 +5748,38 @@ class LinearSweepAlgorithm :
           obj = None
           classic_instruction = True
 
-          op_value = unpack( '=B', insn[idx] )[0]
+          op_value = unpack('=B', insn[idx])[0]
 
           #print "%x %x" % (op_value, idx)
 
           #payload instructions or extented/optimized instructions
-          if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx) :
-            op_value = unpack( '=H', insn[idx:idx+2] )[0]
+          if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx):
+            op_value = unpack('=H', insn[idx:idx + 2])[0]
 
             # payload instructions ?
-            if op_value in DALVIK_OPCODES_PAYLOAD :
-              obj = get_instruction_payload( op_value, insn[idx:] )
-              classic_instruction = False
+            if op_value in DALVIK_OPCODES_PAYLOAD:
+              try:
+                obj = get_instruction_payload(op_value, insn[idx:])
+                classic_instruction = False
+              except struct.error:
+                warning("error while decoding instruction ...")
 
-            elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH :
-              obj = get_extented_instruction( cm, op_value, insn[idx:] )
-              classic_instruction = False
+            elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH:
+              try:
+                obj = get_extented_instruction(cm, op_value, insn[idx:])
+                classic_instruction = False
+              except struct.error, why:
+                warning("error while decoding instruction ..." + why.__str__())
 
             # optimized instructions ?
-            elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED) :
-              obj = get_optimized_instruction( cm, op_value, insn[idx:] )
+            elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
+              obj = get_optimized_instruction(cm, op_value, insn[idx:])
               classic_instruction = False
-          
+
           # classical instructions
-          if classic_instruction :
-            op_value = unpack( '=B', insn[idx] )[0]
-            obj = get_instruction( cm, op_value, insn[idx:], self.odex)
+          if classic_instruction:
+            op_value = unpack('=B', insn[idx])[0]
+            obj = get_instruction(cm, op_value, insn[idx:], self.odex)
 
           # emit instruction
           yield obj
@@ -5769,14 +5791,17 @@ class DCode:
 
         :param class_manager: the ClassManager
         :type class_manager: :class:`ClassManager` object
+        :param offset: the offset of the buffer
+        :type offset: int
         :param size: the total size of the buffer
         :type size: int
         :param buff: a raw buffer where are the instructions
         :type buff: string
     """
-    def __init__(self, class_manager, size, buff) :
+    def __init__(self, class_manager, offset, size, buff) :
         self.CM = class_manager
         self.insn = buff
+        self.offset = offset
         self.size = size
 
         self.notes = {}
@@ -6010,6 +6035,7 @@ class DalvikCode :
     """
     def __init__(self, buff, cm) :
         self.__CM = cm
+        self.offset = buff.get_idx()
 
         self.int_padding = ""
         off = buff.get_idx()
@@ -6029,7 +6055,7 @@ class DalvikCode :
        
         ushort = calcsize( '=H' )
 
-        self.code = DCode( self.__CM, self.insns_size, buff.read( self.insns_size * ushort ) )
+        self.code = DCode(self.__CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
 
         if (self.insns_size % 2 == 1) :
             self.padding = unpack("=H", buff.read(2))[0]
@@ -6154,13 +6180,12 @@ class DalvikCode :
         self.code.pretty_show(m_a)
         self._end_show()
 
-    def get_obj(self) :
-        return [ i for i in self.handlers ]
+    def get_obj(self):
+        return [self.code, self.tries, self.handlers]
 
     def get_raw(self) :
         code_raw = self.code.get_raw()
         self.insns_size = (len(code_raw) / 2) + (len(code_raw) % 2)
-
 
         buff = self.int_padding
         buff += pack("=H", self.registers_size) + \
@@ -7493,7 +7518,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         :param size:
         :type size:
       """
-      for i in DCode(self.CM, size, self.get_buff()[offset:offset + size]).get_instructions():
+      for i in DCode(self.CM, offset, size, self.get_buff()[offset:offset + size]).get_instructions():
         yield i
 
     def get_classes_hierarchy(self):
@@ -7551,6 +7576,35 @@ class DalvikVMFormat(bytecode._Bytecode) :
         l = []
         print_map(Root, l)
         return l
+
+    def get_format(self):
+      objs = self.map_list.get_obj()
+
+      h = {}
+      index = {}
+      self._get_objs(h, index, objs)
+
+      return h, index
+
+    def _get_objs(self, h, index, objs):
+      for i in objs:
+        if isinstance(i, list):
+          self._get_objs(h, index, i)
+        else:
+          try:
+            if i != None:
+              h[i] = {}
+              index[i] = i.offset
+          except AttributeError:
+            pass
+
+          try:
+            if not isinstance(i, MapList):
+              next_objs = i.get_obj()
+              if isinstance(next_objs, list):
+                self._get_objs(h[i], index, next_objs)
+          except AttributeError:
+            pass
 
 
 class OdexHeaderItem:

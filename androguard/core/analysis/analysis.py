@@ -1535,49 +1535,62 @@ def show_ReflectionCode(dx) :
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
-    show_Paths( dx.get_vm(), paths )
+    paths = dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;", ".", ".")
+    show_Paths(dx.get_vm(), paths)
 
-def is_crypto_code(dx) :
+
+def is_crypto_code(dx):
     """
         Crypto code is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods( "Ljavax/crypto/.", ".", ".")
-    if paths != [] :
+    paths = dx.get_tainted_packages().search_methods("Ljavax/crypto/.", ".", ".")
+    if paths != []:
+        return True
+
+    paths = dx.get_tainted_packages().search_methods("Ljava/security/spec/.", ".", ".")
+    if paths != []:
         return True
 
     return False
 
-def is_dyn_code(dx) :
+
+def is_dyn_code(dx):
     """
         Dynamic code loading is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
-    if paths != [] :
+    paths = dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;", ".", ".")
+    if paths != []:
         return True
 
     return False
 
-def is_reflection_code(dx) :
+
+def is_reflection_code(dx):
     """
         Reflection is present ?
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
-    paths = dx.get_tainted_packages().search_methods( "Ljava/lang/reflect/Method;", ".", ".")
-    if paths != [] :
+    paths = dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;", ".", ".")
+    if paths != []:
+        return True
+
+    paths = dx.get_tainted_packages().search_methods("Ljava/lang/Class;",
+                                                     "forName", ".")
+    if paths != []:
         return True
 
     return False
 
-def is_native_code(dx) :
+
+def is_native_code(dx):
     """
         Native code is present ?
         :param dx : the analysis virtual machine
