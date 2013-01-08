@@ -90,6 +90,9 @@ class Constant(IRForm):
     def has_side_effect(self):
         return False
 
+    def get_int_value(self):
+        return self.cst2
+
     def visit(self, visitor, to_int=False):
         if self.type == 'Z':
             if self.cst == 0:

@@ -20,6 +20,7 @@ import logging
 from androguard.decompiler.dad.util import get_type, ACCESS_FLAGS_METHODS
 from androguard.decompiler.dad.opcode_ins import Op
 from androguard.decompiler.dad.instruction import (Constant, ThisParam,
+                                                   BinaryExpression,
                                                    BinaryCompExpression)
 
 
@@ -68,17 +69,34 @@ class Writer(object):
     def end_ins(self):
         self.write(';\n')
 
+    def write_ind_visit_end(self, lhs, s, rhs=None):
+        self.write_ind()
+        lhs.visit(self)
+        self.write(s)
+        if rhs is not None:
+            rhs.visit(self)
+        self.end_ins()
+
+    def write_inplace_if_possible(self, lhs, rhs):
+        if isinstance(rhs, BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+            exp_rhs = rhs.var_map[rhs.arg2]
+            if rhs.op in '+-' and isinstance(exp_rhs, Constant) and\
+                                  exp_rhs.get_int_value() == 1:
+                return self.write_ind_visit_end(lhs, rhs.op * 2)
+            return self.write_ind_visit_end(lhs, ' %s= ' % rhs.op, exp_rhs)
+        return self.write_ind_visit_end(lhs, ' = ', rhs)
+
     def visit_ins(self, ins):
         ins.visit(self)
 
     def write_method(self):
         acc = []
         access = self.method.access
-        self.constructor = 0x10000 in access
-        for i in self.method.access:
-            if i == 0x10000:
+        self.constructor = 'constructor' in access
+        for modifier in self.method.access:
+            if modifier == 'constructor':
                 continue
-            acc.append(ACCESS_FLAGS_METHODS.get(i))
+            acc.append(modifier)
         if self.constructor:
             name = get_type(self.method.cls_name).split('.')[-1]
             proto = '%s %s(' % (' '.join(acc), name)
@@ -86,10 +104,9 @@ class Writer(object):
             name = self.method.name
             proto = '%s %s %s(' % (' '.join(acc), self.method.type, name)
         self.write('%s%s' % (self.space(), proto))
-        if 0x8 in self.method.access:
-            params = self.method.lparams
-        else:
-            params = self.method.lparams[1:]
+        params = self.method.lparams
+        if 'static' not in self.method.access:
+            params = params[1:]
         proto = ''
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
@@ -168,8 +185,8 @@ class Writer(object):
             self.visit_node(cond.false)
         elif follow is not None:
             is_else = not (follow in (cond.true, cond.false))
-            if (cond.true in (follow, self.next_case)
-                                                or cond.num > cond.true.num):
+            if cond.true in (follow, self.next_case) or\
+                                                    cond.num > cond.true.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
@@ -218,7 +235,7 @@ class Writer(object):
         self.write('%sswitch(' % self.space())
         self.visit_ins(switch_ins)
         self.write(') {\n')
-        follow = switch.switch_follow
+        follow = switch.get_switch_follow()
         cases = switch.cases
         self.switch_follow.append(follow)
         default = switch.default
@@ -256,10 +273,8 @@ class Writer(object):
         sucs = self.graph.sucs(stmt)
         for ins in stmt.get_ins():
             self.visit_ins(ins)
-        if len(sucs) == 0:
-            return
-        follow = sucs[0]
-        self.visit_node(follow)
+        if len(sucs) == 1:
+            self.visit_node(sucs[0])
 
     def visit_return_node(self, ret):
         self.need_break = False
@@ -294,32 +309,19 @@ class Writer(object):
         self.write('this')
 
     def visit_assign(self, lhs, rhs):
+        if lhs is not None:
+            return self.write_inplace_if_possible(lhs, rhs)
         self.write_ind()
-        if lhs is None:
-            rhs.visit(self)
-            if not self.skip:
-                self.end_ins()
-            return
-        lhs.visit(self)
-        self.write(' = ')
         rhs.visit(self)
-        self.end_ins()
+        if not self.skip:
+            self.end_ins()
 
     def visit_move_result(self, lhs, rhs):
-        self.write_ind()
-        lhs.visit(self)
-        self.write(' = ')
-        rhs.visit(self)
-        self.end_ins()
+        self.write_ind_visit_end(lhs, ' = ', rhs)
 
     def visit_move(self, lhs, rhs):
-        if lhs is rhs:
-            return
-        self.write_ind()
-        lhs.visit(self)
-        self.write(' = ')
-        rhs.visit(self)
-        self.end_ins()
+        if lhs is not rhs:
+            self.write_inplace_if_possible(lhs, rhs)
 
     def visit_astore(self, array, index, rhs):
         self.write_ind()
@@ -340,11 +342,7 @@ class Writer(object):
         self.end_ins()
 
     def visit_put_instance(self, lhs, name, rhs):
-        self.write_ind()
-        lhs.visit(self)
-        self.write('.%s = ' % name)
-        rhs.visit(self)
-        self.end_ins()
+        self.write_ind_visit_end(lhs, '.%s = ' % name, rhs)
 
     def visit_new(self, atype):
         self.write('new %s' % get_type(atype))
@@ -470,9 +468,7 @@ class Writer(object):
         if atype == 'Z':
             if op is Op.EQUAL:
                 self.write('!')
-                arg.visit(self)
-            else:
-                arg.visit(self)
+            arg.visit(self)
         else:
             arg.visit(self)
             self.write(' %s 0' % op)

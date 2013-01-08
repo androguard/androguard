@@ -72,8 +72,7 @@ ACCESS_FLAGS_METHODS = {
     0x400:   'abstract',
     0x800:   'strict',
     0x1000:  'synthetic',
-    # ACC_CONSTRUCTOR
-    0x10000: '',
+    0x10000: 'constructor',
     0x20000: 'synchronized',
 }
 
