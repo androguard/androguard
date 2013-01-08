@@ -269,6 +269,8 @@ class DvClass():
 class DvMachine():
     def __init__(self, name):
         vm = auto_vm(name)
+        if vm is None:
+            raise ValueError('Format not recognised: %s' % name)
         self.vma = analysis.uVMAnalysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
@@ -317,7 +319,7 @@ def main():
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(console_hdlr)
 
-    default_file = 'examples/android/TestsAndroguard/bin/classes.dex'
+    default_file = 'examples/android/TestsAndroguard/bin/TestsAndroguard.apk'
     if len(sys.argv) > 1:
         machine = DvMachine(sys.argv[1])
     else:
@@ -325,7 +327,7 @@ def main():
 
     logger.info('========================')
     logger.info('Classes:')
-    for class_name in machine.get_classes():
+    for class_name in sorted(machine.get_classes()):
         logger.info(' %s', class_name)
     logger.info('========================')
 
