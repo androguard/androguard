@@ -319,7 +319,7 @@ class ArrayStoreInstruction(IRForm):
         lused_vars = v_m[self.array].get_used_vars()
         lused_vars.extend(v_m[self.index].get_used_vars())
         lused_vars.extend(v_m[self.rhs].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -384,7 +384,7 @@ class InstanceInstruction(IRForm):
         v_m = self.var_map
         lused_vars = v_m[self.lhs].get_used_vars()
         lused_vars.extend(v_m[self.rhs].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def get_lhs(self):
         return None
@@ -473,7 +473,7 @@ class InvokeInstruction(IRForm):
         for arg in self.args:
             lused_vars.extend(v_m[arg].get_used_vars())
         lused_vars.extend(v_m[self.base].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -611,7 +611,7 @@ class ArrayLoadExpression(ArrayExpression):
         v_m = self.var_map
         lused_vars = v_m[self.array].get_used_vars()
         lused_vars.extend(v_m[self.idx].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -699,7 +699,7 @@ class FilledArrayExpression(ArrayExpression):
         for arg in self.args:
             lused_vars.extend(self.var_map[arg].get_used_vars())
         lused_vars.append(self.size)
-        return lused_vars
+        return list(set(lused_vars))
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -789,7 +789,7 @@ class BinaryExpression(IRForm):
         v_m = self.var_map
         lused_vars = v_m[self.arg1].get_used_vars()
         lused_vars.extend(v_m[self.arg2].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -895,7 +895,7 @@ class ConditionalExpression(IRForm):
         v_m = self.var_map
         lused_vars = v_m[self.arg1].get_used_vars()
         lused_vars.extend(v_m[self.arg2].get_used_vars())
-        return lused_vars
+        return list(set(lused_vars))
 
     def neg(self):
         self.op = CONDS[self.op]
