@@ -56,8 +56,8 @@ class DvMethod():
         self.graph = None
 
         access = method.get_access_flags()
-        self.access = [flag for flag in util.ACCESS_FLAGS_METHODS
-                                     if flag & access]
+        self.access = [name for flag, name in
+                        util.ACCESS_FLAGS_METHODS.iteritems() if flag & access]
         desc = method.get_descriptor()
         self.type = util.get_type(desc.split(')')[-1])
         self.params_type = util.get_params_type(desc)
@@ -69,7 +69,7 @@ class DvMethod():
             logger.debug('No code : %s %s', self.name, self.cls_name)
         else:
             start = code.registers_size - code.ins_size
-            if 0x8 not in self.access:
+            if 'static' not in self.access:
                 self.var_to_name[start] = ThisParam(start, self.name)
                 self.lparams.append(start)
                 start += 1
@@ -156,7 +156,7 @@ class DvClass():
         self.inner = False
 
         access = dvclass.get_access_flags()
-        self.access = [util.ACCESS_FLAGS_CLASSES.get(flag) for flag in
+        self.access = [util.ACCESS_FLAGS_CLASSES[flag] for flag in
                             util.ACCESS_FLAGS_CLASSES if flag & access]
         self.prototype = '%s class %s' % (' '.join(self.access), self.name)
 

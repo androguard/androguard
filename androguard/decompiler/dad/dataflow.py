@@ -151,7 +151,7 @@ def dead_code_elimination(graph, du, ud):
                 # something like an array access, so we do nothing.
                 # Otherwise (no side effect) we can remove the instruction from
                 # the node.
-                if du.get((reg, i), None) is  None:
+                if (reg, i) not in du:
                     if ins.is_call():
                         ins.remove_defined_var()
                     elif ins.has_side_effect():
