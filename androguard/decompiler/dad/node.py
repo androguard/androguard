@@ -47,7 +47,6 @@ class Node(object):
         self.looptype = LoopType()
         self.interval = None
         self.startloop = False
-        self.endloop = False
         self.type = -1
         self.latch = None
         self.if_follow = None
@@ -60,7 +59,6 @@ class Node(object):
         self.looptype = node.looptype
         self.interval = node.interval
         self.startloop = node.startloop
-        self.endloop = node.endloop
         self.type = node.type
         self.latch = node.latch
         self.if_follow = node.if_follow
@@ -123,11 +121,11 @@ class Node(object):
     def set_loop_nodes(self, nodes):
         self.loop_nodes = nodes
 
-    def set_start_loop(self, b=True):
-        self.startloop = b
+    def set_start_loop(self):
+        self.startloop = True
 
-    def set_end_loop(self, b=True):
-        self.endloop = b
+    def is_start_loop(self):
+        return self.startloop
 
     def set_if_follow(self, node):
         self.if_follow = node
@@ -149,13 +147,7 @@ class Node(object):
 
     def set_latch_node(self, node):
         self.latch = node
-
-    def is_start_loop(self):
-        return self.startloop
-
-    def is_end_loop(self):
-        return self.endloop
-
+    
     def __repr__(self):
         return str(self)
 
@@ -198,10 +190,6 @@ class Interval(Node):
 
     def get_next(self):
         return self.head.get_next()
-
-    def set_loop_type(self, _type):
-        self.looptype = _type
-        self.get_head().set_loop_type(_type)
 
     def set_startloop(self):
         self.head.set_startloop()

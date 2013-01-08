@@ -127,7 +127,6 @@ def mark_loop(graph, start, end, interval):
     nodes_in_loop = [head]
     mark_loop_rec(graph, latch, head.num, latch.num, interval, nodes_in_loop)
     head.set_start_loop()
-    latch.set_end_loop()
     head.set_latch_node(latch)
     return nodes_in_loop
 
@@ -167,7 +166,7 @@ def loop_follow(start, end, nodes_in_loop):
         else:
             follow = end.true
     else:
-        num_next = NotImplemented  # Hack to do: num_next = infinity
+        num_next = float('inf')
         for node in nodes_in_loop:
             if node.is_cond():
                 if (node.true.num < num_next
@@ -378,7 +377,8 @@ def identify_structures(graph, idoms):
         loop_follow(node, node.latch, node.loop_nodes)
 
     for node in if_unresolved:
-        follows = [n for n in (node.loop_follow, node.switch_follow) if n]
+        follows = [n for n in (node.get_loop_follow(),
+                               node.get_switch_follow()) if n]
         if len(follows) >= 1:
             follow = min(follows, key=lambda x: x.num)
             node.set_if_follow(follow)

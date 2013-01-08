@@ -186,7 +186,7 @@ class Condition(object):
 
     def visit(self, visitor):
         return visitor.visit_short_circuit_condition(self.isnot, self.isand,
-                                             self.cond1, self.cond2)
+                                                     self.cond1, self.cond2)
 
     def __str__(self):
         if self.isnot:
@@ -245,8 +245,7 @@ class LoopBlock(CondBlock):
         if self.looptype.pretest():
             if self.false in self.loop_nodes:
                 return '%d-While(!%s)[%s]' % (self.num, self.name, self.cond)
-            else:
-                return '%d-While(%s)[%s]' % (self.num, self.name, self.cond)
+            return '%d-While(%s)[%s]' % (self.num, self.name, self.cond)
         elif self.looptype.posttest():
             return '%d-DoWhile(%s)[%s]' % (self.num, self.name, self.cond)
         elif self.looptype.endless():

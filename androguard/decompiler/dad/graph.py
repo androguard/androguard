@@ -208,7 +208,6 @@ class Graph():
         Number the nodes in reverse post order.
         An RPO traversal visit as many predecessors of a node as possible
         before visiting the node itself.
-        If reverse is True, the RPO is done on the reverse graph.
         '''
         visit = set()
         res = []
