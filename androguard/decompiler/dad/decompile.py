@@ -301,7 +301,7 @@ class DvMachine():
             klass.show_source()
 
     def process_and_show(self):
-        for name, klass in self.classes.iteritems():
+        for name, klass in sorted(self.classes.iteritems()):
             logger.info('Processing class: %s', name)
             if not isinstance(klass, DvClass):
                 klass = DvClass(klass, self.vma)

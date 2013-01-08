@@ -4277,7 +4277,7 @@ class Instruction11n(Instruction) :
       i16 = unpack("=h", buff[0:2])[0]
       self.OP = i16 & 0xff
       self.A = (i16 >> 8) & 0xf
-      self.B = (i16 >> 12) & 0xf
+      self.B = (i16 >> 12)
 
       #log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
 
