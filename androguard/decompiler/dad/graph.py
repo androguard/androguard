@@ -30,7 +30,7 @@ class Graph():
     def __init__(self):
         self.entry = None
         self.exit = None
-        self.nodes = set()
+        self.nodes = list()
         self.rpo = []
         self.edges = {}
         self.reverse_edges = {}
@@ -59,7 +59,7 @@ class Graph():
         return self.rpo
 
     def add_node(self, node):
-        self.nodes.add(node)
+        self.nodes.append(node)
 
     def add_edge(self, e1, e2):
         lsucs = self.edges.setdefault(e1, [])
@@ -114,7 +114,7 @@ class Graph():
         '''
         node_map = {}
         to_update = set()
-        for node in self.nodes.copy():
+        for node in self.nodes[:]:
             if node.is_cond():
                 if len(node.get_ins()) > 1:
                     pre_ins = node.get_ins()[:-1]
@@ -170,7 +170,7 @@ class Graph():
         redo = True
         while redo:
             redo = False
-            for node in self.nodes.copy():
+            for node in self.nodes[:]:
                 if node.is_stmt() and node in self.nodes:
                     suc = self.sucs(node)[0]
                     if len(node.get_ins()) == 0:

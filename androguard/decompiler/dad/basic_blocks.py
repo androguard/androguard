@@ -315,6 +315,10 @@ def build_node_from_block(block, vmap, gen_ret):
         # move-result*
         elif 0xa <= opcode <= 0xc:
             lins.append(_ins(ins, vmap, gen_ret.last()))
+        # monitor-{enter,exit}
+        elif 0x1d <= opcode <= 0x1e:
+            idx += ins.get_length()
+            continue
         else:
             lins.append(_ins(ins, vmap))
         idx += ins.get_length()

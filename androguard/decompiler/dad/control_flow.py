@@ -194,12 +194,12 @@ def loop_struct(graphs_list, intervals_list):
                 if node.interval is head.interval:
                     lnodes = mark_loop(first_graph, head, node, head.interval)
                     loop_nodes.update(lnodes)
-                    head.get_head().set_loop_nodes(loop_nodes)
+            head.get_head().set_loop_nodes(loop_nodes)
 
 
 def if_struct(graph, idoms):
     unresolved = set()
-    for node in graph.get_rpo()[::-1]:
+    for node in graph.post_order():
         if node.is_cond():
             ldominates = []
             for n, idom in idoms.iteritems():
