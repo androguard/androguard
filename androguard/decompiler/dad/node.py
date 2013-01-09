@@ -197,10 +197,6 @@ class Interval(Node):
     def get_head(self):
         return self.head.get_head()
 
-    def __iter__(self):
-        for item in self.content:
-            yield item
-
     def __len__(self):
         return len(self.content)
 

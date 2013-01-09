@@ -175,7 +175,8 @@ class Writer(object):
         if cond.false is self.loop_follow[-1]:
             cond.neg()
             cond.true, cond.false = cond.false, cond.true
-            self.write('%sif(' % self.space())
+        if self.loop_follow[-1] in (cond.true, cond.false):
+            self.write('%sif (' % self.space())
             cond.visit_cond(self)
             self.write(') {\n')
             self.inc_ind()
@@ -191,7 +192,7 @@ class Writer(object):
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
             if not cond.true in self.visited_nodes:
-                self.write('%sif(' % self.space())
+                self.write('%sif (' % self.space())
                 cond.visit_cond(self)
                 self.write(') {\n')
                 self.inc_ind()
@@ -232,7 +233,7 @@ class Writer(object):
         for ins in lins[:-1]:
             self.visit_ins(ins)
         switch_ins = switch.get_ins()[-1]
-        self.write('%sswitch(' % self.space())
+        self.write('%sswitch (' % self.space())
         self.visit_ins(switch_ins)
         self.write(') {\n')
         follow = switch.get_switch_follow()
@@ -274,7 +275,12 @@ class Writer(object):
         for ins in stmt.get_ins():
             self.visit_ins(ins)
         if len(sucs) == 1:
-            self.visit_node(sucs[0])
+            if sucs[0] is self.loop_follow[-1]:
+                self.write('%sbreak;\n' % self.space())
+            elif sucs[0] is self.next_case:
+                self.need_break = False
+            else:
+                self.visit_node(sucs[0])
 
     def visit_return_node(self, ret):
         self.need_break = False
