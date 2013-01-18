@@ -17,7 +17,8 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
+from androguard.decompiler.dad.opcode_ins import (INSTRUCTION_SET,
+                                                  INSTRUCTION_SET_SIZE)
 from androguard.decompiler.dad.instruction import Variable
 from androguard.decompiler.dad.node import Node
 
@@ -47,7 +48,6 @@ class BasicBlock(Node):
     def add_ins(self, new_ins_list):
         for new_ins in new_ins_list:
             self.ins.append(new_ins)
-        self.ins_range[1] += len(new_ins_list)
 
     def number_ins(self, num):
         last_ins_num = num + len(self.ins)
@@ -144,17 +144,17 @@ class CondBlock(BasicBlock):
         self.false = n_map.get(self.false, self.false)
 
     def neg(self):
-        if len(self.ins) > 1:
-            raise ('Condition should have only 1 instruction !')
-        self.ins[0].neg()
+        if len(self.ins) != 1:
+            raise RuntimeWarning('Condition should have only 1 instruction !')
+        self.ins[-1].neg()
 
     def visit(self, visitor):
         return visitor.visit_cond_node(self)
 
     def visit_cond(self, visitor):
-        if len(self.ins) > 1:
-            raise ('Condition should have only 1 instruction !')
-        return visitor.visit_ins(self.ins[0])
+        if len(self.ins) != 1:
+            raise RuntimeWarning('Condition should have only 1 instruction !')
+        return visitor.visit_ins(self.ins[-1])
 
     def __str__(self):
         return '%d-If(%s)' % (self.num, self.name)
@@ -299,9 +299,9 @@ def build_node_from_block(block, vmap, gen_ret):
         if opcode == 0x1f:  # check-cast
             idx += ins.get_length()
             continue
-        _ins = INSTRUCTION_SET.get(ins.get_name().lower())
-        if _ins is None:
-            logger.error('Unknown instruction : %s.', _ins.get_name().lower())
+        if opcode > INSTRUCTION_SET_SIZE:
+            logger.error('Unknown instruction : %s.', ins.get_name().lower())
+        _ins = INSTRUCTION_SET[opcode]
         # fill-array-data
         if opcode == 0x26:
             fillaray = block.get_special_ins(idx)

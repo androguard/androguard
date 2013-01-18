@@ -314,6 +314,8 @@ sys.setrecursionlimit(5000)
 
 
 def main():
+    # logger.setLevel(logging.DEBUG) for debugging output
+    # comment the line to disable the logging.
     logger.setLevel(logging.INFO)
     console_hdlr = logging.StreamHandler(sys.stdout)
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))

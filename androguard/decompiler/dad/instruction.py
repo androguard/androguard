@@ -87,11 +87,11 @@ class Constant(IRForm):
     def is_const(self):
         return True
 
-    def has_side_effect(self):
-        return False
-
     def get_int_value(self):
         return self.cst2
+
+    def get_type(self):
+        return self.type
 
     def visit(self, visitor, to_int=False):
         if self.type == 'Z':
@@ -106,6 +106,9 @@ class Constant(IRForm):
         else:
             return visitor.visit_constant(self.cst)
 
+    def __str__(self):
+        return 'CST_%s' % repr(self.cst)
+
 
 class BaseClass(IRForm):
     def __init__(self, name):
@@ -118,6 +121,9 @@ class BaseClass(IRForm):
 
     def visit(self, visitor):
         return visitor.visit_base_class(self.cls)
+
+    def __str__(self):
+        return 'BASECLASS_%s' % self.cls
 
 
 class Variable(IRForm):
@@ -134,9 +140,6 @@ class Variable(IRForm):
     def is_call(self):
         return False
 
-    def has_side_effect(self):
-        return False
-
     def is_ident(self):
         return True
 
@@ -145,6 +148,9 @@ class Variable(IRForm):
 
     def visit_decl(self, visitor):
         return visitor.visit_decl(self.v)
+
+    def __str__(self):
+        return 'VAR_%s' % self.v
 
 
 class Param(IRForm):
@@ -162,9 +168,6 @@ class Param(IRForm):
     def is_call(self):
         return False
 
-    def has_side_effect(self):
-        return False
-
     def is_ident(self):
         return True
 
@@ -173,6 +176,9 @@ class Param(IRForm):
 
     def visit_decl(self, visitor):
         pass
+
+    def __str__(self):
+        return 'PARAM_%s' % self.v
 
 
 class ThisParam(Param):
@@ -193,6 +199,9 @@ class ThisParam(Param):
 
     def visit_decl(self, visitor):
         pass
+
+    def __str__(self):
+        return 'THIS'
 
 
 class AssignExpression(IRForm):
@@ -229,6 +238,9 @@ class AssignExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_assign(self.var_map.get(self.lhs), self.rhs)
 
+    def __str__(self):
+        return 'ASSIGN(%s, %s)' % (self.var_map.get(self.lhs), self.rhs)
+
 
 class MoveResultExpression(IRForm):
     def __init__(self, lhs, rhs, type):
@@ -261,10 +273,14 @@ class MoveResultExpression(IRForm):
         return visitor.visit_move_result(v_m[self.lhs], v_m[self.rhs])
 
     def modify_rhs(self, old, new):
-        if old in self.var_map:
+        if old == self.rhs:
             self.var_map[old] = new
         else:
             self.var_map[self.rhs].modify_rhs(old, new)
+
+    def __str__(self):
+        v_m = self.var_map
+        return '%s = %s' % (v_m.get(self.lhs), v_m.get(self.rhs))
 
 
 class MoveExpression(IRForm):
@@ -294,12 +310,16 @@ class MoveExpression(IRForm):
         return visitor.visit_move(v_m[self.lhs], v_m[self.rhs])
 
     def modify_rhs(self, old, new):
-        if old in self.var_map:
+        if old == self.rhs:
             self.var_map[old] = new
         else:
             rhs = self.var_map[self.rhs]
             if not (rhs.is_const() or rhs.is_ident()):
                 rhs.modify_rhs(old, new)
+
+    def __str__(self):
+        v_m = self.var_map
+        return '%s = %s' % (v_m.get(self.lhs), v_m.get(self.rhs))
 
 
 class ArrayStoreInstruction(IRForm):
@@ -336,6 +356,13 @@ class ArrayStoreInstruction(IRForm):
             for arg in (arr, idx, rhs):
                 if not (arg.is_const() or arg.is_ident()):
                     arg.modify_rhs(old, new)
+
+    def __str__(self):
+        v_m = self.var_map
+        arr = v_m[self.array]
+        idx = v_m[self.index]
+        rhs = v_m[self.rhs]
+        return '%s[%s] = %s' % (arr, idx, rhs)
 
 
 class StaticInstruction(IRForm):
@@ -405,6 +432,10 @@ class InstanceInstruction(IRForm):
                 if not (arg.is_const() or arg.is_ident()):
                     arg.modify_rhs(old, new)
 
+    def __str__(self):
+        v_m = self.var_map
+        return '%s.%s = %s' % (v_m[self.lhs], self.name, v_m[self.rhs])
+
 
 class NewInstance(IRForm):
     def __init__(self, ins_type):
@@ -414,9 +445,6 @@ class NewInstance(IRForm):
     def get_type(self):
         return self.type
 
-#    def has_side_effect(self):
-#        return True
-
     def get_used_vars(self):
         return []
 
@@ -425,6 +453,9 @@ class NewInstance(IRForm):
 
     def modify_rhs(self, old, new):
         pass
+
+    def __str__(self):
+        return 'NEW(%s)' % self.type
 
 
 class InvokeInstruction(IRForm):
@@ -481,6 +512,11 @@ class InvokeInstruction(IRForm):
         return visitor.visit_invoke(self.name, v_m[self.base], self.rtype,
                                     self.ptype, largs)
 
+    def __str__(self):
+        v_m = self.var_map
+        return '%s.%s(%s)' % (v_m[self.base], self.name,
+                                ', '.join(str(v_m[i]) for i in self.args))
+
 
 class InvokeRangeInstruction(InvokeInstruction):
     def __init__(self, clsname, name, rtype, ptype, args):
@@ -502,7 +538,11 @@ class InvokeStaticInstruction(InvokeInstruction):
                                                     rtype, ptype, args)
 
     def get_used_vars(self):
-        return list(set(self.args))
+        v_m = self.var_map
+        lused_vars = []
+        for arg in self.args:
+            lused_vars.extend(v_m[arg].get_used_vars())
+        return list(set(lused_vars))
 
 
 class ReturnInstruction(IRForm):
@@ -528,12 +568,16 @@ class ReturnInstruction(IRForm):
             return visitor.visit_return(self.var_map[self.arg])
 
     def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+        arg = self.var_map[self.arg]
+        if not (arg.is_const() or arg.is_ident()):
+            arg.modify_rhs(old, new)
         else:
-            arg = self.var_map[self.arg]
-            if not (arg.is_const() or arg.is_ident()):
-                arg.modify_rhs(old, new)
+            self.var_map[old] = new
+
+    def __str__(self):
+        if self.arg is not None:
+            return 'RETURN(%s)' % self.var_map.get(self.arg)
+        return 'RETURN'
 
 
 class NopExpression(IRForm):
@@ -570,6 +614,9 @@ class SwitchExpression(IRForm):
             src = self.var_map[self.src]
             if not (src.is_const() or src.is_ident()):
                 src.modify_rhs(old, new)
+
+    def __str__(self):
+        return 'SWITCH(%s)' % (self.var_map[self.src])
 
 
 class CheckCastExpression(IRForm):
@@ -627,6 +674,10 @@ class ArrayLoadExpression(ArrayExpression):
                 if not (arg.is_const() or arg.is_ident()):
                     arg.modify_rhs(old, new)
 
+    def __str__(self):
+        v_m = self.var_map
+        return 'ARRAYLOAD(%s, %s)' % (v_m[self.array], v_m[self.idx])
+
 
 class ArrayLengthExpression(ArrayExpression):
     def __init__(self, array):
@@ -650,6 +701,9 @@ class ArrayLengthExpression(ArrayExpression):
             arr = self.var_map[self.array]
             if not (arr.is_const() or arr.is_ident()):
                 arr.modify_rhs(old, new)
+
+    def __str__(self):
+        return 'ARRAYLEN(%s)' % (self.var_map[self.array])
 
 
 class NewArrayExpression(ArrayExpression):
@@ -675,6 +729,9 @@ class NewArrayExpression(ArrayExpression):
             asize = self.var_map[self.size]
             if not (asize.is_const() or asize.is_ident()):
                 asize.modify_rhs(old, new)
+
+    def __str__(self):
+        return 'NEWARRAY_%s[%s]' % (self.type, self.var_map[self.size])
 
 
 class FilledArrayExpression(ArrayExpression):
@@ -806,6 +863,10 @@ class BinaryExpression(IRForm):
                 if not (arg.is_ident() or arg.is_const()):
                     arg.modify_rhs(old, new)
 
+    def __str__(self):
+        v_m = self.var_map
+        return '(%s %s %s)' % (self.op, v_m[self.arg1], v_m[self.arg2])
+
 
 class BinaryCompExpression(BinaryExpression):
     def __init__(self, op, arg1, arg2, type):
@@ -851,6 +912,9 @@ class UnaryExpression(IRForm):
             if not (arg.is_const() or arg.is_ident()):
                 arg.modify_rhs(old, new)
 
+    def __str__(self):
+        return '(%s, %s)' % (self.op, self.var_map[self.arg])
+
 
 class CastExpression(UnaryExpression):
     def __init__(self, op, atype, arg):
@@ -865,6 +929,9 @@ class CastExpression(UnaryExpression):
 
     def visit(self, visitor):
         return visitor.visit_cast(self.op, self.var_map[self.arg])
+
+    def __str__(self):
+        return 'CAST_%s(%s)' % (self.op, self.arg)
 
 
 CONDS = {
@@ -915,6 +982,10 @@ class ConditionalExpression(IRForm):
                 if not (arg.is_ident() or arg.is_const()):
                     arg.modify_rhs(old, new)
 
+    def __str__(self):
+        v_m = self.var_map
+        return 'COND(%s, %s, %s)' % (self.op, v_m[self.arg1], v_m[self.arg2])
+
 
 class ConditionalZExpression(IRForm):
     def __init__(self, op, arg):
@@ -946,6 +1017,9 @@ class ConditionalZExpression(IRForm):
             if not (arg.is_ident() or arg.is_const()):
                 arg.modify_rhs(old, new)
 
+    def __str__(self):
+        return '(IS%s0, %s)' % (self.op, self.var_map[self.arg])
+
 
 class InstanceExpression(IRForm):
     def __init__(self, arg, klass, ftype, name):
@@ -973,6 +1047,9 @@ class InstanceExpression(IRForm):
             if not (arg.is_ident() or arg.is_const()):
                 arg.modify_rhs(old, new)
 
+    def __str__(self):
+        return '%s.%s' % (self.var_map[self.arg], self.name)
+
 
 class StaticExpression(IRForm):
     def __init__(self, cls_name, field_type, field_name):
@@ -989,3 +1066,6 @@ class StaticExpression(IRForm):
 
     def modify_rhs(self, old, new):
         pass
+
+    def __str__(self):
+        return '%s.%s' % (self.cls, self.name)
