@@ -65,6 +65,7 @@ RISK_VALUES = {
 GENERAL_PERMISSIONS_RISK = {
     "dangerous"                 : DANGEROUS_RISK,
     "signatureOrSystem"         : SIGNATURE_SYSTEM_RISK,
+    "signatureOrSystemOrDevelopment" : SIGNATURE_SYSTEM_RISK,
     "signature"                 : SIGNATURE_RISK,
     "normal"                    : NORMAL_RISK,
 }

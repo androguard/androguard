@@ -608,6 +608,13 @@ class APK:
             except KeyError:
                 return None
 
+    def get_signature(self):
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA)$")
+        for i in self.get_files():
+            if signature_expr.search(i):
+                return self.get_file(i)
+        return None
+
     def show(self):
         self.get_files_types()
 
