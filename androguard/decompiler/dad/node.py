@@ -147,14 +147,13 @@ class Node(object):
 
     def set_latch_node(self, node):
         self.latch = node
-    
+
     def __repr__(self):
         return str(self)
 
 
-class Interval(Node):
+class Interval(object):
     def __init__(self, head):
-        super(Interval, self).__init__(head.name)
         self.name = 'Interval-%s' % head.name
         self.content = set([head])
         self.end = None

@@ -42,11 +42,6 @@ from androguard.decompiler.dad.instruction import (ArrayLengthExpression,
 logger = logging.getLogger('dad.opcode_ins')
 
 
-EXPR = 0
-INST = 1
-COND = 2
-
-
 class Op(object):
     CMP = 'cmp'
     ADD = '+'
@@ -1523,7 +1518,7 @@ def divlong2addr(ins, vmap):
 # rem-long/2addr vA, vB ( 4b, 4b )
 def remlong2addr(ins, vmap):
     logger.debug('RemLong2Addr : %s', ins.get_output())
-    return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
+    return assign_binary_2addr_exp(ins, Op.MOD, 'J', vmap)
 
 
 # and-long/2addr vA, vB ( 4b, 4b )
@@ -1736,225 +1731,264 @@ def ushrintlit8(ins, vmap):
     logger.debug('UShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
+INSTRUCTION_SET = [
+    # 0x00
+    nop,               # nop
+    move,              # move
+    movefrom16,        # move/from16
+    move16,            # move/16
+    movewide,          # move-wide
+    movewidefrom16,    # move-wide/from16
+    movewide16,        # move-wide/16
+    moveobject,        # move-object
+    moveobjectfrom16,  # move-object/from16
+    moveobject16,      # move-object/16
+    moveresult,        # move-result
+    moveresultwide,    # move-result-wide
+    moveresultobject,  # move-result-object
+    moveexception,     # move-exception
+    returnvoid,        # return-void
+    return_reg,        # return
 
-INSTRUCTION_SET = {
-    'nop':                    nop,
-    'move':                   move,
-    'move/from16':            movefrom16,
-    'move/16':                move16,
-    'move-wide':              movewide,
-    'move-wide/from16':       movewidefrom16,
-    'move-wide/16':           movewide16,
-    'move-object':            moveobject,
-    'move-object/from16':     moveobjectfrom16,
-    'move-object/16':         moveobject16,
-    'move-result':            moveresult,
-    'move-result-wide':       moveresultwide,
-    'move-result-object':     moveresultobject,
-    'move-exception':         moveexception,
-    'return-void':            returnvoid,
-    'return':                 return_reg,
-    'return-wide':            returnwide,
-    'return-object':          returnobject,
-    'const/4':                const4,
-    'const/16':               const16,
-    'const':                  const,
-    'const/high16':           consthigh16,
-    'const-wide/16':          constwide16,
-    'const-wide/32':          constwide32,
-    'const-wide':             constwide,
-    'const-wide/high16':      constwidehigh16,
-    'const-string':           conststring,
-    'const-string/jumbo':     conststringjumbo,
-    'const-class':            constclass,
-    'monitor-enter':          monitorenter,
-    'monitor-exit':           monitorexit,
-    'check-cast':             checkcast,
-    'instance-of':            instanceof,
-    'array-length':           arraylength,
-    'new-instance':           newinstance,
-    'new-array':              newarray,
-    'filled-new-array':       fillednewarray,
-    'filled-new-array/range': fillednewarrayrange,
-    'fill-array-data':        fillarraydata,
-    'fill-array-data-payload': fillarraydatapayload,
-    'throw':                  throw,
-    'goto':                   goto,
-    'goto/16':                goto16,
-    'goto/32':                goto32,
-    'packed-switch':          packedswitch,
-    'sparse-switch':          sparseswitch,
-    'cmpl-float':             cmplfloat,
-    'cmpg-float':             cmpgfloat,
-    'cmpl-double':            cmpldouble,
-    'cmpg-double':            cmpgdouble,
-    'cmp-long':               cmplong,
-    'if-eq':                  ifeq,
-    'if-ne':                  ifne,
-    'if-lt':                  iflt,
-    'if-ge':                  ifge,
-    'if-gt':                  ifgt,
-    'if-le':                  ifle,
-    'if-eqz':                 ifeqz,
-    'if-nez':                 ifnez,
-    'if-ltz':                 ifltz,
-    'if-gez':                 ifgez,
-    'if-gtz':                 ifgtz,
-    'if-lez':                 iflez,
-    'aget':                   aget,
-    'aget-wide':              agetwide,
-    'aget-object':            agetobject,
-    'aget-boolean':           agetboolean,
-    'aget-byte':              agetbyte,
-    'aget-char':              agetchar,
-    'aget-short':             agetshort,
-    'aput':                   aput,
-    'aput-wide':              aputwide,
-    'aput-object':            aputobject,
-    'aput-boolean':           aputboolean,
-    'aput-byte':              aputbyte,
-    'aput-char':              aputchar,
-    'aput-short':             aputshort,
-    'iget':                   iget,
-    'iget-wide':              igetwide,
-    'iget-object':            igetobject,
-    'iget-boolean':           igetboolean,
-    'iget-byte':              igetbyte,
-    'iget-char':              igetchar,
-    'iget-short':             igetshort,
-    'iput':                   iput,
-    'iput-wide':              iputwide,
-    'iput-object':            iputobject,
-    'iput-boolean':           iputboolean,
-    'iput-byte':              iputbyte,
-    'iput-char':              iputchar,
-    'iput-short':             iputshort,
-    'sget':                   sget,
-    'sget-wide':              sgetwide,
-    'sget-object':            sgetobject,
-    'sget-boolean':           sgetboolean,
-    'sget-byte':              sgetbyte,
-    'sget-char':              sgetchar,
-    'sget-short':             sgetshort,
-    'sput':                   sput,
-    'sput-wide':              sputwide,
-    'sput-object':            sputobject,
-    'sput-boolean':           sputboolean,
-    'sput-byte':              sputbyte,
-    'sput-char':              sputchar,
-    'sput-short':             sputshort,
-    'invoke-virtual':         invokevirtual,
-    'invoke-super':           invokesuper,
-    'invoke-direct':          invokedirect,
-    'invoke-static':          invokestatic,
-    'invoke-interface':       invokeinterface,
-    'invoke-virtual/range':   invokevirtualrange,
-    'invoke-super/range':     invokesuperrange,
-    'invoke-direct/range':    invokedirectrange,
-    'invoke-static/range':    invokestaticrange,
-    'invoke-interface/range': invokeinterfacerange,
-    'neg-int':                negint,
-    'not-int':                notint,
-    'neg-long':               neglong,
-    'not-long':               notlong,
-    'neg-float':              negfloat,
-    'neg-double':             negdouble,
-    'int-to-long':            inttolong,
-    'int-to-float':           inttofloat,
-    'int-to-double':          inttodouble,
-    'long-to-int':            longtoint,
-    'long-to-float':          longtofloat,
-    'long-to-double':         longtodouble,
-    'float-to-int':           floattoint,
-    'float-to-long':          floattolong,
-    'float-to-double':        floattodouble,
-    'double-to-int':          doubletoint,
-    'double-to-long':         doubletolong,
-    'double-to-float':        doubletofloat,
-    'int-to-byte':            inttobyte,
-    'int-to-char':            inttochar,
-    'int-to-short':           inttoshort,
-    'add-int':                addint,
-    'sub-int':                subint,
-    'mul-int':                mulint,
-    'div-int':                divint,
-    'rem-int':                remint,
-    'and-int':                andint,
-    'or-int':                 orint,
-    'xor-int':                xorint,
-    'shl-int':                shlint,
-    'shr-int':                shrint,
-    'ushr-int':               ushrint,
-    'add-long':               addlong,
-    'sub-long':               sublong,
-    'mul-long':               mullong,
-    'div-long':               divlong,
-    'rem-long':               remlong,
-    'and-long':               andlong,
-    'or-long':                orlong,
-    'xor-long':               xorlong,
-    'shl-long':               shllong,
-    'shr-long':               shrlong,
-    'ushr-long':              ushrlong,
-    'add-float':              addfloat,
-    'sub-float':              subfloat,
-    'mul-float':              mulfloat,
-    'div-float':              divfloat,
-    'rem-float':              remfloat,
-    'add-double':             adddouble,
-    'sub-double':             subdouble,
-    'mul-double':             muldouble,
-    'div-double':             divdouble,
-    'rem-double':             remdouble,
-    'add-int/2addr':          addint2addr,
-    'sub-int/2addr':          subint2addr,
-    'mul-int/2addr':          mulint2addr,
-    'div-int/2addr':          divint2addr,
-    'rem-int/2addr':          remint2addr,
-    'and-int/2addr':          andint2addr,
-    'or-int/2addr':           orint2addr,
-    'xor-int/2addr':          xorint2addr,
-    'shl-int/2addr':          shlint2addr,
-    'shr-int/2addr':          shrint2addr,
-    'ushr-int/2addr':         ushrint2addr,
-    'add-long/2addr':         addlong2addr,
-    'sub-long/2addr':         sublong2addr,
-    'mul-long/2addr':         mullong2addr,
-    'div-long/2addr':         divlong2addr,
-    'rem-long/2addr':         remlong2addr,
-    'and-long/2addr':         andlong2addr,
-    'or-long/2addr':          orlong2addr,
-    'xor-long/2addr':         xorlong2addr,
-    'shl-long/2addr':         shllong2addr,
-    'shr-long/2addr':         shrlong2addr,
-    'ushr-long/2addr':        ushrlong2addr,
-    'add-float/2addr':        addfloat2addr,
-    'sub-float/2addr':        subfloat2addr,
-    'mul-float/2addr':        mulfloat2addr,
-    'div-float/2addr':        divfloat2addr,
-    'rem-float/2addr':        remfloat2addr,
-    'add-double/2addr':       adddouble2addr,
-    'sub-double/2addr':       subdouble2addr,
-    'mul-double/2addr':       muldouble2addr,
-    'div-double/2addr':       divdouble2addr,
-    'rem-double/2addr':       remdouble2addr,
-    'add-int/lit16':          addintlit16,
-    'rsub-int':               rsubint,
-    'mul-int/lit16':          mulintlit16,
-    'div-int/lit16':          divintlit16,
-    'rem-int/lit16':          remintlit16,
-    'and-int/lit16':          andintlit16,
-    'or-int/lit16':           orintlit16,
-    'xor-int/lit16':          xorintlit16,
-    'add-int/lit8':           addintlit8,
-    'rsub-int/lit8':          rsubintlit8,
-    'mul-int/lit8':           mulintlit8,
-    'div-int/lit8':           divintlit8,
-    'rem-int/lit8':           remintlit8,
-    'and-int/lit8':           andintlit8,
-    'or-int/lit8':            orintlit8,
-    'xor-int/lit8':           xorintlit8,
-    'shl-int/lit8':           shlintlit8,
-    'shr-int/lit8':           shrintlit8,
-    'ushr-int/lit8':          ushrintlit8,
-}
+    # 0x10
+    returnwide,        # return-wide
+    returnobject,      # return-object
+    const4,            # const/4
+    const16,           # const/16
+    const,             # const
+    consthigh16,       # const/high16
+    constwide16,       # const-wide/16
+    constwide32,       # const-wide/32
+    constwide,         # const-wide
+    constwidehigh16,   # const-wide/high16
+    conststring,       # const-string
+    conststringjumbo,  # const-string/jumbo
+    constclass,        # const-class
+    monitorenter,      # monitor-enter
+    monitorexit,       # monitor-exit
+    checkcast,         # check-cast
+
+    # 0x20
+    instanceof,           # instance-of
+    arraylength,          # array-length
+    newinstance,          # new-instance
+    newarray,             # new-array
+    fillednewarray,       # filled-new-array
+    fillednewarrayrange,  # filled-new-array/range
+    fillarraydata,        # fill-array-data
+    # 'fill-array-data-payload': fillarraydatapayload
+    throw,                # throw
+    goto,                 # goto
+    goto16,               # goto/16
+    goto32,               # goto/32
+    packedswitch,         # packed-switch
+    sparseswitch,         # sparse-switch
+    cmplfloat,            # cmpl-float
+    cmpgfloat,            # cmpg-float
+    cmpldouble,           # cmpl-double
+
+    # 0x30
+    cmpgdouble,  # cmpg-double
+    cmplong,     # cmp-long
+    ifeq,        # if-eq
+    ifne,        # if-ne
+    iflt,        # if-lt
+    ifge,        # if-ge
+    ifgt,        # if-gt
+    ifle,        # if-le
+    ifeqz,       # if-eqz
+    ifnez,       # if-nez
+    ifltz,       # if-ltz
+    ifgez,       # if-gez
+    ifgtz,       # if-gtz
+    iflez,       # if-l
+    nop,         # unused
+    nop,         # unused
+
+    # 0x40
+    nop,          # unused
+    nop,          # unused
+    nop,          # unused
+    nop,          # unused
+    aget,         # aget
+    agetwide,     # aget-wide
+    agetobject,   # aget-object
+    agetboolean,  # aget-boolean
+    agetbyte,     # aget-byte
+    agetchar,     # aget-char
+    agetshort,    # aget-short
+    aput,         # aput
+    aputwide,     # aput-wide
+    aputobject,   # aput-object
+    aputboolean,  # aput-boolean
+    aputbyte,     # aput-byte
+
+    # 0x50
+    aputchar,     # aput-char
+    aputshort,    # aput-short
+    iget,         # iget
+    igetwide,     # iget-wide
+    igetobject,   # iget-object
+    igetboolean,  # iget-boolean
+    igetbyte,     # iget-byte
+    igetchar,     # iget-char
+    igetshort,    # iget-short
+    iput,         # iput
+    iputwide,     # iput-wide
+    iputobject,   # iput-object
+    iputboolean,  # iput-boolean
+    iputbyte,     # iput-byte
+    iputchar,     # iput-char
+    iputshort,    # iput-short
+
+    # 0x60
+    sget,           # sget
+    sgetwide,       # sget-wide
+    sgetobject,     # sget-object
+    sgetboolean,    # sget-boolean
+    sgetbyte,       # sget-byte
+    sgetchar,       # sget-char
+    sgetshort,      # sget-short
+    sput,           # sput
+    sputwide,       # sput-wide
+    sputobject,     # sput-object
+    sputboolean,    # sput-boolean
+    sputbyte,       # sput-byte
+    sputchar,       # sput-char
+    sputshort,      # sput-short
+    invokevirtual,  # invoke-virtual
+    invokesuper,    # invoke-super
+
+    # 0x70
+    invokedirect,          # invoke-direct
+    invokestatic,          # invoke-static
+    invokeinterface,       # invoke-interface
+    nop,                   # unused
+    invokevirtualrange,    # invoke-virtual/range
+    invokesuperrange,      # invoke-super/range
+    invokedirectrange,     # invoke-direct/range
+    invokestaticrange,     # invoke-static/range
+    invokeinterfacerange,  # invoke-interface/range
+    nop,                   # unused
+    nop,                   # unused
+    negint,                # neg-int
+    notint,                # not-int
+    neglong,               # neg-long
+    notlong,               # not-long
+    negfloat,              # neg-float
+
+    # 0x80
+    negdouble,      # neg-double
+    inttolong,      # int-to-long
+    inttofloat,     # int-to-float
+    inttodouble,    # int-to-double
+    longtoint,      # long-to-int
+    longtofloat,    # long-to-float
+    longtodouble,   # long-to-double
+    floattoint,     # float-to-int
+    floattolong,    # float-to-long
+    floattodouble,  # float-to-double
+    doubletoint,    # double-to-int
+    doubletolong,   # double-to-long
+    doubletofloat,  # double-to-float
+    inttobyte,      # int-to-byte
+    inttochar,      # int-to-char
+    inttoshort,     # int-to-short
+
+    # 0x90
+    addint,   # add-int
+    subint,   # sub-int
+    mulint,   # mul-int
+    divint,   # div-int
+    remint,   # rem-int
+    andint,   # and-int
+    orint,    # or-int
+    xorint,   # xor-int
+    shlint,   # shl-int
+    shrint,   # shr-int
+    ushrint,  # ushr-int
+    addlong,  # add-long
+    sublong,  # sub-long
+    mullong,  # mul-long
+    divlong,  # div-long
+    remlong,  # rem-long
+
+    # 0xa0
+    andlong,    # and-long
+    orlong,     # or-long
+    xorlong,    # xor-long
+    shllong,    # shl-long
+    shrlong,    # shr-long
+    ushrlong,   # ushr-long
+    addfloat,   # add-float
+    subfloat,   # sub-float
+    mulfloat,   # mul-float
+    divfloat,   # div-float
+    remfloat,   # rem-float
+    adddouble,  # add-double
+    subdouble,  # sub-double
+    muldouble,  # mul-double
+    divdouble,  # div-double
+    remdouble,  # rem-double
+
+    # 0xb0
+    addint2addr,   # add-int/2addr
+    subint2addr,   # sub-int/2addr
+    mulint2addr,   # mul-int/2addr
+    divint2addr,   # div-int/2addr
+    remint2addr,   # rem-int/2addr
+    andint2addr,   # and-int/2addr
+    orint2addr,    # or-int/2addr
+    xorint2addr,   # xor-int/2addr
+    shlint2addr,   # shl-int/2addr
+    shrint2addr,   # shr-int/2addr
+    ushrint2addr,  # ushr-int/2addr
+    addlong2addr,  # add-long/2addr
+    sublong2addr,  # sub-long/2addr
+    mullong2addr,  # mul-long/2addr
+    divlong2addr,  # div-long/2addr
+    remlong2addr,  # rem-long/2addr
+
+    # 0xc0
+    andlong2addr,    # and-long/2addr
+    orlong2addr,     # or-long/2addr
+    xorlong2addr,    # xor-long/2addr
+    shllong2addr,    # shl-long/2addr
+    shrlong2addr,    # shr-long/2addr
+    ushrlong2addr,   # ushr-long/2addr
+    addfloat2addr,   # add-float/2addr
+    subfloat2addr,   # sub-float/2addr
+    mulfloat2addr,   # mul-float/2addr
+    divfloat2addr,   # div-float/2addr
+    remfloat2addr,   # rem-float/2addr
+    adddouble2addr,  # add-double/2addr
+    subdouble2addr,  # sub-double/2addr
+    muldouble2addr,  # mul-double/2addr
+    divdouble2addr,  # div-double/2addr
+    remdouble2addr,  # rem-double/2addr
+
+    # 0xd0
+    addintlit16,  # add-int/lit16
+    rsubint,      # rsub-int
+    mulintlit16,  # mul-int/lit16
+    divintlit16,  # div-int/lit16
+    remintlit16,  # rem-int/lit16
+    andintlit16,  # and-int/lit16
+    orintlit16,   # or-int/lit16
+    xorintlit16,  # xor-int/lit16
+    addintlit8,   # add-int/lit8
+    rsubintlit8,  # rsub-int/lit8
+    mulintlit8,   # mul-int/lit8
+    divintlit8,   # div-int/lit8
+    remintlit8,   # rem-int/lit8
+    andintlit8,   # and-int/lit8
+    orintlit8,    # or-int/lit8
+    xorintlit8,   # xor-int/lit8
+
+    # 0xe0
+    shlintlit8,   # shl-int/lit8
+    shrintlit8,   # shr-int/lit8
+    ushrintlit8,  # ushr-int/lit8
+]
+
+INSTRUCTION_SET_SIZE = len(INSTRUCTION_SET)
