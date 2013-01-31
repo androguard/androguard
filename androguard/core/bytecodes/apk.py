@@ -87,7 +87,7 @@ class ChilkatZip :
         if entry != None :
 
             obj = chilkat.CkByteData()
-            obj.append( buff, len(buff) )
+            obj.append2( buff, len(buff) )
             return entry.ReplaceData( obj )
         return False
 
@@ -554,16 +554,15 @@ class APK:
         """
         return self.get_elements( "uses-library", "android:name" )
 
-    def get_certificate(self, filename) :
+    def get_certificate(self, filename):
         """
             Return a certificate object by giving the name in the apk file
         """
         import chilkat
 
         cert = chilkat.CkCert()
-        f = self.get_file( filename )
-        
-        success = cert.LoadFromBinary(f, len(f))
+        f = self.get_file(filename)
+        success = cert.LoadFromBinary2(f, len(f))
 
         return success, cert
 
