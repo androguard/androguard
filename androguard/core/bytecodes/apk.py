@@ -416,7 +416,7 @@ class APK:
 
             :rtype: string
         """
-        for i in self.xml :
+        for i in self.xml:
             x = set()
             y = set()
             for item in self.xml[i].getElementsByTagName("activity") :
@@ -435,7 +435,7 @@ class APK:
             return self.format_value(z.pop())
         return None
 
-    def get_activities(self) :
+    def get_activities(self):
         """
             Return the android:name attribute of all activities
 
@@ -443,7 +443,7 @@ class APK:
         """
         return self.get_elements("activity", "android:name")
 
-    def get_services(self) :
+    def get_services(self):
         """
             Return the android:name attribute of all services
 
@@ -467,7 +467,32 @@ class APK:
         """
         return self.get_elements("provider", "android:name")
 
-    def get_permissions(self) :
+    def get_intent_filters(self, category, name):
+        d = {}
+
+        d["action"] = []
+        d["category"] = []
+
+        for i in self.xml:
+            for item in self.xml[i].getElementsByTagName(category):
+                if self.format_value(item.getAttribute("android:name")) == name:
+                    for sitem in item.getElementsByTagName("intent-filter"):
+                        for ssitem in sitem.getElementsByTagName("action"):
+                            if ssitem.getAttribute("android:name") not in d["action"]:
+                                d["action"].append(ssitem.getAttribute("android:name"))
+                        for ssitem in sitem.getElementsByTagName("category"):
+                            if ssitem.getAttribute("android:name") not in d["category"]:
+                                d["category"].append(ssitem.getAttribute("android:name"))
+
+        if not d["action"]:
+            del d["action"]
+
+        if not d["category"]:
+            del d["category"]
+
+        return d
+
+    def get_permissions(self):
         """
             Return permissions
 
@@ -475,7 +500,7 @@ class APK:
         """
         return self.permissions
 
-    def get_details_permissions(self) :
+    def get_details_permissions(self):
         """
             Return permissions with details
 
@@ -607,6 +632,13 @@ class APK:
                 return self.arsc["resources.arsc"]
             except KeyError:
                 return None
+
+    def get_signature_name(self):
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA)$")
+        for i in self.get_files():
+            if signature_expr.search(i):
+                return i
+        return None
 
     def get_signature(self):
         signature_expr = re.compile("^(META-INF/)(.*)(\.RSA)$")
@@ -784,15 +816,15 @@ ATTRIBUTE_IX_VALUE_TYPE     = 3
 ATTRIBUTE_IX_VALUE_DATA     = 4
 ATTRIBUTE_LENGHT            = 5
 
-CHUNK_AXML_FILE             = 0x00080003
-CHUNK_RESOURCEIDS           = 0x00080180
-CHUNK_XML_FIRST             = 0x00100100
-CHUNK_XML_START_NAMESPACE   = 0x00100100
-CHUNK_XML_END_NAMESPACE     = 0x00100101
-CHUNK_XML_START_TAG         = 0x00100102
-CHUNK_XML_END_TAG           = 0x00100103
-CHUNK_XML_TEXT              = 0x00100104
-CHUNK_XML_LAST              = 0x00100104
+CHUNK_AXML_FILE = 0x00080003
+CHUNK_RESOURCEIDS = 0x00080180
+CHUNK_XML_FIRST = 0x00100100
+CHUNK_XML_START_NAMESPACE = 0x00100100
+CHUNK_XML_END_NAMESPACE = 0x00100101
+CHUNK_XML_START_TAG = 0x00100102
+CHUNK_XML_END_TAG = 0x00100103
+CHUNK_XML_TEXT = 0x00100104
+CHUNK_XML_LAST = 0x00100104
 
 START_DOCUMENT              = 0
 END_DOCUMENT                = 1
@@ -805,19 +837,28 @@ class AXMLParser:
     def __init__(self, raw_buff):
         self.reset()
 
+        self.valid_axml = True
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        self.buff.read(4)
-        self.buff.read(4)
+        axml_file = unpack('<L', self.buff.read(4))[0]
 
-        self.sb = StringBlock(self.buff)
+        if axml_file == CHUNK_AXML_FILE:
+            self.buff.read(4)
 
-        self.m_resourceIDs = []
-        self.m_prefixuri = {}
-        self.m_uriprefix = {}
-        self.m_prefixuriL = []
+            self.sb = StringBlock(self.buff)
 
-        self.visited_ns = []
+            self.m_resourceIDs = []
+            self.m_prefixuri = {}
+            self.m_uriprefix = {}
+            self.m_prefixuriL = []
+
+            self.visited_ns = []
+        else:
+            self.valid_axml = False
+            androconf.warning("Not a valid xml file")
+
+    def is_valid(self):
+        return self.valid_axml
 
     def reset(self):
         self.m_event = -1
@@ -860,7 +901,7 @@ class AXMLParser:
                 chunkSize = unpack('<L', self.buff.read(4))[0]
                 # FIXME
                 if chunkSize < 8 or chunkSize % 4 != 0:
-                    androconf.warning("ooo")
+                    androconf.warning("Invalid chunk size")
 
                 for i in range(0, chunkSize / 4 - 2):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
@@ -869,7 +910,7 @@ class AXMLParser:
 
             # FIXME
             if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
-                androconf.warning("ooo")
+                androconf.warning("invalid chunk type")
 
             # Fake START_DOCUMENT event.
             if chunkType == CHUNK_XML_START_TAG and event == -1:
@@ -1066,8 +1107,10 @@ FRACTION_UNITS          =   [ "%", "%p" ]
 
 COMPLEX_UNIT_MASK        =   15
 
+
 def complexToFloat(xcomplex):
     return (float)(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
+
 
 class AXMLPrinter:
     def __init__(self, raw_buff):
@@ -1076,7 +1119,7 @@ class AXMLPrinter:
 
         self.buff = u''
 
-        while True:
+        while True and self.axml.is_valid():
             _type = self.axml.next()
 #           print "tagtype = ", _type
 
@@ -1087,18 +1130,18 @@ class AXMLPrinter:
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
-                    self.buff += "%s%s=\"%s\"\n" % ( self.getPrefix(
-                        self.axml.getAttributePrefix(i) ), self.axml.getAttributeName(i), self._escape( self.getAttributeValue( i ) ) )
+                    self.buff += "%s%s=\"%s\"\n" % (self.getPrefix(
+                        self.axml.getAttributePrefix(i)), self.axml.getAttributeName(i), self._escape(self.getAttributeValue(i)))
 
                 self.buff += u'>\n'
 
-            elif _type == END_TAG :
-                self.buff += "</%s%s>\n" % ( self.getPrefix( self.axml.getPrefix() ), self.axml.getName() )
+            elif _type == END_TAG:
+                self.buff += "</%s%s>\n" % (self.getPrefix(self.axml.getPrefix()), self.axml.getName())
 
-            elif _type == TEXT :
+            elif _type == TEXT:
                 self.buff += "%s\n" % self.axml.getText()
 
-            elif _type == END_DOCUMENT :
+            elif _type == END_DOCUMENT:
                 break
 
     # pleed patch

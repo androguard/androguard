@@ -209,6 +209,9 @@ def set_lazy() :
 def set_debug() :
     log_andro.setLevel( logging.DEBUG )
 
+def set_info() :
+    log_andro.setLevel(logging.INFO)
+
 def get_debug() :
     return log_andro.getEffectiveLevel() == logging.DEBUG
 
@@ -221,9 +224,12 @@ def error(x) :
     log_runtime.error(x)
     raise()
 
-def debug(x) :
+def debug(x):
     log_runtime.debug(x)
-    
+
+def info(x):
+    log_runtime.info(x)
+
 def set_options(key, value) :
     CONF[ key ] = value
 
