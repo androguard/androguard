@@ -24,7 +24,8 @@ import re
 import struct
 from struct import pack, unpack, calcsize
 
-DEX_FILE_MAGIC = 'dex\n035\x00'
+DEX_FILE_MAGIC_35 = 'dex\n035\x00'
+DEX_FILE_MAGIC_36 = 'dex\n036\x00'
 ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
 
