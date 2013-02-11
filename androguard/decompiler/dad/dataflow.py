@@ -196,11 +196,11 @@ def clear_path(graph, reg, loc1, loc2):
     # If both instructions are in the same node, we only have to check that the
     # path is clear inside the node
     if node1 is node2:
-        return clear_path_node(graph, reg, loc1, loc2)
+        return clear_path_node(graph, reg, loc1 + 1, loc2)
 
     # If instructions are in different nodes, we also have to check the nodes
     # in the path between the two locations.
-    if not clear_path_node(graph, reg, loc1, node1.ins_range[1]):
+    if not clear_path_node(graph, reg, loc1 + 1, node1.ins_range[1]):
         return False
     path = build_path(graph, node1, node2)
     for node in path:
@@ -279,7 +279,7 @@ def register_propagation(graph, du, ud):
                     for var2 in orig_ins_used_vars:
                         # loc is the location of the defined variable
                         # i is the location of the current instruction
-                        if not clear_path(graph, var2, loc + 1, i):
+                        if not clear_path(graph, var2, loc, i):
                             safe = False
                             break
                     if not safe:
@@ -291,7 +291,7 @@ def register_propagation(graph, du, ud):
                     # cannot be propagated if there is another side effect
                     # along the path
                     if orig_ins.has_side_effect():
-                        if not clear_path(graph, None, loc + 1, i):
+                        if not clear_path(graph, None, loc, i):
                             logger.debug('        %s has side effect and the '
                                          'path is not clear !', orig_ins)
                             continue
