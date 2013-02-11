@@ -18,8 +18,8 @@
 
 import logging
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
-                                                    StatementBlock, CondBlock,
-                                                    GenInvokeRetName)
+                                                    StatementBlock, CondBlock)
+from androguard.decompiler.dad.instruction import Variable
 from androguard.decompiler.dad.util import common_dom
 
 
@@ -37,26 +37,11 @@ class Graph():
         self.loc_to_ins = None
         self.loc_to_node = None
 
-    def get_entry(self):
-        return self.entry
-
-    def get_exit(self):
-        return self.exit
-
-    def set_entry(self, node):
-        self.entry = node
-
-    def set_exit(self, node):
-        self.exit = node
-
     def sucs(self, node):
         return self.edges.get(node, [])
 
     def preds(self, node):
         return self.reverse_edges.get(node, [])
-
-    def get_rpo(self):
-        return self.rpo
 
     def add_node(self, node):
         self.nodes.append(node)
@@ -115,7 +100,7 @@ class Graph():
         node_map = {}
         to_update = set()
         for node in self.nodes[:]:
-            if node.is_cond():
+            if node.type.is_cond:
                 if len(node.get_ins()) > 1:
                     pre_ins = node.get_ins()[:-1]
                     last_ins = node.get_ins()[-1]
@@ -125,9 +110,9 @@ class Graph():
 
                     pre_node.copy_from(node)
                     cond_node.copy_from(node)
-                    pre_node.set_stmt()
-                    cond_node.set_true(node.true)
-                    cond_node.set_false(node.false)
+                    pre_node.type.is_stmt = True
+                    cond_node.true = node.true
+                    cond_node.false = node.false
 
                     lpreds = self.preds(node)
                     lsuccs = self.sucs(node)
@@ -136,17 +121,17 @@ class Graph():
                         pred_node = node_map.get(pred, pred)
                         if pred is node:
                             pred_node = cond_node
-                        if pred.is_cond():  # and not (pred is node):
+                        if pred.type.is_cond:  # and not (pred is node):
                             if pred.true is node:
-                                pred_node.set_true(pre_node)
+                                pred_node.true = pre_node
                             if pred.false is node:
-                                pred_node.set_false(pre_node)
+                                pred_node.false = pre_node
                         self.add_edge(pred_node, pre_node)
                     for suc in lsuccs:
                         self.add_edge(cond_node, node_map.get(suc, suc))
 
                     if node is self.entry:
-                        self.set_entry(pre_node)
+                        self.entry = pre_node
 
                     self.add_node(pre_node)
                     self.add_node(cond_node)
@@ -171,7 +156,7 @@ class Graph():
         while redo:
             redo = False
             for node in self.nodes[:]:
-                if node.is_stmt() and node in self.nodes:
+                if node.type.is_stmt and node in self.nodes:
                     suc = self.sucs(node)[0]
                     if len(node.get_ins()) == 0:
                         suc = self.edges.get(node)[0]
@@ -185,7 +170,7 @@ class Graph():
                         if node is self.entry:
                             self.entry = suc
                         self.remove_node(node)
-                    elif (suc.is_stmt() and len(self.preds(suc)) == 1
+                    elif (suc.type.is_stmt and len(self.preds(suc)) == 1
                             and not ((node is suc) or (suc is self.entry))):
                         ins_to_merge = suc.get_ins()
                         node.add_ins(ins_to_merge)
@@ -237,24 +222,17 @@ class Graph():
         return res
 
     def draw(self, name, dname, draw_branches=True):
-        import pydot
-        g = pydot.Dot()
-        g.set_node_defaults(**{'color': 'lightgray', 'style': 'filled',
-                    'shape': 'box', 'fontname': 'Courier', 'fontsize': '10'})
+        from pydot import Dot, Edge
+        g = Dot()
+        g.set_node_defaults(color='lightgray', style='filled', shape='box',
+                            fontname='Courier', fontsize='10')
         for node in sorted(self.nodes, key=lambda x: x.num):
-            if draw_branches and node.is_cond():
-                edge_true = pydot.Edge(str(node), str(node.true))
-                edge_false = pydot.Edge(str(node), str(node.false))
-                edge_true.set_color('green')
-                edge_false.set_color('red')
-                g.add_edge(edge_true)
-                g.add_edge(edge_false)
+            if draw_branches and node.type.is_cond:
+                g.add_edge(Edge(str(node), str(node.true), color='green'))
+                g.add_edge(Edge(str(node), str(node.false), color='red'))
             else:
-                succs = self.sucs(node)
-                for suc in succs:
-                    edge = pydot.Edge(str(node), str(suc))
-                    edge.set_color('blue')
-                    g.add_edge(edge)
+                for suc in self.sucs(node):
+                    g.add_edge(Edge(str(node), str(suc), color='blue'))
         g.write_png('%s/%s.png' % (dname, name))
 
     def immediate_dominators(self):
@@ -263,7 +241,7 @@ class Graph():
         immediate dominator
         '''
         idom = dict((n, None) for n in self.nodes)
-        for node in self.get_rpo():
+        for node in self.rpo:
             for pred in self.preds(node):
                 if pred.num < node.num:
                     idom[node] = common_dom(idom, idom[node], pred)
@@ -275,8 +253,8 @@ class Graph():
             dom_tree.add_node(n)
             if idom_n:
                 dom_tree.add_edge(idom_n, n)
-        dom_tree.set_entry(self.entry)
-        dom_tree.set_exit(self.exit)
+        dom_tree.entry = self.entry
+        dom_tree.exit = self.exit
         return dom_tree
 
     def __len__(self):
@@ -302,6 +280,23 @@ def bfs(start):
                 visited.add(child)
 
 
+class GenInvokeRetName(object):
+    def __init__(self):
+        self.num = 0
+        self.ret = None
+
+    def new(self):
+        self.num += 1
+        self.ret = Variable('tmp%d' % self.num)
+        return self.ret
+
+    def set_to(self, ret):
+        self.ret = ret
+
+    def last(self):
+        return self.ret
+
+
 def construct(start_block, vmap, exceptions):
     # Exceptions are not yet handled. An exception block has no parent, so
     # we can skip them by doing a BFS on the basic blocks.
@@ -323,27 +318,27 @@ def construct(start_block, vmap, exceptions):
                 child_node = build_node_from_block(child_block, vmap, gen_ret)
                 block_to_node[child_block] = child_node
             graph.add_edge(node, child_node)
-            if node.is_switch():
+            if node.type.is_switch:
                 node.add_case(child_node)
-            if node.is_cond():
+            if node.type.is_cond:
                 if_target = ((block.end / 2) - (block.last_length / 2) +
                              node.off_last_ins)
                 child_addr = child_block.start / 2
                 if if_target == child_addr:
-                    node.set_true(child_node)
+                    node.true = child_node
                 else:
-                    node.set_false(child_node)
+                    node.false = child_node
         # Check that both branch of the if point to something
         # It may happen that both branch point to the same node, in this case
         # the false branch will be None. So we set it to the right node.
         # TODO: In this situation, we should transform the condition node into
         # a statement node
-        if node.is_cond() and node.false is None:
-            node.set_false(node.true)
+        if node.type.is_cond and node.false is None:
+            node.false = node.true
 
         graph.add_node(node)
 
-    graph.set_entry(block_to_node[start_block])
+    graph.entry = block_to_node[start_block]
     del block_to_node, bfs_blocks
 
     graph.compute_rpo()
@@ -353,17 +348,17 @@ def construct(start_block, vmap, exceptions):
     # There should be one and only one node of this type
     # If this is not the case, try to continue anyway by setting the exit node
     # to the one which has the greatest RPO number (not necessarily the case)
-    lexit_nodes = [node for node in graph if node.is_return()]
+    lexit_nodes = [node for node in graph if node.type.is_return]
 
     if len(lexit_nodes) > 1:
         # Not sure that this case is possible...
         logger.error('Multiple exit nodes found !')
-        graph.set_exit(graph.get_rpo()[-1])
+        graph.exit = graph.rpo[-1]
     elif len(lexit_nodes) < 1:
         # A method can have no return if it has throw statement(s) or if its
         # body is a while(1) whitout break/return.
         logger.debug('No exit node found !')
     else:
-        graph.set_exit(lexit_nodes[0])
+        graph.exit = lexit_nodes[0]
 
     return graph

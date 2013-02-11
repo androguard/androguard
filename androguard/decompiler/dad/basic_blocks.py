@@ -19,7 +19,6 @@
 import logging
 from androguard.decompiler.dad.opcode_ins import (INSTRUCTION_SET,
                                                   INSTRUCTION_SET_SIZE)
-from androguard.decompiler.dad.instruction import Variable
 from androguard.decompiler.dad.node import Node
 
 
@@ -59,6 +58,7 @@ class BasicBlock(Node):
 class StatementBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(StatementBlock, self).__init__(name, block_ins)
+        self.type.is_stmt = True
 
     def visit(self, visitor):
         return visitor.visit_statement_node(self)
@@ -70,6 +70,7 @@ class StatementBlock(BasicBlock):
 class ReturnBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(ReturnBlock, self).__init__(name, block_ins)
+        self.type.is_return = True
 
     def visit(self, visitor):
         return visitor.visit_return_node(self)
@@ -81,6 +82,7 @@ class ReturnBlock(BasicBlock):
 class ThrowBlock(BasicBlock):
     def __init__(self, name, block_ins):
         super(ThrowBlock, self).__init__(name, block_ins)
+        self.type.is_throw = True
 
     def visit(self, visitor):
         return visitor.visit_throw_node(self)
@@ -96,6 +98,7 @@ class SwitchBlock(BasicBlock):
         self.cases = []
         self.default = None
         self.node_to_case = {}
+        self.type.is_switch = True
 
     def add_case(self, case):
         self.cases.append(case)
@@ -105,8 +108,8 @@ class SwitchBlock(BasicBlock):
 
     def copy_from(self, node):
         super(SwitchBlock, self).copy_from(node)
-        self.cases = node.cases
-        self.switch = node.switch
+        self.cases = node.cases[:]
+        self.switch = node.switch[:]
 
     def update_attribute_with(self, n_map):
         super(SwitchBlock, self).update_attribute_with(n_map)
@@ -131,12 +134,7 @@ class CondBlock(BasicBlock):
         super(CondBlock, self).__init__(name, block_ins)
         self.true = None
         self.false = None
-
-    def set_true(self, node):
-        self.true = node
-
-    def set_false(self, node):
-        self.false = node
+        self.type.is_cond = True
 
     def update_attribute_with(self, n_map):
         super(CondBlock, self).update_attribute_with(n_map)
@@ -242,15 +240,15 @@ class LoopBlock(CondBlock):
         self.cond.update_attribute_with(n_map)
 
     def __str__(self):
-        if self.looptype.pretest():
+        if self.looptype.is_pretest:
             if self.false in self.loop_nodes:
                 return '%d-While(!%s)[%s]' % (self.num, self.name, self.cond)
             return '%d-While(%s)[%s]' % (self.num, self.name, self.cond)
-        elif self.looptype.posttest():
+        elif self.looptype.is_posttest:
             return '%d-DoWhile(%s)[%s]' % (self.num, self.name, self.cond)
-        elif self.looptype.endless():
+        elif self.looptype.is_endless:
             return '%d-WhileTrue(%s)[%s]' % (self.num, self.name, self.cond)
-        return '%dWhileNoType(%s)' % (self.num, self.name)
+        return '%d-WhileNoType(%s)' % (self.num, self.name)
 
 
 class TryBlock(BasicBlock):
@@ -274,34 +272,19 @@ class CatchBlock(BasicBlock):
         return 'Catch(%s)' % self.name
 
 
-class GenInvokeRetName(object):
-    def __init__(self):
-        self.num = 0
-        self.ret = None
-
-    def new(self):
-        self.num += 1
-        self.ret = Variable('tmp%d' % self.num)
-        return self.ret
-
-    def set_to(self, ret):
-        self.ret = ret
-
-    def last(self):
-        return self.ret
-
-
 def build_node_from_block(block, vmap, gen_ret):
     ins, lins = None, []
     idx = block.get_start()
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
-        if opcode == 0x1f:  # check-cast
+        # check-cast
+        if opcode == 0x1f:  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
             idx += ins.get_length()
             continue
-        if opcode > INSTRUCTION_SET_SIZE:
-            logger.error('Unknown instruction : %s.', ins.get_name().lower())
-        _ins = INSTRUCTION_SET[opcode]
+        try:
+            _ins = INSTRUCTION_SET[opcode]
+        except IndexError:
+            exit('Unknown instruction : %s.' % ins.get_name().lower())
         # fill-array-data
         if opcode == 0x26:
             fillaray = block.get_special_ins(idx)
@@ -326,26 +309,21 @@ def build_node_from_block(block, vmap, gen_ret):
     # return*
     if 0xe <= opcode <= 0x11:
         node = ReturnBlock(name, lins)
-        node.set_return()
     # {packed,sparse}-switch
     elif 0x2b <= opcode <= 0x2c:
         idx -= ins.get_length()
         values = block.get_special_ins(idx)
         node = SwitchBlock(name, values, lins)
-        node.set_switch()
     # if-test[z]
     elif 0x32 <= opcode <= 0x3d:
         node = CondBlock(name, lins)
-        node.set_cond()
         node.off_last_ins = ins.get_ref_off()
     # throw
     elif opcode == 0x27:
         node = ThrowBlock(name, lins)
-        node.set_throw()
     else:
         # goto*
         if 0x28 <= opcode <= 0x2a:
             lins.pop()
         node = StatementBlock(name, lins)
-        node.set_stmt()
     return node

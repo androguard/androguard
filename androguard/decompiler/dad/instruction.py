@@ -69,7 +69,6 @@ class IRForm(object):
 
 class Constant(IRForm):
     def __init__(self, value, atype, int_value=None):
-        super(Constant, self).__init__()
         self.v = 'c%s' % value
         self.cst = value
         if int_value is None:
@@ -112,7 +111,6 @@ class Constant(IRForm):
 
 class BaseClass(IRForm):
     def __init__(self, name):
-        super(BaseClass, self).__init__()
         self.v = 'c%s' % name
         self.cls = name
 
@@ -128,7 +126,6 @@ class BaseClass(IRForm):
 
 class Variable(IRForm):
     def __init__(self, value):
-        super(Variable, self).__init__()
         self.v = value
 
     def get_type(self):
@@ -155,7 +152,6 @@ class Variable(IRForm):
 
 class Param(IRForm):
     def __init__(self, value, atype):
-        super(Param, self).__init__()
         self.v = value
         self.type = atype
 

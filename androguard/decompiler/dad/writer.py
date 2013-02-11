@@ -35,9 +35,9 @@ class Writer(object):
         self.ind = 4
         self.buffer = []
         self.loop_follow = [None]
-        self.latch_node = [None]
         self.if_follow = [None]
         self.switch_follow = [None]
+        self.latch_node = [None]
         self.next_case = None
         self.skip = False
         self.need_break = True
@@ -118,7 +118,7 @@ class Writer(object):
         self.inc_ind()
 #        for v, var in self.method.var_to_name.iteritems():
 #            var.visit_decl(self)
-        self.visit_node(self.graph.get_entry())
+        self.visit_node(self.graph.entry)
         self.dec_ind()
         self.write('%s}\n' % self.space())
 
@@ -132,32 +132,32 @@ class Writer(object):
         node.visit(self)
 
     def visit_loop_node(self, loop):
-        follow = loop.get_loop_follow()
-        if follow is None and not loop.looptype.endless():
+        follow = loop.follow['loop']
+        if follow is None and not loop.looptype.is_endless:
             logger.error('Loop has no follow !')
-        if loop.looptype.pretest():
+        if loop.looptype.is_pretest:
             if loop.true is follow:
                 loop.neg()
                 loop.true, loop.false = loop.false, loop.true
             self.write('%swhile (' % self.space())
             loop.visit_cond(self)
             self.write(') {\n')
-        elif loop.looptype.posttest():
+        elif loop.looptype.is_posttest:
             self.write('%sdo {\n' % self.space())
             self.latch_node.append(loop.latch)
-        elif loop.looptype.endless():
+        elif loop.looptype.is_endless:
             self.write('%swhile(true) {\n' % self.space())
         self.inc_ind()
         self.loop_follow.append(follow)
-        if loop.looptype.pretest():
+        if loop.looptype.is_pretest:
             self.visit_node(loop.true)
         else:
             self.visit_node(loop.cond)
         self.loop_follow.pop()
         self.dec_ind()
-        if loop.looptype.pretest():
+        if loop.looptype.is_pretest:
             self.write('%s}\n' % self.space())
-        elif loop.looptype.posttest():
+        elif loop.looptype.is_posttest:
             self.latch_node.pop()
             self.write('%s} while(' % self.space())
             loop.latch.visit_cond(self)
@@ -171,7 +171,18 @@ class Writer(object):
             self.visit_node(follow)
 
     def visit_cond_node(self, cond):
-        follow = cond.get_if_follow()
+        follow = cond.follow['if']
+        if cond.false is cond.true:
+            self.write('%s// Both branches of the conditions point to the same'
+                       ' code.\n' % self.space())
+            self.write('%s// if (' % self.space())
+            cond.visit_cond(self)
+            self.write(') {\n')
+            self.inc_ind()
+            self.visit_node(cond.true)
+            self.dec_ind()
+            self.write('%s// }\n' % self.space())
+            return
         if cond.false is self.loop_follow[-1]:
             cond.neg()
             cond.true, cond.false = cond.false, cond.true
@@ -185,9 +196,10 @@ class Writer(object):
             self.write('%s}\n' % self.space())
             self.visit_node(cond.false)
         elif follow is not None:
-            is_else = not (follow in (cond.true, cond.false))
+            #print 'IF:', cond, 'FOLLOW:', follow
             if cond.true in (follow, self.next_case) or\
-                                                    cond.num > cond.true.num:
+                                                cond.num > cond.true.num:
+                             # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
@@ -198,6 +210,7 @@ class Writer(object):
                 self.inc_ind()
                 self.visit_node(cond.true)
                 self.dec_ind()
+            is_else = not (follow in (cond.true, cond.false))
             if is_else and not cond.false in self.visited_nodes:
                 self.write('%s} else {\n' % self.space())
                 self.inc_ind()
@@ -236,7 +249,7 @@ class Writer(object):
         self.write('%sswitch (' % self.space())
         self.visit_ins(switch_ins)
         self.write(') {\n')
-        follow = switch.get_switch_follow()
+        follow = switch.follow['switch']
         cases = switch.cases
         self.switch_follow.append(follow)
         default = switch.default
