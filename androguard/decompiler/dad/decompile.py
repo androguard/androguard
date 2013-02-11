@@ -79,7 +79,7 @@ class DvMethod():
                 self.lparams.append(param)
                 self.var_to_name.setdefault(param, Param(param, ptype))
                 num_param += util.get_type_size(ptype)
-        if 0:
+        if not __debug__:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
                 (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
@@ -94,7 +94,7 @@ class DvMethod():
         graph = construct(self.start_block, self.var_to_name, self.exceptions)
         self.graph = graph
 
-        if 0:
+        if not __debug__:
             util.create_png(self.cls_name, self.name, graph, '/tmp/dad/blocks')
 
         defs, uses = build_def_use(graph, self.lparams)
@@ -115,7 +115,7 @@ class DvMethod():
         idoms = graph.immediate_dominators()
         identify_structures(graph, idoms)
 
-        if 0:
+        if not __debug__:
             util.create_png(self.cls_name, self.name, graph,
                                                     '/tmp/dad/structured')
 
@@ -214,8 +214,9 @@ class DvClass():
 
         source.append('%s {\n' % self.prototype)
         for field in self.fields.values():
-            access = [util.ACCESS_FLAGS_FIELDS.get(flag) for flag in
-                util.ACCESS_FLAGS_FIELDS if flag & field.get_access_flags()]
+            field_access_flags = field.get_access_flags()
+            access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
+                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
             f_type = util.get_type(field.get_descriptor())
             name = field.get_name()
             source.append('    %s %s %s;\n' % (' '.join(access), f_type, name))
@@ -246,8 +247,9 @@ class DvClass():
 
         print '%s {\n' % self.prototype
         for field in self.fields.values():
-            access = [util.ACCESS_FLAGS_FIELDS.get(flag) for flag in
-                util.ACCESS_FLAGS_FIELDS if flag & field.get_access_flags()]
+            field_access_flags = field.get_access_flags()
+            access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
+                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
             f_type = util.get_type(field.get_descriptor())
             name = field.get_name()
             print '    %s %s %s;\n' % (' '.join(access), f_type, name)

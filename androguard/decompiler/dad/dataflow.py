@@ -57,14 +57,14 @@ class BasicReachDef(object):
         self.defs = {}
         self.def_to_loc = {}
         # Deal with special entry node
-        entry = graph.get_entry()
+        entry = graph.entry
         self.defs[entry] = {}
         self.A[entry] = set([-1])
         for param in params:
             self.defs[entry][param] = set([-1])
             self.def_to_loc[param] = set([-1])
         # Deal with the other nodes
-        for node in graph.get_rpo():
+        for node in graph.rpo:
             self.A[node] = set()
             self.R[node] = set()
             self.DB[node] = set()
@@ -78,7 +78,7 @@ class BasicReachDef(object):
                 self.DB[node].add(max(values))
 
     def run(self):
-        nodes = self.g.get_rpo()[:]
+        nodes = self.g.rpo[:]
         while nodes:
             node = nodes.pop(0)
             predA = [self.A[p] for p in self.g.preds(node)]
@@ -145,7 +145,7 @@ def dead_code_elimination(graph, du, ud):
     we update the DU & UD chains of its variables to check for further dead
     instructions.
     '''
-    for node in graph.get_rpo():
+    for node in graph.rpo:
         for i, ins in node.get_loc_with_ins()[:]:
             reg = ins.get_lhs()
             if reg is not None:
@@ -225,7 +225,7 @@ def register_propagation(graph, du, ud):
     change = True
     while change:
         change = False
-        for node in graph.get_rpo():
+        for node in graph.rpo:
             for i, ins in node.get_loc_with_ins()[:]:
                 logger.debug('Treating instruction %d: %s', i, ins)
                 # We make sure the ins has not been deleted since the start of
@@ -360,12 +360,12 @@ def build_def_use(graph, lparams):
 
     # We insert two special nodes : entry & exit, to the graph.
     # This is done to simplify the reaching definition analysis.
-    old_entry = graph.get_entry()
-    old_exit = graph.get_exit()
+    old_entry = graph.entry
+    old_exit = graph.exit
     new_entry = DummyNode('entry')
     graph.add_node(new_entry)
     graph.add_edge(new_entry, old_entry)
-    graph.set_entry(new_entry)
+    graph.entry = new_entry
     if old_exit:
         new_exit = DummyNode('exit')
         graph.add_node(new_exit)
@@ -379,10 +379,10 @@ def build_def_use(graph, lparams):
     graph.remove_node(new_entry)
     if old_exit:
         graph.remove_node(new_exit)
-    graph.set_entry(old_entry)
+    graph.entry = old_entry
 
     UD = {}
-    for node in graph.get_rpo():
+    for node in graph.rpo:
         for i, ins in node.get_loc_with_ins():
             for var in ins.get_used_vars():
                 # var not in analysis.def_to_loc: test that the register
