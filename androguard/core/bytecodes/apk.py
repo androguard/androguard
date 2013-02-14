@@ -416,9 +416,10 @@ class APK:
 
             :rtype: string
         """
+        x = set()
+        y = set()
+
         for i in self.xml:
-            x = set()
-            y = set()
             for item in self.xml[i].getElementsByTagName("activity") :
                 for sitem in item.getElementsByTagName( "action" ) :
                     val = sitem.getAttribute( "android:name" )
@@ -661,9 +662,25 @@ class APK:
         for i in details_permissions:
             print "\t", i, details_permissions[i]
         print "MAIN ACTIVITY: ", self.get_main_activity()
-        print "ACTIVITIES: ", self.get_activities()
-        print "SERVICES: ", self.get_services()
-        print "RECEIVERS: ", self.get_receivers()
+
+        print "ACTIVITIES: "
+        activities = self.get_activities()
+        for i in activities:
+            filters = self.get_intent_filters("activity", i)
+            print "\t", i, filters or ""
+
+        print "SERVICES: "
+        services = self.get_services()
+        for i in services:
+            filters = self.get_intent_filters("service", i)
+            print "\t", i, filters or ""
+
+        print "RECEIVERS: "
+        receivers = self.get_receivers()
+        for i in receivers:
+            filters = self.get_intent_filters("receiver", i)
+            print "\t", i, filters or ""
+
         print "PROVIDERS: ", self.get_providers()
 
 

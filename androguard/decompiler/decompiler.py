@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2011, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2013, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Androguard is free software: you can redistribute it and/or modify
@@ -36,51 +36,74 @@ except ImportError:
     class Filter:
         pass
 
-class DecompilerDex2Jad :
-    def __init__(self, vm, path_dex2jar = "./decompiler/dex2jar/", bin_dex2jar = "dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/") :
-        self.classes = {}
-        self.classes_failed = []
-        
-        pathtmp = tmp_dir
-        if not os.path.exists(pathtmp) :
-            os.makedirs( pathtmp )
 
-        fd, fdname = tempfile.mkstemp( dir=pathtmp )
+class Dex2Jar:
+    def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", tmp_dir="/tmp/"):
+        pathtmp = tmp_dir
+        if not os.path.exists(pathtmp):
+            os.makedirs(pathtmp)
+
+        fd, fdname = tempfile.mkstemp(dir=pathtmp)
         fd = os.fdopen(fd, "w+b")
-        fd.write( vm.get_buff() )
+        fd.write(vm.get_buff())
         fd.flush()
         fd.close()
-       
-        compile = Popen([ path_dex2jar + bin_dex2jar, fdname ], stdout=PIPE, stderr=STDOUT)        
+
+        compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
-        os.unlink( fdname )
+        os.unlink(fdname)
+
+        self.jarfile = fdname + "_dex2jar.jar"
+
+    def get_jar(self):
+        return self.jarfile
+
+
+class DecompilerDex2Jad:
+    def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/"):
+        self.classes = {}
+        self.classes_failed = []
+
+        pathtmp = tmp_dir
+        if not os.path.exists(pathtmp):
+            os.makedirs(pathtmp)
+
+        fd, fdname = tempfile.mkstemp(dir=pathtmp)
+        fd = os.fdopen(fd, "w+b")
+        fd.write(vm.get_buff())
+        fd.flush()
+        fd.close()
+
+        compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
+        stdout, stderr = compile.communicate()
+        os.unlink(fdname)
 
         pathclasses = fdname + "dex2jar/"
-        compile = Popen([ "unzip", fdname + "_dex2jar.jar", "-d", pathclasses ], stdout=PIPE, stderr=STDOUT)        
+        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
-        os.unlink( fdname + "_dex2jar.jar" )
+        os.unlink(fdname + "_dex2jar.jar")
 
-        for root, dirs, files in os.walk( pathclasses, followlinks=True ) :
-            if files != [] :
-                for f in files :
+        for root, dirs, files in os.walk(pathclasses, followlinks=True):
+            if files != []:
+                for f in files:
                     real_filename = root
-                    if real_filename[-1] != "/" :
+                    if real_filename[-1] != "/":
                         real_filename += "/"
                     real_filename += f
-                    
-                    compile = Popen([ path_jad + bin_jad, "-o", "-d", root, real_filename ], stdout=PIPE, stderr=STDOUT)
+
+                    compile = Popen([path_jad + bin_jad, "-o", "-d", root, real_filename], stdout=PIPE, stderr=STDOUT)
                     stdout, stderr = compile.communicate()
 
-        for i in vm.get_classes() :
+        for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
-            if os.path.isfile(fname) == True :
+            if os.path.isfile(fname) == True:
                 fd = open(fname, "r")
-                self.classes[ i.get_name() ] = fd.read() 
+                self.classes[i.get_name()] = fd.read()
                 fd.close()
-            else :
-                self.classes_failed.append( i.get_name() )
-    
-        rrmdir( pathclasses )
+            else:
+                self.classes_failed.append(i.get_name())
+
+        rrmdir(pathclasses)
 
     def get_source_method(self, method):
         class_name = method.get_class_name()
@@ -101,8 +124,11 @@ class DecompilerDex2Jad :
     def display_source(self, method):
         print self.get_source_method(method)
 
-    def get_all(self, class_name) :
-        if class_name not in self.classes :
+    def get_source_class(self, _class):
+        return self.classes[_class.get_name()]
+
+    def get_all(self, class_name):
+        if class_name not in self.classes:
             return ""
 
         if PYGMENTS:
@@ -112,11 +138,94 @@ class DecompilerDex2Jad :
             return result
         return self.classes[class_name]
 
-    def display_all(self, _class) :
-        print self.get_all( _class.get_name() )
+    def display_all(self, _class):
+        print self.get_all(_class.get_name())
 
-class DecompilerDed :
-    def __init__(self, vm, path="./decompiler/ded/", bin_ded = "ded.sh", tmp_dir="/tmp/") :
+
+class DecompilerDex2WineJad:
+    def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/"):
+        self.classes = {}
+        self.classes_failed = []
+
+        pathtmp = tmp_dir
+        if not os.path.exists(pathtmp):
+            os.makedirs(pathtmp)
+
+        fd, fdname = tempfile.mkstemp(dir=pathtmp)
+        fd = os.fdopen(fd, "w+b")
+        fd.write(vm.get_buff())
+        fd.flush()
+        fd.close()
+
+        compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
+        stdout, stderr = compile.communicate()
+        os.unlink(fdname)
+
+        pathclasses = fdname + "dex2jar/"
+        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses], stdout=PIPE, stderr=STDOUT)
+        stdout, stderr = compile.communicate()
+        os.unlink(fdname + "_dex2jar.jar")
+
+        for root, dirs, files in os.walk(pathclasses, followlinks=True):
+            if files != []:
+                for f in files:
+                    real_filename = root
+                    if real_filename[-1] != "/":
+                        real_filename += "/"
+                    real_filename += f
+
+                    compile = Popen(["wine", path_jad + bin_jad, "-o", "-d", root, real_filename], stdout=PIPE, stderr=STDOUT)
+                    stdout, stderr = compile.communicate()
+
+        for i in vm.get_classes():
+            fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
+            if os.path.isfile(fname) == True:
+                fd = open(fname, "r")
+                self.classes[i.get_name()] = fd.read()
+                fd.close()
+            else:
+                self.classes_failed.append(i.get_name())
+
+        rrmdir(pathclasses)
+
+    def get_source_method(self, method):
+        class_name = method.get_class_name()
+        method_name = method.get_name()
+
+        if class_name not in self.classes:
+            return ""
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            lexer.add_filter(MethodFilter(method_name=method_name))
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+
+        return self.classes[class_name]
+
+    def display_source(self, method):
+        print self.get_source_method(method)
+
+    def get_source_class(self, _class):
+        return self.classes[_class.get_name()]
+
+    def get_all(self, class_name):
+        if class_name not in self.classes:
+            return ""
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+        return self.classes[class_name]
+
+    def display_all(self, _class):
+        print self.get_all(_class.get_name())
+
+class DecompilerDed:
+    def __init__(self, vm, path="./decompiler/ded/", bin_ded="ded.sh", tmp_dir="/tmp/"):
         self.classes = {}
         self.classes_failed = []
 
@@ -173,20 +282,121 @@ class DecompilerDed :
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
 
-    def display_source(self, method) :
+    def display_source(self, method):
         print self.get_source_method(method)
 
-    def get_all(self, class_name) :
-        if class_name not in self.classes :
+    def get_all(self, class_name):
+        if class_name not in self.classes:
             return ""
 
         lexer = get_lexer_by_name("java", stripall=True)
         formatter = TerminalFormatter()
         result = highlight(self.classes[class_name], lexer, formatter)
         return result
-    
-    def display_all(self, _class) :
-        print self.get_all( _class.get_name() )
+
+    def get_source_class(self, _class):
+        return self.classes[_class.get_name()]
+
+    def display_all(self, _class):
+        print self.get_all(_class.get_name())
+
+
+class DecompilerDex2Fernflower:
+    def __init__(self,
+                 vm,
+                 path_dex2jar="./decompiler/dex2jar/",
+                 bin_dex2jar="dex2jar.sh",
+                 path_fernflower="./decompiler/fernflower/",
+                 bin_fernflower="fernflower.jar",
+                 options_fernflower={"dgs": '1', "asc": '1'},
+                 tmp_dir="/tmp/"):
+        self.classes = {}
+        self.classes_failed = []
+
+        pathtmp = tmp_dir
+        if not os.path.exists(pathtmp):
+            os.makedirs(pathtmp)
+
+        fd, fdname = tempfile.mkstemp(dir=pathtmp)
+        fd = os.fdopen(fd, "w+b")
+        fd.write(vm.get_buff())
+        fd.flush()
+        fd.close()
+
+        compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
+        stdout, stderr = compile.communicate()
+        os.unlink(fdname)
+
+        pathclasses = fdname + "dex2jar/"
+        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses], stdout=PIPE, stderr=STDOUT)
+        stdout, stderr = compile.communicate()
+        os.unlink(fdname + "_dex2jar.jar")
+
+        for root, dirs, files in os.walk(pathclasses, followlinks=True):
+            if files != []:
+                for f in files:
+                    real_filename = root
+                    if real_filename[-1] != "/":
+                        real_filename += "/"
+                    real_filename += f
+
+                    l = ["java", "-jar", path_fernflower + bin_fernflower]
+
+                    for option in options_fernflower:
+                        l.append("-%s:%s" % (option, options_fernflower[option]))
+                    l.append(real_filename)
+                    l.append(root)
+
+                    compile = Popen(l, stdout=PIPE, stderr=STDOUT)
+                    stdout, stderr = compile.communicate()
+
+        for i in vm.get_classes():
+            fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"
+            if os.path.isfile(fname) == True:
+                fd = open(fname, "r")
+                self.classes[i.get_name()] = fd.read()
+                fd.close()
+            else:
+                self.classes_failed.append(i.get_name())
+
+        rrmdir(pathclasses)
+
+    def get_source_method(self, method):
+        class_name = method.get_class_name()
+        method_name = method.get_name()
+
+        if class_name not in self.classes:
+            return ""
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            lexer.add_filter(MethodFilter(method_name=method_name))
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+
+        return self.classes[class_name]
+
+    def display_source(self, method):
+        print self.get_source_method(method)
+
+    def get_source_class(self, _class):
+        return self.classes[_class.get_name()]
+
+    def get_all(self, class_name):
+        if class_name not in self.classes:
+            return ""
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+        return self.classes[class_name]
+
+    def display_all(self, _class):
+        print self.get_all(_class.get_name())
+
 
 class MethodFilter(Filter):
     def __init__(self, **options):
