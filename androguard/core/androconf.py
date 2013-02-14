@@ -51,6 +51,10 @@ CONF = {
     "BIN_DEX2JAR": "dex2jar.sh",
     "PATH_JAD": "./decompiler/jad/",
     "BIN_JAD": "jad",
+    "BIN_WINEJAD": "jad.exe",
+    "PATH_FERNFLOWER": "./decompiler/fernflower/",
+    "BIN_FERNFLOWER": "fernflower.jar",
+    "OPTIONS_FERNFLOWER": {"dgs": '1', "asc": '1'},
     "PRETTY_SHOW": 1,
 
     "TMP_DIRECTORY": "/tmp/",
