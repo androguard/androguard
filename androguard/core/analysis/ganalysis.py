@@ -45,6 +45,7 @@ __author__ = """\n""".join(['Aric Hagberg (hagberg@lanl.gov)',
                             'Pieter Swart (swart@lanl.gov)',
                             'Dan Schult(dschult@colgate.edu)'])
 
+
 class Graph(object):
     """
     Base class for undirected graphs.
@@ -3099,27 +3100,39 @@ ID_ATTRIBUTES = {
     "dynamic_code" : 6,
 }
 
-class GVMAnalysis :
-    def __init__(self, vmx, apk) :
+
+class GVMAnalysis:
+    def __init__(self, vmx, apk):
         self.vmx = vmx
         self.vm = self.vmx.get_vm()
 
         self.nodes = {}
         self.nodes_id = {}
-        self.entry_nodes = [] 
+        self.entry_nodes = []
         self.G = DiGraph()
+        self.GI = DiGraph()
 
-        for j in self.vmx.get_tainted_packages().get_internal_packages() :
-            src_class_name, src_method_name, src_descriptor = j.get_src( self.vm.get_class_manager() )
-            dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.vm.get_class_manager() )
+        for j in self.vmx.get_tainted_packages().get_internal_packages():
+            src_class_name, src_method_name, src_descriptor = j.get_src(self.vm.get_class_manager())
+            dst_class_name, dst_method_name, dst_descriptor = j.get_dst(self.vm.get_class_manager())
 
-            n1 = self._get_node( src_class_name, src_method_name, src_descriptor )
-            n2 = self._get_node( dst_class_name, dst_method_name, dst_descriptor )
+            n1 = self._get_node(src_class_name, src_method_name, src_descriptor)
+            n2 = self._get_node(dst_class_name, dst_method_name, dst_descriptor)
 
-            self.G.add_edge( n1.id, n2.id )
-            n1.add_edge( n2, j )
+            self.G.add_edge(n1.id, n2.id)
+            n1.add_edge(n2, j)
 
-        if apk != None :
+        internal_new_packages = self.vmx.tainted_packages.get_internal_new_packages()
+        for j in internal_new_packages:
+            for path in internal_new_packages[j]:
+                src_class_name, src_method_name, src_descriptor = path.get_src(self.vm.get_class_manager())
+
+                n1 = self._get_node(src_class_name, src_method_name, src_descriptor)
+                n2 = self._get_node(j, "", "")
+                self.GI.add_edge(n2.id, n1.id)
+                n1.add_edge(n2, path)
+
+        if apk != None:
             for i in apk.get_activities() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "(Landroid/os/Bundle;)V" )
@@ -3152,7 +3165,7 @@ class GVMAnalysis :
                     self.entry_nodes.append( n1.id )
 
         # Specific Java/Android library
-        for c in self.vm.get_classes() :
+        for c in self.vm.get_classes():
             #if c.get_superclassname() == "Landroid/app/Service;" :
             #    n1 = self._get_node( c.get_name(), "<init>", "()V" )
             #    n2 = self._get_node( c.get_name(), "onCreate", "()V" )
@@ -3193,11 +3206,10 @@ class GVMAnalysis :
         #                                            j.get_bb().start + j.get_idx(), \
         #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
 
-
-        list_permissions = self.vmx.get_permissions( [] ) 
-        for x in list_permissions :
-            for j in list_permissions[ x ] :
-                if isinstance(j, PathVar) :
+        list_permissions = self.vmx.get_permissions([])
+        for x in list_permissions:
+            for j in list_permissions[x]:
+                if isinstance(j, PathVar):
                   continue
 
                 src_class_name, src_method_name, src_descriptor = j.get_src( self.vm.get_class_manager() )
@@ -3249,13 +3261,16 @@ class GVMAnalysis :
         except KeyError :
             return None
 
-    def _get_node(self, class_name, method_name, descriptor) :
-        key = "%s %s %s" % (class_name, method_name, descriptor)
-        if key not in self.nodes :
-            self.nodes[ key ] = NodeF( len(self.nodes), class_name, method_name, descriptor )
-            self.nodes_id[ self.nodes[ key ].id ] = self.nodes[ key ]
+    def _get_node(self, class_name, method_name, descriptor):
+        if method_name == "" and descriptor == "":
+            key = class_name
+        else:
+            key = "%s %s %s" % (class_name, method_name, descriptor)
+        if key not in self.nodes:
+            self.nodes[key] = NodeF(len(self.nodes), class_name, method_name, descriptor)
+            self.nodes_id[self.nodes[key].id] = self.nodes[key]
 
-        return self.nodes[ key ]
+        return self.nodes[key]
 
     def _get_new_node_from(self, n, label) :
         return self._get_new_node( n.class_name, n.method_name, n.descriptor + label, label )
@@ -3341,36 +3356,6 @@ class GVMAnalysis :
         
         return buff
 
-    def get_paths_method(self, method) :
-        return self.get_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
-
-    def get_paths(self, class_name, method_name, descriptor) :
-        import connectivity_approx as ca
-        paths = []
-        key = "%s %s %s" % (class_name, method_name, descriptor)
-       
-        if key not in self.nodes :
-            return paths
-
-        for origin in self.G.nodes() : #self.entry_nodes :
-            if ca.vertex_connectivity_approx(self.G, origin, self.nodes[ key ].id) > 0 :
-                for path in ca.node_independent_paths(self.G, origin, self.nodes[ key ].id) :
-                    if self.nodes_id[ path[0] ].real == True :
-                        paths.append( path )
-        return paths
-
-    def print_paths_method(self, method) :
-        self.print_paths( method.get_class_name(), method.get_name(), method.get_descriptor() )
-
-    def print_paths(self, class_name, method_name, descriptor) :
-        paths = self.get_paths( class_name, method_name, descriptor )
-        for path in paths :
-            print path, ":"
-            print "\t",
-            for p in path[:-1] :
-                print self.nodes_id[ p ].label, "-->",
-            print self.nodes_id[ path[-1] ].label
-
 DEFAULT_NODE_TYPE = "normal"
 DEFAULT_NODE_PERM = 0
 DEFAULT_NODE_PERM_LEVEL = -1 
@@ -3389,39 +3374,40 @@ COLOR_PERMISSIONS_LEVEL = {
     "normal"                    : (255, 181, 181),
 }
 
-class NodeF :
-    def __init__(self, id, class_name, method_name, descriptor, label=None, real=True) :
+
+class NodeF:
+    def __init__(self, id, class_name, method_name, descriptor, label=None, real=True):
         self.class_name = class_name
-        self.method_name = method_name 
+        self.method_name = method_name
         self.descriptor = descriptor
 
         self.id = id
         self.real = real
         self.risks = []
-        self.api = {} 
+        self.api = {}
         self.edges = {}
 
-        if label == None : 
+        if label == None:
             self.label = "%s %s %s" % (class_name, method_name, descriptor)
-        else :
+        else:
             self.label = label
 
-        self.attributes = { "type" : DEFAULT_NODE_TYPE,
-                            "color" : None,
-                            "permissions" : DEFAULT_NODE_PERM,
-                            "permissions_level" : DEFAULT_NODE_PERM_LEVEL,
-                            "permissions_details" : set(),
-                            "dynamic_code" : "false",
+        self.attributes = {"type": DEFAULT_NODE_TYPE,
+                           "color": None,
+                           "permissions": DEFAULT_NODE_PERM,
+                           "permissions_level": DEFAULT_NODE_PERM_LEVEL,
+                           "permissions_details": set(),
+                           "dynamic_code": "false",
                           }
 
-    def add_edge(self, n, idx) :
-        try :
-            self.edges[ n ].append( idx )
-        except KeyError :
-            self.edges[ n ] = []
-            self.edges[ n ].append( idx )
+    def add_edge(self, n, idx):
+        try:
+            self.edges[n].append(idx)
+        except KeyError:
+            self.edges[n] = []
+            self.edges[n].append(idx)
 
-    def get_attributes_gexf(self) :
+    def get_attributes_gexf(self):
         buff = ""
         
         if self.attributes[ "color" ] != None : 

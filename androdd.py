@@ -73,6 +73,7 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
     else:
         print "Clean directory %s" % output
         androconf.rrmdir(output)
+        os.makedirs(output)
 
     methods_filter_expr = None
     if methods_filter:
@@ -126,12 +127,13 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
         print "End"
 
         if options.jar:
-            print "jar ..."
+            print "jar ...",
             filenamejar = decompiler.Dex2Jar(vm,
                                              androconf.CONF["PATH_DEX2JAR"],
                                              androconf.CONF["BIN_DEX2JAR"],
                                              androconf.CONF["TMP_DIRECTORY"]).get_jar()
             os.rename(filenamejar, output + "classes.jar")
+            print "End"
 
         for method in vm.get_methods():
             if methods_filter_expr:
