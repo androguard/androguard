@@ -1395,25 +1395,26 @@ def show_PathVariable(vm, paths) :
       method = vm.get_cm_method( m_idx )
       print "%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1])
 
-class PathP :
-  def __init__(self, access, idx, src_idx, dst_idx) :
+
+class PathP:
+  def __init__(self, access, idx, src_idx, dst_idx):
     self.access_flag = access
     self.idx = idx
     self.src_idx = src_idx
     self.dst_idx = dst_idx
 
-  def get_access_flag(self) :
+  def get_access_flag(self):
     return self.access_flag
 
-  def get_dst(self, cm) :
-    method = cm.get_method_ref( self.dst_idx )
+  def get_dst(self, cm):
+    method = cm.get_method_ref(self.dst_idx)
     return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-  def get_src(self, cm) :
-    method = cm.get_method_ref( self.src_idx )
+  def get_src(self, cm):
+    method = cm.get_method_ref(self.src_idx)
     return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-  def get_idx(self) :
+  def get_idx(self):
     return self.idx
 
   def get_src_idx(self):
@@ -1421,6 +1422,7 @@ class PathP :
 
   def get_dst_idx(self):
     return self.dst_idx
+
 
 class TaintedPackage:
     def __init__(self, vm, name):

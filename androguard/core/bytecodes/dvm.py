@@ -2783,15 +2783,15 @@ class EncodedMethod:
                 self.code.pretty_show( self.CM.get_vmanalysis().get_method( self ) )
                 self.show_xref()
 
-    def show_xref(self) :
+    def show_xref(self):
         """
             Display where the method is called or which method is called
         """
-        try :
-            bytecode._PrintSubBanner("XREF") 
+        try:
+            bytecode._PrintSubBanner("XREF")
             bytecode._PrintXRef("F", self.XREFfrom.items)
             bytecode._PrintXRef("T", self.XREFto.items)
-            bytecode._PrintSubBanner() 
+            bytecode._PrintSubBanner()
         except AttributeError:
             pass
 
@@ -3161,7 +3161,8 @@ class ClassDataItem :
     def get_off(self) :
       return self.offset
 
-class ClassDefItem :
+
+class ClassDefItem:
     """
         This class can parse a class_def_item of a dex file
 
@@ -3170,7 +3171,7 @@ class ClassDefItem :
         :param cm: a ClassManager object
         :type cm: :class:`ClassManager`
     """
-    def __init__(self, buff, cm) :
+    def __init__(self, buff, cm):
         self.__CM = cm
         self.offset = buff.get_idx()
 
@@ -3342,21 +3343,33 @@ class ClassDefItem :
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
-    def show(self) :
+    def show(self):
         bytecode._PrintSubBanner("Class Def Item")
         bytecode._PrintDefault("name=%s, sname=%s, interfaces=%s, access_flags=%s\n" %
-                              ( self.name,
-                                self.sname,
-                                self.interfaces,
-                                self.get_access_flags_string()))
+                              (self.name,
+                               self.sname,
+                               self.interfaces,
+                               self.get_access_flags_string()))
         bytecode._PrintDefault("class_idx=%d, superclass_idx=%d, interfaces_off=%x, source_file_idx=%d, annotations_off=%x, class_data_off=%x, static_values_off=%x\n" %
-                              ( self.class_idx,
-                                self.superclass_idx,
-                                self.interfaces_off,
-                                self.source_file_idx,
-                                self.annotations_off,
-                                self.class_data_off,
-                                self.static_values_off))
+                              (self.class_idx,
+                               self.superclass_idx,
+                               self.interfaces_off,
+                               self.source_file_idx,
+                               self.annotations_off,
+                               self.class_data_off,
+                               self.static_values_off))
+        self.show_xref()
+
+    def show_xref(self):
+        """
+            Display where the method is called or which method is called
+        """
+        try:
+            bytecode._PrintSubBanner("XREF")
+            bytecode._PrintXRef("F", self.XREFfrom.items)
+            bytecode._PrintSubBanner()
+        except AttributeError:
+            pass
 
     def source(self):
         """
@@ -7653,8 +7666,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 str_list.append(i)
         return str_list
 
-
-    def get_format_type(self) :
+    def get_format_type(self):
         """
             Return the type
 
@@ -7662,7 +7674,7 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
         return "DEX"
 
-    def create_xref(self, python_export=True) :
+    def create_xref(self, python_export=True):
         """
             Create XREF for this object
 
@@ -7670,39 +7682,52 @@ class DalvikVMFormat(bytecode._Bytecode) :
         """
         gvm = self.CM.get_gvmanalysis()
 
-        for _class in self.get_classes() :
-            for method in _class.get_methods() :
+        for _class in self.get_classes():
+            key = _class.get_name()
+            if key in gvm.nodes:
+              _class.XREFfrom = XREF()
+              for i in gvm.GI.successors(gvm.nodes[key].id):
+                xref = gvm.nodes_id[i]
+                xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
+                if python_export == True:
+                    name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
+                    bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
+                    bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
+                    setattr(_class.XREFfrom, name, xref_meth)
+                _class.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
+
+            for method in _class.get_methods():
                 method.XREFfrom = XREF()
                 method.XREFto = XREF()
 
                 key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
 
-                if key in gvm.nodes :
-                    for i in gvm.G.predecessors( gvm.nodes[ key ].id ) :
-                        xref = gvm.nodes_id[ i ]
-                        xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None :
-                            name = bytecode.FormatClassToPython( xref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( xref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( xref_meth.get_descriptor() )
+                if key in gvm.nodes:
+                    for i in gvm.G.predecessors(gvm.nodes[key].id):
+                        xref = gvm.nodes_id[i]
+                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
+                        if xref_meth != None:
+                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
+                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
+                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
 
-                            if python_export == True :
-                                setattr( method.XREFfrom, name, xref_meth )
-                            method.XREFfrom.add( xref_meth, xref.edges[ gvm.nodes[ key ] ] )
+                            if python_export == True:
+                                setattr(method.XREFfrom, name, xref_meth)
+                            method.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
 
-                    for i in gvm.G.successors( gvm.nodes[ key ].id ) :
-                        xref = gvm.nodes_id[ i ]
-                        xref_meth = self.get_method_descriptor( xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None :
-                            name = bytecode.FormatClassToPython( xref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( xref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( xref_meth.get_descriptor() )
-                            
-                            if python_export == True :
-                                setattr( method.XREFto, name, xref_meth )
-                            method.XREFto.add( xref_meth, gvm.nodes[ key ].edges[ xref ] )
+                    for i in gvm.G.successors(gvm.nodes[key].id):
+                        xref = gvm.nodes_id[i]
+                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
+                        if xref_meth != None:
+                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
+                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
+                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
 
-    def create_dref(self, python_export=True) :
+                            if python_export == True:
+                                setattr(method.XREFto, name, xref_meth)
+                            method.XREFto.add(xref_meth, gvm.nodes[key].edges[xref])
+
+    def create_dref(self, python_export=True):
         """
             Create DREF for this object
 

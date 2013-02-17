@@ -73,25 +73,30 @@ def _Print(name, arg) :
 
     print buff
 
-def PrettyShowEx( exceptions ) :
-    if len(exceptions) > 0 :
+
+def PrettyShowEx(exceptions):
+    if len(exceptions) > 0:
         CONF["PRINT_FCT"]("Exceptions:\n")
-        for i in exceptions : 
+        for i in exceptions:
           CONF["PRINT_FCT"]("\t%s%s%s\n" % (CONF["COLORS"]["EXCEPTION"], i.show_buff(), CONF["COLORS"]["NORMAL"]))
 
-def _PrintXRef(tag, items) :
+
+def _PrintXRef(tag, items):
   print_fct = CONF["PRINT_FCT"]
-  for i in items :
+  for i in items:
     print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j.get_idx() for j in i[1])))
 
-def _PrintDRef(tag, items) :
-  print_fct = CONF["PRINT_FCT"]
-  for i in items :
-    print_fct( "%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j for j in i[1]) ) )
 
-def _PrintDefault(msg) :
+def _PrintDRef(tag, items):
+  print_fct = CONF["PRINT_FCT"]
+  for i in items:
+    print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j for j in i[1])))
+
+
+def _PrintDefault(msg):
   print_fct = CONF["PRINT_FCT"]
   print_fct(msg)
+
 
 def PrettyShow(basic_blocks, notes={}):
     idx = 0
