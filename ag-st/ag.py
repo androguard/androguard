@@ -107,24 +107,6 @@ def get_axml_info(apk_object):
     return i_buffer
 
 
-def get_arsc_info(arscobj):
-    buff = ""
-    for package in arscobj.get_packages_names():
-        buff += package + ":\n"
-        for locale in arscobj.get_locales(package):
-            buff += "\t" + repr(locale) + ":\n"
-            for ttype in arscobj.get_types(package, locale):
-                buff += "\t\t" + ttype + ":\n"
-                try:
-                    tmp_buff = getattr(arscobj, "get_" + ttype + "_resources")(package, locale).decode("utf-8", 'replace').split("\n")
-                    for i in tmp_buff:
-                        buff += "\t\t\t" + i + "\n"
-                except AttributeError:
-                    pass
-
-    return buff
-
-
 def get_sourcecode_method(dex_object, ana_object, method):
     return method.get_source()
 
@@ -142,7 +124,7 @@ class MethodView:
         self.view.set_scratch(True)
         edit = self.view.begin_edit()
 
-        i_buffer = get_bytecodes_method(self.dex_object, self.ana_object, method)
+        i_buffer = dvm.get_bytecodes_method(self.dex_object, self.ana_object, method)
         AG_METHOD_ID[self.view.id()] = method
 
         self.view.replace(edit, sublime.Region(0, self.view.size()), i_buffer)
@@ -381,7 +363,7 @@ class AnalyseARSCThread:
         #self.view.set_syntax_file("Packages/ag-st/agapk.tmLanguage")
 
         arscobj = apk.ARSCParser(self.raw_object)
-        i_buffer = get_arsc_info(arscobj)
+        i_buffer = apk.get_arsc_info(arscobj)
 
         self.view.replace(edit, sublime.Region(0, self.view.size()), i_buffer)
         self.view.end_edit(edit)
@@ -615,7 +597,7 @@ class AgTrCommand(sublime_plugin.WindowCommand):
                 i_buffer = get_sourcecode_method(dex_object, ana_object, AG_METHOD_ID[self.view.id()])
             else:
                 self.view.set_syntax_file("Packages/ag-st/agbytecodes.tmLanguage")
-                i_buffer = get_bytecodes_method(dex_object, ana_object, AG_METHOD_ID[self.view.id()])
+                i_buffer = dvm.get_bytecodes_method(dex_object, ana_object, AG_METHOD_ID[self.view.id()])
 
             self.view.set_read_only(False)
             edit = self.view.begin_edit()

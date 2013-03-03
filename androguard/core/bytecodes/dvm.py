@@ -649,7 +649,7 @@ class AnnotationSetRefItem :
     def get_raw(self) :
         return self.get_obj()
 
-class AnnotationSetRefList :
+class AnnotationSetRefList:
     """
         This class can parse an annotation_set_ref_list_item of a dex file
 
@@ -695,6 +695,9 @@ class AnnotationSetRefList :
 
     def get_raw(self) :
         return pack("=I", self.size) + ''.join(i.get_raw() for i in self.list)
+
+    def get_length(self) :
+        return len(self.get_raw())
 
 class FieldAnnotation :
     """
@@ -852,8 +855,11 @@ class ParameterAnnotation :
 
         return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
 
-    def get_raw(self) :
+    def get_raw(self):
         return self.get_obj()
+
+    def get_length(self):
+      return len(self.get_raw())
 
 class AnnotationsDirectoryItem :
     """
@@ -2746,12 +2752,12 @@ class EncodedMethod:
             bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb - len(params) - 1))
             j = 0
             for i in xrange(nb - len(params), nb):
-                bytecode._PrintDefault("- v%d:%s\n" % (i, get_type(params[j])))
+                bytecode._PrintDefault("- v%d: %s\n" % (i, get_type(params[j])))
                 j += 1
         else:
             bytecode._PrintDefault("local registers: v%d...v%d\n" % (0, nb - 1))
 
-        bytecode._PrintDefault("- return:%s\n" % get_type(ret[1]))
+        bytecode._PrintDefault("- return: %s\n" % get_type(ret[1]))
         bytecode._PrintSubBanner()
 
     def show_info(self) :
@@ -3946,7 +3952,7 @@ class FillArrayData:
         return buff
 
     def get_operands(self, idx=-1):
-      return [(OPERAND_RAW, self.get_data())]
+      return [(OPERAND_RAW, repr(self.get_data()))]
 
     def get_formatted_operands(self):
       return None
@@ -4404,7 +4410,7 @@ class Instruction11n(Instruction):
       return 2
 
     def get_raw(self):
-      return pack("=H", (self.B << 12) | (self.A << 8) | self.OP)
+      return pack("=h", (self.B << 12) | (self.A << 8) | self.OP)
 
 
 class Instruction21c(Instruction):
@@ -6098,6 +6104,7 @@ class LinearSweepAlgorithm :
           yield obj
           idx = idx + obj.get_length()
 
+
 class DCode:
     """
         This class represents the instructions of a method
@@ -6111,7 +6118,7 @@ class DCode:
         :param buff: a raw buffer where are the instructions
         :type buff: string
     """
-    def __init__(self, class_manager, offset, size, buff) :
+    def __init__(self, class_manager, offset, size, buff):
         self.CM = class_manager
         self.insn = buff
         self.offset = offset
@@ -6119,9 +6126,11 @@ class DCode:
 
         self.notes = {}
         self.cached_instructions = []
+        self.rcache = 0
+
         self.idx = 0
 
-    def get_insn(self) :
+    def get_insn(self):
       """
           Get the insn buffer
 
@@ -6129,7 +6138,7 @@ class DCode:
       """
       return self.insn
 
-    def set_insn(self, insn) :
+    def set_insn(self, insn):
       """
           Set a new raw buffer to disassemble
 
@@ -6139,7 +6148,7 @@ class DCode:
       self.insn = insn
       self.size = len(self.insn)
 
-    def set_idx(self, idx) :
+    def set_idx(self, idx):
         """
             Set the start address of the buffer
 
@@ -6148,7 +6157,7 @@ class DCode:
         """
         self.idx = idx
 
-    def set_instructions(self, instructions) :
+    def set_instructions(self, instructions):
       """
           Set the instructions
 
@@ -6157,26 +6166,38 @@ class DCode:
       """
       self.cached_instructions = instructions
 
-    def get_instructions(self) :
+    def get_instructions(self):
         """
             Get the instructions
 
             :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
         # it is possible to a cache for instructions (avoid a new disasm)
-        if self.cached_instructions != [] :
-          for i in self.cached_instructions :
-            yield i
-          return
-
-        lsa = LinearSweepAlgorithm()
-        for i in lsa.get_instructions( self.CM, self.size, self.insn, self.idx ) :
+        if self.cached_instructions:
+          for i in self.cached_instructions:
             yield i
 
-    def reload(self) :
+        else:
+          if self.rcache >= 5:
+            lsa = LinearSweepAlgorithm()
+            for i in lsa.get_instructions(self.CM, self.size, self.insn, self.idx):
+              self.cached_instructions.append(i)
+
+            for i in self.cached_instructions:
+              yield i
+          else:
+            self.rcache += 1
+            if self.size >= 1000:
+              self.rcache = 5
+
+            lsa = LinearSweepAlgorithm()
+            for i in lsa.get_instructions(self.CM, self.size, self.insn, self.idx):
+                yield i
+
+    def reload(self):
         pass
 
-    def add_inote(self, msg, idx, off=None) :
+    def add_inote(self, msg, idx, off=None):
       """
           Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6187,15 +6208,15 @@ class DCode:
           :param off: address of the instruction
           :type off: int
       """
-      if off != None :
+      if off != None:
         idx = self.off_to_pos(off)
 
-      if idx not in self.notes :
-        self.notes[ idx ] = []
+      if idx not in self.notes:
+        self.notes[idx] = []
 
-      self.notes[ idx ].append(msg)
+      self.notes[idx].append(msg)
 
-    def get_instruction(self, idx, off=None) :
+    def get_instruction(self, idx, off=None):
         """
             Get a particular instruction by using (default) the index of the address if specified
 
@@ -6206,11 +6227,11 @@ class DCode:
 
             :rtype: an :class:`Instruction` object
         """
-        if off != None :
+        if off != None:
           idx = self.off_to_pos(off)
-        return [ i for i in self.get_instructions()][idx]
+        return [i for i in self.get_instructions()][idx]
 
-    def off_to_pos(self, off) :
+    def off_to_pos(self, off):
         """
             Get the position of an instruction by using the address
 
@@ -6221,8 +6242,8 @@ class DCode:
         """
         idx = 0
         nb = 0
-        for i in self.get_instructions() :
-            if idx == off :
+        for i in self.get_instructions():
+            if idx == off:
                 return nb
             nb += 1
             idx += i.get_length()
@@ -6238,19 +6259,19 @@ class DCode:
             :rtype: an :class:`Instruction` object
         """
         idx = 0
-        for i in self.get_instructions() :
-            if idx == off :
+        for i in self.get_instructions():
+            if idx == off:
                 return i
             idx += i.get_length()
         return None
 
-    def show(self) :
+    def show(self):
         """
             Display this object
         """
         nb = 0
         idx = 0
-        for i in self.get_instructions() :
+        for i in self.get_instructions():
             print "%-8d(%08x)" % (nb, idx),
             i.show(nb)
             print
@@ -6258,32 +6279,33 @@ class DCode:
             idx += i.get_length()
             nb += 1
 
-    def pretty_show(self, m_a) :
+    def pretty_show(self, m_a):
         """
             Display (with a pretty print) this object
 
             :param m_a: :class:`MethodAnalysis` object
         """
-        bytecode.PrettyShow( m_a.basic_blocks.gets(), self.notes )
-        bytecode.PrettyShowEx( m_a.exceptions.gets() )
+        bytecode.PrettyShow(m_a, m_a.basic_blocks.gets(), self.notes)
+        bytecode.PrettyShowEx(m_a.exceptions.gets())
 
-    def get_raw(self) :
+    def get_raw(self):
         """
             Return the raw buffer of this object
 
             :rtype: string
-        """ 
+        """
         return ''.join(i.get_raw() for i in self.get_instructions())
 
-    def get_length(self) :
+    def get_length(self):
       """
           Return the length of this object
 
           :rtype: int
-      """ 
+      """
       return len(self.get_raw())
 
-class TryItem :
+
+class TryItem:
     """
         This class represents the try_item format
 
@@ -6337,7 +6359,7 @@ class TryItem :
     def get_length(self) :
       return len(self.get_raw())
 
-class DalvikCode :
+class DalvikCode:
     """
         This class represents the instructions of a method
 
@@ -6346,16 +6368,16 @@ class DalvikCode :
         :param cm: the ClassManager
         :type cm: :class:`ClassManager` object
     """
-    def __init__(self, buff, cm) :
+    def __init__(self, buff, cm):
         self.__CM = cm
         self.offset = buff.get_idx()
 
         self.int_padding = ""
         off = buff.get_idx()
-        while off % 4 != 0 :
+        while off % 4 != 0:
             self.int_padding += '\00'
             off += 1
-        buff.set_idx( off )
+        buff.set_idx(off)
 
         self.__off = buff.get_idx()
 
@@ -6365,23 +6387,23 @@ class DalvikCode :
         self.tries_size = unpack("=H", buff.read(2))[0]
         self.debug_info_off = unpack("=I", buff.read(4))[0]
         self.insns_size = unpack("=I", buff.read(4))[0]
-       
-        ushort = calcsize( '=H' )
+
+        ushort = calcsize('=H')
 
         self.code = DCode(self.__CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
 
-        if (self.insns_size % 2 == 1) :
+        if (self.insns_size % 2 == 1):
             self.padding = unpack("=H", buff.read(2))[0]
 
         self.tries = []
-        self.handlers = None 
-        if self.tries_size > 0 :
-            for i in xrange(0, self.tries_size) :
-                self.tries.append( TryItem( buff, self.__CM ) )
+        self.handlers = None
+        if self.tries_size > 0:
+            for i in xrange(0, self.tries_size):
+                self.tries.append(TryItem(buff, self.__CM))
 
-            self.handlers = EncodedCatchHandlerList( buff, self.__CM )
+            self.handlers = EncodedCatchHandlerList(buff, self.__CM)
 
-    def get_registers_size(self) :
+    def get_registers_size(self):
         """
             Get the number of registers used by this code
 
@@ -6389,7 +6411,7 @@ class DalvikCode :
         """
         return self.registers_size
 
-    def get_ins_size(self) :
+    def get_ins_size(self):
       """
           Get the number of words of incoming arguments to the method that this code is for
 
@@ -6397,7 +6419,7 @@ class DalvikCode :
       """
       return self.ins_size
 
-    def get_outs_size(self) :
+    def get_outs_size(self):
       """
           Get the number of words of outgoing argument space required by this code for method invocation
 
@@ -6405,7 +6427,7 @@ class DalvikCode :
       """
       return self.outs_size
 
-    def get_tries_size(self) :
+    def get_tries_size(self):
         """
             Get the number of :class:`TryItem` for this instance
 
@@ -6413,15 +6435,15 @@ class DalvikCode :
         """
         return self.tries_size
 
-    def get_debug_info_off(self) :
+    def get_debug_info_off(self):
       """
           Get the offset from the start of the file to the debug info (line numbers + local variable info) sequence for this code, or 0 if there simply is no information
-          
+
           :rtype: int
       """
       return self.debug_info_off
 
-    def get_insns_size(self) :
+    def get_insns_size(self):
       """
           Get the size of the instructions list, in 16-bit code units
 
@@ -6429,7 +6451,7 @@ class DalvikCode :
       """
       return self.insns_size
 
-    def get_handlers(self) :
+    def get_handlers(self):
         """
             Get the bytes representing a list of lists of catch types and associated handler addresses. 
 
@@ -6437,7 +6459,7 @@ class DalvikCode :
         """
         return self.handlers
 
-    def get_tries(self) :
+    def get_tries(self):
         """
             Get the array indicating where in the code exceptions are caught and how to handle them
 
@@ -6445,15 +6467,15 @@ class DalvikCode :
         """
         return self.tries
 
-    def get_debug(self) :
+    def get_debug(self):
         """
             Return the associated debug object
 
             :rtype: :class:`DebugInfoItem`
         """
-        return self.__CM.get_debug_off( self.debug_info_off )
+        return self.__CM.get_debug_off(self.debug_info_off)
 
-    def get_bc(self) :
+    def get_bc(self):
         """
             Return the associated code object
 
@@ -6461,16 +6483,16 @@ class DalvikCode :
         """
         return self.code
 
-    def set_idx(self, idx) :
+    def set_idx(self, idx):
         self.code.set_idx(idx)
 
-    def reload(self) :
+    def reload(self):
         self.code.reload()
 
-    def get_length(self) :
+    def get_length(self):
         return self.insns_size
 
-    def _begin_show(self) :
+    def _begin_show(self):
       debug("registers_size: %d" % self.registers_size)
       debug("ins_size: %d" % self.ins_size)
       debug("outs_size: %d" % self.outs_size)
@@ -6478,17 +6500,17 @@ class DalvikCode :
       debug("debug_info_off: %d" % self.debug_info_off)
       debug("insns_size: %d" % self.insns_size)
 
-      bytecode._PrintBanner() 
+      bytecode._PrintBanner()
 
-    def show(self) :
+    def show(self):
         self._begin_show()
         self.code.show()
         self._end_show()
 
-    def _end_show(self) :
-      bytecode._PrintBanner() 
+    def _end_show(self):
+      bytecode._PrintBanner()
 
-    def pretty_show(self, m_a) :
+    def pretty_show(self, m_a):
         self._begin_show()
         self.code.pretty_show(m_a)
         self._end_show()
@@ -6496,7 +6518,7 @@ class DalvikCode :
     def get_obj(self):
         return [self.code, self.tries, self.handlers]
 
-    def get_raw(self) :
+    def get_raw(self):
         code_raw = self.code.get_raw()
         self.insns_size = (len(code_raw) / 2) + (len(code_raw) % 2)
 
@@ -6509,16 +6531,16 @@ class DalvikCode :
                 pack("=I", self.insns_size) + \
                 code_raw
 
-        if (self.insns_size % 2 == 1) :
+        if (self.insns_size % 2 == 1):
             buff += pack("=H", self.padding)
 
-        if self.tries_size > 0 :
+        if self.tries_size > 0:
             buff += ''.join(i.get_raw() for i in self.tries)
             buff += self.handlers.get_raw()
 
         return buff
 
-    def add_inote(self, msg, idx, off=None) :
+    def add_inote(self, msg, idx, off=None):
         """
             Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6529,14 +6551,14 @@ class DalvikCode :
             :param off: address of the instruction
             :type off: int
         """
-        if self.code :
+        if self.code:
             return self.code.add_inote(msg, idx, off)
 
-    def get_instruction(self, idx, off=None) :
-        if self.code :
+    def get_instruction(self, idx, off=None):
+        if self.code:
             return self.code.get_instruction(idx, off)
 
-    def get_size(self) :
+    def get_size(self):
       length = len(self.int_padding)
 
       length += len( pack("=H", self.registers_size) + \
@@ -7959,6 +7981,34 @@ class DalvikVMFormat(bytecode._Bytecode) :
                 self._get_objs(h[i], index, next_objs)
           except AttributeError:
             pass
+
+    def colorize_operands(self, operands, colors):
+      for operand in operands:
+        if operand[0] == OPERAND_REGISTER:
+          yield "%sv%d%s" % (colors["registers"], operand[1], colors["normal"])
+
+        elif operand[0] == OPERAND_LITERAL:
+          yield "%s%d%s" % (colors["literal"], operand[1], colors["normal"])
+
+        elif operand[0] == OPERAND_RAW:
+          yield "%s%s%s" % (colors["raw"], operand[1], colors["normal"])
+
+        elif operand[0] == OPERAND_OFFSET:
+          yield "%s%d%s" % (colors["literal"], operand[1], colors["normal"])
+
+        elif operand[0] & OPERAND_KIND:
+            if operand[0] == (OPERAND_KIND + KIND_STRING):
+              yield "%s%s%s" % (colors["string"], operand[2], colors["normal"])
+            elif operand[0] == (OPERAND_KIND + KIND_METH):
+              yield "%s%s%s" % (colors["meth"], operand[2], colors["normal"])
+            elif operand[0] == (OPERAND_KIND + KIND_FIELD):
+              yield "%s%s%s" % (colors["field"], operand[2], colors["normal"])
+            elif operand[0] == (OPERAND_KIND + KIND_TYPE):
+              yield "%s%s%s" % (colors["type"], operand[2], colors["normal"])
+            else:
+              yield "%s" % repr(operands[2])
+        else:
+          yield "%s" % repr(operands[1])
 
     def get_operand_html(self, operand, registers_colors, colors, escape_fct, wrap_fct):
         if operand[0] == OPERAND_REGISTER:

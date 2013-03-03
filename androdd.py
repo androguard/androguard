@@ -123,7 +123,7 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
                                                                   androconf.CONF["OPTIONS_FERNFLOWER"],
                                                                   androconf.CONF["TMP_DIRECTORY"]))
         else:
-            raise("ooo")
+            raise("invalid decompiler !")
         print "End"
 
         if options.jar:
