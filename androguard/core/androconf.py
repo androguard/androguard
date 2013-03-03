@@ -82,6 +82,18 @@ CONF = {
         "BB" : Color.Purple,
         "NOTE" : Color.Red,
         "NORMAL" : Color.Normal,
+
+        "OUTPUT": {
+            "normal": Color.Normal,
+            "registers": Color.Normal,
+            "literal": Color.Green,
+            "offset": Color.Purple,
+            "raw": Color.Red,
+            "string": Color.Red,
+            "meth": Color.Cyan,
+            "type": Color.Blue,
+            "field": Color.Green,
+        }
     },
 
     "PRINT_FCT" : sys.stdout.write,

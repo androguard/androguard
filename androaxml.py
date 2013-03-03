@@ -40,9 +40,7 @@ def main(options, arguments) :
         ret_type = androconf.is_android(options.input)
         if ret_type == "APK":
             a = apk.APK(options.input)
-            print a.get_android_manifest_xml()
             buff = a.get_android_manifest_xml().toprettyxml(encoding="utf-8")
-            a.get_activities()
         elif ".xml" in options.input:
             ap = apk.AXMLPrinter(open(options.input, "rb").read())
             buff = minidom.parseString(ap.get_buff()).toprettyxml(encoding="utf-8")

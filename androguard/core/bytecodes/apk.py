@@ -460,7 +460,7 @@ class APK:
         """
         return self.get_elements("receiver", "android:name")
 
-    def get_providers(self) :
+    def get_providers(self):
         """
             Return the android:name attribute of all providers
 
@@ -1781,3 +1781,20 @@ class ARSCResStringPoolRef:
 
     def get_data_type(self):
         return self.data_type
+
+
+def get_arsc_info(arscobj):
+    buff = ""
+    for package in arscobj.get_packages_names():
+        buff += package + ":\n"
+        for locale in arscobj.get_locales(package):
+            buff += "\t" + repr(locale) + ":\n"
+            for ttype in arscobj.get_types(package, locale):
+                buff += "\t\t" + ttype + ":\n"
+                try:
+                    tmp_buff = getattr(arscobj, "get_" + ttype + "_resources")(package, locale).decode("utf-8", 'replace').split("\n")
+                    for i in tmp_buff:
+                        buff += "\t\t\t" + i + "\n"
+                except AttributeError:
+                    pass
+    return buff
