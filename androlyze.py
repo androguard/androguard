@@ -116,9 +116,7 @@ def AnalyzeAPK(filename, raw=False, decompiler=None):
     """
     androconf.debug("APK ...")
     a = APK(filename, raw)
-
     d, dx = AnalyzeDex(a.get_dex(), raw=True, decompiler=decompiler)
-
     return a, d, dx
 
 
@@ -139,6 +137,46 @@ def AnalyzeDex(filename, raw=False, decompiler=None):
         d = DalvikVMFormat(open(filename, "rb").read())
     else:
         d = DalvikVMFormat(filename)
+
+    androconf.debug("Export VM to python namespace")
+    d.create_python_export()
+
+    androconf.debug("VMAnalysis ...")
+    dx = uVMAnalysis(d)
+
+    androconf.debug("GVMAnalysis ...")
+    gx = GVMAnalysis(dx, None)
+
+    d.set_vmanalysis(dx)
+    d.set_gvmanalysis(gx)
+
+    RunDecompiler(d, dx, decompiler)
+
+    androconf.debug("XREF ...")
+    d.create_xref()
+    androconf.debug("DREF ...")
+    d.create_dref()
+
+    return d, dx
+
+
+def AnalyzeODex(filename, raw=False, decompiler=None):
+    """
+        Analyze an android odex file and setup all stuff for a more quickly analysis !
+
+        :param filename: the filename of the android dex file or a buffer which represents the dex file
+        :type filename: string
+        :param raw: True is you would like to use a buffer (optional)
+        :type raw: boolean
+
+        :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
+    """
+    androconf.debug("DalvikOdexVMFormat ...")
+    d = None
+    if raw == False:
+        d = DalvikOdexVMFormat(open(filename, "rb").read())
+    else:
+        d = DalvikOdexVMFormat(filename)
 
     androconf.debug("Export VM to python namespace")
     d.create_python_export()
