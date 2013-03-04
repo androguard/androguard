@@ -7182,7 +7182,8 @@ class DREF :
     def add(self, x, y):
         self.items.append((x, y))
 
-class DalvikVMFormat(bytecode._Bytecode) :
+
+class DalvikVMFormat(bytecode._Bytecode):
     """
         This class can parse a classes.dex file of an Android application (APK).
 
@@ -8075,6 +8076,15 @@ class OdexHeaderItem:
                                                                                                                   self.aux_length,
                                                                                                                   self.flags)
 
+    def get_raw(self):
+      return pack("=I", self.dex_offset) +    \
+             pack("=I", self.dex_length) +    \
+             pack("=I", self.deps_offset) +   \
+             pack("=I", self.deps_length) +   \
+             pack("=I", self.aux_offset) +    \
+             pack("=I", self.flags) +         \
+             pack("=I", self.padding)
+
 
 class OdexDependencies:
     """
@@ -8104,6 +8114,20 @@ class OdexDependencies:
         """
         return self.dependencies
 
+    def get_raw(self):
+      dependencies = ""
+
+      for idx, value in enumerate(self.dependencies):
+        dependencies += pack("=I", len(value)) + \
+                        pack("=s", value) + \
+                        pack("=20s", self.dependency_checksums[idx])
+
+      return pack("=I", self.modification_time) + \
+             pack("=I", self.crc) +               \
+             pack("=I", self.dalvik_build) +      \
+             pack("=I", self.dependency_count) +  \
+             dependencies
+
 
 class DalvikOdexVMFormat(DalvikVMFormat):
     """
@@ -8128,6 +8152,9 @@ class DalvikOdexVMFormat(DalvikVMFormat):
             self.set_idx(self.odex_header.dex_offset)
             self.set_buff(self.read(self.odex_header.dex_length))
             self.set_idx(0)
+
+    def get_buff(self):
+      return self.odex_header.get_raw() + self.dependencies.get_raw() + super(DalvikOdexVMFormat, self).get_buff()
 
     def get_dependencies(self):
         """

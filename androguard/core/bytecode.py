@@ -644,12 +644,13 @@ class Buff :
 
         self.size = len(buff)
 
-class _Bytecode(object) :
-    def __init__(self, buff) :
+
+class _Bytecode(object):
+    def __init__(self, buff):
         try :
             import psyco
             psyco.full()
-        except ImportError :
+        except ImportError:
             pass
 
         self.__buff = buff
