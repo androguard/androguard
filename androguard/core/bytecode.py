@@ -22,15 +22,18 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from androconf import Color, warning, error, CONF, disable_colors, enable_colors, remove_colors, save_colors, color_range
+from androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
 
-def disable_print_colors() :
+
+def disable_print_colors():
   colors = save_colors()
   remove_colors()
-  return colors 
+  return colors
 
-def enable_print_colors(colors) :
+
+def enable_print_colors(colors):
   enable_colors(colors)
+
 
 # Handle exit message
 def Exit( msg ):

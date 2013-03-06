@@ -1934,7 +1934,7 @@ class Enum(object):
     return tuple(enumerate(self.names))
 
 TAG_ANDROID = Enum([ 'ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
-    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DRM', 'GESTURE',
+    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DEBUG', 'DRM', 'GESTURE',
     'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
     'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
     'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
@@ -1946,7 +1946,7 @@ TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
                  TAG_ANDROID.TELEPHONY :                [ 0, "Landroid/telephony"],
                  TAG_ANDROID.SMS :                      [ 0, "Landroid/telephony/SmsManager"],
                  TAG_ANDROID.SMSMESSAGE :               [ 0, "Landroid/telephony/SmsMessage"],
-
+                 TAG_ANDROID.DEBUG :                    [ 0, "Landroid/os/Debug"],
                  TAG_ANDROID.ACCESSIBILITYSERVICE :     [ 0, "Landroid/accessibilityservice" ],
                  TAG_ANDROID.ACCOUNTS :                 [ 0, "Landroid/accounts" ],
                  TAG_ANDROID.ANIMATION :                [ 0, "Landroid/animation" ],
