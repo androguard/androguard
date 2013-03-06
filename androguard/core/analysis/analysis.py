@@ -2084,28 +2084,38 @@ class BasicBlocks:
     def get_basic_block_pos(self, idx):
         return self.bb[idx]
 
-class ExceptionAnalysis :
-    def __init__(self, exception, bb) :
+
+class ExceptionAnalysis:
+    def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
 
         self.exceptions = exception[2:]
 
-        for i in self.exceptions :
-            i.append( bb.get_basic_block( i[1] ) )
+        for i in self.exceptions:
+            i.append(bb.get_basic_block(i[1]))
 
-    def show_buff(self) :
+    def show_buff(self):
         buff = "%x:%x\n" % (self.start, self.end)
 
-        for i in self.exceptions :
-            if i[2] == None :
+        for i in self.exceptions:
+            if i[2] == None:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
-            else :
+            else:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
 
         return buff[:-1]
 
-class Exceptions :
+    def get(self):
+        d = {"start": self.start, "end": self.end, "list": []}
+
+        for i in self.exceptions:
+            d["list"].append({"name": i[0], "idx": i[1], "bb": i[2].get_name()})
+
+        return d
+
+
+class Exceptions:
     def __init__(self, _vm) :
         self.__vm = _vm
         self.exceptions = []
