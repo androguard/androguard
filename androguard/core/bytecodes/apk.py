@@ -1173,7 +1173,7 @@ class AXMLPrinter:
         return self.buff.encode('utf-8')
 
     def get_xml(self):
-        return minidom.parseString(self.get_buff()).toprettyxml()
+        return minidom.parseString(self.get_buff()).toprettyxml(encoding="utf-8")
 
     def get_xml_obj(self):
         return minidom.parseString(self.get_buff())

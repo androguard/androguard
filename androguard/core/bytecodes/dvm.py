@@ -6531,8 +6531,8 @@ class DalvikCode:
                 pack("=I", self.insns_size) + \
                 code_raw
 
-        if (self.insns_size % 2 == 1):
-            buff += pack("=H", self.padding)
+       # if (self.insns_size % 2 == 1):
+       #     buff += pack("=H", self.padding)
 
         if self.tries_size > 0:
             buff += ''.join(i.get_raw() for i in self.tries)
@@ -6664,8 +6664,8 @@ class MapItem :
     def get_size(self) :
       return self.size
 
-    def next(self, buff, cm) :
-        debug("%s @ 0x%x(%d) %d %x" % (TYPE_MAP_ITEM[ self.type ], buff.get_idx(), buff.get_idx(), self.size, self.offset))
+    def next(self, buff, cm):
+        debug("%s @ 0x%x(%d) %x %x" % (TYPE_MAP_ITEM[self.type], buff.get_idx(), buff.get_idx(), self.size, self.offset))
 
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM" :
             self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
@@ -7305,9 +7305,10 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         self.map_list.pretty_show()
 
-    def save(self) :
+    def save(self):
       """
           Return the dex (with the modifications) into raw format (fix checksums)
+          (beta: do not use !)
 
           :rtype: string
       """
@@ -7317,11 +7318,11 @@ class DalvikVMFormat(bytecode._Bytecode):
       h_r = {}
 
       idx = 0
-      for i in self.map_list.get_obj() :
+      for i in self.map_list.get_obj():
         length = 0
 
-        if isinstance(i, list) :
-          for j in i :
+        if isinstance(i, list):
+          for j in i:
             if isinstance(j, AnnotationsDirectoryItem) :
               if idx % 4 != 0 :
                 idx = idx + (4 - (idx % 4))
@@ -7334,10 +7335,9 @@ class DalvikVMFormat(bytecode._Bytecode):
             s[ idx + length ] = c_length
 
             length += c_length
-
             #debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
 
-          debug("SAVE " + str(i[0]) + " @ 0x%x" % idx)
+          debug("SAVE " + str(i[0]) + " @0x%x (%x)" % (idx, length))
 
         else :
           if isinstance(i, MapList) :
@@ -7350,9 +7350,9 @@ class DalvikVMFormat(bytecode._Bytecode):
 
           length = i.get_length()
 
-          s[ idx ] = length
+          s[idx] = length
 
-          debug("SAVE " + str(i) + " @ 0x%x" % idx)
+          debug("SAVE " + str(i) + " @0x%x (%x)" % (idx, length))
 
         idx += length
 
@@ -7379,7 +7379,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         buff += i.get_raw()
         last_idx = idx + s[ idx ]
 
-      debug( "GLOBAL SIZE %d" % len(buff))
+      debug("GLOBAL SIZE %d" % len(buff))
 
       return self.fix_checksums(buff)
 
@@ -7389,16 +7389,17 @@ class DalvikVMFormat(bytecode._Bytecode):
 
           :rtype: string
       """
-      import zlib, hashlib
+      import zlib
+      import hashlib
+
       signature = hashlib.sha1(buff[32:]).digest()
 
       buff = buff[:12] + signature + buff[32:]
       checksum = zlib.adler32(buff[12:])
       buff = buff[:8] + pack("=i", checksum) + buff[12:]
 
-
-      debug( "NEW SIGNATURE %s" % repr(signature) )
-      debug( "NEW CHECKSUM %x" % checksum )
+      debug("NEW SIGNATURE %s" % repr(signature))
+      debug("NEW CHECKSUM %x" % checksum)
 
       return buff
 
@@ -8082,6 +8083,7 @@ class OdexHeaderItem:
              pack("=I", self.deps_offset) +   \
              pack("=I", self.deps_length) +   \
              pack("=I", self.aux_offset) +    \
+             pack("=I", self.aux_length) +    \
              pack("=I", self.flags) +         \
              pack("=I", self.padding)
 
@@ -8102,7 +8104,7 @@ class OdexDependencies:
 
         for i in range(0, self.dependency_count):
             string_length = unpack("=I", buff.read(4))[0]
-            name_dependency = buff.read(string_length)[:-1]
+            name_dependency = buff.read(string_length)
             self.dependencies.append(name_dependency)
             self.dependency_checksums.append(buff.read(20))
 
@@ -8119,7 +8121,7 @@ class OdexDependencies:
 
       for idx, value in enumerate(self.dependencies):
         dependencies += pack("=I", len(value)) + \
-                        pack("=s", value) + \
+                        pack("=%ds" % len(value), value) + \
                         pack("=20s", self.dependency_checksums[idx])
 
       return pack("=I", self.modification_time) + \
@@ -8142,19 +8144,29 @@ class DalvikOdexVMFormat(DalvikVMFormat):
           DalvikOdexVMFormat( open("classes.odex", "rb").read() )
     """
     def _preload(self, buff):
-        magic = buff[:8]
-        if magic == ODEX_FILE_MAGIC_35 or magic == ODEX_FILE_MAGIC_36:
+        self.orig_buff = buff
+        self.magic = buff[:8]
+        if self.magic == ODEX_FILE_MAGIC_35 or self.magic == ODEX_FILE_MAGIC_36:
             self.odex_header = OdexHeaderItem(self)
 
             self.set_idx(self.odex_header.deps_offset)
             self.dependencies = OdexDependencies(self)
 
+            self.padding = buff[self.odex_header.deps_offset + self.odex_header.deps_length:]
+
             self.set_idx(self.odex_header.dex_offset)
             self.set_buff(self.read(self.odex_header.dex_length))
             self.set_idx(0)
 
+    def save(self):
+      """
+          Do not use !
+      """
+      dex_raw = super(DalvikOdexVMFormat, self).save()
+      return self.magic + self.odex_header.get_raw() + dex_raw + self.dependencies.get_raw() + self.padding
+
     def get_buff(self):
-      return self.odex_header.get_raw() + self.dependencies.get_raw() + super(DalvikOdexVMFormat, self).get_buff()
+      return self.magic + self.odex_header.get_raw() + super(DalvikOdexVMFormat, self).get_buff() + self.dependencies.get_raw() + self.padding
 
     def get_dependencies(self):
         """

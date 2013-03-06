@@ -526,6 +526,10 @@ def method2json_direct(mx):
             if not ok:
                 cblock["Edge"].append(DVMBasicMethodBlockChild[-1].name)
 
+        exception_analysis = DVMBasicMethodBlock.get_exception_analysis()
+        if exception_analysis:
+            cblock["Exceptions"] = exception_analysis.get()
+
         reports.append(cblock)
 
     reports.extend(l)
@@ -538,7 +542,7 @@ class SV:
         self.__size = size
         self.__value = unpack(self.__size, buff)[0]
 
-    def _get(self) :
+    def _get(self):
         return pack(self.__size, self.__value)
 
     def __str__(self) :
