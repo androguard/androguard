@@ -63,25 +63,25 @@ CONF = {
     #"ENGINE" : "automatic",
     "ENGINE": "python",
 
-    "RECODE_ASCII_STRING" : False,
-    "RECODE_ASCII_STRING_METH" : get_ascii_string,
+    "RECODE_ASCII_STRING": False,
+    "RECODE_ASCII_STRING_METH": get_ascii_string,
 
-    "DEOBFUSCATED_STRING" : True,
+    "DEOBFUSCATED_STRING": True,
 #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
 
-    "PATH_JARSIGNER" : "jarsigner",
+    "PATH_JARSIGNER": "jarsigner",
 
-    "COLORS" : {
-        "OFFSET" : Color.Yellow,
-        "OFFSET_ADDR" : Color.Green,
-        "INSTRUCTION_NAME" : Color.Yellow,
-        "BRANCH_FALSE" : Color.Red,
-        "BRANCH_TRUE" : Color.Green,
-        "BRANCH" : Color.Blue,
-        "EXCEPTION" : Color.Cyan,
-        "BB" : Color.Purple,
-        "NOTE" : Color.Red,
-        "NORMAL" : Color.Normal,
+    "COLORS": {
+        "OFFSET": Color.Yellow,
+        "OFFSET_ADDR": Color.Green,
+        "INSTRUCTION_NAME": Color.Yellow,
+        "BRANCH_FALSE": Color.Red,
+        "BRANCH_TRUE": Color.Green,
+        "BRANCH": Color.Blue,
+        "EXCEPTION": Color.Cyan,
+        "BB": Color.Purple,
+        "NOTE": Color.Red,
+        "NORMAL": Color.Normal,
 
         "OUTPUT": {
             "normal": Color.Normal,
@@ -96,14 +96,13 @@ CONF = {
         }
     },
 
-    "PRINT_FCT" : sys.stdout.write,
-
-    "LAZY_ANALYSIS" : False,
-
-    "MAGIC_PATH_FILE" : None,
+    "PRINT_FCT": sys.stdout.write,
+    "LAZY_ANALYSIS": False,
+    "MAGIC_PATH_FILE": None,
 }
 
-def default_colors(obj) :
+
+def default_colors(obj):
   CONF["COLORS"]["OFFSET"] = obj.Yellow
   CONF["COLORS"]["OFFSET_ADDR"] = obj.Green
   CONF["COLORS"]["INSTRUCTION_NAME"] = obj.Yellow
@@ -115,30 +114,59 @@ def default_colors(obj) :
   CONF["COLORS"]["NOTE"] = obj.Red
   CONF["COLORS"]["NORMAL"] = obj.Normal
 
-def disable_colors() :
+  CONF["COLORS"]["OUTPUT"]["normal"] = obj.Normal
+  CONF["COLORS"]["OUTPUT"]["registers"] = obj.Normal
+  CONF["COLORS"]["OUTPUT"]["literal"] = obj.Green
+  CONF["COLORS"]["OUTPUT"]["offset"] = obj.Purple
+  CONF["COLORS"]["OUTPUT"]["raw"] = obj.Red
+  CONF["COLORS"]["OUTPUT"]["string"] = obj.Red
+  CONF["COLORS"]["OUTPUT"]["meth"] = obj.Cyan
+  CONF["COLORS"]["OUTPUT"]["type"] = obj.Blue
+  CONF["COLORS"]["OUTPUT"]["field"] = obj.Green
+
+
+def disable_colors():
   """ Disable colors from the output (color = normal)"""
-  for i in CONF["COLORS"] :
-    CONF["COLORS"][i] = Color.normal
+  for i in CONF["COLORS"]:
+    if isinstance(CONF["COLORS"][i], dict):
+        for j in CONF["COLORS"][i]:
+            CONF["COLORS"][i][j] = Color.normal
+    else:
+        CONF["COLORS"][i] = Color.normal
 
-def remove_colors() :
+
+def remove_colors():
   """ Remove colors from the output (no escape sequences)"""
-  for i in CONF["COLORS"] :
-    CONF["COLORS"][i] = ""
+  for i in CONF["COLORS"]:
+    if isinstance(CONF["COLORS"][i], dict):
+        for j in CONF["COLORS"][i]:
+            CONF["COLORS"][i][j] = ""
+    else:
+        CONF["COLORS"][i] = ""
 
-def enable_colors(colors) :
-  for i in colors :
+
+def enable_colors(colors):
+  for i in colors:
     CONF["COLORS"][i] = colors[i]
 
-def save_colors() :
+
+def save_colors():
   c = {}
-  for i in CONF["COLORS"] :
-    c[i] = CONF["COLORS"][i]
+  for i in CONF["COLORS"]:
+    if isinstance(CONF["COLORS"][i], dict):
+        c[i] = {}
+        for j in CONF["COLORS"][i]:
+            c[i][j] = CONF["COLORS"][i][j]
+    else:
+        c[i] = CONF["COLORS"][i]
   return c
 
-def long2int( l ) :
-    if l > 0x7fffffff :
+
+def long2int(l):
+    if l > 0x7fffffff:
         l = (0x7fffffff & l) - 0x80000000
     return l
+
 
 def long2str(l):
     """Convert an integer to a string."""

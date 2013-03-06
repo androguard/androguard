@@ -2592,7 +2592,7 @@ class EncodedField :
     def get_size(self) :
       return len(self.get_raw())
 
-    def show(self) :
+    def show(self):
         """
             Display the information about the field
         """
@@ -2767,7 +2767,7 @@ class EncodedMethod:
         bytecode._PrintSubBanner("Method Information") 
         bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
  
-    def show(self) :
+    def show(self):
         """
             Display the information about the method
         """
@@ -7299,7 +7299,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         self.map_list.show()
 
-    def pretty_show(self) :
+    def pretty_show(self):
         """
           Show (but pretty !) the all information in the object
         """
@@ -7996,7 +7996,7 @@ class DalvikVMFormat(bytecode._Bytecode):
           yield "%s%s%s" % (colors["raw"], operand[1], colors["normal"])
 
         elif operand[0] == OPERAND_OFFSET:
-          yield "%s%d%s" % (colors["literal"], operand[1], colors["normal"])
+          yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"])
 
         elif operand[0] & OPERAND_KIND:
             if operand[0] == (OPERAND_KIND + KIND_STRING):
