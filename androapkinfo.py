@@ -25,7 +25,7 @@ from optparse import OptionParser
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.core.bytecodes import dvm
-from androguard.core.analysis import analysis 
+from androguard.core.analysis import analysis
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename (APK)', 'nargs' : 1 }
 option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
@@ -34,17 +34,18 @@ option_3 = { 'name' : ('-v', '--version'), 'help' : 'version', 'action' : 'count
 
 options = [option_0, option_1, option_2, option_3]
 
-def display_dvm_info(apk) :
-    vm = dvm.DalvikVMFormat( apk.get_dex() )
-    vmx = analysis.uVMAnalysis( vm )
+def display_dvm_info(apk):
+    vm = dvm.DalvikVMFormat(apk.get_dex())
+    vmx = analysis.uVMAnalysis(vm)
 
     print "Native code:", analysis.is_native_code(vmx)
     print "Dynamic code:", analysis.is_dyn_code(vmx)
     print "Reflection code:", analysis.is_reflection_code(vmx)
+    print "Ascii Obfuscation:", analysis.is_ascii_obfuscation(vm)
 
-    for i in vmx.get_methods() :
+    for i in vmx.get_methods():
       i.create_tags()
-      if not i.tags.empty() :
+      if not i.tags.empty():
         print i.method.get_class_name(), i.method.get_name(), i.tags
 
 def main(options, arguments) :
@@ -54,7 +55,7 @@ def main(options, arguments) :
         print os.path.basename(options.input), ":"
         if ret_type == "APK" :
             try :
-                a = apk.APK( options.input )
+                a = apk.APK(options.input, zipmodule=2)
                 if a.is_valid_APK() :
                     a.show()
                     display_dvm_info( a )
@@ -62,7 +63,9 @@ def main(options, arguments) :
                     print "INVALID"
             except Exception, e :
                 print "ERROR", e
-                
+                import traceback
+                traceback.print_exc()
+
     elif options.directory != None :
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :

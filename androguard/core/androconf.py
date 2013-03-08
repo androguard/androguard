@@ -16,21 +16,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, logging, types, random, string
+import sys
+import os
+import logging
+import types
+import random
+import string
 
 ANDROGUARD_VERSION = "2.0"
 
-def get_ascii_string(s) :
-    try :
-        return s.decode("ascii")
-    except UnicodeDecodeError :
-        d = ""
-        for i in s :
-            if ord(i) < 128 :
-                d += i
-            else :
-                d += "%x" % ord(i)
-        return d
+
+def is_ascii_problem(s):
+    try:
+        s.decode("ascii")
+        return False
+    except UnicodeDecodeError:
+        return True
+
 
 class Color:
     Normal = "\033[0m"
@@ -64,7 +66,7 @@ CONF = {
     "ENGINE": "python",
 
     "RECODE_ASCII_STRING": False,
-    "RECODE_ASCII_STRING_METH": get_ascii_string,
+    "RECODE_ASCII_STRING_METH": None,
 
     "DEOBFUSCATED_STRING": True,
 #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,

@@ -2465,7 +2465,8 @@ class MethodIdItemInvalid :
     def show(self) :
         print "AG:IMI:invalid_method_item"
 
-class EncodedField :
+
+class EncodedField:
     """
         This class can parse an encoded_field of a dex file
 
@@ -2579,8 +2580,8 @@ class EncodedField :
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
-    def set_name(self, value) :
-        self.CM.set_hook_field_name( self, value )
+    def set_name(self, value):
+        self.CM.set_hook_field_name(self, value)
         self.reload()
 
     def get_obj(self) :
@@ -5994,12 +5995,17 @@ DALVIK_OPCODES_OPTIMIZED = {
     0xffff : [ Instruction40sc, ["throw-verification-error/jumbo", VARIES ] ],
 }
 
+
 class Unresolved(Instruction):
-  def __init__(self, data):
+  def __init__(self, cm, data):
+    self.cm = cm
     self.data = data
 
   def get_name(self):
     return "unresolved"
+
+  def get_operands(self, idx=-1):
+    return [(OPERAND_KIND + KIND_STRING, -1, "AG:OP: invalid opcode " + repr(ord(self.data[0])))]
 
   def get_op_value(self):
     return ord(self.data[0])
@@ -6024,7 +6030,7 @@ def get_instruction(cm, op_value, buff, odex=False):
     except KeyError:
       return InstructionInvalid(cm, buff)
   except:
-      return Unresolved(buff)
+      return Unresolved(cm, buff)
 
 
 def get_extented_instruction(cm, op_value, buff):
@@ -6819,15 +6825,17 @@ class MapItem :
     def set_item(self, item) :
       self.item = item
 
-class OffObj :
-    def __init__(self, o) :
+
+class OffObj:
+    def __init__(self, o):
         self.off = o
 
-class ClassManager :
+
+class ClassManager:
     """
        This class is used to access to all elements (strings, type, proto ...) of the dex format
     """
-    def __init__(self, vm) :
+    def __init__(self, vm, config):
         self.vm = vm
         self.buff = vm
 
@@ -6846,20 +6854,34 @@ class ClassManager :
         self.__cached_type_list = {}
         self.__cached_proto = {}
 
-        self.recode_ascii_string = CONF["RECODE_ASCII_STRING"]
-        self.recode_ascii_string_meth = CONF["RECODE_ASCII_STRING_METH"]
+        self.recode_ascii_string = config["RECODE_ASCII_STRING"]
+        self.recode_ascii_string_meth = None
+        if config["RECODE_ASCII_STRING_METH"]:
+          self.recode_ascii_string_meth = config["RECODE_ASCII_STRING_METH"]
 
-        self.lazy_analysis = CONF["LAZY_ANALYSIS"]
+        self.lazy_analysis = config["LAZY_ANALYSIS"]
 
         self.hook_strings = {}
 
         self.engine = []
         self.engine.append("python")
 
-        if self.vm != None :
+        if self.vm != None:
             self.odex_format = self.vm.get_format_type() == "ODEX"
 
-    def get_odex_format(self) :
+    def get_ascii_string(self, s):
+        try:
+            return s.decode("ascii")
+        except UnicodeDecodeError:
+            d = ""
+            for i in s:
+                if ord(i) < 128:
+                    d += i
+                else:
+                    d += "%x" % ord(i)
+            return d
+
+    def get_odex_format(self):
         return self.odex_format
 
     def get_obj_by_offset(self, offset) :
@@ -6946,11 +6968,13 @@ class ClassManager :
             bytecode.Warning( "unknown string item @ %d" % (idx) )
             return "AG:IS: invalid string"
 
-        try :
-            if self.recode_ascii_string :
-                return self.recode_ascii_string_meth( self.__strings_off[off].get() )
+        try:
+            if self.recode_ascii_string:
+                if self.recode_ascii_string_meth:
+                  return self.recode_ascii_string_meth(self.__strings_off[off].get())
+                return self.get_ascii_string(self.__strings_off[off].get())
             return self.__strings_off[off].get()
-        except KeyError :
+        except KeyError:
             bytecode.Warning( "unknown string item @ 0x%x(%d)" % (off,idx) )
             return "AG:IS: invalid string"
 
@@ -7033,25 +7057,33 @@ class ClassManager :
 
         self.vm._create_python_export_class( class_def )
 
-    def set_hook_method_name(self, encoded_method, value) :
+    def set_hook_method_name(self, encoded_method, value):
+        python_export = True
+
         method = self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( encoded_method.get_method_idx() )
         self.set_hook_string( method.get_name_idx(), value )
 
         class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( method.get_class_idx() )
-        if class_def != None :
-          try :
+        if class_def != None:
+          try:
             name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() )
-            delattr( class_def, name )
           except AttributeError:
-            name += "_" + bytecode.FormatDescriptorToPython( encoded_method.get_descriptor() )
-            delattr( class_def, name )
+            name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
-          name = "METHOD_" + bytecode.FormatNameToPython( value )
-          setattr( class_def, name, encoded_method )
+          try:
+            delattr(class_def, name)
+          except AttributeError:
+            python_export = False
+
+          if python_export:
+            name = "METHOD_" + bytecode.FormatNameToPython(value)
+            setattr(class_def, name, encoded_method)
 
         method.reload()
 
-    def set_hook_field_name(self, encoded_field, value) :
+    def set_hook_field_name(self, encoded_field, value):
+        python_export = True
+
         field = self.__manage_item[ "TYPE_FIELD_ID_ITEM" ].get( encoded_field.get_field_idx() )
         self.set_hook_string( field.get_name_idx(), value )
 
@@ -7059,13 +7091,18 @@ class ClassManager :
         if class_def != None :
           try :
             name = "FIELD_" + bytecode.FormatNameToPython( encoded_field.get_name() )
-            delattr( class_def, name )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython( encoded_field.get_descriptor() )
-            delattr( class_def, name )
+            
 
-          name = "FIELD_" + bytecode.FormatNameToPython( value )
-          setattr( class_def, name, encoded_field )
+          try:
+            delattr( class_def, name )
+          except AttributeError:
+            python_export = False
+
+          if python_export:
+            name = "FIELD_" + bytecode.FormatNameToPython( value )
+            setattr( class_def, name, encoded_field )
 
         field.reload()
 
@@ -7195,25 +7232,30 @@ class DalvikVMFormat(bytecode._Bytecode):
         :Example:
           DalvikVMFormat( open("classes.dex", "rb").read() )
     """
-    def __init__(self, buff, decompiler=None) :
-        super(DalvikVMFormat, self).__init__( buff )
+    def __init__(self, buff, decompiler=None, config=None):
+        super(DalvikVMFormat, self).__init__(buff)
 
-        self.CM = ClassManager(self)
-        self.CM.set_decompiler( decompiler )
+        self.config = config
+        if not self.config:
+          self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
+                         "RECODE_ASCII_STRING_METH": CONF["RECODE_ASCII_STRING_METH"],
+                         "LAZY_ANALYSIS": CONF["LAZY_ANALYSIS"]}
 
+        self.CM = ClassManager(self, self.config)
+        self.CM.set_decompiler(decompiler)
 
         self._preload(buff)
         self._load(buff)
 
-    def _preload(self, buff) :
+    def _preload(self, buff):
         pass
 
-    def _load(self, buff) :
-        self.__header = HeaderItem( 0, self, ClassManager(None) )
+    def _load(self, buff):
+        self.__header = HeaderItem(0, self, ClassManager(None, self.config))
 
-        if self.__header.map_off == 0 :
-            bytecode.Warning( "no map list ..." )
-        else :
+        if self.__header.map_off == 0:
+            bytecode.Warning("no map list ...")
+        else:
             self.map_list = MapList( self.CM, self.__header.map_off, self )
 
             self.classes = self.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
@@ -7899,7 +7941,7 @@ class DalvikVMFormat(bytecode._Bytecode):
       for i in DCode(self.CM, offset, size, self.get_buff()[offset:offset + size]).get_instructions():
         yield i
 
-    def get_classes_hierarchy(self):
+    def _get_class_hierarchy(self):
         ids = {}
         present = {}
         r_ids = {}
@@ -7942,6 +7984,9 @@ class DalvikVMFormat(bytecode._Bytecode):
              treeMap[parentId] = bytecode.Node(0, '')
          treeMap[parentId].children.append(treeMap[nodeId])
 
+        return Root
+
+    def print_classes_hierarchy(self):
         def print_map(node, l, lvl=0):
          for n in node.children:
              if lvl == 0:
@@ -7952,8 +7997,28 @@ class DalvikVMFormat(bytecode._Bytecode):
                  print_map(n, l, lvl + 1)
 
         l = []
-        print_map(Root, l)
+        print_map(self._get_class_hierarchy(), l)
         return l
+
+    def list_classes_hierarchy(self):
+      def print_map(node, l):
+        if node.title not in l:
+          l[node.title] = []
+
+        for n in node.children:
+          if len(n.children) > 0:
+            w = {}
+            w[n.title] = []
+            l[node.title].append(w)
+
+            print_map(n, w)
+          else:
+            l[node.title].append(n.title)
+
+      l = {}
+      print_map(self._get_class_hierarchy(), l)
+
+      return l
 
     def get_format(self):
       objs = self.map_list.get_obj()
