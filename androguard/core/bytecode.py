@@ -120,7 +120,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
     colors = CONF["COLORS"]["OUTPUT"]
 
     for i in basic_blocks:
-        print_fct("%s%s%s : \n" % (bb_color, i.name, normal_color))
+        print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
         instructions = i.get_instructions()
         for ins in instructions:
             if nb in notes:
@@ -140,14 +140,14 @@ def PrettyShow(m_a, basic_blocks, notes={}):
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
                       values = i.get_special_ins(idx).get_values()
-                      print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].name, branch_color))
-                      print_fct(' '.join("%d:%s" % (values[j], i.childs[j + 1][2].name) for j in range(0, len(i.childs) - 1)) + " ]%s" % normal_color)
+                      print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].get_name(), branch_color))
+                      print_fct(' '.join("%d:%s" % (values[j], i.childs[j + 1][2].get_name()) for j in range(0, len(i.childs) - 1)) + " ]%s" % normal_color)
                 else:
                     if len(i.childs) == 2:
-                        print_fct("%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
-                        print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + " ]%s" % normal_color)
+                        print_fct("%s[ %s%s " % (branch_false_color, i.childs[0][2].get_name(), branch_true_color))
+                        print_fct(' '.join("%s" % c[2].get_name() for c in i.childs[1:]) + " ]%s" % normal_color)
                     else:
-                        print_fct("%s[ " % branch_color + ' '.join("%s" % c[2].name for c in i.childs) + " ]%s" % normal_color)
+                        print_fct("%s[ " % branch_color + ' '.join("%s" % c[2].get_name() for c in i.childs) + " ]%s" % normal_color)
 
             idx += ins.get_length()
             nb += 1
@@ -204,8 +204,16 @@ def method2dot(mx, colors={}):
 
     registers = {}
     if method.get_code():
-        for i in range(method.get_code().get_registers_size()):
-            registers[i] = 0
+        for DVMBasicMethodBlock in mx.basic_blocks.gets():
+            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
+                operands = DVMBasicMethodBlockInstruction.get_operands(0)
+                for register in operands:
+                    if register[0] == 0:
+                        if register[1] not in registers:
+                            registers[register[1]] = 0
+                        registers[register[1]] += 1
+#        for i in range(method.get_code().get_registers_size()):
+#            registers[i] = 0
 
     if registers:
         registers_colors = color_range(colors["registers_range"][0],
@@ -218,7 +226,7 @@ def method2dot(mx, colors={}):
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         ins_idx = DVMBasicMethodBlock.start
-        block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.name).hexdigest()
+        block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name()).hexdigest()
 
         content = link_tpl % 'header'
 
@@ -275,7 +283,7 @@ def method2dot(mx, colors={}):
             if values:
                 label_edge = values.pop(0)
 
-            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild[-1].name).hexdigest()
+            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild[-1].get_name()).hexdigest()
             edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (block_id, child_id, val, label_edge)
             # color switch
             if val == colors["false_branch"]:
@@ -288,7 +296,7 @@ def method2dot(mx, colors={}):
             for exception_elem in exception_analysis.exceptions:
                 exception_block = exception_elem[-1]
                 if exception_block:
-                    exception_id = hashlib.md5(sha256 + exception_block.name).hexdigest()
+                    exception_id = hashlib.md5(sha256 + exception_block.get_name()).hexdigest()
                     edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (block_id, exception_id, "black", exception_elem[0])
 
     for link in new_links:
@@ -296,8 +304,8 @@ def method2dot(mx, colors={}):
         DVMBasicMethodBlockChild = mx.basic_blocks.get_basic_block(link[2])
 
         if DVMBasicMethodBlockChild:
-            block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.name).hexdigest()
-            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild.name).hexdigest()
+            block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name()).hexdigest()
+            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild.get_name()).hexdigest()
 
             edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"data(0x%x) to @0x%x\", style=\"dashed\"];\n" % (block_id, child_id, "yellow", link[1], link[2])
 
@@ -415,6 +423,9 @@ class TmpBlock:
     def __init__(self, name):
         self.name = name
 
+    def get_name(self):
+        return self.name
+
 
 def method2json(mx, directed_graph=False):
     if directed_graph:
@@ -430,7 +441,7 @@ def method2json_undirect(mx):
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         cblock = {}
 
-        cblock["BasicBlockId"] = DVMBasicMethodBlock.name
+        cblock["BasicBlockId"] = DVMBasicMethodBlock.get_name()
         cblock["registers"] = mx.get_method().get_code().get_registers_size()
         cblock["instructions"] = []
 
@@ -446,7 +457,7 @@ def method2json_undirect(mx):
 
         cblock["Edge"] = []
         for DVMBasicMethodBlockChild in DVMBasicMethodBlock.childs:
-            cblock["Edge"].append(DVMBasicMethodBlockChild[-1].name)
+            cblock["Edge"].append(DVMBasicMethodBlockChild[-1].get_name())
 
         reports.append(cblock)
 
@@ -463,13 +474,13 @@ def method2json_direct(mx):
     l = []
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         for index, DVMBasicMethodBlockChild in enumerate(DVMBasicMethodBlock.childs):
-            if DVMBasicMethodBlock.name == DVMBasicMethodBlockChild[-1].name:
+            if DVMBasicMethodBlock.get_name() == DVMBasicMethodBlockChild[-1].get_name():
 
-                preblock = TmpBlock(DVMBasicMethodBlock.name + "-pre")
+                preblock = TmpBlock(DVMBasicMethodBlock.get_name() + "-pre")
 
                 cnblock = {}
-                cnblock["BasicBlockId"] = DVMBasicMethodBlock.name + "-pre"
-                cnblock["Edge"] = [DVMBasicMethodBlock.name]
+                cnblock["BasicBlockId"] = DVMBasicMethodBlock.get_name() + "-pre"
+                cnblock["Edge"] = [DVMBasicMethodBlock.get_name()]
                 cnblock["registers"] = 0
                 cnblock["instructions"] = []
                 cnblock["info_bb"] = 0
@@ -477,17 +488,17 @@ def method2json_direct(mx):
                 l.append(cnblock)
 
                 for parent in DVMBasicMethodBlock.fathers:
-                    hooks[parent[-1].name] = []
-                    hooks[parent[-1].name].append(preblock)
+                    hooks[parent[-1].get_name()] = []
+                    hooks[parent[-1].get_name()].append(preblock)
 
                     for idx, child in enumerate(parent[-1].childs):
-                        if child[-1].name == DVMBasicMethodBlock.name:
-                            hooks[parent[-1].name].append(child[-1])
+                        if child[-1].get_name() == DVMBasicMethodBlock.get_name():
+                            hooks[parent[-1].get_name()].append(child[-1])
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         cblock = {}
 
-        cblock["BasicBlockId"] = DVMBasicMethodBlock.name
+        cblock["BasicBlockId"] = DVMBasicMethodBlock.get_name()
         cblock["registers"] = mx.get_method().get_code().get_registers_size()
         cblock["instructions"] = []
 
@@ -521,13 +532,13 @@ def method2json_direct(mx):
         cblock["Edge"] = []
         for DVMBasicMethodBlockChild in DVMBasicMethodBlock.childs:
             ok = False
-            if DVMBasicMethodBlock.name in hooks:
-                if DVMBasicMethodBlockChild[-1] in hooks[DVMBasicMethodBlock.name]:
+            if DVMBasicMethodBlock.get_name() in hooks:
+                if DVMBasicMethodBlockChild[-1] in hooks[DVMBasicMethodBlock.get_name()]:
                     ok = True
-                    cblock["Edge"].append(hooks[DVMBasicMethodBlock.name][0].name)
+                    cblock["Edge"].append(hooks[DVMBasicMethodBlock.get_name()][0].get_name())
 
             if not ok:
-                cblock["Edge"].append(DVMBasicMethodBlockChild[-1].name)
+                cblock["Edge"].append(DVMBasicMethodBlockChild[-1].get_name())
 
         exception_analysis = DVMBasicMethodBlock.get_exception_analysis()
         if exception_analysis:

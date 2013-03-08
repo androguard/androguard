@@ -20,7 +20,6 @@
 
 import sys, os, cmd, threading, code, re
 
-
 from optparse import OptionParser
 
 from androguard.core import *
@@ -132,6 +131,7 @@ def AnalyzeDex(filename, raw=False, decompiler=None):
         :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
     androconf.debug("DalvikVMFormat ...")
+
     d = None
     if raw == False:
         d = DalvikVMFormat(open(filename, "rb").read())

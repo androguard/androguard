@@ -18,7 +18,7 @@
 
 import re, random, string, cPickle
 
-from androguard.core.androconf import error, warning, debug
+from androguard.core.androconf import error, warning, debug, is_ascii_problem
 from androguard.core.bytecodes import jvm, dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
@@ -1005,7 +1005,7 @@ class DVMBasicBlock:
         return self.method
 
     def get_name(self):
-        return self.name
+        return "%s-BB@0x%x" % (self.method.get_name(), self.start)
 
     def get_start(self):
         return self.start
@@ -2524,3 +2524,13 @@ class uVMAnalysis(VMAnalysis) :
   def get_tainted_variables(self) :
         self._resolve()
         return self.tainted_variables
+
+
+def is_ascii_obfuscation(vm):
+    for classe in vm.get_classes():
+        if is_ascii_problem(classe.get_name()):
+            return True
+        for method in classe.get_methods():
+            if is_ascii_problem(method.get_name()):
+                return True
+    return False

@@ -505,7 +505,7 @@ class AnalyseDexThread:  # (threading.Thread):
                 b_buffer += "\n"
                 line += 1
 
-        l = dex_object.get_classes_hierarchy()
+        l = dex_object.print_classes_hierarchy()
         h_buffer = ""
         for i in l:
             h_buffer += i + "\n"
