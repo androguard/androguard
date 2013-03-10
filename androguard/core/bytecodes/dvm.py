@@ -6005,10 +6005,10 @@ class Unresolved(Instruction):
     return "unresolved"
 
   def get_operands(self, idx=-1):
-    return [(OPERAND_KIND + KIND_STRING, -1, "AG:OP: invalid opcode " + repr(ord(self.data[0])))]
+    return [(OPERAND_KIND + KIND_STRING, -1, "AG:OP: invalid opcode " + repr(self.data))]
 
   def get_op_value(self):
-    return ord(self.data[0])
+    return -1
 
   def get_output(self, idx=-1):
     return repr(self.data)
@@ -6017,7 +6017,7 @@ class Unresolved(Instruction):
     return len(self.data)
 
   def get_raw(self):
-    return self.buff
+    return self.data
 
 
 def get_instruction(cm, op_value, buff, odex=False):
