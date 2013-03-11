@@ -983,6 +983,20 @@ class DVMBasicBlock:
         self.tainted_variables = self.context.get_tainted_variables()
         self.tainted_packages = self.context.get_tainted_packages()
 
+        self.notes = []
+
+    def get_notes(self):
+        return self.notes
+
+    def set_notes(self, value):
+        self.notes = [value]
+
+    def add_note(self, note):
+        self.notes.append(note)
+
+    def clear_notes(self):
+        self.notes = []
+
     def get_instructions(self):
       """
         Get all instructions from a basic block.
@@ -2248,6 +2262,7 @@ class MethodAnalysis:
             :rtype: a :class:`BasicBlocks` object
         """
         return self.basic_blocks
+
     def get_length(self) :
         """
             :rtype: an integer which is the length of the code

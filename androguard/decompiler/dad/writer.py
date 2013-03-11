@@ -309,7 +309,7 @@ class Writer(object):
 #        self.end_ins()
 
     def visit_constant(self, cst):
-        if isinstance(cst, str):
+        if isinstance(cst, str) or isinstance(cst, unicode):
             return self.write(string('%s' % cst))
         self.write('%s' % cst)
 

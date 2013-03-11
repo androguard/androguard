@@ -473,7 +473,6 @@ class DecompilerDAD:
         z.process()
 
         result = z.get_source()
-
         return result
 
     def display_source(self, m):

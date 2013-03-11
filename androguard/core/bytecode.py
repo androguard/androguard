@@ -480,6 +480,9 @@ def method2json_direct(mx):
 
                 cnblock = {}
                 cnblock["BasicBlockId"] = DVMBasicMethodBlock.get_name() + "-pre"
+                cnblock["start"] = DVMBasicMethodBlock.start
+                cnblock["notes"] = []
+
                 cnblock["Edge"] = [DVMBasicMethodBlock.get_name()]
                 cnblock["registers"] = 0
                 cnblock["instructions"] = []
@@ -499,6 +502,9 @@ def method2json_direct(mx):
         cblock = {}
 
         cblock["BasicBlockId"] = DVMBasicMethodBlock.get_name()
+        cblock["start"] = DVMBasicMethodBlock.start
+        cblock["notes"] = DVMBasicMethodBlock.get_notes()
+
         cblock["registers"] = mx.get_method().get_code().get_registers_size()
         cblock["instructions"] = []
 
