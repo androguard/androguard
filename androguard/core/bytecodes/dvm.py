@@ -144,7 +144,7 @@ BRANCH_DVM_OPCODES = [ "throw", "throw.", "if.", "goto", "goto.", "return", "ret
 
 def clean_name_instruction( instruction ) :
     op_value = instruction.get_op_value()
-    
+
     # goto range
     if op_value >= 0x28 and op_value <= 0x2a :
         return "goto"
@@ -158,7 +158,7 @@ def static_operand_instruction( instruction ) :
       # get instructions without registers
       for val in instruction.get_literals() :
           buff += "%s" % val
-    
+
     op_value = instruction.get_op_value()
     if op_value == 0x1a or op_value == 0x1b :
         buff += instruction.get_string()
@@ -257,10 +257,10 @@ def readsleb128_2(buff) :
       cur = get_sbyte(buff)
       result |= (cur & 0x7f) << 14
       if cur <= 0x7f :
-        result = (result << 11) >> 11 
+        result = (result << 11) >> 11
       else :
         cur = get_sbyte(buff)
-        result |= (cur & 0x7f) << 21 
+        result |= (cur & 0x7f) << 21
         if cur <= 0x7f :
           result = (result << 4) >> 4
         else :
@@ -380,7 +380,7 @@ def determineException(vm, m) :
 
         exceptions.append( z )
 
-    #print m.get_name(), exceptions 
+    #print m.get_name(), exceptions
     return exceptions
 
 class HeaderItem :
@@ -579,7 +579,7 @@ class AnnotationSetItem :
             self.annotation_off_item.append( AnnotationOffItem(buff, cm) )
 
     def get_annotation_off_item(self) :
-        """ 
+        """
             Return the offset from the start of the file to an annotation
 
             :rtype: a list of :class:`AnnotationOffItem`
@@ -629,7 +629,7 @@ class AnnotationSetRefItem :
 
     def get_annotations_off(self) :
       """
-          Return the offset from the start of the file to the referenced annotation set or 
+          Return the offset from the start of the file to the referenced annotation set or
           0 if there are no annotations for this element.
 
           :rtype: int
@@ -710,7 +710,7 @@ class FieldAnnotation :
     """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
-        
+
         self.__CM = cm
         self.field_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
@@ -818,7 +818,7 @@ class ParameterAnnotation :
     """
     def __init__(self, buff, cm) :
         self.offset = buff.get_idx()
-        
+
         self.__CM = cm
         self.method_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
@@ -894,7 +894,7 @@ class AnnotationsDirectoryItem :
 
     def get_class_annotations_off(self) :
       """
-          Return the offset from the start of the file to the annotations made directly on the class, 
+          Return the offset from the start of the file to the annotations made directly on the class,
           or 0 if the class has no direct annotations
 
           :rtype: int
@@ -962,8 +962,8 @@ class AnnotationsDirectoryItem :
 
     def show(self) :
         bytecode._PrintSubBanner("Annotations Directory Item")
-        bytecode._PrintDefault("class_annotations_off=0x%x annotated_fields_size=%d annotated_methods_size=%d annotated_parameters_size=%d\n" % 
-                              ( self.class_annotations_off, 
+        bytecode._PrintDefault("class_annotations_off=0x%x annotated_fields_size=%d annotated_methods_size=%d annotated_parameters_size=%d\n" %
+                              ( self.class_annotations_off,
                                 self.annotated_fields_size,
                                 self.annotated_methods_size,
                                 self.annotated_parameters_size))
@@ -979,7 +979,7 @@ class AnnotationsDirectoryItem :
 
     def get_obj(self) :
         if self.class_annotations_off != 0 :
-          self.class_annotations_off = self.__CM.get_obj_by_offset( self.class_annotations_off ).get_off() 
+          self.class_annotations_off = self.__CM.get_obj_by_offset( self.class_annotations_off ).get_off()
 
         return pack("=I", self.class_annotations_off) +     \
                pack("=I", self.annotated_fields_size) +               \
@@ -1392,7 +1392,7 @@ class EncodedArray :
 
     def get_values(self) :
         """
-            Return a series of size encoded_value byte sequences in the format specified by this section, 
+            Return a series of size encoded_value byte sequences in the format specified by this section,
             concatenated sequentially
 
             :rtype: a list of :class:`EncodedValue` objects
@@ -1474,7 +1474,7 @@ class EncodedValue :
 
     def get_value(self) :
       """
-          Return the bytes representing the value, variable in length and interpreted differently for different value_type bytes, 
+          Return the bytes representing the value, variable in length and interpreted differently for different value_type bytes,
           though always little-endian
 
           :rtype: an object representing the value
@@ -1483,7 +1483,7 @@ class EncodedValue :
 
     def get_value_type(self) :
       return self.value_type
-    
+
     def get_value_arg(self) :
       return self.value_arg
 
@@ -1536,7 +1536,7 @@ class AnnotationElement :
     def get_name_idx(self) :
       """
           Return the element name, represented as an index into the string_ids section
-          
+
           :rtype: int
       """
       return self.name_idx
@@ -1766,7 +1766,7 @@ class StringDataItem :
       """
           Return the size of this string, in UTF-16 code units
 
-          :rtype:int 
+          :rtype:int
       """
       return self.utf16_size
 
@@ -1842,7 +1842,7 @@ class StringIdItem :
     def get_obj(self) :
         if self.string_data_off != 0 :
           self.string_data_off = self.__CM.get_string_by_offset( self.string_data_off ).get_off()
-        
+
         return pack("=I", self.string_data_off)
 
     def get_raw(self) :
@@ -2036,10 +2036,10 @@ class ProtoIdItem :
     def show(self) :
         bytecode._PrintSubBanner("Proto Item")
         bytecode._PrintDefault("shorty_idx=%d return_type_idx=%d parameters_off=%d\n" % (self.shorty_idx, self.return_type_idx, self.parameters_off))
-        bytecode._PrintDefault("shorty_idx_value=%s return_type_idx_value=%s parameters_off_value=%s\n" % 
+        bytecode._PrintDefault("shorty_idx_value=%s return_type_idx_value=%s parameters_off_value=%s\n" %
                                 (self.shorty_idx_value, self.return_type_idx_value, self.parameters_off_value))
 
-        
+
     def get_obj(self) :
         if self.parameters_off != 0 :
           self.parameters_off = self.__CM.get_obj_by_offset( self.parameters_off ).get_off()
@@ -2315,7 +2315,7 @@ class MethodIdItem :
           Return the class name of the method
 
           :rtype: string
-      """      
+      """
       return self.class_idx_value
 
     def get_proto(self) :
@@ -2323,7 +2323,7 @@ class MethodIdItem :
             Return the prototype of the method
 
             :rtype: string
-        """      
+        """
         return self.proto_idx_value
 
     def get_descriptor(self) :
@@ -2500,7 +2500,7 @@ class EncodedField:
     def set_init_value(self, value) :
         """
             Setup the init value object of the field
-          
+
             :param value: the init value
             :type value: :class:`EncodedValue`
         """
@@ -2520,7 +2520,7 @@ class EncodedField:
 
     def get_field_idx_diff(self) :
         """
-            Return the index into the field_ids list for the identity of this field (includes the name and descriptor), 
+            Return the index into the field_ids list for the identity of this field (includes the name and descriptor),
             represented as a difference from the index of previous element in the list
 
             :rtype: int
@@ -2605,7 +2605,7 @@ class EncodedField:
         """
             Display the information (with a pretty print) about the field
         """
-        bytecode._PrintSubBanner("Field Information") 
+        bytecode._PrintSubBanner("Field Information")
         bytecode._PrintDefault("%s->%s %s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
 
         init_value = self.get_init_value()
@@ -2619,10 +2619,10 @@ class EncodedField:
             Display where this field is read or written
         """
         try :
-            bytecode._PrintSubBanner("DREF") 
+            bytecode._PrintSubBanner("DREF")
             bytecode._PrintDRef("R", self.DREFr.items)
             bytecode._PrintDRef("W", self.DREFw.items)
-            bytecode._PrintSubBanner() 
+            bytecode._PrintSubBanner()
         except AttributeError:
             pass
 
@@ -2668,9 +2668,9 @@ class EncodedMethod:
 
     def get_method_idx_diff(self) :
       """
-          Return index into the method_ids list for the identity of this method (includes the name and descriptor), 
+          Return index into the method_ids list for the identity of this method (includes the name and descriptor),
           represented as a difference from the index of previous element in the lis
-          
+
           :rtype: int
       """
       return self.method_idx_diff
@@ -2685,7 +2685,7 @@ class EncodedMethod:
 
     def get_code_off(self) :
       """
-          Return the offset from the start of the file to the code structure for this method, 
+          Return the offset from the start of the file to the code structure for this method,
           or 0 if this method is either abstract or native
 
           :rtype: int
@@ -2765,9 +2765,9 @@ class EncodedMethod:
         """
             Display the basic information about the method
         """
-        bytecode._PrintSubBanner("Method Information") 
+        bytecode._PrintSubBanner("Method Information")
         bytecode._PrintDefault("%s->%s%s [access_flags=%s]\n" % ( self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string() ))
- 
+
     def show(self):
         """
             Display the information about the method
@@ -2807,10 +2807,10 @@ class EncodedMethod:
           Display the notes about the method
       """
       if self.notes != [] :
-        bytecode._PrintSubBanner("Notes") 
+        bytecode._PrintSubBanner("Notes")
         for i in self.notes :
           bytecode._PrintNote(i)
-        bytecode._PrintSubBanner() 
+        bytecode._PrintSubBanner()
 
     def source(self):
         """
@@ -2922,7 +2922,7 @@ class EncodedMethod:
             :param off: address of the instruction
             :type off: int
         """
-        if self.code != None :  
+        if self.code != None :
             self.code.add_inote(msg, idx, off)
 
     def add_note(self, msg) :
@@ -3270,7 +3270,7 @@ class ClassDefItem:
 
     def get_source_file_idx(self) :
         """
-            Return the index into the string_ids list for the name of the file containing the original 
+            Return the index into the string_ids list for the name of the file containing the original
             source for (at least most of) this class, or the special value NO_INDEX to represent a lack of this information
 
             :rtype: int
@@ -3279,7 +3279,7 @@ class ClassDefItem:
 
     def get_annotations_off(self) :
         """
-            Return the offset from the start of the file to the annotations structure for this class, 
+            Return the offset from the start of the file to the annotations structure for this class,
             or 0 if there are no annotations on this class.
 
             :rtype: int
@@ -3300,7 +3300,7 @@ class ClassDefItem:
             Return the offset from the start of the file to the list of initial values for static fields,
             or 0 if there are none (and all static fields are to be initialized with 0 or null)
 
-            :rtype: int 
+            :rtype: int
         """
         return self.static_values_off
 
@@ -3453,7 +3453,7 @@ class ClassHDefItem :
     def get_class_idx(self, idx) :
       for i in self.class_def :
           if i.get_class_idx() == idx :
-            return i 
+            return i
       return None
 
     def get_method(self, name_class, name_method) :
@@ -5899,7 +5899,7 @@ DALVIK_OPCODES_PAYLOAD = {
     0x0300 : [FillArrayData],
 }
 
-INLINE_METHODS = [ 
+INLINE_METHODS = [
     [ "Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V" ],
 
     [ "Ljava/lang/String;", "charAt", "(I)C" ],
@@ -6459,7 +6459,7 @@ class DalvikCode:
 
     def get_handlers(self):
         """
-            Get the bytes representing a list of lists of catch types and associated handler addresses. 
+            Get the bytes representing a list of lists of catch types and associated handler addresses.
 
             :rtype: :class:`EncodedCatchHandlerList`
         """
@@ -6804,7 +6804,7 @@ class MapItem :
                         i.show()
             else :
                 self.item.show()
-                
+
     def get_obj(self) :
         return self.item
 
@@ -7093,7 +7093,7 @@ class ClassManager:
             name = "FIELD_" + bytecode.FormatNameToPython( encoded_field.get_name() )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython( encoded_field.get_descriptor() )
-            
+
 
           try:
             delattr( class_def, name )
@@ -7119,7 +7119,7 @@ class ClassManager:
     def get_debug_off(self, off) :
         self.buff.set_idx( off )
 
-        return DebugInfoItem( self.buff, self ) 
+        return DebugInfoItem( self.buff, self )
 
 class MapList :
     """
@@ -7205,14 +7205,14 @@ class MapList :
     def get_length(self) :
       return len(self.get_raw())
 
-class XREF : 
+class XREF :
     def __init__(self) :
         self.items = []
 
     def add(self, x, y):
         self.items.append((x, y))
 
-class DREF : 
+class DREF :
     def __init__(self) :
         self.items = []
 
@@ -7628,7 +7628,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 for j in i.get_methods() :
                     self.__cache_methods[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
 
-        try : 
+        try :
             return self.__cache_methods[ key ]
         except KeyError :
             return None
@@ -7822,7 +7822,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                             name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
                             bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
                             bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-                            
+
                             if python_export == True :
                                 setattr( field.DREFr, name, dref_meth )
 
@@ -7837,14 +7837,14 @@ class DalvikVMFormat(bytecode._Bytecode):
                             name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
                             bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
                             bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-                            
+
                             if python_export == True :
                                 setattr( field.DREFw, name, dref_meth )
 
                             try :
                                 access["W"][ dref_meth ].append( idx )
                             except KeyError :
-                                access["W"][ dref_meth ] = [] 
+                                access["W"][ dref_meth ] = []
                                 access["W"][ dref_meth ].append( idx )
 
                     for i in access["R"] :
@@ -8271,7 +8271,10 @@ def get_params_info(nb, proto):
 
 def get_bytecodes_method(dex_object, ana_object, method):
     mx = ana_object.get_method(method)
+    return get_bytecodes_methodx(method, mx)
 
+
+def get_bytecodes_methodx(method, mx):
     basic_blocks = mx.basic_blocks.gets()
     i_buffer = ""
 
