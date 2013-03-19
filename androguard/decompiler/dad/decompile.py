@@ -323,7 +323,7 @@ def main():
     console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
     logger.addHandler(console_hdlr)
 
-    default_file = 'examples/android/TestsAndroguard/bin/TestsAndroguard.apk'
+    default_file = 'examples/android/TestsAndroguard/bin/TestActivity.apk'
     if len(sys.argv) > 1:
         machine = DvMachine(sys.argv[1])
     else:

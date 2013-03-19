@@ -1990,5 +1990,3 @@ INSTRUCTION_SET = [
     shrintlit8,   # shr-int/lit8
     ushrintlit8,  # ushr-int/lit8
 ]
-
-INSTRUCTION_SET_SIZE = len(INSTRUCTION_SET)

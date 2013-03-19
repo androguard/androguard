@@ -23,7 +23,7 @@ public class TestSynthetic {
 	}
 	
 	public static void TestSynthetic3( ){
-		Integer o = new Integer(5);
+		Integer o = Integer.valueOf(5);
 
 		new Thread(){
 			Integer o = this.o;

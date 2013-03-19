@@ -157,7 +157,10 @@ class Graph():
             redo = False
             for node in self.nodes[:]:
                 if node.type.is_stmt and node in self.nodes:
-                    suc = self.sucs(node)[0]
+                    sucs = self.sucs(node)
+                    if len(sucs) == 0:
+                        continue
+                    suc = sucs[0]
                     if len(node.get_ins()) == 0:
                         suc = self.edges.get(node)[0]
                         if node is suc:

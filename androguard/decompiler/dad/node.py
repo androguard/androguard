@@ -34,8 +34,8 @@ class MakeProperties(type):
         attrs = []
         prefixes = ('_get_', '_set_')
         for key in dct.keys():
-            for i in range(2):
-                if key.startswith(prefixes[i]):
+            for prefix in prefixes:
+                if key.startswith(prefix):
                     attrs.append(key[4:])
                     delattr(cls, key)
         for attr in attrs:
