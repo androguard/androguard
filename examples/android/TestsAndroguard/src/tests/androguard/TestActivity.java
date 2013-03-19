@@ -363,7 +363,8 @@ public class TestActivity<T> extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
-		Toast.makeText(getApplicationContext(), "this is a test ! " + 42, Toast.LENGTH_LONG);
+		Toast toast = Toast.makeText(getApplicationContext(), "this is a test ! " + 42, Toast.LENGTH_LONG);
+		toast.show();
 		/*
 		TestLoops o = new TestLoops();
 		o.testIrreducible(test3, test2);

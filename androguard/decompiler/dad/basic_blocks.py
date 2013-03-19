@@ -17,8 +17,7 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from androguard.decompiler.dad.opcode_ins import (INSTRUCTION_SET,
-                                                  INSTRUCTION_SET_SIZE)
+from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.dad.node import Node
 
 
@@ -278,7 +277,7 @@ def build_node_from_block(block, vmap, gen_ret):
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
         # check-cast
-        if opcode == 0x1f:  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
+        if opcode in (0x1f, -1):  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
             idx += ins.get_length()
             continue
         try:
