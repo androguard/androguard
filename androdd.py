@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+import shutil
 import sys
 import os
 import re
@@ -41,7 +42,7 @@ option_4 = { 'name' : ('-f', '--format'), 'help' : 'write the method in specific
 option_5 = { 'name' : ('-l', '--limit'), 'help' : 'limit analysis to specific methods/classes by using a regexp', 'nargs' : 1}
 option_6 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
 
 
 def valid_class_name(class_name):
@@ -132,7 +133,7 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
                                              androconf.CONF["PATH_DEX2JAR"],
                                              androconf.CONF["BIN_DEX2JAR"],
                                              androconf.CONF["TMP_DIRECTORY"]).get_jar()
-            os.rename(filenamejar, output + "classes.jar")
+            shutil.move(filenamejar, output + "classes.jar")
             print "End"
 
         for method in vm.get_methods():
