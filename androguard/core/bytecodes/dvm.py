@@ -398,7 +398,7 @@ class HeaderItem :
         self.offset = buff.get_idx()
 
         self.magic = unpack("=Q", buff.read(8))[0]
-        self.checksum = unpack("=I", buff.read(4))[0]
+        self.checksum = unpack("=i", buff.read(4))[0]
         self.signature = unpack("=20s", buff.read(20))[0]
         self.file_size = unpack("=I", buff.read(4))[0]
         self.header_size = unpack("=I", buff.read(4))[0]
@@ -2475,7 +2475,7 @@ class EncodedField:
         :param cm: a ClassManager object
         :type cm: :class:`ClassManager`
     """
-    def __init__(self, buff, cm) :
+    def __init__(self, buff, cm):
         self.CM = cm
         self.offset = buff.get_idx()
 
