@@ -112,7 +112,7 @@ class Writer(object):
                         p_type, param in zip(self.method.params_type, params)])
         self.write('%s)' % proto)
         if self.graph is None:
-            return self.write(';')
+            return self.write(';\n')
         self.write('\n%s{\n' % self.space())
         self.inc_ind()
 #        for v, var in self.method.var_to_name.iteritems():

@@ -88,7 +88,10 @@ class DvMethod():
 
         # Native methods... no blocks.
         if self.start_block is None:
-            return logger.debug('Native Method.')
+            logger.debug('Native Method.')
+            self.writer = Writer(None, self)
+            self.writer.write_method()
+            return
 
         graph = construct(self.start_block, self.var_to_name, self.exceptions)
         self.graph = graph
