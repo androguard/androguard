@@ -297,7 +297,7 @@ def register_propagation(graph, du, ud):
 
                     logger.debug('     => Modification of the instruction!')
                     logger.debug('      - BEFORE: %s', ins)
-                    ins.modify_rhs(var, orig_ins.get_rhs())
+                    ins.replace(var, orig_ins.get_rhs())
                     logger.debug('      -> AFTER: %s', ins)
                     logger.debug('\t UD(%s, %s) : %s', var, i, ud[(var, i)])
                     ud[(var, i)].remove(loc)

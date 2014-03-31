@@ -1,7 +1,7 @@
 # This file is part of Androguard.
 #
-# Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
-# All Rights Reserved.
+# Copyright (C) 2012, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,13 +45,8 @@ class IRForm(object):
     def get_used_vars(self):
         return []
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
-        else:
-            import logging
-            logger = logging.getLogger('dad.instruction')
-            logger.error('modify_rhs not implemented %s', self)
+    def replace(self, old, new):
+        raise NotImplementedError('replace not implemented in %s' % self)
 
     def remove_defined_var(self):
         pass
@@ -127,9 +122,6 @@ class Variable(IRForm):
     def __init__(self, value):
         self.v = value
 
-    def get_type(self):
-        return None
-
     def get_used_vars(self):
         return [self.v]
 
@@ -138,6 +130,9 @@ class Variable(IRForm):
 
     def is_ident(self):
         return True
+
+    def value(self):
+        return self.v
 
     def visit(self, visitor):
         return visitor.visit_variable(self.v)
@@ -149,28 +144,14 @@ class Variable(IRForm):
         return 'VAR_%s' % self.v
 
 
-class Param(IRForm):
+class Param(Variable):
     def __init__(self, value, atype):
-        self.v = value
+        super(Param, self).__init__(value)
+        self.declared = True
         self.type = atype
-
-    def get_type(self):
-        return self.type
-
-    def get_used_vars(self):
-        return [self.v]
-
-    def is_call(self):
-        return False
-
-    def is_ident(self):
-        return True
 
     def visit(self, visitor):
         return visitor.visit_param(self.v)
-
-    def visit_decl(self, visitor):
-        pass
 
     def __str__(self):
         return 'PARAM_%s' % self.v
@@ -227,55 +208,14 @@ class AssignExpression(IRForm):
     def remove_defined_var(self):
         self.lhs = None
 
-    def modify_rhs(self, old, new):
-        self.rhs.modify_rhs(old, new)
+    def replace(self, old, new):
+        self.rhs.replace(old, new)
 
     def visit(self, visitor):
         return visitor.visit_assign(self.var_map.get(self.lhs), self.rhs)
 
     def __str__(self):
         return 'ASSIGN(%s, %s)' % (self.var_map.get(self.lhs), self.rhs)
-
-
-class MoveResultExpression(IRForm):
-    def __init__(self, lhs, rhs, type):
-        super(MoveResultExpression, self).__init__()
-        self.lhs = lhs.v
-        self.rhs = rhs.v
-        self.var_map.update([(lhs.v, lhs), (rhs.v, rhs)])
-        self.type = type
-
-    def is_propagable(self):
-        return self.var_map[self.rhs].is_propagable()
-
-    def is_call(self):
-        return self.var_map[self.rhs].is_call()
-
-    def has_side_effect(self):
-        return self.var_map[self.rhs].has_side_effect()
-
-    def get_used_vars(self):
-        return self.var_map[self.rhs].get_used_vars()
-
-    def get_rhs(self):
-        return self.var_map[self.rhs]
-
-    def get_lhs(self):
-        return self.lhs
-
-    def visit(self, visitor):
-        v_m = self.var_map
-        return visitor.visit_move_result(v_m[self.lhs], v_m[self.rhs])
-
-    def modify_rhs(self, old, new):
-        if old == self.rhs:
-            self.var_map[old] = new
-        else:
-            self.var_map[self.rhs].modify_rhs(old, new)
-
-    def __str__(self):
-        v_m = self.var_map
-        return '%s = %s' % (v_m.get(self.lhs), v_m.get(self.rhs))
 
 
 class MoveExpression(IRForm):
@@ -304,13 +244,36 @@ class MoveExpression(IRForm):
         v_m = self.var_map
         return visitor.visit_move(v_m[self.lhs], v_m[self.rhs])
 
-    def modify_rhs(self, old, new):
-        if old == self.rhs:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        rhs = v_m[self.rhs]
+        if not (rhs.is_const() or rhs.is_ident()):
+            rhs.replace(old, new)
         else:
-            rhs = self.var_map[self.rhs]
-            if not (rhs.is_const() or rhs.is_ident()):
-                rhs.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.rhs = new.value()
+            else:
+                v_m[old] = new
+
+    def __str__(self):
+        v_m = self.var_map
+        return '%s = %s' % (v_m.get(self.lhs), v_m.get(self.rhs))
+
+
+class MoveResultExpression(MoveExpression):
+    def __init__(self, lhs, rhs):
+        super(MoveResultExpression, self).__init__(lhs, rhs)
+
+    def is_propagable(self):
+        return self.var_map[self.rhs].is_propagable()
+
+    def has_side_effect(self):
+        return self.var_map[self.rhs].has_side_effect()
+
+    def visit(self, visitor):
+        v_m = self.var_map
+        return visitor.visit_move_result(v_m[self.lhs], v_m[self.rhs])
 
     def __str__(self):
         v_m = self.var_map
@@ -318,13 +281,13 @@ class MoveExpression(IRForm):
 
 
 class ArrayStoreInstruction(IRForm):
-    def __init__(self, rhs, array, index, type):
+    def __init__(self, rhs, array, index, _type):
         super(ArrayStoreInstruction, self).__init__()
         self.rhs = rhs.v
         self.array = array.v
         self.index = index.v
         self.var_map.update([(rhs.v, rhs), (array.v, array), (index.v, index)])
-        self.type = type
+        self.type = _type
 
     def has_side_effect(self):
         return True
@@ -341,23 +304,31 @@ class ArrayStoreInstruction(IRForm):
         return visitor.visit_astore(v_m[self.array],
                                     v_m[self.index], v_m[self.rhs])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.rhs == old:
+                        self.rhs = new.value()
+                    if self.array == old:
+                        self.array = new.value()
+                    if self.index == old:
+                        self.array = new.value()
+                else:
+                    v_m[old] = new
         else:
-            arr = self.var_map[self.array]
-            idx = self.var_map[self.index]
-            rhs = self.var_map[self.rhs]
-            for arg in (arr, idx, rhs):
+            for arg in (v_m[self.array], v_m[self.index], v_m[self.rhs]):
                 if not (arg.is_const() or arg.is_ident()):
-                    arg.modify_rhs(old, new)
+                    arg.replace(old, new)
 
     def __str__(self):
         v_m = self.var_map
-        arr = v_m[self.array]
-        idx = v_m[self.index]
-        rhs = v_m[self.rhs]
-        return '%s[%s] = %s' % (arr, idx, rhs)
+        return '%s[%s] = %s' % (v_m[self.array], v_m[self.index], v_m[self.rhs])
 
 
 class StaticInstruction(IRForm):
@@ -379,14 +350,22 @@ class StaticInstruction(IRForm):
         return None
 
     def visit(self, visitor):
-        v_m = self.var_map
-        return visitor.visit_put_static(self.cls, self.name, v_m[self.rhs])
+        return visitor.visit_put_static(
+            self.cls, self.name, self.var_map[self.rhs])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        rhs = self.var_map[self.rhs]
+        if not (rhs.is_const() or rhs.is_ident()):
+            rhs.replace(old, new)
         else:
-            self.var_map[self.rhs].modify_rhs(old, new)
+            if new.is_ident():
+                self.var_map[new.value()] = new
+                self.rhs = new.value()
+            else:
+                self.var_map[old] = new
+
+    def __str__(self):
+      return '%s.%s = %s' % (self.cls, self.name, self.var_map[self.rhs])
 
 
 class InstanceInstruction(IRForm):
@@ -416,16 +395,25 @@ class InstanceInstruction(IRForm):
         return visitor.visit_put_instance(v_m[self.lhs],
                                           self.name, v_m[self.rhs])
 
-    def modify_rhs(self, old, new):
+    def replace(self, old, new):
         v_m = self.var_map
         if old in v_m:
-            v_m[old] = new
+            arg = v_m[old]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.lhs == old:
+                        self.lhs = new.value()
+                    if self.rhs == old:
+                        self.rhs = new.value()
+                else:
+                    v_m[old] = new
         else:
-            lhs = v_m[self.lhs]
-            rhs = v_m[self.rhs]
-            for arg in (lhs, rhs):
+            for arg in (v_m[self.lhs], v_m[self.rhs]):
                 if not (arg.is_const() or arg.is_ident()):
-                    arg.modify_rhs(old, new)
+                    arg.replace(old, new)
 
     def __str__(self):
         v_m = self.var_map
@@ -446,7 +434,7 @@ class NewInstance(IRForm):
     def visit(self, visitor):
         return visitor.visit_new(self.type)
 
-    def modify_rhs(self, old, new):
+    def replace(self, old, new):
         pass
 
     def __str__(self):
@@ -475,23 +463,31 @@ class InvokeInstruction(IRForm):
     def has_side_effect(self):
         return True
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            arg = self.var_map[old]
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
             if not (arg.is_ident() or arg.is_const()):
-                arg.modify_rhs(old, new)
+                arg.replace(old, new)
             else:
-                self.var_map[old] = new
-        else:
-            base = self.var_map[self.base]
-            if not (base.is_ident() or base.is_const()):
-                base.modify_rhs(old, new)
-            for arg in self.args:
-                cnt = self.var_map[arg]
-                if cnt.is_ident() or cnt.is_const():
-                    continue
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.base == old:
+                        self.base = new.value()
+                    for idx, arg in enumerate(self.args):
+                        if arg == old:
+                            self.args.pop(idx)
+                            self.args.insert(idx, new.value())
                 else:
-                    self.var_map[arg].modify_rhs(old, new)
+                    v_m[old] = new
+        else:
+            base = v_m[self.base]
+            if not (base.is_ident() or base.is_const()):
+                base.replace(old, new)
+            for arg in self.args:
+                cnt = v_m[arg]
+                if not (cnt.is_ident() or cnt.is_const()):
+                    cnt.replace(old, new)
 
     def get_used_vars(self):
         v_m = self.var_map
@@ -510,7 +506,7 @@ class InvokeInstruction(IRForm):
     def __str__(self):
         v_m = self.var_map
         return '%s.%s(%s)' % (v_m[self.base], self.name,
-                                ', '.join(str(v_m[i]) for i in self.args))
+                                ', '.join('%s' % v_m[i] for i in self.args))
 
 
 class InvokeRangeInstruction(InvokeInstruction):
@@ -528,7 +524,6 @@ class InvokeDirectInstruction(InvokeInstruction):
 
 class InvokeStaticInstruction(InvokeInstruction):
     def __init__(self, clsname, name, base, rtype, ptype, args):
-        # TODO: check base class name and current class name
         super(InvokeStaticInstruction, self).__init__(clsname, name, base,
                                                     rtype, ptype, args)
 
@@ -562,12 +557,17 @@ class ReturnInstruction(IRForm):
         else:
             return visitor.visit_return(self.var_map[self.arg])
 
-    def modify_rhs(self, old, new):
-        arg = self.var_map[self.arg]
+    def replace(self, old, new):
+        v_m = self.var_map
+        arg = v_m[self.arg]
         if not (arg.is_const() or arg.is_ident()):
-            arg.modify_rhs(old, new)
+            arg.replace(old, new)
         else:
-            self.var_map[old] = new
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.arg = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         if self.arg is not None:
@@ -602,13 +602,17 @@ class SwitchExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_switch(self.var_map[self.src])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        src = v_m[self.src]
+        if not (src.is_const() or src.is_ident()):
+            src.replace(old, new)
         else:
-            src = self.var_map[self.src]
-            if not (src.is_const() or src.is_ident()):
-                src.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.src = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return 'SWITCH(%s)' % (self.var_map[self.src])
@@ -627,13 +631,17 @@ class CheckCastExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_check_cast(self.var_map[self.arg], self.type)
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        arg = v_m[self.arg]
+        if not (arg.is_const() or arg.is_ident()):
+            arg.replace(old, new)
         else:
-            arg = self.var_map[self.arg]
-            if not (arg.is_const() or arg.is_ident()):
-                arg.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.arg = new.value()
+            else:
+                v_m[old] = new
 
 
 class ArrayExpression(IRForm):
@@ -642,12 +650,12 @@ class ArrayExpression(IRForm):
 
 
 class ArrayLoadExpression(ArrayExpression):
-    def __init__(self, arg, index, type):
+    def __init__(self, arg, index, _type):
         super(ArrayLoadExpression, self).__init__()
         self.array = arg.v
         self.idx = index.v
         self.var_map.update([(arg.v, arg), (index.v, index)])
-        self.type = type
+        self.type = _type
 
     def get_used_vars(self):
         v_m = self.var_map
@@ -659,15 +667,26 @@ class ArrayLoadExpression(ArrayExpression):
         v_m = self.var_map
         return visitor.visit_aload(v_m[self.array], v_m[self.idx])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
+            if not (arg.is_ident() or arg.is_const()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.array == old:
+                        self.array = new.value()
+                    if self.idx == old:
+                        self.idx = new.value()
+                else:
+                    v_m[old] = new
         else:
-            arr = self.var_map[self.array]
-            idx = self.var_map[self.idx]
-            for arg in (arr, idx):
-                if not (arg.is_const() or arg.is_ident()):
-                    arg.modify_rhs(old, new)
+            for arg in (self.array, self.idx):
+                cnt = v_m[arg]
+                if not (cnt.is_ident() or cnt.is_const()):
+                    cnt.replace(old, new)
 
     def __str__(self):
         v_m = self.var_map
@@ -689,13 +708,17 @@ class ArrayLengthExpression(ArrayExpression):
     def visit(self, visitor):
         return visitor.visit_alength(self.var_map[self.array])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        array = v_m[self.array]
+        if not (array.is_const() or array.is_ident()):
+            array.replace(old, new)
         else:
-            arr = self.var_map[self.array]
-            if not (arr.is_const() or arr.is_ident()):
-                arr.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.array = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return 'ARRAYLEN(%s)' % (self.var_map[self.array])
@@ -717,13 +740,17 @@ class NewArrayExpression(ArrayExpression):
     def visit(self, visitor):
         return visitor.visit_new_array(self.type, self.var_map[self.size])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        size = v_m[self.size]
+        if not (size.is_const() or size.is_ident()):
+            size.replace(old, new)
         else:
-            asize = self.var_map[self.size]
-            if not (asize.is_const() or asize.is_ident()):
-                asize.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.size = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return 'NEWARRAY_%s[%s]' % (self.type, self.var_map[self.size])
@@ -752,6 +779,27 @@ class FilledArrayExpression(ArrayExpression):
             lused_vars.extend(self.var_map[arg].get_used_vars())
         lused_vars.append(self.size)
         return list(set(lused_vars))
+
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
+            if not (arg.is_ident() or arg.is_const()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    for idx, arg in enumerate(self.args):
+                        if arg == old:
+                            self.args.pop(idx)
+                            self.args.insert(idx, new.value())
+                else:
+                    v_m[old] = new
+        else:
+            for arg in self.args:
+                cnt = v_m[arg]
+                if not (cnt.is_ident() or cnt.is_const()):
+                    cnt.replace(old, new)
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -788,11 +836,17 @@ class RefExpression(IRForm):
     def get_used_vars(self):
         return self.var_map[self.ref].get_used_vars()
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        ref = v_m[self.ref]
+        if not (ref.is_const() or ref.is_ident()):
+            ref.replace(old, new)
         else:
-            self.var_map[self.ref].modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.ref = new.value()
+            else:
+                v_m[old] = new
 
 
 class MonitorEnterExpression(RefExpression):
@@ -820,13 +874,13 @@ class ThrowExpression(RefExpression):
 
 
 class BinaryExpression(IRForm):
-    def __init__(self, op, arg1, arg2, type):
+    def __init__(self, op, arg1, arg2, _type):
         super(BinaryExpression, self).__init__()
         self.op = op
         self.arg1 = arg1.v
         self.arg2 = arg2.v
         self.var_map.update([(arg1.v, arg1), (arg2.v, arg2)])
-        self.type = type
+        self.type = _type
 
     # TODO: return the max type of arg1 & arg2
     def get_type(self):
@@ -848,15 +902,25 @@ class BinaryExpression(IRForm):
         return visitor.visit_binary_expression(self.op, v_m[self.arg1],
                                                         v_m[self.arg2])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.arg1 == old:
+                        self.arg1 = new.value()
+                    if self.arg2 == old:
+                        self.arg2 = new.value()
+                else:
+                    v_m[old] = new
         else:
-            arg1 = self.var_map[self.arg1]
-            arg2 = self.var_map[self.arg2]
-            for arg in (arg1, arg2):
+            for arg in (v_m[self.arg1], v_m[self.arg2]):
                 if not (arg.is_ident() or arg.is_const()):
-                    arg.modify_rhs(old, new)
+                    arg.replace(old, new)
 
     def __str__(self):
         v_m = self.var_map
@@ -864,8 +928,8 @@ class BinaryExpression(IRForm):
 
 
 class BinaryCompExpression(BinaryExpression):
-    def __init__(self, op, arg1, arg2, type):
-        super(BinaryCompExpression, self).__init__(op, arg1, arg2, type)
+    def __init__(self, op, arg1, arg2, _type):
+        super(BinaryCompExpression, self).__init__(op, arg1, arg2, _type)
 
     def visit(self, visitor):
         v_m = self.var_map
@@ -874,8 +938,8 @@ class BinaryCompExpression(BinaryExpression):
 
 
 class BinaryExpression2Addr(BinaryExpression):
-    def __init__(self, op, dest, arg, type):
-        super(BinaryExpression2Addr, self).__init__(op, dest, arg, type)
+    def __init__(self, op, dest, arg, _type):
+        super(BinaryExpression2Addr, self).__init__(op, dest, arg, _type)
 
 
 class BinaryExpressionLit(BinaryExpression):
@@ -899,13 +963,17 @@ class UnaryExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_unary_expression(self.op, self.var_map[self.arg])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        arg = v_m[self.arg]
+        if not (arg.is_const() or arg.is_ident()):
+            arg.replace(old, new)
         else:
-            arg = self.var_map[self.arg]
-            if not (arg.is_const() or arg.is_ident()):
-                arg.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.arg = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return '(%s, %s)' % (self.op, self.var_map[self.arg])
@@ -967,15 +1035,25 @@ class ConditionalExpression(IRForm):
         return visitor.visit_cond_expression(self.op, v_m[self.arg1],
                                                       v_m[self.arg2])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        if old in v_m:
+            arg = v_m[old]
+            if not (arg.is_const() or arg.is_ident()):
+                arg.replace(old, new)
+            else:
+                if new.is_ident():
+                    v_m[new.value()] = new
+                    if self.arg1 == old:
+                        self.arg1 = new.value()
+                    if self.arg2 == old:
+                        self.arg2 = new.value()
+                else:
+                    v_m[old] = new
         else:
-            arg1 = self.var_map[self.arg1]
-            arg2 = self.var_map[self.arg2]
-            for arg in (arg1, arg2):
+            for arg in (v_m[self.arg1], v_m[self.arg2]):
                 if not (arg.is_ident() or arg.is_const()):
-                    arg.modify_rhs(old, new)
+                    arg.replace(old, new)
 
     def __str__(self):
         v_m = self.var_map
@@ -1004,13 +1082,17 @@ class ConditionalZExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_condz_expression(self.op, self.var_map[self.arg])
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        arg = v_m[self.arg]
+        if not (arg.is_const() or arg.is_ident()):
+            arg.replace(old, new)
         else:
-            arg = self.var_map[self.arg]
-            if not (arg.is_ident() or arg.is_const()):
-                arg.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.arg = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return '(IS%s0, %s)' % (self.op, self.var_map[self.arg])
@@ -1034,13 +1116,17 @@ class InstanceExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_get_instance(self.var_map[self.arg], self.name)
 
-    def modify_rhs(self, old, new):
-        if old in self.var_map:
-            self.var_map[old] = new
+    def replace(self, old, new):
+        v_m = self.var_map
+        arg = v_m[self.arg]
+        if not (arg.is_const() or arg.is_ident()):
+            arg.replace(old, new)
         else:
-            arg = self.var_map[self.arg]
-            if not (arg.is_ident() or arg.is_const()):
-                arg.modify_rhs(old, new)
+            if new.is_ident():
+                v_m[new.value()] = new
+                self.arg = new.value()
+            else:
+                v_m[old] = new
 
     def __str__(self):
         return '%s.%s' % (self.var_map[self.arg], self.name)
@@ -1059,7 +1145,7 @@ class StaticExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_get_static(self.cls, self.name)
 
-    def modify_rhs(self, old, new):
+    def replace(self, old, new):
         pass
 
     def __str__(self):
