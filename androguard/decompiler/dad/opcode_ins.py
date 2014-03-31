@@ -1,7 +1,7 @@
 # This file is part of Androguard.
 #
-# Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
-# All Rights Reserved.
+# Copyright (C) 2012, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+# All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -188,19 +188,19 @@ def moveobject16(ins, vmap):
 # move-result vAA ( 8b )
 def moveresult(ins, vmap, ret):
     logger.debug('MoveResult : %s', ins.get_output())
-    return MoveResultExpression(get_variables(vmap, ins.AA), ret, None)
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-result-wide vAA ( 8b )
 def moveresultwide(ins, vmap, ret):
     logger.debug('MoveResultWide : %s', ins.get_output())
-    return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'W')
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-result-object vAA ( 8b )
 def moveresultobject(ins, vmap, ret):
     logger.debug('MoveResultObject : %s', ins.get_output())
-    return MoveResultExpression(get_variables(vmap, ins.AA), ret, 'O')
+    return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-exception vAA ( 8b )
