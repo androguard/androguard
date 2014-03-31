@@ -309,8 +309,8 @@ class Writer(object):
 
     def visit_constant(self, cst):
         if isinstance(cst, str) or isinstance(cst, unicode):
-            return self.write(string('%s' % cst))
-        self.write('%s' % cst)
+            return self.write(string(cst))
+        self.write('%r' % cst)
 
     def visit_base_class(self, cls):
         self.write(cls)
@@ -500,15 +500,22 @@ class Writer(object):
 
 
 def string(s):
-    # Based on http://stackoverflow.com/a/1676407
     ret = ['"']
     for c in s:
-        if ord(c) < 32 or 0x80 <= ord(c) <= 0xff:
-            to_add = '\\x%02x' % ord(c)
-        elif c in '\\"':
-            to_add = '%c' % c
-        else:
-            to_add = c
-        ret.append(to_add)
+        if c >= ' ' and c < '\x7f':
+            if c == "'" or c == '"' or c == '\\':
+                ret.append('\\')
+            ret.append(c)
+            continue
+        elif c <= '\x7f':
+            if c in ('\r', '\n', '\t'):
+              ret.append(c.encode('unicode-escape'))
+              continue
+        i = ord(c)
+        ret.append('\\u')
+        ret.append('%x' % (i >> 12))
+        ret.append('%x' % ((i >> 8) & 0x0f))
+        ret.append('%x' % ((i >> 4) & 0x0f))
+        ret.append('%x' % (i & 0x0f))
     ret.append('"')
     return ''.join(ret)
