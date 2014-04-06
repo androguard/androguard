@@ -110,7 +110,7 @@ class Node(object):
         return self
 
     def __repr__(self):
-        return str(self)
+        return '%s' % self
 
 
 class Interval(object):
@@ -153,3 +153,4 @@ class Interval(object):
 
     def __repr__(self):
         return '%s(%s)' % (self.name, self.content)
+

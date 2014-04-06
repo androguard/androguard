@@ -25,6 +25,7 @@ from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
+                                                place_declarations,
                                                 dead_code_elimination,
                                                 register_propagation)
 from androguard.decompiler.dad.graph import construct
@@ -58,7 +59,7 @@ class DvMethod():
         self.access = [name for flag, name in
                         util.ACCESS_FLAGS_METHODS.iteritems() if flag & access]
         desc = method.get_descriptor()
-        self.type = util.get_type(desc.split(')')[-1])
+        self.type = desc.split(')')[-1]
         self.params_type = util.get_params_type(desc)
 
         self.exceptions = methanalysis.exceptions.exceptions
@@ -102,6 +103,7 @@ class DvMethod():
         defs, uses = build_def_use(graph, self.lparams)
         dead_code_elimination(graph, uses, defs)
         register_propagation(graph, uses, defs)
+        place_declarations(graph, self.var_to_name, uses, defs)
         del uses, defs
 
         # After the DCE pass, some nodes may be empty, so we can simplify the
@@ -116,7 +118,6 @@ class DvMethod():
 
         idoms = graph.immediate_dominators()
         identify_structures(graph, idoms)
-
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph,
                                                     '/tmp/dad/structured')
@@ -126,8 +127,7 @@ class DvMethod():
         del graph
 
     def show_source(self):
-        if self.writer:
-            print self.writer
+        print self.get_source()
 
     def get_source(self):
         if self.writer:
@@ -233,36 +233,7 @@ class DvClass():
         return ''.join(source)
 
     def show_source(self):
-        if not self.inner and self.package:
-            print 'package %s;\n' % self.package
-
-        if self.superclass is not None:
-            self.superclass = self.superclass[1:-1].replace('/', '.')
-            if self.superclass.split('.')[-1] == 'Object':
-                self.superclass = None
-            if self.superclass is not None:
-                self.prototype += ' extends %s' % self.superclass
-        if self.interfaces is not None:
-            interfaces = self.interfaces[1:-1].split(' ')
-            self.prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in interfaces])
-
-        print '%s {\n' % self.prototype
-        for field in self.fields.values():
-            field_access_flags = field.get_access_flags()
-            access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
-                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
-            f_type = util.get_type(field.get_descriptor())
-            name = field.get_name()
-            print '    %s %s %s;\n' % (' '.join(access), f_type, name)
-
-        for klass in self.subclasses.values():
-            klass.show_source()
-
-        for _, method in self.methods.iteritems():
-            if isinstance(method, DvMethod):
-                method.show_source()
-        print '}\n'
+        print self.get_source()
 
     def __repr__(self):
         if not self.subclasses:
@@ -361,3 +332,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
