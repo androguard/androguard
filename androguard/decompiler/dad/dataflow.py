@@ -16,7 +16,8 @@
 # limitations under the License.
 
 import logging
-from androguard.decompiler.dad.util import build_path
+from androguard.decompiler.dad.instruction import Variable, Param
+from androguard.decompiler.dad.util import build_path, common_dom
 
 
 logger = logging.getLogger('dad.control_flow')
@@ -120,6 +121,9 @@ def update_chain(graph, loc, du, ud):
             # We remove the use of the variable at loc from the DU chain of
             # the variable definition located at def_loc
             du.get((var, def_loc)).remove(loc)
+            ud.get((var, loc)).remove(def_loc)
+            if len(ud.get((var, loc))) == 0:
+                ud.pop((var, loc))
             # If the DU chain of the defined variable is now empty, this means
             # that we may have created a new dead instruction, so we check that
             # the instruction has no side effect and we update the DU chain of
@@ -127,6 +131,7 @@ def update_chain(graph, loc, du, ud):
             # We also make sure that def_loc is not -1. This is the case when
             # the current variable is a method parameter.
             if  def_loc >= 0 and len(du.get((var, def_loc))) == 0:
+                du.pop((var, def_loc))
                 def_ins = graph.get_ins_from_loc(def_loc)
                 if def_ins.is_call():
                     def_ins.remove_defined_var()
@@ -302,6 +307,8 @@ def register_propagation(graph, du, ud):
                     logger.debug('\t UD(%s, %s) : %s', var, i, ud[(var, i)])
                     ud[(var, i)].remove(loc)
                     logger.debug('\t    -> %s', ud[(var, i)])
+                    if len(ud[(var, i)]) == 0:
+                        ud.pop((var, i))
                     for var2 in orig_ins.get_used_vars():
                         # We update the UD chain of the variables we
                         # propagate. We also have to take the
@@ -330,6 +337,7 @@ def register_propagation(graph, du, ud):
                     logger.debug('\t    -> %s', new_du)
                     if len(new_du) == 0:
                         logger.debug('\t  REMOVING INS %d', loc)
+                        du.pop((var, loc))
                         graph.remove_ins(loc)
                         change = True
 
@@ -409,3 +417,30 @@ def build_def_use(graph, lparams):
             DU.setdefault((var, def_loc), []).append(loc)
 
     return UD, DU
+
+
+def place_declarations(graph, dvars, du, ud):
+    idom = graph.immediate_dominators()
+    for node in graph.rpo:
+        for loc, ins in node.get_loc_with_ins():
+            used_vars = ins.get_used_vars()
+            for var in used_vars:
+                if (not isinstance(dvars[var], Variable)
+                    or isinstance(dvars[var], Param)):
+                    continue
+                var_defs_locs = ud.get((var, loc))
+                # FIXME: this should not happen.
+                if var_defs_locs is None:
+                    continue
+                def_nodes = set()
+                for def_loc in var_defs_locs:
+                    def_nodes.add(graph.get_node_from_loc(def_loc))
+                common_dominator = def_nodes.pop()
+                for def_node in def_nodes:
+                    common_dominator = common_dom(
+                                      idom,common_dominator, def_node)
+                if any(var in range(*common_dominator.ins_range)
+                       for var in ud[(var, loc)]):
+                    continue
+                common_dominator.add_variable_declaration(dvars[var])
+

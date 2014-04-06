@@ -109,6 +109,8 @@ class Graph():
 
                     pre_node.copy_from(node)
                     cond_node.copy_from(node)
+                    for var in node.var_to_declare:
+                        pre_node.add_variable_declaration(var)
                     pre_node.type.is_stmt = True
                     cond_node.true = node.true
                     cond_node.false = node.false
@@ -176,6 +178,8 @@ class Graph():
                             and not ((node is suc) or (suc is self.entry))):
                         ins_to_merge = suc.get_ins()
                         node.add_ins(ins_to_merge)
+                        for var in suc.var_to_declare:
+                            node.add_variable_declaration(var)
                         new_suc = self.sucs(suc)[0]
                         if new_suc:
                             self.add_edge(node, new_suc)
@@ -364,3 +368,4 @@ def construct(start_block, vmap, exceptions):
         graph.exit = lexit_nodes[0]
 
     return graph
+

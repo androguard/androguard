@@ -29,6 +29,7 @@ class BasicBlock(Node):
         self.ins = block_ins
         self.ins_range = None
         self.loc_ins = None
+        self.var_to_declare = set()
 
     def get_ins(self):
         return self.ins
@@ -45,6 +46,9 @@ class BasicBlock(Node):
     def add_ins(self, new_ins_list):
         for new_ins in new_ins_list:
             self.ins.append(new_ins)
+
+    def add_variable_declaration(self, variable):
+        self.var_to_declare.add(variable)
 
     def number_ins(self, num):
         last_ins_num = num + len(self.ins)
@@ -282,7 +286,8 @@ def build_node_from_block(block, vmap, gen_ret):
         try:
             _ins = INSTRUCTION_SET[opcode]
         except IndexError:
-            exit('Unknown instruction : %s.' % ins.get_name().lower())
+            logger.error('Unknown instruction : %s.', ins.get_name().lower())
+            raise
         # fill-array-data
         if opcode == 0x26:
             fillaray = block.get_special_ins(idx)
@@ -325,3 +330,4 @@ def build_node_from_block(block, vmap, gen_ret):
             lins.pop()
         node = StatementBlock(name, lins)
     return node
+

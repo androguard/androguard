@@ -91,32 +91,32 @@ class Writer(object):
     def write_method(self):
         acc = []
         access = self.method.access
-        self.constructor = 'constructor' in access
-        for modifier in self.method.access:
+        self.constructor = False
+        for modifier in access:
             if modifier == 'constructor':
+                self.constructor = True
                 continue
             acc.append(modifier)
         if self.constructor:
             name = get_type(self.method.cls_name).split('.')[-1]
-            proto = '%s %s(' % (' '.join(acc), name)
+            proto = '%s %s' % (' '.join(acc), name)
         else:
             name = self.method.name
-            proto = '%s %s %s(' % (' '.join(acc), self.method.type, name)
-        self.write('%s%s' % (self.space(), proto))
+            proto = '%s %s %s' % (
+                              ' '.join(acc), get_type(self.method.type), name)
+        self.write('\n%s%s' % (self.space(), proto))
         params = self.method.lparams
-        if 'static' not in self.method.access:
+        if 'static' not in access:
             params = params[1:]
         proto = ''
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
                         p_type, param in zip(self.method.params_type, params)])
-        self.write('%s)' % proto)
+        self.write('(%s)' % proto)
         if self.graph is None:
             return self.write(';\n')
         self.write('\n%s{\n' % self.space())
         self.inc_ind()
-#        for v, var in self.method.var_to_name.iteritems():
-#            var.visit_decl(self)
         self.visit_node(self.graph.entry)
         self.dec_ind()
         self.write('%s}\n' % self.space())
@@ -125,9 +125,12 @@ class Writer(object):
         if node in (self.if_follow[-1], self.switch_follow[-1],
                     self.loop_follow[-1], self.latch_node[-1]):
             return
-        if node in self.visited_nodes:
+        if not node.type.is_return and node in self.visited_nodes:
             return
         self.visited_nodes.add(node)
+        for var in node.var_to_declare:
+            var.visit_decl(self)
+            var.declared = True
         node.visit(self)
 
     def visit_loop_node(self, loop):
@@ -303,9 +306,12 @@ class Writer(object):
         for ins in throw.get_ins():
             self.visit_ins(ins)
 
-#    def visit_decl(self, var):
-#        self.write('%sdecl v%s' % (SPACE * self.ind, var))
-#        self.end_ins()
+    def visit_decl(self, var):
+        if not var.declared:
+            var_type = var.get_type() or 'unknownType'
+            self.write('%s%s v%s' % (
+                       self.space(), get_type(var_type), var.value()))
+            self.end_ins()
 
     def visit_constant(self, cst):
         if isinstance(cst, str) or isinstance(cst, unicode):
@@ -316,9 +322,11 @@ class Writer(object):
         self.write(cls)
 
     def visit_variable(self, var):
-        if isinstance(var, str):
-            return self.write(var)
-        self.write('v%d' % var)
+        if not var.declared:
+            var_type = var.get_type() or 'unknownType'
+            self.write('%s ' % get_type(var_type))
+            var.declared = True
+        self.write('v%s' % var.value())
 
     def visit_param(self, param):
         self.write('p%s' % param)
@@ -420,14 +428,12 @@ class Writer(object):
         self.write(']')
 
     def visit_filled_new_array(self, atype, size, args):
-        self.write('filled-new-array(type=')
-        atype.visit(self)
-        self.write(', size=')
-        size.visit(self)
-        for arg in args:
-            self.write(', arg=')
+        self.write('new %s {' % get_type(atype))
+        for idx, arg in enumerate(args):
             arg.visit(self)
-        self.write(')')
+            if idx + 1 < len(args):
+                self.write(', ')
+        self.write('})')
 
     def visit_fill_array(self, array, value):
         self.write_ind()
@@ -489,7 +495,10 @@ class Writer(object):
             arg.visit(self)
         else:
             arg.visit(self)
-            self.write(' %s 0' % op)
+            if atype in 'VBSCIJFD':
+                self.write(' %s 0' % op)
+            else:
+                self.write(' %s null' % op)
 
     def visit_get_instance(self, arg, name):
         arg.visit(self)
@@ -519,3 +528,4 @@ def string(s):
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
     return ''.join(ret)
+

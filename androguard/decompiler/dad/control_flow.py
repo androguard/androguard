@@ -47,7 +47,7 @@ def intervals(graph):
             processed[head] = True
             interv_heads[head] = Interval(head)
 
-            # Check if if there is a node which has all its predecessor in the
+            # Check if there is a node which has all its predecessor in the
             # current interval. If there is, add that node to the interval and
             # repeat until all the possible nodes have been added.
             change = True
@@ -377,3 +377,4 @@ def identify_structures(graph, idoms):
         if len(follows) >= 1:
             follow = min(follows, key=lambda x: x.num)
             node.follow['if'] = follow
+
