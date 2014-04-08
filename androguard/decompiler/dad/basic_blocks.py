@@ -254,27 +254,39 @@ class LoopBlock(CondBlock):
 
 
 class TryBlock(BasicBlock):
-    def __init__(self, name, block_ins):
-        super(TryBlock, self).__init__(name, block_ins)
+    def __init__(self, node):
+        super(TryBlock, self).__init__('Try-%s' % node.name, None)
+        self.try_start = node
         self.catch = []
 
-    def add_catch(self, node):
+    def add_catch_node(self, node):
         self.catch.append(node)
 
+    def visit(self, visitor):
+        visitor.visit_try_node(self)
+
     def __str__(self):
-        return 'Try(%s)' % self.name
+        return 'Try(%s)[%s]' % (self.name, self.catch)
 
 
 class CatchBlock(BasicBlock):
-    def __init__(self, name, block_ins, typeh):
-        super(CatchBlock, self).__init__(name, block_ins)
-        self.exception_type = typeh
+    def __init__(self, node):
+        self.exception = node.ins[0]
+        node.ins.pop(0)
+        super(CatchBlock, self).__init__('Catch-%s' % node.name, node.ins)
+        self.catch_start = node
+
+    def visit(self, visitor):
+        visitor.visit_catch_node(self)
+
+    def visit_exception(self, visitor):
+        visitor.visit_ins(self.exception)
 
     def __str__(self):
         return 'Catch(%s)' % self.name
 
 
-def build_node_from_block(block, vmap, gen_ret):
+def build_node_from_block(block, vmap, gen_ret, exception_type=None):
     ins, lins = None, []
     idx = block.get_start()
     for ins in block.get_instructions():
@@ -301,6 +313,9 @@ def build_node_from_block(block, vmap, gen_ret):
         # move-result*
         elif 0xa <= opcode <= 0xc:
             lins.append(_ins(ins, vmap, gen_ret.last()))
+        # move-exception
+        elif opcode == 0xd:
+            lins.append(_ins(ins, vmap, exception_type))
         # monitor-{enter,exit}
         elif 0x1d <= opcode <= 0x1e:
             idx += ins.get_length()

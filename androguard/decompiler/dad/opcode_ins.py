@@ -30,10 +30,10 @@ from androguard.decompiler.dad.instruction import (ArrayLengthExpression,
                             InvokeInstruction, InvokeDirectInstruction,
                             InvokeRangeInstruction, InvokeStaticInstruction,
                             MonitorEnterExpression, MonitorExitExpression,
-                            MoveExpression, MoveResultExpression,
-                            NewArrayExpression, NewInstance, NopExpression,
-                            RefExpression, ThrowExpression, Variable,
-                            ReturnInstruction, StaticExpression,
+                            MoveExceptionExpression, MoveExpression,
+                            MoveResultExpression, NewArrayExpression,
+                            NewInstance, NopExpression, ThrowExpression,
+                            Variable, ReturnInstruction, StaticExpression,
                             StaticInstruction, SwitchExpression,
                             UnaryExpression)
 
@@ -204,9 +204,9 @@ def moveresultobject(ins, vmap, ret):
 
 
 # move-exception vAA ( 8b )
-def moveexception(ins, vmap):
+def moveexception(ins, vmap, _type):
     logger.debug('MoveException : %s', ins.get_output())
-    return RefExpression(get_variables(vmap, ins.AA))
+    return MoveExceptionExpression(get_variables(vmap, ins.AA), _type)
 
 
 # return-void

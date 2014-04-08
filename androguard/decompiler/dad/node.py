@@ -82,6 +82,7 @@ class Node(object):
         self.follow = {'if': None, 'loop': None, 'switch': None}
         self.looptype = LoopType()
         self.type = NodeType()
+        self.in_catch = False
         self.interval = None
         self.startloop = False
         self.latch = None
@@ -96,6 +97,7 @@ class Node(object):
         self.follow = node.follow.copy()
         self.latch = node.latch
         self.loop_nodes = node.loop_nodes
+        self.in_catch = node.in_catch
 
     def update_attribute_with(self, n_map):
         self.latch = n_map.get(self.latch, self.latch)
@@ -119,6 +121,7 @@ class Interval(object):
         self.content = set([head])
         self.end = None
         self.head = head
+        self.in_catch = head.in_catch
         head.interval = self
 
     def __contains__(self, item):

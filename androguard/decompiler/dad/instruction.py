@@ -125,6 +125,7 @@ class Variable(IRForm):
     def __init__(self, value):
         self.v = value
         self.declared = False
+        self.type = None
 
     def get_used_vars(self):
         return [self.v]
@@ -842,6 +843,9 @@ class RefExpression(IRForm):
         self.ref = ref.v
         self.var_map[ref.v] = ref
 
+    def is_propagable(self):
+        return False
+
     def get_used_vars(self):
         return self.var_map[self.ref].get_used_vars()
 
@@ -857,6 +861,28 @@ class RefExpression(IRForm):
                 self.ref = new.value()
             else:
                 v_m[old] = new
+
+
+class MoveExceptionExpression(RefExpression):
+    def __init__(self, ref, _type):
+        super(MoveExceptionExpression, self).__init__(ref)
+        self.type = _type
+        ref.set_type(_type)
+
+    def get_lhs(self):
+        return self.ref
+
+    def has_side_effect(self):
+        return True
+
+    def get_used_vars(self):
+        return []
+
+    def visit(self, visitor):
+        return visitor.visit_move_exception(self.var_map[self.ref])
+
+    def __str__(self):
+        return 'MOVE_EXCEPT %s' % self.var_map[self.ref]
 
 
 class MonitorEnterExpression(RefExpression):
@@ -976,7 +1002,7 @@ class UnaryExpression(IRForm):
         arg = v_m[self.arg]
         if not (arg.is_const() or arg.is_ident()):
             arg.replace(old, new)
-        else:
+        elif old in v_m:
             if new.is_ident():
                 v_m[new.value()] = new
                 v_m.pop(old)
@@ -1096,7 +1122,7 @@ class ConditionalZExpression(IRForm):
         arg = v_m[self.arg]
         if not (arg.is_const() or arg.is_ident()):
             arg.replace(old, new)
-        else:
+        elif old in v_m:
             if new.is_ident():
                 v_m[new.value()] = new
                 v_m.pop(old)
@@ -1131,7 +1157,7 @@ class InstanceExpression(IRForm):
         arg = v_m[self.arg]
         if not (arg.is_const() or arg.is_ident()):
             arg.replace(old, new)
-        else:
+        elif old in v_m:
             if new.is_ident():
                 v_m[new.value()] = new
                 v_m.pop(old)

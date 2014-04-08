@@ -37,6 +37,7 @@ class Writer(object):
         self.if_follow = [None]
         self.switch_follow = [None]
         self.latch_node = [None]
+        self.try_follow = [None]
         self.next_case = None
         self.skip = False
         self.need_break = True
@@ -123,7 +124,8 @@ class Writer(object):
 
     def visit_node(self, node):
         if node in (self.if_follow[-1], self.switch_follow[-1],
-                    self.loop_follow[-1], self.latch_node[-1]):
+                    self.loop_follow[-1], self.latch_node[-1],
+                    self.try_follow[-1]):
             return
         if not node.type.is_return and node in self.visited_nodes:
             return
@@ -198,7 +200,6 @@ class Writer(object):
             self.write('%s}\n' % self.space())
             self.visit_node(cond.false)
         elif follow is not None:
-            #print 'IF:', cond, 'FOLLOW:', follow
             if cond.true in (follow, self.next_case) or\
                                                 cond.num > cond.true.num:
                              # or cond.true.num > cond.false.num:
@@ -296,6 +297,28 @@ class Writer(object):
                 self.need_break = False
             else:
                 self.visit_node(sucs[0])
+
+    def visit_try_node(self, try_node):
+        self.write('%stry {\n' % self.space())
+        self.inc_ind()
+        self.try_follow.append(try_node.follow)
+        self.visit_node(try_node.try_start)
+        self.dec_ind()
+        self.write('%s}' % self.space())
+        for catch in try_node.catch:
+            self.visit_node(catch)
+        self.write('\n')
+        self.visit_node(self.try_follow.pop())
+
+
+    def visit_catch_node(self, catch_node):
+        self.write(' catch (')
+        catch_node.visit_exception(self)
+        self.write(') {\n')
+        self.inc_ind()
+        self.visit_node(catch_node.catch_start)
+        self.dec_ind()
+        self.write('%s}' % self.space())
 
     def visit_return_node(self, ret):
         self.need_break = False
@@ -443,6 +466,11 @@ class Writer(object):
         self.write(', '.join(['%d' % ord(c) for c in data[:-1]]))
         self.write('}')
         self.end_ins()
+
+    def visit_move_exception(self, var):
+        var.declared = True
+        var_type = var.get_type() or 'unknownType'
+        self.write('%s v%s' % (get_type(var_type), var.value()))
 
     def visit_monitor_enter(self, ref):
         self.write_ind()

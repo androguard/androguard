@@ -18,6 +18,7 @@
 import logging
 from androguard.decompiler.dad.instruction import Variable, Param
 from androguard.decompiler.dad.util import build_path, common_dom
+from androguard.decompiler.dad.node import Node
 
 
 logger = logging.getLogger('dad.control_flow')
@@ -81,11 +82,11 @@ class BasicReachDef(object):
         nodes = self.g.rpo[:]
         while nodes:
             node = nodes.pop(0)
-            predA = [self.A[p] for p in self.g.preds(node)]
+            predA = [self.A[p] for p in self.g.all_preds(node)]
             newR = reduce(set.union, predA, set())
             if predA and newR != self.R[node]:
                 self.R[node] = newR
-                for suc in self.g.sucs(node):
+                for suc in self.g.all_sucs(node):
                     if suc not in nodes:
                         nodes.append(suc)
 
@@ -101,7 +102,7 @@ class BasicReachDef(object):
             newA = A.union(self.DB[node])
             if newA != self.A[node]:
                 self.A[node] = newA
-                for suc in self.g.sucs(node):
+                for suc in self.g.all_sucs(node):
                     if suc not in nodes:
                         nodes.append(suc)
 
@@ -256,6 +257,14 @@ def register_propagation(graph, du, ud):
 
                     logger.debug('     -> DU(%s, %s) = %s', var, loc,
                                                     du.get((var, loc)))
+
+                    # We defined some instructions as not propagable.
+                    # Actually this is the case only for array creation
+                    # (new foo[x])
+                    if not orig_ins.is_propagable():
+                        logger.debug('    %s not propagable...', orig_ins)
+                        continue
+
                     # We only try to propagate constants and definition
                     # points which are used at only one location.
                     if len(du.get((var, loc), ())) > 1:
@@ -264,12 +273,6 @@ def register_propagation(graph, du, ud):
                                          ' and is not const => skip')
                             continue
 
-                    # We defined some instructions as not propagable.
-                    # Actually this is the case only for array creation
-                    # (new foo[x])
-                    if not orig_ins.is_propagable():
-                        logger.debug('    %s not propagable...', orig_ins)
-                        continue
                     # We check that the propagation is safe for all the
                     # variables that are used in the instruction.
                     # The propagation is not safe if there is a side effect
@@ -342,9 +345,9 @@ def register_propagation(graph, du, ud):
                         change = True
 
 
-class DummyNode(object):
+class DummyNode(Node):
     def __init__(self, name):
-        self.name = name
+        super(DummyNode, self).__init__(name)
 
     def get_loc_with_ins(self):
         return []
@@ -361,10 +364,6 @@ def build_def_use(graph, lparams):
     Builds the Def-Use and Use-Def (DU/UD) chains of the variables of the
     method.
     '''
-#    if 0:
-#        dom_tree = dominator_tree(graph, immdoms)
-#        dom_tree.draw(graph.entry.name, 'dad_graphs/dominators', False)
-
     # We insert two special nodes : entry & exit, to the graph.
     # This is done to simplify the reaching definition analysis.
     old_entry = graph.entry
@@ -434,7 +433,13 @@ def place_declarations(graph, dvars, du, ud):
                     continue
                 def_nodes = set()
                 for def_loc in var_defs_locs:
-                    def_nodes.add(graph.get_node_from_loc(def_loc))
+                    def_node = graph.get_node_from_loc(def_loc)
+                    # TODO: place declarations in catch if needed
+                    if def_node.in_catch:
+                        continue
+                    def_nodes.add(def_node)
+                if not def_nodes:
+                    continue
                 common_dominator = def_nodes.pop()
                 for def_node in def_nodes:
                     common_dominator = common_dom(
