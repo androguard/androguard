@@ -93,7 +93,7 @@ def build_path(graph, node1, node2, path=None):
     if node1 is node2:
         return path
     path.append(node2)
-    for pred in graph.preds(node2):
+    for pred in graph.all_preds(node2):
         if pred in path:
             continue
         build_path(graph, node1, pred, path)
@@ -187,3 +187,4 @@ def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
     m_name = ''.join(x for x in meth_name if x.isalnum())
     name = ''.join((cls_name.split('/')[-1][:-1], '#', m_name))
     graph.draw(name, dir_name)
+

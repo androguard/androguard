@@ -105,7 +105,6 @@ class DvMethod():
         register_propagation(graph, uses, defs)
         place_declarations(graph, self.var_to_name, uses, defs)
         del uses, defs
-
         # After the DCE pass, some nodes may be empty, so we can simplify the
         # graph to delete these nodes.
         # We start by restructuring the graph by spliting the conditional nodes
@@ -113,11 +112,12 @@ class DvMethod():
         graph.split_if_nodes()
         # We then simplify the graph by merging multiple statement nodes into
         # a single statement node when possible. This also delete empty nodes.
+
         graph.simplify()
         graph.reset_rpo()
 
-        idoms = graph.immediate_dominators()
-        identify_structures(graph, idoms)
+        identify_structures(graph, graph.immediate_dominators())
+
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph,
                                                     '/tmp/dad/structured')

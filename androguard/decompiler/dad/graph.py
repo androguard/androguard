@@ -32,15 +32,25 @@ class Graph():
         self.nodes = list()
         self.rpo = []
         self.edges = {}
+        self.catch_edges = {}
         self.reverse_edges = {}
+        self.reverse_catch_edges = {}
         self.loc_to_ins = None
         self.loc_to_node = None
 
     def sucs(self, node):
         return self.edges.get(node, [])
 
+    def all_sucs(self, node):
+        return self.edges.get(node, []) + self.catch_edges.get(node, [])
+
     def preds(self, node):
-        return self.reverse_edges.get(node, [])
+        return [n for n in self.reverse_edges.get(node, [])
+                if not n.in_catch]
+
+    def all_preds(self, node):
+        return (self.reverse_edges.get(node, []) +
+                self.reverse_catch_edges.get(node, []))
 
     def add_node(self, node):
         self.nodes.append(node)
@@ -53,14 +63,30 @@ class Graph():
         if e1 not in lpreds:
             lpreds.append(e1)
 
+    def add_catch_edge(self, e1, e2):
+        lsucs = self.catch_edges.setdefault(e1, [])
+        if e2 not in lsucs:
+            lsucs.append(e2)
+        lpreds = self.reverse_catch_edges.setdefault(e2, [])
+        if e1 not in lpreds:
+            lpreds.append(e1)
+
     def remove_node(self, node):
         preds = self.reverse_edges.pop(node, [])
         for pred in preds:
             self.edges[pred].remove(node)
 
-        succs = self.edges.get(node, [])
+        succs = self.edges.pop(node, [])
         for suc in succs:
             self.reverse_edges[suc].remove(node)
+
+        exc_preds = self.reverse_catch_edges.pop(node, [])
+        for pred in exc_preds:
+            self.catch_edges[pred].remove(node)
+
+        exc_succs = self.catch_edges.pop(node, [])
+        for suc in exc_succs:
+            self.reverse_catch_edges[suc].remove(node)
 
         self.nodes.remove(node)
         if node in self.rpo:
@@ -115,11 +141,12 @@ class Graph():
                     cond_node.true = node.true
                     cond_node.false = node.false
 
-                    lpreds = self.preds(node)
-                    lsuccs = self.sucs(node)
-
-                    for pred in lpreds:
+                    for pred in self.all_preds(node):
                         pred_node = node_map.get(pred, pred)
+                        # Verify that the link is not an exception link
+                        if node not in self.sucs(pred):
+                            self.add_catch_edge(pred_node, pre_node)
+                            continue
                         if pred is node:
                             pred_node = cond_node
                         if pred.type.is_cond:  # and not (pred is node):
@@ -128,8 +155,13 @@ class Graph():
                             if pred.false is node:
                                 pred_node.false = pre_node
                         self.add_edge(pred_node, pre_node)
-                    for suc in lsuccs:
+                    for suc in self.sucs(node):
                         self.add_edge(cond_node, node_map.get(suc, suc))
+
+                    # We link all the exceptions to the pre node instead of the
+                    # condition node, which should not trigger any of them.
+                    for suc in self.catch_edges.get(node, []):
+                        self.add_catch_edge(pre_node, node_map.get(suc, suc))
 
                     if node is self.entry:
                         self.entry = pre_node
@@ -156,26 +188,40 @@ class Graph():
         redo = True
         while redo:
             redo = False
+            node_map = {}
+            to_update = set()
             for node in self.nodes[:]:
                 if node.type.is_stmt and node in self.nodes:
-                    sucs = self.sucs(node)
-                    if len(sucs) == 0:
+                    sucs = self.all_sucs(node)
+                    if len(sucs) == 0 or len(sucs) > 1:
                         continue
                     suc = sucs[0]
                     if len(node.get_ins()) == 0:
+                        if any(pred.type.is_switch
+                               for pred in self.all_preds(node)):
+                            continue
                         suc = self.edges.get(node)[0]
                         if node is suc:
                             continue
-                        node_map = {node: suc}
-                        for pred in self.preds(node):
+                        node_map[node] = suc
+
+                        add_edge = self.add_edge
+                        if node.in_catch:
+                            add_edge = self.add_catch_edge
+                        for pred in self.all_preds(node):
                             pred.update_attribute_with(node_map)
+                            if node not in self.sucs(pred):
+                                self.add_catch_edge(pred, suc)
+                                continue
                             self.add_edge(pred, suc)
                         redo = True
                         if node is self.entry:
                             self.entry = suc
                         self.remove_node(node)
-                    elif (suc.type.is_stmt and len(self.preds(suc)) == 1
-                            and not ((node is suc) or (suc is self.entry))):
+                    elif (suc.type.is_stmt and
+                          len(self.all_preds(suc)) == 1 and
+                          not (suc in self.catch_edges) and
+                          not ((node is suc) or (suc is self.entry))):
                         ins_to_merge = suc.get_ins()
                         node.add_ins(ins_to_merge)
                         for var in suc.var_to_declare:
@@ -183,14 +229,21 @@ class Graph():
                         new_suc = self.sucs(suc)[0]
                         if new_suc:
                             self.add_edge(node, new_suc)
+                        for exception_suc in self.catch_edges.get(suc, []):
+                            self.add_catch_edge(node, exception_suc)
                         redo = True
                         self.remove_node(suc)
+                else:
+                    to_update.add(node)
+            for node in to_update:
+                node.update_attribute_with(node_map)
+
 
     def _traverse(self, node, visit, res):
         if node in visit:
             return
         visit.add(node)
-        for suc in self.sucs(node):
+        for suc in self.all_sucs(node):
             self._traverse(suc, visit, res)
         res.insert(0, node)
 
@@ -221,7 +274,7 @@ class Graph():
             visited = set()
             start = self.entry
         visited.add(start)
-        for suc in self.sucs(start):
+        for suc in self.all_sucs(start):
             if not suc in visited:
                 self.post_order(suc, visited, res)
         res.append(start)
@@ -239,6 +292,10 @@ class Graph():
             else:
                 for suc in self.sucs(node):
                     g.add_edge(Edge(str(node), str(suc), color='blue'))
+            for except_node in self.catch_edges.get(node, []):
+                g.add_edge(Edge(str(node), str(except_node),
+                                color='black', style='dashed'))
+
         g.write_png('%s/%s.png' % (dname, name))
 
     def immediate_dominators(self):
@@ -248,20 +305,14 @@ class Graph():
         '''
         idom = dict((n, None) for n in self.nodes)
         for node in self.rpo:
-            for pred in self.preds(node):
+            if node.in_catch:
+                predecessor = self.all_preds
+            else:
+                predecessor = self.preds
+            for pred in predecessor(node):
                 if pred.num < node.num:
                     idom[node] = common_dom(idom, idom[node], pred)
         return idom
-
-    def dominator_tree(self, immediate_dominators):
-        dom_tree = Graph()
-        for n, idom_n in immediate_dominators.items():
-            dom_tree.add_node(n)
-            if idom_n:
-                dom_tree.add_edge(idom_n, n)
-        dom_tree.entry = self.entry
-        dom_tree.exit = self.exit
-        return dom_tree
 
     def __len__(self):
         return len(self.nodes)
@@ -280,6 +331,11 @@ def bfs(start):
     while to_visit:
         node = to_visit.pop(0)
         yield node
+        if node.exception_analysis:
+            for _, _, exception in node.exception_analysis.exceptions:
+                if exception not in visited:
+                    to_visit.append(exception)
+                    visited.add(exception)
         for _, _, child in node.childs:
             if child not in visited:
                 to_visit.append(child)
@@ -303,9 +359,49 @@ class GenInvokeRetName(object):
         return self.ret
 
 
+def make_node(graph, block, block_to_node, vmap, gen_ret):
+    node = block_to_node.get(block)
+    if node is None:
+        node = build_node_from_block(block, vmap, gen_ret)
+        block_to_node[block] = node
+    if block.exception_analysis:
+        for _type, _, exception_target in block.exception_analysis.exceptions:
+            exception_node = block_to_node.get(exception_target)
+            if exception_node is None:
+                exception_node = build_node_from_block(exception_target,
+                                                        vmap, gen_ret, _type)
+                exception_node.in_catch = True
+                block_to_node[exception_target] = exception_node
+            graph.add_catch_edge(node, exception_node)
+    for _, _, child_block in block.childs:
+        child_node = block_to_node.get(child_block)
+        if child_node is None:
+            child_node = build_node_from_block(child_block, vmap, gen_ret)
+            block_to_node[child_block] = child_node
+        graph.add_edge(node, child_node)
+        if node.type.is_switch:
+            node.add_case(child_node)
+        if node.type.is_cond:
+            if_target = ((block.end / 2) - (block.last_length / 2) +
+                          node.off_last_ins)
+            child_addr = child_block.start / 2
+            if if_target == child_addr:
+                node.true = child_node
+            else:
+                node.false = child_node
+
+    # Check that both branch of the if point to something
+    # It may happen that both branch point to the same node, in this case
+    # the false branch will be None. So we set it to the right node.
+    # TODO: In this situation, we should transform the condition node into
+    # a statement node
+    if node.type.is_cond and node.false is None:
+        node.false = node.true
+
+    return node
+
+
 def construct(start_block, vmap, exceptions):
-    # Exceptions are not yet handled. An exception block has no parent, so
-    # we can skip them by doing a BFS on the basic blocks.
     bfs_blocks = bfs(start_block)
 
     graph = Graph()
@@ -313,35 +409,14 @@ def construct(start_block, vmap, exceptions):
 
     # Construction of a mapping of basic blocks into Nodes
     block_to_node = {}
-    for block in bfs_blocks:
-        node = block_to_node.get(block)
-        if node is None:
-            node = build_node_from_block(block, vmap, gen_ret)
-            block_to_node[block] = node
-        for _, _, child_block in block.childs:
-            child_node = block_to_node.get(child_block)
-            if child_node is None:
-                child_node = build_node_from_block(child_block, vmap, gen_ret)
-                block_to_node[child_block] = child_node
-            graph.add_edge(node, child_node)
-            if node.type.is_switch:
-                node.add_case(child_node)
-            if node.type.is_cond:
-                if_target = ((block.end / 2) - (block.last_length / 2) +
-                             node.off_last_ins)
-                child_addr = child_block.start / 2
-                if if_target == child_addr:
-                    node.true = child_node
-                else:
-                    node.false = child_node
-        # Check that both branch of the if point to something
-        # It may happen that both branch point to the same node, in this case
-        # the false branch will be None. So we set it to the right node.
-        # TODO: In this situation, we should transform the condition node into
-        # a statement node
-        if node.type.is_cond and node.false is None:
-            node.false = node.true
 
+    exceptions_start_block = []
+    for exception in exceptions:
+        for _, _, block in exception.exceptions:
+            exceptions_start_block.append(block)
+
+    for block in bfs_blocks:
+        node = make_node(graph, block, block_to_node, vmap, gen_ret)
         graph.add_node(node)
 
     graph.entry = block_to_node[start_block]
@@ -349,6 +424,12 @@ def construct(start_block, vmap, exceptions):
 
     graph.compute_rpo()
     graph.number_ins()
+
+    for node in graph.rpo:
+        preds = [pred for pred in graph.all_preds(node)
+                 if pred.num < node.num]
+        if preds and all(pred.in_catch for pred in preds):
+            node.in_catch = True
 
     # Create a list of Node which are 'return' node
     # There should be one and only one node of this type
