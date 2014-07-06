@@ -1018,10 +1018,17 @@ def invokesuperrange(ins, vmap, ret):
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
     largs = range(ins.CCCC, ins.NNNN + 1)
-    args = get_args(vmap, param_type, largs)
+    args = get_args(vmap, param_type, largs[1:])
+    base = get_variables(vmap, ins.CCCC)
+    if ret_type != 'V':
+        returned = ret.new()
+    else:
+        returned = base
+        ret.set_to(base)
+    superclass = BaseClass('super')
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, args)
-    return AssignExpression(ret.new(), exp)
+                                param_type, [superclass] + args)
+    return AssignExpression(returned, exp)
 
 
 # invoke-direct/range {vCCCC..vNNNN} ( 16b each )

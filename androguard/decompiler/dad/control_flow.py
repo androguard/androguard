@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import logging
+from collections import defaultdict
 from androguard.decompiler.dad.basic_blocks import (CatchBlock,
                                                     Condition,
                                                     LoopBlock,
@@ -40,7 +41,7 @@ def intervals(graph):
     heads = [graph.entry]  # list of header nodes
     interv_heads = {}  # interv_heads[i] = interval of header i
     processed = dict([(i, False) for i in graph])
-    edges = {}
+    edges = defaultdict(list)
 
     while heads:
         head = heads.pop(0)
@@ -65,7 +66,7 @@ def intervals(graph):
             for node in graph:
                 if node not in interv_heads[head] and node not in heads:
                     if any(p in interv_heads[head] for p in graph.all_preds(node)):
-                        edges.setdefault(interv_heads[head], []).append(node)
+                        edges[interv_heads[head]].append(node)
                         assert(node not in heads)
                         heads.append(node)
 

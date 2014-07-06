@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import logging
+from collections import defaultdict
 from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.dad.node import Node
 
@@ -99,7 +100,7 @@ class SwitchBlock(BasicBlock):
         self.switch = switch
         self.cases = []
         self.default = None
-        self.node_to_case = {}
+        self.node_to_case = defaultdict(list)
         self.type.is_switch = True
 
     def add_case(self, case):
@@ -125,7 +126,7 @@ class SwitchBlock(BasicBlock):
         if len(values) < len(self.cases):
             self.default = self.cases.pop(0)
         for case, node in zip(values, self.cases):
-            self.node_to_case.setdefault(node, []).append(case)
+            self.node_to_case[node].append(case)
 
     def __str__(self):
         return '%d-Switch(%s)' % (self.num, self.name)

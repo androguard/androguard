@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import logging
+from collections import defaultdict
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
 from androguard.decompiler.dad.instruction import Variable
@@ -31,10 +32,10 @@ class Graph():
         self.exit = None
         self.nodes = list()
         self.rpo = []
-        self.edges = {}
-        self.catch_edges = {}
-        self.reverse_edges = {}
-        self.reverse_catch_edges = {}
+        self.edges = defaultdict(list)
+        self.catch_edges = defaultdict(list)
+        self.reverse_edges = defaultdict(list)
+        self.reverse_catch_edges = defaultdict(list)
         self.loc_to_ins = None
         self.loc_to_node = None
 
@@ -56,18 +57,18 @@ class Graph():
         self.nodes.append(node)
 
     def add_edge(self, e1, e2):
-        lsucs = self.edges.setdefault(e1, [])
+        lsucs = self.edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
-        lpreds = self.reverse_edges.setdefault(e2, [])
+        lpreds = self.reverse_edges[e2]
         if e1 not in lpreds:
             lpreds.append(e1)
 
     def add_catch_edge(self, e1, e2):
-        lsucs = self.catch_edges.setdefault(e1, [])
+        lsucs = self.catch_edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
-        lpreds = self.reverse_catch_edges.setdefault(e2, [])
+        lpreds = self.reverse_catch_edges[e2]
         if e1 not in lpreds:
             lpreds.append(e1)
 

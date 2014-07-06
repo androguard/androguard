@@ -19,6 +19,7 @@ import sys
 sys.path.append('./')
 
 import logging
+from collections import defaultdict
 import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
@@ -27,7 +28,9 @@ from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
                                                 dead_code_elimination,
-                                                register_propagation)
+                                                register_propagation,
+                                                phi_placement,
+                                                split_variables)
 from androguard.decompiler.dad.graph import construct
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
@@ -51,7 +54,7 @@ class DvMethod():
         self.cls_name = method.get_class_name()
         self.name = method.get_name()
         self.lparams = []
-        self.var_to_name = {}
+        self.var_to_name = defaultdict()
         self.writer = None
         self.graph = None
 
@@ -77,7 +80,7 @@ class DvMethod():
             for ptype in self.params_type:
                 param = start + num_param
                 self.lparams.append(param)
-                self.var_to_name.setdefault(param, Param(param, ptype))
+                self.var_to_name[param] = Param(param, ptype)
                 num_param += util.get_type_size(ptype)
         if not __debug__:
             from androguard.core import bytecode
@@ -100,11 +103,19 @@ class DvMethod():
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph, '/tmp/dad/blocks')
 
-        defs, uses = build_def_use(graph, self.lparams)
-        dead_code_elimination(graph, uses, defs)
-        register_propagation(graph, uses, defs)
-        place_declarations(graph, self.var_to_name, uses, defs)
-        del uses, defs
+        #idoms = graph.immediate_dominators()
+        #DF = dominance_frontier(graph, idoms)
+        use_defs, def_uses = build_def_use(graph, self.lparams)
+        #phi_placement(graph, DF, self.var_to_name, use_defs, def_uses)
+        split_variables(graph, self.var_to_name, def_uses, use_defs)
+        # TODO: split_variables should update DU/UD
+        use_defs, def_uses = build_def_use(graph, self.lparams)
+
+        dead_code_elimination(graph, def_uses, use_defs)
+        register_propagation(graph, def_uses, use_defs)
+        
+        place_declarations(graph, self.var_to_name, def_uses, use_defs)
+        del def_uses, use_defs
         # After the DCE pass, some nodes may be empty, so we can simplify the
         # graph to delete these nodes.
         # We start by restructuring the graph by spliting the conditional nodes
