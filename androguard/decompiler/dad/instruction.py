@@ -715,6 +715,11 @@ class CheckCastExpression(IRForm):
     def visit(self, visitor):
         return visitor.visit_check_cast(self.var_map[self.arg], self.type)
 
+    def replace_var(self, old, new):
+        self.arg = new.v
+        self.var_map.pop(old)
+        self.var_map[new.v] = new
+
     def replace(self, old, new):
         v_m = self.var_map
         arg = v_m[self.arg]
