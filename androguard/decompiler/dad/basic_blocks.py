@@ -260,6 +260,15 @@ class TryBlock(BasicBlock):
         self.try_start = node
         self.catch = []
 
+    # FIXME:
+    @property
+    def num(self):
+        return self.try_start.num
+
+    @num.setter
+    def num(self, value):
+        pass
+
     def add_catch_node(self, node):
         self.catch.append(node)
 
