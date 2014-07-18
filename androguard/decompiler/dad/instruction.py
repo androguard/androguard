@@ -481,6 +481,9 @@ class NewInstance(IRForm):
         super(NewInstance, self).__init__()
         self.type = ins_type
 
+    def is_const(self):
+        return True
+
     def get_type(self):
         return self.type
 
@@ -1160,6 +1163,9 @@ class UnaryExpression(IRForm):
 class CastExpression(UnaryExpression):
     def __init__(self, op, atype, arg):
         super(CastExpression, self).__init__(op, arg, atype)
+
+    def is_const(self):
+        return self.var_map[self.arg].is_const()
 
     def get_type(self):
         return self.type
