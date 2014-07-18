@@ -29,7 +29,6 @@ from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
                                                 dead_code_elimination,
                                                 register_propagation,
-                                                phi_placement,
                                                 split_variables)
 from androguard.decompiler.dad.graph import construct
 from androguard.decompiler.dad.instruction import Param, ThisParam
@@ -103,10 +102,7 @@ class DvMethod():
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph, '/tmp/dad/blocks')
 
-        #idoms = graph.immediate_dominators()
-        #DF = dominance_frontier(graph, idoms)
         use_defs, def_uses = build_def_use(graph, self.lparams)
-        #phi_placement(graph, DF, self.var_to_name, use_defs, def_uses)
         split_variables(graph, self.var_to_name, def_uses, use_defs)
         # TODO: split_variables should update DU/UD
         use_defs, def_uses = build_def_use(graph, self.lparams)
