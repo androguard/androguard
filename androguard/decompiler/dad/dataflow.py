@@ -17,8 +17,8 @@
 
 import logging
 from collections import defaultdict
-from androguard.decompiler.dad.graph import Graph
-from androguard.decompiler.dad.instruction import Variable, Param
+from androguard.decompiler.dad.instruction import (Variable, ThisParam,
+                                                   Param)
 from androguard.decompiler.dad.util import build_path, common_dom
 from androguard.decompiler.dad.node import Node
 
@@ -36,10 +36,10 @@ class BasicReachDef(object):
         self.def_to_loc = defaultdict(set)
         # Deal with special entry node
         entry = graph.entry
-        self.A[entry] = set([-1])
-        for param in params:
-            self.defs[entry][param].add(-1)
-            self.def_to_loc[param].add(-1)
+        self.A[entry] = range(-1, -len(params) - 1, -1)
+        for loc, param in enumerate(params, 1):
+            self.defs[entry][param].add(-loc)
+            self.def_to_loc[param].add(-loc)
         # Deal with the other nodes
         for node in graph.rpo:
             for i, ins in node.get_loc_with_ins():
@@ -65,8 +65,7 @@ class BasicReachDef(object):
 
             killed_locs = set()
             for reg in self.defs[node]:
-                for loc in self.def_to_loc[reg]:
-                    killed_locs.add(loc)
+                killed_locs.update(self.def_to_loc[reg])
 
             A = set()
             for loc in self.R[node]:
@@ -102,7 +101,7 @@ def update_chain(graph, loc, du, ud):
             # that we may have created a new dead instruction, so we check that
             # the instruction has no side effect and we update the DU chain of
             # the new dead instruction, and we delete it.
-            # We also make sure that def_loc is not -1. This is the case when
+            # We also make sure that def_loc is not < 0. This is the case when
             # the current variable is a method parameter.
             if  def_loc >= 0 and not du[(var, def_loc)]:
                 du.pop((var, def_loc))
@@ -222,8 +221,8 @@ def register_propagation(graph, du, ud):
                         continue
 
                     loc = locs[0]
-                    # Methods parameters are defined with a location of -1.
-                    if loc == -1:
+                    # Methods parameters are defined with a location < 0.
+                    if loc < 0:
                         continue
                     orig_ins = graph.get_ins_from_loc(loc)
                     logger.debug('     -> %s', orig_ins)
@@ -370,8 +369,11 @@ def split_variables(graph, lvars, DU, UD):
             continue
         orig_var = lvars.pop(var)
         for i, (defs, uses) in enumerate(versions):
-            if -1 in defs:  # Param
-                new_version = Param(var, orig_var.type)
+            if min(defs) < 0:  # Param
+                if orig_var.this:
+                    new_version = ThisParam(var, orig_var.type)
+                else:
+                    new_version = Param(var, orig_var.type)
                 lvars[var] = new_version
             else:
                 new_version = Variable(nb_vars)
@@ -381,7 +383,7 @@ def split_variables(graph, lvars, DU, UD):
             new_version.name = '%d_%d' % (var, i)
 
             for loc in defs:
-                if loc == -1:
+                if loc < 0:
                     continue
                 ins = graph.get_ins_from_loc(loc)
                 ins.replace_lhs(new_version)
@@ -443,9 +445,6 @@ def build_def_use(graph, lparams):
     DU = defaultdict(list)
     for var_loc, defs_loc in UD.items():
         var, loc = var_loc
-        # FIXME: should not have to add this
-        if not defs_loc:
-            DU[(var, -1)].append(loc)
         for def_loc in defs_loc:
             DU[(var, def_loc)].append(loc)
 
@@ -462,9 +461,6 @@ def place_declarations(graph, dvars, du, ud):
                     or isinstance(dvars[var], Param)):
                     continue
                 var_defs_locs = ud[(var, loc)]
-                # FIXME: this should not happen.
-                if var_defs_locs is None:
-                    continue
                 def_nodes = set()
                 for def_loc in var_defs_locs:
                     def_node = graph.get_node_from_loc(def_loc)

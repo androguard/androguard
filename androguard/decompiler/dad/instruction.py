@@ -161,6 +161,10 @@ class Param(Variable):
         super(Param, self).__init__(value)
         self.declared = True
         self.type = atype
+        self.this = False
+
+    def is_const(self):
+        return True
 
     def visit(self, visitor):
         return visitor.visit_param(self.v)
@@ -172,12 +176,7 @@ class Param(Variable):
 class ThisParam(Param):
     def __init__(self, value, atype):
         super(ThisParam, self).__init__(value, atype)
-
-    def is_const(self):
-        return True
-
-    def get_used_vars(self):
-        return []
+        self.this = True
 
     def visit(self, visitor):
         return visitor.visit_this()
