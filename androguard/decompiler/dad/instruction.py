@@ -189,10 +189,13 @@ class ThisParam(Param):
 class AssignExpression(IRForm):
     def __init__(self, lhs, rhs):
         super(AssignExpression, self).__init__()
-        self.lhs = lhs.v
+        if lhs:
+            self.lhs = lhs.v
+            self.var_map[lhs.v] = lhs
+            lhs.set_type(rhs.get_type())
+        else:
+            self.lhs = None
         self.rhs = rhs
-        self.var_map[lhs.v] = lhs
-        lhs.set_type(rhs.get_type())
 
     def is_propagable(self):
         return self.rhs.is_propagable()

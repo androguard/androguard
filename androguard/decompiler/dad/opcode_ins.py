@@ -34,7 +34,7 @@ from androguard.decompiler.dad.instruction import (ArrayLengthExpression,
                             MoveResultExpression, NewArrayExpression,
                             NewInstance, NopExpression, ThrowExpression,
                             Variable, ReturnInstruction, StaticExpression,
-                            StaticInstruction, SwitchExpression,
+                            StaticInstruction, SwitchExpression, ThisParam,
                             UnaryExpression)
 
 
@@ -931,7 +931,6 @@ def invokesuper(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    nbargs = ins.A - 1
     largs = [ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     superclass = BaseClass('super')
@@ -951,11 +950,14 @@ def invokedirect(ins, vmap, ret):
     largs = [ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     base = get_variables(vmap, ins.C)
-    if ret_type != 'V':
-        returned = ret.new()
+    if ret_type == 'V':
+        if isinstance(base, ThisParam):
+            returned = None
+        else:
+            returned = base
+            ret.set_to(base)
     else:
-        returned = base
-        ret.set_to(base)
+        returned = ret.new()
     exp = InvokeDirectInstruction(cls_name, name, base, ret_type,
                             param_type, args)
     return AssignExpression(returned, exp)
