@@ -237,33 +237,33 @@ def register_propagation(graph, du, ud):
                         logger.debug('    %s not propagable...', orig_ins)
                         continue
 
-                    # We only try to propagate constants and definition
-                    # points which are used at only one location.
-                    if len(du[(var, loc)]) > 1:
-                        if not orig_ins.get_rhs().is_const():
+                    if not orig_ins.get_rhs().is_const():
+                        # We only try to propagate constants and definition
+                        # points which are used at only one location.
+                        if len(du[(var, loc)]) > 1:
                             logger.debug('       => variable has multiple uses'
                                          ' and is not const => skip')
                             continue
 
-                    # We check that the propagation is safe for all the
-                    # variables that are used in the instruction.
-                    # The propagation is not safe if there is a side effect
-                    # along the path from the definition of the variable
-                    # to its use in the instruction, or if the variable may
-                    # be redifined along this path.
-                    safe = True
-                    orig_ins_used_vars = orig_ins.get_used_vars()
-                    logger.debug('    variables used by the original '
-                                 'instruction: %s', orig_ins_used_vars)
-                    for var2 in orig_ins_used_vars:
-                        # loc is the location of the defined variable
-                        # i is the location of the current instruction
-                        if not clear_path(graph, var2, loc, i):
-                            safe = False
-                            break
-                    if not safe:
-                        logger.debug('Propagation NOT SAFE')
-                        continue
+                        # We check that the propagation is safe for all the
+                        # variables that are used in the instruction.
+                        # The propagation is not safe if there is a side effect
+                        # along the path from the definition of the variable
+                        # to its use in the instruction, or if the variable may
+                        # be redifined along this path.
+                        safe = True
+                        orig_ins_used_vars = orig_ins.get_used_vars()
+                        logger.debug('    variables used by the original '
+                                    'instruction: %s', orig_ins_used_vars)
+                        for var2 in orig_ins_used_vars:
+                            # loc is the location of the defined variable
+                            # i is the location of the current instruction
+                            if not clear_path(graph, var2, loc, i):
+                                safe = False
+                                break
+                        if not safe:
+                            logger.debug('Propagation NOT SAFE')
+                            continue
 
                     # We also check that the instruction itself is
                     # propagable. If the instruction has a side effect it
@@ -387,9 +387,11 @@ def split_variables(graph, lvars, DU, UD):
                     continue
                 ins = graph.get_ins_from_loc(loc)
                 ins.replace_lhs(new_version)
+                DU[(new_version.value(), loc)] = DU.pop((var, loc))
             for loc in uses:
                 ins = graph.get_ins_from_loc(loc)
                 ins.replace_var(var, new_version)
+                UD[(new_version.value(), loc)] = UD.pop((var, loc))
 
 
 def build_def_use(graph, lparams):
@@ -413,7 +415,7 @@ def build_def_use(graph, lparams):
 
     analysis = BasicReachDef(graph, set(lparams))
     analysis.run()
-    
+
     # The analysis is done, We can now remove the two special nodes.
     graph.remove_node(new_entry)
     if old_exit:
@@ -455,8 +457,7 @@ def place_declarations(graph, dvars, du, ud):
     idom = graph.immediate_dominators()
     for node in graph.rpo:
         for loc, ins in node.get_loc_with_ins():
-            used_vars = ins.get_used_vars()
-            for var in used_vars:
+            for var in ins.get_used_vars():
                 if (not isinstance(dvars[var], Variable)
                     or isinstance(dvars[var], Param)):
                     continue
