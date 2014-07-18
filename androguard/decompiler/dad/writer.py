@@ -333,7 +333,7 @@ class Writer(object):
         if not var.declared:
             var_type = var.get_type() or 'unknownType'
             self.write('%s%s v%s' % (
-                       self.space(), get_type(var_type), var.value()))
+                       self.space(), get_type(var_type), var.name))
             self.end_ins()
 
     def visit_constant(self, cst):
@@ -349,7 +349,7 @@ class Writer(object):
             var_type = var.get_type() or 'unknownType'
             self.write('%s ' % get_type(var_type))
             var.declared = True
-        self.write('v%s' % var.value())
+        self.write('v%s' % var.name)
 
     def visit_param(self, param):
         self.write('p%s' % param)
@@ -470,7 +470,7 @@ class Writer(object):
     def visit_move_exception(self, var):
         var.declared = True
         var_type = var.get_type() or 'unknownType'
-        self.write('%s v%s' % (get_type(var_type), var.value()))
+        self.write('%s v%s' % (get_type(var_type), var.name))
 
     def visit_monitor_enter(self, ref):
         self.write_ind()
