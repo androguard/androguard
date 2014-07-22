@@ -934,9 +934,10 @@ def invokesuper(ins, vmap, ret):
     largs = [ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     superclass = BaseClass('super')
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, superclass, ret_type,
                             param_type, args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # invoke-direct {vD, vE, vF, vG, vA} ( 4b each )
@@ -975,8 +976,9 @@ def invokestatic(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name)
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                    param_type, args)
-    return AssignExpression(ret.new(), exp)
+                                  param_type, args)
+    returned = None if ret_type == 'V' else ret.new()
+    return AssignExpression(returned, exp)
 
 
 # invoke-interface {vD, vE, vF, vG, vA} ( 4b each )
@@ -1618,7 +1620,9 @@ def addintlit16(ins, vmap):
 # rsub-int vA, vB, #+CCCC ( 4b, 4b, 16b )
 def rsubint(ins, vmap):
     logger.debug('RSubInt : %s', ins.get_output())
-    return assign_lit(Op.SUB, ins.CCCC, ins.A, ins.B, vmap)
+    var_a, var_b = get_variables(vmap, ins.A, ins.B)
+    cst = Constant(ins.CCCC, 'I')
+    return AssignExpression(var_a, BinaryExpressionLit(Op.SUB, cst, var_b))
 
 
 # mul-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
@@ -1667,7 +1671,9 @@ def addintlit8(ins, vmap):
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
 def rsubintlit8(ins, vmap):
     logger.debug('RSubIntLit8 : %s', ins.get_output())
-    return assign_lit(Op.SUB, ins.CC, ins.AA, ins.BB, vmap)
+    var_a, var_b = get_variables(vmap, ins.AA, ins.BB)
+    cst = Constant(ins.CC, 'I')
+    return AssignExpression(var_a, BinaryExpressionLit(Op.SUB, cst, var_b))
 
 
 # mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )

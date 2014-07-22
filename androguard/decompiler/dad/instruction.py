@@ -83,9 +83,6 @@ class Constant(IRForm):
     def get_used_vars(self):
         return []
 
-    def is_call(self):
-        return False
-
     def is_const(self):
         return True
 
@@ -136,9 +133,6 @@ class Variable(IRForm):
 
     def get_used_vars(self):
         return [self.v]
-
-    def is_call(self):
-        return False
 
     def is_ident(self):
         return True
@@ -221,8 +215,6 @@ class AssignExpression(IRForm):
         self.rhs.replace(old, new)
 
     def replace_lhs(self, new):
-        if self.lhs != self.rhs:
-            self.var_map.pop(self.lhs)
         self.lhs = new.v
         self.var_map[new.v] = new
 
