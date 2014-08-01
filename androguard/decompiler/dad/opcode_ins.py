@@ -251,7 +251,7 @@ def const16(ins, vmap):
 def const(ins, vmap):
     logger.debug('Const : %s', ins.get_output())
     value = unpack("=f", pack("=i", ins.BBBBBBBB))[0]
-    cst = Constant(value, 'F', ins.BBBBBBBB)
+    cst = Constant(value, 'I', ins.BBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -259,7 +259,7 @@ def const(ins, vmap):
 def consthigh16(ins, vmap):
     logger.debug('ConstHigh16 : %s', ins.get_output())
     value = unpack('=f', '\x00\x00' + pack('=h', ins.BBBB))[0]
-    cst = Constant(value, 'F', ins.BBBB)
+    cst = Constant(value, 'I', ins.BBBB)
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -918,9 +918,10 @@ def invokevirtual(ins, vmap, ret):
     largs = [ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, c, ret_type,
                             param_type, args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # invoke-super {vD, vE, vF, vG, vA} ( 4b each )
@@ -975,9 +976,9 @@ def invokestatic(ins, vmap, ret):
     largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name)
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                   param_type, args)
-    returned = None if ret_type == 'V' else ret.new()
     return AssignExpression(returned, exp)
 
 
@@ -992,9 +993,10 @@ def invokeinterface(ins, vmap, ret):
     largs = [ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, c, ret_type,
                             param_type, args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # invoke-virtual/range {vCCCC..vNNNN} ( 16b each )
@@ -1008,9 +1010,10 @@ def invokevirtualrange(ins, vmap, ret):
     largs = range(ins.CCCC, ins.NNNN + 1)
     this_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
                                  param_type, [this_arg] + args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # invoke-super/range {vCCCC..vNNNN} ( 16b each )
@@ -1068,9 +1071,10 @@ def invokestaticrange(ins, vmap, ret):
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name)
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
                                 param_type, args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # invoke-interface/range {vCCCC..vNNNN} ( 16b each )
@@ -1084,9 +1088,10 @@ def invokeinterfacerange(ins, vmap, ret):
     largs = range(ins.CCCC, ins.NNNN + 1)
     base_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
+    returned = None if ret_type == 'V' else ret.new()
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
                                 param_type, [base_arg] + args)
-    return AssignExpression(ret.new(), exp)
+    return AssignExpression(returned, exp)
 
 
 # neg-int vA, vB ( 4b, 4b )

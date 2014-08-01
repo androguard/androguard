@@ -16,7 +16,7 @@
 # limitations under the License.
 
 import logging
-from androguard.decompiler.dad.util import get_type, ACCESS_FLAGS_METHODS
+from androguard.decompiler.dad.util import get_type 
 from androguard.decompiler.dad.opcode_ins import Op
 from androguard.decompiler.dad.instruction import (Constant, ThisParam,
                                                    BinaryExpression,
@@ -376,10 +376,7 @@ class Writer(object):
         self.write_ind()
         array.visit(self)
         self.write('[')
-        if isinstance(index, Constant):
-            index.visit(self, 'I')
-        else:
-            index.visit(self)
+        index.visit(self)
         self.write('] = ')
         rhs.visit(self)
         self.end_ins()
@@ -463,7 +460,7 @@ class Writer(object):
         array.visit(self)
         self.write(' = {')
         data = value.get_data()
-        self.write(', '.join(['%d' % ord(c) for c in data[:-1]]))
+        self.write(', '.join('%d' % ord(data[i]) for i in range(value.size)))
         self.write('}')
         self.end_ins()
 
