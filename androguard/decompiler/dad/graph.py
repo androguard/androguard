@@ -20,8 +20,6 @@ from collections import defaultdict
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
 from androguard.decompiler.dad.instruction import Variable
-from androguard.decompiler.dad.util import common_dom
-
 
 logger = logging.getLogger('dad.graph')
 
@@ -302,20 +300,7 @@ class Graph():
 
 
     def immediate_dominators(self):
-        '''
-        Create a mapping of the nodes of a graph with their corresponding
-        immediate dominator
-        '''
-        idom = dict((n, None) for n in self.nodes)
-        for node in self.rpo:
-            if node.in_catch:
-                predecessor = self.all_preds
-            else:
-                predecessor = self.preds
-            for pred in predecessor(node):
-                if pred.num < node.num:
-                    idom[node] = common_dom(idom, idom[node], pred)
-        return idom
+        return dom_lt(self)
 
     def __len__(self):
         return len(self.nodes)
@@ -326,6 +311,109 @@ class Graph():
     def __iter__(self):
         for node in self.nodes:
             yield node
+
+
+def dom_cooper(graph):
+    '''Dominator algorithm from Cooper & al'''
+    def intersect(x, y):
+        while x != y:
+            while x.po < y.po:
+                x = dom[x]
+            while y.po < x.po:
+                y = dom[y]
+        return x
+
+    graph_rpo = graph.post_order()
+    for idx, node in enumerate(graph_rpo):
+        node.po = idx
+
+    dom = dict((n, None) for n in graph.nodes)
+    dom[graph.entry] = graph.entry
+
+    changed = True
+    while changed:
+        changed = False
+        processed = set([graph.entry])
+        for v in graph.rpo[1:]:
+            preds = set(graph.all_preds(v))
+            for p in preds:
+                if p in processed:
+                    pick = p
+                    preds.remove(pick)
+                    break
+            new_idom = pick
+            while preds:
+                p = preds.pop()
+                if dom[p] != None:
+                    new_idom = intersect(p, new_idom)
+            if dom[v] != new_idom:
+                dom[v] = new_idom
+                changed = True
+            processed.add(v)
+    dom[graph.entry] = None
+    return dom
+
+
+def dom_lt(graph):
+    '''Dominator algorithm from Lengaeur-Tarjan'''
+    def _dfs(v, n):
+        semi[v] = n = n + 1
+        vertex[n] = label[v] = v
+        ancestor[v] = 0
+        for w in graph.all_sucs(v):
+            if not semi[w]:
+                parent[w] = v
+                n = _dfs(w, n)
+            pred[w].add(v)
+        return n
+
+    def _compress(v):
+        u = ancestor[v]
+        if ancestor[u]:
+            _compress(u)
+            if semi[label[u]] < semi[label[v]]:
+                label[v] = label[u]
+            ancestor[v] = ancestor[u]
+
+    def _eval(v):
+        if ancestor[v]:
+            _compress(v)
+            return label[v]
+        return v
+
+    def _link(v, w):
+        ancestor[w] = v
+
+    parent, ancestor, vertex = {}, {}, {}
+    label, dom = {}, {}
+    pred, bucket = defaultdict(set), defaultdict(set)
+
+    # Step 1:
+    semi = {v: 0 for v in graph.nodes}
+    n = _dfs(graph.entry, 0)
+    for i in xrange(n, 1, -1):
+        w = vertex[i]
+    # Step 2:
+        for v in pred[w]:
+            u = _eval(v)
+            y = semi[w] = min(semi[w], semi[u])
+        bucket[vertex[y]].add(w)
+        pw = parent[w]
+        _link(pw, w)
+    # Step 3:
+        bpw = bucket[pw]
+        while bpw:
+            v = bpw.pop()
+            u = _eval(v)
+            dom[v] = u if semi[u] < semi[v] else pw
+    # Step 4:
+    for i in range(2, n + 1):
+        w = vertex[i]
+        dw = dom[w]
+        if dw != vertex[semi[w]]:
+            dom[w] = dom[dw]
+    dom[graph.entry] = None
+    return dom
 
 
 def bfs(start):
