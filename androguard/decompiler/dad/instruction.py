@@ -92,7 +92,7 @@ class Constant(IRForm):
     def get_type(self):
         return self.type
 
-    def visit(self, visitor, to_int=False):
+    def visit(self, visitor):
         if self.type == 'Z':
             if self.cst == 0:
                 return visitor.visit_constant('false')
@@ -100,7 +100,7 @@ class Constant(IRForm):
                 return visitor.visit_constant('true')
         elif self.type == 'class':
             return visitor.visit_base_class(self.cst)
-        elif to_int:
+        elif self.type in 'IJB':
             return visitor.visit_constant(self.cst2)
         else:
             return visitor.visit_constant(self.cst)
@@ -473,9 +473,6 @@ class NewInstance(IRForm):
         super(NewInstance, self).__init__()
         self.type = ins_type
 
-    def is_const(self):
-        return True
-
     def get_type(self):
         return self.type
 
@@ -830,6 +827,9 @@ class NewArrayExpression(ArrayExpression):
         self.size = asize.v
         self.type = atype
         self.var_map[asize.v] = asize
+
+    def is_propagable(self):
+        return False
 
     def get_used_vars(self):
         return self.var_map[self.size].get_used_vars()

@@ -123,7 +123,7 @@ class Graph():
         Split IfNodes in two nodes, the first node is the header node, the
         second one is only composed of the jump condition.
         '''
-        node_map = {}
+        node_map = {n: n for n in self.nodes}
         to_update = set()
         for node in self.nodes[:]:
             if node.type.is_cond:
@@ -133,6 +133,8 @@ class Graph():
                     pre_node = StatementBlock('%s-pre' % node.name, pre_ins)
                     cond_node = CondBlock('%s-cond' % node.name, [last_ins])
                     node_map[node] = pre_node
+                    node_map[pre_node] = pre_node
+                    node_map[cond_node] = cond_node
 
                     pre_node.copy_from(node)
                     cond_node.copy_from(node)
@@ -143,7 +145,7 @@ class Graph():
                     cond_node.false = node.false
 
                     for pred in self.all_preds(node):
-                        pred_node = node_map.get(pred, pred)
+                        pred_node = node_map[pred]
                         # Verify that the link is not an exception link
                         if node not in self.sucs(pred):
                             self.add_catch_edge(pred_node, pre_node)
@@ -157,12 +159,12 @@ class Graph():
                                 pred_node.false = pre_node
                         self.add_edge(pred_node, pre_node)
                     for suc in self.sucs(node):
-                        self.add_edge(cond_node, node_map.get(suc, suc))
+                        self.add_edge(cond_node, node_map[suc])
 
                     # We link all the exceptions to the pre node instead of the
                     # condition node, which should not trigger any of them.
                     for suc in self.catch_edges.get(node, []):
-                        self.add_catch_edge(pre_node, node_map.get(suc, suc))
+                        self.add_catch_edge(pre_node, node_map[suc])
 
                     if node is self.entry:
                         self.entry = pre_node
@@ -194,14 +196,13 @@ class Graph():
             for node in self.nodes[:]:
                 if node.type.is_stmt and node in self.nodes:
                     sucs = self.all_sucs(node)
-                    if len(sucs) == 0 or len(sucs) > 1:
+                    if len(sucs) != 1:
                         continue
                     suc = sucs[0]
                     if len(node.get_ins()) == 0:
                         if any(pred.type.is_switch
                                for pred in self.all_preds(node)):
                             continue
-                        suc = self.edges.get(node)[0]
                         if node is suc:
                             continue
                         node_map[node] = suc
@@ -298,6 +299,7 @@ class Graph():
                                 color='black', style='dashed'))
 
         g.write_png('%s/%s.png' % (dname, name))
+
 
     def immediate_dominators(self):
         '''
