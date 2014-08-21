@@ -16,7 +16,8 @@
 # limitations under the License.
 
 import logging
-from androguard.decompiler.dad.util import get_type 
+from struct import unpack
+from androguard.decompiler.dad.util import get_type
 from androguard.decompiler.dad.opcode_ins import Op
 from androguard.decompiler.dad.instruction import (Constant, ThisParam,
                                                    BinaryExpression,
@@ -460,7 +461,15 @@ class Writer(object):
         array.visit(self)
         self.write(' = {')
         data = value.get_data()
-        self.write(', '.join('%d' % ord(data[i]) for i in range(value.size)))
+        tab = []
+        elem_size = value.element_width
+        if elem_size == 4:
+            for i in range(0, value.size * 4, 4):
+                tab.append('%s' % unpack('i', data[i:i+4])[0])
+        else: # FIXME: other cases
+            for i in range(value.size):
+                tab.append('%s' % unpack('b', data[i])[0])
+        self.write(', '.join(tab))
         self.write('}')
         self.end_ins()
 
