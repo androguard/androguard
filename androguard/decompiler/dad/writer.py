@@ -428,9 +428,9 @@ class Writer(object):
         arg.visit(self)
 
     def visit_check_cast(self, arg, atype):
-        self.write('(checkcast)(')
+        self.write('((%s) ' % atype)
         arg.visit(self)
-        self.write(', %s)' % atype)
+        self.write(')')
 
     def visit_aload(self, array, index):
         array.visit(self)

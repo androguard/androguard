@@ -701,6 +701,9 @@ class CheckCastExpression(IRForm):
         self.var_map[arg.v] = arg
         self.type = _type
 
+    def is_const(self):
+        return self.var_map[self.arg].is_const()
+
     def get_used_vars(self):
         return self.var_map[self.arg].get_used_vars()
 
@@ -723,6 +726,9 @@ class CheckCastExpression(IRForm):
                 self.arg = new.value()
             else:
                 v_m[old] = new
+
+    def __str__(self):
+        return 'CAST(%s) %s' % (self.type, self.var_map[self.arg])
 
 
 class ArrayExpression(IRForm):
