@@ -515,7 +515,7 @@ class Writer(object):
             return arg.visit(self)
         atype = arg.get_type()
         if atype == 'Z':
-            if op is Op.EQUAL:
+            if op == Op.EQUAL:
                 self.write('!')
             arg.visit(self)
         else:
