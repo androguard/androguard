@@ -72,13 +72,33 @@ ACCESS_FLAGS_METHODS = {
     0x800:   'strict',
     0x1000:  'synthetic',
     0x10000: 'constructor',
-    0x20000: 'synchronized',
+    0x20000: 'declared_synchronized',
 }
+
+ACCESS_ORDER = [0x1, 0x4, 0x2, 0x400, 0x8, 0x10,
+                0x80, 0x40, 0x20, 0x100, 0x800,
+                0x200, 0x1000, 0x2000, 0x4000,
+                0x10000, 0x20000]
 
 TYPE_LEN = {
     'J': 2,
     'D': 2,
 }
+
+
+def get_access_class(access):
+  sorted_access = [i for i in ACCESS_ORDER if i & access]
+  return [ACCESS_FLAGS_CLASSES[flag] for flag in sorted_access]
+
+
+def get_access_method(access):
+  sorted_access = [i for i in ACCESS_ORDER if i & access]
+  return [ACCESS_FLAGS_METHODS[flag] for flag in sorted_access]
+
+
+def get_access_field(access):
+  sorted_access = [i for i in ACCESS_ORDER if i & access]
+  return [ACCESS_FLAGS_FIELDS[flag] for flag in sorted_access]
 
 
 def build_path(graph, node1, node2, path=None):
