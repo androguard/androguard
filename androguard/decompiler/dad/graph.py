@@ -238,47 +238,33 @@ class Graph():
             for node in to_update:
                 node.update_attribute_with(node_map)
 
-
-    def _traverse(self, node, visit, res):
-        if node in visit:
-            return
-        visit.add(node)
-        for suc in self.all_sucs(node):
-            self._traverse(suc, visit, res)
-        res.insert(0, node)
-
     def compute_rpo(self):
         '''
         Number the nodes in reverse post order.
         An RPO traversal visit as many predecessors of a node as possible
         before visiting the node itself.
         '''
-        visit = set()
-        res = []
-        self._traverse(self.entry, visit, res)
-        for i, n in enumerate(res, 1):
-            n.num = i
-            self.rpo.append(n)
+        nb = len(self.nodes) + 1
+        for node in self.post_order():
+            node.num = nb - node.po
+        self.rpo = sorted(self.nodes, key=lambda n: n.num)
 
-    def reset_rpo(self):
-        self.rpo = []
-        self.compute_rpo()
-
-    def post_order(self, start=None, visited=None, res=None):
+    def post_order(self):
         '''
         Return the nodes of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         '''
-        if visited is None:
-            res = []
-            visited = set()
-            start = self.entry
-        visited.add(start)
-        for suc in self.all_sucs(start):
-            if not suc in visited:
-                self.post_order(suc, visited, res)
-        res.append(start)
-        return res
+        def _visit(n, cnt):
+            visited.add(n)
+            for suc in self.all_sucs(n):
+                if not suc in visited:
+                    for cnt, s in _visit(suc, cnt):
+                        yield cnt, s
+            n.po = cnt
+            yield cnt + 1, n
+        visited = set()
+        for _, node in _visit(self.entry, 1):
+            yield node
 
     def draw(self, name, dname, draw_branches=True):
         from pydot import Dot, Edge
@@ -311,47 +297,6 @@ class Graph():
     def __iter__(self):
         for node in self.nodes:
             yield node
-
-
-def dom_cooper(graph):
-    '''Dominator algorithm from Cooper & al'''
-    def intersect(x, y):
-        while x != y:
-            while x.po < y.po:
-                x = dom[x]
-            while y.po < x.po:
-                y = dom[y]
-        return x
-
-    graph_rpo = graph.post_order()
-    for idx, node in enumerate(graph_rpo):
-        node.po = idx
-
-    dom = dict((n, None) for n in graph.nodes)
-    dom[graph.entry] = graph.entry
-
-    changed = True
-    while changed:
-        changed = False
-        processed = set([graph.entry])
-        for v in graph.rpo[1:]:
-            preds = set(graph.all_preds(v))
-            for p in preds:
-                if p in processed:
-                    pick = p
-                    preds.remove(pick)
-                    break
-            new_idom = pick
-            while preds:
-                p = preds.pop()
-                if dom[p] != None:
-                    new_idom = intersect(p, new_idom)
-            if dom[v] != new_idom:
-                dom[v] = new_idom
-                changed = True
-            processed.add(v)
-    dom[graph.entry] = None
-    return dom
 
 
 def dom_lt(graph):

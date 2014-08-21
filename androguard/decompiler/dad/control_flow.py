@@ -313,7 +313,7 @@ def short_circuit_struct(graph, idom, node_map):
                         merged_node.false = els.false
             done.add(node)
         if change:
-            graph.reset_rpo()
+            graph.compute_rpo()
 
 
 def while_block_struct(graph, node_map):
@@ -345,7 +345,7 @@ def while_block_struct(graph, node_map):
             graph.remove_node(node)
 
     if change:
-        graph.reset_rpo()
+        graph.compute_rpo()
 
 
 def catch_struct(graph, idoms):

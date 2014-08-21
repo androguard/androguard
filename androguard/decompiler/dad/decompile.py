@@ -120,7 +120,11 @@ class DvMethod():
         # a single statement node when possible. This also delete empty nodes.
 
         graph.simplify()
-        graph.reset_rpo()
+        graph.compute_rpo()
+
+        if not __debug__:
+            util.create_png(self.cls_name, self.name, graph,
+                                                    '/tmp/dad/pre-structured')
 
         identify_structures(graph, graph.immediate_dominators())
 
