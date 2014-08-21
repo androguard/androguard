@@ -207,7 +207,7 @@ class Writer(object):
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
-            if not cond.true in self.visited_nodes:
+            if cond.true: # in self.visited_nodes:
                 self.write('%sif (' % self.space())
                 cond.visit_cond(self)
                 self.write(') {\n')
