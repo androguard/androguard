@@ -57,9 +57,8 @@ class DvMethod():
         self.writer = None
         self.graph = None
 
-        access = method.get_access_flags()
-        self.access = [name for flag, name in
-                        util.ACCESS_FLAGS_METHODS.iteritems() if flag & access]
+        self.access = util.get_access_method(method.get_access_flags())
+
         desc = method.get_descriptor()
         self.type = desc.split(')')[-1]
         self.params_type = util.get_params_type(desc)
@@ -165,9 +164,15 @@ class DvClass():
         self.inner = False
 
         access = dvclass.get_access_flags()
-        self.access = [util.ACCESS_FLAGS_CLASSES[flag] for flag in
-                            util.ACCESS_FLAGS_CLASSES if flag & access]
-        self.prototype = '%s class %s' % (' '.join(self.access), self.name)
+        # If interface we remove the class and abstract keywords
+        if 0x200 & access:
+            prototype = '%s %s'
+            access -= 0x400
+        else:
+            prototype = '%s class %s'
+
+        self.access = util.get_access_class(access)
+        self.prototype = prototype % (' '.join(self.access), self.name)
 
         self.interfaces = dvclass.interfaces
         self.superclass = dvclass.get_superclassname()
@@ -222,13 +227,20 @@ class DvClass():
                         [n[1:-1].replace('/', '.') for n in interfaces])
 
         source.append('%s {\n' % self.prototype)
-        for field in self.fields.values():
-            field_access_flags = field.get_access_flags()
-            access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
-                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
+        for name, field in sorted(self.fields.iteritems()):
+            access = util.get_access_field(field.get_access_flags())
             f_type = util.get_type(field.get_descriptor())
-            name = field.get_name()
-            source.append('    %s %s %s;\n' % (' '.join(access), f_type, name))
+            source.append('    ')
+            if access:
+                source.append(' '.join(access))
+                source.append(' ')
+            if field.init_value:
+                value = field.init_value.value
+                if f_type == 'String':
+                    value = '"%s"' % value
+                source.append('%s %s = %s;\n' % (f_type, name, value))
+            else:
+                source.append('%s %s;\n' % (f_type, name))
 
         for klass in self.subclasses.values():
             source.append(klass.get_source())
