@@ -383,7 +383,7 @@ def fillednewarray(ins, vmap, ret):
 # filled-new-array/range {vCCCC..vNNNN} ( 16b )
 def fillednewarrayrange(ins, vmap, ret):
     logger.debug('FilledNewArrayRange : %s', ins.get_output())
-    a, c, n = get_variables(vmap, ins.AA, ins.BBBB, ins.CCCC, ins.NNNN)
+    a, c, n = get_variables(vmap, ins.AA, ins.CCCC, ins.NNNN)
     array_type = ins.cm.get_type(ins.BBBB)
     exp = FilledArrayExpression(a, array_type, [c, n])
     return AssignExpression(ret, exp)
@@ -1780,7 +1780,6 @@ INSTRUCTION_SET = [
     fillednewarray,       # filled-new-array
     fillednewarrayrange,  # filled-new-array/range
     fillarraydata,        # fill-array-data
-    # 'fill-array-data-payload': fillarraydatapayload
     throw,                # throw
     goto,                 # goto
     goto16,               # goto/16
