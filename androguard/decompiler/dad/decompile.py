@@ -335,7 +335,7 @@ def main():
     if cls_name == '*':
         machine.process_and_show()
     else:
-        cls = machine.get_class(cls_name)
+        cls = machine.get_class(cls_name.decode('utf8'))
         if cls is None:
             logger.error('%s not found.', cls_name)
         else:
