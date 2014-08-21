@@ -99,14 +99,13 @@ class Writer(object):
                 self.constructor = True
                 continue
             acc.append(modifier)
+        self.write('\n%s' % self.space())
+        if acc:
+            self.write('%s ' % ' '.join(acc))
         if self.constructor:
-            name = get_type(self.method.cls_name).split('.')[-1]
-            proto = '%s %s' % (' '.join(acc), name)
+            self.write(get_type(self.method.cls_name).split('.')[-1])
         else:
-            name = self.method.name
-            proto = '%s %s %s' % (
-                              ' '.join(acc), get_type(self.method.type), name)
-        self.write('\n%s%s' % (self.space(), proto))
+            self.write('%s %s' % (get_type(self.method.type), self.method.name))
         params = self.method.lparams
         if 'static' not in access:
             params = params[1:]

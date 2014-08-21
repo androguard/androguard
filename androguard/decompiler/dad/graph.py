@@ -205,9 +205,6 @@ class Graph():
                             continue
                         node_map[node] = suc
 
-                        add_edge = self.add_edge
-                        if node.in_catch:
-                            add_edge = self.add_catch_edge
                         for pred in self.all_preds(node):
                             pred.update_attribute_with(node_map)
                             if node not in self.sucs(pred):
