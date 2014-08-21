@@ -301,15 +301,14 @@ def build_node_from_block(block, vmap, gen_ret, exception_type=None):
     idx = block.get_start()
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
-        # check-cast
-        if opcode in (0x1f, -1):  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
+        if opcode == -1:  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
             idx += ins.get_length()
             continue
         try:
             _ins = INSTRUCTION_SET[opcode]
         except IndexError:
             logger.error('Unknown instruction : %s.', ins.get_name().lower())
-            raise
+            _ins = INSTRUCTION_SET[0]
         # fill-array-data
         if opcode == 0x26:
             fillaray = block.get_special_ins(idx)

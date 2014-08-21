@@ -334,7 +334,8 @@ def monitorexit(ins, vmap):
 def checkcast(ins, vmap):
     logger.debug('CheckCast: %s', ins.get_output())
     cast_type = util.get_type(ins.get_translated_kind())
-    return CheckCastExpression(get_variables(vmap, ins.AA), cast_type)
+    cast_var = get_variables(vmap, ins.AA)
+    return AssignExpression(cast_var, CheckCastExpression(cast_var, cast_type))
 
 
 # instance-of vA, vB ( 4b, 4b )
