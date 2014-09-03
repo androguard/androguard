@@ -5,6 +5,8 @@ from xml.dom import minidom
 MANIFEST = "tools/permissions/AndroidManifest.xml"
 STRINGS = "tools/permissions/strings.xml"
 
+NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
+
 manifest_document = minidom.parse( MANIFEST )
 strings_document = minidom.parse( STRINGS )
 
@@ -16,8 +18,8 @@ for i in strings_document.getElementsByTagName( "string" ) :
         pass
 
 for i in manifest_document.getElementsByTagName( "permission" ) :
-    label_strings = i.getAttribute( "android:label" )[8:]
-    description_strings = i.getAttribute( "android:description" )[8:]
+    label_strings = i.getAttributeNS( NS_ANDROID_URI, "label" )[8:]
+    description_strings = i.getAttribute( NS_ANDROID_URI, "description" )[8:]
 
     rdesc = "\"\""
     rlabel = "\"\""
@@ -31,7 +33,7 @@ for i in manifest_document.getElementsByTagName( "permission" ) :
         rlabel = dstrings[ label_strings ]
         rdesc = dstrings[ description_strings ]
    
-    name = i.getAttribute("android:name")
+    name = i.getAttributeNS(NS_ANDROID_URI, "name")
     name = name[ name.rfind(".") + 1: ]
 
-    print "\t\t\"%s\"" % name, ": [", "\"%s\"" % i.getAttribute( "android:protectionLevel" ), ",", rlabel, ",", rdesc, "],"
+    print "\t\t\"%s\"" % name, ": [", "\"%s\"" % i.getAttributeNS( NS_ANDROID_URI, "protectionLevel" ), ",", rlabel, ",", rdesc, "],"
