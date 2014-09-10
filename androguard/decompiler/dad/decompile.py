@@ -103,12 +103,9 @@ class DvMethod():
 
         use_defs, def_uses = build_def_use(graph, self.lparams)
         split_variables(graph, self.var_to_name, def_uses, use_defs)
-        # TODO: split_variables should update DU/UD
-        use_defs, def_uses = build_def_use(graph, self.lparams)
-
         dead_code_elimination(graph, def_uses, use_defs)
         register_propagation(graph, def_uses, use_defs)
-        
+
         place_declarations(graph, self.var_to_name, def_uses, use_defs)
         del def_uses, use_defs
         # After the DCE pass, some nodes may be empty, so we can simplify the
@@ -171,7 +168,8 @@ class DvClass():
         # If interface we remove the class and abstract keywords
         if 0x200 & access:
             prototype = '%s %s'
-            access -= 0x400
+            if access & 0x400:
+                access -= 0x400
         else:
             prototype = '%s class %s'
 
