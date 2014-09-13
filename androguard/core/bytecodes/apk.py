@@ -28,6 +28,8 @@ import re
 
 from xml.dom import minidom
 
+NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
+
 # 0: chilkat
 # 1: default python zipfile module
 # 2: patch zipfile module
@@ -192,11 +194,11 @@ class APK:
 
                 if self.xml[i] != None:
                     self.package = self.xml[i].documentElement.getAttribute("package")
-                    self.androidversion["Code"] = self.xml[i].documentElement.getAttribute("android:versionCode")
-                    self.androidversion["Name"] = self.xml[i].documentElement.getAttribute("android:versionName")
+                    self.androidversion["Code"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
+                    self.androidversion["Name"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
 
                     for item in self.xml[i].getElementsByTagName('uses-permission'):
-                        self.permissions.append(str(item.getAttribute("android:name")))
+                        self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
 
                     self.valid_apk = True
 
@@ -371,7 +373,7 @@ class APK:
         l = []
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
-                value = item.getAttribute(attribute)
+                value = item.getAttributeNS(NS_ANDROID_URI, attribute)
                 value = self.format_value( value )
 
 
@@ -403,7 +405,7 @@ class APK:
         """
         for i in self.xml :
             for item in self.xml[i].getElementsByTagName(tag_name) :
-                value = item.getAttribute(attribute)
+                value = item.getAttributeNS(NS_ANDROID_URI, attribute)
 
                 if len(value) > 0 :
                     return value
@@ -421,14 +423,14 @@ class APK:
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName("activity") :
                 for sitem in item.getElementsByTagName( "action" ) :
-                    val = sitem.getAttribute( "android:name" )
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
                     if val == "android.intent.action.MAIN" :
-                        x.add( item.getAttribute( "android:name" ) )
+                        x.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
                    
                 for sitem in item.getElementsByTagName( "category" ) :
-                    val = sitem.getAttribute( "android:name" )
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
                     if val == "android.intent.category.LAUNCHER" :
-                        y.add( item.getAttribute( "android:name" ) )
+                        y.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
                 
         z = x.intersection(y)
         if len(z) > 0 :
@@ -441,7 +443,7 @@ class APK:
 
             :rtype: a list of string
         """
-        return self.get_elements("activity", "android:name")
+        return self.get_elements("activity", "name")
 
     def get_services(self):
         """
@@ -449,7 +451,7 @@ class APK:
 
             :rtype: a list of string
         """
-        return self.get_elements("service", "android:name")
+        return self.get_elements("service", "name")
 
     def get_receivers(self) :
         """
@@ -457,7 +459,7 @@ class APK:
 
             :rtype: a list of string
         """
-        return self.get_elements("receiver", "android:name")
+        return self.get_elements("receiver", "name")
 
     def get_providers(self):
         """
@@ -465,7 +467,7 @@ class APK:
 
             :rtype: a list of string
         """
-        return self.get_elements("provider", "android:name")
+        return self.get_elements("provider", "name")
 
     def get_intent_filters(self, category, name):
         d = {}
@@ -475,14 +477,14 @@ class APK:
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(category):
-                if self.format_value(item.getAttribute("android:name")) == name:
+                if self.format_value(item.getAttributeNS(NS_ANDROID_URI, "name")) == name:
                     for sitem in item.getElementsByTagName("intent-filter"):
                         for ssitem in sitem.getElementsByTagName("action"):
-                            if ssitem.getAttribute("android:name") not in d["action"]:
-                                d["action"].append(ssitem.getAttribute("android:name"))
+                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") not in d["action"]:
+                                d["action"].append(ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
                         for ssitem in sitem.getElementsByTagName("category"):
-                            if ssitem.getAttribute("android:name") not in d["category"]:
-                                d["category"].append(ssitem.getAttribute("android:name"))
+                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") not in d["category"]:
+                                d["category"].append(ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
 
         if not d["action"]:
             del d["action"]
@@ -528,7 +530,7 @@ class APK:
 
             :rtype: string
         """
-        return self.get_element("uses-sdk", "android:maxSdkVersion")
+        return self.get_element("uses-sdk", "maxSdkVersion")
 
     def get_min_sdk_version(self):
         """
@@ -536,7 +538,7 @@ class APK:
 
             :rtype: string
         """
-        return self.get_element("uses-sdk", "android:minSdkVersion")
+        return self.get_element("uses-sdk", "minSdkVersion")
 
     def get_target_sdk_version(self) :
         """
@@ -544,7 +546,7 @@ class APK:
 
             :rtype: string
         """
-        return self.get_element( "uses-sdk", "android:targetSdkVersion" )
+        return self.get_element( "uses-sdk", "targetSdkVersion" )
 
     def get_libraries(self) :
         """
@@ -552,7 +554,7 @@ class APK:
 
             :rtype: list
         """
-        return self.get_elements( "uses-library", "android:name" )
+        return self.get_elements( "uses-library", "name" )
 
     def get_certificate(self, filename):
         """
