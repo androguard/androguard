@@ -102,7 +102,7 @@ class Constant(IRForm):
             else:
                 return visitor.visit_constant('true')
         elif self.type == 'class':
-            return visitor.visit_base_class(self.cst)
+            return visitor.visit_base_class(self.cst, data=self.cst)
         elif to_int:
             return visitor.visit_constant(self.cst2)
         else:
@@ -121,7 +121,7 @@ class BaseClass(IRForm):
         return True
 
     def visit(self, visitor):
-        return visitor.visit_base_class(self.cls)
+        return visitor.visit_base_class(self.cls, data=self.cls)
 
     def __str__(self):
         return 'BASECLASS_%s' % self.cls
@@ -163,7 +163,7 @@ class Param(Variable):
         self.type = atype
 
     def visit(self, visitor):
-        return visitor.visit_param(self.v)
+        return visitor.visit_param(self.v, data=self.type)
 
     def __str__(self):
         return 'PARAM_%s' % self.name
@@ -331,7 +331,7 @@ class ArrayStoreInstruction(IRForm):
     def visit(self, visitor):
         v_m = self.var_map
         return visitor.visit_astore(v_m[self.array],
-                                    v_m[self.index], v_m[self.rhs])
+                                    v_m[self.index], v_m[self.rhs], data=self)
 
     def replace_var(self, old, new):
         if self.rhs == old:
@@ -439,7 +439,7 @@ class InstanceInstruction(IRForm):
     def visit(self, visitor):
         v_m = self.var_map
         return visitor.visit_put_instance(v_m[self.lhs],
-                                          self.name, v_m[self.rhs])
+                                          self.name, v_m[self.rhs], data=self.atype)
 
     def replace_var(self, old, new):
         if self.lhs == old:
@@ -486,7 +486,7 @@ class NewInstance(IRForm):
         return []
 
     def visit(self, visitor):
-        return visitor.visit_new(self.type)
+        return visitor.visit_new(self.type, data=self)
 
     def replace(self, old, new):
         pass
@@ -572,8 +572,8 @@ class InvokeInstruction(IRForm):
     def visit(self, visitor):
         v_m = self.var_map
         largs = [v_m[arg] for arg in self.args]
-        return visitor.visit_invoke(self.name, v_m[self.base], self.rtype,
-                                    self.ptype, largs)
+        return visitor.visit_invoke(self.name, v_m[self.base], self.ptype,
+                                    self.rtype, largs, self)
 
     def __str__(self):
         v_m = self.var_map
@@ -1006,7 +1006,7 @@ class MoveExceptionExpression(RefExpression):
         self.var_map[new.v] = new
 
     def visit(self, visitor):
-        return visitor.visit_move_exception(self.var_map[self.ref])
+        return visitor.visit_move_exception(self.var_map[self.ref], data=self)
 
     def __str__(self):
         return 'MOVE_EXCEPT %s' % self.var_map[self.ref]
@@ -1302,7 +1302,7 @@ class InstanceExpression(IRForm):
         return self.var_map[self.arg].get_used_vars()
 
     def visit(self, visitor):
-        return visitor.visit_get_instance(self.var_map[self.arg], self.name)
+        return visitor.visit_get_instance(self.var_map[self.arg], self.name, data=self.ftype)
 
     def replace_var(self, old, new):
         self.arg = new.v

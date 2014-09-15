@@ -491,6 +491,14 @@ class DecompilerDAD:
 
         return result
 
+    def get_source_class_ext(self, _class):
+        c = decompile.DvClass(_class, self.vmx)
+        c.process()
+
+        result = c.get_source_ext()
+
+        return result
+
     def display_all(self, _class):
         result = self.get_source_class(_class)
 
