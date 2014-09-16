@@ -49,6 +49,7 @@ def auto_vm(filename):
 class DvMethod():
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
+        self.method = method # EncodedMethod linked to have more info in DvMethod
         self.start_block = next(methanalysis.get_basic_blocks().get(), None)
         self.cls_name = method.get_class_name()
         self.name = method.get_name()
@@ -141,8 +142,14 @@ class DvMethod():
             return '%s' % self.writer
         return ''
 
+    def get_source_ext(self):
+        if self.writer:
+            return self.writer.str_ext()
+        return []
+
     def __repr__(self):
-        return 'Method %s' % self.name
+        #return 'Method %s' % self.name
+        return 'class DvMethod: %s' % self.name
 
 
 class DvClass():
@@ -252,6 +259,60 @@ class DvClass():
                 source.append(method.get_source())
         source.append('}\n')
         return ''.join(source)
+
+    #NB: we cannot call it several times in a row because
+    #    some fields are rewritten based on their old value
+    #    such as self.superclass for instance
+    def get_source_ext(self):
+        source = []
+        if not self.inner and self.package:
+            source.append(('PACKAGE', [('PACKAGE_START', 'package '), ('NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')]))
+
+        list_proto = []
+        list_proto.append(('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
+        list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
+        if self.superclass is not None:
+            self.superclass = self.superclass[1:-1].replace('/', '.')
+            if self.superclass.split('.')[-1] == 'Object':
+                self.superclass = None
+            if self.superclass is not None:
+                list_proto.append(('EXTEND',' extends '))
+                list_proto.append(('NAME_SUPERCLASS', '%s' % self.superclass))
+        if self.interfaces is not None:
+            interfaces = self.interfaces[1:-1].split(' ')
+            list_proto.append(('IMPLEMENTS', ' implements '))
+            for i in range(len(interfaces)):
+                if i != 0:
+                    list_proto.append(('COMMA',', '))
+                list_proto.append(('NAME_INTERFACE', interfaces[i][1:-1].replace('/', '.')))
+        list_proto.append(('PROTOTYPE_END', ' {\n'))
+        source.append(("PROTOTYPE", list_proto))
+
+        for field in self.fields.values():
+            field_access_flags = field.get_access_flags()
+            access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
+                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
+            f_type = util.get_type(field.get_descriptor())
+            name = field.get_name()
+            if access:
+                access_str = '    %s ' % ' '.join(access)
+            else:
+                access_str = '    '
+            source.append(('FIELD', [('FIELD_ACCESS', access_str),
+                                     ('FIELD_TYPE', '%s' % f_type),
+                                     ('SPACE', ' '),
+                                     ('NAME_FIELD', '%s' % name, f_type, field),
+                                     ('FIELD_END', ';\n')]))
+
+        #TODO: call get_source_ext for each subclass?
+        for klass in self.subclasses.values():
+            source.append((klass, klass.get_source()))
+
+        for _, method in self.methods.iteritems():
+            if isinstance(method, DvMethod):
+                source.append(("METHOD", method.get_source_ext()))
+        source.append(("CLASS_END", [('CLASS_END', '}\n')]))
+        return source
 
     def show_source(self):
         print self.get_source()

@@ -9,7 +9,7 @@ setup(
     scripts = ['androaxml.py', 'androcsign.py', 'androdiff.py', 'androgexf.py',
                'androlyze.py', 'andromercury.py', 'androrisk.py', 'androsign.py',
                'androsim.py', 'androxgmml.py', 'apkviewer.py',
-               'androdd.py', 'androapkinfo.py',
+               'androdd.py', 'androapkinfo.py', 'androgui.py',
                ],
     install_requires=['distribute'],
 )

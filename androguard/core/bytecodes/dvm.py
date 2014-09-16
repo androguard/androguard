@@ -3419,6 +3419,9 @@ class ClassDefItem:
     def get_source(self):
       return self.__CM.decompiler_ob.get_source_class(self)
 
+    def get_source_ext(self):
+      return self.__CM.decompiler_ob.get_source_class_ext(self)
+
     def set_name(self, value) :
         self.__CM.set_hook_class_name( self, value )
 
@@ -7100,14 +7103,32 @@ class ClassManager:
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
+          debug("try deleting old name in python...")
           try:
             delattr(class_def, name)
+            debug("success with regular name")
           except AttributeError:
-            python_export = False
+            debug("WARNING: fail with regular name")
+            #python_export = False
+
+            try:
+              name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
+            except AttributeError:
+              name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
+  
+            try:
+              delattr(class_def, name)
+              debug("success with name containing prototype")
+            except AttributeError:
+              debug("WARNING: fail with name containing prototype")
+              python_export = False
 
           if python_export:
             name = "METHOD_" + bytecode.FormatNameToPython(value)
             setattr(class_def, name, encoded_method)
+            debug("new name in python: created: %s." % name)
+          else:
+            debug("skipping creating new name in python")
 
         method.reload()
 
@@ -7511,13 +7532,15 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         return self.CM.get_type( idx )
 
-    def get_classes_names(self) :
+    def get_classes_names(self, update=False) :
         """
             Return the names of classes
 
+            :param update: True indicates to recompute the list. 
+                           Maybe needed after using a MyClass.set_name().
             :rtype: a list of string
         """
-        if self.classes_names == None :
+        if self.classes_names == None or update :
             self.classes_names = [ i.get_name() for i in self.classes.class_def ]
         return self.classes_names
 
