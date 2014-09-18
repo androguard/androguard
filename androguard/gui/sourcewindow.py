@@ -7,40 +7,36 @@ from androguard.gui.renamewindow import RenameDialog
 from androguard.core.bytecodes.dvm import EncodedField, EncodedMethod
 from androguard.decompiler.dad.decompile import DvMethod
 
-import sys
+import sys, os
+
+BINDINGS_NAMES = ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']
 
 class SourceDocument(QtGui.QTextDocument):
-    '''XXX
-    '''
+    '''QTextDocument associated with the SourceWindow.'''
 
     def __init__(self, parent=None, lines=[]):
         super(SourceDocument, self).__init__(parent)
         self.parent = parent
 
-#        print lines
         cursor = QtGui.QTextCursor(self) # position=0x0
         state = 0
-        # save the cursor position before each interesting element
         self.binding = {}
-        #TODO: we need to find a way to scroll to the right place because
-        #      moving the cursor is not enough. Indeed if it is already in the window
-        #      it does not do nothing
 
+        # save the cursor position before each interesting element
         for section, L in lines:
             for t in L:
-                if t[0] in ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']:
+                if t[0] in BINDINGS_NAMES:
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
-#        print self.binding
 
-class SourceWindow(QtGui.QTextEdit):
-#class SourceWindow(QtGui.QTextBrowser):
+#class SourceWindow(QtGui.QTextEdit):
+class SourceWindow(QtGui.QTextBrowser):
     '''Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
         path: class FQN
         title: last part of the class FQN
-        class_item: ClassDefItem
+        class_item: ClassDefItem i.e. class.java object for which we create the tab
     '''
 
     def __init__(self, parent=None, win=None, path=None):
@@ -51,12 +47,18 @@ class SourceWindow(QtGui.QTextEdit):
         self.path = path
         self.title = path.split("/")[-1].replace(';', '')
 
+        self.ospath = "/".join(path.split("/")[:-1])[1:]
+        self.osfile = self.title + ".html"
+        try:
+            os.makedirs(self.ospath)
+        except OSError:
+            pass
+
         arg = class2func(self.path)
         self.class_item = getattr(self.mainwin.d, arg)
 
         self.createActions()
         self.setReadOnly(True)
-        #self.createFormatSelection()
 
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
@@ -65,72 +67,57 @@ class SourceWindow(QtGui.QTextEdit):
         # it is called in MainWindow.currentTabChanged() function
         # that will be called when displaying the tab
 
-        self.mainwin.central.addTab(self, self.title)
-        self.mainwin.central.setTabToolTip(self.mainwin.central.indexOf(self), self.path)
-
     def browse_to_method(self, method):
         '''Scroll to the right place were the method is.
 
            TODO: implement it, because does not work for now.
         '''
 
+        #TODO: we need to find a way to scroll to the right place because
+        #      moving the cursor is not enough. Indeed if it is already in the window
+        #      it does not do nothing
+
         #TODO: idea, highlight the method in the screen so we do not have to search for it
 
         androconf.debug("Browsing to %s -> %s" % (self.path, method))
 
         # debug
-        if False:
-            for k, v in self.doc.infoBlocks.items():
-                print k
-                print v
-                print "-"*10
-
-        # tests
-        cursor = self.textCursor()
-        cursor.setPosition(0)
-        self.setTextCursor(cursor)
-        self.ensureCursorVisible()
-
-        # tests 2
-#        cursor.setPosition(self.doc.infoBlocks['METHODS'][method])
-#        self.setTextCursor(cursor)
-#        self.ensureCursorVisible()
+#        if False:
+#            for k, v in self.doc.infoBlocks.items():
+#                print k
+#                print v
+#                print "-"*10
 
     def reload_java_sources(self):
-        '''
+        '''Reload completely the sources by asking Androguard
+           to decompile it again. Useful when:
+            - an element has been renamed to propagate the info
+            - the current tab is changed because we do not know what user
+              did since then, so we need to propagate previous changes as well
         '''
 
         androconf.debug("Getting sources for %s" % self.path)
         lines = self.class_item.get_source_ext()
+
+        filename = os.path.join(self.ospath, self.osfile)
+        androconf.debug("Writing file: %s" % filename)
+        fd = open(filename, 'wb')
+        for section, L in lines:
+            for t in L:
+#                if t[0] in BINDINGS_NAMES:
+#                    self.binding[cursor.position()] = t
+                fd.write(t[1])
+        fd.close()
+
         #TODO: delete doc when tab is closed? not deleted by "self" :(
         if hasattr(self, "doc"):
             del self.doc
         self.doc = SourceDocument(parent=self, lines=lines)
         self.setDocument(self.doc)
-        #TODO: font in this class
-        #self.setFont(self.mainwin.font)
-        #self.setPlainText(text)
-        #TODO: no need to save hightlighter. highlighBlock will automatically be called
+
+        #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
         Highlighter(self.doc)
-#        self.setFont(self.mainwin.font)
-
-#        #DEBUG / debug TODO temporaire
-#        ## hardcoded highlight
-#        cursor = self.textCursor()
-#        cursor.setPosition(90)
-#        #cursor.movePosition(QtGui.QTextCursor.EndOfWord, QtGui.QTextCursor.KeepAnchor, 1)
-#        cursor.setPosition(95, QtGui.QTextCursor.KeepAnchor)
-#        cursor.mergeCharFormat(self.formatSelection)
-
-#    def mousePressEvent(self, event):
-#        print "mouse pressed!"
-#        print event
-#        cursor = self.textCursor()
-#        cursor.setPosition(90)
-#        #cursor.movePosition(QtGui.QTextCursor.EndOfWord, QtGui.QTextCursor.KeepAnchor, 1)
-#        cursor.setPosition(95, QtGui.QTextCursor.KeepAnchor)
-#        cursor.mergeCharFormat(self.formatSelection)
 
     def createActions(self):
         self.xrefAct = QtGui.QAction("Xref from...", self,
@@ -153,59 +140,6 @@ class SourceWindow(QtGui.QTextEdit):
         menu.addAction(self.renameAct)
         menu.addAction(self.infoAct)
         menu.exec_(QtGui.QCursor.pos())
-
-#    def createFormatSelection(self):
-#        self.formatSelection = QtGui.QTextCharFormat()
-#        self.formatSelection.setBackground(QtGui.QBrush(QtGui.QColor("yellow")))
-
-    def get_selection_info(self, selection):
-        '''Main function for looking for a selected symbol over the source file'''
-
-        res = self.get_selection_path_and_method(selection)
-        if not res:
-            androconf.debug("No corresponding method found in source file")
-            res = self.get_selection_path_and_method_in_xrefs(selection)
-            if not res:
-                androconf.debug("No corresponding method found in xrefs source file")
-                return None
-        return res
-
-    def get_selection_path_and_method(self, selection):
-        '''Look for a class -> method with method is the string name selection
-           NB: does not take into account when several methods from
-           the same objet have the same name (with different number of parameters)
-           TODO: fix that
-        '''
-
-        methods = self.class_item.get_methods()
-        #print methods
-        for m in methods:
-            #print m.name
-            if m.name == selection:
-                return (self.path, m.name)
-        return None
-
-    def get_selection_path_and_method_in_xrefs(self, selection):
-        '''Look for a class -> method where there is a call
-           inside the method to a function with the string name selection
-           NB: does not take into account when several methods from
-           different objets have the same name.
-           TODO: fix that
-        '''
-
-        methods = self.class_item.get_methods()
-        #print methods
-        for m in methods:
-            #print m.name
-            if not hasattr(m, "XREFfrom"):
-                continue
-            xref_items = m.XREFto.items
-            for i in range(len(xref_items)):
-                class_ = xref_items[i][0].get_class_name()
-                method_ = xref_items[i][0].get_name()
-                if method_ == selection:
-                    return (class_, method_)
-        return None
 
     def actionXref(self):
         cursor = self.textCursor()
@@ -335,7 +269,6 @@ class SourceWindow(QtGui.QTextEdit):
         '''
 
         methods = self.class_item.get_methods()
-        #print [m.name for m in methods]
         for m in methods:
             if m.name == meth_name:
                 return True
@@ -348,7 +281,6 @@ class SourceWindow(QtGui.QTextEdit):
         '''
 
         fields = self.class_item.get_fields()
-        print [f.name for f in fields]
         for f in fields:
             if f.name == field_name:
                 return True

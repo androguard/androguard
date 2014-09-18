@@ -52,8 +52,18 @@ def classdot2class(path):
         return path
 
     new_name = 'L' + path.replace('.', '/') + ';'
-#    print "classdot2class"
-#    print path + " ====> " + new_name
+    return new_name
+
+def class2dotclass(path):
+    '''Opposite of classdot2class.
+       Convert a path 'Landroid/support/v4/app/ActivityCompat'
+       into a string such as 'android.support.v4.app.ActivityCompat'
+    '''
+    if path[0] != 'L' or path[-1] != ';':
+        print "WARNING: %s not a Lclass; name" % path
+        return path
+
+    new_name = path[1:-1].replace("/", ".")
     return new_name
 
 def proto2methodprotofunc(proto):
