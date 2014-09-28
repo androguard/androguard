@@ -49,7 +49,7 @@ def auto_vm(filename):
 class DvMethod():
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
-        self.method = method # EncodedMethod linked to have more info in DvMethod
+        self.method = method
         self.start_block = next(methanalysis.get_basic_blocks().get(), None)
         self.cls_name = method.get_class_name()
         self.name = method.get_name()
@@ -266,25 +266,29 @@ class DvClass():
     def get_source_ext(self):
         source = []
         if not self.inner and self.package:
-            source.append(('PACKAGE', [('PACKAGE_START', 'package '), ('NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')]))
-
+            source.append(
+            ('PACKAGE', [('PACKAGE_START', 'package '),
+                         ('NAME_PACKAGE', '%s' % self.package),
+                         ('PACKAGE_END', ';\n')]))
         list_proto = []
-        list_proto.append(('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
+        list_proto.append(
+            ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
         list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
         if self.superclass is not None:
             self.superclass = self.superclass[1:-1].replace('/', '.')
             if self.superclass.split('.')[-1] == 'Object':
                 self.superclass = None
             if self.superclass is not None:
-                list_proto.append(('EXTEND',' extends '))
+                list_proto.append(('EXTEND', ' extends '))
                 list_proto.append(('NAME_SUPERCLASS', '%s' % self.superclass))
         if self.interfaces is not None:
             interfaces = self.interfaces[1:-1].split(' ')
             list_proto.append(('IMPLEMENTS', ' implements '))
             for i in range(len(interfaces)):
                 if i != 0:
-                    list_proto.append(('COMMA',', '))
-                list_proto.append(('NAME_INTERFACE', interfaces[i][1:-1].replace('/', '.')))
+                    list_proto.append(('COMMA', ', '))
+                list_proto.append(
+                    ('NAME_INTERFACE', interfaces[i][1:-1].replace('/', '.')))
         list_proto.append(('PROTOTYPE_END', ' {\n'))
         source.append(("PROTOTYPE", list_proto))
 
@@ -298,11 +302,12 @@ class DvClass():
                 access_str = '    %s ' % ' '.join(access)
             else:
                 access_str = '    '
-            source.append(('FIELD', [('FIELD_ACCESS', access_str),
-                                     ('FIELD_TYPE', '%s' % f_type),
-                                     ('SPACE', ' '),
-                                     ('NAME_FIELD', '%s' % name, f_type, field),
-                                     ('FIELD_END', ';\n')]))
+            source.append(
+                ('FIELD', [('FIELD_ACCESS', access_str),
+                           ('FIELD_TYPE', '%s' % f_type),
+                           ('SPACE', ' '),
+                           ('NAME_FIELD', '%s' % name, f_type, field),
+                           ('FIELD_END', ';\n')]))
 
         #TODO: call get_source_ext for each subclass?
         for klass in self.subclasses.values():
@@ -414,4 +419,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

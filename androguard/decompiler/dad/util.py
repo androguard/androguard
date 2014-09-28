@@ -87,18 +87,18 @@ TYPE_LEN = {
 
 
 def get_access_class(access):
-  sorted_access = [i for i in ACCESS_ORDER if i & access]
-  return [ACCESS_FLAGS_CLASSES[flag] for flag in sorted_access]
+    sorted_access = [i for i in ACCESS_ORDER if i & access]
+    return [ACCESS_FLAGS_CLASSES[flag] for flag in sorted_access]
 
 
 def get_access_method(access):
-  sorted_access = [i for i in ACCESS_ORDER if i & access]
-  return [ACCESS_FLAGS_METHODS[flag] for flag in sorted_access]
+    sorted_access = [i for i in ACCESS_ORDER if i & access]
+    return [ACCESS_FLAGS_METHODS[flag] for flag in sorted_access]
 
 
 def get_access_field(access):
-  sorted_access = [i for i in ACCESS_ORDER if i & access]
-  return [ACCESS_FLAGS_FIELDS[flag] for flag in sorted_access]
+    sorted_access = [i for i in ACCESS_ORDER if i & access]
+    return [ACCESS_FLAGS_FIELDS[flag] for flag in sorted_access]
 
 
 def build_path(graph, node1, node2, path=None):
@@ -207,4 +207,3 @@ def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
     m_name = ''.join(x for x in meth_name if x.isalnum())
     name = ''.join((cls_name.split('/')[-1][:-1], '#', m_name))
     graph.draw(name, dir_name)
-

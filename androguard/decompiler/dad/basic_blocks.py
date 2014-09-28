@@ -354,4 +354,3 @@ def build_node_from_block(block, vmap, gen_ret, exception_type=None):
             lins.pop()
         node = StatementBlock(name, lins)
     return node
-

@@ -103,8 +103,10 @@ class Writer(object):
             rhs.visit(self)
         self.end_ins()
 
-    #TODO: prefer this class as write_ind_visit_end that should be deprecated at the end
-    def write_ind_visit_end_ext(self, lhs, before, s, after, rhs=None, data=None, subsection='UNKNOWN_SUBSECTION'):
+    #TODO: prefer this class as write_ind_visit_end that should be deprecated
+    # at the end
+    def write_ind_visit_end_ext(self, lhs, before, s, after, rhs=None,
+                                data=None, subsection='UNKNOWN_SUBSECTION'):
         self.write_ind()
         lhs.visit(self)
         self.write(before + s + after)
@@ -121,7 +123,8 @@ class Writer(object):
             if rhs.op in '+-' and isinstance(exp_rhs, Constant) and\
                                   exp_rhs.get_int_value() == 1:
                 return self.write_ind_visit_end(lhs, rhs.op * 2, data=rhs)
-            return self.write_ind_visit_end(lhs, ' %s= ' % rhs.op, exp_rhs, data=rhs)
+            return self.write_ind_visit_end(
+                lhs, ' %s= ' % rhs.op, exp_rhs, data=rhs)
         return self.write_ind_visit_end(lhs, ' = ', rhs, data=rhs)
 
     def visit_ins(self, ins):
@@ -146,10 +149,14 @@ class Writer(object):
             self.write(name)
             self.write_ext(('NAME_METHOD_PROTOTYPE', '%s' % name, self.method))
         else:
-            self.write('%s %s' % (get_type(self.method.type), self.method.name))
-            self.write_ext(('PROTOTYPE_TYPE', '%s' % get_type(self.method.type)))
+            self.write(
+                '%s %s' % (get_type(self.method.type), self.method.name))
+            self.write_ext(
+                ('PROTOTYPE_TYPE', '%s' % get_type(self.method.type)))
             self.write_ext(('SPACE', ' '))
-            self.write_ext(('NAME_METHOD_PROTOTYPE', '%s' % self.method.name, self.method))
+            self.write_ext(
+                ('NAME_METHOD_PROTOTYPE',
+                '%s' % self.method.name, self.method))
         params = self.method.lparams
         if 'static' not in access:
             params = params[1:]
@@ -166,7 +173,8 @@ class Writer(object):
                     first = False
                 self.write_ext(('ARG_TYPE', '%s' % get_type(p_type)))
                 self.write_ext(('SPACE', ' '))
-                self.write_ext(('NAME_ARG', 'p%s' % param, p_type, self.method))
+                self.write_ext(
+                    ('NAME_ARG', 'p%s' % param, p_type, self.method))
         self.write_ext(('PARENTHESIS_END', ')'))
         self.write('(%s)' % proto)
         if self.graph is None:
@@ -203,7 +211,7 @@ class Writer(object):
                 loop.neg()
                 loop.true, loop.false = loop.false, loop.true
             self.write('%swhile (' % self.space())
-            self.write_ext(('WHILE','%swhile (' % self.space()))
+            self.write_ext(('WHILE', '%swhile (' % self.space()))
             loop.visit_cond(self)
             self.write(') {\n')
             self.write_ext(('WHILE_START', ') {\n'))
@@ -244,10 +252,12 @@ class Writer(object):
     def visit_cond_node(self, cond):
         follow = cond.follow['if']
         if cond.false is cond.true:
-            self.write('%s// Both branches of the conditions point to the same'
+            self.write('%s// Both branches of the condition point to the same'
                        ' code.\n' % self.space())
-            self.write_ext(('COMMENT_ERROR_MSG', '%s// Both branches of the conditions point to the same'
-                       ' code.\n' % self.space()))
+            self.write_ext(
+                ('COMMENT_ERROR_MSG',
+                 '%s// Both branches of the condition point to the same'
+                 ' code.\n' % self.space()))
             self.write('%s// if (' % self.space())
             self.write_ext(('COMMENT_IF', '%s// if (' % self.space()))
             cond.visit_cond(self)
@@ -277,7 +287,7 @@ class Writer(object):
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
-            if cond.true: # in self.visited_nodes:
+            if cond.true:  # in self.visited_nodes:
                 self.write('%sif (' % self.space(), data="IF")
                 cond.visit_cond(self)
                 self.write(') {\n', data="IF_TRUE")
@@ -332,7 +342,8 @@ class Writer(object):
                 continue
             self.inc_ind()
             for case in switch.node_to_case[node]:
-                self.write('%scase %d:\n' % (self.space(), case), data="CASE_XX")
+                self.write(
+                    '%scase %d:\n' % (self.space(), case), data="CASE_XX")
             if i + 1 < len(cases):
                 self.next_case = cases[i + 1]
             else:
@@ -381,7 +392,6 @@ class Writer(object):
         self.write('\n', data="NEWLINE_END_TRY")
         self.visit_node(self.try_follow.pop())
 
-
     def visit_catch_node(self, catch_node):
         self.write(' catch (', data="CATCH")
         catch_node.visit_exception(self)
@@ -411,7 +421,7 @@ class Writer(object):
     def visit_constant(self, cst):
         if isinstance(cst, str) or isinstance(cst, unicode):
             return self.write(string(cst), data="CONSTANT_STRING")
-        self.write('%r' % cst, data="CONSTANT_INTEGER") # INTEGER or also others?
+        self.write('%r' % cst, data="CONSTANT_INTEGER")  # INTEGER or also others?
 
     def visit_base_class(self, cls, data=None):
         self.write(cls)
@@ -421,7 +431,8 @@ class Writer(object):
         var_type = var.get_type() or 'unknownType'
         if not var.declared:
             self.write('%s ' % get_type(var_type))
-            self.write_ext(('VARIABLE_TYPE', '%s' % get_type(var_type), var_type))
+            self.write_ext(
+                ('VARIABLE_TYPE', '%s' % get_type(var_type), var_type))
             self.write_ext(('SPACE', ' '))
             var.declared = True
         self.write('v%s' % var.name)
@@ -465,12 +476,15 @@ class Writer(object):
         self.end_ins()
 
     def visit_put_instance(self, lhs, name, rhs, data=None):
-        self.write_ind_visit_end_ext(lhs, '.', '%s' % name, ' = ', rhs, data=data, subsection='NAME_CLASS_ASSIGNMENT')
+        self.write_ind_visit_end_ext(
+            lhs, '.', '%s' % name, ' = ', rhs,
+            data=data, subsection='NAME_CLASS_ASSIGNMENT')
 
     def visit_new(self, atype, data=None):
         self.write('new %s' % get_type(atype))
         self.write_ext(('NEW', 'new '))
-        self.write_ext(('NAME_CLASS_NEW', '%s' % get_type(atype), data.type, data))
+        self.write_ext(
+            ('NAME_CLASS_NEW', '%s' % get_type(atype), data.type, data))
 
     def visit_invoke(self, name, base, ptype, rtype, args, invokeInstr=None):
         if isinstance(base, ThisParam):
@@ -490,7 +504,8 @@ class Writer(object):
                     if isinstance(base2base, NewInstance):
                         call_name = "%s -> %s" % (base2base.type, name)
                         break
-                    elif hasattr(base2base, "base") and hasattr(base2base, "var_map"):
+                    elif (hasattr(base2base, "base") and
+                          hasattr(base2base, "var_map")):
                         continue
                     else:
                         call_name = "UNKNOWN_TODO"
@@ -503,7 +518,9 @@ class Writer(object):
                 call_name = "UNKNOWN_TODO2"
             self.write('.%s' % name)
             self.write_ext(('INVOKE', '.'))
-            self.write_ext(('NAME_METHOD_INVOKE', '%s' % name, call_name, ptype, rtype, base, invokeInstr))
+            self.write_ext(
+                ('NAME_METHOD_INVOKE',
+                 '%s' % name, call_name, ptype, rtype, base, invokeInstr))
         self.write('(', data="PARAM_START")
         comma = False
         for arg in args:
@@ -567,8 +584,8 @@ class Writer(object):
         elem_size = value.element_width
         if elem_size == 4:
             for i in range(0, value.size * 4, 4):
-                tab.append('%s' % unpack('i', data[i:i+4])[0])
-        else: # FIXME: other cases
+                tab.append('%s' % unpack('i', data[i:i + 4])[0])
+        else:  # FIXME: other cases
             for i in range(value.size):
                 tab.append('%s' % unpack('b', data[i])[0])
         self.write(', '.join(tab), data="COMMA")
@@ -579,9 +596,11 @@ class Writer(object):
         var.declared = True
         var_type = var.get_type() or 'unknownType'
         self.write('%s v%s' % (get_type(var_type), var.name))
-        self.write_ext(('EXCEPTION_TYPE', '%s' % get_type(var_type), data.type))
+        self.write_ext(
+            ('EXCEPTION_TYPE', '%s' % get_type(var_type), data.type))
         self.write_ext(('SPACE', ' '))
-        self.write_ext(('NAME_CLASS_EXCEPTION', 'v%s' % var.value(), data.type, data))
+        self.write_ext(
+            ('NAME_CLASS_EXCEPTION', 'v%s' % var.value(), data.type, data))
 
     def visit_monitor_enter(self, ref):
         self.write_ind()
@@ -659,8 +678,8 @@ def string(s):
             continue
         elif c <= '\x7f':
             if c in ('\r', '\n', '\t'):
-              ret.append(c.encode('unicode-escape'))
-              continue
+                ret.append(c.encode('unicode-escape'))
+                continue
         i = ord(c)
         ret.append('\\u')
         ret.append('%x' % (i >> 12))
@@ -669,4 +688,3 @@ def string(s):
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
     return ''.join(ret)
-

@@ -337,7 +337,6 @@ class ArrayStoreInstruction(IRForm):
         self.var_map.pop(old)
         self.var_map[new.v] = new
 
-
     def replace(self, old, new):
         v_m = self.var_map
         if old in v_m:
@@ -362,7 +361,8 @@ class ArrayStoreInstruction(IRForm):
 
     def __str__(self):
         v_m = self.var_map
-        return '%s[%s] = %s' % (v_m[self.array], v_m[self.index], v_m[self.rhs])
+        return '%s[%s] = %s' % (
+            v_m[self.array], v_m[self.index], v_m[self.rhs])
 
 
 class StaticInstruction(IRForm):
@@ -405,7 +405,7 @@ class StaticInstruction(IRForm):
                 v_m[old] = new
 
     def __str__(self):
-      return '%s.%s = %s' % (self.cls, self.name, self.var_map[self.rhs])
+        return '%s.%s = %s' % (self.cls, self.name, self.var_map[self.rhs])
 
 
 class InstanceInstruction(IRForm):
@@ -432,8 +432,8 @@ class InstanceInstruction(IRForm):
 
     def visit(self, visitor):
         v_m = self.var_map
-        return visitor.visit_put_instance(v_m[self.lhs],
-                                          self.name, v_m[self.rhs], data=self.atype)
+        return visitor.visit_put_instance(
+            v_m[self.lhs], self.name, v_m[self.rhs], data=self.atype)
 
     def replace_var(self, old, new):
         if self.lhs == old:
@@ -902,10 +902,10 @@ class FilledArrayExpression(ArrayExpression):
                     v_m[new.value()] = new
                     new_args = []
                     for arg in self.args:
-                      if arg == old:
-                          new_args.append(new.v)
-                      else:
-                          new_args.append(arg)
+                        if arg == old:
+                            new_args.append(new.v)
+                        else:
+                            new_args.append(arg)
                     self.args = new_args
                 else:
                     v_m[old] = new
@@ -1308,7 +1308,8 @@ class InstanceExpression(IRForm):
         return self.var_map[self.arg].get_used_vars()
 
     def visit(self, visitor):
-        return visitor.visit_get_instance(self.var_map[self.arg], self.name, data=self.ftype)
+        return visitor.visit_get_instance(
+            self.var_map[self.arg], self.name, data=self.ftype)
 
     def replace_var(self, old, new):
         self.arg = new.v
@@ -1349,4 +1350,3 @@ class StaticExpression(IRForm):
 
     def __str__(self):
         return '%s.%s' % (self.cls, self.name)
-

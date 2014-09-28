@@ -281,7 +281,6 @@ class Graph():
 
         g.write_png('%s/%s.png' % (dname, name))
 
-
     def immediate_dominators(self):
         return dom_lt(self)
 
@@ -482,4 +481,3 @@ def construct(start_block, vmap, exceptions):
         graph.exit = lexit_nodes[0]
 
     return graph
-
