@@ -737,6 +737,7 @@ def FormatClassToPython(input) :
     i = input[:-1]
     i = i.replace("/", "_")
     i = i.replace("$", "_")
+    i = i.encode('ascii', errors='backslashreplace')
 
     return i
 
@@ -744,6 +745,7 @@ def FormatNameToPython(input) :
     i = input.replace("<", "")
     i = i.replace(">", "")
     i = i.replace("$", "_")
+    i = i.encode('ascii', errors='backslashreplace')
 
     return i
 
@@ -755,6 +757,7 @@ def FormatDescriptorToPython(input) :
     i = i.replace(")", "")
     i = i.replace(" ", "")
     i = i.replace("$", "")
+    i = i.encode('ascii', errors='backslashreplace')
 
     return i
 
