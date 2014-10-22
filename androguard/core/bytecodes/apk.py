@@ -39,7 +39,7 @@ import sys
 if sys.hexversion < 0x2070000 :
     try :
         import chilkat
-        ZIPMODULE = 0 
+        ZIPMODULE = 0
         # UNLOCK : change it with your valid key !
         try :
             CHILKAT_KEY = open("key.txt", "rb").read()
@@ -49,7 +49,7 @@ if sys.hexversion < 0x2070000 :
     except ImportError :
         ZIPMODULE = 1
 else :
-    ZIPMODULE = 1 
+    ZIPMODULE = 1
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip :
@@ -60,7 +60,7 @@ class ChilkatZip :
         self.zip.UnlockComponent( CHILKAT_KEY )
 
         self.zip.OpenFromMemory( raw, len(raw) )
-        
+
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
         while e != None :
@@ -75,7 +75,7 @@ class ChilkatZip :
         e = self.zip.FirstEntry()
         while e != None :
             e.get_FileName(filename)
-          
+
             if re.match(patterns, filename.getString()) != None :
                 el.append( e )
             e = e.NextEntry()
@@ -129,7 +129,7 @@ def sign_apk(filename, keystore, storepass):
 
 
 ######################################################## APK FORMAT ########################################################
-class APK:
+class APK(object):
     """
         This class can access to all elements in an APK file
 
@@ -382,7 +382,7 @@ class APK:
 
     def format_value(self, value) :
         if len(value) > 0 :
-            if value[0] == "." : 
+            if value[0] == "." :
                 value = self.package + value
             else :
                 v_dot = value.find(".")
@@ -426,12 +426,12 @@ class APK:
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
                     if val == "android.intent.action.MAIN" :
                         x.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
-                   
+
                 for sitem in item.getElementsByTagName( "category" ) :
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
                     if val == "android.intent.category.LAUNCHER" :
                         y.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
-                
+
         z = x.intersection(y)
         if len(z) > 0 :
             return self.format_value(z.pop())
@@ -516,7 +516,7 @@ class APK:
 
             if pos != -1 :
                 perm = i[pos+1:]
-            
+
             try :
                 l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
             except KeyError :
@@ -696,7 +696,7 @@ def show_Certificate(cert):
 UTF8_FLAG = 0x00000100
 
 
-class StringBlock:
+class StringBlock(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
         self._cache = {}
@@ -850,7 +850,7 @@ END_TAG                     = 3
 TEXT                        = 4
 
 
-class AXMLParser:
+class AXMLParser(object):
     def __init__(self, raw_buff):
         self.reset()
 
@@ -1129,7 +1129,7 @@ def complexToFloat(xcomplex):
     return (float)(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
-class AXMLPrinter:
+class AXMLPrinter(object):
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
         self.xmlns = False
@@ -1253,7 +1253,7 @@ RES_TABLE_TYPE_TYPE         = 0x0201
 RES_TABLE_TYPE_SPEC_TYPE    = 0x0202
 
 
-class ARSCParser:
+class ARSCParser(object):
     def __init__(self, raw_buff):
         self.analyzed = False
         self.buff = bytecode.BuffHandle(raw_buff)
@@ -1601,7 +1601,7 @@ class ARSCParser:
         return self.packages[package_name]
 
 
-class PackageContext:
+class PackageContext(object):
     def __init__(self, current_package, stringpool_main, mTableStrings, mKeyStrings):
         self.stringpool_main = stringpool_main
         self.mTableStrings = mTableStrings
@@ -1615,7 +1615,7 @@ class PackageContext:
         self.current_package.mResId = mResId
 
 
-class ARSCHeader:
+class ARSCHeader(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.type = unpack('<h', buff.read(2))[0]
@@ -1625,7 +1625,7 @@ class ARSCHeader:
         #print "ARSCHeader", hex(self.start), hex(self.type), hex(self.header_size), hex(self.size)
 
 
-class ARSCResTablePackage:
+class ARSCResTablePackage(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.id = unpack('<i', buff.read(4))[0]
@@ -1644,7 +1644,7 @@ class ARSCResTablePackage:
         return name
 
 
-class ARSCResTypeSpec:
+class ARSCResTypeSpec(object):
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1660,7 +1660,7 @@ class ARSCResTypeSpec:
             self.typespec_entries.append(unpack('<i', buff.read(4))[0])
 
 
-class ARSCResType:
+class ARSCResType(object):
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1680,7 +1680,7 @@ class ARSCResType:
         return self.parent.mTableStrings.getString(self.id - 1)
 
 
-class ARSCResTableConfig:
+class ARSCResTableConfig(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.size = unpack('<i', buff.read(4))[0]
@@ -1716,7 +1716,7 @@ class ARSCResTableConfig:
         return chr(x & 0x00ff) + chr((x & 0xff00) >> 8)
 
 
-class ARSCResTableEntry:
+class ARSCResTableEntry(object):
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
@@ -1748,7 +1748,7 @@ class ARSCResTableEntry:
         return (self.flags & 1) == 1
 
 
-class ARSCComplex:
+class ARSCComplex(object):
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1763,7 +1763,7 @@ class ARSCComplex:
         #print "ARSCComplex", hex(self.start), self.id_parent, self.count, repr(self.parent.mKeyStrings.getString(self.id_parent))
 
 
-class ARSCResStringPoolRef:
+class ARSCResStringPoolRef(object):
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent

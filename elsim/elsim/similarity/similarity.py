@@ -47,7 +47,7 @@ try :
 
     #   unsigned int *corig;
     #   unsigned int *ccmp;
-    #   
+    #
     #   float res;
     #};
 
@@ -61,11 +61,11 @@ try :
                     ("ccmp", c_size_t),
 
                     ("res", c_float),
-                ]    
-    
+                ]
+
     def new_zero_native() :
         return c_size_t( 0 )
-    
+
     NATIVE_LIB = True
 except :
     NATIVE_LIB = False
@@ -109,7 +109,7 @@ class SIMILARITYBase(object) :
            SNAPPY_COMPRESS : {},
            VCBLOCKSORT_COMPRESS : {},
         }
-        
+
         self.__rcaches = {
            ZLIB_COMPRESS : {},
            BZ2_COMPRESS : {},
@@ -121,14 +121,14 @@ class SIMILARITYBase(object) :
         }
 
         self.__ecaches = {}
-        
+
         self.level = 9
 
         if native_lib == True :
             self.new_zero = new_zero_native
         else :
             self.new_zero = new_zero_python
-    
+
     def set_level(self, level) :
         self.level = level
 
@@ -151,7 +151,7 @@ class SIMILARITYBase(object) :
         h = zlib.adler32( s )
         if h not in self.__caches[ self.ctype ] :
             self.__caches[ self.ctype ][ h ] = v
-    
+
     def add_in_rcaches(self, s, v, r) :
         h = zlib.adler32( s )
         if h not in self.__rcaches[ self.ctype ] :
@@ -165,13 +165,13 @@ class SIMILARITYBase(object) :
         h = zlib.adler32( s )
         if h not in self.__ecaches :
             self.__ecaches[ h ] = (v, r)
-    
+
     def get_in_ecaches(self, s1) :
         try :
             return self.__ecaches[ zlib.adler32( s1 ) ]
         except KeyError :
             return -1, -1
-    
+
     def __nb_caches(self, caches) :
         nb = 0
         for i in caches :
@@ -199,7 +199,7 @@ class SIMILARITYNative(SIMILARITYBase) :
         self._u.cmid.restype = c_int
         self._u.entropy.restype = c_double
         self._u.levenshtein.restype = c_uint
-        
+
         self._u.kolmogorov.restype = c_uint
         self._u.bennett.restype = c_double
         self._u.RDTSC.restype = c_double
@@ -229,7 +229,7 @@ class SIMILARITYNative(SIMILARITYBase) :
 
         corig = self.get_in_caches(s1)
         ccmp = self.get_in_caches(s2)
-        
+
         self.__libsim_t.corig = addressof( corig )
         self.__libsim_t.ccmp = addressof( ccmp )
 
@@ -249,11 +249,11 @@ class SIMILARITYNative(SIMILARITYBase) :
 
     def cmid(self, s1, s2) :
         return self._sim( s1, s2, self._u.cmid )
-    
+
     def kolmogorov(self, s1) :
         ret = self._u.kolmogorov( self.level, cast( s1, c_void_p ), len( s1 ) )
         return ret, 0
-    
+
     def bennett(self, s1) :
         ret = self._u.bennett( self.level, cast( s1, c_void_p ), len( s1 ) )
         return ret, 0
@@ -265,7 +265,7 @@ class SIMILARITYNative(SIMILARITYBase) :
 
         res = self._u.entropy( cast( s1, c_void_p ), len( s1 ) )
         self.add_in_ecaches( s1, res, 0 )
-        
+
         return res, 0
 
     def RDTSC(self) :
@@ -274,7 +274,7 @@ class SIMILARITYNative(SIMILARITYBase) :
     def levenshtein(self, s1, s2) :
         res = self._u.levenshtein( cast( s1, c_void_p ), len( s1 ), cast( s2, c_void_p ), len( s2 ) )
         return res, 0
-    
+
     def set_compress_type(self, t):
         self.ctype = t
         self._u.set_compress_type(t)
@@ -282,7 +282,7 @@ class SIMILARITYNative(SIMILARITYBase) :
 class SIMILARITYPython(SIMILARITYBase) :
     def __init__(self) :
         super(SIMILARITYPython, self).__init__()
-    
+
     def set_compress_type(self, t):
         self.ctype = t
         if self.ctype != ZLIB_COMPRESS and self.ctype != BZ2_COMPRESS :
@@ -297,7 +297,7 @@ class SIMILARITYPython(SIMILARITYBase) :
             return zlib.compress( s1, self.level )
         elif self.ctype == BZ2_COMPRESS :
             return bz2.compress( s1, self.level )
-       
+
     def _sim(self, s1, s2, func) :
         end, ret = self.get_in_rcaches( s1, s2 )
         if end != -1 :
@@ -305,7 +305,7 @@ class SIMILARITYPython(SIMILARITYBase) :
 
         corig = self.get_in_caches(s1)
         ccmp = self.get_in_caches(s2)
-        
+
         res, corig, ccmp, ret = func( s1, s2, corig, ccmp )
 
         self.add_in_caches(s1, corig)
@@ -373,7 +373,7 @@ class SIMILARITY :
         if native_lib == True and NATIVE_LIB == True:
             try :
                 self.s = SIMILARITYNative( path )
-            except : 
+            except :
                 self.s = SIMILARITYPython()
         else :
             self.s = SIMILARITYPython()
@@ -395,10 +395,10 @@ class SIMILARITY :
 
     def cmid(self, s1, s2) :
         return self.s.cmid(s1, s2)
-    
+
     def kolmogorov(self, s1) :
         return self.s.kolmogorov(s1)
-    
+
     def bennett(self, s1) :
         return self.s.bennett(s1)
 
@@ -410,7 +410,7 @@ class SIMILARITY :
 
     def levenshtein(self, s1, s2) :
         return self.s.levenshtein(s1, s2)
-    
+
     def set_compress_type(self, t):
         return self.s.set_compress_type(t)
 
@@ -418,10 +418,10 @@ class SIMILARITY :
         self.s.show()
 
 
-class DBFormat:
+class DBFormat(object):
     def __init__(self, filename):
         self.filename = filename
-       
+
         self.D = {}
 
         fd = None

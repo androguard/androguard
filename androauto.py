@@ -29,7 +29,7 @@ option_1 = {'name': ('-v', '--verbose'), 'help': 'add debug', 'action': 'count'}
 options = [option_0, option_1]
 
 
-class AndroLog:
+class AndroLog(object):
   def __init__(self, id_file, filename):
     self.id_file = id_file
 

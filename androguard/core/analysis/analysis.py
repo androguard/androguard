@@ -737,7 +737,7 @@ class JVMBasicBlock :
             #########################################################
 
             idx += i.get_length()
-    
+
     def set_exception(self, exception_analysis) :
         pass
 
@@ -956,7 +956,7 @@ DVM_FIELDS_ACCESS = {
    }
 
 
-class DVMBasicBlock:
+class DVMBasicBlock(object):
     """
         A simple basic block of a dalvik method
     """
@@ -1235,7 +1235,7 @@ class TaintedVariables :
         z.append( PathVar(access, idx, m_idx, obj ) )
       return z
 
-    # permission functions 
+    # permission functions
     def get_permissions_method(self, method) :
         permissions = []
 
@@ -1378,7 +1378,7 @@ def show_Path(vm, path):
       src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
       dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
 
-      print "%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(), 
+      print "%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
                                                   src_class_name,
                                                   src_method_name,
                                                   src_descriptor,
@@ -1388,7 +1388,7 @@ def show_Path(vm, path):
                                                   dst_descriptor)
     else :
       src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      print "%d %s->%s%s (0x%x)" % (path.get_access_flag(), 
+      print "%d %s->%s%s (0x%x)" % (path.get_access_flag(),
                                     src_class_name,
                                     src_method_name,
                                     src_descriptor,
@@ -1438,7 +1438,7 @@ def show_PathVariable(vm, paths):
       print "%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1])
 
 
-class PathP:
+class PathP(object):
   def __init__(self, access, idx, src_idx, dst_idx):
     self.access_flag = access
     self.idx = idx
@@ -1466,7 +1466,7 @@ class PathP:
     return self.dst_idx
 
 
-class TaintedPackage:
+class TaintedPackage(object):
     def __init__(self, vm, name):
         self.vm = vm
         self.name = name
@@ -1577,7 +1577,7 @@ def show_NativeMethods(dx):
 
 def show_ReflectionCode(dx):
     """
-        Show the reflection code 
+        Show the reflection code
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
@@ -1802,7 +1802,7 @@ class TaintedPackages :
 
             :rtype: a list of called packages' paths
         """
-        ex = re.compile(package_name)   
+        ex = re.compile(package_name)
 
         l = []
         for m, _ in self.get_packages():
@@ -1817,7 +1817,7 @@ class TaintedPackages :
         ex = re.compile( package_name )
 
         l = []
-        d = {} 
+        d = {}
         for m, _ in self.get_packages() :
             if ex.match( m.get_info() ) != None :
                 for path in m.get_methods() :
@@ -1845,7 +1845,7 @@ class TaintedPackages :
                     l.extend( m.search_method( name, descriptor ) )
 
         return l
-    
+
     def search_objects(self, class_name) :
         """
             @param class_name : a regexp for the class name
@@ -1858,7 +1858,7 @@ class TaintedPackages :
         for m, _ in self.get_packages() :
             if ex.search( m.get_name() ) != None :
                 l.extend( m.get_objects_paths() )
-    
+
         return l
 
     def search_crypto_packages(self) :
@@ -1875,7 +1875,7 @@ class TaintedPackages :
 
     def search_net_packages(self) :
         """
-            @rtype : a list of called net packages 
+            @rtype : a list of called net packages
         """
         return self.search_packages( "Landroid/net/" )
 
@@ -1942,7 +1942,7 @@ class Enum(object):
     self.names = names
     for value, name in enumerate(self.names):
       setattr(self, name.upper(), value)
-  
+
   def tuples(self):
     return tuple(enumerate(self.names))
 
@@ -2002,13 +2002,13 @@ TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
 class Tags :
   """
       Handle specific tags
-      
+
       :param patterns:
       :params reverse:
   """
   def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID) :
     self.tags = set()
-   
+
     self.patterns = patterns
     self.reverse = TAG_REVERSE_ANDROID
 
@@ -2020,7 +2020,7 @@ class Tags :
       if self.patterns[i][0] == 0 :
         if self.patterns[i][1].search( method.get_class() ) != None :
           self.tags.add( i )
-  
+
   def emit_by_classname(self, classname) :
     for i in self.patterns :
       if self.patterns[i][0] == 0 :
@@ -2041,7 +2041,7 @@ class Tags :
     return self.tags == set()
 
 
-class BasicBlocks:
+class BasicBlocks(object):
     """
         This class represents all basic blocks of a method
     """
@@ -2098,7 +2098,7 @@ class BasicBlocks:
         return self.bb[idx]
 
 
-class ExceptionAnalysis:
+class ExceptionAnalysis(object):
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -2128,7 +2128,7 @@ class ExceptionAnalysis:
         return d
 
 
-class Exceptions:
+class Exceptions(object):
     def __init__(self, _vm) :
         self.__vm = _vm
         self.exceptions = []
@@ -2163,7 +2163,7 @@ for i in BO["BasicOPCODES"] :
   BO["BasicOPCODES_H"].append( re.compile( i ) )
 
 
-class MethodAnalysis:
+class MethodAnalysis(object):
     """
         This class analyses in details a method of a class/dex file
 
@@ -2314,7 +2314,7 @@ SIGNATURE_L0_0 = "L0_0"
 SIGNATURE_L0_1 = "L0_1"
 SIGNATURE_L0_2 = "L0_2"
 SIGNATURE_L0_3 = "L0_3"
-SIGNATURE_L0_4 = "L0_4" 
+SIGNATURE_L0_4 = "L0_4"
 SIGNATURE_L0_5 = "L0_5"
 SIGNATURE_L0_6 = "L0_6"
 SIGNATURE_L0_0_L1 = "L0_0:L1"
@@ -2343,7 +2343,7 @@ SIGNATURES = {
 from sign import Signature
 
 
-class VMAnalysis:
+class VMAnalysis(object):
     """
        This class analyses a dex file
 
@@ -2417,13 +2417,13 @@ class VMAnalysis:
             :type predef_sign: string
 
             :rtype: a :class:`Sign` object
-        """        
+        """
         if self.signature == None :
           self.signature = Signature( self )
 
         if predef_sign != "" :
             g = ""
-            o = {} 
+            o = {}
 
             for i in predef_sign.split(":") :
                 if "_" in i :
@@ -2431,10 +2431,10 @@ class VMAnalysis:
                     o[ "L0" ] = SIGNATURES[ i ]
                 else :
                     g += i
-                    g += ":" 
+                    g += ":"
 
             return self.signature.get_method( self.get_method( method ), g[:-1], o )
-        else : 
+        else :
             return self.signature.get_method( self.get_method( method ), grammar_type, options )
 
     def get_permissions(self, permissions_needed) :
@@ -2443,7 +2443,7 @@ class VMAnalysis:
 
             :param permissions_needed: a list of restricted permissions to get ([] returns all permissions)
             :type permissions_needed: list
-            
+
             :rtype: a dictionnary of permissions paths
         """
         permissions = {}
@@ -2458,7 +2458,7 @@ class VMAnalysis:
         permissions_v = self.get_tainted_variables().get_permissions_method( method )
 
         return list( set( permissions_f + permissions_v ) )
- 
+
     def get_tainted_variables(self) :
         """
            Return the tainted variables

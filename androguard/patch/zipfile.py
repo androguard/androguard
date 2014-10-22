@@ -306,7 +306,7 @@ class ZipInfo (object):
         self.volume = 0                 # Volume number of file header
         self.internal_attr = 0          # Internal attributes
         self.external_attr = 0          # External file attributes
-        # Other attributes are set by class ZipFile:
+        # Other attributes are set by class ZipFile(object):
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
         # compress_size         Size of the compressed file
@@ -398,7 +398,7 @@ class ZipInfo (object):
             extra = extra[ln+4:]
 
 
-class _ZipDecrypter:
+class _ZipDecrypter(object):
     """Class to handle decryption of files stored within a ZIP archive.
 
     ZIP supports a password-based form of encryption. Even though known
@@ -647,7 +647,7 @@ class ZipExtFile(io.BufferedIOBase):
 
 
 
-class ZipFile:
+class ZipFile(object):
     """ Class with methods to open, read, write, close, list zip files.
 
     z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=False)

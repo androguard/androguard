@@ -541,7 +541,7 @@ class Graph(object):
         for n in nodes:
             try:
                 del self.node[n]
-                for u in list(adj[n].keys()):   # keys() handles self-loops 
+                for u in list(adj[n].keys()):   # keys() handles self-loops
                     del adj[u][n]         #(allows mutation of dict in loop)
                 del adj[n]
             except KeyError:
@@ -837,8 +837,8 @@ class Graph(object):
 
         Notes
         -----
-        Adding the same edge twice for Graph/DiGraph simply updates 
-        the edge data.  For MultiGraph/MultiDiGraph, duplicate edges 
+        Adding the same edge twice for Graph/DiGraph simply updates
+        the edge data.  For MultiGraph/MultiDiGraph, duplicate edges
         are stored.
 
         Examples
@@ -1246,7 +1246,7 @@ class Graph(object):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -1285,7 +1285,7 @@ class Graph(object):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -1312,7 +1312,7 @@ class Graph(object):
             nodes_nbrs = self.adj.items()
         else:
             nodes_nbrs=((n,self.adj[n]) for n in self.nbunch_iter(nbunch))
-  
+
         if weight is None:
             for n,nbrs in nodes_nbrs:
                 yield (n,len(nbrs)+(n in nbrs)) # return tuple (n,degree)
@@ -1421,8 +1421,8 @@ class Graph(object):
         G=DiGraph()
         G.name=self.name
         G.add_nodes_from(self)
-        G.add_edges_from( ((u,v,deepcopy(data)) 
-                           for u,nbrs in self.adjacency_iter() 
+        G.add_edges_from( ((u,v,deepcopy(data))
+                           for u,nbrs in self.adjacency_iter()
                            for v,data in nbrs.items()) )
         G.graph=deepcopy(self.graph)
         G.node=deepcopy(self.node)
@@ -1620,7 +1620,7 @@ class Graph(object):
         Parameters
         ----------
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
 
         Returns
@@ -1836,8 +1836,8 @@ class Graph(object):
                     elif 'hashable' in message:
                         raise NetworkXError(\
                             "Node %s in the sequence nbunch is not a valid node."%n)
-                    else: 
-                        raise 
+                    else:
+                        raise
             bunch=bunch_iter(nbunch,self.adj)
         return bunch
 
@@ -2640,7 +2640,7 @@ class DiGraph(Graph):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -2693,7 +2693,7 @@ class DiGraph(Graph):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -2742,7 +2742,7 @@ class DiGraph(Graph):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -2791,7 +2791,7 @@ class DiGraph(Graph):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -2833,7 +2833,7 @@ class DiGraph(Graph):
             through once.
 
         weight : string or None, optional (default=None)
-           The edge attribute that holds the numerical value used 
+           The edge attribute that holds the numerical value used
            as a weight.  If None, then each edge has weight 1.
            The degree is the sum of the edge weights adjacent to the node.
 
@@ -2936,8 +2936,8 @@ class DiGraph(Graph):
         Parameters
         ----------
         reciprocal : bool (optional)
-          If True only keep edges that appear in both directions 
-          in the original digraph. 
+          If True only keep edges that appear in both directions
+          in the original digraph.
 
         Returns
         -------
@@ -2973,7 +2973,7 @@ class DiGraph(Graph):
         if reciprocal is True:
             H.add_edges_from( (u,v,deepcopy(d))
                               for u,nbrs in self.adjacency_iter()
-                              for v,d in nbrs.items() 
+                              for v,d in nbrs.items()
                               if v in self.pred[u])
         else:
             H.add_edges_from( (u,v,deepcopy(d))
@@ -3000,7 +3000,7 @@ class DiGraph(Graph):
         if copy:
             H = self.__class__(name="Reverse of (%s)"%self.name)
             H.add_nodes_from(self)
-            H.add_edges_from( (v,u,deepcopy(d)) for u,v,d 
+            H.add_edges_from( (v,u,deepcopy(d)) for u,v,d
                               in self.edges(data=True) )
             H.graph=deepcopy(self.graph)
             H.node=deepcopy(self.node)
@@ -3100,7 +3100,7 @@ ID_ATTRIBUTES = {
 }
 
 
-class GVMAnalysis:
+class GVMAnalysis(object):
     def __init__(self, vmx, apk):
         self.vmx = vmx
         self.vm = self.vmx.get_vm()
@@ -3135,7 +3135,7 @@ class GVMAnalysis:
             for i in apk.get_activities() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "(Landroid/os/Bundle;)V" )
-                if n1 != None : 
+                if n1 != None :
                     n1.set_attributes( { "type" : "activity" } )
                     n1.set_attributes( { "color" : ACTIVITY_COLOR } )
                     n2 = self._get_new_node_from( n1, "ACTIVITY" )
@@ -3145,7 +3145,7 @@ class GVMAnalysis:
             for i in apk.get_services() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "()V" )
-                if n1 != None : 
+                if n1 != None :
                     n1.set_attributes( { "type" : "service" } )
                     n1.set_attributes( { "color" : SERVICE_COLOR } )
                     n2 = self._get_new_node_from( n1, "SERVICE" )
@@ -3155,7 +3155,7 @@ class GVMAnalysis:
             for i in apk.get_receivers() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V" )
-                if n1 != None : 
+                if n1 != None :
                     n1.set_attributes( { "type" : "receiver" } )
                     n1.set_attributes( { "color" : RECEIVER_COLOR } )
                     n2 = self._get_new_node_from( n1, "RECEIVER" )
@@ -3174,8 +3174,8 @@ class GVMAnalysis:
                 for i in self.vm.get_method("run") :
                     if i.get_class_name() == c.get_name() :
                         n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
-                        n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() ) 
-                       
+                        n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() )
+
                         # link from start to run
                         self.G.add_edge( n2.id, n1.id )
                         n2.add_edge( n1, {} )
@@ -3296,7 +3296,7 @@ class GVMAnalysis:
         buff += "<gexf xmlns=\"http://www.gephi.org/gexf\" xmlns:viz=\"http://www.gephi.org/gexf/viz\">\n"
         buff += "<graph type=\"static\">\n"
 
-        buff += "<attributes class=\"node\" type=\"static\">\n" 
+        buff += "<attributes class=\"node\" type=\"static\">\n"
         buff += "<attribute default=\"normal\" id=\"%d\" title=\"type\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "type"]
         buff += "<attribute id=\"%d\" title=\"class_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "class_name"]
         buff += "<attribute id=\"%d\" title=\"method_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "method_name"]
@@ -3305,9 +3305,9 @@ class GVMAnalysis:
 
         buff += "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[ "permissions"]
         buff += "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "permissions_level"]
-        
+
         buff += "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[ "dynamic_code"]
-        buff += "</attributes>\n"   
+        buff += "</attributes>\n"
 
         buff += "<nodes>\n"
         for node in self.G.nodes() :
@@ -3352,12 +3352,12 @@ class GVMAnalysis:
 
         buff += "</graph>\n"
         buff += "</graphml>\n"
-        
+
         return buff
 
 DEFAULT_NODE_TYPE = "normal"
 DEFAULT_NODE_PERM = 0
-DEFAULT_NODE_PERM_LEVEL = -1 
+DEFAULT_NODE_PERM_LEVEL = -1
 
 PERMISSIONS_LEVEL = {
     "dangerous" : 3,
@@ -3374,7 +3374,7 @@ COLOR_PERMISSIONS_LEVEL = {
 }
 
 
-class NodeF:
+class NodeF(object):
     def __init__(self, id, class_name, method_name, descriptor, label=None, real=True):
         self.class_name = class_name
         self.method_name = method_name
@@ -3408,16 +3408,16 @@ class NodeF:
 
     def get_attributes_gexf(self):
         buff = ""
-        
-        if self.attributes[ "color" ] != None : 
+
+        if self.attributes[ "color" ] != None :
             buff += "<viz:color r=\"%d\" g=\"%d\" b=\"%d\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
-        
+
         buff += "<attvalues>\n"
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["class_name"], escape(self.class_name))
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["method_name"], escape(self.method_name))
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["descriptor"], escape(self.descriptor))
-        
-        
+
+
         if self.attributes[ "type" ] != DEFAULT_NODE_TYPE :
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["type"], self.attributes[ "type" ])
         if self.attributes[ "permissions" ] != DEFAULT_NODE_PERM :
@@ -3433,16 +3433,16 @@ class NodeF:
 
     def get_attributes_gml(self) :
         buff = ""
-        
+
         buff += "<data key=\"d6\">\n"
         buff += "<y:ShapeNode>\n"
-       
-        height = 10 
+
+        height = 10
         width = max(len(self.class_name), len(self.method_name))
         width = max(width, len(self.descriptor))
 
         buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 8 * width)
-        if self.attributes[ "color" ] != None : 
+        if self.attributes[ "color" ] != None :
             buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
 
         buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"

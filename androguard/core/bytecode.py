@@ -418,7 +418,7 @@ def vm2json(vm):
     return json.dumps(d)
 
 
-class TmpBlock:
+class TmpBlock(object):
     def __init__(self, name):
         self.name = name
 
@@ -556,7 +556,7 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-class SV:
+class SV(object):
     def __init__(self, size, buff):
         self.__size = size
         self.__value = unpack(self.__size, buff)[0]
@@ -624,7 +624,7 @@ class MethodBC(object) :
         getattr(self, "show_" + value)()
 
 
-class BuffHandle:
+class BuffHandle(object):
     def __init__(self, buff):
         self.__buff = buff
         self.__idx = 0
@@ -758,7 +758,7 @@ def FormatDescriptorToPython(input) :
 
     return i
 
-class Node:
+class Node(object):
  def __init__(self, n, s):
      self.id = n
      self.title = s

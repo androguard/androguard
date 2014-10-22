@@ -31,7 +31,7 @@ def test(got, expected):
     return (got == expected)
 
 
-class AndroLog:
+class AndroLog(object):
   def __init__(self, id_file, filename):
     self.id_file = id_file
     self.filename = filename

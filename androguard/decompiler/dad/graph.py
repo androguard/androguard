@@ -24,7 +24,7 @@ from androguard.decompiler.dad.instruction import Variable
 logger = logging.getLogger('dad.graph')
 
 
-class Graph():
+class Graph(object):
     def __init__(self):
         self.entry = None
         self.exit = None
