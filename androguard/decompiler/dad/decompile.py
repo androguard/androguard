@@ -134,9 +134,6 @@ class DvMethod(object):
         self.writer.write_method()
         del graph
 
-    def show_source(self):
-        print self.get_source()
-
     def get_source(self):
         if self.writer:
             return '%s' % self.writer
@@ -224,18 +221,19 @@ class DvClass(object):
         if not self.inner and self.package:
             source.append('package %s;\n' % self.package)
 
-        if self.superclass is not None:
-            self.superclass = self.superclass[1:-1].replace('/', '.')
-            if self.superclass.split('.')[-1] == 'Object':
-                self.superclass = None
-            if self.superclass is not None:
-                self.prototype += ' extends %s' % self.superclass
+        superclass, prototype = self.superclass, self.prototype
+        if superclass is not None:
+            superclass = superclass[1:-1].replace('/', '.')
+            if superclass.split('.')[-1] == 'Object':
+                superclass = None
+            if superclass is not None:
+                prototype += ' extends %s' % superclass
         if self.interfaces is not None:
             interfaces = self.interfaces[1:-1].split(' ')
-            self.prototype += ' implements %s' % ', '.join(
+            prototype += ' implements %s' % ', '.join(
                         [n[1:-1].replace('/', '.') for n in interfaces])
 
-        source.append('%s {\n' % self.prototype)
+        source.append('%s {\n' % prototype)
         for name, field in sorted(self.fields.iteritems()):
             access = util.get_access_field(field.get_access_flags())
             f_type = util.get_type(field.get_descriptor())
@@ -260,9 +258,6 @@ class DvClass(object):
         source.append('}\n')
         return ''.join(source)
 
-    #NB: we cannot call it several times in a row because
-    #    some fields are rewritten based on their old value
-    #    such as self.superclass for instance
     def get_source_ext(self):
         source = []
         if not self.inner and self.package:
@@ -274,13 +269,14 @@ class DvClass(object):
         list_proto.append(
             ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
         list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
-        if self.superclass is not None:
-            self.superclass = self.superclass[1:-1].replace('/', '.')
-            if self.superclass.split('.')[-1] == 'Object':
-                self.superclass = None
-            if self.superclass is not None:
+        superclass = self.superclass
+        if superclass is not None:
+            superclass = superclass[1:-1].replace('/', '.')
+            if superclass.split('.')[-1] == 'Object':
+                superclass = None
+            if superclass is not None:
                 list_proto.append(('EXTEND', ' extends '))
-                list_proto.append(('NAME_SUPERCLASS', '%s' % self.superclass))
+                list_proto.append(('NAME_SUPERCLASS', '%s' % superclass))
         if self.interfaces is not None:
             interfaces = self.interfaces[1:-1].split(' ')
             list_proto.append(('IMPLEMENTS', ' implements '))
@@ -319,9 +315,6 @@ class DvClass(object):
         source.append(("CLASS_END", [('CLASS_END', '}\n')]))
         return source
 
-    def show_source(self):
-        print self.get_source()
-
     def __repr__(self):
         if not self.subclasses:
             return 'Class(%s)' % self.name
@@ -358,17 +351,13 @@ class DvMachine(object):
                 dvclass = self.classes[name] = DvClass(klass, self.vma)
                 dvclass.process()
 
-    def show_source(self):
-        for klass in self.classes.values():
-            klass.show_source()
-
     def process_and_show(self):
         for name, klass in sorted(self.classes.iteritems()):
             logger.info('Processing class: %s', name)
             if not isinstance(klass, DvClass):
                 klass = DvClass(klass, self.vma)
             klass.process()
-            klass.show_source()
+            print klass.get_source()
 
 
 logger = logging.getLogger('dad')
@@ -415,7 +404,7 @@ def main():
                 cls.process_method(int(meth))
             logger.info('Source:')
             logger.info('===========================')
-            cls.show_source()
+            print cls.get_source()
 
 if __name__ == '__main__':
     main()
