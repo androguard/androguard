@@ -134,9 +134,6 @@ class DvMethod(object):
         self.writer.write_method()
         del graph
 
-    def show_source(self):
-        print self.get_source()
-
     def get_source(self):
         if self.writer:
             return '%s' % self.writer
@@ -319,9 +316,6 @@ class DvClass(object):
         source.append(("CLASS_END", [('CLASS_END', '}\n')]))
         return source
 
-    def show_source(self):
-        print self.get_source()
-
     def __repr__(self):
         if not self.subclasses:
             return 'Class(%s)' % self.name
@@ -358,17 +352,13 @@ class DvMachine(object):
                 dvclass = self.classes[name] = DvClass(klass, self.vma)
                 dvclass.process()
 
-    def show_source(self):
-        for klass in self.classes.values():
-            klass.show_source()
-
     def process_and_show(self):
         for name, klass in sorted(self.classes.iteritems()):
             logger.info('Processing class: %s', name)
             if not isinstance(klass, DvClass):
                 klass = DvClass(klass, self.vma)
             klass.process()
-            klass.show_source()
+            print klass.get_source()
 
 
 logger = logging.getLogger('dad')
@@ -415,7 +405,7 @@ def main():
                 cls.process_method(int(meth))
             logger.info('Source:')
             logger.info('===========================')
-            cls.show_source()
+            print cls.get_source()
 
 if __name__ == '__main__':
     main()
