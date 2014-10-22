@@ -33,7 +33,7 @@ def is_ascii_problem(s):
         return True
 
 
-class Color:
+class Color(object):
     Normal = "\033[0m"
     Black = "\033[30m"
     Red = "\033[31m"
@@ -202,7 +202,7 @@ def is_android(filename) :
     """Return the type of the file
 
         @param filename : the filename
-        @rtype : "APK", "DEX", "ELF", None 
+        @rtype : "APK", "DEX", "ELF", None
     """
     if not filename:
         return None

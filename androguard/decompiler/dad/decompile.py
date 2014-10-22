@@ -46,7 +46,7 @@ def auto_vm(filename):
     return None
 
 
-class DvMethod():
+class DvMethod(object):
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
         self.method = method
@@ -149,10 +149,10 @@ class DvMethod():
 
     def __repr__(self):
         #return 'Method %s' % self.name
-        return 'class DvMethod: %s' % self.name
+        return 'class DvMethod(object): %s' % self.name
 
 
-class DvClass():
+class DvClass(object):
     def __init__(self, dvclass, vma):
         name = dvclass.get_name()
         if name.find('/') > 0:
@@ -328,7 +328,7 @@ class DvClass():
         return 'Class(%s) -- Subclasses(%s)' % (self.name, self.subclasses)
 
 
-class DvMachine():
+class DvMachine(object):
     def __init__(self, name):
         vm = auto_vm(name)
         if vm is None:

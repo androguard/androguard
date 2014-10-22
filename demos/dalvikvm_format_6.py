@@ -23,7 +23,7 @@ def hexdump(src, length=8, off=0):
         result.append( b"%04X   %-*s   %s" % (i+off, length*(digits + 1), hexa, text) )
     return b'\n'.join(result)
 
-class MDalvikVMFormat:
+class MDalvikVMFormat(object):
     def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx

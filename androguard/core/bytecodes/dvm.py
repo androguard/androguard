@@ -648,7 +648,7 @@ class AnnotationSetRefItem :
     def get_raw(self) :
         return self.get_obj()
 
-class AnnotationSetRefList:
+class AnnotationSetRefList(object):
     """
         This class can parse an annotation_set_ref_list_item of a dex file
 
@@ -2496,7 +2496,7 @@ class MethodIdItemInvalid :
         print "AG:IMI:invalid_method_item"
 
 
-class EncodedField:
+class EncodedField(object):
     """
         This class can parse an encoded_field of a dex file
 
@@ -2656,7 +2656,7 @@ class EncodedField:
         except AttributeError:
             pass
 
-class EncodedMethod:
+class EncodedMethod(object):
     """
         This class can parse an encoded_method of a dex file
 
@@ -3199,7 +3199,7 @@ class ClassDataItem :
       return self.offset
 
 
-class ClassDefItem:
+class ClassDefItem(object):
     """
         This class can parse a class_def_item of a dex file
 
@@ -3920,7 +3920,7 @@ class InstructionInvalid(Instruction):
       return pack("=H", self.OP)
 
 
-class FillArrayData:
+class FillArrayData(object):
     """
         This class can parse a FillArrayData instruction
 
@@ -4029,7 +4029,7 @@ class FillArrayData:
         return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
 
 
-class SparseSwitch:
+class SparseSwitch(object):
     """
         This class can parse a SparseSwitch instruction
 
@@ -4150,7 +4150,7 @@ class SparseSwitch:
         return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
 
 
-class PackedSwitch:
+class PackedSwitch(object):
     """
         This class can parse a PackedSwitch instruction
 
@@ -6144,7 +6144,7 @@ class LinearSweepAlgorithm :
           idx = idx + obj.get_length()
 
 
-class DCode:
+class DCode(object):
     """
         This class represents the instructions of a method
 
@@ -6344,7 +6344,7 @@ class DCode:
       return len(self.get_raw())
 
 
-class TryItem:
+class TryItem(object):
     """
         This class represents the try_item format
 
@@ -6398,7 +6398,7 @@ class TryItem:
     def get_length(self) :
       return len(self.get_raw())
 
-class DalvikCode:
+class DalvikCode(object):
     """
         This class represents the instructions of a method
 
@@ -6859,12 +6859,12 @@ class MapItem :
       self.item = item
 
 
-class OffObj:
+class OffObj(object):
     def __init__(self, o):
         self.off = o
 
 
-class ClassManager:
+class ClassManager(object):
     """
        This class is used to access to all elements (strings, type, proto ...) of the dex format
     """
@@ -7115,7 +7115,7 @@ class ClassManager:
               name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
             except AttributeError:
               name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
-  
+
             try:
               delattr(class_def, name)
               debug("success with name containing prototype")
@@ -7536,7 +7536,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
             Return the names of classes
 
-            :param update: True indicates to recompute the list. 
+            :param update: True indicates to recompute the list.
                            Maybe needed after using a MyClass.set_name().
             :rtype: a list of string
         """
@@ -8168,7 +8168,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         return escape_fct(str(operand[1]))
 
 
-class OdexHeaderItem:
+class OdexHeaderItem(object):
     """
         This class can parse the odex header
 
@@ -8206,7 +8206,7 @@ class OdexHeaderItem:
              pack("=I", self.padding)
 
 
-class OdexDependencies:
+class OdexDependencies(object):
     """
         This class can parse the odex dependencies
 

@@ -32,11 +32,11 @@ try:
     from pygments.token import Token
 except ImportError:
     PYGMENTS = False
-    class Filter:
+    class Filter(object):
         pass
 
 
-class Dex2Jar:
+class Dex2Jar(object):
     def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", tmp_dir="/tmp/"):
         pathtmp = tmp_dir
         if not os.path.exists(pathtmp):
@@ -58,7 +58,7 @@ class Dex2Jar:
         return self.jarfile
 
 
-class DecompilerDex2Jad:
+class DecompilerDex2Jad(object):
     def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/"):
         self.classes = {}
         self.classes_failed = []
@@ -141,7 +141,7 @@ class DecompilerDex2Jad:
         print self.get_all(_class.get_name())
 
 
-class DecompilerDex2WineJad:
+class DecompilerDex2WineJad(object):
     def __init__(self, vm, path_dex2jar="./decompiler/dex2jar/", bin_dex2jar="dex2jar.sh", path_jad="./decompiler/jad/", bin_jad="jad", tmp_dir="/tmp/"):
         self.classes = {}
         self.classes_failed = []
@@ -223,7 +223,7 @@ class DecompilerDex2WineJad:
     def display_all(self, _class):
         print self.get_all(_class.get_name())
 
-class DecompilerDed:
+class DecompilerDed(object):
     def __init__(self, vm, path="./decompiler/ded/", bin_ded="ded.sh", tmp_dir="/tmp/"):
         self.classes = {}
         self.classes_failed = []
@@ -237,13 +237,13 @@ class DecompilerDed:
         fd.write( vm.get_buff() )
         fd.flush()
         fd.close()
-       
+
         dirname = tempfile.mkdtemp(prefix=fdname + "-src")
-        compile = Popen([ path + bin_ded, "-c", "-o", "-d", dirname, fdname ], stdout=PIPE, stderr=STDOUT)        
+        compile = Popen([ path + bin_ded, "-c", "-o", "-d", dirname, fdname ], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
         os.unlink( fdname )
 
-        findsrc = None 
+        findsrc = None
         for root, dirs, files in os.walk( dirname + "/optimized-decompiled/" ) :
             if dirs != [] :
                 for f in dirs :
@@ -255,17 +255,17 @@ class DecompilerDed:
                         break
             if findsrc != None :
                 break
-        
+
         for i in vm.get_classes() :
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
             #print fname
             if os.path.isfile(fname) == True :
                 fd = open(fname, "r")
-                self.classes[ i.get_name() ] = fd.read() 
+                self.classes[ i.get_name() ] = fd.read()
                 fd.close()
             else :
                 self.classes_failed.append( i.get_name() )
-      
+
         rrmdir( dirname )
 
     def get_source_method(self, method):
@@ -300,7 +300,7 @@ class DecompilerDed:
         print self.get_all(_class.get_name())
 
 
-class DecompilerDex2Fernflower:
+class DecompilerDex2Fernflower(object):
     def __init__(self,
                  vm,
                  path_dex2jar="./decompiler/dex2jar/",
@@ -400,7 +400,7 @@ class DecompilerDex2Fernflower:
 class MethodFilter(Filter):
     def __init__(self, **options):
         Filter.__init__(self, **options)
-        
+
         self.method_name = options["method_name"]
         #self.descriptor = options["descriptor"]
 
@@ -422,11 +422,11 @@ class MethodFilter(Filter):
                         if a[i][1] != "class" :
                             item_decl = i
                         break
-               
+
                 if item_decl != -1 :
                     self.present = True
                     l.extend( a[item_decl:] )
-        
+
 
             if self.present and ttype is Token.Keyword.Declaration :
                 item_end = -1
@@ -434,18 +434,18 @@ class MethodFilter(Filter):
                     if l[i][0] is Token.Operator and l[i][1] == "}" :
                         item_end = i
                         break
-               
+
                 if item_end != -1 :
                     rep.extend( l[:item_end+1] )
                     l = []
                     self.present = False
-                
+
             if self.present :
                 l.append( (ttype, value) )
 
             a.append( (ttype, value) )
 
-        
+
         if self.present :
             nb = 0
             item_end = -1
@@ -455,13 +455,13 @@ class MethodFilter(Filter):
                     if nb == 2 :
                         item_end = i
                         break
-            
+
             rep.extend( l[:item_end+1] )
-            
+
         return rep
 
 
-class DecompilerDAD:
+class DecompilerDAD(object):
     def __init__(self, vm, vmx):
         self.vm = vm
         self.vmx = vmx

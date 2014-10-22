@@ -111,7 +111,7 @@ def get_sourcecode_method(dex_object, ana_object, method):
     return method.get_source()
 
 
-class MethodView:
+class MethodView(object):
     def __init__(self, orig_id, method):
         self.view = sublime.active_window().new_file()
         self.dex_object, self.ana_object = AG_DEX_VIEW[orig_id]
@@ -135,7 +135,7 @@ class MethodView:
             AG_SC[self.view.id()] = False
 
 
-class FieldView:
+class FieldView(object):
     def __init__(self, orig_id, field):
         self.view = sublime.active_window().new_file()
         self.dex_object, self.ana_object = AG_DEX_VIEW[orig_id]
@@ -156,7 +156,7 @@ class FieldView:
         self.view.sel().clear()
 
 
-class ClassView:
+class ClassView(object):
     def __init__(self, orig_id, class_obj):
         self.view = sublime.active_window().new_file()
         self.dex_object, self.ana_object = AG_DEX_VIEW[orig_id]
@@ -268,7 +268,7 @@ class AgDoubleClick(sublime_plugin.TextCommand):
                     new_view.set_read_only(True)
 
 
-class ThreadProgress():
+class ThreadProgress(object):
     def __init__(self, thread, message, success_message):
         self.thread = thread
         self.message = message
@@ -297,7 +297,7 @@ class ThreadProgress():
         sublime.set_timeout(lambda: self.run(i), 100)
 
 
-class AnalyseAXMLThread:
+class AnalyseAXMLThread(object):
     def __init__(self, view, filename, apk_object):
         self.view = view
         self.apk_object = apk_object
@@ -324,7 +324,7 @@ class AnalyseAXMLThread:
             AG_SC[self.view.id()] = False
 
 
-class AnalyseAXMLSimpleThread:
+class AnalyseAXMLSimpleThread(object):
     def __init__(self, view, filename, raw_object):
         self.view = view
         self.raw_object = raw_object
@@ -347,7 +347,7 @@ class AnalyseAXMLSimpleThread:
         self.view.set_read_only(True)
 
 
-class AnalyseARSCThread:
+class AnalyseARSCThread(object):
     def __init__(self, view, filename, raw_object):
         self.view = view
         self.raw_object = raw_object
@@ -375,7 +375,7 @@ class AnalyseARSCThread:
             AG_SC[self.view.id()] = False
 
 
-class AnalyseAPKThread:
+class AnalyseAPKThread(object):
     def __init__(self, view, filename, raw):
         self.view = view
         self.raw = raw
@@ -406,7 +406,7 @@ class AnalyseAPKThread:
         FILENAMES[self.view.id()] = hashlib.sha1(apk_object.get_raw()).hexdigest()
 
 
-class AnalyseDexThread:  # (threading.Thread):
+class AnalyseDexThread(object):  # (threading.Thread):
     def __init__(self, view, filename, raw):
         self.view = view
         self.raw = raw

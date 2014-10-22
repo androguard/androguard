@@ -81,7 +81,7 @@ class BC :
     def __getattr__(self, value) :
         return getattr(self.__bc, value)
 
-class Androguard:
+class Androguard(object):
     """Androguard is the main object to abstract and manage differents formats
 
        @param files : a list of filenames (filename must be terminated by .class or .dex)
