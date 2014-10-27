@@ -71,11 +71,11 @@ class Graph(object):
             lpreds.append(e1)
 
     def remove_node(self, node):
-        preds = self.reverse_edges.pop(node, [])
+        preds = self.reverse_edges.get(node, [])
         for pred in preds:
             self.edges[pred].remove(node)
 
-        succs = self.edges.pop(node, [])
+        succs = self.edges.get(node, [])
         for suc in succs:
             self.reverse_edges[suc].remove(node)
 
