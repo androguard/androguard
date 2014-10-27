@@ -19,6 +19,7 @@ import sys
 sys.path.append('./')
 
 import logging
+import struct
 from collections import defaultdict
 import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
@@ -247,6 +248,8 @@ class DvClass(object):
                 value = field.init_value.value
                 if f_type == 'String':
                     value = '"%s"' % value
+                elif field.proto == 'B':
+                    value = '0x%x' % struct.unpack('b', value)[0]
                 source.append('%s %s = %s;\n' % (f_type, name, value))
             else:
                 source.append('%s %s;\n' % (f_type, name))
