@@ -62,7 +62,7 @@ ACCESS_FLAGS = [
     (0x100, 'native'),
     (0x200, 'interface'),
     (0x400, 'abstract'),
-    (0x800, 'strict'),
+    (0x800, 'strictfp'),
     (0x1000, 'synthetic'),
     (0x4000, 'enum'),
     (0x8000, 'unused'),

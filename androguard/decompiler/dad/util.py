@@ -69,7 +69,7 @@ ACCESS_FLAGS_METHODS = {
     0x80:    'varargs',
     0x100:   'native',
     0x400:   'abstract',
-    0x800:   'strict',
+    0x800:   'strictfp',
     0x1000:  'synthetic',
     0x10000: 'constructor',
     0x20000: 'declared_synchronized',
