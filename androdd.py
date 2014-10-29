@@ -186,18 +186,14 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
                 create_directory(filename_class, output)
 
                 current_filename_class = output_name + current_filename_class + ".java"
-                fd = open(current_filename_class, "w")
-                fd.write(current_class.get_source())
-                fd.close()
-
+                with open(current_filename_class, "w") as fd:
+                    fd.write(current_class.get_source())
                 dump_classes.append(method.get_class_name())
 
             print "bytecodes ...",
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
-            fd = open(filename + ".ag", "w")
-            fd.write(bytecode_buff)
-            fd.close()
-
+            with open(filename + ".ag", "w") as fd:
+                fd.write(bytecode_buff)
             print
 
 

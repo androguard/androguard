@@ -6,11 +6,12 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
 from androguard.core.bytecodes import dvm
+from androguard.util import read
 
 TEST = "./examples/dalvik/test/bin/classes.dex"
 TEST_OUTPUT = "./examples/dalvik/test/bin/classes_output.dex"
 
-j = dvm.DalvikVMFormat( open(TEST).read() )
+j = dvm.DalvikVMFormat( read(TEST, binary=False) )
 
 # Modify the name of each field
 #for field in j.get_fields() :
@@ -22,6 +23,5 @@ j = dvm.DalvikVMFormat( open(TEST).read() )
 #      method.set_name( random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] ) )
 
 # SAVE CLASS
-fd = open( TEST_OUTPUT, "w" )
-fd.write( j.save() )
-fd.close()
+with open( TEST_OUTPUT, "w" ) as fd:
+	fd.write( j.save() )

@@ -427,9 +427,8 @@ class DBFormat(object):
         fd = None
 
         try :
-            fd = open(self.filename, "r+")
-            self.D = json.load( fd )
-            fd.close()
+            with open(self.filename, "r+") as fd :
+                self.D = json.load( fd )
         except IOError :
             print "Impossible to open filename: " + filename
             self.D = {}
@@ -531,6 +530,5 @@ class DBFormat(object):
                     print "\t\t", k, len(self.D[i][j][k])
 
     def save(self):
-        fd = open(self.filename, "w")
-        json.dump(self.D, fd)
-        fd.close()
+        with open(self.filename, "w") as fd :
+            json.dump(self.D, fd)

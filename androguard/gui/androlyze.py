@@ -37,6 +37,7 @@ from androguard.decompiler.decompiler import *
 
 
 from androguard.core import androconf
+from androguard.util import read
 
 from IPython.frontend.terminal.embed import InteractiveShellEmbed
 from IPython.config.loader import Config
@@ -80,9 +81,8 @@ def save_session(l, filename):
         :Example:
             save_session([a, vm, vmx], "msession.json")
     """
-    fd = open(filename, "w")
-    fd.write(dumps(l, -1))
-    fd.close()
+    with open(filename, "w") as fd:
+        fd.write(dumps(l, -1))
 
 
 def load_session(filename):
@@ -97,7 +97,7 @@ def load_session(filename):
         :Example:
             a, vm, vmx = load_session("mysession.json")
     """
-    return loads(open(filename, "r").read())
+    return loads(read(filename, binary=False))
 
 
 def AnalyzeAPK(filename, raw=False, decompiler=None):
@@ -134,7 +134,7 @@ def AnalyzeDex(filename, raw=False, decompiler=None):
 
     d = None
     if raw == False:
-        d = DalvikVMFormat(open(filename, "rb").read())
+        d = DalvikVMFormat(read(filename))
     else:
         d = DalvikVMFormat(filename)
 
@@ -174,7 +174,7 @@ def AnalyzeODex(filename, raw=False, decompiler=None):
     androconf.debug("DalvikOdexVMFormat ...")
     d = None
     if raw == False:
-        d = DalvikOdexVMFormat(open(filename, "rb").read())
+        d = DalvikOdexVMFormat(read(filename))
     else:
         d = DalvikOdexVMFormat(filename)
 
@@ -244,7 +244,7 @@ def AnalyzeElf(filename, raw=False):
 
     e = None
     if raw == False:
-        e = ELF(open(filename, "rb").read())
+        e = ELF(read(filename))
     else:
         e = ELF(filename)
 
@@ -297,7 +297,7 @@ def main(options, arguments):
             for method in _a.get("method", options.method) :
                 if options.pretty != None :
                     _a.ianalyze()
-                    method.pretty_show() 
+                    method.pretty_show()
                 else :
                     method.show()
 

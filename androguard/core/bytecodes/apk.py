@@ -19,6 +19,7 @@
 from androguard.core import bytecode
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
+from androguard.util import read
 
 import StringIO
 from struct import pack, unpack
@@ -42,7 +43,7 @@ if sys.hexversion < 0x2070000 :
         ZIPMODULE = 0
         # UNLOCK : change it with your valid key !
         try :
-            CHILKAT_KEY = open("key.txt", "rb").read()
+            CHILKAT_KEY = read("key.txt")
         except Exception :
             CHILKAT_KEY = "testme"
 
@@ -147,7 +148,7 @@ class APK(object):
 
         :Example:
           APK("myfile.apk")
-          APK(open("myfile.apk", "rb").read(), raw=True)
+          APK(read("myfile.apk"), raw=True)
     """
     def __init__(self, filename, raw=False, mode="r", magic_file=None, zipmodule=ZIPMODULE):
         self.filename = filename
@@ -169,9 +170,7 @@ class APK(object):
         if raw == True:
             self.__raw = filename
         else:
-            fd = open(filename, "rb")
-            self.__raw = fd.read()
-            fd.close()
+            self.__raw = read(filename)
 
         self.zipmodule = zipmodule
 

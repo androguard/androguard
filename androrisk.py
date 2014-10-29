@@ -25,6 +25,7 @@ from optparse import OptionParser
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.core.analysis import risk
+from androguard.util import read
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 1 }
 option_1 = { 'name' : ('-m', '--method'), 'help' : 'perform analysis of each method', 'action' : 'count' }
@@ -53,12 +54,12 @@ def main(options, arguments) :
     ri.add_risk_analysis( risk.FuzzyRisk() )
 
     if options.input != None :
-        ret_type = androconf.is_android( options.input ) 
+        ret_type = androconf.is_android( options.input )
         if ret_type == "APK" :
             a = apk.APK( options.input )
             analyze_app( options.input, ri, a )
         elif ret_type == "DEX" :
-            analyze_dex( options.input, ri, open(options.input, "r").read() )
+            analyze_dex( options.input, ri, read(options.input, binary=False) )
 
 
     elif options.directory != None :
@@ -79,7 +80,7 @@ def main(options, arguments) :
                             print e
 
                     elif ret_type == "DEX" :
-                        analyze_dex( real_filename, ri, open(real_filename, "r").read() )
+                        analyze_dex( real_filename, ri, read(real_filename, binary=False) )
 
     elif options.version != None :
         print "Androrisk version %s" % androconf.ANDROGUARD_VERSION

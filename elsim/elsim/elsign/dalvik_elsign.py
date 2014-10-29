@@ -24,6 +24,7 @@ from androguard.core.bytecodes import dvm
 
 from androguard.core.analysis import analysis
 from androguard.core import androconf
+from androguard.util import read
 
 from libelsign.libelsign import Elsign, entropy
 
@@ -73,7 +74,7 @@ class DalvikElsign :
     def load_config(self, buff) :
     ################ METHOD ################
         methsim = buff["METHSIM"]
-        
+
         self.meth_elsign.set_distance( str( methsim["DISTANCE"] ) )
         self.meth_elsign.set_method( str( methsim["METHOD"] ) )
         self.meth_elsign.set_weight( methsim["WEIGHTS"] )#[ 2.0, 1.2, 0.5, 0.1, 0.6 ] )
@@ -89,7 +90,7 @@ class DalvikElsign :
 
     ################ CLASS ################
         classsim = buff["METHSIM"]
-        
+
         self.class_elsign.set_distance( str( classsim["DISTANCE"] ) )
         self.class_elsign.set_method( str( classsim["METHOD"] ) )
         self.class_elsign.set_weight( classsim["WEIGHTS"] )#[ 2.0, 1.2, 0.5, 0.1, 0.6 ] )
@@ -101,16 +102,16 @@ class DalvikElsign :
         self.class_elsign.set_threshold_high( classsim["THRESHOLD_HIGH"] )
         # SNAPPY
         self.class_elsign.set_ncd_compression_algorithm( 5 )
-      
+
     def add_signature(self, type_signature, x, y, z) :
         ret = None
         #print type_signature, x, y, z
-        
+
         # FIX ENTROPIES (old version)
         for j in z :
             if len(j[0]) == 5 :
                 j[0].pop(0)
-       
+
         # FIX FORMULA (old version)
         y = FIX_FORMULA(y, len(z))
 
@@ -135,16 +136,16 @@ class DalvikElsign :
         for method in vm.get_methods() :
             if method.get_length() < 15 :
                 continue
-                
+
             entropies = create_entropies(vmx, method)
             self.meth_elsign.add_element( entropies[0], entropies[1:] )
             del entropies
-   
+
     def load_classes(self, vm, vmx) :
         if self.debug :
             print "LC",
             sys.stdout.flush()
-       
+
         # Add classes for CLASSSIM
         for c in vm.get_classes() :
             value = ""
@@ -153,14 +154,14 @@ class DalvikElsign :
             hex_entropy = 0.0
             exception_entropy = 0.0
             nb_methods = 0
-            
+
             class_data = c.get_class_data()
             if class_data == None :
                 continue
 
             for m in c.get_methods() :
                 z_tmp = create_entropies( vmx, m )
-                            
+
                 value += z_tmp[0]
                 android_entropy += z_tmp[1]
                 java_entropy += z_tmp[2]
@@ -168,23 +169,23 @@ class DalvikElsign :
                 exception_entropy += z_tmp[4]
 
                 nb_methods += 1
-                
+
             if nb_methods != 0 :
-                self.class_elsign.add_element( value, [ android_entropy/nb_methods, 
-                                                        java_entropy/nb_methods, 
+                self.class_elsign.add_element( value, [ android_entropy/nb_methods,
+                                                        java_entropy/nb_methods,
                                                         hex_entropy/nb_methods,
                                                         exception_entropy/nb_methods ] )
                 del value, z_tmp
 
     def check(self, vm, vmx) :
         self.load_meths(vm, vmx)
-        
+
         if self.debug :
             print "CM",
             sys.stdout.flush()
-        ret = self.meth_elsign.check() 
-        
-        
+        ret = self.meth_elsign.check()
+
+
         if self.debug :
             dt = self.meth_elsign.get_debug()
             debug_nb_sign = dt[0]
@@ -206,12 +207,12 @@ class DalvikElsign :
 
         if ret[0] == None :
             self.load_classes(vm, vmx)
-            
+
             if self.debug :
                 print "CC",
                 sys.stdout.flush()
             ret = self.class_elsign.check()
-        
+
             if self.debug :
                 dt = self.class_elsign.get_debug()
                 debug_nb_sign = dt[0]
@@ -248,9 +249,9 @@ class PublicSignature :
         self._load()
 
     def _load(self) :
-        self.DE.load_config( json.loads( open(self.config, "rb").read() ) )
+        self.DE.load_config( json.loads( read(self.config) ) )
 
-        buff = json.loads( open(self.database, "rb").read() )
+        buff = json.loads( read(self.database) )
         for i in buff :
 
             type_signature = None
@@ -273,10 +274,10 @@ class PublicSignature :
         if self.debug :
             print "loading apk..",
             sys.stdout.flush()
-       
+
         classes_dex = apk.get_dex()
         ret = self._check_dalvik( classes_dex )
-        
+
         return ret
 
     def check_dex(self, buff) :
@@ -296,18 +297,18 @@ class PublicSignature :
             @rtype : None if no signatures match, otherwise the name of the signature
         """
         return self._check_dalvik_direct( d, dx )
-    
+
     def _check_dalvik(self, buff) :
         if self.debug :
             print "loading dex..",
             sys.stdout.flush()
-        
+
         vm = dvm.DalvikVMFormat( buff )
-        
+
         if self.debug :
             print "analysis..",
             sys.stdout.flush()
-        
+
         vmx = analysis.VMAnalysis( vm )
         return self._check_dalvik_direct( vm, vmx )
 
@@ -345,7 +346,7 @@ class MSignature :
         """
         self.debug = True
         self.p.set_debug()
-        
+
 
     def check_apk(self, apk) :
         """
@@ -357,7 +358,7 @@ class MSignature :
         if self.debug :
             print "loading apk..",
             sys.stdout.flush()
-        
+
         classes_dex = apk.get_dex()
         ret, l = self.p._check_dalvik( classes_dex )
 
@@ -396,9 +397,9 @@ class PublicCSignature :
             a = apk.APK( rules[0]["SAMPLE"] )
             classes_dex = a.get_dex()
         elif ret_type == "DEX" :
-            classes_dex = open( rules[0]["SAMPLE"], "rb" ).read()
+            classes_dex = read( rules[0]["SAMPLE"])
         elif ret_type == "ELF" :
-            elf_file = open( rules[0]["SAMPLE"], "rb" ).read()
+            elf_file = read( rules[0]["SAMPLE"])
         else :
             return None
 
@@ -408,7 +409,7 @@ class PublicCSignature :
 
         for i in rules[1:] :
             x = { i["NAME"] : [] }
-            
+
             sign = []
             for j in i["SIGNATURE"] :
                 z = []
@@ -418,9 +419,9 @@ class PublicCSignature :
                     if m == None :
                         print "impossible to find", j["CN"], j["MN"], j["D"]
                         raise("ooo")
-                    
+
                     #print m.get_length()
-                   
+
                     z_tmp = create_entropies( vmx, m )
                     print z_tmp[0]
                     z_tmp[0] = base64.b64encode( z_tmp[0] )
@@ -437,7 +438,7 @@ class PublicCSignature :
                             nb_methods = 0
                             for m in c.get_methods() :
                                 z_tmp = create_entropies( vmx, m )
-                            
+
                                 value += z_tmp[0]
                                 android_entropy += z_tmp[1]
                                 java_entropy += z_tmp[2]
@@ -446,10 +447,10 @@ class PublicCSignature :
 
                                 nb_methods += 1
 
-                            z.extend( [ base64.b64encode(value), 
-                                        android_entropy/nb_methods, 
-                                        java_entropy/nb_methods, 
-                                        hex_entropy/nb_methods, 
+                            z.extend( [ base64.b64encode(value),
+                                        android_entropy/nb_methods,
+                                        java_entropy/nb_methods,
+                                        hex_entropy/nb_methods,
                                         exception_entropy/nb_methods ] )
                 else :
                     return None
@@ -470,9 +471,9 @@ class PublicCSignature :
             a = apk.APK( rules[0]["SAMPLE"] )
             classes_dex = a.get_dex()
         elif ret_type == "DEX" :
-            classes_dex = open( rules[0]["SAMPLE"], "rb" ).read()
+            classes_dex = read( rules[0]["SAMPLE"])
         #elif ret_type == "ELF" :
-            #elf_file = open( rules[0]["SAMPLE"], "rb" ).read()
+            #elf_file = read( rules[0]["SAMPLE"])
         else :
             return None
 
@@ -513,10 +514,7 @@ class CSignature :
         s = similarity.SIMILARITY( "./elsim/elsim/similarity/libsimilarity/libsimilarity.so" )
         s.set_compress_type( similarity.ZLIB_COMPRESS )
 
-        fd = open(output, "r")
-        buff = json.loads( fd.read() )
-        fd.close()
-
+        buff = json.loads( read(output, binary=False) )
         for i in buff :
             print i
             for j in buff[i][0] :
@@ -529,10 +527,7 @@ class CSignature :
         meth_sim = []
         class_sim = []
 
-        fd = open(output, "r")
-        buff = json.loads( fd.read() )
-        fd.close()
-        
+        buff = json.loads( read(output, binary=False) )
         for i in buff :
             nb = 0
             for ssign in buff[i][0] :
@@ -574,31 +569,26 @@ class CSignature :
                             problems[ ids[ j ] + ids[ i ] ] = 0
 
     def remove_indb(self, signature, output) :
-        fd = open(output, "r")
-        buff = json.loads( fd.read() )
-        fd.close()
-
+        buff = json.loads( read(output, binary=False) )
         del buff[signature]
 
-        fd = open(output, "w")
-        fd.write( json.dumps( buff ) )
-        fd.close()
+        with open(output, "w") as fd:
+            fd.write( json.dumps( buff ) )
 
     def add_indb(self, signatures, output) :
         if signatures == None :
             return
 
-        fd = open(output, "a+")
-        buff = fd.read() 
-        if buff == "" :
-            buff = {}
-        else :
-            buff = json.loads( buff )
-        fd.close()
+        with open(output, "a+") as fd:
+            buff = fd.read()
+            if buff == "" :
+                buff = {}
+            else:
+                buff = json.loads( buff )
 
         for i in signatures :
             buff.update( i )
 
-        fd = open(output, "w") 
-        fd.write( json.dumps( buff ) )
-        fd.close()
+        with open(output, "w") as fd:
+            fd.write( json.dumps( buff ) )
+

@@ -21,6 +21,7 @@
 import sys
 
 from androguard.core import androconf
+from androguard.util import read
 
 sys.path.append("./elsim/")
 from elsim.elsign import dalvik_elsign
@@ -39,7 +40,7 @@ options = [option_0, option_1, option_2, option_3, option_4, option_5]
 def main(options, arguments) :
     s = dalvik_elsign.CSignature(pcs=dalvik_elsign.PublicCSignature)
     if options.input != None :
-        ret = s.add_file( open( options.input, "rb" ).read() )
+        ret = s.add_file( read( options.input) )
         if ret != None and options.output != None :
             s.add_indb( ret, options.output )
 

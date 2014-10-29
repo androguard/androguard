@@ -238,25 +238,24 @@ def export_xgmml_efcg(a, x, fd) :
 def export_apps_to_xgmml( input, output, fcg, efcg ) :
     a = Androguard( [ input ] )
 
-    fd = open(output, "w")
-    fd.write("<?xml version='1.0'?>\n")
-    fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
+    with open(output, "w") as fd:
+        fd.write("<?xml version='1.0'?>\n")
+        fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
 
-    for vm in a.get_vms() :
-        x = analysis.VMAnalysis( vm )
-        # CFG
-        for method in vm.get_methods() :
-            g = x.get_method( method )
-            export_xgmml_cfg(g, fd)
+        for vm in a.get_vms() :
+            x = analysis.VMAnalysis( vm )
+            # CFG
+            for method in vm.get_methods() :
+                g = x.get_method( method )
+                export_xgmml_cfg(g, fd)
 
-        if fcg :
-            export_xgmml_fcg(vm, x, fd)
+            if fcg :
+                export_xgmml_fcg(vm, x, fd)
 
-        if efcg :
-            export_xgmml_efcg(vm, x, fd)
+            if efcg :
+                export_xgmml_efcg(vm, x, fd)
 
-    fd.write("</graph>")
-    fd.close()
+        fd.write("</graph>")
 
 def main(options, arguments) :
     if options.input != None and options.output != None :

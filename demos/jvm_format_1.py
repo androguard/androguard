@@ -6,11 +6,12 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
 
+from androguard.util import read
 import jvm
 
 TEST = "./examples/java/test/orig/Test1.class"
 
-j = jvm.JVMFormat( open(TEST).read() )
+j = jvm.JVMFormat( read(TEST, binary=False) )
 
 # SHOW CLASS (verbose)
 j.show()

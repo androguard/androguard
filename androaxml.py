@@ -25,6 +25,7 @@ import codecs
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
+from androguard.util import read
 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
@@ -42,7 +43,7 @@ def main(options, arguments) :
             a = apk.APK(options.input)
             buff = a.get_android_manifest_xml().toprettyxml(encoding="utf-8")
         elif ".xml" in options.input:
-            ap = apk.AXMLPrinter(open(options.input, "rb").read())
+            ap = apk.AXMLPrinter(read(options.input))
             buff = minidom.parseString(ap.get_buff()).toprettyxml(encoding="utf-8")
         else:
             print "Unknown file type"

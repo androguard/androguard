@@ -13,9 +13,8 @@ def _VmB(VmKey):
     global _proc_status, _scale
      # get pseudo file  /proc/<pid>/status
     try:
-        t = open(_proc_status)
-        v = t.read()
-        t.close()
+        with open(_proc_status) as t:
+            v = t.read()
     except:
         return 0.0  # non-Linux?
      # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
