@@ -94,15 +94,13 @@ class AndroPreDump :
 
     def dumpMemory(self, base_filename) :
         for i in self.data :
-            fd = open(base_filename + "-" + "0x%x-0x%x" % (i[0].start, i[0].end), "w")
-            fd.write( i[1] )
-            fd.close()
+            with open(base_filename + "-" + "0x%x-0x%x" % (i[0].start, i[0].end), "w") as fd:
+                fd.write( i[1] )
 
     def dumpFiles(self, base_filename) :
         for i in self.data :
-            fd = open(base_filename + "-" + "0x%x-0x%x" % (i[0].start + i[2], i[0].end), "w")
-            fd.write( i[1][i[2]:] )
-            fd.close()
+            with fd = open(base_filename + "-" + "0x%x-0x%x" % (i[0].start + i[2], i[0].end), "w") as fd:
+                fd.write( i[1][i[2]:] )
 
 class AndroDump :
     def __init__(self, adp) :

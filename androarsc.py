@@ -25,6 +25,7 @@ import codecs
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
+from androguard.util import read
 
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android resources(arsc))', 'nargs' : 1 }
@@ -46,7 +47,7 @@ def main(options, arguments):
             a = apk.APK(options.input)
             arscobj = a.get_android_resources()
         elif ret_type == "ARSC":
-            arscobj = apk.ARSCParser(open(options.input, "rb").read())
+            arscobj = apk.ARSCParser(read(options.input))
         else:
             print "Unknown file type"
             return

@@ -24,6 +24,7 @@ from optparse import OptionParser
 import sys
 sys.path.append("./")
 
+from androguard.util import read
 from elsim.elsim import Elsim, ELSIM_VERSION
 from elsim.elsim_text import ProxyText, FILTERS_TEXT
 
@@ -37,18 +38,18 @@ options = [option_0, option_1, option_2]
 def main(options, arguments) :
     if options.input != None :
 
-        el = Elsim( ProxyText( open(options.input[0], "rb").read() ),
-                ProxyText( open(options.input[1], "rb").read() ), FILTERS_TEXT,
+        el = Elsim( ProxyText( read(options.input[0]) ),
+                ProxyText( read(options.input[1]) ), FILTERS_TEXT,
                 libpath="elsim/similarity/libsimilarity/libsimilarity.so")
         el.show()
         print "\t--> sentences: %f%% of similarities" % el.get_similarity_value()
-        
+
         if options.display :
             print "SIMILAR sentences:"
             diff_methods = el.get_similar_elements()
             for i in diff_methods :
                 el.show_element( i )
-            
+
             print "IDENTICAL sentences:"
             new_methods = el.get_identical_elements()
             for i in new_methods :
@@ -63,7 +64,7 @@ def main(options, arguments) :
             del_methods = el.get_deleted_elements()
             for i in del_methods :
                 el.show_element( i )
-            
+
             print "SKIPPED sentences:"
             skip_methods = el.get_skipped_elements()
             for i in skip_methods :

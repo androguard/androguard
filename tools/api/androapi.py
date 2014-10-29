@@ -99,31 +99,29 @@ def extractInformation( filename ) :
                 PERMS_API[ perm ][ package ].append( element )
 
 def save_file( filename ):
-    fd = open( filename, "w" )
+    with open( filename, "w" ) as fd:
+        fd.write("PERMISSIONS = {\n")
+        for i in PERMS_API :
+            if len(PERMS_API[ i ]) > 0 :
+                fd.write("\"%s\" : {\n" % ( i ))
 
-    fd.write("PERMISSIONS = {\n")
-    for i in PERMS_API :
-        if len(PERMS_API[ i ]) > 0 :
-            fd.write("\"%s\" : {\n" % ( i ))
+            for package in PERMS_API[ i ] :
+                if len(PERMS_API[ i ][ package ]) > 0 :
+                    fd.write("\t\"%s\" : [\n" % package)
 
-        for package in PERMS_API[ i ] :
-            if len(PERMS_API[ i ][ package ]) > 0 :
-                fd.write("\t\"%s\" : [\n" % package)
+                for j in PERMS_API[ i ][ package ] :
+                    if isinstance(j, Function) :
+                        fd.write( "\t\t[\"F\"," "\"" + j.name + "\"," + "\"" + j.desc_return + "\"]" + ",\n")
+                    else :
+                        fd.write( "\t\t[\"C\"," "\"" + j.name + "\"," + "\"" + j.desc_return + "\"]" + ",\n")
 
-            for j in PERMS_API[ i ][ package ] :
-                if isinstance(j, Function) :
-                    fd.write( "\t\t[\"F\"," "\"" + j.name + "\"," + "\"" + j.desc_return + "\"]" + ",\n")
-                else :
-                    fd.write( "\t\t[\"C\"," "\"" + j.name + "\"," + "\"" + j.desc_return + "\"]" + ",\n")
+                if len(PERMS_API[ i ][ package ]) > 0 :
+                    fd.write("\t],\n")
 
-            if len(PERMS_API[ i ][ package ]) > 0 :
-                fd.write("\t],\n")
+            if len(PERMS_API[ i ]) > 0 :
+                fd.write("},\n\n")
 
-        if len(PERMS_API[ i ]) > 0 :
-            fd.write("},\n\n")
-
-    fd.write("}")
-    fd.close()
+        fd.write("}")
 
 BASE_DOCS = sys.argv[1]
 

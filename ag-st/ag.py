@@ -30,6 +30,7 @@ from androguard.core.analysis import analysis
 from androguard.core.analysis import ganalysis
 from androguard.decompiler import decompiler
 from androguard.core import androconf
+from androguard.util import read
 
 AG_DEX_VIEW = {}
 AG_APK_VIEW = {}
@@ -527,19 +528,19 @@ class AgCommand(sublime_plugin.WindowCommand):
 
     ret = androconf.is_android(filename)
     if ret == "APK":
-        at = AnalyseAPKThread(self.window.new_file(), filename, open(filename, "rb").read())
+        at = AnalyseAPKThread(self.window.new_file(), filename, read(filename))
         at.run()
     elif ret == "DEX" or ret == "DEY":
-        at = AnalyseDexThread(self.window.new_file(), filename, open(filename, "rb").read())
+        at = AnalyseDexThread(self.window.new_file(), filename, read(filename))
         at.run()
     elif ret == "AXML":
-        at = AnalyseAXMLSimpleThread(self.window.new_file(), filename, open(filename, "rb").read())
+        at = AnalyseAXMLSimpleThread(self.window.new_file(), filename, read(filename))
         at.run()
     elif ret == "ARSC":
-        at = AnalyseARSCThread(self.window.new_file(), filename, open(filename, "rb").read())
+        at = AnalyseARSCThread(self.window.new_file(), filename, read(filename))
         at.run()
 
-    #thread = AnalyseThread(self.window.new_file(), filename, open(filename, "rb").read())
+    #thread = AnalyseThread(self.window.new_file(), filename, read(filename))
     #thread.start()
     #ThreadProgress(thread,
     #               "Analysing app ...",

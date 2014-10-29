@@ -25,6 +25,7 @@ from optparse import OptionParser
 from androguard.core import androconf
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
+from androguard.util import read
 
 sys.path.append("./elsim")
 from elsim import elsim
@@ -51,7 +52,7 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
         a = apk.APK( file_input )
         d2 = dvm.DalvikVMFormat( a.get_dex() )
     elif ret_type == "DEX" :
-        d2 = dvm.DalvikVMFormat( open(file_input, "rb").read() )
+        d2 = dvm.DalvikVMFormat( read(file_input) )
 
     if d2 == None :
       return
@@ -60,14 +61,14 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
     el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor, libnative=library )
     el.show()
     print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
-    
+
 
     if options.display :
         print "SIMILAR methods:"
         diff_methods = el.get_similar_elements()
         for i in diff_methods :
             el.show_element( i )
-            
+
         print "IDENTICAL methods:"
         new_methods = el.get_identical_elements()
         for i in new_methods :
@@ -82,30 +83,30 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
         del_methods = el.get_deleted_elements()
         for i in del_methods :
             el.show_element( i )
-            
+
         print "SKIPPED methods:"
         skipped_methods = el.get_skipped_elements()
         for i in skipped_methods :
             el.show_element( i )
-    
+
     if view_strings :
         els = elsim.Elsim( ProxyDalvikStringMultiple(d1, dx1),
-                           ProxyDalvikStringMultiple(d2, dx2), 
-                           FILTERS_DALVIK_SIM_STRING, 
-                           threshold, 
-                           options.compressor, 
+                           ProxyDalvikStringMultiple(d2, dx2),
+                           FILTERS_DALVIK_SIM_STRING,
+                           threshold,
+                           options.compressor,
                            libnative=library )
         #els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1),
         #    ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor, libnative=library )
         els.show()
         print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
-    
+
         if options.display :
           print "SIMILAR strings:"
           diff_strings = els.get_similar_elements()
           for i in diff_strings :
             els.show_element( i )
-            
+
           print "IDENTICAL strings:"
           new_strings = els.get_identical_elements()
           for i in new_strings :
@@ -120,12 +121,12 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
           del_strings = els.get_deleted_elements()
           for i in del_strings :
             els.show_element( i )
-            
+
           print "SKIPPED strings:"
           skipped_strings = els.get_skipped_elements()
           for i in skipped_strings :
             els.show_element( i )
-        
+
 
 def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True) :
     for root, dirs, files in os.walk( directory, followlinks=True ) :
@@ -148,10 +149,10 @@ def main(options, arguments) :
             a = apk.APK( options.input[0] )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
         elif ret_type == "DEX" :
-            d1 = dvm.DalvikVMFormat( open(options.input[0], "rb").read() )
-        
+            d1 = dvm.DalvikVMFormat( read(options.input[0]) )
+
         dx1 = analysis.VMAnalysis( d1 )
-        
+
         threshold = None
         if options.threshold != None :
             threshold = float(options.threshold)
@@ -159,11 +160,11 @@ def main(options, arguments) :
         FS = FILTERS_DALVIK_SIM
         FS[elsim.FILTER_SKIPPED_METH].set_regexp( options.exclude )
         FS[elsim.FILTER_SKIPPED_METH].set_size( options.size )
-    
+
         new = True
         if options.new != None :
           new = False
-        
+
         library = True
         if options.library != None :
             library = options.library

@@ -25,6 +25,7 @@ from androguard.core import androconf
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
 from androguard.core.androconf import debug
+from androguard.util import read
 
 
 class AndroAuto(object):
@@ -354,5 +355,5 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
           if real_filename[-1] != "/":
             real_filename += "/"
           real_filename += f
-          q.put((real_filename, open(real_filename, "rb").read()))
+          q.put((real_filename, read(real_filename)))
     return False

@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 
-f = open("permi", "r")
-
-b = f.readlines()
-f.close()
+with open("permi", "r") as f:
+    b = f.readlines()
 
 for i in b :
     v = i.split(" ")

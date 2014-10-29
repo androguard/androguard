@@ -34,6 +34,7 @@ from androguard.decompiler.dad.dataflow import (build_def_use,
 from androguard.decompiler.dad.graph import construct
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
+from androguard.util import read
 
 
 def auto_vm(filename):
@@ -41,9 +42,9 @@ def auto_vm(filename):
     if ret == 'APK':
         return dvm.DalvikVMFormat(apk.APK(filename).get_dex())
     elif ret == 'DEX':
-        return dvm.DalvikVMFormat(open(filename, 'rb').read())
+        return dvm.DalvikVMFormat(read(filename))
     elif ret == 'ODEX':
-        return dvm.DalvikOdexVMFormat(open(filename, 'rb').read())
+        return dvm.DalvikOdexVMFormat(read(filename))
     return None
 
 

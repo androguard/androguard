@@ -21,6 +21,7 @@ import re, zipfile, StringIO, os
 
 from androguard.core import bytecode
 from androguard.core.bytecode import SV, SVs
+from androguard.util import read
 
 
 ######################################################## JAR FORMAT ########################################################
@@ -31,9 +32,7 @@ class JAR :
         if raw == True :
             self.__raw = filename
         else :
-            fd = open( filename, "rb" )
-            self.__raw = fd.read()
-            fd.close()
+            self.__raw = read(filename)
 
         self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
 
@@ -479,7 +478,7 @@ def determineNext(i, end, m) :
         return x
     return []
 
-def determineException(vm, m) :                                                                                                                                                                  
+def determineException(vm, m) :
     return []
 
 def classToJclass(x) :
@@ -1366,7 +1365,7 @@ class JavaCode :
         """
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
-        
+
     def get_relative_idx(self, idx) :
         """
             Return the relative idx by given an offset in the code
@@ -3430,7 +3429,7 @@ class JVMFormat(bytecode._Bytecode) :
             @rtype: string
         """
         return self._get_raw()
-    
+
     def set_vmanalysis(self, vmanalysis) :
         pass
 

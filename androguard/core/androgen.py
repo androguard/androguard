@@ -21,6 +21,7 @@ from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
 from androguard.core.analysis import analysis
 from androguard.core.analysis import ganalysis
+from androguard.util import read
 
 class BC :
     def __init__(self, bc) :
@@ -92,7 +93,7 @@ class Androguard(object):
 
         self.__orig_raw = {}
         for i in self.__files :
-            self.__orig_raw[ i ] = open(i, "rb").read()
+            self.__orig_raw[ i ] = read(i)
 
         self.__bc = []
         self._analyze()
@@ -112,12 +113,12 @@ class Androguard(object):
                 x = apk.APK( i )
                 bc = dvm.DalvikVMFormat( x.get_dex() )
             elif ret_type == "DEX" :
-                bc = dvm.DalvikVMFormat( open(i, "rb").read() )
+                bc = dvm.DalvikVMFormat( read(i) )
             elif ret_type == "DEY" :
-                bc = dvm.DalvikOdexVMFormat( open(i, "rb").read() )
+                bc = dvm.DalvikOdexVMFormat( read(i) )
             elif ret_type == "ELF" :
                 from androguard.core.binaries import elf
-                bc = elf.ELF( open(i, "rb").read() )
+                bc = elf.ELF( read(i) )
             else :
                 raise( "Unknown format" )
 

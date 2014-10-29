@@ -11,7 +11,7 @@
 # (at your option) any later version.
 #
 # Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of  
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
@@ -24,7 +24,8 @@ from optparse import OptionParser
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.data import data
 from androguard.core.analysis import analysis, ganalysis
-from androguard.core import androconf 
+from androguard.core import androconf
+from androguard.util import read
 
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
 option_1 = { 'name' : ('-o', '--output'), 'help' : 'directory output', 'nargs' : 1 }
@@ -60,7 +61,7 @@ def main(options, arguments) :
                 print "INVALID APK"
         elif ret_type == "DEX" :
             try :
-                vm = dvm.DalvikVMFormat( open(options.input, "rb").read() )
+                vm = dvm.DalvikVMFormat( read(options.input) )
             except Exception, e :
                 print "INVALID DEX", e
 
@@ -76,7 +77,7 @@ def main(options, arguments) :
 
         buff = dd.export_apk_to_gml()
         androconf.save_to_disk( buff, options.output + "/" + "apk.graphml" )
-        
+
         buff = dd.export_methodcalls_to_gml()
         androconf.save_to_disk( buff,  options.output + "/" + "methodcalls.graphml" )
 
@@ -91,7 +92,7 @@ if __name__ == "__main__" :
 	  del option['name']
 	  parser.add_option(*param, **option)
 
-	  
+
    options, arguments = parser.parse_args()
    sys.argv[:] = arguments
-   main(options, arguments)	
+   main(options, arguments)

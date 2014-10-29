@@ -25,6 +25,7 @@ from optparse import OptionParser
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
 from androguard.core import androconf
+from androguard.util import read
 
 sys.path.append("./elsim")
 from elsim import elsim
@@ -48,29 +49,29 @@ def main(options, arguments) :
     details = False
     if options.display != None :
         details = True
-    
+
     if options.input != None :
         ret_type = androconf.is_android( options.input[0] )
         if ret_type == "APK" :
             a = apk.APK( options.input[0] )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
         elif ret_type == "DEX" :
-            d1 = dvm.DalvikVMFormat( open(options.input[0], "rb").read() )
-        
+            d1 = dvm.DalvikVMFormat( read(options.input[0]) )
+
         dx1 = analysis.VMAnalysis( d1 )
-       
+
         ret_type = androconf.is_android( options.input[1] )
         if ret_type == "APK" :
             a = apk.APK( options.input[1] )
             d2 = dvm.DalvikVMFormat( a.get_dex() )
         elif ret_type == "DEX" :
-            d2 = dvm.DalvikVMFormat( open(options.input[1], "rb").read() )
-        
+            d2 = dvm.DalvikVMFormat( read(options.input[1]) )
+
         dx2 = analysis.VMAnalysis( d2 )
 
         print d1, dx1, d2, dx2
         sys.stdout.flush()
-        
+
         threshold = None
         if options.threshold != None :
             threshold = float(options.threshold)

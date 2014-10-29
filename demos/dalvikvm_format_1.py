@@ -5,10 +5,11 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 from androguard.core.bytecodes import dvm
+from androguard.util import read
 
 TEST = "./examples/dalvik/test/bin/classes.dex"
 
-j = dvm.DalvikVMFormat(open(TEST).read())
+j = dvm.DalvikVMFormat(read(TEST, binary=False))
 
 # SHOW CLASS (verbose)
 j.show()

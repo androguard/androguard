@@ -20,6 +20,7 @@ import re, random, string, cPickle
 from androguard.core.androconf import error, warning, debug, is_ascii_problem
 from androguard.core.bytecodes import jvm, dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
+from androguard.util import read
 
 class ContextField :
     def __init__(self, mode) :
@@ -2351,7 +2352,7 @@ class VMAnalysis(object):
        :type _vm: a :class:`DalvikVMFormat` object
 
        :Example:
-            VMAnalysis( DalvikVMFormat( open("toto.dex", "r").read() ) )
+            VMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
     """
     def __init__(self, _vm) :
         self.__vm = _vm
@@ -2501,7 +2502,7 @@ class uVMAnalysis(VMAnalysis) :
      :type _vm: a :class:`DalvikVMFormat` object
 
      :Example:
-          uVMAnalysis( DalvikVMFormat( open("toto.dex", "r").read() ) )
+          uVMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
   """
   def __init__(self, vm) :
     self.vm = vm

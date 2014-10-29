@@ -8,15 +8,16 @@ sys.path.append(PATH_INSTALL)
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
 from androguard.decompiler import decompiler
+from androguard.util import read
 
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
-j = dvm.DalvikVMFormat( open(TEST).read() )
+j = dvm.DalvikVMFormat( read(TEST, binary=False) )
 jx = analysis.VMAnalysis( j )
 
 #d = decompiler.DecompilerDex2Jad( j )
 #d = decompiler.DecompilerDed( j )
-d = decompiler.DecompilerDAD( j, jx ) 
+d = decompiler.DecompilerDAD( j, jx )
 
 j.set_decompiler( d )
 

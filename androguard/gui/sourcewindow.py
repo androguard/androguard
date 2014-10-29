@@ -63,7 +63,7 @@ class SourceWindow(QtGui.QTextBrowser):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
 
-        # No need to call reload_java_sources() here because 
+        # No need to call reload_java_sources() here because
         # it is called in MainWindow.currentTabChanged() function
         # that will be called when displaying the tab
 
@@ -101,13 +101,12 @@ class SourceWindow(QtGui.QTextBrowser):
 
         filename = os.path.join(self.ospath, self.osfile)
         androconf.debug("Writing file: %s" % filename)
-        fd = open(filename, 'wb')
-        for section, L in lines:
-            for t in L:
-#                if t[0] in BINDINGS_NAMES:
-#                    self.binding[cursor.position()] = t
-                fd.write(t[1])
-        fd.close()
+        with open(filename, 'wb') as fd:
+            for section, L in lines:
+                for t in L:
+    #                if t[0] in BINDINGS_NAMES:
+    #                    self.binding[cursor.position()] = t
+                    fd.write(t[1])
 
         #TODO: delete doc when tab is closed? not deleted by "self" :(
         if hasattr(self, "doc"):
@@ -194,7 +193,7 @@ class SourceWindow(QtGui.QTextBrowser):
             self.mainwin.showStatus("Rename not available. No info for: '%s'." % selection)
             return
 
-        # Double check if we support the renaming for the type of 
+        # Double check if we support the renaming for the type of
         # object before poping a new window to the user
         t = self.doc.binding[start]
         if t[0] == 'NAME_METHOD_PROTOTYPE':

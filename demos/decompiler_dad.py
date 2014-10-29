@@ -8,10 +8,11 @@ sys.path.append(PATH_INSTALL)
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
 from androguard.decompiler.dad import decompile
+from androguard.util import read
 
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-vm = dvm.DalvikVMFormat(open(TEST, "r").read())
+vm = dvm.DalvikVMFormat(read(TEST, binary=False))
 vmx = analysis.VMAnalysis(vm)
 
 # CFG

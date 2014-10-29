@@ -22,6 +22,7 @@ import os
 
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
+from androguard.util import read
 
 PYGMENTS = True
 try:
@@ -43,10 +44,9 @@ class Dex2Jar(object):
             os.makedirs(pathtmp)
 
         fd, fdname = tempfile.mkstemp(dir=pathtmp)
-        fd = os.fdopen(fd, "w+b")
-        fd.write(vm.get_buff())
-        fd.flush()
-        fd.close()
+        with os.fdopen(fd, "w+b") as fd:
+            fd.write(vm.get_buff())
+            fd.flush()
 
         compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
@@ -68,10 +68,9 @@ class DecompilerDex2Jad(object):
             os.makedirs(pathtmp)
 
         fd, fdname = tempfile.mkstemp(dir=pathtmp)
-        fd = os.fdopen(fd, "w+b")
-        fd.write(vm.get_buff())
-        fd.flush()
-        fd.close()
+        with os.fdopen(fd, "w+b") as fd:
+            fd.write(vm.get_buff())
+            fd.flush()
 
         compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
@@ -96,9 +95,7 @@ class DecompilerDex2Jad(object):
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
             if os.path.isfile(fname) == True:
-                fd = open(fname, "r")
-                self.classes[i.get_name()] = fd.read()
-                fd.close()
+                self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 
@@ -151,10 +148,9 @@ class DecompilerDex2WineJad(object):
             os.makedirs(pathtmp)
 
         fd, fdname = tempfile.mkstemp(dir=pathtmp)
-        fd = os.fdopen(fd, "w+b")
-        fd.write(vm.get_buff())
-        fd.flush()
-        fd.close()
+        with os.fdopen(fd, "w+b") as fd:
+            fd.write(vm.get_buff())
+            fd.flush()
 
         compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
@@ -179,9 +175,7 @@ class DecompilerDex2WineJad(object):
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
             if os.path.isfile(fname) == True:
-                fd = open(fname, "r")
-                self.classes[i.get_name()] = fd.read()
-                fd.close()
+                self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 
@@ -233,10 +227,9 @@ class DecompilerDed(object):
             os.makedirs( pathtmp )
 
         fd, fdname = tempfile.mkstemp( dir=pathtmp )
-        fd = os.fdopen(fd, "w+b")
-        fd.write( vm.get_buff() )
-        fd.flush()
-        fd.close()
+        with os.fdopen(fd, "w+b") as fd:
+            fd.write( vm.get_buff() )
+            fd.flush()
 
         dirname = tempfile.mkdtemp(prefix=fdname + "-src")
         compile = Popen([ path + bin_ded, "-c", "-o", "-d", dirname, fdname ], stdout=PIPE, stderr=STDOUT)
@@ -259,10 +252,8 @@ class DecompilerDed(object):
         for i in vm.get_classes() :
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
             #print fname
-            if os.path.isfile(fname) == True :
-                fd = open(fname, "r")
-                self.classes[ i.get_name() ] = fd.read()
-                fd.close()
+            if os.path.isfile(fname) == True:
+                self.classes[ i.get_name() ] = read(fname, binary=False)
             else :
                 self.classes_failed.append( i.get_name() )
 
@@ -317,10 +308,9 @@ class DecompilerDex2Fernflower(object):
             os.makedirs(pathtmp)
 
         fd, fdname = tempfile.mkstemp(dir=pathtmp)
-        fd = os.fdopen(fd, "w+b")
-        fd.write(vm.get_buff())
-        fd.flush()
-        fd.close()
+        with os.fdopen(fd, "w+b") as fd:
+            fd.write(vm.get_buff())
+            fd.flush()
 
         compile = Popen([path_dex2jar + bin_dex2jar, fdname], stdout=PIPE, stderr=STDOUT)
         stdout, stderr = compile.communicate()
@@ -352,9 +342,7 @@ class DecompilerDex2Fernflower(object):
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"
             if os.path.isfile(fname) == True:
-                fd = open(fname, "r")
-                self.classes[i.get_name()] = fd.read()
-                fd.close()
+                self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 

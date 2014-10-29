@@ -17,6 +17,7 @@
 
 from androguard.core import bytecode
 from androguard.core.androconf import CONF, debug, warning, is_android_raw
+from androguard.util import read
 
 import sys
 import re
@@ -7281,7 +7282,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         :type decompiler: object
 
         :Example:
-          DalvikVMFormat( open("classes.dex", "rb").read() )
+          DalvikVMFormat( read("classes.dex") )
     """
     def __init__(self, buff, decompiler=None, config=None):
         super(DalvikVMFormat, self).__init__(buff)
@@ -8259,7 +8260,7 @@ class DalvikOdexVMFormat(DalvikVMFormat):
         :type decompiler: object
 
         :Example:
-          DalvikOdexVMFormat( open("classes.odex", "rb").read() )
+          DalvikOdexVMFormat( read("classes.odex") )
     """
     def _preload(self, buff):
         self.orig_buff = buff
@@ -8385,7 +8386,7 @@ def auto(filename, raw=None):
   """
   data_raw = raw
   if raw == None:
-    data_raw = open(filename, "rb").read()
+    data_raw = read(filename)
     ret_type = is_android_raw(data_raw[:10])
     if ret_type == "DEX":
       return DalvikVMFormat(data_raw)

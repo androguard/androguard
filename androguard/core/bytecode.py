@@ -719,10 +719,9 @@ class _Bytecode(object):
         self.__buff = buff
 
     def save(self, filename) :
-        fd = open(filename, "w")
         buff = self._save()
-        fd.write( buff )
-        fd.close()
+        with open(filename, "w") as fd:
+            fd.write( buff )
 
 def FormatClassToJava(input) :
     """

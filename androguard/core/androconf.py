@@ -207,14 +207,11 @@ def is_android(filename) :
     if not filename:
         return None
 
-    fd = open( filename, "r")
     val = None
+    with open(filename, "r") as fd:
+        f_bytes = fd.read(7)
+        val = is_android_raw( f_bytes )
 
-    f_bytes = fd.read(7)
-
-    val = is_android_raw( f_bytes )
-
-    fd.close()
     return val
 
 def is_android_raw(raw):
@@ -279,9 +276,8 @@ def set_options(key, value) :
     CONF[ key ] = value
 
 def save_to_disk(buff, output) :
-    fd = open(output, "w")
-    fd.write(buff)
-    fd.close()
+    with open(output, "w") as fd:
+        fd.write(buff)
 
 def rrmdir( directory ):
     for root, dirs, files in os.walk(directory, topdown=False):

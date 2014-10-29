@@ -6,12 +6,13 @@ PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "/core")
 sys.path.append(PATH_INSTALL + "/core/bytecodes")
 
+from androguard.util import read
 import jvm
 
 TEST = "./examples/java/test/orig/Test1.class"
 TEST_OUTPUT = "./examples/java/test/new/Test1.class"
 
-j = jvm.JVMFormat( open(TEST).read() )
+j = jvm.JVMFormat( read(TEST, binary=False) )
 
 # Modify the name of each field
 for field in j.get_fields() :
@@ -23,6 +24,6 @@ for method in j.get_methods() :
         method.set_name( random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] ) )
 
 # SAVE CLASS
-fd = open( TEST_OUTPUT, "w" )
-fd.write( j.save() )
-fd.close()
+with open( TEST_OUTPUT, "w" ) as fd:
+	fd.write( j.save() )
+

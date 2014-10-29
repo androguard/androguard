@@ -34,6 +34,7 @@ from elsim.similarity.similarity import *
 from androguard.core import androconf
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
+from androguard.util import read
 
 DEFAULT_SIGNATURE = analysis.SIGNATURE_SEQUENCE_BB
 option_0 = { 'name' : ('-i', '--input'), 'help' : 'use this filename', 'nargs' : 1 }
@@ -65,7 +66,7 @@ def check_one_directory(directory) :
                     a = apk.APK( real_filename )
                     d1 = dvm.DalvikVMFormat( a.get_dex() )
                 elif ret_type == "DEX" :
-                    d1 = dvm.DalvikVMFormat( open(real_filename, "rb").read() )
+                    d1 = dvm.DalvikVMFormat( read(real_filename) )
 
                 dx1 = analysis.VMAnalysis( d1 )
                 check_one_file( d1, dx1 )
@@ -77,7 +78,7 @@ def main(options, arguments) :
             a = apk.APK( options.input )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
         elif ret_type == "DEX" :
-            d1 = dvm.DalvikVMFormat( open(options.input, "rb").read() )
+            d1 = dvm.DalvikVMFormat( read(options.input) )
 
         dx1 = analysis.VMAnalysis( d1 )
 

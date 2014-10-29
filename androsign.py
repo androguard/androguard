@@ -24,6 +24,7 @@ from optparse import OptionParser
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
+from androguard.util import read
 
 sys.path.append("./elsim/")
 from elsim.elsign import dalvik_elsign
@@ -48,8 +49,8 @@ def main(options, arguments) :
     s = dalvik_elsign.MSignature( options.database, options.config, options.verbose != None, ps = dalvik_elsign.PublicSignature)
 
     if options.input != None :
-        ret_type = androconf.is_android( options.input ) 
-        
+        ret_type = androconf.is_android( options.input )
+
         print os.path.basename(options.input), ":",
         sys.stdout.flush()
         if ret_type == "APK" :
@@ -63,7 +64,7 @@ def main(options, arguments) :
                 print "ERROR", e
 
         elif ret_type == "DEX" :
-            display( s.check_dex( open(options.input, "rb").read() ), options.verbose )
+            display( s.check_dex( read(options.input) ), options.verbose )
     elif options.directory != None :
         for root, dirs, files in os.walk( options.directory, followlinks=True ) :
             if files != [] :
@@ -89,8 +90,8 @@ def main(options, arguments) :
                         try :
                             print os.path.basename( real_filename ), ":",
                             sys.stdout.flush()
-                            display( s.check_dex( open(real_filename, "rb").read() ), options.verbose )
-                        except Exception, e : 
+                            display( s.check_dex( read(real_filename) ), options.verbose )
+                        except Exception, e :
                             print "ERROR", e
 
     elif options.version != None :
