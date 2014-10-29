@@ -226,12 +226,10 @@ class DvClass(object):
             source.append('package %s;\n' % self.package)
 
         superclass, prototype = self.superclass, self.prototype
-        if superclass is not None:
+        if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
-            if superclass.split('.')[-1] == 'Object':
-                superclass = None
-            if superclass is not None:
-                prototype += ' extends %s' % superclass
+            prototype += ' extends %s' % superclass
+
         if self.interfaces is not None:
             interfaces = self.interfaces[1:-1].split(' ')
             prototype += ' implements %s' % ', '.join(
@@ -276,13 +274,11 @@ class DvClass(object):
             ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
         list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
         superclass = self.superclass
-        if superclass is not None:
+        if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
-            if superclass.split('.')[-1] == 'Object':
-                superclass = None
-            if superclass is not None:
-                list_proto.append(('EXTEND', ' extends '))
-                list_proto.append(('NAME_SUPERCLASS', '%s' % superclass))
+            list_proto.append(('EXTEND', ' extends '))
+            list_proto.append(('NAME_SUPERCLASS', '%s' % superclass))
+
         if self.interfaces is not None:
             interfaces = self.interfaces[1:-1].split(' ')
             list_proto.append(('IMPLEMENTS', ' implements '))
