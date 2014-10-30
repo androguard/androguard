@@ -579,7 +579,7 @@ class SV(object):
     def set_value(self, attr) :
         self.__value = attr
 
-class SVs :
+class SVs(object):
     def __init__(self, size, ntuple, buff) :
         self.__size = size
 
@@ -660,7 +660,7 @@ class BuffHandle(object):
     def end(self) :
         return self.__idx == len(self.__buff)
 
-class Buff :
+class Buff(object):
     def __init__(self, offset, buff) :
         self.offset = offset
         self.buff = buff

@@ -22,7 +22,7 @@ from androguard.core.bytecodes import jvm, dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 from androguard.util import read
 
-class ContextField :
+class ContextField(object):
     def __init__(self, mode) :
         self.mode = mode
         self.details = []
@@ -31,7 +31,7 @@ class ContextField :
         for i in details :
             self.details.append( i )
 
-class ContextMethod :
+class ContextMethod(object):
     def __init__(self) :
         self.details = []
 
@@ -39,7 +39,7 @@ class ContextMethod :
         for i in details :
             self.details.append( i )
 
-class ExternalFM :
+class ExternalFM(object):
     def __init__(self, class_name, name, descriptor) :
         self.class_name = class_name
         self.name = name
@@ -54,7 +54,7 @@ class ExternalFM :
     def get_descriptor(self) :
         return self.descriptor
 
-class ToString :
+class ToString(object):
     def __init__(self, tab) :
         self.__tab = tab
         self.__re_tab = {}
@@ -136,7 +136,7 @@ BREAK_JVM_OPCODES_RE = []
 for i in jvm.BREAK_JVM_OPCODES :
     BREAK_JVM_OPCODES_RE.append( re.compile( i ) )
 
-class Stack :
+class Stack(object):
     def __init__(self) :
         self.__elems = []
 
@@ -171,7 +171,7 @@ class Stack :
             print "\t-->", nb, ": ", i
             nb += 1
 
-class StackTraces :
+class StackTraces(object):
     def __init__(self) :
         self.__elems = []
 
@@ -522,7 +522,7 @@ INSTRUCTIONS_ACTIONS = {
 }
 
 
-class ReturnValues :
+class ReturnValues(object):
     def __init__(self) :
         self.__elems = []
         self.__msgs = []
@@ -539,7 +539,7 @@ class ReturnValues :
     def get_return(self) :
         return self.__elems
 
-class ExternalMethod :
+class ExternalMethod(object):
     def __init__(self, class_name, name, descriptor) :
         self.__class_name = class_name
         self.__name = name
@@ -551,7 +551,7 @@ class ExternalMethod :
     def set_fathers(self, f) :
         pass
 
-class JVMBasicBlock :
+class JVMBasicBlock(object):
     def __init__(self, start, vm, method, context) :
         self.__vm = vm
         self.method = method
@@ -1133,7 +1133,7 @@ TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 TAINTED_STRING = 2
 
-class PathVar :
+class PathVar(object):
   def __init__(self, access, idx, dst_idx, info_obj) :
     self.access_flag = access
     self.idx = idx
@@ -1153,7 +1153,7 @@ class PathVar :
   def get_idx(self) :
     return self.idx
 
-class TaintedVariable :
+class TaintedVariable(object):
     def __init__(self, var, _type) :
         self.var = var
         self.type = _type
@@ -1200,7 +1200,7 @@ class TaintedVariable :
     def show_paths(self, vm) :
         show_PathVariable( vm, self.get_paths() )
 
-class TaintedVariables :
+class TaintedVariables(object):
     def __init__(self, _vm) :
         self.__vm = _vm
         self.__vars = {
@@ -1681,7 +1681,7 @@ def is_native_code(dx):
     return False
 
 
-class TaintedPackages :
+class TaintedPackages(object):
     def __init__(self, _vm) :
         self.__vm = _vm
         self.__packages = {}
@@ -2000,7 +2000,7 @@ TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
                  TAG_ANDROID.JAVA_REFLECTION :          [ 0, "Ljava/lang/reflect"],
 }
 
-class Tags :
+class Tags(object):
   """
       Handle specific tags
 

@@ -53,7 +53,7 @@ else :
     ZIPMODULE = 1
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
-class ChilkatZip :
+class ChilkatZip(object):
     def __init__(self, raw) :
         self.files = []
         self.zip = chilkat.CkZip()

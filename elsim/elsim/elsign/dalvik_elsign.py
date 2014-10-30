@@ -58,10 +58,10 @@ def FIX_FORMULA(x, z) :
         return x
     return x
 
-class ElfElsign :
+class ElfElsign(object):
     pass
 
-class DalvikElsign :
+class DalvikElsign(object):
     def __init__(self) :
         self.debug = False
         self.meth_elsign = Elsign()
@@ -234,7 +234,7 @@ class DalvikElsign :
 
         return ret[0], ret[1:]
 
-class PublicSignature :
+class PublicSignature(object):
     def __init__(self, database, config, debug=False) :
         self.debug = debug
 
@@ -321,7 +321,7 @@ class PublicSignature :
 
         return ret
 
-class MSignature :
+class MSignature(object):
     def __init__(self, dbname, dbconfig, debug, ps=PublicSignature) :
         """
             Check if signatures from a database is present in an android application (apk/dex)
@@ -387,7 +387,7 @@ class MSignature :
         """
         return self.p._check_dalvik_direct( d, dx )
 
-class PublicCSignature :
+class PublicCSignature(object):
     def add_file(self, srules) :
         l = []
         rules = json.loads( srules )
@@ -499,7 +499,7 @@ class PublicCSignature :
         return vm, vmx, res
 
 
-class CSignature :
+class CSignature(object):
     def __init__(self, pcs=PublicCSignature) :
         self.pcs = pcs()
 

@@ -383,7 +383,7 @@ def determineException(vm, m) :
     #print m.get_name(), exceptions
     return exceptions
 
-class HeaderItem :
+class HeaderItem(object):
     """
         This class can parse an header_item of a dex file
 
@@ -531,7 +531,7 @@ class HeaderItem :
     def get_off(self) :
       return self.offset
 
-class AnnotationOffItem :
+class AnnotationOffItem(object):
     """
         This class can parse an annotation_off_item of a dex file
 
@@ -560,7 +560,7 @@ class AnnotationOffItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class AnnotationSetItem :
+class AnnotationSetItem(object):
     """
         This class can parse an annotation_set_item of a dex file
 
@@ -614,7 +614,7 @@ class AnnotationSetItem :
 
       return length
 
-class AnnotationSetRefItem :
+class AnnotationSetRefItem(object):
     """
         This class can parse an annotation_set_ref_item of a dex file
 
@@ -699,7 +699,7 @@ class AnnotationSetRefList(object):
     def get_length(self) :
         return len(self.get_raw())
 
-class FieldAnnotation :
+class FieldAnnotation(object):
     """
         This class can parse a field_annotation of a dex file
 
@@ -753,7 +753,7 @@ class FieldAnnotation :
     def get_length(self) :
         return len(self.get_raw())
 
-class MethodAnnotation :
+class MethodAnnotation(object):
     """
         This class can parse a method_annotation of a dex file
 
@@ -807,7 +807,7 @@ class MethodAnnotation :
     def get_length(self) :
       return len(self.get_raw())
 
-class ParameterAnnotation :
+class ParameterAnnotation(object):
     """
         This class can parse a parameter_annotation of a dex file
 
@@ -861,7 +861,7 @@ class ParameterAnnotation :
     def get_length(self):
       return len(self.get_raw())
 
-class AnnotationsDirectoryItem :
+class AnnotationsDirectoryItem(object):
     """
         This class can parse an annotations_directory_item of a dex file
 
@@ -1005,7 +1005,7 @@ class AnnotationsDirectoryItem :
 
       return length
 
-class TypeItem :
+class TypeItem(object):
     """
         This class can parse a type_item of a dex file
 
@@ -1047,7 +1047,7 @@ class TypeItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class TypeList :
+class TypeList(object):
     """
         This class can parse a type_list of a dex file
 
@@ -1178,7 +1178,7 @@ DBG_LINE_BASE                       = -4
 DBG_LINE_RANGE                      = 15
 
 
-class DBGBytecode :
+class DBGBytecode(object):
     def __init__(self, cm, op_value) :
         self.CM = cm
         self.op_value = op_value
@@ -1214,7 +1214,7 @@ class DBGBytecode :
                 buff += writesleb128( i[0] )
         return buff
 
-class DebugInfoItem :
+class DebugInfoItem(object):
     def __init__(self, buff, cm) :
         self.CM = cm
 
@@ -1327,7 +1327,7 @@ VALUE_NULL      = 0x1e    # (none; must be 0)      (none)  null reference value
 VALUE_BOOLEAN   = 0x1f    # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
 
 
-class DebugInfoItemEmpty :
+class DebugInfoItemEmpty(object):
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -1363,7 +1363,7 @@ class DebugInfoItemEmpty :
     def get_length(self) :
       return len(self.__raw)
 
-class EncodedArray :
+class EncodedArray(object):
     """
         This class can parse an encoded_array of a dex file
 
@@ -1419,7 +1419,7 @@ class EncodedArray :
 
       return length
 
-class EncodedValue :
+class EncodedValue(object):
     """
         This class can parse an encoded_value of a dex file
 
@@ -1517,7 +1517,7 @@ class EncodedValue :
       else :
         return len(pack("=B", self.val)) + len(bytecode.object_to_str( self.raw_value ))
 
-class AnnotationElement :
+class AnnotationElement(object):
     """
         This class can parse an annotation_element of a dex file
 
@@ -1563,7 +1563,7 @@ class AnnotationElement :
     def get_length(self) :
       return len(self.get_obj()) + self.value.get_length()
 
-class EncodedAnnotation :
+class EncodedAnnotation(object):
     """
         This class can parse an encoded_annotation of a dex file
 
@@ -1628,7 +1628,7 @@ class EncodedAnnotation :
 
       return length
 
-class AnnotationItem :
+class AnnotationItem(object):
     """
         This class can parse an annotation_item of a dex file
 
@@ -1688,7 +1688,7 @@ class AnnotationItem :
 
       return length
 
-class EncodedArrayItem :
+class EncodedArrayItem(object):
     """
         This class can parse an encoded_array_item of a dex file
 
@@ -1772,7 +1772,7 @@ def utf8_to_string(buff, length):
     return ''.join(chars)
 
 
-class StringDataItem :
+class StringDataItem(object):
     """
         This class can parse a string_data_item of a dex file
 
@@ -1834,7 +1834,7 @@ class StringDataItem :
     def get_length(self) :
       return len(writeuleb128( self.utf16_size )) + len(self.data)
 
-class StringIdItem :
+class StringIdItem(object):
     """
         This class can parse a string_id_item of a dex file
 
@@ -1882,7 +1882,7 @@ class StringIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class TypeIdItem :
+class TypeIdItem(object):
     """
         This class can parse a type_id_item of a dex file
 
@@ -1930,7 +1930,7 @@ class TypeIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class TypeHIdItem :
+class TypeHIdItem(object):
     """
         This class can parse a list of type_id_item of a dex file
 
@@ -1989,7 +1989,7 @@ class TypeHIdItem :
         length += i.get_length()
       return length
 
-class ProtoIdItem :
+class ProtoIdItem(object):
     """
         This class can parse a proto_id_item of a dex file
 
@@ -2083,7 +2083,7 @@ class ProtoIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class ProtoHIdItem :
+class ProtoHIdItem(object):
     """
         This class can parse a list of proto_id_item of a dex file
 
@@ -2135,7 +2135,7 @@ class ProtoHIdItem :
         length += i.get_length()
       return length
 
-class FieldIdItem :
+class FieldIdItem(object):
     """
         This class can parse a field_id_item of a dex file
 
@@ -2236,7 +2236,7 @@ class FieldIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class FieldHIdItem :
+class FieldHIdItem(object):
     """
         This class can parse a list of field_id_item of a dex file
 
@@ -2291,7 +2291,7 @@ class FieldHIdItem :
       return length
 
 
-class MethodIdItem :
+class MethodIdItem(object):
     """
         This class can parse a method_id_item of a dex file
 
@@ -2391,7 +2391,7 @@ class MethodIdItem :
     def get_length(self) :
       return len(self.get_obj())
 
-class MethodHIdItem :
+class MethodHIdItem(object):
     """
         This class can parse a list of method_id_item of a dex file
 
@@ -2445,7 +2445,7 @@ class MethodHIdItem :
         length += i.get_length()
       return length
 
-class ProtoIdItemInvalid :
+class ProtoIdItemInvalid(object):
     def get_params(self) :
         return "AG:IPI:invalid_params;"
 
@@ -2458,7 +2458,7 @@ class ProtoIdItemInvalid :
     def show(self) :
         print "AG:IPI:invalid_proto_item", self.get_shorty(), self.get_return_type(), self.get_params()
 
-class FieldIdItemInvalid :
+class FieldIdItemInvalid(object):
     def get_class_name(self) :
         return "AG:IFI:invalid_class_name;"
 
@@ -2477,7 +2477,7 @@ class FieldIdItemInvalid :
     def show(self) :
         print "AG:IFI:invalid_field_item"
 
-class MethodIdItemInvalid :
+class MethodIdItemInvalid(object):
     def get_class_name(self) :
         return "AG:IMI:invalid_class_name;"
 
@@ -2988,7 +2988,7 @@ class EncodedMethod(object):
     def get_size(self) :
       return len(self.get_raw())
 
-class ClassDataItem :
+class ClassDataItem(object):
     """
         This class can parse a class_data_item of a dex file
 
@@ -3454,7 +3454,7 @@ class ClassDefItem(object):
     def get_length(self) :
       return len(self.get_obj())
 
-class ClassHDefItem :
+class ClassHDefItem(object):
     """
         This class can parse a list of class_def_item of a dex file
 
@@ -3524,7 +3524,7 @@ class ClassHDefItem :
         length += i.get_length()
       return length
 
-class EncodedTypeAddrPair :
+class EncodedTypeAddrPair(object):
     """
         This class can parse an encoded_type_addr_pair of a dex file
 
@@ -3566,7 +3566,7 @@ class EncodedTypeAddrPair :
     def get_length(self) :
       return len(self.get_raw())
 
-class EncodedCatchHandler :
+class EncodedCatchHandler(object):
     """
         This class can parse an encoded_catch_handler of a dex file
 
@@ -3647,7 +3647,7 @@ class EncodedCatchHandler :
 
       return length
 
-class EncodedCatchHandlerList :
+class EncodedCatchHandlerList(object):
     """
         This class can parse an encoded_catch_handler_list of a dex file
 
@@ -6079,7 +6079,7 @@ def get_instruction_payload(op_value, buff) :
   return DALVIK_OPCODES_PAYLOAD[op_value][0]( buff )
 
 
-class LinearSweepAlgorithm :
+class LinearSweepAlgorithm(object):
     """
         This class is used to disassemble a method. The algorithm used by this class is linear sweep.
     """
@@ -6623,7 +6623,7 @@ class DalvikCode(object):
     def get_off(self) :
         return self.__off
 
-class CodeItem :
+class CodeItem(object):
     def __init__(self, size, buff, cm) :
         self.__CM = cm
 
@@ -6670,7 +6670,7 @@ class CodeItem :
         length += i.get_size()
       return length
 
-class MapItem :
+class MapItem(object):
     def __init__(self, buff, cm) :
         self.__CM = cm
 
@@ -7173,7 +7173,7 @@ class ClassManager(object):
 
         return DebugInfoItem( self.buff, self )
 
-class MapList :
+class MapList(object):
     """
        This class can parse the "map_list" of the dex format
     """
@@ -7257,14 +7257,14 @@ class MapList :
     def get_length(self) :
       return len(self.get_raw())
 
-class XREF :
+class XREF(object):
     def __init__(self) :
         self.items = []
 
     def add(self, x, y):
         self.items.append((x, y))
 
-class DREF :
+class DREF(object):
     def __init__(self) :
         self.items = []
 

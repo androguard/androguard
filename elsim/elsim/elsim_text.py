@@ -28,28 +28,28 @@ def filter_sim_value_meth( v ) :
         return 1.0
     return v
 
-class CheckSumText :
+class CheckSumText(object):
     def __init__(self, s1, sim) :
         self.s1 = s1
         self.sim = sim
         self.buff = s1.string
         self.entropy = 0.0
         self.signature = None
-        
+
     def get_signature(self) :
         if self.signature == None :
             raise("ooo")
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
-    
+
     def get_signature_entropy(self) :
         if self.signature == None :
             raise("ooo")
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature_entropy
-        
+
     def get_entropy(self) :
         return self.entropy
 
@@ -75,13 +75,13 @@ def filter_sort_meth_basic( j, x, value ) :
     if get_debug() :
         for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
- 
+
     if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
-class Text :
+class Text(object):
     def __init__(self, e, el) :
         self.string = el
 
@@ -102,14 +102,14 @@ class Text :
     def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
-    
+
     def getsha256(self) :
         return self.sha256
 
 def filter_element_meth_basic(el, e) :
     return Text( e, el )
 
-class FilterNone :
+class FilterNone(object):
     def skip(self, e):
         # remove whitespace elements
         if e.string.isspace() == True :
@@ -130,7 +130,7 @@ FILTERS_TEXT = {
     elsim.FILTER_SIM_VALUE_METH   : filter_sim_value_meth,
 }
 
-class ProxyText :
+class ProxyText(object):
     def __init__(self, buff) :
         self.buff = buff
 

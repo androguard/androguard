@@ -24,7 +24,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import cPickle
 
 def is_connected() :
-    return True 
+    return True
 
 def wrapper_get_raw(oops) :
     F = {}
@@ -34,7 +34,7 @@ def wrapper_get_raw(oops) :
 
         f_start = function_ea
         f_end = GetFunctionAttr(function_ea, FUNCATTR_END)
-        
+
         edges = set()
         boundaries = set((f_start,))
 
@@ -46,15 +46,15 @@ def wrapper_get_raw(oops) :
 
                 refs = CodeRefsFrom(head, 0)
                 refs = set(filter(lambda x: x>=f_start and x<=f_end, refs))
-                
+
                 if refs :
                     next_head = NextHead(head, f_end)
                     if isFlow(GetFlags(next_head)):
                         refs.add(next_head)
-                                                      
+
                     # Update the boundaries found so far.
                     boundaries.update(refs)
-                                                                                                  
+
                     # For each of the references found, and edge is
                     # created.
                     for r in refs:
@@ -64,7 +64,7 @@ def wrapper_get_raw(oops) :
                         if isFlow(GetFlags(r)):
                             edges.add((PrevHead(r, f_start), r))
                         edges.add((head, r))
-        
+
         #print edges, boundaries
         # Let's build the list of (startEA, startEA) couples
         # for each basic block
@@ -103,13 +103,13 @@ def wrapper_get_function(oops) :
 def wrapper_quit(oops) :
     qexit(0)
 
-class IDAWrapper :
+class IDAWrapper(object):
     def _dispatch(self, x, params) :
         #fd = open("toto.txt", "w")
         #fd.write( x + "\n" )
         #fd.write( str(type(params[0])) + "\n" )
         #fd.close()
-        
+
         params = cPickle.loads( *params )
         if isinstance(params, tuple) == False :
             params = (params,)
@@ -145,14 +145,14 @@ def main() :
 
     server = SimpleXMLRPCServer(("localhost", 9000))
     server.register_function(is_connected, "is_connected")
-    
+
     server.register_function(wrapper_get_raw, "get_raw")
     server.register_function(wrapper_get_function, "get_function")
     server.register_function(wrapper_Heads, "Heads")
     server.register_function(wrapper_Functions, "Functions")
-    
+
     server.register_instance(IDAWrapper())
-    
+
     server.register_function(wrapper_quit, "quit")
     server.serve_forever()
 

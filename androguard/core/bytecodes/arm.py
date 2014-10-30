@@ -10,7 +10,7 @@ from miasm.core.bin_stream import  bin_stream
 from miasm.core import asmbloc
 
 
-class ARM2 :
+class ARM2(object):
     def __init__(self) :
         b = r_bin.RBin ()
         b.load("./apks/exploits/617efb2d51ad5c4aed50b76119ad880c6adcd4d2e386b3170930193525b0563d", None)
@@ -41,13 +41,13 @@ class ARM2 :
             print s, s.name, s.rva, s.offset, s.size
             if s.name == "rootshell" :
                 #print core.disassemble_bytes( 0x8000 + s.offset, s.size )
-               
+
                 #core.assembler.mdisassemble( 0x8000 + s.offset, s.size )
                 z = core.op_anal( 0x8000 + s.offset )
                 print z.mnemonic
 
                 raise("oo")
-                
+
                 print core.bin.bins, core.bin.user
                 d = core.bin.read_at( 0x8000 + s.offset, x, s.size )
                 print d

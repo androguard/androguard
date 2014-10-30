@@ -28,17 +28,17 @@ def filter_sim_value_meth( v ) :
         return 1.0
     return v
 
-class CheckSumFunc :
+class CheckSumFunc(object):
     def __init__(self, f, sim) :
         self.f = f
         self.sim = sim
         self.buff = ""
         self.entropy = 0.0
         self.signature = None
-      
+
         for i in self.f.get_instructions() :
             self.buff += i.get_mnemonic()
-        
+
         self.entropy, _ = sim.entropy( self.buff )
 
     def get_signature(self) :
@@ -47,14 +47,14 @@ class CheckSumFunc :
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
-    
+
     def get_signature_entropy(self) :
         if self.signature == None :
             self.signature = self.buff
             self.signature_entropy, _ = self.sim.entropy( self.signature )
-        
+
         return self.signature_entropy
-        
+
     def get_entropy(self) :
         return self.entropy
 
@@ -76,20 +76,20 @@ def filter_sort_meth_basic( j, x, value ) :
     if get_debug() :
         for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
- 
+
     if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
-class Instruction :
+class Instruction(object):
     def __init__(self, i) :
         self.mnemonic = i[1]
 
     def get_mnemonic(self) :
         return self.mnemonic
 
-class Function :
+class Function(object):
     def __init__(self, e, el) :
         self.function = el
 
@@ -106,14 +106,14 @@ class Function :
     def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
-    
+
     def getsha256(self) :
         return self.sha256
 
 def filter_element_meth_basic(el, e) :
     return Function( e, el )
 
-class FilterNone :
+class FilterNone(object):
     def skip(self, e) :
         #if e.get_nb_instructions() < 2 :
         #    return True
@@ -129,7 +129,7 @@ FILTERS_X86 = {
     elsim.FILTER_SIM_VALUE_METH   : filter_sim_value_meth,
 }
 
-class ProxyX86IDA :
+class ProxyX86IDA(object):
     def __init__(self, ipipe) :
         self.functions = ipipe.get_quick_functions()
 

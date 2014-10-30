@@ -25,7 +25,7 @@ from androguard.util import read
 
 
 ######################################################## JAR FORMAT ########################################################
-class JAR :
+class JAR(object):
     def __init__(self, filename, raw=False) :
         self.filename = filename
 
@@ -664,7 +664,7 @@ class NameAndType(CpInfo) :
     def get_descriptor_index(self) :
         return self.format.get_value().descriptor_index
 
-class EmptyConstant :
+class EmptyConstant(object):
     def __init__(self) :
         pass
 
@@ -717,7 +717,7 @@ VERIFICATION_TYPE_INFO = {
         ITEM_Uninitialized :            [ "Uninitialized_variable_info", '>BH', namedtuple( "Uninitialized_variable_info", "tag offset" ) ],
     }
 
-class FieldInfo :
+class FieldInfo(object):
     """An object which represents a Field"""
     def __init__(self, class_manager, buff) :
         self.__raw_buff = buff.read( calcsize( FIELD_INFO[0] ) )
@@ -787,7 +787,7 @@ class FieldInfo :
         for i in self.__attributes :
             i.show()
 
-class MethodInfo :
+class MethodInfo(object):
     """An object which represents a Method"""
     def __init__(self, class_manager, buff) :
         self.format = SVs( METHOD_INFO[0], METHOD_INFO[1], buff.read( calcsize( METHOD_INFO[0] ) ) )
@@ -882,7 +882,7 @@ class MethodInfo :
             i.pretty_show(vm_a.hmethods[ self ])
         print "*" * 80
 
-class CreateString :
+class CreateString(object):
     """Create a specific String constant by given the name index"""
     def __init__(self, class_manager, bytes) :
         self.__string_index = class_manager.add_string( bytes )
@@ -893,7 +893,7 @@ class CreateString :
 
         return buff
 
-class CreateInteger :
+class CreateInteger(object):
     """Create a specific Integer constant by given the name index"""
     def __init__(self, byte) :
         self.__byte = byte
@@ -904,7 +904,7 @@ class CreateInteger :
 
         return buff
 
-class CreateClass :
+class CreateClass(object):
     """Create a specific Class constant by given the name index"""
     def __init__(self, class_manager, name_index) :
         self.__CM = class_manager
@@ -917,7 +917,7 @@ class CreateClass :
 
         return buff
 
-class CreateNameAndType :
+class CreateNameAndType(object):
     """Create a specific NameAndType constant by given the name and the descriptor index"""
     def __init__(self, class_manager, name_index, descriptor_index) :
         self.__CM = class_manager
@@ -931,7 +931,7 @@ class CreateNameAndType :
 
         return buff
 
-class CreateFieldRef :
+class CreateFieldRef(object):
     """Create a specific FieldRef constant by given the class and the NameAndType index"""
     def __init__(self, class_manager, class_index, name_and_type_index) :
         self.__CM = class_manager
@@ -945,7 +945,7 @@ class CreateFieldRef :
 
         return buff
 
-class CreateMethodRef :
+class CreateMethodRef(object):
     """Create a specific MethodRef constant by given the class and the NameAndType index"""
     def __init__(self, class_manager, class_index, name_and_type_index) :
         self.__CM = class_manager
@@ -959,7 +959,7 @@ class CreateMethodRef :
 
         return buff
 
-class CreateCodeAttributeInfo :
+class CreateCodeAttributeInfo(object):
     """Create a specific CodeAttributeInfo by given bytecodes (into an human readable format)"""
     def __init__(self, class_manager, codes) :
         self.__CM = class_manager
@@ -1028,7 +1028,7 @@ class CreateCodeAttributeInfo :
                  ''.join( i.get_raw() for i in self.__attributes )
 
 # FIELD_INFO                  =         [ '>HHHH',        namedtuple("FieldInfo", "access_flags name_index descriptor_index attributes_count") ]
-class CreateFieldInfo :
+class CreateFieldInfo(object):
     """Create a specific FieldInfo by given the name, the prototype of the "new" field"""
     def __init__(self, class_manager, name, proto) :
         self.__CM = class_manager
@@ -1056,7 +1056,7 @@ class CreateFieldInfo :
         return buff
 
 # METHOD_INFO      =                    [ '>HHHH', namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]
-class CreateMethodInfo :
+class CreateMethodInfo(object):
     """Create a specific MethodInfo by given the name, the prototype and the code (into an human readable format) of the "new" method"""
     def __init__(self, class_manager, name, proto, codes) :
         self.__CM = class_manager
@@ -1086,7 +1086,7 @@ class CreateMethodInfo :
 
         return buff
 
-class JBC :
+class JBC(object):
     """JBC manages each bytecode with the value, name, raw buffer and special functions"""
     # special --> ( r_function, v_function, r_buff, r_format, f_function )
     def __init__(self, class_manager, op_name, raw_buff, special=None) :
@@ -1195,7 +1195,7 @@ class JBC :
         print self.show_buff( pos ),
 
 
-class JavaCode :
+class JavaCode(object):
     """JavaCode manages a list of bytecode to a specific method, by decoding a raw buffer and transform each bytecode into a JBC object"""
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
@@ -1926,7 +1926,7 @@ class RuntimeInvisibleParameterAnnotationsAttribute(RuntimeVisibleParameterAnnot
         for i in self.parameter_annotations :
             i.show()
 
-class ParameterAnnotation :
+class ParameterAnnotation(object):
     def __init__(self, cm, buff) :
         # u2 num_annotations;
         # annotation annotations[num_annotations];
@@ -1963,7 +1963,7 @@ class AnnotationDefaultAttribute(BasicAttribute) :
         print "AnnotationDefault"
         self.default_value.show()
 
-class Annotation :
+class Annotation(object):
     def __init__(self, cm, buff) :
         # u2 type_index;
         # u2 num_element_value_pairs;
@@ -1988,7 +1988,7 @@ class Annotation :
             i.show()
 
 
-class ElementValuePair :
+class ElementValuePair(object):
     def __init__(self, cm, buff) :
         # u2 element_name_index;
         # element_value value;
@@ -2004,7 +2004,7 @@ class ElementValuePair :
         self.value.show()
 
 ENUM_CONST_VALUE = [ '>HH', namedtuple("EnumConstValue", "type_name_index const_name_index") ]
-class ElementValue :
+class ElementValue(object):
     def __init__(self, cm, buff) :
         # u1 tag;
         # union {
@@ -2049,7 +2049,7 @@ class ElementValue :
         else :
             self.value.show()
 
-class ArrayValue :
+class ArrayValue(object):
     def __init__(self, cm, buff) :
         # u2     num_values;
         # element_value values[num_values];
@@ -2093,7 +2093,7 @@ class ExceptionsAttribute(BasicAttribute) :
         for i in self.__exception_index_table :
             print "\t", i
 
-class VerificationTypeInfo :
+class VerificationTypeInfo(object):
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         tag = SV( '>B', buff.read_b(1) ).get_value()
@@ -2132,7 +2132,7 @@ class VerificationTypeInfo :
     def set_cm(self, cm) :
         self.__CM = cm
 
-class FullFrame :
+class FullFrame(object):
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = FULL_FRAME; /* 255 */
@@ -2189,7 +2189,7 @@ class FullFrame :
         for i in self.__locals :
             i.set_cm( cm )
 
-class ChopFrame :
+class ChopFrame(object):
     def __init__(self, buff) :
         # u1 frame_type=CHOP; /* 248-250 */
         # u2 offset_delta;
@@ -2211,7 +2211,7 @@ class ChopFrame :
     def set_cm(self, cm) :
         pass
 
-class SameFrame :
+class SameFrame(object):
     def __init__(self, buff) :
         # u1 frame_type = SAME;/* 0-63 */
         self.frame_type = SV( '>B', buff.read(1) )
@@ -2230,7 +2230,7 @@ class SameFrame :
     def set_cm(self, cm) :
         pass
 
-class SameLocals1StackItemFrame :
+class SameLocals1StackItemFrame(object):
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = SAME_LOCALS_1_STACK_ITEM;/* 64-127 */
@@ -2253,7 +2253,7 @@ class SameLocals1StackItemFrame :
     def set_cm(self, cm) :
         self.__CM = cm
 
-class SameLocals1StackItemFrameExtended :
+class SameLocals1StackItemFrameExtended(object):
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = SAME_LOCALS_1_STACK_ITEM_EXTENDED; /* 247 */
@@ -2279,7 +2279,7 @@ class SameLocals1StackItemFrameExtended :
         self.stack.show()
         print "#" * 60
 
-class SameFrameExtended :
+class SameFrameExtended(object):
     def __init__(self, buff) :
         # u1 frame_type = SAME_FRAME_EXTENDED;/* 251*/
         # u2 offset_delta;
@@ -2301,7 +2301,7 @@ class SameFrameExtended :
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
         print "#" * 60
 
-class AppendFrame :
+class AppendFrame(object):
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = APPEND; /* 252-254 */
@@ -2403,7 +2403,7 @@ class StackMapTableAttribute(BasicAttribute) :
         for i in self.__entries :
             i.set_cm( cm )
 
-class InnerClassesDesc :
+class InnerClassesDesc(object):
     def __init__(self, class_manager, buff) :
         INNER_CLASSES_FORMAT = [ ">HHHH", "inner_class_info_index outer_class_info_index inner_name_index inner_class_access_flags" ]
 
@@ -2527,7 +2527,7 @@ ATTRIBUTE_INFO_DESCR = {
         "AnnotationDefault" : AnnotationDefaultAttribute,
 }
 
-class AttributeInfo :
+class AttributeInfo(object):
     """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
     def __init__(self, class_manager, buff) :
         self.__CM = class_manager
@@ -2589,7 +2589,7 @@ class AttributeInfo :
             else :
                 self._info.show()
 
-class ClassManager :
+class ClassManager(object):
     """ClassManager can be used by all classes to get more information"""
     def __init__(self, constant_pool, constant_pool_count) :
         self.constant_pool = constant_pool

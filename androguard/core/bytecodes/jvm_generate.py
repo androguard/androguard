@@ -20,7 +20,7 @@ import random
 from androconf import error
 import jvm
 
-class Automaton :
+class Automaton(object):
     def __init__(self, _analysis) :
         self.__analysis = _analysis
 
@@ -101,7 +101,7 @@ class Automaton :
         #draw_graphviz(self.__G)
         #write_dot(self.__G,'file.dot')
 
-class JVMGenerate :
+class JVMGenerate(object):
     def __init__(self, _vm, _analysis) :
         self.__vm = _vm
         self.__analysis = _analysis
