@@ -41,7 +41,7 @@ options = [option_0, option_1]
 
 MAGIC_PATTERN = "\xca\xfe\xba\xbe"
 
-class AndroPreDump :
+class AndroPreDump(object):
     def __init__(self, input) :
         self.data = []
 
@@ -102,7 +102,7 @@ class AndroPreDump :
             with fd = open(base_filename + "-" + "0x%x-0x%x" % (i[0].start + i[2], i[0].end), "w") as fd:
                 fd.write( i[1][i[2]:] )
 
-class AndroDump :
+class AndroDump(object):
     def __init__(self, adp) :
         self.__adp = adp
 

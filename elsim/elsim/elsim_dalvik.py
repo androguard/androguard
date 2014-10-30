@@ -32,14 +32,14 @@ def filter_sim_value_meth( v ) :
         return 1.0
     return v
 
-class CheckSumMeth :
+class CheckSumMeth(object):
     def __init__(self, m1, sim) :
         self.m1 = m1
         self.sim = sim
         self.buff = ""
         self.entropy = 0.0
         self.signature = None
-        
+
         code = m1.m.get_code()
         if code != None :
             bc = code.get_bc()
@@ -56,14 +56,14 @@ class CheckSumMeth :
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
-    
+
     def get_signature_entropy(self) :
         if self.signature == None :
             self.signature = self.m1.vmx.get_method_signature( self.m1.m, predef_sign = DEFAULT_SIGNATURE ).get_string()
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature_entropy
-        
+
     def get_entropy(self) :
         return self.entropy
 
@@ -80,7 +80,7 @@ def filter_sim_meth_old( m1, m2, sim ) :
     e1 = a1.get_entropy()
     e2 = a2.get_entropy()
 
-    return (max(e1, e2) - min(e1, e2)) 
+    return (max(e1, e2) - min(e1, e2))
 
 def filter_sim_meth_basic( sim, m1, m2 ) :
     ncd1, _ = sim.ncd( m1.checksum.get_signature(), m2.checksum.get_signature() )
@@ -96,7 +96,7 @@ def filter_sort_meth_basic( j, x, value ) :
     if get_debug() :
         for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
- 
+
     if z[:1][0][1] > value :
         return []
 
@@ -106,7 +106,7 @@ def filter_sim_bb_basic( sim, bb1, bb2 ) :
     ncd, _ = sim.ncd( bb1.checksum.get_buff(), bb2.checksum.get_buff() )
     return ncd
 
-class CheckSumBB :
+class CheckSumBB(object):
     def __init__(self, basic_block, sim) :
         self.basic_block = basic_block
         self.buff = ""
@@ -133,7 +133,7 @@ DIFF_INS_TAG = {
                         "REMOVE" : 2
                     }
 
-class DiffBB :
+class DiffBB(object):
     def __init__(self, bb1, bb2, info) :
         self.bb1 = bb1
         self.bb2 = bb2
@@ -231,7 +231,7 @@ class DiffBB :
         for i in self.di.remove_ins :
             print "\t\t", i[0], i[1], i[2].get_name(), i[2].get_output()
 
-class NewBB :
+class NewBB(object):
     def __init__(self, bb) :
         self.bb = bb
 
@@ -252,7 +252,7 @@ class NewBB :
 
         self.childs = childs
 
-class DiffINS :
+class DiffINS(object):
     def __init__(self, add_ins, remove_ins) :
         self.add_ins = add_ins
         self.remove_ins = remove_ins
@@ -263,7 +263,7 @@ DIFF_BB_TAG = {
                         "NEW"  : 2
                }
 
-class Method :
+class Method(object):
     def __init__(self, vm, vmx, m) :
         self.m = m
         self.vm = vm
@@ -395,7 +395,7 @@ class Method :
         for bb in self.mx.basic_blocks.get() :
             if bb.name not in dbb :
                 # add the original basic block
-                bb.bb_tag = DIFF_BB_TAG["ORIG"] 
+                bb.bb_tag = DIFF_BB_TAG["ORIG"]
                 l.append( bb )
             else :
                 # add the diff basic block
@@ -404,7 +404,7 @@ class Method :
 
         for i in nbb :
             # add the new basic block
-            nbb[ i ].bb_tag = DIFF_BB_TAG["NEW"] 
+            nbb[ i ].bb_tag = DIFF_BB_TAG["NEW"]
             l.append( nbb[ i ] )
 
         # Sorted basic blocks by addr (orig, new, diff)
@@ -453,14 +453,14 @@ class Method :
 def filter_element_meth_basic(el, e) :
     return Method( e.vm, e.vmx, el )
 
-class BasicBlock :
+class BasicBlock(object):
     def __init__(self, bb) :
         self.bb = bb
 
     def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
-    
+
     def getsha256(self) :
         return self.sha256
 
@@ -471,7 +471,7 @@ class BasicBlock :
         print self.bb.name
 
 def filter_element_bb_basic(el, e) :
-    return BasicBlock( el ) 
+    return BasicBlock( el )
 
 def filter_sort_bb_basic( j, x, value ) :
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
@@ -479,14 +479,14 @@ def filter_sort_bb_basic( j, x, value ) :
     if get_debug() :
         for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
- 
+
     if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
 import re
-class FilterSkip :
+class FilterSkip(object):
     def __init__(self, size, regexp) :
         self.size = size
         self.regexp = regexp
@@ -494,7 +494,7 @@ class FilterSkip :
     def skip(self, m) :
         if self.size != None and m.get_length() < self.size :
             return True
-        
+
         if self.regexp != None and re.match(self.regexp, m.m.get_class_name()) != None :
             return True
 
@@ -509,7 +509,7 @@ class FilterSkip :
         else :
             self.size = e
 
-class FilterNone :
+class FilterNone(object):
     def skip(self, e) :
         return False
 
@@ -523,14 +523,14 @@ FILTERS_DALVIK_SIM = {
     elsim.FILTER_SIM_VALUE_METH   : filter_sim_value_meth,
 }
 
-class StringVM :
+class StringVM(object):
     def __init__(self, el) :
         self.el = el
 
     def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
-   
+
     def get_length(self) :
         return len(self.el)
 
@@ -543,7 +543,7 @@ class StringVM :
 def filter_element_meth_string(el, e) :
     return StringVM( el )
 
-class CheckSumString :
+class CheckSumString(object):
     def __init__(self, m1, sim) :
         self.m1 = m1
         self.sim = sim
@@ -566,7 +566,7 @@ def filter_sort_meth_string( j, x, value ) :
     if get_debug() :
         for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
- 
+
     if z[:1][0][1] > value :
         return []
 
@@ -592,7 +592,7 @@ FILTERS_DALVIK_BB = {
     elsim.FILTER_SIM_VALUE_METH   : filter_sim_value_meth,
 }
 
-class ProxyDalvik :
+class ProxyDalvik(object):
     def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
@@ -601,7 +601,7 @@ class ProxyDalvik :
         for i in self.vm.get_methods() :
             yield i
 
-class ProxyDalvikMethod :
+class ProxyDalvikMethod(object):
     def __init__(self, el) :
         self.el = el
 
@@ -609,7 +609,7 @@ class ProxyDalvikMethod :
         for j in self.el.mx.basic_blocks.get() :
             yield j
 
-class ProxyDalvikStringMultiple :
+class ProxyDalvikStringMultiple(object):
     def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
@@ -620,7 +620,7 @@ class ProxyDalvikStringMultiple :
         #for i in self.vm.get_strings() :
         #    yield i
 
-class ProxyDalvikStringOne :
+class ProxyDalvikStringOne(object):
     def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
@@ -676,7 +676,7 @@ def toString( bb, hS, rS ) :
 
     return S, map_x
 
-class DiffInstruction :
+class DiffInstruction(object):
     def __init__(self, bb, instruction) :
         self.bb = bb
 
@@ -687,7 +687,7 @@ class DiffInstruction :
     def show(self) :
         print hex(self.bb.bb.start + self.offset), self.pos_instruction, self.ins.get_name(), self.ins.show_buff( self.bb.bb.start + self.offset )
 
-class DiffBasicBlock :
+class DiffBasicBlock(object):
     def __init__(self, x, y, added, deleted) :
         self.basic_block_x = x
         self.basic_block_y = y
@@ -741,13 +741,13 @@ def filter_diff_bb(x, y) :
         debug(" \t %s %s %s" % (i[0], instructions[ i[0] ].get_name(), instructions[ i[0] ].get_output()))
         final_rm.append( (i[0], map_x[i[0]], instructions[ i[0] ]) )
 
-    return DiffBasicBlock( y, x, final_add, final_rm ) 
+    return DiffBasicBlock( y, x, final_add, final_rm )
 
 FILTERS_DALVIK_DIFF_BB = {
     elsim.DIFF : filter_diff_bb,
 }
 
-class ProxyDalvikBasicBlock :
+class ProxyDalvikBasicBlock(object):
     def __init__(self, esim) :
         self.esim = esim
 
@@ -756,7 +756,7 @@ class ProxyDalvikBasicBlock :
         for i in x :
             yield i, x[i]
 
-class DiffDalvikMethod :
+class DiffDalvikMethod(object):
     def __init__(self, m1, m2, els, eld) :
         self.m1 = m1
         self.m2 = m2
@@ -779,7 +779,7 @@ class DiffDalvikMethod :
             print i.bb, hex(i.bb.get_start()), hex(i.bb.get_end()) #, i.bb.childs
             idx = i.bb.get_start()
             for j in i.bb.get_instructions() :
-                print "\t" + info, hex(idx), 
+                print "\t" + info, hex(idx),
                 j.show(idx)
                 print
                 idx += j.get_length()

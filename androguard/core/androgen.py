@@ -23,7 +23,7 @@ from androguard.core.analysis import analysis
 from androguard.core.analysis import ganalysis
 from androguard.util import read
 
-class BC :
+class BC(object):
     def __init__(self, bc) :
         self.__bc = bc
 
@@ -228,7 +228,7 @@ class Androguard(object):
         for _, bc in self.__bc :
             bc.pretty_show()
 
-class AndroguardS :
+class AndroguardS(object):
     """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
 
        @param filename : the filename to use (filename must be terminated by .class or .dex)

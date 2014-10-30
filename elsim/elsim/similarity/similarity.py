@@ -368,7 +368,7 @@ class SIMILARITYPython(SIMILARITYBase) :
 
         return current[n]
 
-class SIMILARITY :
+class SIMILARITY(object):
     def __init__(self, path="./libsimilarity/libsimilarity.so", native_lib=True) :
         if native_lib == True and NATIVE_LIB == True:
             try :

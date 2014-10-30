@@ -33,13 +33,13 @@ try :
 except ImportError :
     pass
 
-class Constant :
+class Constant(object):
     def __init__(self, name, perms, desc_return) :
         self.name = name
         self.perms = perms
         self.desc_return = desc_return
 
-class Function :
+class Function(object):
     def __init__(self, name, perms, desc_return) :
         self.name = name
         self.perms = perms

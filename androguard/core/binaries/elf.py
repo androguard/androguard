@@ -38,7 +38,7 @@ def disasm_at_addr(in_str, ad_to_dis, symbol_pool) :
             bytecode._PrintDefault("\t %s\n" % j)
         bytecode._PrintDefault("\n")
 
-class Function :
+class Function(object):
     def __init__(self, cm, name, info) :
         self.cm = cm
         self.name = name
@@ -47,10 +47,10 @@ class Function :
     def show(self) :
         bytecode._PrintSubBanner("Function")
         bytecode._PrintDefault("name=%s addr=0x%x\n" % (self.name, self.info.value))
-        
+
         self.cm.disasm_at_addr( self.info.value )
 
-class ClassManager :
+class ClassManager(object):
     def __init__(self, in_str, symbol_pool) :
         self.in_str = in_str
         self.symbol_pool = symbol_pool
@@ -58,7 +58,7 @@ class ClassManager :
     def disasm_at_addr(self, ad_to_dis) :
         disasm_at_addr( self.in_str, ad_to_dis, self.symbol_pool )
 
-class ELF :
+class ELF(object):
     def __init__(self, buff) :
         self.E = elf_init.ELF( buff )
 
@@ -69,7 +69,7 @@ class ELF :
         self.create_symbol_pool()
 
         self.CM = ClassManager( self.in_str, self.symbol_pool )
-        
+
         self.create_functions()
 
     def create_symbol_pool(self) :
@@ -95,7 +95,7 @@ class ELF :
                     self.functions.append( Function(self.CM, k, v) )
         except AttributeError :
             pass
-        
+
         for k, v in self.E.sh.dynsym.symbols.items() :
             if v.size != 0 :
                 self.functions.append( Function(self.CM, k, v) )

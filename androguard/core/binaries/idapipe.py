@@ -22,16 +22,16 @@ import xmlrpclib
 
 import cPickle
 
-class _Method :
+class _Method(object):
     def __init__(self, proxy, name) :
         self.proxy = proxy
         self.name = name
-    
+
     def __call__(self, *args):
         #print "CALL", self.name, args
         z = getattr( self.proxy, self.name, None )
         #print "SEND", repr(cPickle.dumps( args ) )
-       
+
         try :
             if len(args) == 1 :
                 ret = z( cPickle.dumps( args[0] ) )
@@ -42,14 +42,14 @@ class _Method :
         except xmlrpclib.ProtocolError :
             return []
 
-class MyXMLRPC :
+class MyXMLRPC(object):
     def __init__(self, proxy) :
         self.proxy = proxy
 
     def __getattr__(self, name) :
         return _Method(self.proxy, name)
 
-class BasicBlock :
+class BasicBlock(object):
     def __init__(self, ins) :
         self.ins = ins
 
@@ -57,10 +57,10 @@ class BasicBlock :
         for i in self.ins :
             print i
 
-class Function :
+class Function(object):
     def __init__(self, name, start_ea, instructions, information) :
         #print name, start_ea
-                
+
         self.name = name
         self.start_ea = start_ea
         self.information = information
@@ -96,13 +96,13 @@ def run_ida(idapath, wrapper_init_path, binpath) :
 #        print stdout, stderr
         sys.exit(0)
 
-class IDAPipe :
+class IDAPipe(object):
     def __init__(self, idapath, binpath, wrapper_init_path) :
         self.idapath = idapath
         self.binpath = binpath
 
         self.proxy = None
-        
+
         run_ida(self.idapath, self.binpath, wrapper_init_path)
 
         while 1 :
@@ -112,7 +112,7 @@ class IDAPipe :
                 break
             except :
                 pass
-            
+
         #print self.proxy
         self.proxy = MyXMLRPC( self.proxy )
 
@@ -152,12 +152,12 @@ class IDAPipe :
         if function_ea == -1 :
             return
 
-        f_start = function_ea 
+        f_start = function_ea
         f_end = self.proxy.GetFunctionAttr(function_ea, 4) #FUNCATTR_END)
-        
+
         edges = set()
         boundaries = set((f_start,))
-        
+
         for head in self.proxy.Heads(f_start, f_end) :
             if self.proxy.isCode( self.proxy.GetFlags( head ) ) :
                 refs = self.proxy.CodeRefsFrom(head, 0)
@@ -169,10 +169,10 @@ class IDAPipe :
                     next_head = self.proxy.NextHead(head, f_end)
                     if self.proxy.isFlow(self.proxy.GetFlags(next_head)):
                         refs.add(next_head)
-                                                      
+
                     # Update the boundaries found so far.
                     boundaries.update(refs)
-                                                                                                  
+
                     # For each of the references found, and edge is
                     # created.
                     for r in refs:
@@ -182,7 +182,7 @@ class IDAPipe :
                         if self.proxy.isFlow(self.proxy.GetFlags(r)):
                             edges.add((self.proxy.PrevHead(r, f_start), r))
                         edges.add((head, r))
-                
+
 
         #print edges, boundaries
         # Let's build the list of (startEA, startEA) couples

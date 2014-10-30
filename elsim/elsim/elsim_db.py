@@ -49,7 +49,7 @@ def eval_res_per_class(ret) :
 
 ############################################################
 
-class ElsimDB :
+class ElsimDB(object):
   def __init__(self, database_path) :
       self.db = DBFormat( database_path )
 
@@ -187,17 +187,17 @@ class ElsimDB :
 
           if sort_ret != {} :
               if _class.get_name() not in N :
-                  info["nodes"].append( { "name" : _class.get_name().split("/")[-1], "group" : 0 } ) 
+                  info["nodes"].append( { "name" : _class.get_name().split("/")[-1], "group" : 0 } )
                   N[_class.get_name()] = len(N)
 
-              for j in sort_ret : 
-                  if j not in N : 
+              for j in sort_ret :
+                  if j not in N :
                       N[j] = len(N)
                       info["nodes"].append( { "name" : j, "group" : 1 } )
 
                   key = _class.get_name() + j
                   if key not in L :
-                      L[ key ] = { "source" : N[_class.get_name()], "target" : N[j], "value" : 0 } 
+                      L[ key ] = { "source" : N[_class.get_name()], "target" : N[j], "value" : 0 }
                       info["links"].append( L[ key ] )
 
                   for k in sort_ret[j] :
@@ -207,7 +207,7 @@ class ElsimDB :
       return info
 
 
-class ElsimDBIn :
+class ElsimDBIn(object):
   def __init__(self, output) :
     self.db = DBFormat( output )
 
@@ -221,10 +221,10 @@ class ElsimDBIn :
     if regexp_pattern != None :
         if re.match(regexp_pattern, _class.get_name()) == None :
             continue
-    if regexp_exclude_pattern != None : 
+    if regexp_exclude_pattern != None :
         if re.match(regexp_exclude_pattern, _class.get_name()) != None :
             continue
-    
+
     print "\t", _class.get_name()
     for method in _class.get_methods() :
         code = method.get_code()

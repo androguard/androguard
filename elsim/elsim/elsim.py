@@ -49,8 +49,8 @@ from similarity.similarity import *
 FILTER_ELEMENT_METH         =       "FILTER_ELEMENT_METH"
 FILTER_CHECKSUM_METH        =       "FILTER_CHECKSUM_METH"      # function to checksum an element
 FILTER_SIM_METH             =       "FILTER_SIM_METH"           # function to calculate the similarity between two elements
-FILTER_SORT_METH            =       "FILTER_SORT_METH"          # function to sort all similar elements 
-FILTER_SORT_VALUE           =       "FILTER_SORT_VALUE"         # value which used in the sort method to eliminate not interesting comparisons 
+FILTER_SORT_METH            =       "FILTER_SORT_METH"          # function to sort all similar elements
+FILTER_SORT_VALUE           =       "FILTER_SORT_VALUE"         # value which used in the sort method to eliminate not interesting comparisons
 FILTER_SKIPPED_METH         =       "FILTER_SKIPPED_METH"       # object to skip elements
 FILTER_SIM_VALUE_METH       =       "FILTER_SIM_VALUE_METH"     # function to modify values of the similarity
 
@@ -69,7 +69,7 @@ SIMILARITY_ELEMENTS         =       "similarity_elements"
 SIMILARITY_SORT_ELEMENTS    =       "similarity_sort_elements"
 
 
-class ElsimNeighbors :
+class ElsimNeighbors(object):
     def __init__(self, x, ys) :
         import numpy as np
         from sklearn.neighbors import NearestNeighbors
@@ -79,7 +79,7 @@ class ElsimNeighbors :
         #print CI, x.get_info()
         #print
 
-        for i in ys : 
+        for i in ys :
             CI = np.vstack( (CI, [i.checksum.get_signature_entropy(), i.checksum.get_entropy()]) )
 
         #idx = 0
@@ -97,12 +97,12 @@ class ElsimNeighbors :
     def cmp_elements(self) :
         z = self.neigh.kneighbors( self.CI[0], 5 )
         l = []
-        
+
         cmp_values = z[0][0]
         cmp_elements = z[1][0]
         idx = 1
         for i in cmp_elements[1:] :
-            
+
             #if cmp_values[idx] > 1.0 :
             #    break
 
@@ -120,10 +120,10 @@ def split_elements(el, els) :
 
 ####
 # elements : entropy raw, hash, signature
-# 
+#
 # set elements : hash
 # hash table elements : hash --> element
-class Elsim :
+class Elsim(object):
     def __init__(self, e1, e2, F, T=None, C=None, libnative=True, libpath="elsim/elsim/similarity/libsimilarity/libsimilarity.so") :
         self.e1 = e1
         self.e2 = e2
@@ -174,10 +174,10 @@ class Elsim :
 
         self.filters[ ELEMENTS ][ self.e1 ] = []
         self.filters[ HASHSUM ][ self.e1 ]  = []
-        
+
         self.filters[ ELEMENTS ][ self.e2 ] = []
         self.filters[ HASHSUM ][ self.e2 ]  = []
-        
+
         self.filters[ SIMILARITY_ELEMENTS ] = {}
         self.filters[ SIMILARITY_SORT_ELEMENTS ] = {}
 
@@ -194,31 +194,31 @@ class Elsim :
         self.set_els[ ce ] = set()
         self.ref_set_els[ ce ] = {}
         self.ref_set_ident[ce] = {}
-        
+
         for ae in ce.get_elements() :
             e = self.filters[BASE][FILTER_ELEMENT_METH]( ae, ce )
-       
+
             if self.filters[BASE][FILTER_SKIPPED_METH].skip( e ) :
                 self.filters[ SKIPPED_ELEMENTS ].append( e )
                 continue
-          
+
             self.filters[ ELEMENTS ][ ce ].append( e )
             fm = self.filters[ BASE ][ FILTER_CHECKSUM_METH ]( e, self.sim )
             e.set_checksum( fm )
-            
+
             sha256 = e.getsha256()
             self.filters[ HASHSUM ][ ce ].append( sha256 )
-            
+
             if sha256 not in self.set_els[ ce ] :
                 self.set_els[ ce ].add( sha256 )
                 self.ref_set_els[ ce ][ sha256 ] = e
-                
+
                 self.ref_set_ident[ce][sha256] = []
             self.ref_set_ident[ce][sha256].append(e)
 
 
     def _init_similarity(self) :
-        intersection_elements = self.set_els[ self.e2 ].intersection( self.set_els[ self.e1 ] ) 
+        intersection_elements = self.set_els[ self.e2 ].intersection( self.set_els[ self.e1 ] )
         difference_elements = self.set_els[ self.e2 ].difference( intersection_elements )
 
         self.filters[IDENTICAL_ELEMENTS].update([ self.ref_set_els[ self.e1 ][ i ] for i in intersection_elements ])
@@ -230,11 +230,11 @@ class Elsim :
 
             #debug("SIM FOR %s" % (j.get_info()))
             if j.getsha256() not in self.filters[HASHSUM][self.e2] :
-                
+
                 #eln = ElsimNeighbors( j, available_e2_elements )
                 #for k in eln.cmp_elements() :
                 for k in available_e2_elements :
-                    #debug("%s" % k.get_info()) 
+                    #debug("%s" % k.get_info())
                     self.filters[SIMILARITY_ELEMENTS][ j ][ k ] = self.filters[BASE][FILTER_SIM_METH]( self.sim, j, k )
                     if j.getsha256() not in self.filters[HASHSUM_SIMILAR_ELEMENTS] :
                         self.filters[SIMILAR_ELEMENTS].append(j)
@@ -244,7 +244,7 @@ class Elsim :
         deleted_elements = []
         for j in self.filters[SIMILAR_ELEMENTS] :
             #debug("SORT FOR %s" % (j.get_info()))
-            
+
             sort_h = self.filters[BASE][FILTER_SORT_METH]( j, self.filters[SIMILARITY_ELEMENTS][ j ], self.filters[BASE][FILTER_SORT_VALUE] )
             self.filters[SIMILARITY_SORT_ELEMENTS][ j ] = set( i[0] for i in sort_h )
 
@@ -258,7 +258,7 @@ class Elsim :
         for j in deleted_elements :
             self.filters[ DELETED_ELEMENTS ].append( j )
             self.filters[ SIMILAR_ELEMENTS ].remove( j )
-        
+
     def __checksort(self, x, y) :
         return y in self.filters[SIMILARITY_SORT_ELEMENTS][ x ]
 
@@ -293,25 +293,25 @@ class Elsim :
             @rtype : a list of elements
         """
         return self.get_elem( NEW_ELEMENTS )
-    
+
     def get_deleted_elements(self) :
         """ Return the deleted elements
             @rtype : a list of elements
         """
         return self.get_elem( DELETED_ELEMENTS )
-    
+
     def get_internal_identical_elements(self, ce) :
-        """ Return the internal identical elements 
+        """ Return the internal identical elements
             @rtype : a list of elements
         """
         return self.get_elem( INTERNAL_IDENTICAL_ELEMENTS )
 
     def get_identical_elements(self) :
-        """ Return the identical elements 
+        """ Return the identical elements
             @rtype : a list of elements
         """
         return self.get_elem( IDENTICAL_ELEMENTS )
-    
+
     def get_skipped_elements(self) :
         return self.get_elem( SKIPPED_ELEMENTS )
 
@@ -333,9 +333,9 @@ class Elsim :
             else :
                 for j in self.filters[ SIMILARITY_SORT_ELEMENTS ][ i ] :
                     print "\t\t-->", j.get_info(), self.filters[ SIMILARITY_ELEMENTS ][ i ][ j ]
-    
+
     def get_element_info(self, i) :
-        
+
         l = []
 
         if i.getsha256() == None :
@@ -380,7 +380,7 @@ class Elsim :
 
         return (similarity_value/len(values)) * 100
 
-    def show(self): 
+    def show(self):
         print "Elements:"
         print "\t IDENTICAL:\t", len(self.get_identical_elements())
         print "\t SIMILAR: \t", len(self.get_similar_elements())
@@ -394,11 +394,11 @@ ADDED_ELEMENTS = "added elements"
 DELETED_ELEMENTS = "deleted elements"
 LINK_ELEMENTS = "link elements"
 DIFF = "diff"
-class Eldiff :
+class Eldiff(object):
     def __init__(self, elsim, F) :
         self.elsim = elsim
         self.F = F
-       
+
         self._init_filters()
         self._init_diff()
 
@@ -408,7 +408,7 @@ class Eldiff :
         self.filters[ BASE ]                = {}
         self.filters[ BASE ].update( self.F )
         self.filters[ ELEMENTS ]            = {}
-        self.filters[ ADDED_ELEMENTS ] = {} 
+        self.filters[ ADDED_ELEMENTS ] = {}
         self.filters[ DELETED_ELEMENTS ] = {}
         self.filters[ LINK_ELEMENTS ] = {}
 
@@ -428,7 +428,7 @@ class Eldiff :
     def show(self) :
         for bb in self.filters[ LINK_ELEMENTS ] : #print "la"
             print bb.get_info(), self.filters[ LINK_ELEMENTS ][ bb ].get_info()
-            
+
             print "Added Elements(%d)" % (len(self.filters[ ADDED_ELEMENTS ][ bb ]))
             for i in self.filters[ ADDED_ELEMENTS ][ bb ] :
                 print "\t",

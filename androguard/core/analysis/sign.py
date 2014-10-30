@@ -23,9 +23,9 @@ TAINTED_PACKAGE_INTERNAL_CALL = 2
 FIELD_ACCESS = { "R" : 0, "W" : 1 }
 PACKAGE_ACCESS = { TAINTED_PACKAGE_CREATE : 0, TAINTED_PACKAGE_CALL : 1, TAINTED_PACKAGE_INTERNAL_CALL : 2 }
 
-class Sign :
+class Sign(object):
     def __init__(self) :
-        self.levels = {} 
+        self.levels = {}
         self.hlevels = []
 
     def add(self, level, value) :
@@ -44,7 +44,7 @@ class Sign :
     def get_list(self) :
       return self.levels[ "sequencebb" ]
 
-class Signature :
+class Signature(object):
     def __init__(self, vmx) :
         self.vmx = vmx
         self.tainted_packages = self.vmx.get_tainted_packages()
@@ -143,7 +143,7 @@ class Signature :
                     internal.extend( getattr( self, f )( analysis_method ) )
 
             internal.sort()
-            
+
             for i in internal :
                 if i[0] >= b.start and i[0] < b.end :
                     l.append( i )
@@ -310,7 +310,7 @@ class Signature :
                     if m.find(i) == 0 :
                         present = True
                         break
-                
+
                 if present == True :
                     l.append( (path.get_idx(), "P%s" % (PACKAGE_ACCESS[ path.get_access_flag() ]) ) )
                     continue
@@ -334,14 +334,14 @@ class Signature :
         #print signature_type, signature_arguments
         for i in signature_type.split(":") :
         #    print i, signature_arguments[ i ]
-            if i == "L0" : 
+            if i == "L0" :
                 _type = self.levels[ i ][ signature_arguments[ i ][ "type" ] ]
-                try : 
-                    _arguments = signature_arguments[ i ][ "arguments" ] 
+                try :
+                    _arguments = signature_arguments[ i ][ "arguments" ]
                 except KeyError :
                     _arguments = []
 
-                value = self._get_bb( analysis_method, _type, _arguments ) 
+                value = self._get_bb( analysis_method, _type, _arguments )
                 s.add( i, ''.join(z for z in value) )
 
             elif i == "L4" :
@@ -368,7 +368,7 @@ class Signature :
                 s.add( i, value )
 
             else :
-                for f in self.levels[ i ] : 
+                for f in self.levels[ i ] :
                     value = getattr( self, f )( analysis_method )
                 s.add( i, value )
 
