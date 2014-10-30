@@ -39,7 +39,7 @@ from androguard.decompiler.decompiler import *
 from androguard.core import androconf
 from androguard.util import read
 
-from IPython.frontend.terminal.embed import InteractiveShellEmbed
+from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.config.loader import Config
 
 from cPickle import dumps, loads
