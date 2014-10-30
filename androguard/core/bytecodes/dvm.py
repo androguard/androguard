@@ -1768,7 +1768,7 @@ def utf8_to_string(buff, length):
             chars.append(unichr(value))
         else:
             warning('at offset %x: illegal utf8' % buff.get_idx())
-    return ''.join(chars)
+    return ''.join(chars).encode('utf-8')
 
 
 class StringDataItem :
