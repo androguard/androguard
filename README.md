@@ -2,7 +2,7 @@ Androguard
 ==========
 
 - Github: https://github.com/androguard/androguard
-- Google Code
+- Google Code: http://code.google.com/p/androguard
 - Email: dev (at) androguard.re 
 
 ##1.  About
