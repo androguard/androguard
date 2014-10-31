@@ -42,7 +42,7 @@ options = [option_0, option_1]
 MAGIC_PATTERN = "\xca\xfe\xba\xbe"
 
 class AndroPreDump(object):
-    def __init__(self, input) :
+    def __init__(self, input):
         self.data = []
 
         self.pid = int(input)
@@ -55,20 +55,19 @@ class AndroPreDump(object):
 
         self.procmaps = readProcessMappings(self.process)
         for pm in self.procmaps:
-            if pm.permissions.find("w") != -1 and pm.pathname == None :
-
-#            if Code == False and Header == True :
+            if pm.permissions.find("w") != -1 and pm.pathname == None:
+#            if Code == False and Header == True:
 #               data = self.process.readBytes(pm.start, pm.end-pm.start)
 #               idx = data.find("SourceFile")
-#               if idx != -1 :
+#               if idx != -1:
 #                  print "CODE", pm
 #                  self.data.append( (pm, data, idx) )
 #                  Code = True
 
-                if Header == False :
+                if Header == False:
                     data = self.process.readBytes(pm.start, pm.end-pm.start)
                     idx = data.find(MAGIC_PATTERN)
-                    if idx != -1 :
+                    if idx != -1:
                         print "HEADER", pm
                         self.data.append( (pm, data) )
                         Header = True
@@ -76,15 +75,15 @@ class AndroPreDump(object):
         self.dumpMemory( "java_dump_memory" )
 #      self.dumpFiles( "java_files" )
 
-    def write(self, idx, buff) :
+    def write(self, idx, buff):
         self.process.writeBytes( idx, buff )
 
-    def getFilesBuffer(self) :
-        for i in self.data :
+    def getFilesBuffer(self):
+        for i in self.data:
             d = i[1]
             x = d.find(MAGIC_PATTERN)
             idx = x
-            while x != -1 :
+            while x != -1:
                 yield i[0].start + idx, d[x:]
                 d = d[x+len(MAGIC_PATTERN):]
 
@@ -92,29 +91,29 @@ class AndroPreDump(object):
                 x = d.find(MAGIC_PATTERN)
                 idx += x
 
-    def dumpMemory(self, base_filename) :
-        for i in self.data :
+    def dumpMemory(self, base_filename):
+        for i in self.data:
             with open(base_filename + "-" + "0x%x-0x%x" % (i[0].start, i[0].end), "w") as fd:
                 fd.write( i[1] )
 
-    def dumpFiles(self, base_filename) :
-        for i in self.data :
+    def dumpFiles(self, base_filename):
+        for i in self.data:
             with fd = open(base_filename + "-" + "0x%x-0x%x" % (i[0].start + i[2], i[0].end), "w") as fd:
                 fd.write( i[1][i[2]:] )
 
 class AndroDump(object):
-    def __init__(self, adp) :
+    def __init__(self, adp):
         self.__adp = adp
 
-        for i in self.__adp.getFilesBuffer() :
-            try :
+        for i in self.__adp.getFilesBuffer():
+            try:
                 print "0x%x :" % (i[0])
                 j = jvm.JVMFormat( i[1] )
 
-                for method in j.get_methods() :
+                for method in j.get_methods():
                     print "\t -->", method.get_class_name(), method.get_name(), method.get_descriptor()
 
-#               if (method.get_class_name() == "Test2" and method.get_name() == "main") :
+#               if (method.get_class_name() == "Test2" and method.get_name() == "main"):
 #                  print "patch"
 
 #                  code = method.get_code()
@@ -124,20 +123,20 @@ class AndroDump(object):
 #            print "\t\t-> %x" % (len(j.save()))
 
 #            self.__adp.write( i[0], j.save() )
-            except Exception, e :
+            except Exception, e:
                 print e
 
-def main(options, arguments) :
-    if options.input != None :
+def main(options, arguments):
+    if options.input != None:
         apd = AndroPreDump( options.input )
         AndroDump( apd )
 
-    elif options.version != None :
+    elif options.version != None:
         print "Androdump version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

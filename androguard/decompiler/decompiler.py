@@ -223,7 +223,7 @@ class DecompilerDed(object):
         self.classes_failed = []
 
         pathtmp = tmp_dir
-        if not os.path.exists(pathtmp) :
+        if not os.path.exists(pathtmp):
             os.makedirs( pathtmp )
 
         fd, fdname = tempfile.mkstemp( dir=pathtmp )
@@ -237,24 +237,24 @@ class DecompilerDed(object):
         os.unlink( fdname )
 
         findsrc = None
-        for root, dirs, files in os.walk( dirname + "/optimized-decompiled/" ) :
-            if dirs != [] :
-                for f in dirs :
-                    if f == "src" :
+        for root, dirs, files in os.walk( dirname + "/optimized-decompiled/" ):
+            if dirs != []:
+                for f in dirs:
+                    if f == "src":
                         findsrc = root
-                        if findsrc[-1] != "/" :
+                        if findsrc[-1] != "/":
                             findsrc += "/"
                         findsrc += f
                         break
-            if findsrc != None :
+            if findsrc != None:
                 break
 
-        for i in vm.get_classes() :
+        for i in vm.get_classes():
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
             #print fname
             if os.path.isfile(fname) == True:
                 self.classes[ i.get_name() ] = read(fname, binary=False)
-            else :
+            else:
                 self.classes_failed.append( i.get_name() )
 
         rrmdir( dirname )
@@ -395,52 +395,52 @@ class MethodFilter(Filter):
         self.present = False
         self.get_desc = True #False
 
-    def filter(self, lexer, stream) :
+    def filter(self, lexer, stream):
         a = []
         l = []
         rep = []
 
         for ttype, value in stream:
-            if self.method_name == value and (ttype is Token.Name.Function or ttype is Token.Name) :
+            if self.method_name == value and (ttype is Token.Name.Function or ttype is Token.Name):
                 #print ttype, value
 
                 item_decl = -1
-                for i in range(len(a)-1, 0, -1) :
-                    if a[i][0] is Token.Keyword.Declaration :
-                        if a[i][1] != "class" :
+                for i in range(len(a)-1, 0, -1):
+                    if a[i][0] is Token.Keyword.Declaration:
+                        if a[i][1] != "class":
                             item_decl = i
                         break
 
-                if item_decl != -1 :
+                if item_decl != -1:
                     self.present = True
                     l.extend( a[item_decl:] )
 
 
-            if self.present and ttype is Token.Keyword.Declaration :
+            if self.present and ttype is Token.Keyword.Declaration:
                 item_end = -1
-                for i in range(len(l)-1, 0, -1) :
-                    if l[i][0] is Token.Operator and l[i][1] == "}" :
+                for i in range(len(l)-1, 0, -1):
+                    if l[i][0] is Token.Operator and l[i][1] == "}":
                         item_end = i
                         break
 
-                if item_end != -1 :
+                if item_end != -1:
                     rep.extend( l[:item_end+1] )
                     l = []
                     self.present = False
 
-            if self.present :
+            if self.present:
                 l.append( (ttype, value) )
 
             a.append( (ttype, value) )
 
 
-        if self.present :
+        if self.present:
             nb = 0
             item_end = -1
-            for i in range(len(l)-1, 0, -1) :
-                if l[i][0] is Token.Operator and l[i][1] == "}" :
+            for i in range(len(l)-1, 0, -1):
+                if l[i][0] is Token.Operator and l[i][1] == "}":
                     nb += 1
-                    if nb == 2 :
+                    if nb == 2:
                         item_end = i
                         break
 

@@ -19,5 +19,5 @@ j.set_vmanalysis( x )
 j.pretty_show()
 
 # SHOW METHODS
-for i in j.get_methods() :
+for i in j.get_methods():
     i.pretty_show( )

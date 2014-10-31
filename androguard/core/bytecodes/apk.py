@@ -37,24 +37,24 @@ NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 ZIPMODULE = 1
 
 import sys
-if sys.hexversion < 0x2070000 :
-    try :
+if sys.hexversion < 0x2070000:
+    try:
         import chilkat
         ZIPMODULE = 0
         # UNLOCK : change it with your valid key !
-        try :
+        try:
             CHILKAT_KEY = read("key.txt")
-        except Exception :
+        except Exception:
             CHILKAT_KEY = "testme"
 
-    except ImportError :
+    except ImportError:
         ZIPMODULE = 1
-else :
+else:
     ZIPMODULE = 1
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip(object):
-    def __init__(self, raw) :
+    def __init__(self, raw):
         self.files = []
         self.zip = chilkat.CkZip()
 
@@ -64,44 +64,43 @@ class ChilkatZip(object):
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None :
+        while e != None:
             e.get_FileName(filename)
             self.files.append( filename.getString() )
             e = e.NextEntry()
 
-    def delete(self, patterns) :
+    def delete(self, patterns):
         el = []
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None :
+        while e != None:
             e.get_FileName(filename)
 
-            if re.match(patterns, filename.getString()) != None :
+            if re.match(patterns, filename.getString()) != None:
                 el.append( e )
             e = e.NextEntry()
 
-        for i in el :
+        for i in el:
             self.zip.DeleteEntry( i )
 
-    def remplace_file(self, filename, buff) :
+    def remplace_file(self, filename, buff):
         entry = self.zip.GetEntryByName(filename)
-        if entry != None :
-
+        if entry != None:
             obj = chilkat.CkByteData()
             obj.append2( buff, len(buff) )
             return entry.ReplaceData( obj )
         return False
 
-    def write(self) :
+    def write(self):
         obj = chilkat.CkByteData()
         self.zip.WriteToMemory( obj )
         return obj.getBytes()
 
-    def namelist(self) :
+    def namelist(self):
         return self.files
 
-    def read(self, elem) :
+    def read(self, elem):
         e = self.zip.GetEntryByName( elem )
         s = chilkat.CkByteData()
 
@@ -370,8 +369,8 @@ class APK(object):
             :param attribute: a string which specify the attribute
         """
         l = []
-        for i in self.xml :
-            for item in self.xml[i].getElementsByTagName(tag_name) :
+        for i in self.xml:
+            for item in self.xml[i].getElementsByTagName(tag_name):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
                 value = self.format_value( value )
 
@@ -379,15 +378,15 @@ class APK(object):
                 l.append( str( value ) )
         return l
 
-    def format_value(self, value) :
-        if len(value) > 0 :
-            if value[0] == "." :
+    def format_value(self, value):
+        if len(value) > 0:
+            if value[0] == ".":
                 value = self.package + value
-            else :
+            else:
                 v_dot = value.find(".")
-                if v_dot == 0 :
+                if v_dot == 0:
                     value = self.package + "." + value
-                elif v_dot == -1 :
+                elif v_dot == -1:
                     value = self.package + "." + value
         return value
 
@@ -402,15 +401,15 @@ class APK(object):
 
             :rtype: string
         """
-        for i in self.xml :
-            for item in self.xml[i].getElementsByTagName(tag_name) :
+        for i in self.xml:
+            for item in self.xml[i].getElementsByTagName(tag_name):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
 
-                if len(value) > 0 :
+                if len(value) > 0:
                     return value
         return None
 
-    def get_main_activity(self) :
+    def get_main_activity(self):
         """
             Return the name of the main activity
 
@@ -420,19 +419,19 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity") :
-                for sitem in item.getElementsByTagName( "action" ) :
+            for item in self.xml[i].getElementsByTagName("activity"):
+                for sitem in item.getElementsByTagName( "action" ):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
-                    if val == "android.intent.action.MAIN" :
+                    if val == "android.intent.action.MAIN":
                         x.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
 
-                for sitem in item.getElementsByTagName( "category" ) :
+                for sitem in item.getElementsByTagName( "category" ):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
-                    if val == "android.intent.category.LAUNCHER" :
+                    if val == "android.intent.category.LAUNCHER":
                         y.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
 
         z = x.intersection(y)
-        if len(z) > 0 :
+        if len(z) > 0:
             return self.format_value(z.pop())
         return None
 
@@ -452,7 +451,7 @@ class APK(object):
         """
         return self.get_elements("service", "name")
 
-    def get_receivers(self) :
+    def get_receivers(self):
         """
             Return the android:name attribute of all receivers
 
@@ -509,16 +508,16 @@ class APK(object):
         """
         l = {}
 
-        for i in self.permissions :
+        for i in self.permissions:
             perm = i
             pos = i.rfind(".")
 
-            if pos != -1 :
+            if pos != -1:
                 perm = i[pos+1:]
 
-            try :
+            try:
                 l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
-            except KeyError :
+            except KeyError:
                 l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
 
         return l
@@ -539,7 +538,7 @@ class APK(object):
         """
         return self.get_element("uses-sdk", "minSdkVersion")
 
-    def get_target_sdk_version(self) :
+    def get_target_sdk_version(self):
         """
             Return the android:targetSdkVersion attribute
 
@@ -547,7 +546,7 @@ class APK(object):
         """
         return self.get_element( "uses-sdk", "targetSdkVersion" )
 
-    def get_libraries(self) :
+    def get_libraries(self):
         """
             Return the android:name attributes for libraries
 
@@ -567,7 +566,7 @@ class APK(object):
 
         return success, cert
 
-    def new_zip(self, filename, deleted_files=None, new_files={}) :
+    def new_zip(self, filename, deleted_files=None, new_files={}):
         """
             Create a new zip file
 
@@ -1011,13 +1010,13 @@ class AXMLParser(object):
             return u''
 
     def getName(self):
-        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG) :
+        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
             return u''
 
         return self.sb.getString(self.m_name)
 
-    def getText(self) :
-        if self.m_name == -1 or self.m_event != TEXT :
+    def getText(self):
+        if self.m_name == -1 or self.m_event != TEXT:
             return u''
 
         return self.sb.getString(self.m_name)
@@ -1038,7 +1037,7 @@ class AXMLParser(object):
                 self.visited_ns.append(i)
         return buff
 
-    def getNamespaceCount(self, pos) :
+    def getNamespaceCount(self, pos):
         pass
 
     def getAttributeOffset(self, index):
@@ -1070,27 +1069,27 @@ class AXMLParser(object):
 
         return self.sb.getString(prefix)
 
-    def getAttributeName(self, index) :
+    def getAttributeName(self, index):
         offset = self.getAttributeOffset(index)
         name = self.m_attributes[offset+ATTRIBUTE_IX_NAME]
 
-        if name == -1 :
+        if name == -1:
             return ""
 
         return self.sb.getString( name )
 
-    def getAttributeValueType(self, index) :
+    def getAttributeValueType(self, index):
         offset = self.getAttributeOffset(index)
         return self.m_attributes[offset+ATTRIBUTE_IX_VALUE_TYPE]
 
-    def getAttributeValueData(self, index) :
+    def getAttributeValueData(self, index):
         offset = self.getAttributeOffset(index)
         return self.m_attributes[offset+ATTRIBUTE_IX_VALUE_DATA]
 
-    def getAttributeValue(self, index) :
+    def getAttributeValue(self, index):
         offset = self.getAttributeOffset(index)
         valueType = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_TYPE]
-        if valueType == TYPE_STRING :
+        if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_STRING]
             return self.sb.getString( valueString )
         # WIP

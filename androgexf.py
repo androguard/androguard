@@ -32,22 +32,22 @@ option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the gexf'
 
 options = [option_0, option_1]
 
-def main(options, arguments) :
-    if options.input != None and options.output != None :
+def main(options, arguments):
+    if options.input != None and options.output != None:
         ret_type = androconf.is_android( options.input )
 
         vm = None
         a = None
-        if ret_type == "APK"  :
+        if ret_type == "APK":
             a = apk.APK( options.input )
-            if a.is_valid_APK() :
+            if a.is_valid_APK():
                 vm = dvm.DalvikVMFormat( a.get_dex() )
-            else :
+            else:
                 print "INVALID APK"
-        elif ret_type == "DEX" :
-            try :
+        elif ret_type == "DEX":
+            try:
                 vm = dvm.DalvikVMFormat( read(options.input) )
-            except Exception, e :
+            except Exception, e:
                 print "INVALID DEX", e
 
         vmx = analysis.VMAnalysis( vm )
@@ -56,9 +56,9 @@ def main(options, arguments) :
         b = gvmx.export_to_gexf()
         androconf.save_to_disk( b, options.output )
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
    parser = OptionParser()
-   for option in options :
+   for option in options:
 	  param = option['name']
 	  del option['name']
 	  parser.add_option(*param, **option)
