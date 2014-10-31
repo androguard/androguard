@@ -19,6 +19,6 @@ x = analysis.VMAnalysis( j )
 #j.pretty_show( x )
 
 # SHOW METHODS
-for i in j.get_methods() :
+for i in j.get_methods():
     print i
     i.pretty_show( x )

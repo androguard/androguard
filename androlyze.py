@@ -280,45 +280,45 @@ def main(options, arguments):
     if options.shell != None:
         interact()
 
-    elif options.input != None :
+    elif options.input != None:
         _a = AndroguardS( options.input )
 
-        if options.pretty != None :
+        if options.pretty != None:
           init_print_colors()
 
-        if options.display != None :
-            if options.pretty != None :
+        if options.display != None:
+            if options.pretty != None:
                 _a.ianalyze()
                 _a.pretty_show()
-            else :
+            else:
                 _a.show()
 
-        elif options.method != None :
-            for method in _a.get("method", options.method) :
-                if options.pretty != None :
+        elif options.method != None:
+            for method in _a.get("method", options.method):
+                if options.pretty != None:
                     _a.ianalyze()
                     method.pretty_show()
-                else :
+                else:
                     method.show()
 
-        elif options.field != None :
-            for field in _a.get("field", options.field) :
+        elif options.field != None:
+            for field in _a.get("field", options.field):
                 field.show()
 
-        elif options.xpermissions != None :
+        elif options.xpermissions != None:
             _a.ianalyze()
             perms_access = _a.get_analysis().get_permissions( [] )
-            for perm in perms_access :
+            for perm in perms_access:
                 print "PERM : ", perm
-                for path in perms_access[ perm ] :
+                for path in perms_access[ perm ]:
                     show_Path( _a.get_vm(), path )
 
-    elif options.version != None :
+    elif options.version != None:
         print "Androlyze version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)
