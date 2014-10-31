@@ -23,13 +23,12 @@ from idc import *
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import cPickle
 
-def is_connected() :
+def is_connected():
     return True
 
-def wrapper_get_raw(oops) :
+def wrapper_get_raw(oops):
     F = {}
-    for function_ea in Functions() :
-
+    for function_ea in Functions():
         F[ function_ea ] = []
 
         f_start = function_ea
@@ -40,14 +39,14 @@ def wrapper_get_raw(oops) :
 
         F[ function_ea ].append( GetFunctionName(function_ea) )
 
-        for head in Heads(f_start, f_end) :
-            if isCode( GetFlags( head ) ) :
+        for head in Heads(f_start, f_end):
+            if isCode( GetFlags( head ) ):
                 F[ function_ea ].append( (head, GetMnem(head), GetOpnd(head, 0), GetOpnd(head, 1), GetOpnd(head, 2)) )
 
                 refs = CodeRefsFrom(head, 0)
                 refs = set(filter(lambda x: x>=f_start and x<=f_end, refs))
 
-                if refs :
+                if refs:
                     next_head = NextHead(head, f_end)
                     if isFlow(GetFlags(next_head)):
                         refs.add(next_head)
@@ -86,32 +85,32 @@ def wrapper_get_raw(oops) :
 
     return cPickle.dumps( F )
 
-def wrapper_Heads(oops) :
+def wrapper_Heads(oops):
     start, end = cPickle.loads(oops)
     return cPickle.dumps( [ x for x in Heads( start, end ) ] )
 
-def wrapper_Functions(oops) :
+def wrapper_Functions(oops):
     return cPickle.dumps( [ x for x in Functions() ] )
 
-def wrapper_get_function(oops) :
+def wrapper_get_function(oops):
     name = cPickle.loads(oops)
-    for function_ea in Functions() :
-        if GetFunctionName(function_ea) == name :
+    for function_ea in Functions():
+        if GetFunctionName(function_ea) == name:
             return cPickle.dumps( function_ea )
     return cPickle.dumps( -1 )
 
-def wrapper_quit(oops) :
+def wrapper_quit(oops):
     qexit(0)
 
 class IDAWrapper(object):
-    def _dispatch(self, x, params) :
+    def _dispatch(self, x, params):
         #fd = open("toto.txt", "w")
         #fd.write( x + "\n" )
         #fd.write( str(type(params[0])) + "\n" )
         #fd.close()
 
         params = cPickle.loads( *params )
-        if isinstance(params, tuple) == False :
+        if isinstance(params, tuple) == False:
             params = (params,)
 
         import types
@@ -119,27 +118,27 @@ class IDAWrapper(object):
         import idc
 
         #[getattr(idautils, a, None) for a in dir(idautils) if isinstance(getattr(idautils, a, None) , types.FunctionType)]
-        for a in dir(idautils) :
+        for a in dir(idautils):
             #fd.write( "\t" + a + "\n" )
-            if a == x :
+            if a == x:
                 z = getattr(idautils, a, None)
                 ret = z( *params )
-                if type(ret).__name__=='generator' :
+                if type(ret).__name__=='generator':
                     return cPickle.dumps( [ i for i in ret ] )
                 return cPickle.dumps( ret )
 
-        for a in dir(idc) :
+        for a in dir(idc):
             #fd.write( "\t" + a + "\n" )
-            if a == x :
+            if a == x:
                 z = getattr(idc, a, None)
                 ret = z( *params )
-                if type(ret).__name__=='generator' :
+                if type(ret).__name__=='generator':
                     return cPickle.dumps( [ i for i in ret ] )
                 return cPickle.dumps( ret )
 
         return cPickle.dumps( [] )
 
-def main() :
+def main():
     autoWait()
     ea = ScreenEA()
 

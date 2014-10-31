@@ -10,13 +10,13 @@ from androguard.core.bytecodes import apk
 from androguard.core.analysis import analysis
 from androguard.core import androconf
 
-class Nop(dvm.Instruction10x) :
-    def __init__(self) :
+class Nop(dvm.Instruction10x):
+    def __init__(self):
         self.OP = 0x00
 
-def patch_dex( m ) :
-    for i in m.get_methods() :
-        if i.get_class_name() == "Lorg/dexlabs/poc/dexdropper/DropActivity;" :
+def patch_dex( m ):
+    for i in m.get_methods():
+        if i.get_class_name() == "Lorg/dexlabs/poc/dexdropper/DropActivity;":
             print i.get_class_name(), i.get_name()
 
             patch_method_3( i )
@@ -24,22 +24,22 @@ def patch_dex( m ) :
             # patch_method_X( i )
 
 
-def  patch_method_1( method ) :
+def  patch_method_1( method ):
     buff = method.get_code().get_bc().insn
     buff = "\x00" * 0x12 + buff[0x12:]
     method.get_code().get_bc().insn = buff
 
-def  patch_method_2( method ) :
+def  patch_method_2( method ):
     method.set_code_idx( 0x12 )
     instructions = [ j for j in method.get_instructions() ]
-    for j in range(0, 9) :
+    for j in range(0, 9):
         instructions.insert(0, Nop() )
     method.set_instructions( instructions )
 
-def  patch_method_3( method ) :
+def  patch_method_3( method ):
     method.set_code_idx( 0x12 )
     instructions = [ j for j in method.get_instructions() ]
-    for j in range(0, 9) :
+    for j in range(0, 9):
         instructions.insert(0, dvm.Instruction10x(None, "\x00\x00") )
     method.set_instructions( instructions )
 

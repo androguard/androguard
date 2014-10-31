@@ -75,20 +75,20 @@ EDGE_GRAPHIC = {
    }
 }
 
-def get_node_name(method, bb) :
+def get_node_name(method, bb):
     return "%s-%s-%s" % ( method.get_class_name(), escape(bb.name), escape(method.get_descriptor()) )
 
-def export_xgmml_cfg(g, fd) :
+def export_xgmml_cfg(g, fd):
     method = g.get_method()
 
     name = method.get_name()
     class_name = method.get_class_name()
     descriptor = method.get_descriptor()
 
-    if method.get_code() != None :
+    if method.get_code() != None:
         size_ins = method.get_code().get_length()
 
-    for i in g.basic_blocks.get() :
+    for i in g.basic_blocks.get():
         fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), get_node_name(method, i)))
 
         fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(class_name)))
@@ -102,20 +102,20 @@ def export_xgmml_cfg(g, fd) :
         fill = cl["fill"]
 
         # No child ...
-        if i.childs == [] :
+        if i.childs == []:
             fill = "#87ceeb"
 
-        if i.start == 0 :
+        if i.start == 0:
             fd.write("<att type=\"string\" name=\"node.label\" value=\"%s\\n%s\"/>\n" % (escape(name), i.get_instructions()[-1].get_name()))
             width = 3
             fill = "#ff0000"
 
             METHODS_ID[ class_name + name + descriptor ] = len(NODES_ID)
-        else :
+        else:
             fd.write("<att type=\"string\" name=\"node.label\" value=\"0x%x\\n%s\"/>\n" % (i.start, i.get_instructions()[-1].get_name()))
 
         size = 0
-        for tmp_ins in i.get_instructions() :
+        for tmp_ins in i.get_instructions():
             size += (tmp_ins.get_length() / 2)
 
 
@@ -128,9 +128,9 @@ def export_xgmml_cfg(g, fd) :
 
         NODES_ID[ class_name + i.name + descriptor ] = len(NODES_ID)
 
-    for i in g.basic_blocks.get() :
-        for j in i.childs :
-            if j[-1] != None :
+    for i in g.basic_blocks.get():
+        for j in i.childs:
+            if j[-1] != None:
                 label = "%s (cfg) %s" % (get_node_name(method, i), get_node_name(method, j[-1]))
                 id = len(NODES_ID) + len(EDGES_ID)
                 fd.write( "<edge id=\"%d\" label=\"%s\" source=\"%d\" target=\"%d\">\n" % (id, label, NODES_ID[ class_name + i.name + descriptor ], NODES_ID[ class_name + j[-1].name + descriptor ]) )
@@ -143,17 +143,17 @@ def export_xgmml_cfg(g, fd) :
 
                 EDGES_ID[ label ] = id
 
-def export_xgmml_fcg(a, x, fd) :
+def export_xgmml_fcg(a, x, fd):
     classes = a.get_classes_names()
 
     # Methods flow graph
-    for m, _ in x.get_tainted_packages().get_packages() :
+    for m, _ in x.get_tainted_packages().get_packages():
         paths = m.get_methods()
-        for j in paths :
-            if j.get_method().get_class_name() in classes and m.get_info() in classes :
-                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+        for j in paths:
+            if j.get_method().get_class_name() in classes and m.get_info() in classes:
+                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL:
                     t =  m.get_info() + j.get_name() + j.get_descriptor()
-                    if t not in METHODS_ID :
+                    if t not in METHODS_ID:
                         continue
 
                     bb1 = x.get_method( j.get_method() ).basic_blocks.get_basic_block( j.get_idx() )
@@ -163,7 +163,7 @@ def export_xgmml_fcg(a, x, fd) :
 
                     label = "%s (fcg) %s" % (node1, node2)
 
-                    if label in EDGES_ID :
+                    if label in EDGES_ID:
                         continue
 
                     id = len(NODES_ID) + len(EDGES_ID)
@@ -181,17 +181,17 @@ def export_xgmml_fcg(a, x, fd) :
 
                     EDGES_ID[ label ] = id
 
-def export_xgmml_efcg(a, x, fd) :
+def export_xgmml_efcg(a, x, fd):
     classes = a.get_classes_names()
 
     # Methods flow graph
-    for m, _ in x.get_tainted_packages().get_packages() :
+    for m, _ in x.get_tainted_packages().get_packages():
         paths = m.get_methods()
-        for j in paths :
-            if j.get_method().get_class_name() in classes and m.get_info() not in classes :
-                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL :
+        for j in paths:
+            if j.get_method().get_class_name() in classes and m.get_info() not in classes:
+                if j.get_access_flag() == analysis.TAINTED_PACKAGE_CALL:
                     t =  m.get_info() + j.get_name() + j.get_descriptor()
-                    if t not in EXTERNAL_METHODS_ID :
+                    if t not in EXTERNAL_METHODS_ID:
                         fd.write("<node id=\"%d\" label=\"%s\">\n" % (len(NODES_ID), escape(t)))
 
                         fd.write("<att type=\"string\" name=\"classname\" value=\"%s\"/>\n" % (escape(m.get_info())))
@@ -217,7 +217,7 @@ def export_xgmml_efcg(a, x, fd) :
 
                     label = "%s (efcg) %s" % (node1, node2)
 
-                    if label in EDGES_ID :
+                    if label in EDGES_ID:
                         continue
 
                     id = len(NODES_ID) + len(EDGES_ID)
@@ -235,35 +235,35 @@ def export_xgmml_efcg(a, x, fd) :
 
                     EDGES_ID[ label ] = id
 
-def export_apps_to_xgmml( input, output, fcg, efcg ) :
+def export_apps_to_xgmml( input, output, fcg, efcg ):
     a = Androguard( [ input ] )
 
     with open(output, "w") as fd:
         fd.write("<?xml version='1.0'?>\n")
         fd.write("<graph label=\"Androguard XGMML %s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ns1=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.cs.rpi.edu/XGMML\" directed=\"1\">\n" % (os.path.basename(input)))
 
-        for vm in a.get_vms() :
+        for vm in a.get_vms():
             x = analysis.VMAnalysis( vm )
             # CFG
-            for method in vm.get_methods() :
+            for method in vm.get_methods():
                 g = x.get_method( method )
                 export_xgmml_cfg(g, fd)
 
-            if fcg :
+            if fcg:
                 export_xgmml_fcg(vm, x, fd)
 
-            if efcg :
+            if efcg:
                 export_xgmml_efcg(vm, x, fd)
 
         fd.write("</graph>")
 
-def main(options, arguments) :
-    if options.input != None and options.output != None :
+def main(options, arguments):
+    if options.input != None and options.output != None:
         export_apps_to_xgmml( options.input, options.output, options.functions, options.externals )
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

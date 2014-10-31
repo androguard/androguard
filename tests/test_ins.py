@@ -82,27 +82,27 @@ def test(got, expected):
 
     print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
-def getVal(i) :
+def getVal(i):
     op = i.get_operands()
 
-    if isinstance(op, int) :
+    if isinstance(op, int):
         return [ op ]
-    elif i.get_name() == "lookupswitch" :
+    elif i.get_name() == "lookupswitch":
         x = []
 
         x.append( i.get_operands().default )
-        for idx in range(0, i.get_operands().npairs) :
+        for idx in range(0, i.get_operands().npairs):
             off = getattr(i.get_operands(), "offset%d" % idx)
             x.append( off )
         return x
 
     return [-1]
 
-def check(a, values) :
-    for method in a.get_methods() :
+def check(a, values):
+    for method in a.get_methods():
         key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
-        if key not in values :
+        if key not in values:
             continue
 
         print "CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
@@ -110,9 +110,9 @@ def check(a, values) :
         bc = code.get_bc()
 
         idx = 0
-        for i in bc.get() :
+        for i in bc.get():
 #            print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
-            if idx in values[key] :
+            if idx in values[key]:
                 elem = values[key][idx]
 
                 val1 = i.get_name() + "%s" % i.get_operands()
@@ -125,7 +125,7 @@ def check(a, values) :
             idx += i.get_length()
 
 
-for i in TESTS_CASES :
+for i in TESTS_CASES:
     a = AndroguardS( i )
     check( a, VALUES[i] )
 

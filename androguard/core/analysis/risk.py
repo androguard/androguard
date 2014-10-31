@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# risks from classes.dex :
+# risks from classes.dex:
     # API <-> Permissions
         # method X is more dangerous than another one
     # const-string -> apk-tool
@@ -109,13 +109,13 @@ from androguard.core.analysis import analysis
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 import re, copy
 
-def add_system_rule(system, rule_name, rule) :
+def add_system_rule(system, rule_name, rule):
     system.rules[ rule_name ] = rule
 
-def create_system_risk() :
-    try :
+def create_system_risk():
+    try:
         import fuzzy
-    except ImportError :
+    except ImportError:
         error("please install pyfuzzy to use this module !")
 
     import fuzzy.System
@@ -290,10 +290,10 @@ AVERAGE_METHOD_SCORE        = "average"
 HIGH_METHOD_SCORE           = "high"
 PERFECT_METHOD_SCORE        = "perfect"
 
-def create_system_method_score() :
-    try :
+def create_system_method_score():
+    try:
         import fuzzy
-    except ImportError :
+    except ImportError:
         error("please install pyfuzzy to use this module !")
 
     import fuzzy.System
@@ -467,10 +467,10 @@ def create_system_method_score() :
 
     return system
 
-def create_system_method_one_score() :
-    try :
+def create_system_method_one_score():
+    try:
         import fuzzy
-    except ImportError :
+    except ImportError:
         error("please install pyfuzzy to use this module !")
 
     import fuzzy.System
@@ -594,7 +594,7 @@ def create_system_method_one_score() :
 
     return system
 
-def export_system(system, directory) :
+def export_system(system, directory):
     from fuzzy.doc.plot.gnuplot import doc
 
     d = doc.Doc(directory)
@@ -630,27 +630,27 @@ def export_system(system, directory) :
                 d.create3DPlot(system, in_vars[0], in_vars[1], out_var, {})
 
 class RiskIndicator(object):
-    def __init__(self) :
+    def __init__(self):
         self.risk_analysis_obj = []
 
-    def add_risk_analysis(self, obj) :
+    def add_risk_analysis(self, obj):
         self.risk_analysis_obj.append( obj )
 
-    def with_apk(self, apk_file) :
-      if apk_file.is_valid_APK() :
+    def with_apk(self, apk_file):
+      if apk_file.is_valid_APK():
         d = dvm.DalvikVMFormat( apk_file.get_dex() )
         dx = analysis.uVMAnalysis( d )
 
         return self.with_apk_direct(apk_file, d, dx)
       return {}
 
-    def with_apk_direct(self, apk_file, d, dx) :
+    def with_apk_direct(self, apk_file, d, dx):
       res = {}
-      for i in self.risk_analysis_obj :
+      for i in self.risk_analysis_obj:
         res[ i.get_name() ] = i.with_apk( apk_file, d, dx )
       return res
 
-    def with_dex(self, dex_file) :
+    def with_dex(self, dex_file):
       """
             @param dex_file : a buffer
 
@@ -661,16 +661,16 @@ class RiskIndicator(object):
 
       return self.with_dex_direct(d, dx)
 
-    def with_dex_direct(self, d, dx) :
+    def with_dex_direct(self, d, dx):
       res = {}
-      for i in self.risk_analysis_obj :
+      for i in self.risk_analysis_obj:
         res[ i.get_name() ] = i.with_dex( d, dx )
       return res
 
 class FuzzyRisk(object):
   """
-  Calculate the risk to install a specific android application by using :
-        Permissions :
+  Calculate the risk to install a specific android application by using:
+        Permissions:
             - dangerous
             - signatureOrSystem
             - signature
@@ -682,25 +682,25 @@ class FuzzyRisk(object):
             - call
             - privacy
 
-         API :
+         API:
             - DexClassLoader
 
-         Files :
+         Files:
             - binary file
             - shared library
 
         note : pyfuzzy without fcl support (don't install antlr)
   """
-  def __init__(self) :
+  def __init__(self):
     self.system = create_system_risk()
 #     export_system( SYSTEM, "./output" )
 
     self.system_method_risk = create_system_method_one_score()
 
-  def get_name(self) :
+  def get_name(self):
     return "FuzzyRisk"
 
-  def with_apk(self, apk_file, d, dx) :
+  def with_apk(self, apk_file, d, dx):
     """
       @param apk_file : an L{APK} object
 
@@ -723,7 +723,7 @@ class FuzzyRisk(object):
 
     return val
 
-  def with_dex(self, vm, vmx) :
+  def with_dex(self, vm, vmx):
       risks = { DANGEROUS_RISK    : 0.0,
                 MONEY_RISK        : 0.0,
                 PRIVACY_RISK      : 0.0,
@@ -734,7 +734,7 @@ class FuzzyRisk(object):
 
 
       d = {}
-      for i in vmx.get_permissions( [] ) :
+      for i in vmx.get_permissions( [] ):
           d[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][i]
       self.__eval_risk_perm( d, risks )
       self.__eval_risk_dyn( vmx, risks )
@@ -743,7 +743,7 @@ class FuzzyRisk(object):
 
       return val
 
-  def test(self) :
+  def test(self):
       ##########################
       score_order_sign = {}
 
@@ -751,8 +751,8 @@ class FuzzyRisk(object):
       import sys
       sys.path.append("./elsim")
       from elsim.elsign.libelsign import libelsign
-      for method in vm.get_methods() :
-          if method.get_length() < 80 :
+      for method in vm.get_methods():
+          if method.get_length() < 80:
               continue
 
           score_order_sign[ method ] = self.get_method_score( method.get_length(),
@@ -762,17 +762,17 @@ class FuzzyRisk(object):
           )
 
 
-      for v in sorted(score_order_sign, key=lambda x : score_order_sign[x], reverse=True) :
+      for v in sorted(score_order_sign, key=lambda x : score_order_sign[x], reverse=True):
           print v.get_name(), v.get_class_name(), v.get_descriptor(), v.get_length(), score_order_sign[ v ]
 
       ##########################
 
       return val, score_order_sign
 
-  def __eval_risk_perm(self, list_details_permissions, risks) :
-      for i in list_details_permissions :
+  def __eval_risk_perm(self, list_details_permissions, risks):
+      for i in list_details_permissions:
           permission = i
-          if permission.find(".") != -1 :
+          if permission.find(".") != -1:
               permission = permission.split(".")[-1]
 #            print permission, GENERAL_PERMISSIONS_RISK[ list_details_permissions[ i ][0] ]
 
@@ -780,31 +780,31 @@ class FuzzyRisk(object):
 
           risks[ DANGEROUS_RISK ] += RISK_VALUES [ risk_type ]
 
-          try :
-              for j in PERMISSIONS_RISK[ permission ] :
+          try:
+              for j in PERMISSIONS_RISK[ permission ]:
                   risks[ j ] += RISK_VALUES[ j ]
-          except KeyError :
+          except KeyError:
               pass
 
-  def __eval_risk_dyn(self, vmx, risks) :
-      for m, _ in vmx.tainted_packages.get_packages() :
-          if m.get_name() == "Ldalvik/system/DexClassLoader;" :
-              for path in m.get_paths() :
-                  if path.get_access_flag() == analysis.TAINTED_PACKAGE_CREATE :
+  def __eval_risk_dyn(self, vmx, risks):
+      for m, _ in vmx.tainted_packages.get_packages():
+          if m.get_name() == "Ldalvik/system/DexClassLoader;":
+              for path in m.get_paths():
+                  if path.get_access_flag() == analysis.TAINTED_PACKAGE_CREATE:
                       risks[ DYNAMIC_RISK ] = RISK_VALUES[ DYNAMIC_RISK ]
                       return
 
-  def __eval_risk_bin(self, list_details_files, risks) :
-      for i in list_details_files :
-          if "ELF" in list_details_files[ i ] :
+  def __eval_risk_bin(self, list_details_files, risks):
+      for i in list_details_files:
+          if "ELF" in list_details_files[ i ]:
               # shared library
-              if "shared" in list_details_files[ i ] :
+              if "shared" in list_details_files[ i ]:
                   risks[ BINARY_RISK ] += RISK_VALUES [ BINARY_RISK ]
               # binary
-              else :
+              else:
                   risks[ BINARY_RISK ] += RISK_VALUES [ EXPLOIT_RISK ]
 
-  def __eval_risks(self, risks) :
+  def __eval_risks(self, risks):
       output_values = {"output_malware_risk" : 0.0}
       input_val = {}
       input_val['input_Dangerous_Risk'] = risks[ DANGEROUS_RISK ]
@@ -821,15 +821,15 @@ class FuzzyRisk(object):
       val = output_values[ "output_malware_risk" ]
       return { "VALUE" : val }
 
-  def get_method_score(self, length, android_entropy, java_entropy, permissions) :
+  def get_method_score(self, length, android_entropy, java_entropy, permissions):
       val_permissions = 0
-      for i in permissions :
+      for i in permissions:
           val_permissions += RISK_VALUES[ GENERAL_PERMISSIONS_RISK[ i[1][0] ] ]
 
-          try :
-              for j in PERMISSIONS_RISK[ i[0] ] :
+          try:
+              for j in PERMISSIONS_RISK[ i[0] ]:
                   val_permissions += RISK_VALUES[ j ]
-          except KeyError :
+          except KeyError:
               pass
 
       print length, android_entropy, java_entropy, val_permissions
@@ -846,7 +846,7 @@ class FuzzyRisk(object):
 
       return score
 
-  def simulate(self, risks) :
+  def simulate(self, risks):
       return self.__eval_risks( risks )
 
 class RedFlags(object):
@@ -870,7 +870,7 @@ class RedFlags(object):
             # System
         # DEX
             # Obfuscation
-    def __init__(self) :
+    def __init__(self):
         self.flags = { "APK" : {
                       "SHARED LIBRARIES" :    0,      # presence of shared libraries (ELF)
                       "EXECUTABLE" :          0,      # presence of executables (ELF)
@@ -903,10 +903,10 @@ class RedFlags(object):
 
         self.flags_dex = { "DEX" : self.flags["DEX"] }
 
-    def get_name(self) :
+    def get_name(self):
         return "RedFlags"
 
-    def with_apk(self, apk_file, d, dx) :
+    def with_apk(self, apk_file, d, dx):
       flags = copy.deepcopy( self.flags )
 
       self.analyze_apk( apk_file, flags["APK"] )
@@ -915,14 +915,14 @@ class RedFlags(object):
 
       return flags
 
-    def with_dex(self, d, dx) :
+    def with_dex(self, d, dx):
       flags = self.flags_dex.copy()
 
       self.analyze_dex( d, dx, flags["DEX"] )
 
       return flags
 
-    def analyze_apk(self, a, flags) :
+    def analyze_apk(self, a, flags):
       elf_executable = [ re.compile("ELF.+executable.+"), "EXECUTABLE" ]
       lib_elf = [ re.compile("ELF.+shared object"), "SHARED LIBRARIES" ]
       apk_file = [ re.compile("Android application package file"), "APK" ]
@@ -933,16 +933,16 @@ class RedFlags(object):
       regexp = [ elf_executable, lib_elf, apk_file, dex_file, script_file, zip_file ]
 
       files_types = a.get_files_types()
-      for i in files_types :
-        for j in regexp :
-          if j[0].search( files_types[i] ) != None :
-            if len(j) < 3 :
+      for i in files_types:
+        for j in regexp:
+          if j[0].search( files_types[i] ) != None:
+            if len(j) < 3:
               flags[j[1]] += 1
-            else :
-              if j[2].search( i ) == None :
+            else:
+              if j[2].search( i ) == None:
                 flags[j[1]] += 1
 
-    def analyze_axml(self, a, flags) :
+    def analyze_axml(self, a, flags):
       perms = {
                 "SEND_SMS"                  : [ "MONEY",    "SMS" ],
                 "SEND_SMS_NO_CONFIRMATION"  : [ "MONEY",    "SMS"],
@@ -994,39 +994,39 @@ class RedFlags(object):
                 "INSTALL_LOCATION_PROVIDER" : [ "GPS" ],
       }
 
-      for i in a.get_permissions() :
+      for i in a.get_permissions():
         perm = i.split(".")[-1]
 
-        try :
+        try:
           flags[ DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm][0].upper() ] += 1
 
-          for j in perms :
-            if j == perm :
-              for k in perms[j] :
+          for j in perms:
+            if j == perm:
+              for k in perms[j]:
                 flags[k] += 1
-        except :
+        except:
           debug("Unknown permission %s" % perm)
 
-    def analyze_dex(self, d, dx, flags) :
+    def analyze_dex(self, d, dx, flags):
       flags["REFLECTION"] = int( analysis.is_reflection_code(dx) )
       flags["NATIVE"] = int( analysis.is_native_code(dx) )
       flags["DYNAMIC"] = int( analysis.is_dyn_code(dx) )
       flags["CRYPTO"] = int( analysis.is_crypto_code(dx) )
 
 class MethodScore(object):
-    def __init__(self, length, matches, android_entropy, java_entropy, permissions, similarity_matches) :
+    def __init__(self, length, matches, android_entropy, java_entropy, permissions, similarity_matches):
         self.system = create_system_method_score()
         #export_system( self.system, "./output" )
 
 
         val_permissions = 0
-        for i in permissions :
+        for i in permissions:
             val_permissions += RISK_VALUES[ GENERAL_PERMISSIONS_RISK[ i[1][0] ] ]
 
-            try :
-                for j in PERMISSIONS_RISK[ i[0] ] :
+            try:
+                for j in PERMISSIONS_RISK[ i[0] ]:
                     val_permissions += RISK_VALUES[ j ]
-            except KeyError :
+            except KeyError:
                 pass
 
         print length, matches, android_entropy, java_entropy, similarity_matches, val_permissions
@@ -1043,5 +1043,5 @@ class MethodScore(object):
         self.system.calculate(input=input_val, output = output_values)
         self.score = output_values[ "output_method_score" ]
 
-    def get_score(self) :
+    def get_score(self):
         return self.score

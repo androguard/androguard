@@ -31,7 +31,7 @@ PATH_WRAPPER = "./androguard/core/binaries/idawrapper.py"
 ip = idapipe.IDAPipe( PATH_IDA, PATH_WRAPPER, "./elsim/examples/x86/elf/polarssl/libpolarssl.so" )
 #ip = idapipe.IDAPipe( "/media/truecrypt1/ida/6.2/ida-6.2/idal", "examples/x86/pe/win32k-5.1.2600.6119.sys" )
 
-try :
+try:
     f = ip.get_quick_functions()
 
    # print len(f)
@@ -42,7 +42,7 @@ try :
     #ip.get_function_name( "aes_gen_tables" )
 
     ip.quit()
-except :
+except:
     import traceback
     traceback.print_exc()
     ip.quit()
