@@ -7,7 +7,7 @@ Androguard
 
 ##1.  About
    
-    Androguard (Android Guard) is primarily a tool written in full python to 
+Androguard (Android Guard) is primarily a tool written in full python to 
 play with
   - DEX, ODEX
   - APK
@@ -58,7 +58,7 @@ You must go to the website to see more example: http://code.google.com/p/androgu
  - Decompiler
 
  - Reverse
- - 
+ 
     http://code.google.com/p/androguard/wiki/RE
 
 ##3.  Roadmap/Issues
