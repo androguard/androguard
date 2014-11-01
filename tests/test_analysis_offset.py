@@ -78,31 +78,31 @@ def test(got, expected):
 
     print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
-def getVal(i) :
+def getVal(i):
     op = i.get_operands()
 
-    if isinstance(op, int) :
+    if isinstance(op, int):
         return [ op ]
-    elif i.get_name() == "lookupswitch" :
+    elif i.get_name() == "lookupswitch":
         x = []
 
         x.append( i.get_operands().default )
-        for idx in range(0, i.get_operands().npairs) :
+        for idx in range(0, i.get_operands().npairs):
             off = getattr(i.get_operands(), "offset%d" % idx)
             x.append( off )
         return x
 
     return [-1]
 
-def check(a, values, branch) :
+def check(a, values, branch):
     b = []
-    for i in branch :
+    for i in branch:
         b.append( re.compile( i ) )
 
-    for method in a.get_methods() :
+    for method in a.get_methods():
         key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
-        if key not in values :
+        if key not in values:
             continue
 
         print "CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
@@ -111,10 +111,10 @@ def check(a, values, branch) :
 
         idx = 0
         v = 0
-        for i in bc.get() :
+        for i in bc.get():
 #         print "\t", "%x(%d)" % (idx, idx), i.get_name(), i.get_operands()
-            for j in b :
-                if j.match(i.get_name()) != None :
+            for j in b:
+                if j.match(i.get_name()) != None:
                     elem = values[key][v]
                     test("%s %s" % (elem[0], elem[1]), "%s %s" % (i.get_name(), getVal(i)))
 
@@ -123,17 +123,17 @@ def check(a, values, branch) :
 
             idx += i.get_length()
 
-def modify(a, modif) :
-    for method in a.get_methods() :
+def modify(a, modif):
+    for method in a.get_methods():
         key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
-        if key not in modif :
+        if key not in modif:
             continue
 
         print "MODIFYING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
         code = method.get_code()
 
-        for i in modif[key] :
+        for i in modif[key]:
             getattr( code, i[0] )( *i[1:] )
 
 a = AndroguardS( TEST_CASE )

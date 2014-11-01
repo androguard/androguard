@@ -21,9 +21,9 @@ a = apk.APK( TEST )
 vm = dvm.DalvikVMFormat( a.get_dex() )
 vmx = analysis.VMAnalysis( vm )
 
-for i in vmx.get_methods() :
+for i in vmx.get_methods():
     i.create_tags()
 
     tags = i.get_tags()
-    if not tags.empty() :
+    if not tags.empty():
         print tags
