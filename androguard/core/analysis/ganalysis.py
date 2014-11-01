@@ -20,7 +20,7 @@ from xml.sax.saxutils import escape
 from androguard.core import bytecode
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.core.analysis.risk import PERMISSIONS_RISK, INTERNET_RISK, PRIVACY_RISK, PHONE_RISK, SMS_RISK, MONEY_RISK
-from androguard.core.analysis.analysis import PathVar, TAINTED_PACKAGE_CREATE
+from modules.androguard.androguard.core.analysis.analysis import PathVar, TAINTED_PACKAGE_CREATE
 
 
 """Base class for undirected graphs.
