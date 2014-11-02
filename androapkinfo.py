@@ -48,54 +48,54 @@ def display_dvm_info(apk):
       if not i.tags.empty():
         print i.method.get_class_name(), i.method.get_name(), i.tags
 
-def main(options, arguments) :
-    if options.input != None :
-        ret_type = androconf.is_android( options.input ) 
+def main(options, arguments):
+    if options.input != None:
+        ret_type = androconf.is_android( options.input )
 
         print os.path.basename(options.input), ":"
-        if ret_type == "APK" :
-            try :
+        if ret_type == "APK":
+            try:
                 a = apk.APK(options.input, zipmodule=2)
-                if a.is_valid_APK() :
+                if a.is_valid_APK():
                     a.show()
                     display_dvm_info( a )
-                else :
+                else:
                     print "INVALID"
-            except Exception, e :
+            except Exception, e:
                 print "ERROR", e
                 import traceback
                 traceback.print_exc()
 
-    elif options.directory != None :
-        for root, dirs, files in os.walk( options.directory, followlinks=True ) :
-            if files != [] :
-                for f in files :
+    elif options.directory != None:
+        for root, dirs, files in os.walk( options.directory, followlinks=True ):
+            if files != []:
+                for f in files:
                     real_filename = root
-                    if real_filename[-1] != "/" :
+                    if real_filename[-1] != "/":
                         real_filename += "/"
                     real_filename += f
 
                     ret_type = androconf.is_android( real_filename )
-                    if ret_type == "APK"  :
+                    if ret_type == "APK":
                         print os.path.basename( real_filename ), ":"
-                        try :
+                        try:
                             a = apk.APK( real_filename )
-                            if a.is_valid_APK() :
+                            if a.is_valid_APK():
                                 a.show()
                                 display_dvm_info( a )
-                            else :
+                            else:
                                 print "INVALID APK"
                                 raise("ooos")
-                        except Exception, e :
+                        except Exception, e:
                             print "ERROR", e
                             raise("ooos")
 
-    elif options.version != None :
+    elif options.version != None:
         print "Androapkinfo version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

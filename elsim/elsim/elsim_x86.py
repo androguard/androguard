@@ -23,99 +23,99 @@ import hashlib
 from elsim import error, warning, debug, set_debug, get_debug
 import elsim
 
-def filter_sim_value_meth( v ) :
-    if v >= 0.2 :
+def filter_sim_value_meth( v ):
+    if v >= 0.2:
         return 1.0
     return v
 
 class CheckSumFunc(object):
-    def __init__(self, f, sim) :
+    def __init__(self, f, sim):
         self.f = f
         self.sim = sim
         self.buff = ""
         self.entropy = 0.0
         self.signature = None
 
-        for i in self.f.get_instructions() :
+        for i in self.f.get_instructions():
             self.buff += i.get_mnemonic()
 
         self.entropy, _ = sim.entropy( self.buff )
 
-    def get_signature(self) :
-        if self.signature == None :
+    def get_signature(self):
+        if self.signature == None:
             self.signature = self.buff
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
 
-    def get_signature_entropy(self) :
-        if self.signature == None :
+    def get_signature_entropy(self):
+        if self.signature == None:
             self.signature = self.buff
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature_entropy
 
-    def get_entropy(self) :
+    def get_entropy(self):
         return self.entropy
 
-    def get_buff(self) :
+    def get_buff(self):
         return self.buff
 
-def filter_checksum_meth_basic( f, sim ) :
+def filter_checksum_meth_basic( f, sim ):
     return CheckSumFunc( f, sim )
 
-def filter_sim_meth_basic( sim, m1, m2 ) :
+def filter_sim_meth_basic( sim, m1, m2 ):
     #ncd1, _ = sim.ncd( m1.checksum.get_signature(), m2.checksum.get_signature() )
     ncd2, _ = sim.ncd( m1.checksum.get_buff(), m2.checksum.get_buff() )
     #return (ncd1 + ncd2) / 2.0
     return ncd2
 
-def filter_sort_meth_basic( j, x, value ) :
+def filter_sort_meth_basic( j, x, value ):
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-    if get_debug() :
-        for i in z :
+    if get_debug():
+        for i in z:
             debug("\t %s %f" %(i[0].get_info(), i[1]))
 
-    if z[:1][0][1] > value :
+    if z[:1][0][1] > value:
         return []
 
     return z[:1]
 
 class Instruction(object):
-    def __init__(self, i) :
+    def __init__(self, i):
         self.mnemonic = i[1]
 
-    def get_mnemonic(self) :
+    def get_mnemonic(self):
         return self.mnemonic
 
 class Function(object):
-    def __init__(self, e, el) :
+    def __init__(self, e, el):
         self.function = el
 
-    def get_instructions(self) :
-        for i in self.function.get_instructions() :
+    def get_instructions(self):
+        for i in self.function.get_instructions():
             yield Instruction(i)
 
-    def get_nb_instructions(self) :
+    def get_nb_instructions(self):
         return len(self.function.get_instructions())
 
-    def get_info(self) :
+    def get_info(self):
         return "%s" % (self.function.name)
 
-    def set_checksum(self, fm) :
+    def set_checksum(self, fm):
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
 
-    def getsha256(self) :
+    def getsha256(self):
         return self.sha256
 
-def filter_element_meth_basic(el, e) :
+def filter_element_meth_basic(el, e):
     return Function( e, el )
 
 class FilterNone(object):
-    def skip(self, e) :
-        #if e.get_nb_instructions() < 2 :
+    def skip(self, e):
+        #if e.get_nb_instructions() < 2:
         #    return True
         return False
 
@@ -130,9 +130,9 @@ FILTERS_X86 = {
 }
 
 class ProxyX86IDA(object):
-    def __init__(self, ipipe) :
+    def __init__(self, ipipe):
         self.functions = ipipe.get_quick_functions()
 
-    def get_elements(self) :
-        for i in self.functions :
+    def get_elements(self):
+        for i in self.functions:
             yield self.functions[ i ]

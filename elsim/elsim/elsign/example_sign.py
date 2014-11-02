@@ -8,7 +8,7 @@ sys.path.append(PATH_INSTALL)
 from libelsign import libelsign
 #from libelsign import libelsign2 as libelsign
 
-SIGNS = [ 
+SIGNS = [
             [ "Sign1", "a",
                 [ [ 4.4915299415588379, 4.9674844741821289,
                     4.9468302726745605, 0.0 ], "HELLO WORLDDDDDDDDDDDDDDDDDDDDDDD" ] ],
@@ -43,12 +43,12 @@ es.set_threshold_high( 0.4 )
 es.set_ncd_compression_algorithm( 5 )
 
 
-for i in range(0, len(SIGNS)) :
+for i in range(0, len(SIGNS)):
     id = es.add_signature( SIGNS[i][0], SIGNS[i][1], SIGNS[i][2:] )
     print SIGNS[i], id
     HSIGNS[id] = i
 
-for i in range(0, len(ELEMS)) :
+for i in range(0, len(ELEMS)):
     id = es.add_element( ELEMS[i][1], ELEMS[i][0] )
     print ELEMS[i], id
     HELEMS[id] = i

@@ -41,7 +41,7 @@ def test(got, expected):
 a = AndroguardS( TEST_CASE )
 x = analysis.uVMAnalysis( a.get_vm() )
 
-for method in a.get_methods() :
+for method in a.get_methods():
     print method.get_class_name(), method.get_name(), method.get_descriptor()
     print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_0).get_string()
     print "-> : \t", x.get_method_signature(method, predef_sign = analysis.SIGNATURE_L0_1).get_string()

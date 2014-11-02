@@ -17,11 +17,11 @@ j = jvm.JVMFormat( read(TEST, binary=False) )
 j.show()
 
 # SHOW FIELDS
-for i in j.get_fields() :
+for i in j.get_fields():
     print i.get_access(), i.get_name(), i.get_descriptor()
 
 print
 
 # SHOW METHODS
-for i in j.get_methods() :
+for i in j.get_methods():
     print i.get_access(), i.get_name(), i.get_descriptor()

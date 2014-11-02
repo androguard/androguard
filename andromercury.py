@@ -41,56 +41,56 @@ option_7 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information',
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7]
 
-def display(ret, debug) :
+def display(ret, debug):
     print "---->", ret[0],
 
-def main(options, arguments) :
+def main(options, arguments):
     sessionip = "127.0.0.1"
     sessionport = 31415
-    
-    if options.remotehost :
+
+    if options.remotehost:
         sessionip = options.remotehost
 
-    if options.port :
+    if options.port:
         sessionport = int(options.port)
 
     newsession = Session(sessionip, sessionport, "bind")
 
     # Check if connection can be established
     if newsession.executeCommand("core", "ping", None).data == "pong":
-      
-        if options.list :
+
+        if options.list:
             request = {'filter': options.list, 'permissions': None }
             apks_info = newsession.executeCommand("packages", "info", {}).getPaddedErrorOrData()
             print apks_info
 
-        elif options.input and options.output :
+        elif options.input and options.output:
             s = None
-            if options.database != None or options.config != None :
+            if options.database != None or options.config != None:
                 s = dalvik_elsign.MSignature( options.database, options.config, options.verbose != None, ps = dalvik_elsign.PublicSignature)
-            
+
             request = {'filter': options.input, 'permissions': None }
             apks_info = newsession.executeCommand("packages", "info", request).getPaddedErrorOrData()
             print apks_info
 
-            for i in apks_info.split("\n") :
-                if re.match("APK path:", i) != None :
+            for i in apks_info.split("\n"):
+                if re.match("APK path:", i) != None:
                     name_app = i.split(":")[1][1:]
                     print name_app,
                     response = newsession.downloadFile(name_app, options.output)
                     print response.data, response.error,
-                    
-                    if s != None :
+
+                    if s != None:
                         a = apk.APK( options.output + "/" + os.path.basename(name_app) )
-                        if a.is_valid_APK() :
+                        if a.is_valid_APK():
                             display( s.check_apk( a ), options.verbose )
                     print
     else:
         print "\n**Network Error** Could not connect to " + sessionip + ":" + str(sessionport) + "\n"
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)
