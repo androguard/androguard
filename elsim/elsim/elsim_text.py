@@ -23,43 +23,43 @@ import hashlib
 from elsim import error, warning, debug, set_debug, get_debug
 import elsim
 
-def filter_sim_value_meth( v ):
-    if v >= 0.2:
+def filter_sim_value_meth( v ) :
+    if v >= 0.2 :
         return 1.0
     return v
 
 class CheckSumText(object):
-    def __init__(self, s1, sim):
+    def __init__(self, s1, sim) :
         self.s1 = s1
         self.sim = sim
         self.buff = s1.string
         self.entropy = 0.0
         self.signature = None
 
-    def get_signature(self):
-        if self.signature == None:
+    def get_signature(self) :
+        if self.signature == None :
             raise("ooo")
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
 
-    def get_signature_entropy(self):
-        if self.signature == None:
+    def get_signature_entropy(self) :
+        if self.signature == None :
             raise("ooo")
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature_entropy
 
-    def get_entropy(self):
+    def get_entropy(self) :
         return self.entropy
 
-    def get_buff(self):
+    def get_buff(self) :
         return self.buff
 
-def filter_checksum_meth_basic( m1, sim ):
+def filter_checksum_meth_basic( m1, sim ) :
     return CheckSumText( m1, sim )
 
-def filter_sim_meth_basic( sim, m1, m2 ):
+def filter_sim_meth_basic( sim, m1, m2 ) :
     from similarity.similarity import XZ_COMPRESS
     sim.set_compress_type( XZ_COMPRESS )
     ncd1, _ = sim.ncd( m1.checksum.get_buff(), m2.checksum.get_buff() )
@@ -69,53 +69,53 @@ def filter_sim_meth_basic( sim, m1, m2 ):
     #ncd2, _ = sim.ncd( m1.checksum.get_buff(), m2.checksum.get_buff() )
     #return (ncd1 + ncd2) / 2.0
 
-def filter_sort_meth_basic( j, x, value ):
+def filter_sort_meth_basic( j, x, value ) :
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-    if get_debug():
-        for i in z:
+    if get_debug() :
+        for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
 
-    if z[:1][0][1] > value:
+    if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
 class Text(object):
-    def __init__(self, e, el):
+    def __init__(self, e, el) :
         self.string = el
 
         nb = 0
-        for i in range(0, len(self.string)):
-            if self.string[i] == " ":
+        for i in range(0, len(self.string)) :
+            if self.string[i] == " " :
                 nb += 1
-            else:
+            else :
                 break
 
         self.string = self.string[nb:]
         self.sha256 = None
 
-    def get_info(self):
+    def get_info(self) :
         return "%d %s" % (len(self.string), repr(self.string))
         #return "%d %s" % (len(self.string), "")
 
-    def set_checksum(self, fm):
+    def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
 
-    def getsha256(self):
+    def getsha256(self) :
         return self.sha256
 
-def filter_element_meth_basic(el, e):
+def filter_element_meth_basic(el, e) :
     return Text( e, el )
 
 class FilterNone(object):
     def skip(self, e):
         # remove whitespace elements
-        if e.string.isspace() == True:
+        if e.string.isspace() == True :
             return True
 
-        if len(e.string) == 0:
+        if len(e.string) == 0 :
             return True
 
         return False
@@ -131,12 +131,12 @@ FILTERS_TEXT = {
 }
 
 class ProxyText(object):
-    def __init__(self, buff):
+    def __init__(self, buff) :
         self.buff = buff
 
-    def get_elements(self):
+    def get_elements(self) :
         buff = self.buff.replace("\n"," ")
         # multi split elements: ".", ",", ":"
         import re
-        for i in re.split('; |, |-|\.|\?|:', buff):
+        for i in re.split('; |, |-|\.|\?|:', buff) :
             yield i

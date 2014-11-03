@@ -25,9 +25,10 @@ j.set_gvmanalysis( gx )
 j.create_xref()
 j.create_dref()
 
-for m in dx.get_methods():
+for m in dx.get_methods() :
+
   idx = 0
-  for i in m.basic_blocks.get():
+  for i in m.basic_blocks.get() :
     print "\t %s %x %x" % (i.name, i.start, i.end), i.get_instructions()[-1].get_name()
 
   print m.method.XREFfrom, m.method.XREFto

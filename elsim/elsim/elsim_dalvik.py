@@ -27,13 +27,13 @@ import elsim
 
 DEFAULT_SIGNATURE = analysis.SIGNATURE_L0_4
 
-def filter_sim_value_meth( v ):
-    if v >= 0.2:
+def filter_sim_value_meth( v ) :
+    if v >= 0.2 :
         return 1.0
     return v
 
 class CheckSumMeth(object):
-    def __init__(self, m1, sim):
+    def __init__(self, m1, sim) :
         self.m1 = m1
         self.sim = sim
         self.buff = ""
@@ -41,39 +41,39 @@ class CheckSumMeth(object):
         self.signature = None
 
         code = m1.m.get_code()
-        if code != None:
+        if code != None :
             bc = code.get_bc()
 
-            for i in bc.get_instructions():
+            for i in bc.get_instructions() :
                 self.buff += dvm.clean_name_instruction( i )
                 self.buff += dvm.static_operand_instruction( i )
 
             self.entropy, _ = sim.entropy( self.buff )
 
-    def get_signature(self):
-        if self.signature == None:
+    def get_signature(self) :
+        if self.signature == None :
             self.signature = self.m1.vmx.get_method_signature( self.m1.m, predef_sign = DEFAULT_SIGNATURE ).get_string()
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature
 
-    def get_signature_entropy(self):
-        if self.signature == None:
+    def get_signature_entropy(self) :
+        if self.signature == None :
             self.signature = self.m1.vmx.get_method_signature( self.m1.m, predef_sign = DEFAULT_SIGNATURE ).get_string()
             self.signature_entropy, _ = self.sim.entropy( self.signature )
 
         return self.signature_entropy
 
-    def get_entropy(self):
+    def get_entropy(self) :
         return self.entropy
 
-    def get_buff(self):
+    def get_buff(self) :
         return self.buff
 
-def filter_checksum_meth_basic( m1, sim ):
+def filter_checksum_meth_basic( m1, sim ) :
     return CheckSumMeth( m1, sim )
 
-def filter_sim_meth_old( m1, m2, sim ):
+def filter_sim_meth_old( m1, m2, sim ) :
     a1 = m1.checksum
     a2 = m2.checksum
 
@@ -82,7 +82,7 @@ def filter_sim_meth_old( m1, m2, sim ):
 
     return (max(e1, e2) - min(e1, e2))
 
-def filter_sim_meth_basic( sim, m1, m2 ):
+def filter_sim_meth_basic( sim, m1, m2 ) :
     ncd1, _ = sim.ncd( m1.checksum.get_signature(), m2.checksum.get_signature() )
     return ncd1
 
@@ -90,40 +90,40 @@ def filter_sim_meth_basic( sim, m1, m2 ):
 
 #    return (ncd1 + ncd2) / 2.0
 
-def filter_sort_meth_basic( j, x, value ):
+def filter_sort_meth_basic( j, x, value ) :
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-    if get_debug():
-        for i in z:
+    if get_debug() :
+        for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
 
-    if z[:1][0][1] > value:
+    if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
-def filter_sim_bb_basic( sim, bb1, bb2 ):
+def filter_sim_bb_basic( sim, bb1, bb2 ) :
     ncd, _ = sim.ncd( bb1.checksum.get_buff(), bb2.checksum.get_buff() )
     return ncd
 
 class CheckSumBB(object):
-    def __init__(self, basic_block, sim):
+    def __init__(self, basic_block, sim) :
         self.basic_block = basic_block
         self.buff = ""
-        for i in self.basic_block.bb.get_instructions():
+        for i in self.basic_block.bb.get_instructions() :
             self.buff += dvm.clean_name_instruction( i )
             self.buff += dvm.static_operand_instruction( i )
 
         #self.hash = hashlib.sha256( self.buff + "%d%d" % (len(basic_block.childs), len(basic_block.fathers)) ).hexdigest()
         self.hash = hashlib.sha256( self.buff ).hexdigest()
 
-    def get_buff(self):
+    def get_buff(self) :
         return self.buff
 
-    def get_hash(self):
+    def get_hash(self) :
         return self.hash
 
-def filter_checksum_bb_basic( basic_block, sim ):
+def filter_checksum_bb_basic( basic_block, sim ) :
     return CheckSumBB( basic_block, sim )
 
 
@@ -134,7 +134,7 @@ DIFF_INS_TAG = {
                     }
 
 class DiffBB(object):
-    def __init__(self, bb1, bb2, info):
+    def __init__(self, bb1, bb2, info) :
         self.bb1 = bb1
         self.bb2 = bb2
         self.info = info
@@ -146,34 +146,34 @@ class DiffBB(object):
         self.di = None
         self.ins = []
 
-    def diff_ins(self, di):
+    def diff_ins(self, di) :
         self.di = di
 
         off_add = {}
         off_rm = {}
-        for i in self.di.add_ins:
+        for i in self.di.add_ins :
             off_add[ i[0] ] = i
 
-        for i in self.di.remove_ins:
+        for i in self.di.remove_ins :
             off_rm[ i[0] ] = i
 
         nb = 0
-        for i in self.bb1.ins:
+        for i in self.bb1.ins :
             ok = False
-            if nb in off_add:
+            if nb in off_add :
                 debug("%d ADD %s %s" % (nb, off_add[ nb ][2].get_name(), off_add[ nb ][2].get_output()))
                 self.ins.append( off_add[ nb ][2] )
                 setattr( off_add[ nb ][2], "diff_tag", DIFF_INS_TAG["ADD"] )
                 del off_add[ nb ]
 
-            if nb in off_rm:
+            if nb in off_rm :
                 debug("%d RM %s %s" % (nb, off_rm[ nb ][2].get_name(), off_rm[ nb ][2].get_output()))
                 self.ins.append( off_rm[ nb ][2] )
                 setattr( off_rm[ nb ][2], "diff_tag", DIFF_INS_TAG["REMOVE"] )
                 del off_rm[ nb ]
                 ok = True
 
-            if ok == False:
+            if ok == False :
                 self.ins.append( i )
                 debug("%d %s %s" % (nb, i.get_name(), i.get_output()))
                 setattr( i, "diff_tag", DIFF_INS_TAG["ORIG"] )
@@ -183,19 +183,19 @@ class DiffBB(object):
         #print nb, off_add, off_rm
 
         nbmax = nb
-        if off_add != {}:
+        if off_add != {} :
             nbmax = sorted(off_add)[-1]
-        if off_rm != {}:
+        if off_rm != {} :
             nbmax = max(nbmax, sorted(off_rm)[-1])
 
-        while nb <= nbmax:
-            if nb in off_add:
+        while nb <= nbmax :
+            if nb in off_add :
                 debug("%d ADD %s %s" % (nb, off_add[ nb ][2].get_name(), off_add[ nb ][2].get_output()))
                 self.ins.append( off_add[ nb ][2] )
                 setattr( off_add[ nb ][2], "diff_tag", DIFF_INS_TAG["ADD"] )
                 del off_add[ nb ]
 
-            if nb in off_rm:
+            if nb in off_rm :
                 debug("%d RM %s %s" % (nb, off_rm[ nb ][2].get_name(), off_rm[ nb ][2].get_output()))
                 self.ins.append( off_rm[ nb ][2] )
                 setattr( off_rm[ nb ][2], "diff_tag", DIFF_INS_TAG["REMOVE"] )
@@ -205,33 +205,34 @@ class DiffBB(object):
 
         #print off_add, off_rm
 
-    def set_childs(self, abb):
+    def set_childs(self, abb) :
         self.childs = self.bb1.childs
 
-        for i in self.ins:
-            if i == self.bb2.ins[-1]:
+        for i in self.ins :
+            if i == self.bb2.ins[-1] :
+
                 childs = []
-                for c in self.bb2.childs:
-                    if c[2].name in abb:
+                for c in self.bb2.childs :
+                    if c[2].name in abb :
                         debug("SET %s %s" % (c[2], abb[ c[2].name ]))
                         childs.append( (c[0], c[1], abb[ c[2].name ]) )
-                    else:
+                    else :
                         debug("SET ORIG %s" % str(c))
                         childs.append( c )
 
                 i.childs = childs
 
-    def show(self):
+    def show(self) :
         print "\tADD INSTRUCTIONS :"
-        for i in self.di.add_ins:
+        for i in self.di.add_ins :
             print "\t\t", i[0], i[1], i[2].get_name(), i[2].get_output()
 
         print "\tREMOVE INSTRUCTIONS :"
-        for i in self.di.remove_ins:
+        for i in self.di.remove_ins :
             print "\t\t", i[0], i[1], i[2].get_name(), i[2].get_output()
 
 class NewBB(object):
-    def __init__(self, bb):
+    def __init__(self, bb) :
         self.bb = bb
 
         self.start = self.bb.start
@@ -239,20 +240,20 @@ class NewBB(object):
         self.name = self.bb.name
         self.ins = self.bb.ins
 
-    def set_childs(self, abb):
+    def set_childs(self, abb) :
         childs = []
-        for c in self.bb.childs:
-            if c[2].name in abb:
+        for c in self.bb.childs :
+            if c[2].name in abb :
                 debug("SET %s %s " % (c[2], abb[ c[2].name ]))
                 childs.append( (c[0], c[1], abb[ c[2].name ]) )
-            else:
+            else :
                 debug("SET ORIG %s" % str(c))
                 childs.append( c )
 
         self.childs = childs
 
 class DiffINS(object):
-    def __init__(self, add_ins, remove_ins):
+    def __init__(self, add_ins, remove_ins) :
         self.add_ins = add_ins
         self.remove_ins = remove_ins
 
@@ -263,7 +264,7 @@ DIFF_BB_TAG = {
                }
 
 class Method(object):
-    def __init__(self, vm, vmx, m):
+    def __init__(self, vm, vmx, m) :
         self.m = m
         self.vm = vm
         self.vmx = vmx
@@ -274,18 +275,18 @@ class Method(object):
         self.hash = {}
         self.sha256 = None
 
-    def get_info(self):
+    def get_info(self) :
         return "%s %s %s %d" % (self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(), self.m.get_length())
 
-    def get_length(self):
+    def get_length(self) :
         return self.m.get_length()
 
-    def set_checksum(self, fm):
+    def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
 
     def diff(self, func_sim_bb, func_diff_ins):
-        if self.sort_h == []:
+        if self.sort_h == [] :
             self.dbb = {}
             self.nbb = {}
             return
@@ -305,103 +306,103 @@ class Method(object):
         ### Reverse Dict with matches diff basic blocks
         associated_bb = {}
 
-        for b1 in bb1:
+        for b1 in bb1 :
             diff_bb[ bb1[ b1 ] ] = {}
 
             debug("%s 0x%x" % (b1, bb1[ b1 ].basic_block.end))
-            for i in self.sort_h:
+            for i in self.sort_h :
                 bb2 = i[0].bb
                 b_z = diff_bb[ bb1[ b1 ] ]
 
                 bb2hash = i[0].bb_sha256
 
-                # If b1 is in bb2:
+                # If b1 is in bb2 :
                     # we can have one or more identical basic blocks to b1, we must add them
-                if bb1[ b1 ].get_hash() in bb2hash:
-                    for equal_bb in bb2hash[ bb1[ b1 ].get_hash() ]:
+                if bb1[ b1 ].get_hash() in bb2hash :
+                    for equal_bb in bb2hash[ bb1[ b1 ].get_hash() ] :
                         b_z[ equal_bb.basic_block.name ] = 0.0
 
-                # If b1 is not in bb2:
+                # If b1 is not in bb2 :
                     # we must check similarities between all bb2
-                else:
-                    for b2 in bb2:
+                else :
+                    for b2 in bb2 :
                         b_z[ b2 ] = func_sim_bb( bb1[ b1 ], bb2[ b2 ], self.sim )
 
                 sorted_bb = sorted(b_z.iteritems(), key=lambda (k,v): (v,k))
 
                 debug("\t\t%s" %  sorted_bb[:2])
 
-                for new_diff in sorted_bb:
+                for new_diff in sorted_bb :
                     associated_bb[ new_diff[0] ] = bb1[ b1 ].basic_block
 
-                    if new_diff[1] == 0.0:
+                    if new_diff[1] == 0.0 :
                         direct_diff_bb.append( new_diff[0] )
 
-                if sorted_bb[0][1] != 0.0:
+                if sorted_bb[0][1] != 0.0 :
                     diff_bb[ bb1[ b1 ] ] = (bb2[ sorted_bb[0][0] ], sorted_bb[0][1])
                     direct_diff_bb.append( sorted_bb[0][0] )
-                else:
+                else :
                     del diff_bb[ bb1[ b1 ] ]
 
-        for i in self.sort_h:
+        for i in self.sort_h :
             bb2 = i[0].bb
-            for b2 in bb2:
-                if b2 not in direct_diff_bb:
+            for b2 in bb2 :
+                if b2 not in direct_diff_bb :
                     new_bb[ b2 ] = bb2[ b2 ]
 
         dbb = {}
         nbb = {}
         # Add all different basic blocks
-        for d in diff_bb:
+        for d in diff_bb :
             dbb[ d.basic_block.name ] = DiffBB( d.basic_block, diff_bb[ d ][0].basic_block, diff_bb[ d ] )
 
         # Add all new basic blocks
-        for n in new_bb:
+        for n in new_bb :
             nbb[ new_bb[ n ].basic_block ] = NewBB( new_bb[ n ].basic_block )
-            if n in associated_bb:
+            if n in associated_bb :
                 del associated_bb[ n ]
 
         self.dbb = dbb
         self.nbb = nbb
 
         # Found diff instructions
-        for d in dbb:
+        for d in dbb :
             func_diff_ins( dbb[d], self.sim )
 
         # Set new childs for diff basic blocks
             # The instructions will be tag with a new flag "childs"
-        for d in dbb:
+        for d in dbb :
             dbb[ d ].set_childs( associated_bb )
 
         # Set new childs for new basic blocks
-        for d in nbb:
+        for d in nbb :
             nbb[ d ].set_childs( associated_bb )
 
         # Create and tag all (orig/diff/new) basic blocks
         self.create_bbs()
 
-    def create_bbs(self):
+    def create_bbs(self) :
         dbb = self.dbb
         nbb = self.nbb
 
-        # For same block:
+        # For same block :
             # tag = 0
-        # For diff block:
+        # For diff block :
             # tag = 1
-        # For new block:
+        # For new block :
             # tag = 2
         l = []
-        for bb in self.mx.basic_blocks.get():
-            if bb.name not in dbb:
+        for bb in self.mx.basic_blocks.get() :
+            if bb.name not in dbb :
                 # add the original basic block
                 bb.bb_tag = DIFF_BB_TAG["ORIG"]
                 l.append( bb )
-            else:
+            else :
                 # add the diff basic block
                 dbb[ bb.name ].bb_tag = DIFF_BB_TAG["DIFF"]
                 l.append( dbb[ bb.name ] )
 
-        for i in nbb:
+        for i in nbb :
             # add the new basic block
             nbb[ i ].bb_tag = DIFF_BB_TAG["NEW"]
             l.append( nbb[ i ] )
@@ -410,106 +411,106 @@ class Method(object):
         l = sorted(l, key = lambda x : x.start)
         self.bbs = l
 
-    def getsha256(self):
+    def getsha256(self) :
         return self.sha256
 
-    def get_length(self):
-        if self.m.get_code() == None:
+    def get_length(self) :
+        if self.m.get_code() == None :
             return 0
         return self.m.get_code().get_length()
 
-    def show(self, details=False, exclude=[]):
+    def show(self, details=False, exclude=[]) :
         print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
         print "with",
 
-        for i in self.sort_h:
+        for i in self.sort_h :
             print i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]
 
         print "\tDIFF BASIC BLOCKS :"
-        for d in self.dbb:
+        for d in self.dbb :
             print "\t\t", self.dbb[d].bb1.name, " --->", self.dbb[d].bb2.name, ":", self.dbb[d].info[1]
-            if details:
+            if details :
                 self.dbb[d].show()
 
         print "\tNEW BASIC BLOCKS :"
-        for b in self.nbb:
+        for b in self.nbb :
             print "\t\t", self.nbb[b].name
 
         # show diff !
-        if details:
+        if details :
             bytecode.PrettyShow2( self.bbs, exclude )
 
-    def show2(self, details=False):
+    def show2(self, details=False) :
         print self.m.get_class_name(), self.m.get_name(), self.m.get_descriptor(),
         print self.get_length()
 
-        for i in self.sort_h:
+        for i in self.sort_h :
             print "\t", i[0].m.get_class_name(), i[0].m.get_name(), i[0].m.get_descriptor(), i[1]
 
-        if details:
+        if details :
             bytecode.PrettyShow1( self.mx.basic_blocks.get() )
 
-def filter_element_meth_basic(el, e):
+def filter_element_meth_basic(el, e) :
     return Method( e.vm, e.vmx, el )
 
 class BasicBlock(object):
-    def __init__(self, bb):
+    def __init__(self, bb) :
         self.bb = bb
 
-    def set_checksum(self, fm):
+    def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
 
-    def getsha256(self):
+    def getsha256(self) :
         return self.sha256
 
-    def get_info(self):
+    def get_info(self) :
         return self.bb.name
 
-    def show(self):
+    def show(self) :
         print self.bb.name
 
-def filter_element_bb_basic(el, e):
+def filter_element_bb_basic(el, e) :
     return BasicBlock( el )
 
-def filter_sort_bb_basic( j, x, value ):
+def filter_sort_bb_basic( j, x, value ) :
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-    if get_debug():
-        for i in z:
+    if get_debug() :
+        for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
 
-    if z[:1][0][1] > value:
+    if z[:1][0][1] > value :
         return []
 
     return z[:1]
 
 import re
 class FilterSkip(object):
-    def __init__(self, size, regexp):
+    def __init__(self, size, regexp) :
         self.size = size
         self.regexp = regexp
 
-    def skip(self, m):
-        if self.size != None and m.get_length() < self.size:
+    def skip(self, m) :
+        if self.size != None and m.get_length() < self.size :
             return True
 
-        if self.regexp != None and re.match(self.regexp, m.m.get_class_name()) != None:
+        if self.regexp != None and re.match(self.regexp, m.m.get_class_name()) != None :
             return True
 
         return False
 
-    def set_regexp(self, e):
+    def set_regexp(self, e) :
         self.regexp = e
 
-    def set_size(self, e):
-        if e != None:
+    def set_size(self, e) :
+        if e != None :
             self.size = int(e)
-        else:
+        else :
             self.size = e
 
 class FilterNone(object):
-    def skip(self, e):
+    def skip(self, e) :
         return False
 
 FILTERS_DALVIK_SIM = {
@@ -523,50 +524,50 @@ FILTERS_DALVIK_SIM = {
 }
 
 class StringVM(object):
-    def __init__(self, el):
+    def __init__(self, el) :
         self.el = el
 
-    def set_checksum(self, fm):
+    def set_checksum(self, fm) :
         self.sha256 = hashlib.sha256( fm.get_buff() ).hexdigest()
         self.checksum = fm
 
-    def get_length(self):
+    def get_length(self) :
         return len(self.el)
 
-    def getsha256(self):
+    def getsha256(self) :
         return self.sha256
 
-    def get_info(self):
+    def get_info(self) :
         return len(self.el), repr(self.el)
 
-def filter_element_meth_string(el, e):
+def filter_element_meth_string(el, e) :
     return StringVM( el )
 
 class CheckSumString(object):
-    def __init__(self, m1, sim):
+    def __init__(self, m1, sim) :
         self.m1 = m1
         self.sim = sim
 
         self.buff = self.m1.el
 
-    def get_buff(self):
+    def get_buff(self) :
         return self.buff
 
-def filter_checksum_meth_string( m1, sim ):
+def filter_checksum_meth_string( m1, sim ) :
     return CheckSumString( m1, sim )
 
-def filter_sim_meth_string( sim, m1, m2 ):
+def filter_sim_meth_string( sim, m1, m2 ) :
     ncd1, _ = sim.ncd( m1.checksum.get_buff(), m2.checksum.get_buff() )
     return ncd1
 
-def filter_sort_meth_string( j, x, value ):
+def filter_sort_meth_string( j, x, value ) :
     z = sorted(x.iteritems(), key=lambda (k,v): (v,k))
 
-    if get_debug():
-        for i in z:
+    if get_debug() :
+        for i in z :
             debug("\t %s %f" %(i[0].get_info(), i[1]))
 
-    if z[:1][0][1] > value:
+    if z[:1][0][1] > value :
         return []
 
     return z[:1]
@@ -592,39 +593,39 @@ FILTERS_DALVIK_BB = {
 }
 
 class ProxyDalvik(object):
-    def __init__(self, vm, vmx):
+    def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
 
-    def get_elements(self):
-        for i in self.vm.get_methods():
+    def get_elements(self) :
+        for i in self.vm.get_methods() :
             yield i
 
 class ProxyDalvikMethod(object):
-    def __init__(self, el):
+    def __init__(self, el) :
         self.el = el
 
-    def get_elements(self):
-        for j in self.el.mx.basic_blocks.get():
+    def get_elements(self) :
+        for j in self.el.mx.basic_blocks.get() :
             yield j
 
 class ProxyDalvikStringMultiple(object):
-    def __init__(self, vm, vmx):
+    def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
 
-    def get_elements(self):
-      for i in self.vmx.get_tainted_variables().get_strings():
+    def get_elements(self) :
+      for i in self.vmx.get_tainted_variables().get_strings() :
         yield i[1]
-        #for i in self.vm.get_strings():
+        #for i in self.vm.get_strings() :
         #    yield i
 
 class ProxyDalvikStringOne(object):
-    def __init__(self, vm, vmx):
+    def __init__(self, vm, vmx) :
         self.vm = vm
         self.vmx = vmx
 
-    def get_elements(self):
+    def get_elements(self) :
       yield ''.join( self.vm.get_strings() )
 
 def LCS(X, Y):
@@ -654,17 +655,17 @@ def getDiff(C, X, Y, i, j, a, r):
             r.append( (i-1, X[i-1]) )
             debug(" - " + "%02X" % ord(X[i-1]))
 
-def toString( bb, hS, rS ):
+def toString( bb, hS, rS ) :
     map_x = {}
     S = ""
 
     idx = 0
     nb = 0
-    for i in bb.get_instructions():
+    for i in bb.get_instructions() :
         ident = dvm.clean_name_instruction( i )
         ident += dvm.static_operand_instruction( i )
 
-        if ident not in hS:
+        if ident not in hS :
             hS[ ident ] = len(hS)
             rS[ chr( hS[ ident ] ) ] = ident
 
@@ -676,32 +677,32 @@ def toString( bb, hS, rS ):
     return S, map_x
 
 class DiffInstruction(object):
-    def __init__(self, bb, instruction):
+    def __init__(self, bb, instruction) :
         self.bb = bb
 
         self.pos_instruction = instruction[0]
         self.offset = instruction[1]
         self.ins = instruction[2]
 
-    def show(self):
+    def show(self) :
         print hex(self.bb.bb.start + self.offset), self.pos_instruction, self.ins.get_name(), self.ins.show_buff( self.bb.bb.start + self.offset )
 
 class DiffBasicBlock(object):
-    def __init__(self, x, y, added, deleted):
+    def __init__(self, x, y, added, deleted) :
         self.basic_block_x = x
         self.basic_block_y = y
         self.added = sorted(added, key=lambda x : x[1])
         self.deleted = sorted(deleted, key=lambda x : x[1])
 
-    def get_added_elements(self):
-        for i in self.added:
+    def get_added_elements(self) :
+        for i in self.added :
             yield DiffInstruction( self.basic_block_x, i )
 
-    def get_deleted_elements(self):
-        for i in self.deleted:
+    def get_deleted_elements(self) :
+        for i in self.deleted :
             yield DiffInstruction( self.basic_block_y, i )
 
-def filter_diff_bb(x, y):
+def filter_diff_bb(x, y) :
     final_add = []
     final_rm = []
 
@@ -729,13 +730,13 @@ def filter_diff_bb(x, y):
 
     #print map_x, map_y, a, r
     debug("DEBUG ADD")
-    for i in a:
+    for i in a :
         instructions = [ j for j in y.bb.get_instructions() ]
         debug(" \t %s %s %s" % (i[0], instructions[ i[0] ].get_name(), instructions[ i[0] ].get_output()))
         final_add.append( (i[0], map_y[i[0]], instructions[ i[0] ]) )
 
     debug("DEBUG REMOVE")
-    for i in r:
+    for i in r :
         instructions = [ j for j in x.bb.get_instructions() ]
         debug(" \t %s %s %s" % (i[0], instructions[ i[0] ].get_name(), instructions[ i[0] ].get_output()))
         final_rm.append( (i[0], map_x[i[0]], instructions[ i[0] ]) )
@@ -747,25 +748,25 @@ FILTERS_DALVIK_DIFF_BB = {
 }
 
 class ProxyDalvikBasicBlock(object):
-    def __init__(self, esim):
+    def __init__(self, esim) :
         self.esim = esim
 
-    def get_elements(self):
+    def get_elements(self) :
         x = elsim.split_elements( self.esim, self.esim.get_similar_elements() )
-        for i in x:
+        for i in x :
             yield i, x[i]
 
 class DiffDalvikMethod(object):
-    def __init__(self, m1, m2, els, eld):
+    def __init__(self, m1, m2, els, eld) :
         self.m1 = m1
         self.m2 = m2
         self.els = els
         self.eld = eld
 
-    def get_info_method(self, m):
+    def get_info_method(self, m) :
         return m.m.get_class_name(), m.m.get_name(), m.m.get_descriptor()
 
-    def show(self):
+    def show(self) :
         print "[", self.get_info_method(self.m1), "]", "<->", "[", self.get_info_method(self.m2), "]"
 
         self.eld.show()
@@ -773,11 +774,11 @@ class DiffDalvikMethod(object):
         self.els.show()
         self._show_elements( "NEW", self.els.get_new_elements() )
 
-    def _show_elements(self, info, elements):
-        for i in elements:
+    def _show_elements(self, info, elements) :
+        for i in elements :
             print i.bb, hex(i.bb.get_start()), hex(i.bb.get_end()) #, i.bb.childs
             idx = i.bb.get_start()
-            for j in i.bb.get_instructions():
+            for j in i.bb.get_instructions() :
                 print "\t" + info, hex(idx),
                 j.show(idx)
                 print

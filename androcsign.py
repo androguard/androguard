@@ -37,28 +37,28 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
-def main(options, arguments):
+def main(options, arguments) :
     s = dalvik_elsign.CSignature(pcs=dalvik_elsign.PublicCSignature)
-    if options.input != None:
+    if options.input != None :
         ret = s.add_file( read( options.input) )
-        if ret != None and options.output != None:
+        if ret != None and options.output != None :
             s.add_indb( ret, options.output )
 
-    elif options.list != None:
+    elif options.list != None :
         s.list_indb( options.list )
 
-    elif options.remove != None:
+    elif options.remove != None :
         s.remove_indb( options.remove, options.output )
 
-    elif options.check != None:
+    elif options.check != None :
         s.check_db( options.check )
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androcsign version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

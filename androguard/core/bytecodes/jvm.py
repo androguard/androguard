@@ -26,71 +26,71 @@ from androguard.util import read
 
 ######################################################## JAR FORMAT ########################################################
 class JAR(object):
-    def __init__(self, filename, raw=False):
+    def __init__(self, filename, raw=False) :
         self.filename = filename
 
-        if raw == True:
+        if raw == True :
             self.__raw = filename
-        else:
+        else :
             self.__raw = read(filename)
 
         self.zip = zipfile.ZipFile( StringIO.StringIO( self.__raw ) )
 
-    def get_classes(self):
+    def get_classes(self) :
         l = []
-        for i in self.zip.namelist():
-            if ".class" in i:
+        for i in self.zip.namelist() :
+            if ".class" in i :
                 l.append( (i, self.zip.read(i)) )
 
         return l
 
 
-    def show(self):
+    def show(self) :
         print self.zip.namelist()
 
 ######################################################## CLASS FORMAT ########################################################
 
 # Special functions to manage more easily special arguments of bytecode
-def special_F0(x):
+def special_F0(x) :
     return [ i for i in x ]
 
-def special_F0R(x):
+def special_F0R(x) :
     return [ x ]
 
-def special_F1(x):
+def special_F1(x) :
     return (x[0] << 8) | x[1]
 
-def special_F1R(x):
+def special_F1R(x) :
     return [ (x & 0xFF00) >> 8, x & 0x00FF ]
 
-def special_F2(x):
+def special_F2(x) :
     v = ((x[0] << 8) | x[1])
-    if v > 0x7FFF:
+    if v > 0x7FFF :
         v = (0x7FFF & v) - 0x8000
 
     return v
 
-def special_F2R(x):
+def special_F2R(x) :
     val = x & 0xFFFF
     return [ (val & 0xFF00) >> 8, val & 0x00FF ]
 
-def special_F3(x):
+def special_F3(x) :
     val = (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3]
-    if val > 0x7fffffff:
+    if val > 0x7fffffff :
         val = (0x7fffffff & val) - 0x80000000
     return val
 
-def special_F3R(x):
+def special_F3R(x) :
     val = x & 0xFFFFFFFF
     return [ (val & 0xFF000000) >> 24, (val & 0x00FF0000) >> 16, (val & 0x0000FF00) >> 8, val & 0x000000FF ]
 
-def special_F4(x):
+def special_F4(x) :
     return [ (x[0] << 8) | x[1], x[2] ]
 
-def special_F4R(x):
+def special_F4R(x) :
     pass
 
-def specialSwitch(x):
+def specialSwitch(x) :
     return x
 
 FD = { "B" : "byte",
@@ -104,44 +104,44 @@ FD = { "B" : "byte",
          "V" : "void",
 }
 
-def formatFD(v):
+def formatFD(v) :
     #print v, "--->",
     l = []
 
     i = 0
-    while i < len(v):
-        if v[i] == "L":
+    while i < len(v) :
+        if v[i] == "L" :
             base_object = ""
             i = i + 1
-            while v[i] != ";":
+            while v[i] != ";" :
                 base_object += v[i]
                 i = i + 1
             l.append( os.path.basename( base_object ) )
-        elif v[i] == "[":
+        elif v[i] == "[" :
             z = []
-            while v[i] == "[":
+            while v[i] == "[" :
                 z.append( "[]" )
                 i = i + 1
 
             l.append( [ FD[ v[i] ], z ] )
-        else:
+        else :
             l.append( FD[ v[i] ] )
         i = i + 1
 
         #print l
     return l
 
-def TableSwitch(idx, raw_format):
+def TableSwitch(idx, raw_format) :
     r_buff = []
     r_format = ">"
 
     idx = idx + 1
 
     n = 0
-    if idx % 4:
+    if idx % 4 :
         n = 4 - (idx % 4)
 
-    for i in range(0, n):
+    for i in range(0, n) :
         r_buff.append( "bytepad%d" % i )
         r_format += "B"
 
@@ -154,23 +154,23 @@ def TableSwitch(idx, raw_format):
     idx = idx + 4
     high = unpack('>L', raw_format[ idx : idx + 4 ])[0]
 
-    for i in range(0, high - low + 1):
+    for i in range(0, high - low + 1) :
         r_buff.append( "offset%d" % i )
         r_format += "L"
 
     return specialSwitch, specialSwitch, r_buff, r_format, None
 
-def LookupSwitch(idx, raw_format):
+def LookupSwitch(idx, raw_format) :
     r_buff = []
     r_format = ">"
 
     idx = idx + 1
 
     n = 0
-    if idx % 4:
+    if idx % 4 :
         n = 4 - (idx % 4)
 
-    for i in range(0, n):
+    for i in range(0, n) :
         r_buff.append( "bytepad%d" % i )
         r_format += "B"
 
@@ -178,7 +178,7 @@ def LookupSwitch(idx, raw_format):
     r_format += "LL"
 
     idx = 1 + n + 4
-    for i in range(0,  unpack('>L', raw_format[ idx : idx + 4 ])[0]):
+    for i in range(0,  unpack('>L', raw_format[ idx : idx + 4 ])[0]) :
         r_buff.extend( [ "match%d" % i, "offset%d" % i ] )
         r_format += "LL"
 
@@ -409,7 +409,7 @@ MATH_JVM_OPCODES = { ".and" : '&',
                          }
 
 MATH_JVM_RE = []
-for i in MATH_JVM_OPCODES:
+for i in MATH_JVM_OPCODES :
     MATH_JVM_RE.append( (re.compile( i ), MATH_JVM_OPCODES[i]) )
 
 INVOKE_JVM_OPCODES = [ "invoke." ]
@@ -420,7 +420,7 @@ BREAK_JVM_OPCODES = [ "invoke.", "put.", ".store", "iinc", "pop", ".return", "if
 
 INTEGER_INSTRUCTIONS = [ "bipush", "sipush" ]
 
-def EXTRACT_INFORMATION_SIMPLE(op_value):
+def EXTRACT_INFORMATION_SIMPLE(op_value) :
     """Extract information (special functions) about a bytecode"""
     r_function = JAVA_OPCODES[ op_value ][2]
     v_function = JAVA_OPCODES[ op_value ][3]
@@ -431,7 +431,7 @@ def EXTRACT_INFORMATION_SIMPLE(op_value):
 
     format = JAVA_OPCODES[ op_value ][1]
     l = format.split(" ")
-    for j in l:
+    for j in l :
         operands = j.split(":")
 
         name = operands[0] + " "
@@ -442,46 +442,46 @@ def EXTRACT_INFORMATION_SIMPLE(op_value):
 
     return ( r_function, v_function, r_buff, r_format, f_function )
 
-def EXTRACT_INFORMATION_VARIABLE(idx, op_value, raw_format):
+def EXTRACT_INFORMATION_VARIABLE(idx, op_value, raw_format) :
     r_function, v_function, r_buff, r_format, f_function = JAVA_OPCODES[ op_value ][1]( idx, raw_format )
     return ( r_function, v_function, r_buff, r_format, f_function )
 
-def determineNext(i, end, m):
-    #if "invoke" in i.get_name():
+def determineNext(i, end, m) :
+    #if "invoke" in i.get_name() :
     #    self.childs.append( self.end, -1, ExternalMethod( i.get_operands()[0], i.get_operands()[1], i.get_operands()[2] ) )
     #    self.childs.append( self.end, self.end, self.__context.get_basic_block( self.end + 1 ) )
-    if "return" in i.get_name():
+    if "return" in i.get_name() :
         return [ -1 ]
-    elif "goto" in i.get_name():
+    elif "goto" in i.get_name() :
         return [ i.get_operands() + end ]
-    elif "jsr" in i.get_name():
+    elif "jsr" in i.get_name() :
         return [ i.get_operands() + end ]
-    elif "if" in i.get_name():
+    elif "if" in i.get_name() :
         return [ end + i.get_length(), i.get_operands() + end ]
-    elif "tableswitch" in i.get_name():
+    elif "tableswitch" in i.get_name() :
         x = []
 
         x.append( i.get_operands().default + end )
-        for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1):
+        for idx in range(0, (i.get_operands().high - i.get_operands().low) + 1) :
             off = getattr(i.get_operands(), "offset%d" % idx)
 
             x.append( off + end )
         return x
-    elif "lookupswitch" in i.get_name():
+    elif "lookupswitch" in i.get_name() :
         x = []
 
         x.append( i.get_operands().default + end )
 
-        for idx in range(0, i.get_operands().npairs):
+        for idx in range(0, i.get_operands().npairs) :
             off = getattr(i.get_operands(), "offset%d" % idx)
             x.append( off + end )
         return x
     return []
 
-def determineException(vm, m):
+def determineException(vm, m) :
     return []
 
-def classToJclass(x):
+def classToJclass(x) :
     return "L%s;" % x
 
 METHOD_INFO                 =         [ '>HHHH',        namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]
@@ -542,9 +542,9 @@ ACC_METHOD_FLAGS = {
                         }
 INVERT_ACC_METHOD_FLAGS = dict([( ACC_METHOD_FLAGS[k][0], k ) for k in ACC_METHOD_FLAGS])
 
-class CpInfo(object):
+class CpInfo(object) :
     """Generic class to manage constant info object"""
-    def __init__(self, buff):
+    def __init__(self, buff) :
         self.__tag = SV( '>B', buff.read_b(1) )
 
         self.__bytes = None
@@ -558,126 +558,126 @@ class CpInfo(object):
         self.format = SVs( format, CONSTANT_INFO[ tag_value ][2], buff.read( calcsize( format ) ) )
 
         # Utf8 value ?
-        if tag_value == 1:
+        if tag_value == 1 :
             self.__extra = self.format.get_value().length
             self.__bytes = SVs( ">%ss" % self.format.get_value().length, namedtuple( CONSTANT_INFO[ tag_value ][0] + "_next", "bytes" ), buff.read( self.format.get_value().length ) )
 
-    def get_format(self):
+    def get_format(self) :
         return self.format
 
-    def get_name(self):
+    def get_name(self) :
         return self.__name
 
-    def get_bytes(self):
+    def get_bytes(self) :
         return self.__bytes.get_value().bytes
 
-    def set_bytes(self, name):
+    def set_bytes(self, name) :
         self.format.set_value( { "length" : len(name) } )
         self.__extra = self.format.get_value().length
         self.__bytes = SVs( ">%ss" % self.format.get_value().length, namedtuple( CONSTANT_INFO[ self.__tag.get_value() ][0] + "_next", "bytes" ), name )
 
-    def get_length(self):
+    def get_length(self) :
         return self.__extra + calcsize( CONSTANT_INFO[ self.__tag.get_value() ][1] )
 
-    def get_raw(self):
-        if self.__bytes != None:
+    def get_raw(self) :
+        if self.__bytes != None :
             return self.format.get_value_buff() + self.__bytes.get_value_buff()
         return self.format.get_value_buff()
 
-    def show(self):
-        if self.__bytes != None:
+    def show(self) :
+        if self.__bytes != None :
             print self.format.get_value(), self.__bytes.get_value()
-        else:
+        else :
             print self.format.get_value()
 
-class MethodRef(CpInfo):
-    def __init__(self, class_manager, buff):
+class MethodRef(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(MethodRef, self).__init__( buff )
 
-    def get_class_index(self):
+    def get_class_index(self) :
         return self.format.get_value().class_index
 
-    def get_name_and_type_index(self):
+    def get_name_and_type_index(self) :
         return self.format.get_value().name_and_type_index
 
-class InterfaceMethodRef(CpInfo):
-    def __init__(self, class_manager, buff):
+class InterfaceMethodRef(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(InterfaceMethodRef, self).__init__( buff )
 
-    def get_class_index(self):
+    def get_class_index(self) :
         return self.format.get_value().class_index
 
-    def get_name_and_type_index(self):
+    def get_name_and_type_index(self) :
         return self.format.get_value().name_and_type_index
 
-class FieldRef(CpInfo):
-    def __init__(self, class_manager, buff):
+class FieldRef(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(FieldRef, self).__init__( buff )
 
-    def get_class_index(self):
+    def get_class_index(self) :
         return self.format.get_value().class_index
 
-    def get_name_and_type_index(self):
+    def get_name_and_type_index(self) :
         return self.format.get_value().name_and_type_index
 
-class Class(CpInfo):
-    def __init__(self, class_manager, buff):
+class Class(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Class, self).__init__( buff )
 
-    def get_name_index(self):
+    def get_name_index(self) :
         return self.format.get_value().name_index
 
-class Utf8(CpInfo):
-    def __init__(self, class_manager, buff):
+class Utf8(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Utf8, self).__init__( buff )
 
-class String(CpInfo):
-    def __init__(self, class_manager, buff):
+class String(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(String, self).__init__( buff )
 
-class Integer(CpInfo):
-    def __init__(self, class_manager, buff):
+class Integer(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Integer, self).__init__( buff )
 
-class Float(CpInfo):
-    def __init__(self, class_manager, buff):
+class Float(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Float, self).__init__( buff )
 
-class Long(CpInfo):
-    def __init__(self, class_manager, buff):
+class Long(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Long, self).__init__( buff )
 
-class Double(CpInfo):
-    def __init__(self, class_manager, buff):
+class Double(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(Double, self).__init__( buff )
 
-class NameAndType(CpInfo):
-    def __init__(self, class_manager, buff):
+class NameAndType(CpInfo) :
+    def __init__(self, class_manager, buff) :
         super(NameAndType, self).__init__( buff )
 
-    def get_get_name_index(self):
+    def get_get_name_index(self) :
         return self.format.get_value().get_name_index
 
-    def get_name_index(self):
+    def get_name_index(self) :
         return self.format.get_value().name_index
 
-    def get_descriptor_index(self):
+    def get_descriptor_index(self) :
         return self.format.get_value().descriptor_index
 
 class EmptyConstant(object):
-    def __init__(self):
+    def __init__(self) :
         pass
 
-    def get_name(self):
+    def get_name(self) :
         return ""
 
-    def get_raw(self):
+    def get_raw(self) :
         return ""
 
-    def get_length(self):
+    def get_length(self) :
         return 0
 
-    def show(self):
+    def show(self) :
         pass
 
 
@@ -719,175 +719,175 @@ VERIFICATION_TYPE_INFO = {
 
 class FieldInfo(object):
     """An object which represents a Field"""
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__raw_buff = buff.read( calcsize( FIELD_INFO[0] ) )
         self.format = SVs( FIELD_INFO[0], FIELD_INFO[1], self.__raw_buff )
 
         self.__CM = class_manager
         self.__attributes = []
 
-        for i in range(0, self.format.get_value().attributes_count):
+        for i in range(0, self.format.get_value().attributes_count) :
             ai = AttributeInfo( self.__CM, buff )
             self.__attributes.append( ai )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.__raw_buff + ''.join(x.get_raw() for x in self.__attributes)
 
-    def get_length(self):
+    def get_length(self) :
         val = 0
-        for i in self.__attributes:
+        for i in self.__attributes :
             val += i.length
         return val + calcsize( FIELD_INFO[0] )
 
-    def get_access(self):
-        try:
+    def get_access(self) :
+        try :
             return ACC_FIELD_FLAGS[ self.format.get_value().access_flags ][0]
-        except KeyError:
+        except KeyError :
             ok = True
             access = ""
-            for i in ACC_FIELD_FLAGS:
-                if (i & self.format.get_value().access_flags) == i:
+            for i in ACC_FIELD_FLAGS :
+                if (i & self.format.get_value().access_flags) == i :
                     access += ACC_FIELD_FLAGS[ i ][0] + " "
                     ok = False
 
-            if ok == False:
+            if ok == False :
                 return access[:-1]
 
             return "ACC_PRIVATE"
 
-    def set_access(self, value):
+    def set_access(self, value) :
         self.format.set_value( { "access_flags" : value } )
 
-    def get_class_name(self):
+    def get_class_name(self) :
         return self.__CM.get_this_class_name()
 
-    def get_name(self):
+    def get_name(self) :
         return self.__CM.get_string( self.format.get_value().name_index )
 
-    def set_name(self, name):
+    def set_name(self, name) :
         return self.__CM.set_string( self.format.get_value().name_index, name )
 
-    def get_descriptor(self):
+    def get_descriptor(self) :
         return self.__CM.get_string( self.format.get_value().descriptor_index )
 
-    def set_descriptor(self, name):
+    def set_descriptor(self, name) :
         return self.__CM.set_string( self.format.get_value().descriptor_index, name )
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.__attributes
 
-    def get_name_index(self):
+    def get_name_index(self) :
         return self.format.get_value().name_index
 
-    def get_descriptor_index(self):
+    def get_descriptor_index(self) :
         return self.format.get_value().descriptor_index
 
-    def show(self):
+    def show(self) :
         print self.format.get_value(), self.get_name(), self.get_descriptor()
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.show()
 
 class MethodInfo(object):
     """An object which represents a Method"""
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.format = SVs( METHOD_INFO[0], METHOD_INFO[1], buff.read( calcsize( METHOD_INFO[0] ) ) )
 
         self.__CM = class_manager
         self.__code = None
         self.__attributes = []
 
-        for i in range(0, self.format.get_value().attributes_count):
+        for i in range(0, self.format.get_value().attributes_count) :
             ai = AttributeInfo( self.__CM, buff )
             self.__attributes.append( ai )
 
-            if ai.get_name() == "Code":
+            if ai.get_name() == "Code" :
                 self.__code = ai
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.format.get_value_buff() + ''.join(x.get_raw() for x in self.__attributes)
 
-    def get_length(self):
+    def get_length(self) :
         val = 0
-        for i in self.__attributes:
+        for i in self.__attributes :
             val += i.length
 
         return val + calcsize( METHOD_INFO[0] )
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.__attributes
 
-    def get_access(self):
+    def get_access(self) :
         return ACC_METHOD_FLAGS[ self.format.get_value().access_flags ][0]
 
-    def set_access(self, value):
+    def set_access(self, value) :
         self.format.set_value( { "access_flags" : value } )
 
-    def get_name(self):
+    def get_name(self) :
         return self.__CM.get_string( self.format.get_value().name_index )
 
-    def set_name(self, name):
+    def set_name(self, name) :
         return self.__CM.set_string( self.format.get_value().name_index, name )
 
-    def get_descriptor(self):
+    def get_descriptor(self) :
         return self.__CM.get_string( self.format.get_value().descriptor_index )
 
-    def set_descriptor(self, name):
+    def set_descriptor(self, name) :
         return self.__CM.set_string( self.format.get_value().name_descriptor, name )
 
-    def get_name_index(self):
+    def get_name_index(self) :
         return self.format.get_value().name_index
 
-    def get_descriptor_index(self):
+    def get_descriptor_index(self) :
         return self.format.get_value().descriptor_index
 
-    def get_local_variables(self):
+    def get_local_variables(self) :
         return self.get_code().get_local_variables()
 
-    def get_code(self):
-        if self.__code == None:
+    def get_code(self) :
+        if self.__code == None :
             return None
         return self.__code.get_item()
 
-    def set_name_index(self, name_index):
+    def set_name_index(self, name_index) :
         self.format.set_value( { "name_index" : name_index } )
 
-    def set_descriptor_index(self, descriptor_index):
+    def set_descriptor_index(self, descriptor_index) :
         self.format.set_value( { "descriptor_index" : descriptor_index } )
 
-    def get_class_name(self):
+    def get_class_name(self) :
         return self.__CM.get_this_class_name()
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.set_cm( cm )
 
-    def with_descriptor(self, descriptor):
+    def with_descriptor(self, descriptor) :
         return descriptor == self.__CM.get_string( self.format.get_value().descriptor_index )
 
-    def _patch_bytecodes(self):
+    def _patch_bytecodes(self) :
         return self.get_code()._patch_bytecodes()
 
-    def show(self):
+    def show(self) :
         print "*" * 80
         print self.format.get_value(), self.get_class_name(), self.get_name(), self.get_descriptor()
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.show()
         print "*" * 80
 
-    def pretty_show(self, vm_a):
+    def pretty_show(self, vm_a) :
         print "*" * 80
         print self.format.get_value(), self.get_class_name(), self.get_name(), self.get_descriptor()
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.pretty_show(vm_a.hmethods[ self ])
         print "*" * 80
 
 class CreateString(object):
     """Create a specific String constant by given the name index"""
-    def __init__(self, class_manager, bytes):
+    def __init__(self, class_manager, bytes) :
         self.__string_index = class_manager.add_string( bytes )
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_String" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__string_index )
 
@@ -895,10 +895,10 @@ class CreateString(object):
 
 class CreateInteger(object):
     """Create a specific Integer constant by given the name index"""
-    def __init__(self, byte):
+    def __init__(self, byte) :
         self.__byte = byte
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_Integer" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__byte )
 
@@ -906,12 +906,12 @@ class CreateInteger(object):
 
 class CreateClass(object):
     """Create a specific Class constant by given the name index"""
-    def __init__(self, class_manager, name_index):
+    def __init__(self, class_manager, name_index) :
         self.__CM = class_manager
 
         self.__name_index = name_index
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_Class" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__name_index )
 
@@ -919,13 +919,13 @@ class CreateClass(object):
 
 class CreateNameAndType(object):
     """Create a specific NameAndType constant by given the name and the descriptor index"""
-    def __init__(self, class_manager, name_index, descriptor_index):
+    def __init__(self, class_manager, name_index, descriptor_index) :
         self.__CM = class_manager
 
         self.__name_index = name_index
         self.__descriptor_index = descriptor_index
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_NameAndType" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__name_index, self.__descriptor_index )
 
@@ -933,13 +933,13 @@ class CreateNameAndType(object):
 
 class CreateFieldRef(object):
     """Create a specific FieldRef constant by given the class and the NameAndType index"""
-    def __init__(self, class_manager, class_index, name_and_type_index):
+    def __init__(self, class_manager, class_index, name_and_type_index) :
         self.__CM = class_manager
 
         self.__class_index = class_index
         self.__name_and_type_index = name_and_type_index
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_Fieldref" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__class_index, self.__name_and_type_index )
 
@@ -947,13 +947,13 @@ class CreateFieldRef(object):
 
 class CreateMethodRef(object):
     """Create a specific MethodRef constant by given the class and the NameAndType index"""
-    def __init__(self, class_manager, class_index, name_and_type_index):
+    def __init__(self, class_manager, class_index, name_and_type_index) :
         self.__CM = class_manager
 
         self.__class_index = class_index
         self.__name_and_type_index = name_and_type_index
 
-    def get_raw(self):
+    def get_raw(self) :
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_Methodref" ]
         buff = pack( CONSTANT_INFO[ tag_value ][1], tag_value, self.__class_index, self.__name_and_type_index )
 
@@ -961,7 +961,7 @@ class CreateMethodRef(object):
 
 class CreateCodeAttributeInfo(object):
     """Create a specific CodeAttributeInfo by given bytecodes (into an human readable format)"""
-    def __init__(self, class_manager, codes):
+    def __init__(self, class_manager, codes) :
         self.__CM = class_manager
 
 #ATTRIBUTE_INFO  =                    [ '>HL', namedtuple("AttributeInfo", "attribute_name_index attribute_length") ]
@@ -978,12 +978,12 @@ class CreateCodeAttributeInfo(object):
 # CODE
         raw_buff = ""
 
-        for i in codes:
+        for i in codes :
             op_name = i[0]
             op_value = INVERT_JAVA_OPCODES[ op_name ]
             raw_buff += pack( '>B', op_value )
 
-            if len( JAVA_OPCODES[ op_value ] ) > 1:
+            if len( JAVA_OPCODES[ op_value ] ) > 1 :
                 r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
                 raw_buff += pack(r_format, *v_function( *i[1:] ) )
 
@@ -1018,7 +1018,7 @@ class CreateCodeAttributeInfo(object):
                                           calcsize('>H') + \
                                           calcsize('>H')
 
-    def get_raw(self):
+    def get_raw(self) :
         return pack( ATTRIBUTE_INFO[0], self.__attribute_name_index, self.__attribute_length ) + \
                  pack( CODE_LOW_STRUCT[0], self.__max_stack, self.__max_locals, self.__code_length ) + \
                  self.__code.get_raw() + \
@@ -1030,7 +1030,7 @@ class CreateCodeAttributeInfo(object):
 # FIELD_INFO                  =         [ '>HHHH',        namedtuple("FieldInfo", "access_flags name_index descriptor_index attributes_count") ]
 class CreateFieldInfo(object):
     """Create a specific FieldInfo by given the name, the prototype of the "new" field"""
-    def __init__(self, class_manager, name, proto):
+    def __init__(self, class_manager, name, proto) :
         self.__CM = class_manager
 
         access_flags_value = proto[0]
@@ -1038,19 +1038,19 @@ class CreateFieldInfo(object):
 
         self.__access_flags = INVERT_ACC_FIELD_FLAGS[ access_flags_value ]
         self.__name_index = self.__CM.get_string_index( name )
-        if self.__name_index == -1:
+        if self.__name_index == -1 :
             self.__name_index = self.__CM.add_string( name )
-        else:
+        else :
             bytecode.Exit("field %s is already present ...." % name)
 
         self.__descriptor_index = self.__CM.add_string( type_value )
 
         self.__attributes = []
 
-    def get_raw(self):
+    def get_raw(self) :
         buff = pack( FIELD_INFO[0], self.__access_flags, self.__name_index, self.__descriptor_index, len(self.__attributes) )
 
-        for i in self.__attributes:
+        for i in self.__attributes :
             buff += i.get_raw()
 
         return buff
@@ -1058,7 +1058,7 @@ class CreateFieldInfo(object):
 # METHOD_INFO      =                    [ '>HHHH', namedtuple("MethodInfo", "access_flags name_index descriptor_index attributes_count") ]
 class CreateMethodInfo(object):
     """Create a specific MethodInfo by given the name, the prototype and the code (into an human readable format) of the "new" method"""
-    def __init__(self, class_manager, name, proto, codes):
+    def __init__(self, class_manager, name, proto, codes) :
         self.__CM = class_manager
 
         access_flags_value = proto[0]
@@ -1068,7 +1068,7 @@ class CreateMethodInfo(object):
         self.__access_flags = INVERT_ACC_METHOD_FLAGS[ access_flags_value ]
 
         self.__name_index = self.__CM.get_string_index( name )
-        if self.__name_index == -1:
+        if self.__name_index == -1 :
             self.__name_index = self.__CM.add_string( name )
 
         proto_final = "(" + arguments_value + ")" + return_value
@@ -1078,10 +1078,10 @@ class CreateMethodInfo(object):
 
         self.__attributes.append( CreateCodeAttributeInfo( self.__CM, codes ) )
 
-    def get_raw(self):
+    def get_raw(self) :
         buff = pack( METHOD_INFO[0], self.__access_flags, self.__name_index, self.__descriptor_index, len(self.__attributes) )
 
-        for i in self.__attributes:
+        for i in self.__attributes :
             buff += i.get_raw()
 
         return buff
@@ -1089,7 +1089,7 @@ class CreateMethodInfo(object):
 class JBC(object):
     """JBC manages each bytecode with the value, name, raw buffer and special functions"""
     # special --> ( r_function, v_function, r_buff, r_format, f_function )
-    def __init__(self, class_manager, op_name, raw_buff, special=None):
+    def __init__(self, class_manager, op_name, raw_buff, special=None) :
         self.__CM = class_manager
         self.__op_name = op_name
         self.__raw_buff = raw_buff
@@ -1099,95 +1099,95 @@ class JBC(object):
 
         self._load()
 
-    def _load(self):
-        if self.__special != None:
+    def _load(self) :
+        if self.__special != None :
             ntuple = namedtuple( self.__op_name, self.__special[2] )
             x = ntuple._make( unpack( self.__special[3], self.__raw_buff[1:] ) )
 
-            if self.__special[4] == None:
+            if self.__special[4] == None :
                 self.__special_value = self.__special[0]( x )
-            else:
+            else :
                 self.__special_value = getattr(self.__CM, self.__special[4])( self.__special[0]( x ) )
 
-    def reload(self, raw_buff):
+    def reload(self, raw_buff) :
         """Reload the bytecode with a new raw buffer"""
         self.__raw_buff = raw_buff
         self._load()
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-    def get_length(self):
+    def get_length(self) :
         """Return the length of the bytecode"""
         return len( self.__raw_buff )
 
-    def get_raw(self):
+    def get_raw(self) :
         """Return the current raw buffer of the bytecode"""
         return self.__raw_buff
 
-    def get_name(self):
+    def get_name(self) :
         """Return the name of the bytecode"""
         return self.__op_name
 
-    def get_operands(self):
+    def get_operands(self) :
         """Return the operands of the bytecode"""
         if isinstance( self.__special_value, list ):
-            if len(self.__special_value) == 1:
+            if len(self.__special_value) == 1 :
                 return self.__special_value[0]
         return self.__special_value
 
-    def get_formatted_operands(self):
+    def get_formatted_operands(self) :
         return []
 
-    def adjust_r(self, pos, pos_modif, len_modif):
+    def adjust_r(self, pos, pos_modif, len_modif) :
         """Adjust the bytecode (if necessary (in this cas the bytecode is a branch bytecode)) when a bytecode has been removed"""
 #        print self.__op_name, pos, pos_modif, len_modif, self.__special_value, type(pos), type(pos_modif), type(len_modif), type(self.__special_value)
 
-        if pos > pos_modif:
-            if (self.__special_value + pos) < (pos_modif):
+        if pos > pos_modif :
+            if (self.__special_value + pos) < (pos_modif) :
 #                print "MODIF +", self.__special_value, len_modif,
                 self.__special_value += len_modif
 #                print self.__special_value
                 self.__raw_buff = pack( '>B', INVERT_JAVA_OPCODES[ self.__op_name ] ) + pack(self.__special[3], *self.__special[1]( self.__special_value ) )
 
-        elif pos < pos_modif:
-            if (self.__special_value + pos) > (pos_modif):
+        elif pos < pos_modif :
+            if (self.__special_value + pos) > (pos_modif) :
 #                print "MODIF -", self.__special_value, len_modif,
                 self.__special_value -= len_modif
 #                print self.__special_value
                 self.__raw_buff = pack( '>B', INVERT_JAVA_OPCODES[ self.__op_name ] ) + pack(self.__special[3], *self.__special[1]( self.__special_value ) )
 
-    def adjust_i(self, pos, pos_modif, len_modif):
+    def adjust_i(self, pos, pos_modif, len_modif) :
         """Adjust the bytecode (if necessary (in this cas the bytecode is a branch bytecode)) when a bytecode has been inserted"""
         #print self.__op_name, pos, pos_modif, len_modif, self.__special_value, type(pos), type(pos_modif), type(len_modif), type(self.__special_value)
 
-        if pos > pos_modif:
-            if (self.__special_value + pos) < (pos_modif):
+        if pos > pos_modif :
+            if (self.__special_value + pos) < (pos_modif) :
 #                print "MODIF +", self.__special_value, len_modif,
                 self.__special_value -= len_modif
 #                print self.__special_value
                 self.__raw_buff = pack( '>B', INVERT_JAVA_OPCODES[ self.__op_name ] ) + pack(self.__special[3], *self.__special[1]( self.__special_value ) )
 
-        elif pos < pos_modif:
-            if (self.__special_value + pos) > (pos_modif):
+        elif pos < pos_modif :
+            if (self.__special_value + pos) > (pos_modif) :
 #                print "MODIF -", self.__special_value, len_modif,
                 self.__special_value += len_modif
 #                print self.__special_value
                 self.__raw_buff = pack( '>B', INVERT_JAVA_OPCODES[ self.__op_name ] ) + pack(self.__special[3], *self.__special[1]( self.__special_value ) )
 
-    def show_buff(self, pos):
+    def show_buff(self, pos) :
         buff = ""
-        if self.__special_value == None:
+        if self.__special_value == None :
             buff += self.__op_name
-        else:
-            if self.__op_name in BRANCH_JVM_OPCODES:
+        else :
+            if self.__op_name in BRANCH_JVM_OPCODES :
                 buff += "%s %s %s" % (self.__op_name, self.__special_value, self.__special_value + pos)
-            else:
+            else :
                 buff += "%s %s" % (self.__op_name, self.__special_value)
 
         return buff
 
-    def show(self, pos):
+    def show(self, pos) :
         """Show the bytecode at a specific position
 
             pos - the position into the bytecodes (integer)
@@ -1197,7 +1197,7 @@ class JBC(object):
 
 class JavaCode(object):
     """JavaCode manages a list of bytecode to a specific method, by decoding a raw buffer and transform each bytecode into a JBC object"""
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
 
         self.__raw_buff = buff
@@ -1206,15 +1206,15 @@ class JavaCode(object):
         self.__branches = []
 
         i = 0
-        while i < len(self.__raw_buff):
+        while i < len(self.__raw_buff) :
             op_value = unpack( '>B', self.__raw_buff[i])[0]
-            if op_value in JAVA_OPCODES:
-                if len( JAVA_OPCODES[ op_value ] ) >= 2:
+            if op_value in JAVA_OPCODES :
+                if len( JAVA_OPCODES[ op_value ] ) >= 2 :
                     # it's a fixed length opcode
-                    if isinstance(JAVA_OPCODES[ op_value ][1], str) == True:
+                    if isinstance(JAVA_OPCODES[ op_value ][1], str) == True :
                         r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
                     # it's a variable length opcode
-                    else:
+                    else :
                         r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_VARIABLE( i, op_value, self.__raw_buff[ i : ] )
 
                     len_format = calcsize(r_format)
@@ -1224,9 +1224,9 @@ class JavaCode(object):
                     self.__bytecodes.append( jbc )
 
                     i += len_format
-                else:
+                else :
                     self.__bytecodes.append( JBC( class_manager, JAVA_OPCODES[ op_value ][0], self.__raw_buff[ i ] ) )
-            else:
+            else :
                 bytecode.Exit( "op_value 0x%x is unknown" % op_value )
 
             i += 1
@@ -1234,19 +1234,19 @@ class JavaCode(object):
         # Create branch bytecodes list
         idx = 0
         nb = 0
-        for i in self.__bytecodes:
+        for i in self.__bytecodes :
             self.__maps.append( idx )
 
-            if i.get_name() in BRANCH_JVM_OPCODES:
+            if i.get_name() in BRANCH_JVM_OPCODES :
                 self.__branches.append( nb )
 
             idx += i.get_length()
             nb += 1
 
-    def _patch_bytecodes(self):
+    def _patch_bytecodes(self) :
         methods = []
-        for i in self.__bytecodes:
-            if "invoke" in i.get_name():
+        for i in self.__bytecodes :
+            if "invoke" in i.get_name() :
                 operands = i.get_operands()
                 methods.append( operands )
                 op_value = INVERT_JAVA_OPCODES[ i.get_name() ]
@@ -1260,14 +1260,14 @@ class JavaCode(object):
                 self.__CM.create_method_ref( new_class_index, new_name_and_type_index )
 
                 value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *operands[0:] )
-                if value == -1:
+                if value == -1 :
                     bytecode.Exit( "Unable to found method " + str(operands) )
 
                 raw_buff += pack(r_format, *v_function( value ) )
 
                 i.reload( raw_buff )
 
-            elif "anewarray" in i.get_name():
+            elif "anewarray" in i.get_name() :
                 operands = i.get_operands()
                 op_value = INVERT_JAVA_OPCODES[ i.get_name() ]
                 raw_buff = pack( '>B', op_value )
@@ -1280,7 +1280,7 @@ class JavaCode(object):
 
                 i.reload( raw_buff )
 
-            elif "getstatic" == i.get_name():
+            elif "getstatic" == i.get_name() :
                 operands = i.get_operands()
                 op_value = INVERT_JAVA_OPCODES[ i.get_name() ]
                 raw_buff = pack( '>B', op_value )
@@ -1294,35 +1294,35 @@ class JavaCode(object):
 
 
                 value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *operands[1:] )
-                if value == -1:
+                if value == -1 :
                     bytecode.Exit( "Unable to found method " + str(operands) )
 
                 raw_buff += pack(r_format, *v_function( value ) )
 
                 i.reload( raw_buff )
 
-            elif "ldc" == i.get_name():
+            elif "ldc" == i.get_name() :
                 operands = i.get_operands()
                 op_value = INVERT_JAVA_OPCODES[ i.get_name() ]
                 raw_buff = pack( '>B', op_value )
 
                 r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
-                if operands[0] != "CONSTANT_Integer" and operands[0] != "CONSTANT_String":
+                if operands[0] != "CONSTANT_Integer" and operands[0] != "CONSTANT_String" :
                     bytecode.Exit( "...." )
 
-                if operands[0] == "CONSTANT_Integer":
+                if operands[0] == "CONSTANT_Integer" :
                     new_int_index = self.__CM.create_integer( operands[1] )
                     raw_buff += pack(r_format, *v_function( new_int_index ) )
 
-                elif operands[0] == "CONSTANT_String":
+                elif operands[0] == "CONSTANT_String" :
                     new_string_index = self.__CM.create_string( operands[1] )
 
                     raw_buff += pack(r_format, *v_function( new_string_index ) )
 
                 i.reload( raw_buff )
 
-            elif "new" == i.get_name():
+            elif "new" == i.get_name() :
                 operands = i.get_operands()
                 op_value = INVERT_JAVA_OPCODES[ i.get_name() ]
                 raw_buff = pack( '>B', op_value )
@@ -1337,7 +1337,7 @@ class JavaCode(object):
 
         return methods
 
-    def get(self):
+    def get(self) :
         """
             Return all bytecodes
 
@@ -1345,28 +1345,28 @@ class JavaCode(object):
         """
         return self.__bytecodes
 
-    def get_raw(self):
+    def get_raw(self) :
         return ''.join(x.get_raw() for x in self.__bytecodes)
 
-    def show(self):
+    def show(self) :
         """
             Display the code like a disassembler
         """
         nb = 0
-        for i in self.__bytecodes:
+        for i in self.__bytecodes :
             print nb, self.__maps[nb],
             i.show( self.__maps[nb] )
             print
             nb += 1
 
-    def pretty_show(self, m_a):
+    def pretty_show(self, m_a) :
         """
             Display the code like a disassembler but with instructions' links
         """
         bytecode.PrettyShow( m_a.basic_blocks.gets() )
         bytecode.PrettyShowEx( m_a.exceptions.gets() )
 
-    def get_relative_idx(self, idx):
+    def get_relative_idx(self, idx) :
         """
             Return the relative idx by given an offset in the code
 
@@ -1376,15 +1376,15 @@ class JavaCode(object):
         """
         n = 0
         x = 0
-        for i in self.__bytecodes:
+        for i in self.__bytecodes :
             #print n, idx
-            if n == idx:
+            if n == idx :
                 return x
             n += i.get_length()
             x += 1
         return -1
 
-    def get_at(self, idx):
+    def get_at(self, idx) :
         """
             Return a specific bytecode at an index
 
@@ -1394,7 +1394,7 @@ class JavaCode(object):
         """
         return self.__bytecodes[ idx ]
 
-    def remove_at(self, idx):
+    def remove_at(self, idx) :
         """
             Remove bytecode at a specific index
 
@@ -1406,11 +1406,11 @@ class JavaCode(object):
         val_m = self.__maps[idx]
 
         # Remove the index if it's in our branch list
-        if idx in self.__branches:
+        if idx in self.__branches :
             self.__branches.remove( idx )
 
         # Adjust each branch
-        for i in self.__branches:
+        for i in self.__branches :
             self.__bytecodes[i].adjust_r( self.__maps[i], val_m, val.get_length() )
 
         # Remove it !
@@ -1423,35 +1423,35 @@ class JavaCode(object):
 
         return val.get_length()
 
-    def _adjust_maps(self, val, size):
+    def _adjust_maps(self, val, size) :
         nb = 0
-        for i in self.__maps:
-            if i > val:
+        for i in self.__maps :
+            if i > val :
                 self.__maps[ nb ] = i + size
             nb = nb + 1
 
-    def _adjust_maps_i(self, val, size):
+    def _adjust_maps_i(self, val, size) :
         nb = 0
         x = 0
-        for i in self.__maps:
-            if i == val:
+        for i in self.__maps :
+            if i == val :
                 x+=1
 
-            if x == 2:
+            if x == 2 :
                 self.__maps[ nb ] = i + size
 
-            if i > val:
+            if i > val :
                 self.__maps[ nb ] = i + size
             nb = nb + 1
 
-    def _adjust_branches(self, val, size):
+    def _adjust_branches(self, val, size) :
         nb = 0
-        for i in self.__branches:
-            if i > val:
+        for i in self.__branches :
+            if i > val :
                 self.__branches[ nb ] = i + size
             nb += 1
 
-    def insert_at(self, idx, byte_code):
+    def insert_at(self, idx, byte_code) :
         """
             Insert bytecode at a specific index
 
@@ -1468,27 +1468,29 @@ class JavaCode(object):
         new_jbc = None
 
         # If it's an op_value with args, we must handle that !
-        if len( JAVA_OPCODES[ op_value ] ) > 1:
+        if len( JAVA_OPCODES[ op_value ] ) > 1 :
+
             # Find information about the op_value
             r_function, v_function, r_buff, r_format, f_function = EXTRACT_INFORMATION_SIMPLE( op_value )
 
             # Special values for this op_value (advanced bytecode)
-            if len( JAVA_OPCODES[ op_value ] ) == 6:
+            if len( JAVA_OPCODES[ op_value ] ) == 6 :
+
                 value = getattr( self.__CM, JAVA_OPCODES[ op_value ][5] )( *byte_code[1:] )
-                if value == -1:
+                if value == -1 :
                     bytecode.Exit( "Unable to found " + str(byte_code[1:]) )
 
                 raw_buff += pack(r_format, *v_function( value ) )
-            else:
+            else :
                 raw_buff += pack(r_format, *v_function( *byte_code[1:] ) )
 
             new_jbc = JBC(self.__CM, op_name, raw_buff, ( r_function, v_function, r_buff, r_format, f_function ) )
-        else:
+        else :
             new_jbc = JBC(self.__CM, op_name, raw_buff)
 
         # Adjust each branch with the new insertion
         val_m = self.__maps[ idx ]
-        for i in self.__branches:
+        for i in self.__branches :
             self.__bytecodes[i].adjust_i( self.__maps[i], val_m, new_jbc.get_length() )
 
         # Insert the new bytecode at the correct index
@@ -1500,7 +1502,7 @@ class JavaCode(object):
         self._adjust_branches( idx, 1 )
 
         # Add it to the branches if it's a correct op_value
-        if new_jbc.get_name() in BRANCH_JVM_OPCODES:
+        if new_jbc.get_name() in BRANCH_JVM_OPCODES :
             self.__branches.append( idx )
 
         # FIXME
@@ -1510,7 +1512,7 @@ class JavaCode(object):
         # return the length of the raw_buff
         return len(raw_buff)
 
-    def remplace_at(self, idx, bytecode):
+    def remplace_at(self, idx, bytecode) :
         """
             Remplace bytecode at a specific index by another bytecode (remplace = remove + insert)
 
@@ -1524,23 +1526,23 @@ class JavaCode(object):
 
         return size
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__bytecodes:
+        for i in self.__bytecodes :
             i.set_cm( cm )
 
-class BasicAttribute(object):
-    def __init__(self):
+class BasicAttribute(object) :
+    def __init__(self) :
         self.__attributes = []
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.__attributes
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-class CodeAttribute(BasicAttribute):
-    def __init__(self, class_manager, buff):
+class CodeAttribute(BasicAttribute) :
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
 
         super(CodeAttribute, self).__init__()
@@ -1564,7 +1566,7 @@ class CodeAttribute(BasicAttribute):
         #                  u2  catch_type;
         # }        exception_table[exception_table_length];
         self.__exception_table = []
-        for i in range(0, self.exception_table_length.get_value()):
+        for i in range(0, self.exception_table_length.get_value()) :
             et = SVs( EXCEPTION_TABLE[0], EXCEPTION_TABLE[1], buff.read( calcsize(EXCEPTION_TABLE[0]) ) )
             self.__exception_table.append( et )
 
@@ -1573,17 +1575,17 @@ class CodeAttribute(BasicAttribute):
 
         # attribute_info attributes[attributes_count];
         self.__attributes = []
-        for i in range(0, self.attributes_count.get_value()):
+        for i in range(0, self.attributes_count.get_value()) :
             ai = AttributeInfo( self.__CM, buff )
             self.__attributes.append( ai )
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.__attributes
 
-    def get_exceptions(self):
+    def get_exceptions(self) :
         return self.__exception_table
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.low_struct.get_value_buff() +                                  \
                  self.__code.get_raw() +                                                    \
                  self.exception_table_length.get_value_buff() +                  \
@@ -1591,120 +1593,120 @@ class CodeAttribute(BasicAttribute):
                  self.attributes_count.get_value_buff()                          + \
                  ''.join(x.get_raw() for x in self.__attributes)
 
-    def get_length(self):
+    def get_length(self) :
         return self.low_struct.get_value().code_length
 
 
-    def get_max_stack(self):
+    def get_max_stack(self) :
         return self.low_struct.get_value().max_stack
 
-    def get_max_locals(self):
+    def get_max_locals(self) :
         return self.low_struct.get_value().max_locals
 
-    def get_local_variables(self):
-        for i in self.__attributes:
-            if i.get_name() == "StackMapTable":
+    def get_local_variables(self) :
+        for i in self.__attributes :
+            if i.get_name() == "StackMapTable" :
                 return i.get_item().get_local_variables()
         return []
 
-    def get_bc(self):
+    def get_bc(self) :
         return self.__code
 
     # FIXME : show* --> add exceptions
-    def show_info(self):
+    def show_info(self) :
         print "!" * 70
         print self.low_struct.get_value()
         bytecode._Print( "ATTRIBUTES_COUNT", self.attributes_count.get_value() )
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.show()
         print "!" * 70
 
-    def _begin_show(self):
+    def _begin_show(self) :
         print "!" * 70
         print self.low_struct.get_value()
 
-    def _end_show(self):
+    def _end_show(self) :
         bytecode._Print( "ATTRIBUTES_COUNT", self.attributes_count.get_value() )
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.show()
         print "!" * 70
 
-    def show(self):
+    def show(self) :
         self._begin_show()
         self.__code.show()
         self._end_show()
 
-    def pretty_show(self, m_a):
+    def pretty_show(self, m_a) :
         self._begin_show()
         self.__code.pretty_show(m_a)
         self._end_show()
 
-    def _patch_bytecodes(self):
+    def _patch_bytecodes(self) :
         return self.__code._patch_bytecodes()
 
-    def remplace_at(self, idx, bytecode):
+    def remplace_at(self, idx, bytecode) :
         size = self.__code.remplace_at(idx, bytecode)
 
         # Adjust the length of our bytecode
         self.low_struct.set_value( { "code_length" : self.low_struct.get_value().code_length + size } )
 
-    def remove_at(self, idx):
+    def remove_at(self, idx) :
         size = self.__code.remove_at(idx)
         # Adjust the length of our bytecode
         self.low_struct.set_value( { "code_length" : self.low_struct.get_value().code_length - size } )
 
-    def removes_at(self, l_idx):
+    def removes_at(self, l_idx) :
         i = 0
-        while i < len(l_idx):
+        while i < len(l_idx) :
             self.remove_at( l_idx[i] )
 
             j = i + 1
-            while j < len(l_idx):
-                if l_idx[j] > l_idx[i]:
+            while j < len(l_idx) :
+                if l_idx[j] > l_idx[i] :
                     l_idx[j] -= 1
 
                 j += 1
 
             i += 1
 
-    def inserts_at(self, idx, l_bc):
+    def inserts_at(self, idx, l_bc) :
 #        self.low_struct.set_value( { "max_stack" : self.low_struct.get_value().max_stack + 2 } )
 #        print self.low_struct.get_value()
         total_size = 0
-        for i in l_bc:
+        for i in l_bc :
             size = self.insert_at( idx, i )
             idx += 1
             total_size += size
         return total_size
 
-    def insert_at(self, idx, bytecode):
+    def insert_at(self, idx, bytecode) :
         size = self.__code.insert_at(idx, bytecode)
         # Adjust the length of our bytecode
         self.low_struct.set_value( { "code_length" : self.low_struct.get_value().code_length + size } )
 
         return size
 
-    def get_relative_idx(self, idx):
+    def get_relative_idx(self, idx) :
         return self.__code.get_relative_idx(idx)
 
-    def get_at(self, idx):
+    def get_at(self, idx) :
         return self.__code.get_at(idx)
 
-    def gets_at(self, l_idx):
+    def gets_at(self, l_idx) :
         return [ self.__code.get_at(i) for i in l_idx ]
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__attributes:
+        for i in self.__attributes :
             i.set_cm( cm )
         self.__code.set_cm( cm )
 
-    def _fix_attributes(self, new_cm):
-        for i in self.__attributes:
+    def _fix_attributes(self, new_cm) :
+        for i in self.__attributes :
             i._fix_attributes( new_cm )
 
-class SourceFileAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class SourceFileAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(SourceFileAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1712,14 +1714,14 @@ class SourceFileAttribute(BasicAttribute):
         # u2 sourcefile_index;
         self.sourcefile_index = SV( '>H', buff.read(2) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.sourcefile_index.get_value_buff()
 
-    def show(self):
+    def show(self) :
         print self.sourcefile_index
 
-class LineNumberTableAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class LineNumberTableAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(LineNumberTableAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1732,27 +1734,27 @@ class LineNumberTableAttribute(BasicAttribute):
         self.line_number_table_length = SV( '>H', buff.read( 2 ) )
 
         self.__line_number_table = []
-        for i in range(0, self.line_number_table_length.get_value()):
+        for i in range(0, self.line_number_table_length.get_value()) :
             lnt = SVs( LINE_NUMBER_TABLE[0], LINE_NUMBER_TABLE[1], buff.read( 4 ) )
             self.__line_number_table.append( lnt )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.line_number_table_length.get_value_buff() + \
                  ''.join(x.get_value_buff() for x in self.__line_number_table)
 
-    def get_line_number_table(self):
+    def get_line_number_table(self) :
         return self.__line_number_table
 
-    def show(self):
+    def show(self) :
         bytecode._Print("LINE_NUMBER_TABLE_LENGTH", self.line_number_table_length.get_value())
-        for x in self.__line_number_table:
+        for x in self.__line_number_table :
             print "\t", x.get_value()
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         pass
 
-class LocalVariableTableAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class LocalVariableTableAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(LocalVariableTableAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1767,21 +1769,21 @@ class LocalVariableTableAttribute(BasicAttribute):
         self.local_variable_table_length = SV( '>H', buff.read(2) )
 
         self.local_variable_table = []
-        for i in range(0, self.local_variable_table_length.get_value()):
+        for i in range(0, self.local_variable_table_length.get_value()) :
             lvt = SVs( LOCAL_VARIABLE_TABLE[0], LOCAL_VARIABLE_TABLE[1], buff.read( calcsize(LOCAL_VARIABLE_TABLE[0]) ) )
             self.local_variable_table.append( lvt )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.local_variable_table_length.get_value_buff() + \
                  ''.join(x.get_value_buff() for x in self.local_variable_table)
 
-    def show(self):
+    def show(self) :
         print "LocalVariableTable", self.local_variable_table_length.get_value()
-        for x in self.local_variable_table:
+        for x in self.local_variable_table :
             print x.get_value()
 
-class LocalVariableTypeTableAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class LocalVariableTypeTableAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(LocalVariableTypeTableAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1796,21 +1798,21 @@ class LocalVariableTypeTableAttribute(BasicAttribute):
         self.local_variable_type_table_length = SV( '>H', buff.read(2) )
 
         self.local_variable_type_table = []
-        for i in range(0, self.local_variable_type_table_length.get_value()):
+        for i in range(0, self.local_variable_type_table_length.get_value()) :
             lvtt = SVs( LOCAL_VARIABLE_TYPE_TABLE[0], LOCAL_VARIABLE_TYPE_TABLE[1], buff.read( calcsize(LOCAL_VARIABLE_TYPE_TABLE[0]) ) )
             self.local_variable_type_table.append( lvtt )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.local_variable_type_table_length.get_value_buff() + \
                  ''.join(x.get_value_buff() for x in self.local_variable_type_table)
 
-    def show(self):
+    def show(self) :
         print "LocalVariableTypeTable", self.local_variable_type_table_length.get_value()
-        for x in self.local_variable_type_table:
+        for x in self.local_variable_type_table :
             print x.get_value()
 
-class SourceDebugExtensionAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class SourceDebugExtensionAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(SourceDebugExtensionAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1818,38 +1820,38 @@ class SourceDebugExtensionAttribute(BasicAttribute):
 
         self.debug_extension = buff.read( self.attribute_length )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.debug_extension
 
-    def show(self):
+    def show(self) :
         print "SourceDebugExtension", self.debug_extension.get_value()
 
-class DeprecatedAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class DeprecatedAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(DeprecatedAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
 
-    def get_raw(self):
+    def get_raw(self) :
         return ''
 
-    def show(self):
+    def show(self) :
         print "Deprecated"
 
-class SyntheticAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class SyntheticAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(SyntheticAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
 
-    def get_raw(self):
+    def get_raw(self) :
         return ''
 
-    def show(self):
+    def show(self) :
         print "Synthetic"
 
-class SignatureAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class SignatureAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(SignatureAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1857,14 +1859,14 @@ class SignatureAttribute(BasicAttribute):
         # u2 signature_index;
         self.signature_index = SV( '>H', buff.read(2) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.signature_index.get_value_buff()
 
-    def show(self):
+    def show(self) :
         print "Signature", self.signature_index.get_value()
 
-class RuntimeVisibleAnnotationsAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class RuntimeVisibleAnnotationsAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(RuntimeVisibleAnnotationsAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1874,26 +1876,26 @@ class RuntimeVisibleAnnotationsAttribute(BasicAttribute):
         self.num_annotations = SV( '>H', buff.read(2) )
 
         self.annotations = []
-        for i in range(0, self.num_annotations.get_value()):
+        for i in range(0, self.num_annotations.get_value()) :
             self.annotations.append( Annotation(cm, buff) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.num_annotations.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.annotations)
 
-    def show(self):
+    def show(self) :
         print "RuntimeVisibleAnnotations", self.num_annotations.get_value()
-        for i in self.annotations:
+        for i in self.annotations :
             i.show()
 
-class RuntimeInvisibleAnnotationsAttribute(RuntimeVisibleAnnotationsAttribute):
-    def show(self):
+class RuntimeInvisibleAnnotationsAttribute(RuntimeVisibleAnnotationsAttribute) :
+    def show(self) :
         print "RuntimeInvisibleAnnotations", self.num_annotations.get_value()
-        for i in self.annotations:
+        for i in self.annotations :
             i.show()
 
-class RuntimeVisibleParameterAnnotationsAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class RuntimeVisibleParameterAnnotationsAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(RuntimeVisibleParameterAnnotationsAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1906,46 +1908,46 @@ class RuntimeVisibleParameterAnnotationsAttribute(BasicAttribute):
 
         self.num_parameters = SV( '>H', buff.read(2) )
         self.parameter_annotations = []
-        for i in range(0, self.num_parameters.get_value()):
+        for i in range(0, self.num_parameters.get_value()) :
             self.parameter_annotations.append( ParameterAnnotation( cm, buff ) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.num_parameters.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.parameter_annotations)
 
-    def show(self):
+    def show(self) :
         print "RuntimeVisibleParameterAnnotations", self.num_parameters.get_value()
-        for i in self.parameter_annotations:
+        for i in self.parameter_annotations :
             i.show()
 
-class RuntimeInvisibleParameterAnnotationsAttribute(RuntimeVisibleParameterAnnotationsAttribute):
-    def show(self):
+class RuntimeInvisibleParameterAnnotationsAttribute(RuntimeVisibleParameterAnnotationsAttribute) :
+    def show(self) :
         print "RuntimeVisibleParameterAnnotations", self.num_annotations.get_value()
-        for i in self.parameter_annotations:
+        for i in self.parameter_annotations :
             i.show()
 
 class ParameterAnnotation(object):
-    def __init__(self, cm, buff):
+    def __init__(self, cm, buff) :
         # u2 num_annotations;
         # annotation annotations[num_annotations];
         self.num_annotations = SV( '>H', buff.read(2) )
         self.annotations = []
 
-        for i in range(0, self.num_annotations.get_value()):
+        for i in range(0, self.num_annotations.get_value()) :
             self.annotations = Annotation( cm, buff )
 
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.num_annotations.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.annotations)
 
-    def show(self):
+    def show(self) :
         print "ParameterAnnotation", self.num_annotations.get_value()
-        for i in self.annotations:
+        for i in self.annotations :
             i.show()
 
-class AnnotationDefaultAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class AnnotationDefaultAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(AnnotationDefaultAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -1954,15 +1956,15 @@ class AnnotationDefaultAttribute(BasicAttribute):
 
         self.default_value = ElementValue( cm, buff )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.default_value.get_raw()
 
-    def show(self):
+    def show(self) :
         print "AnnotationDefault"
         self.default_value.show()
 
 class Annotation(object):
-    def __init__(self, cm, buff):
+    def __init__(self, cm, buff) :
         # u2 type_index;
         # u2 num_element_value_pairs;
         # {     u2 element_name_index;
@@ -1973,37 +1975,37 @@ class Annotation(object):
 
         self.element_value_pairs = []
 
-        for i in range(0, self.num_element_value_pairs.get_value()):
+        for i in range(0, self.num_element_value_pairs.get_value()) :
             self.element_value_pairs.append( ElementValuePair(cm, buff) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.type_index.get_value_buff() + self.num_element_value_pairs.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.element_value_pairs)
 
-    def show(self):
+    def show(self) :
         print "Annotation", self.type_index.get_value(), self.num_element_value_pairs.get_value()
-        for i in self.element_value_pairs:
+        for i in self.element_value_pairs :
             i.show()
 
 
 class ElementValuePair(object):
-    def __init__(self, cm, buff):
+    def __init__(self, cm, buff) :
         # u2 element_name_index;
         # element_value value;
         self.element_name_index = SV( '>H', buff.read(2) )
         self.value = ElementValue(cm, buff)
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.element_name_index.get_value_buff() + \
                  self.value.get_raw()
 
-    def show(self):
+    def show(self) :
         print "ElementValuePair", self.element_name_index.get_value()
         self.value.show()
 
 ENUM_CONST_VALUE = [ '>HH', namedtuple("EnumConstValue", "type_name_index const_name_index") ]
 class ElementValue(object):
-    def __init__(self, cm, buff):
+    def __init__(self, cm, buff) :
         # u1 tag;
         # union {
         #            u2     const_value_index;
@@ -2021,53 +2023,53 @@ class ElementValue(object):
         self.tag = SV( '>B', buff.read(1) )
 
         tag = chr( self.tag.get_value() )
-        if tag == 'B' or tag == 'C' or tag == 'D' or tag == 'F' or tag == 'I' or tag == 'J' or tag == 'S' or tag == 'Z' or tag == 's':
+        if tag == 'B' or tag == 'C' or tag == 'D' or tag == 'F' or tag == 'I' or tag == 'J' or tag == 'S' or tag == 'Z' or tag == 's' :
             self.value = SV( '>H', buff.read(2) )
-        elif tag == 'e':
+        elif tag == 'e' :
             self.value = SVs( ENUM_CONST_VALUE[0], ENUM_CONST_VALUE[1], buff.read( calcsize(ENUM_CONST_VALUE[0]) ) )
-        elif tag == 'c':
+        elif tag == 'c' :
             self.value = SV( '>H', buff.read(2) )
-        elif tag == '@':
+        elif tag == '@' :
             self.value = Annotation( cm, buff )
-        elif tag == '[':
+        elif tag == '[' :
             self.value = ArrayValue( cm, buff )
-        else:
+        else :
             bytecode.Exit( "tag %c not in VERIFICATION_TYPE_INFO" % self.tag.get_value() )
 
-    def get_raw(self):
-        if isinstance(self.value, SV) or isinstance(self.value, SVs):
+    def get_raw(self) :
+        if isinstance(self.value, SV) or isinstance(self.value, SVs) :
             return self.tag.get_value_buff() + self.value.get_value_buff()
 
         return self.tag.get_value_buff() + self.value.get_raw()
 
-    def show(self):
+    def show(self) :
         print "ElementValue", self.tag.get_value()
-        if isinstance(self.value, SV) or isinstance(self.value, SVs):
+        if isinstance(self.value, SV) or isinstance(self.value, SVs) :
             print self.value.get_value()
-        else:
+        else :
             self.value.show()
 
 class ArrayValue(object):
-    def __init__(self, cm, buff):
+    def __init__(self, cm, buff) :
         # u2     num_values;
         # element_value values[num_values];
         self.num_values = SV( '>H', buff.read(2) )
 
         self.values = []
-        for i in range(0, self.num_values.get_value()):
+        for i in range(0, self.num_values.get_value()) :
             self.values.append( ElementValue(cm, buff) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.num_values.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.values)
 
-    def show(self):
+    def show(self) :
         print "ArrayValue", self.num_values.get_value()
-        for i in self.values:
+        for i in self.values :
             i.show()
 
-class ExceptionsAttribute(BasicAttribute):
-    def __init__(self, cm, buff):
+class ExceptionsAttribute(BasicAttribute) :
+    def __init__(self, cm, buff) :
         super(ExceptionsAttribute, self).__init__()
         # u2 attribute_name_index;
         # u4 attribute_length;
@@ -2077,61 +2079,61 @@ class ExceptionsAttribute(BasicAttribute):
         self.number_of_exceptions = SV( '>H', buff.read(2) )
 
         self.__exception_index_table = []
-        for i in range(0, self.number_of_exceptions.get_value()):
+        for i in range(0, self.number_of_exceptions.get_value()) :
             self.__exception_index_table.append( SV( '>H', buff.read(2) ) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.number_of_exceptions.get_value_buff() + ''.join(x.get_value_buff() for x in self.__exception_index_table)
 
-    def get_exception_index_table(self):
+    def get_exception_index_table(self) :
         return self.__exception_index_table
 
-    def show(self):
+    def show(self) :
         print "Exceptions", self.number_of_exceptions.get_value()
-        for i in self.__exception_index_table:
+        for i in self.__exception_index_table :
             print "\t", i
 
 class VerificationTypeInfo(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         tag = SV( '>B', buff.read_b(1) ).get_value()
 
-        if tag not in VERIFICATION_TYPE_INFO:
+        if tag not in VERIFICATION_TYPE_INFO :
             bytecode.Exit( "tag not in VERIFICATION_TYPE_INFO" )
 
         format = VERIFICATION_TYPE_INFO[ tag ][1]
         self.format = SVs( format, VERIFICATION_TYPE_INFO[ tag ][2], buff.read( calcsize( format ) ) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.format.get_value_buff()
 
-    def show(self):
+    def show(self) :
         general_format = self.format.get_value()
-        if len( VERIFICATION_TYPE_INFO[ general_format.tag ] ) > 3:
+        if len( VERIFICATION_TYPE_INFO[ general_format.tag ] ) > 3 :
             print general_format,
-            for (i,j) in VERIFICATION_TYPE_INFO[ general_format.tag ][3]:
+            for (i,j) in VERIFICATION_TYPE_INFO[ general_format.tag ][3] :
                 print getattr(self.__CM, j)( getattr(general_format, i) )
-        else:
+        else :
             print general_format
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         general_format = self.format.get_value()
 
-        if len( VERIFICATION_TYPE_INFO[ general_format.tag ] ) > 3:
-            for (i,j) in VERIFICATION_TYPE_INFO[ general_format.tag ][3]:
+        if len( VERIFICATION_TYPE_INFO[ general_format.tag ] ) > 3 :
+            for (i,j) in VERIFICATION_TYPE_INFO[ general_format.tag ][3] :
                 # Fix the first object which is the current class
-                if getattr(self.__CM, j)( getattr(general_format, i) )[0] == self.__CM.get_this_class_name():
+                if getattr(self.__CM, j)( getattr(general_format, i) )[0] == self.__CM.get_this_class_name() :
                     self.format.set_value( { "cpool_index" : new_cm.get_this_class() } )
                 # Fix other objects
-                else:
+                else :
                     new_class_index = new_cm.create_class( getattr(self.__CM, j)( getattr(general_format, i) )[0] )
                     self.format.set_value( { "cpool_index" : new_class_index } )
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
 class FullFrame(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = FULL_FRAME; /* 255 */
         # u2 offset_delta;
@@ -2142,20 +2144,20 @@ class FullFrame(object):
 
         # verification_type_info locals[number_of_locals];
         self.__locals = []
-        for i in range(0, self.number_of_locals.get_value()):
+        for i in range(0, self.number_of_locals.get_value()) :
             self.__locals.append( VerificationTypeInfo( self.__CM, buff ) )
 
         # u2 number_of_stack_items;
         self.number_of_stack_items = SV( '>H', buff.read(2) )
         # verification_type_info stack[number_of_stack_items];
         self.__stack = []
-        for i in range(0, self.number_of_stack_items.get_value()):
+        for i in range(0, self.number_of_stack_items.get_value()) :
             self.__stack.append( VerificationTypeInfo( self.__CM, buff ) )
 
-    def get_locals(self):
+    def get_locals(self) :
         return self.__locals
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + \
                   self.offset_delta.get_value_buff() + \
                   self.number_of_locals.get_value_buff() + \
@@ -2163,96 +2165,96 @@ class FullFrame(object):
                   self.number_of_stack_items.get_value_buff() + \
                   ''.join(x.get_raw() for x in self.__stack)
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tFULL_FRAME", self.frame_type.get_value())
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
 
         bytecode._Print("\tNUMBER_OF_LOCALS", self.number_of_locals.get_value())
-        for i in self.__locals:
+        for i in self.__locals :
             i.show()
 
         bytecode._Print("\tNUMBER_OF_STACK_ITEMS", self.number_of_stack_items.get_value())
-        for i in self.__stack:
+        for i in self.__stack :
             i.show()
 
         print "#" * 60
 
-    def _fix_attributes(self, new_cm):
-        for i in self.__locals:
+    def _fix_attributes(self, new_cm) :
+        for i in self.__locals :
             i._fix_attributes( new_cm )
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__locals:
+        for i in self.__locals :
             i.set_cm( cm )
 
 class ChopFrame(object):
-    def __init__(self, buff):
+    def __init__(self, buff) :
         # u1 frame_type=CHOP; /* 248-250 */
         # u2 offset_delta;
         self.frame_type = SV( '>B', buff.read(1) )
         self.offset_delta = SV( '>H', buff.read(2) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + self.offset_delta.get_value_buff()
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tCHOP_FRAME", self.frame_type.get_value())
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
         print "#" * 60
 
-    def _fix_attributes(self, cm):
+    def _fix_attributes(self, cm) :
         pass
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         pass
 
 class SameFrame(object):
-    def __init__(self, buff):
+    def __init__(self, buff) :
         # u1 frame_type = SAME;/* 0-63 */
         self.frame_type = SV( '>B', buff.read(1) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff()
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tSAME_FRAME", self.frame_type.get_value())
         print "#" * 60
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         pass
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         pass
 
 class SameLocals1StackItemFrame(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = SAME_LOCALS_1_STACK_ITEM;/* 64-127 */
         # verification_type_info stack[1];
         self.frame_type = SV( '>B', buff.read(1) )
         self.stack = VerificationTypeInfo( self.__CM, buff )
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tSAME_LOCALS_1_STACK_ITEM_FRAME", self.frame_type.get_value())
         self.stack.show()
         print "#" * 60
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + self.stack.get_raw()
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         pass
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
 class SameLocals1StackItemFrameExtended(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = SAME_LOCALS_1_STACK_ITEM_EXTENDED; /* 247 */
         # u2 offset_delta;
@@ -2261,16 +2263,16 @@ class SameLocals1StackItemFrameExtended(object):
         self.offset_delta = SV( '>H', buff.read(2) )
         self.stack = VerificationTypeInfo( self.__CM, buff )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + self.offset_delta.get_value_buff() + self.stack.get_value_buff()
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         pass
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tSAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED", self.frame_type.get_value())
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
@@ -2278,29 +2280,29 @@ class SameLocals1StackItemFrameExtended(object):
         print "#" * 60
 
 class SameFrameExtended(object):
-    def __init__(self, buff):
+    def __init__(self, buff) :
         # u1 frame_type = SAME_FRAME_EXTENDED;/* 251*/
         # u2 offset_delta;
         self.frame_type = SV( '>B', buff.read(1) )
         self.offset_delta = SV( '>H', buff.read(2) )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + self.offset_delta.get_value_buff()
 
-    def _fix_attributes(self, cm):
+    def _fix_attributes(self, cm) :
         pass
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         pass
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tSAME_FRAME_EXTENDED", self.frame_type.get_value())
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
         print "#" * 60
 
 class AppendFrame(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         # u1 frame_type = APPEND; /* 252-254 */
         # u2 offset_delta;
@@ -2310,38 +2312,38 @@ class AppendFrame(object):
         # verification_type_info locals[frame_type -251];
         self.__locals = []
         k = self.frame_type.get_value() - 251
-        for i in range(0, k):
+        for i in range(0, k) :
             self.__locals.append( VerificationTypeInfo( self.__CM, buff ) )
 
-    def get_locals(self):
+    def get_locals(self) :
         return self.__locals
 
-    def show(self):
+    def show(self) :
         print "#" * 60
         bytecode._Print("\tAPPEND_FRAME", self.frame_type.get_value())
         bytecode._Print("\tOFFSET_DELTA", self.offset_delta.get_value())
 
-        for i in self.__locals:
+        for i in self.__locals :
             i.show()
 
         print "#" * 60
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.frame_type.get_value_buff() + \
                  self.offset_delta.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.__locals)
 
-    def _fix_attributes(self, new_cm):
-        for i in self.__locals:
+    def _fix_attributes(self, new_cm) :
+        for i in self.__locals :
             i._fix_attributes( new_cm )
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__locals:
+        for i in self.__locals :
             i.set_cm( cm )
 
-class StackMapTableAttribute(BasicAttribute):
-    def __init__(self, class_manager, buff):
+class StackMapTableAttribute(BasicAttribute) :
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
 
         super(StackMapTableAttribute, self).__init__()
@@ -2353,56 +2355,56 @@ class StackMapTableAttribute(BasicAttribute):
 
         # stack_map_frame entries[number_of_entries];
         self.__entries = []
-        for i in range(0, self.number_of_entries.get_value()):
+        for i in range(0, self.number_of_entries.get_value()) :
             frame_type = SV( '>B', buff.read_b(1) ).get_value()
 
-            if frame_type >= 0 and frame_type <= 63:
+            if frame_type >= 0 and frame_type <= 63 :
                 self.__entries.append( SameFrame( buff ) )
-            elif frame_type >= 64 and frame_type <= 127:
+            elif frame_type >= 64 and frame_type <= 127 :
                 self.__entries.append( SameLocals1StackItemFrame( self.__CM, buff ) )
-            elif frame_type == 247:
+            elif frame_type == 247 :
                 self.__entries.append( SameLocals1StackItemFrameExtended( self.__CM, buff ) )
-            elif frame_type >= 248 and frame_type <= 250:
+            elif frame_type >= 248 and frame_type <= 250 :
                 self.__entries.append( ChopFrame( buff ) )
-            elif frame_type == 251:
+            elif frame_type == 251 :
                 self.__entries.append( SameFrameExtended( buff ) )
-            elif frame_type >= 252 and frame_type <= 254:
+            elif frame_type >= 252 and frame_type <= 254 :
                 self.__entries.append( AppendFrame( self.__CM, buff ) )
-            elif frame_type == 255:
+            elif frame_type == 255 :
                 self.__entries.append( FullFrame( self.__CM, buff ) )
-            else:
+            else :
                 bytecode.Exit( "Frame type %d is unknown" % frame_type )
 
-    def get_entries(self):
+    def get_entries(self) :
         return self.__entries
 
-    def get_local_variables(self):
-        for i in self.__entries:
-            if isinstance(i, FullFrame):
+    def get_local_variables(self) :
+        for i in self.__entries :
+            if isinstance(i, FullFrame) :
                 return i.get_local_variables()
 
         return []
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.number_of_entries.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.__entries )
 
-    def show(self):
+    def show(self) :
         bytecode._Print("NUMBER_OF_ENTRIES", self.number_of_entries.get_value())
-        for i in self.__entries:
+        for i in self.__entries :
             i.show()
 
-    def _fix_attributes(self, new_cm):
-        for i in self.__entries:
+    def _fix_attributes(self, new_cm) :
+        for i in self.__entries :
             i._fix_attributes( new_cm )
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__entries:
+        for i in self.__entries :
             i.set_cm( cm )
 
 class InnerClassesDesc(object):
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         INNER_CLASSES_FORMAT = [ ">HHHH", "inner_class_info_index outer_class_info_index inner_name_index inner_class_access_flags" ]
 
         self.__CM = class_manager
@@ -2411,17 +2413,17 @@ class InnerClassesDesc(object):
 
         self.format = SVs( INNER_CLASSES_FORMAT[0], namedtuple( "InnerClassesFormat", INNER_CLASSES_FORMAT[1] ), self.__raw_buff )
 
-    def show(self):
+    def show(self) :
         print self.format
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.format.get_value_buff()
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-class InnerClassesAttribute(BasicAttribute):
-    def __init__(self, class_manager, buff):
+class InnerClassesAttribute(BasicAttribute) :
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
 
         super(InnerClassesAttribute, self).__init__()
@@ -2438,28 +2440,28 @@ class InnerClassesAttribute(BasicAttribute):
         # } classes[number_of_classes];
         self.__classes = []
 
-        for i in range(0, self.number_of_classes.get_value()):
+        for i in range(0, self.number_of_classes.get_value()) :
             self.__classes.append( InnerClassesDesc( self.__CM, buff ) )
 
-    def get_classes(self):
+    def get_classes(self) :
         return self.__classes
 
-    def show(self):
+    def show(self) :
         print self.number_of_classes
-        for i in self.__classes:
+        for i in self.__classes :
             i.show()
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
-        for i in self.__classes:
+        for i in self.__classes :
             i.set_cm( cm )
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.number_of_classes.get_value_buff() + \
                  ''.join(x.get_raw() for x in self.__classes)
 
-class ConstantValueAttribute(BasicAttribute):
-    def __init__(self, class_manager, buff):
+class ConstantValueAttribute(BasicAttribute) :
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
 
         super(ConstantValueAttribute, self).__init__()
@@ -2469,17 +2471,17 @@ class ConstantValueAttribute(BasicAttribute):
         # u2 constantvalue_index;
         self.constantvalue_index = SV( '>H', buff.read(2) )
 
-    def show(self):
+    def show(self) :
         print self.constantvalue_index
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.constantvalue_index.get_value_buff()
 
-class EnclosingMethodAttribute(BasicAttribute):
-    def __init__(self, class_manager, buff):
+class EnclosingMethodAttribute(BasicAttribute) :
+    def __init__(self, class_manager, buff) :
         ENCLOSING_METHOD_FORMAT = [ '>HH', "class_index method_index" ]
 
         self.__CM = class_manager
@@ -2494,13 +2496,13 @@ class EnclosingMethodAttribute(BasicAttribute):
         self.__raw_buff = buff.read( calcsize( ENCLOSING_METHOD_FORMAT[0] ) )
         self.format = SVs( ENCLOSING_METHOD_FORMAT[0], namedtuple( "EnclosingMethodFormat", ENCLOSING_METHOD_FORMAT[1] ), self.__raw_buff )
 
-    def show(self):
+    def show(self) :
         print self.format
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
 
-    def get_raw(self):
+    def get_raw(self) :
         return self.format.get_value_buff()
 
 ATTRIBUTE_INFO_DESCR = {
@@ -2527,94 +2529,94 @@ ATTRIBUTE_INFO_DESCR = {
 
 class AttributeInfo(object):
     """AttributeInfo manages each attribute info (Code, SourceFile ....)"""
-    def __init__(self, class_manager, buff):
+    def __init__(self, class_manager, buff) :
         self.__CM = class_manager
         self.__raw_buff = buff.read( calcsize( ATTRIBUTE_INFO[0] ) )
 
         self.format = SVs( ATTRIBUTE_INFO[0], ATTRIBUTE_INFO[1], self.__raw_buff )
         self.__name = self.__CM.get_string( self.format.get_value().attribute_name_index )
 
-        try:
+        try :
             self._info = ATTRIBUTE_INFO_DESCR[ self.__name ](self.__CM, buff)
-        except KeyError, ke:
+        except KeyError, ke :
             bytecode.Exit( "AttributeInfo %s doesn't exit" % self.__name )
 
-    def get_item(self):
+    def get_item(self) :
         """Return the specific attribute info"""
         return self._info
 
-    def get_name(self):
+    def get_name(self) :
         """Return the name of the attribute"""
         return self.__name
 
-    def get_raw(self):
+    def get_raw(self) :
         v1 = self.format.get_value().attribute_length
         v2 = len(self._info.get_raw())
-        if v1 != v2:
+        if v1 != v2 :
             self.set_attribute_length( v2 )
 
         return self.format.get_value_buff() + self._info.get_raw()
 
-    def get_attribute_name_index(self):
+    def get_attribute_name_index(self) :
         return self.format.get_value().attribute_name_index
 
-    def set_attribute_name_index(self, value):
+    def set_attribute_name_index(self, value) :
         self.format.set_value( { "attribute_name_index" : value } )
 
-    def set_attribute_length(self, value):
+    def set_attribute_length(self, value) :
         self.format.set_value( { "attribute_length" : value } )
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.format
 
-    def _fix_attributes(self, new_cm):
+    def _fix_attributes(self, new_cm) :
         self._info._fix_attributes( new_cm )
 
-    def set_cm(self, cm):
+    def set_cm(self, cm) :
         self.__CM = cm
         self._info.set_cm( cm )
 
-    def show(self):
+    def show(self) :
         print self.format, self.__name
-        if self._info != None:
+        if self._info != None :
             self._info.show()
 
-    def pretty_show(self, m_a):
+    def pretty_show(self, m_a) :
         print self.format, self.__name
-        if self._info != None:
-            if isinstance(self._info, CodeAttribute):
+        if self._info != None :
+            if isinstance(self._info, CodeAttribute) :
                 self._info.pretty_show(m_a)
-            else:
+            else :
                 self._info.show()
 
 class ClassManager(object):
     """ClassManager can be used by all classes to get more information"""
-    def __init__(self, constant_pool, constant_pool_count):
+    def __init__(self, constant_pool, constant_pool_count) :
         self.constant_pool = constant_pool
         self.constant_pool_count = constant_pool_count
 
         self.__this_class = None
 
-    def get_value(self, idx):
+    def get_value(self, idx) :
         name = self.get_item(idx[0]).get_name()
-        if name == "CONSTANT_Integer":
+        if name == "CONSTANT_Integer" :
             return [ name, self.get_item(idx[0]).get_format().get_value().bytes ]
-        elif name == "CONSTANT_String":
+        elif name == "CONSTANT_String" :
             return [ name, self.get_string( self.get_item(idx[0]).get_format().get_value().string_index ) ]
-        elif name == "CONSTANT_Class":
+        elif name == "CONSTANT_Class" :
             return [ name, self.get_class( idx[0] ) ]
-        elif name == "CONSTANT_Fieldref":
+        elif name == "CONSTANT_Fieldref" :
             return [ name, self.get_field( idx[0] ) ]
-        elif name == "CONSTANT_Float":
+        elif name == "CONSTANT_Float" :
             return [ name, self.get_item(idx[0]).get_format().get_value().bytes ]
 
         bytecode.Exit( "get_value not yet implemented for %s" % name )
 
-    def get_item(self, idx):
+    def get_item(self, idx) :
         return self.constant_pool[ idx - 1]
 
-    def get_interface(self, idx):
-        if self.get_item(idx).get_name() != "CONSTANT_InterfaceMethodref":
+    def get_interface(self, idx) :
+        if self.get_item(idx).get_name() != "CONSTANT_InterfaceMethodref" :
             return []
 
         class_idx = self.get_item(idx).get_class_index()
@@ -2625,11 +2627,11 @@ class ClassManager(object):
                     self.get_string( self.get_item(name_and_type_idx).get_descriptor_index() )
                  ]
 
-    def get_interface_index(self, class_name, name, descriptor):
+    def get_interface_index(self, class_name, name, descriptor) :
         raise("ooo")
 
-    def get_method(self, idx):
-        if self.get_item(idx).get_name() != "CONSTANT_Methodref":
+    def get_method(self, idx) :
+        if self.get_item(idx).get_name() != "CONSTANT_Methodref" :
             return []
 
         class_idx = self.get_item(idx).get_class_index()
@@ -2640,20 +2642,20 @@ class ClassManager(object):
                     self.get_string( self.get_item(name_and_type_idx).get_descriptor_index() )
                  ]
 
-    def get_method_index(self, class_name, name, descriptor):
+    def get_method_index(self, class_name, name, descriptor) :
         idx = 1
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             res = self.get_method( idx )
-            if res != []:
+            if res != [] :
                 m_class_name, m_name, m_descriptor = res
-                if m_class_name == class_name and m_name == name and m_descriptor == descriptor:
+                if m_class_name == class_name and m_name == name and m_descriptor == descriptor :
                     return idx
             idx += 1
 
         return -1
 
-    def get_field(self, idx):
-        if self.get_item(idx).get_name() != "CONSTANT_Fieldref":
+    def get_field(self, idx) :
+        if self.get_item(idx).get_name() != "CONSTANT_Fieldref" :
             return []
 
         class_idx = self.get_item(idx).get_class_index()
@@ -2664,142 +2666,142 @@ class ClassManager(object):
                     self.get_string( self.get_item(name_and_type_idx).get_descriptor_index() )
                  ]
 
-    def get_field_index(self, name, descriptor):
+    def get_field_index(self, name, descriptor) :
         idx = 1
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             res = self.get_field( idx )
-            if res != []:
+            if res != [] :
                 _, m_name, m_descriptor = res
-                if m_name == name and m_descriptor == descriptor:
+                if m_name == name and m_descriptor == descriptor :
                     return idx
             idx += 1
 
-    def get_class(self, idx):
-        if self.get_item(idx).get_name() != "CONSTANT_Class":
+    def get_class(self, idx) :
+        if self.get_item(idx).get_name() != "CONSTANT_Class" :
             return []
 
         return [ self.get_string( self.get_item(idx).get_name_index() ) ]
 
-    def get_array_type(self, idx):
+    def get_array_type(self, idx) :
         return ARRAY_TYPE[ idx[0] ]
 
-    def get_string_index(self, name):
+    def get_string_index(self, name) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Utf8":
-                if i.get_bytes() == name:
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Utf8" :
+                if i.get_bytes() == name :
                     return idx
             idx += 1
         return -1
 
-    def get_integer_index(self, value):
+    def get_integer_index(self, value) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Integer":
-                if i.get_format().get_value().bytes == value:
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Integer" :
+                if i.get_format().get_value().bytes == value :
                     return idx
             idx += 1
         return -1
 
-    def get_cstring_index(self, value):
+    def get_cstring_index(self, value) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_String":
-                if self.get_string( i.get_format().get_value().string_index ) == value:
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_String" :
+                if self.get_string( i.get_format().get_value().string_index ) == value :
                     return idx
             idx += 1
         return -1
 
-    def get_name_and_type_index(self, name_method_index, descriptor_method_index):
+    def get_name_and_type_index(self, name_method_index, descriptor_method_index) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_NameAndType":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_NameAndType" :
                 value = i.get_format().get_value()
-                if value.name_index == name_method_index and value.descriptor_index == descriptor_method_index:
+                if value.name_index == name_method_index and value.descriptor_index == descriptor_method_index :
                     return idx
             idx += 1
         return -1
 
-    def get_class_by_index(self, name_index):
+    def get_class_by_index(self, name_index) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Class":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Class" :
                 value = i.get_format().get_value()
-                if value.name_index == name_index:
+                if value.name_index == name_index :
                     return idx
             idx += 1
         return -1
 
-    def get_method_ref_index(self, new_class_index, new_name_and_type_index):
+    def get_method_ref_index(self, new_class_index, new_name_and_type_index) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Methodref":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Methodref" :
                 value = i.get_format().get_value()
-                if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index:
+                if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index :
                     return idx
             idx += 1
         return -1
 
-    def get_field_ref_index(self, new_class_index, new_name_and_type_index):
+    def get_field_ref_index(self, new_class_index, new_name_and_type_index) :
         idx = 1
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Fieldref":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Fieldref" :
                 value = i.get_format().get_value()
-                if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index:
+                if value.class_index == new_class_index and value.name_and_type_index == new_name_and_type_index :
                     return idx
             idx += 1
         return -1
 
-    def get_class_index(self, method_name):
+    def get_class_index(self, method_name) :
         idx = 1
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             res = self.get_method( idx )
-            if res != []:
+            if res != [] :
                 _, name, _ = res
-                if name == method_name:
+                if name == method_name :
                     return i.get_class_index()
             idx += 1
         return -1
 
-    def get_class_index2(self, class_name):
+    def get_class_index2(self, class_name) :
         idx = 1
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             res = self.get_class( idx )
-            if res != []:
+            if res != [] :
                 name = res[0]
-                if name == class_name:
+                if name == class_name :
                     return idx
             idx += 1
         return -1
 
-    def get_used_fields(self):
+    def get_used_fields(self) :
         l = []
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Fieldref":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Fieldref" :
                 l.append( i )
         return l
 
-    def get_used_methods(self):
+    def get_used_methods(self) :
         l = []
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Methodref":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Methodref" :
                 l.append( i )
         return l
 
-    def get_string(self, idx):
-        if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8":
+    def get_string(self, idx) :
+        if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
             return self.constant_pool[idx - 1].get_bytes()
         return None
 
-    def set_string(self, idx, name):
-        if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8":
+    def set_string(self, idx, name) :
+        if self.constant_pool[idx - 1].get_name() == "CONSTANT_Utf8" :
             self.constant_pool[idx - 1].set_bytes( name )
-        else:
+        else :
             bytecode.Exit( "invalid index %d to set string %s" % (idx, name) )
 
-    def add_string(self, name):
+    def add_string(self, name) :
         name_index = self.get_string_index(name)
-        if name_index != -1:
+        if name_index != -1 :
             return name_index
 
         tag_value = INVERT_CONSTANT_INFO[ "CONSTANT_Utf8" ]
@@ -2811,91 +2813,91 @@ class ClassManager(object):
 
         return self.constant_pool_count.get_value() - 1
 
-    def set_this_class(self, this_class):
+    def set_this_class(self, this_class) :
         self.__this_class = this_class
 
-    def get_this_class(self):
+    def get_this_class(self) :
         return self.__this_class.get_value()
 
-    def get_this_class_name(self):
+    def get_this_class_name(self) :
         return self.get_class( self.__this_class.get_value() )[0]
 
-    def add_constant_pool(self, elem):
+    def add_constant_pool(self, elem) :
         self.constant_pool.append( elem )
         self.constant_pool_count.set_value( self.constant_pool_count.get_value() + 1 )
 
-    def get_constant_pool_count(self):
+    def get_constant_pool_count(self) :
         return self.constant_pool_count.get_value()
 
-    def create_class(self, name):
+    def create_class(self, name) :
         class_name_index = self.add_string( name )
         return self._create_class( class_name_index )
 
-    def _create_class(self, class_name_index):
+    def _create_class(self, class_name_index) :
         class_index = self.get_class_by_index( class_name_index )
-        if class_index == -1:
+        if class_index == -1 :
             new_class = CreateClass( self, class_name_index )
             self.add_constant_pool( Class( self, bytecode.BuffHandle( new_class.get_raw() ) ) )
             class_index = self.get_constant_pool_count() - 1
         return class_index
 
-    def create_name_and_type(self, name, desc):
+    def create_name_and_type(self, name, desc) :
         name_index = self.add_string( name )
         descriptor_index = self.add_string( desc )
 
         return self._create_name_and_type( name_index, descriptor_index )
 
-    def create_name_and_type_by_index(self, name_method_index, descriptor_method_index):
+    def create_name_and_type_by_index(self, name_method_index, descriptor_method_index) :
         return self._create_name_and_type( name_method_index, descriptor_method_index )
 
-    def _create_name_and_type(self, name_method_index, descriptor_method_index):
+    def _create_name_and_type(self, name_method_index, descriptor_method_index) :
         name_and_type_index = self.get_name_and_type_index( name_method_index, descriptor_method_index )
-        if name_and_type_index == -1:
+        if name_and_type_index == -1 :
             new_nat = CreateNameAndType( self, name_method_index, descriptor_method_index )
             self.add_constant_pool( NameAndType( self, bytecode.BuffHandle( new_nat.get_raw() ) ) )
             name_and_type_index = self.get_constant_pool_count() - 1
         return name_and_type_index
 
-    def create_method_ref(self, new_class_index, new_name_and_type_index):
+    def create_method_ref(self, new_class_index, new_name_and_type_index) :
         new_mr_index = self.get_method_ref_index( new_class_index, new_name_and_type_index )
-        if new_mr_index == -1:
+        if new_mr_index == -1 :
             new_mr = CreateMethodRef( self, new_class_index, new_name_and_type_index )
             self.add_constant_pool( MethodRef( self, bytecode.BuffHandle( new_mr.get_raw() ) ) )
             new_mr_index = self.get_constant_pool_count() - 1
         return new_mr_index
 
-    def create_field_ref(self, new_class_index, new_name_and_type_index):
+    def create_field_ref(self, new_class_index, new_name_and_type_index) :
         new_fr_index = self.get_field_ref_index( new_class_index, new_name_and_type_index )
-        if new_fr_index == -1:
+        if new_fr_index == -1 :
             new_fr = CreateFieldRef( self, new_class_index, new_name_and_type_index )
             self.add_constant_pool( FieldRef( self, bytecode.BuffHandle( new_fr.get_raw() ) ) )
             new_fr_index = self.get_constant_pool_count() - 1
         return new_fr_index
 
-    def create_integer(self, value):
+    def create_integer(self, value) :
         new_int_index = self.get_integer_index( value )
-        if new_int_index == -1:
+        if new_int_index == -1 :
             new_int = CreateInteger( value )
             self.add_constant_pool( Integer( self, bytecode.BuffHandle( new_int.get_raw() ) ) )
             new_int_index = self.get_constant_pool_count() - 1
 
         return new_int_index
 
-    def create_string(self, value):
+    def create_string(self, value) :
         new_string_index = self.get_cstring_index( value )
-        if new_string_index == -1:
+        if new_string_index == -1 :
             new_string = CreateString( self, value )
             self.add_constant_pool( String( self, bytecode.BuffHandle( new_string.get_raw() ) ) )
             new_string_index = self.get_constant_pool_count() - 1
         return new_string_index
 
 
-class JVMFormat(bytecode._Bytecode):
+class JVMFormat(bytecode._Bytecode) :
     """
         An object which is the main class to handle properly a class file.
         Exported fields : magic, minor_version, major_version, constant_pool_count, access_flags, this_class, super_class, interfaces_count, fields_count, methods_count, attributes_count
     """
-    def __init__(self, buff):
+    def __init__(self, buff) :
         """
             @param buff : the buffer which represents the open file
         """
@@ -2903,7 +2905,7 @@ class JVMFormat(bytecode._Bytecode):
 
         self._load_class()
 
-    def _load_class(self):
+    def _load_class(self) :
         # u4 magic;
         # u2 minor_version;
         # u2 major_version;
@@ -2919,10 +2921,10 @@ class JVMFormat(bytecode._Bytecode):
         self.__CM = ClassManager( self.constant_pool, self.constant_pool_count )
 
         i = 1
-        while(i < self.constant_pool_count.get_value()):
+        while(i < self.constant_pool_count.get_value()) :
             tag = SV( '>B', self.read_b( 1 ) )
 
-            if tag.get_value() not in CONSTANT_INFO:
+            if tag.get_value() not in CONSTANT_INFO :
                 bytecode.Exit( "tag %d not in CONSTANT_INFO" % tag.get_value() )
 
             ci = CONSTANT_INFO[ tag.get_value() ][-1]( self.__CM, self )
@@ -2934,7 +2936,7 @@ class JVMFormat(bytecode._Bytecode):
             #        in the constant_pool table at index n, then the next usable item in the pool is
             #        located at index n + 2. The constant_pool index n + 1 must be valid but is
             #        considered unusable.
-            if tag.get_value() == 5 or tag.get_value() == 6:
+            if tag.get_value() == 5 or tag.get_value() == 6 :
                 self.constant_pool.append( EmptyConstant() )
                 i = i + 1
 
@@ -2952,7 +2954,7 @@ class JVMFormat(bytecode._Bytecode):
 
         # u2 interfaces[interfaces_count];
         self.interfaces = []
-        for i in range(0, self.interfaces_count.get_value()):
+        for i in range(0, self.interfaces_count.get_value()) :
             tag = SV( '>H', self.read( 2 ) )
             self.interfaces.append( tag )
 
@@ -2962,7 +2964,7 @@ class JVMFormat(bytecode._Bytecode):
 
         # field_info fields[fields_count];
         self.fields = []
-        for i in range(0, self.fields_count.get_value()):
+        for i in range(0, self.fields_count.get_value()) :
             fi = FieldInfo( self.__CM, self )
             self.fields.append( fi )
 
@@ -2971,7 +2973,7 @@ class JVMFormat(bytecode._Bytecode):
 
         # method_info methods[methods_count];
         self.methods = []
-        for i in range(0, self.methods_count.get_value()):
+        for i in range(0, self.methods_count.get_value()) :
             mi = MethodInfo( self.__CM, self )
             self.methods.append( mi )
 
@@ -2980,11 +2982,11 @@ class JVMFormat(bytecode._Bytecode):
 
         # attribute_info attributes[attributes_count];
         self.__attributes = []
-        for i in range(0, self.attributes_count.get_value()):
+        for i in range(0, self.attributes_count.get_value()) :
             ai = AttributeInfo( self.__CM, self )
             self.__attributes.append( ai )
 
-    def get_class(self, class_name):
+    def get_class(self, class_name) :
         """
             Verify the name of the class
 
@@ -2993,30 +2995,30 @@ class JVMFormat(bytecode._Bytecode):
             @rtype : True if the class name is valid, otherwise it's False
         """
         x = self.__CM.get_this_class_name() == class_name
-        if x == True:
+        if x == True :
             return x
 
         return self.__CM.get_this_class_name() == class_name.replace(".", "/")
 
-    def get_classes_names(self):
+    def get_classes_names(self) :
         """
             Return the names of classes
         """
         return [ self.__CM.get_this_class_name() ]
 
-    def get_name(self):
+    def get_name(self) :
         """
 
         """
         return self.__CM.get_this_class_name()
 
-    def get_classes(self):
+    def get_classes(self) :
         """
 
         """
         return [ self ]
 
-    def get_field(self, name):
+    def get_field(self, name) :
         """
             Return into a list all fields which corresponds to the regexp
 
@@ -3024,12 +3026,12 @@ class JVMFormat(bytecode._Bytecode):
         """
         prog = re.compile( name )
         fields = []
-        for i in self.fields:
-            if prog.match( i.get_name() ):
+        for i in self.fields :
+            if prog.match( i.get_name() ) :
                 fields.append( i )
         return fields
 
-    def get_method_descriptor(self, class_name, method_name, descriptor):
+    def get_method_descriptor(self, class_name, method_name, descriptor) :
         """
             Return the specific method
 
@@ -3040,17 +3042,17 @@ class JVMFormat(bytecode._Bytecode):
             @rtype: L{MethodInfo}
         """
         # FIXME : handle multiple class name ?
-        if class_name != None:
-            if class_name != self.__CM.get_this_class_name():
+        if class_name != None :
+            if class_name != self.__CM.get_this_class_name() :
                 return None
 
-        for i in self.methods:
-            if method_name == i.get_name() and descriptor == i.get_descriptor():
+        for i in self.methods :
+            if method_name == i.get_name() and descriptor == i.get_descriptor() :
                 return i
 
         return None
 
-    def get_field_descriptor(self, class_name, field_name, descriptor):
+    def get_field_descriptor(self, class_name, field_name, descriptor) :
         """
             Return the specific field
 
@@ -3061,51 +3063,51 @@ class JVMFormat(bytecode._Bytecode):
             @rtype: L{FieldInfo}
         """
         # FIXME : handle multiple class name ?
-        if class_name != None:
-            if class_name != self.__CM.get_this_class_name():
+        if class_name != None :
+            if class_name != self.__CM.get_this_class_name() :
                 return None
 
-        for i in self.fields:
-            if field_name == i.get_name() and descriptor == i.get_descriptor():
+        for i in self.fields :
+            if field_name == i.get_name() and descriptor == i.get_descriptor() :
                 return i
         return None
 
-    def get_method(self, name):
+    def get_method(self, name) :
         """Return into a list all methods which corresponds to the regexp
 
             @param name : the name of the method (a regexp)
         """
         prog = re.compile( name )
         methods = []
-        for i in self.methods:
-            if prog.match( i.get_name() ):
+        for i in self.methods :
+            if prog.match( i.get_name() ) :
                 methods.append( i )
         return methods
 
-    def get_all_fields(self):
+    def get_all_fields(self) :
         return self.fields
 
-    def get_fields(self):
+    def get_fields(self) :
         """Return all objects fields"""
         return self.fields
 
-    def get_methods(self):
+    def get_methods(self) :
         """Return all objects methods"""
         return self.methods
 
-    def get_constant_pool(self):
+    def get_constant_pool(self) :
         """Return the constant pool list"""
         return self.constant_pool
 
-    def get_strings(self):
+    def get_strings(self) :
         """Return all strings into the class"""
         l = []
-        for i in self.constant_pool:
-            if i.get_name() == "CONSTANT_Utf8":
+        for i in self.constant_pool :
+            if i.get_name() == "CONSTANT_Utf8" :
                 l.append( i.get_bytes() )
         return l
 
-    def get_class_manager(self):
+    def get_class_manager(self) :
         """
             Return directly the class manager
 
@@ -3113,7 +3115,7 @@ class JVMFormat(bytecode._Bytecode):
         """
         return self.__CM
 
-    def set_used_field(self, old, new):
+    def set_used_field(self, old, new) :
         """
             Change the description of a field
 
@@ -3121,35 +3123,35 @@ class JVMFormat(bytecode._Bytecode):
             @param new : a list of string which contained the new class name, the new field name and the new descriptor
         """
         used_fields = self.__CM.get_used_fields()
-        for i in used_fields:
+        for i in used_fields :
             class_idx = i.format.get_value().class_index
             name_and_type_idx = i.format.get_value().name_and_type_index
             class_name = self.__CM.get_string( self.__CM.get_item(class_idx).get_name_index() )
             field_name = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_name_index() )
             descriptor = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index() )
 
-            if old[0] == class_name and old[1] == field_name and old[2] == descriptor:
+            if old[0] == class_name and old[1] == field_name and old[2] == descriptor :
 #              print "SET USED FIELD", class_name, method_name, descriptor
 
                 self.__CM.set_string( self.__CM.get_item(class_idx).get_name_index(), new[0] )
                 self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_name_index(), new[1] )
                 self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index(), new[2] )
 
-    def set_used_method(self, old, new):
+    def set_used_method(self, old, new) :
         """
             Change the description of a method
             @param old : a list of string which contained the original class name, the original method name and the original descriptor
             @param new : a list of string which contained the new class name, the new method name and the new descriptor
         """
         used_methods = self.__CM.get_used_methods()
-        for i in used_methods:
+        for i in used_methods :
             class_idx = i.format.get_value().class_index
             name_and_type_idx = i.format.get_value().name_and_type_index
             class_name = self.__CM.get_string( self.__CM.get_item(class_idx).get_name_index() )
             method_name = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_name_index() )
             descriptor = self.__CM.get_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index() )
 
-            if old[0] == class_name and old[1] == method_name and old[2] == descriptor:
+            if old[0] == class_name and old[1] == method_name and old[2] == descriptor :
 #                print "SET USED METHOD", class_name, method_name, descriptor
 
                 self.__CM.set_string( self.__CM.get_item(class_idx).get_name_index(), new[0] )
@@ -3157,7 +3159,7 @@ class JVMFormat(bytecode._Bytecode):
                 self.__CM.set_string( self.__CM.get_item(name_and_type_idx).get_descriptor_index(), new[2] )
 
 
-    def show(self):
+    def show(self) :
         """
             Show the .class format into a human readable format
         """
@@ -3167,7 +3169,7 @@ class JVMFormat(bytecode._Bytecode):
         bytecode._Print( "CONSTANT POOL COUNT", self.constant_pool_count.get_value() )
 
         nb = 0
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             print nb,
             i.show()
             nb += 1
@@ -3179,13 +3181,13 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "INTERFACE COUNT", self.interfaces_count.get_value() )
         nb = 0
-        for i in self.interfaces:
+        for i in self.interfaces :
             print nb,
             print i
 
         bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
         nb = 0
-        for i in self.fields:
+        for i in self.fields :
             print nb,
             i.show()
             nb += 1
@@ -3193,7 +3195,7 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "METHODS COUNT", self.methods_count.get_value() )
         nb = 0
-        for i in self.methods:
+        for i in self.methods :
             print nb,
             i.show()
             nb += 1
@@ -3201,12 +3203,12 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "ATTRIBUTES COUNT", self.attributes_count.get_value() )
         nb = 0
-        for i in self.__attributes:
+        for i in self.__attributes :
             print nb,
             i.show()
             nb += 1
 
-    def pretty_show(self, vm_a):
+    def pretty_show(self, vm_a) :
         """
             Show the .class format into a human readable format
         """
@@ -3216,7 +3218,7 @@ class JVMFormat(bytecode._Bytecode):
         bytecode._Print( "CONSTANT POOL COUNT", self.constant_pool_count.get_value() )
 
         nb = 0
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             print nb,
             i.show()
             nb += 1
@@ -3228,13 +3230,13 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "INTERFACE COUNT", self.interfaces_count.get_value() )
         nb = 0
-        for i in self.interfaces:
+        for i in self.interfaces :
             print nb,
             i.show()
 
         bytecode._Print( "FIELDS COUNT", self.fields_count.get_value() )
         nb = 0
-        for i in self.fields:
+        for i in self.fields :
             print nb,
             i.show()
             nb += 1
@@ -3242,7 +3244,7 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "METHODS COUNT", self.methods_count.get_value() )
         nb = 0
-        for i in self.methods:
+        for i in self.methods :
             print nb,
             i.pretty_show(vm_a)
             nb += 1
@@ -3250,18 +3252,18 @@ class JVMFormat(bytecode._Bytecode):
 
         bytecode._Print( "ATTRIBUTES COUNT", self.attributes_count.get_value() )
         nb = 0
-        for i in self.__attributes:
+        for i in self.__attributes :
             print nb,
             i.show()
 
-    def insert_string(self, value):
+    def insert_string(self, value) :
         """Insert a string into the constant pool list (Constant_Utf8)
 
             @param value : the new string
         """
         self.__CM.add_string( value )
 
-    def insert_field(self, class_name, name, descriptor):
+    def insert_field(self, class_name, name, descriptor) :
         """
             Insert a field into the class
 
@@ -3280,7 +3282,7 @@ class JVMFormat(bytecode._Bytecode):
         name_and_type_index = self.__CM.create_name_and_type_by_index( new_field.get_name_index(), new_field.get_descriptor_index() )
         self.__CM.create_field_ref( self.__CM.get_this_class(), name_and_type_index )
 
-    def insert_craft_method(self, name, proto, codes):
+    def insert_craft_method(self, name, proto, codes) :
         """
             Insert a craft method into the class
 
@@ -3294,19 +3296,19 @@ class JVMFormat(bytecode._Bytecode):
         # Insert the method by casting it directly into a MethodInfo with the raw buffer
         self._insert_basic_method( MethodInfo( self.__CM, bytecode.BuffHandle( new_method.get_raw() ) ) )
 
-    def insert_direct_method(self, name, ref_method):
+    def insert_direct_method(self, name, ref_method) :
         """
             Insert a direct method (MethodInfo object) into the class
 
             @param name : the name of the new method
             @param ref_method : the MethodInfo Object
         """
-        if ref_method == None:
+        if ref_method == None :
             return
 
         # Change the name_index
         name_index = self.__CM.get_string_index( name )
-        if name_index != -1:
+        if name_index != -1 :
             bytecode.Exit( "method %s already exits" % name )
 
         name_index = self.__CM.add_string( name )
@@ -3314,7 +3316,7 @@ class JVMFormat(bytecode._Bytecode):
 
         # Change the descriptor_index
         descriptor_index = self.__CM.get_string_index( ref_method.get_descriptor() )
-        if descriptor_index == -1:
+        if descriptor_index == -1 :
             descriptor_index = self.__CM.add_string( ref_method.get_descriptor() )
         ref_method.set_descriptor_index( descriptor_index )
 
@@ -3327,23 +3329,23 @@ class JVMFormat(bytecode._Bytecode):
         # Insert the method
         self._insert_basic_method( ref_method )
 
-    def _fix_attributes_external(self, ref_method):
-        for i in ref_method.get_attributes():
+    def _fix_attributes_external(self, ref_method) :
+        for i in ref_method.get_attributes() :
             attribute_name_index = self.__CM.add_string( i.get_name() )
 
             i.set_attribute_name_index( attribute_name_index )
 
             self._fix_attributes_external( i.get_item() )
 
-    def _fix_attributes_internal(self, ref_method):
-        for i in ref_method.get_attributes():
+    def _fix_attributes_internal(self, ref_method) :
+        for i in ref_method.get_attributes() :
             attribute_name_index = self.__CM.add_string( i.get_name() )
 
             i._fix_attributes( self.__CM )
 
             i.set_attribute_name_index( attribute_name_index )
 
-    def _insert_basic_method(self, ref_method):
+    def _insert_basic_method(self, ref_method) :
         # Add a MethodRef and a NameAndType
         name_and_type_index = self.__CM.create_name_and_type_by_index( ref_method.get_name_index(), ref_method.get_descriptor_index() )
 
@@ -3357,8 +3359,8 @@ class JVMFormat(bytecode._Bytecode):
 
         # FIXME : insert needed fields + methods
         prog = re.compile( "^java*" )
-        for i in methods:
-            if prog.match( i[0] ) == None:
+        for i in methods :
+            if prog.match( i[0] ) == None :
                 bytecode.Exit( "ooooops" )
 
 
@@ -3368,7 +3370,7 @@ class JVMFormat(bytecode._Bytecode):
         self.methods.append( ref_method )
         self.methods_count.set_value( self.methods_count.get_value() + 1 )
 
-    def _get_raw(self):
+    def _get_raw(self) :
         # u4 magic;
         # u2 minor_version;
         # u2 major_version;
@@ -3380,7 +3382,7 @@ class JVMFormat(bytecode._Bytecode):
         buff += self.constant_pool_count.get_value_buff()
 
         #  cp_info constant_pool[constant_pool_count-1];
-        for i in self.constant_pool:
+        for i in self.constant_pool :
             buff += i.get_raw()
 
         # u2 access_flags;
@@ -3394,33 +3396,33 @@ class JVMFormat(bytecode._Bytecode):
         buff += self.interfaces_count.get_value_buff()
 
         # u2 interfaces[interfaces_count];
-        for i in self.interfaces:
+        for i in self.interfaces :
             buff += i.get_value_buff()
 
         # u2 fields_count;
         buff += self.fields_count.get_value_buff()
 
         # field_info fields[fields_count];
-        for i in self.fields:
+        for i in self.fields :
             buff += i.get_raw()
 
         # u2 methods_count;
         buff += self.methods_count.get_value_buff()
 
         # method_info methods[methods_count];
-        for i in self.methods:
+        for i in self.methods :
             buff += i.get_raw()
 
         # u2 attributes_count;
         buff += self.attributes_count.get_value_buff()
 
         # attribute_info attributes[attributes_count];
-        for i in self.__attributes:
+        for i in self.__attributes :
             buff += i.get_raw()
 
         return buff
 
-    def save(self):
+    def save(self) :
         """
             Return the class (with the modifications) into raw format
 
@@ -3428,15 +3430,15 @@ class JVMFormat(bytecode._Bytecode):
         """
         return self._get_raw()
 
-    def set_vmanalysis(self, vmanalysis):
+    def set_vmanalysis(self, vmanalysis) :
         pass
 
-    def get_generator(self):
+    def get_generator(self) :
         import jvm_generate
         return jvm_generate.JVMGenerate
 
-    def get_INTEGER_INSTRUCTIONS(self):
+    def get_INTEGER_INSTRUCTIONS(self) :
         return INTEGER_INSTRUCTIONS
 
-    def get_type(self):
+    def get_type(self) :
         return "JVM"

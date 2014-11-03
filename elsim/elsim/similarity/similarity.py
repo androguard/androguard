@@ -20,14 +20,14 @@
 import zlib, bz2
 import math, json, re
 
-def simhash(x):
+def simhash(x) :
     import simhash
     return simhash.simhash(x)
 
 def entropy(data):
     entropy = 0.0
 
-    if len(data) == 0:
+    if len(data) == 0 :
         return entropy
 
     for x in range(256):
@@ -36,7 +36,7 @@ def entropy(data):
             entropy += - p_x*math.log(p_x, 2)
     return entropy
 
-try:
+try :
     from ctypes import cdll, c_float, c_double, c_int, c_uint, c_void_p, Structure, addressof, cast, c_size_t
 
     #struct libsimilarity {
@@ -51,7 +51,7 @@ try:
     #   float res;
     #};
 
-    class LIBSIMILARITY_T(Structure):
+    class LIBSIMILARITY_T(Structure) :
         _fields_ = [("orig", c_void_p),
                     ("size_orig", c_size_t),
                     ("cmp", c_void_p),
@@ -63,14 +63,14 @@ try:
                     ("res", c_float),
                 ]
 
-    def new_zero_native():
+    def new_zero_native() :
         return c_size_t( 0 )
 
     NATIVE_LIB = True
-except:
+except :
     NATIVE_LIB = False
 
-def new_zero_python():
+def new_zero_python() :
     return 0
 
 ZLIB_COMPRESS         =     0
@@ -96,8 +96,8 @@ HR_COMPRESSOR = {
                 SNAPPY_COMPRESS :   "SNAPPY",
         }
 
-class SIMILARITYBase(object):
-    def __init__(self, native_lib=False):
+class SIMILARITYBase(object) :
+    def __init__(self, native_lib=False) :
         self.ctype = ZLIB_COMPRESS
 
         self.__caches = {
@@ -124,71 +124,71 @@ class SIMILARITYBase(object):
 
         self.level = 9
 
-        if native_lib == True:
+        if native_lib == True :
             self.new_zero = new_zero_native
-        else:
+        else :
             self.new_zero = new_zero_python
 
-    def set_level(self, level):
+    def set_level(self, level) :
         self.level = level
 
-    def get_in_caches(self, s):
-        try:
+    def get_in_caches(self, s) :
+        try :
             return self.__caches[ self.ctype ][ zlib.adler32( s ) ]
-        except KeyError:
+        except KeyError :
             return self.new_zero()
 
-    def get_in_rcaches(self, s1, s2):
-        try:
+    def get_in_rcaches(self, s1, s2) :
+        try :
             return self.__rcaches[ self.ctype ][ zlib.adler32( s1 + s2 ) ]
-        except KeyError:
-            try:
+        except KeyError :
+            try :
                 return self.__rcaches[ self.ctype ][ zlib.adler32( s2 + s1 ) ]
-            except KeyError:
+            except KeyError :
                 return -1, -1
 
-    def add_in_caches(self, s, v):
+    def add_in_caches(self, s, v) :
         h = zlib.adler32( s )
-        if h not in self.__caches[ self.ctype ]:
+        if h not in self.__caches[ self.ctype ] :
             self.__caches[ self.ctype ][ h ] = v
 
-    def add_in_rcaches(self, s, v, r):
+    def add_in_rcaches(self, s, v, r) :
         h = zlib.adler32( s )
-        if h not in self.__rcaches[ self.ctype ]:
+        if h not in self.__rcaches[ self.ctype ] :
             self.__rcaches[ self.ctype ][ h ] = (v, r)
 
-    def clear_caches(self):
-        for i in self.__caches:
+    def clear_caches(self) :
+        for i in self.__caches :
             self.__caches[i] = {}
 
-    def add_in_ecaches(self, s, v, r):
+    def add_in_ecaches(self, s, v, r) :
         h = zlib.adler32( s )
-        if h not in self.__ecaches:
+        if h not in self.__ecaches :
             self.__ecaches[ h ] = (v, r)
 
-    def get_in_ecaches(self, s1):
-        try:
+    def get_in_ecaches(self, s1) :
+        try :
             return self.__ecaches[ zlib.adler32( s1 ) ]
-        except KeyError:
+        except KeyError :
             return -1, -1
 
-    def __nb_caches(self, caches):
+    def __nb_caches(self, caches) :
         nb = 0
-        for i in caches:
+        for i in caches :
             nb += len(caches[i])
         return nb
 
     def set_compress_type(self, t):
         self.ctype = t
 
-    def show(self):
+    def show(self) :
         print "ECACHES", len(self.__ecaches)
         print "RCACHES", self.__nb_caches( self.__rcaches )
         print "CACHES", self.__nb_caches( self.__caches )
 
 
-class SIMILARITYNative(SIMILARITYBase):
-    def __init__(self, path="./libsimilarity/libsimilarity.so"):
+class SIMILARITYNative(SIMILARITYBase) :
+    def __init__(self, path="./libsimilarity/libsimilarity.so") :
         super(SIMILARITYNative, self).__init__(True)
 
         self._u = cdll.LoadLibrary( path )
@@ -208,17 +208,17 @@ class SIMILARITYNative(SIMILARITYBase):
 
         self.set_compress_type( ZLIB_COMPRESS )
 
-    def raz(self):
+    def raz(self) :
         del self._u
         del self.__libsim_t
 
-    def compress(self, s1):
+    def compress(self, s1) :
         res = self._u.compress( self.level, cast( s1, c_void_p ), len( s1 ) )
         return res
 
-    def _sim(self, s1, s2, func):
+    def _sim(self, s1, s2, func) :
         end, ret = self.get_in_rcaches( s1, s2 )
-        if end != -1:
+        if end != -1 :
             return end, ret
 
         self.__libsim_t.orig = cast( s1, c_void_p )
@@ -241,26 +241,26 @@ class SIMILARITYNative(SIMILARITYBase):
 
         return self.__libsim_t.res, ret
 
-    def ncd(self, s1, s2):
+    def ncd(self, s1, s2) :
         return self._sim( s1, s2, self._u.ncd )
 
-    def ncs(self, s1, s2):
+    def ncs(self, s1, s2) :
         return self._sim( s1, s2, self._u.ncs )
 
-    def cmid(self, s1, s2):
+    def cmid(self, s1, s2) :
         return self._sim( s1, s2, self._u.cmid )
 
-    def kolmogorov(self, s1):
+    def kolmogorov(self, s1) :
         ret = self._u.kolmogorov( self.level, cast( s1, c_void_p ), len( s1 ) )
         return ret, 0
 
-    def bennett(self, s1):
+    def bennett(self, s1) :
         ret = self._u.bennett( self.level, cast( s1, c_void_p ), len( s1 ) )
         return ret, 0
 
-    def entropy(self, s1):
+    def entropy(self, s1) :
         end, ret = self.get_in_ecaches( s1 )
-        if end != -1:
+        if end != -1 :
             return end, ret
 
         res = self._u.entropy( cast( s1, c_void_p ), len( s1 ) )
@@ -268,10 +268,10 @@ class SIMILARITYNative(SIMILARITYBase):
 
         return res, 0
 
-    def RDTSC(self):
+    def RDTSC(self) :
         return self._u.RDTSC()
 
-    def levenshtein(self, s1, s2):
+    def levenshtein(self, s1, s2) :
         res = self._u.levenshtein( cast( s1, c_void_p ), len( s1 ), cast( s2, c_void_p ), len( s2 ) )
         return res, 0
 
@@ -279,28 +279,28 @@ class SIMILARITYNative(SIMILARITYBase):
         self.ctype = t
         self._u.set_compress_type(t)
 
-class SIMILARITYPython(SIMILARITYBase):
-    def __init__(self):
+class SIMILARITYPython(SIMILARITYBase) :
+    def __init__(self) :
         super(SIMILARITYPython, self).__init__()
 
     def set_compress_type(self, t):
         self.ctype = t
-        if self.ctype != ZLIB_COMPRESS and self.ctype != BZ2_COMPRESS:
+        if self.ctype != ZLIB_COMPRESS and self.ctype != BZ2_COMPRESS :
             print "warning: compressor %s is not supported (use zlib default compressor)" % HR_COMPRESSOR[ t ]
             self.ctype = ZLIB_COMPRESS
 
-    def compress(self, s1):
+    def compress(self, s1) :
         return len(self._compress(s1))
 
-    def _compress(self, s1):
-        if self.ctype == ZLIB_COMPRESS:
+    def _compress(self, s1) :
+        if self.ctype == ZLIB_COMPRESS :
             return zlib.compress( s1, self.level )
-        elif self.ctype == BZ2_COMPRESS:
+        elif self.ctype == BZ2_COMPRESS :
             return bz2.compress( s1, self.level )
 
-    def _sim(self, s1, s2, func):
+    def _sim(self, s1, s2, func) :
         end, ret = self.get_in_rcaches( s1, s2 )
-        if end != -1:
+        if end != -1 :
             return end, ret
 
         corig = self.get_in_caches(s1)
@@ -314,11 +314,11 @@ class SIMILARITYPython(SIMILARITYBase):
 
         return res, ret
 
-    def _ncd(self, s1, s2, s1size=0, s2size=0):
-        if s1size == 0:
+    def _ncd(self, s1, s2, s1size=0, s2size=0) :
+        if s1size == 0 :
             s1size = self.compress(s1)
 
-        if s2size == 0:
+        if s2size == 0 :
             s2size = self.compress(s2)
 
         s3size = self.compress(s1+s2)
@@ -327,20 +327,20 @@ class SIMILARITYPython(SIMILARITYBase):
         smin = min(s1size, s2size)
 
         res = (abs(s3size - smin)) / float(smax)
-        if res > 1.0:
+        if res > 1.0 :
             res = 1.0
 
         return res, s1size, s2size, 0
 
-    def ncd(self, s1, s2):
+    def ncd(self, s1, s2) :
         return self._sim( s1, s2, self._ncd )
 
-    def ncs(self, s1, s2):
+    def ncs(self, s1, s2) :
         return self._sim( s1, s2, self._u.ncs )
 
-    def entropy(self, s1):
+    def entropy(self, s1) :
         end, ret = self.get_in_ecaches( s1 )
-        if end != -1:
+        if end != -1 :
             return end, ret
 
         res = entropy( s1 )
@@ -369,52 +369,52 @@ class SIMILARITYPython(SIMILARITYBase):
         return current[n]
 
 class SIMILARITY(object):
-    def __init__(self, path="./libsimilarity/libsimilarity.so", native_lib=True):
+    def __init__(self, path="./libsimilarity/libsimilarity.so", native_lib=True) :
         if native_lib == True and NATIVE_LIB == True:
-            try:
+            try :
                 self.s = SIMILARITYNative( path )
-            except:
+            except :
                 self.s = SIMILARITYPython()
-        else:
+        else :
             self.s = SIMILARITYPython()
 
-    def raz(self):
+    def raz(self) :
         return self.s.raz()
 
-    def set_level(self, level):
+    def set_level(self, level) :
         return self.s.set_level(level)
 
-    def compress(self, s1):
+    def compress(self, s1) :
         return self.s.compress(s1)
 
-    def ncd(self, s1, s2):
+    def ncd(self, s1, s2) :
         return self.s.ncd(s1, s2)
 
-    def ncs(self, s1, s2):
+    def ncs(self, s1, s2) :
         return self.s.ncs(s1, s2)
 
-    def cmid(self, s1, s2):
+    def cmid(self, s1, s2) :
         return self.s.cmid(s1, s2)
 
-    def kolmogorov(self, s1):
+    def kolmogorov(self, s1) :
         return self.s.kolmogorov(s1)
 
-    def bennett(self, s1):
+    def bennett(self, s1) :
         return self.s.bennett(s1)
 
-    def entropy(self, s1):
+    def entropy(self, s1) :
         return self.s.entropy(s1)
 
-    def RDTSC(self):
+    def RDTSC(self) :
         return self.s.RDTSC()
 
-    def levenshtein(self, s1, s2):
+    def levenshtein(self, s1, s2) :
         return self.s.levenshtein(s1, s2)
 
     def set_compress_type(self, t):
         return self.s.set_compress_type(t)
 
-    def show(self):
+    def show(self) :
         self.s.show()
 
 
@@ -426,65 +426,65 @@ class DBFormat(object):
 
         fd = None
 
-        try:
-            with open(self.filename, "r+") as fd:
+        try :
+            with open(self.filename, "r+") as fd :
                 self.D = json.load( fd )
-        except IOError:
+        except IOError :
             print "Impossible to open filename: " + filename
             self.D = {}
 
         self.H = {}
         self.N = {}
 
-        for i in self.D:
+        for i in self.D :
             self.H[i] = {}
-            for j in self.D[i]:
-                if j == "NAME":
+            for j in self.D[i] :
+                if j == "NAME" :
                     self.N[ i ] = re.compile( self.D[i][j] )
                     continue
 
                 self.H[i][j] = {}
-                for k in self.D[i][j]:
-                    if isinstance(self.D[i][j][k], dict):
+                for k in self.D[i][j] :
+                    if isinstance(self.D[i][j][k], dict) :
                         self.H[i][j][k] = set()
-                        for e in self.D[i][j][k].keys():
+                        for e in self.D[i][j][k].keys() :
                             self.H[i][j][k].add( long(e) )
 
-    def add_name(self, name, value):
-        if name not in self.D:
+    def add_name(self, name, value) :
+        if name not in self.D :
             self.D[ name ] = {}
 
         self.D[ name ]["NAME"] = value
 
     def add_element(self, name, sname, sclass, size, elem):
-        try:
-            if elem not in self.D[ name ][ sname ][ sclass ]:
+        try :
+            if elem not in self.D[ name ][ sname ][ sclass ] :
                 self.D[ name ][ sname ][ sclass ][ elem ] = size
                 self.D[ name ][ sname ][ "SIZE" ] += size
 
-        except KeyError:
-            if name not in self.D:
+        except KeyError :
+            if name not in self.D :
                 self.D[ name ] = {}
                 self.D[ name ][ sname ] = {}
                 self.D[ name ][ sname ][ "SIZE" ] = 0
                 self.D[ name ][ sname ][ sclass ] = {}
-            elif sname not in self.D[ name ]:
+            elif sname not in self.D[ name ] :
                 self.D[ name ][ sname ] = {}
                 self.D[ name ][ sname ][ "SIZE" ] = 0
                 self.D[ name ][ sname ][ sclass ] = {}
-            elif sclass not in self.D[ name ][ sname ]:
+            elif sclass not in self.D[ name ][ sname ] :
                 self.D[ name ][ sname ][ sclass ] = {}
 
             self.D[ name ][ sname ][ "SIZE" ] += size
             self.D[ name ][ sname ][ sclass ][ elem ] = size
 
-    def is_present(self, elem):
-        for i in self.D:
-            if elem in self.D[i]:
+    def is_present(self, elem) :
+        for i in self.D :
+            if elem in self.D[i] :
                 return True, i
         return False, None
 
-    def elems_are_presents(self, elems):
+    def elems_are_presents(self, elems) :
         ret = {}
         info = {}
 
@@ -492,43 +492,43 @@ class DBFormat(object):
             ret[i] = {}
             info[i] = {}
 
-            for j in self.H[i]:
+            for j in self.H[i] :
                 ret[i][j] = {}
                 info[i][j] = {}
 
-                for k in self.H[i][j]:
+                for k in self.H[i][j] :
                     val = [self.H[i][j][k].intersection(elems), len(self.H[i][j][k]), 0, 0]
 
                     size = 0
-                    for z in val[0]:
+                    for z in val[0] :
                         size += self.D[i][j][k][str(z)]
 
                     val[2] = (float(len(val[0]))/(val[1])) * 100
                     val[3] = size
 
-                    if val[3] != 0:
+                    if val[3] != 0 :
                         ret[i][j][k] = val
 
                 info[i][j][ "SIZE" ] = self.D[i][j]["SIZE"]
 
         return ret, info
 
-    def classes_are_presents(self, classes):
+    def classes_are_presents(self, classes) :
         m = set()
-        for j in classes:
-            for i in self.N:
-                if self.N[i].search(j) != None:
+        for j in classes :
+            for i in self.N :
+                if self.N[i].search(j) != None :
                     m.add( i )
         return m
 
-    def show(self):
-        for i in self.D:
+    def show(self) :
+        for i in self.D :
             print i, ":"
-            for j in self.D[i]:
+            for j in self.D[i] :
                 print "\t", j, len(self.D[i][j])
-                for k in self.D[i][j]:
+                for k in self.D[i][j] :
                     print "\t\t", k, len(self.D[i][j][k])
 
     def save(self):
-        with open(self.filename, "w") as fd:
+        with open(self.filename, "w") as fd :
             json.dump(self.D, fd)
