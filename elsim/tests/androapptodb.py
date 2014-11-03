@@ -44,15 +44,15 @@ option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2, option_3, option_4]
 
 ############################################################
-def main(options, arguments):
-    if options.input != None  and options.output != None and options.name != None and options.subname != None:
+def main(options, arguments) :
+    if options.input != None  and options.output != None and options.name != None and options.subname != None :
         edi = ElsimDBIn( options.output )
 
         ret_type = androconf.is_android( options.input )
-        if ret_type == "APK":
+        if ret_type == "APK" :
             a = apk.APK( options.input )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
-        elif ret_type == "DEX":
+        elif ret_type == "DEX" :
             d1 = dvm.DalvikVMFormat( read(options.input) )
 
         dx1 = analysis.VMAnalysis( d1 )
@@ -63,12 +63,12 @@ def main(options, arguments):
         edi.add( d1, dx1, options.name, options.sname, regexp_pattern, regexp_exclude_pattern)
         edi.save()
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androapptodb version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

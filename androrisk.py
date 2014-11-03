@@ -34,60 +34,60 @@ option_3 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_3]
 
-def display_result(res):
-  for i in res:
+def display_result(res) :
+  for i in res :
     print "\t", i
-    for j in res[i]:
+    for j in res[i] :
       print "\t\t", j, res[i][j]
 
-def analyze_app(filename, ri, a):
+def analyze_app(filename, ri, a) :
     print filename
     display_result( ri.with_apk( a ) )
 
-def analyze_dex(filename, ri, d):
+def analyze_dex(filename, ri, d) :
     print filename
     display_result( ri.with_dex( d ) )
 
-def main(options, arguments):
+def main(options, arguments) :
     ri = risk.RiskIndicator()
     ri.add_risk_analysis( risk.RedFlags() )
     ri.add_risk_analysis( risk.FuzzyRisk() )
 
-    if options.input != None:
+    if options.input != None :
         ret_type = androconf.is_android( options.input )
-        if ret_type == "APK":
+        if ret_type == "APK" :
             a = apk.APK( options.input )
             analyze_app( options.input, ri, a )
-        elif ret_type == "DEX":
+        elif ret_type == "DEX" :
             analyze_dex( options.input, ri, read(options.input, binary=False) )
 
 
-    elif options.directory != None:
-        for root, dirs, files in os.walk( options.directory, followlinks=True ):
-            if files != []:
-                for f in files:
+    elif options.directory != None :
+        for root, dirs, files in os.walk( options.directory, followlinks=True ) :
+            if files != [] :
+                for f in files :
                     real_filename = root
-                    if real_filename[-1] != "/":
+                    if real_filename[-1] != "/" :
                         real_filename += "/"
                     real_filename += f
 
                     ret_type = androconf.is_android( real_filename )
-                    if ret_type == "APK":
-                        try:
+                    if ret_type == "APK"  :
+                        try :
                             a = apk.APK( real_filename )
                             analyze_app( real_filename, ri, a )
-                        except Exception, e:
+                        except Exception, e :
                             print e
 
-                    elif ret_type == "DEX":
+                    elif ret_type == "DEX" :
                         analyze_dex( real_filename, ri, read(real_filename, binary=False) )
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androrisk version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

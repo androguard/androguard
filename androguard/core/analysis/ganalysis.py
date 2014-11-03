@@ -3132,30 +3132,30 @@ class GVMAnalysis(object):
                 n1.add_edge(n2, path)
 
         if apk != None:
-            for i in apk.get_activities():
+            for i in apk.get_activities() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "(Landroid/os/Bundle;)V" )
-                if n1 != None:
+                if n1 != None :
                     n1.set_attributes( { "type" : "activity" } )
                     n1.set_attributes( { "color" : ACTIVITY_COLOR } )
                     n2 = self._get_new_node_from( n1, "ACTIVITY" )
                     n2.set_attributes( { "color" : ACTIVITY_COLOR } )
                     self.G.add_edge( n2.id, n1.id )
                     self.entry_nodes.append( n1.id )
-            for i in apk.get_services():
+            for i in apk.get_services() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onCreate", "()V" )
-                if n1 != None:
+                if n1 != None :
                     n1.set_attributes( { "type" : "service" } )
                     n1.set_attributes( { "color" : SERVICE_COLOR } )
                     n2 = self._get_new_node_from( n1, "SERVICE" )
                     n2.set_attributes( { "color" : SERVICE_COLOR } )
                     self.G.add_edge( n2.id, n1.id )
                     self.entry_nodes.append( n1.id )
-            for i in apk.get_receivers():
+            for i in apk.get_receivers() :
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node( j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V" )
-                if n1 != None:
+                if n1 != None :
                     n1.set_attributes( { "type" : "receiver" } )
                     n1.set_attributes( { "color" : RECEIVER_COLOR } )
                     n2 = self._get_new_node_from( n1, "RECEIVER" )
@@ -3165,14 +3165,14 @@ class GVMAnalysis(object):
 
         # Specific Java/Android library
         for c in self.vm.get_classes():
-            #if c.get_superclassname() == "Landroid/app/Service;":
+            #if c.get_superclassname() == "Landroid/app/Service;" :
             #    n1 = self._get_node( c.get_name(), "<init>", "()V" )
             #    n2 = self._get_node( c.get_name(), "onCreate", "()V" )
 
             #    self.G.add_edge( n1.id, n2.id )
-            if c.get_superclassname() == "Ljava/lang/Thread;" or c.get_superclassname() == "Ljava/util/TimerTask;":
-                for i in self.vm.get_method("run"):
-                    if i.get_class_name() == c.get_name():
+            if c.get_superclassname() == "Ljava/lang/Thread;" or c.get_superclassname() == "Ljava/util/TimerTask;" :
+                for i in self.vm.get_method("run") :
+                    if i.get_class_name() == c.get_name() :
                         n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
                         n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() )
 
@@ -3181,26 +3181,26 @@ class GVMAnalysis(object):
                         n2.add_edge( n1, {} )
 
                         # link from init to start
-                        for init in self.vm.get_method("<init>"):
-                            if init.get_class_name() == c.get_name():
+                        for init in self.vm.get_method("<init>") :
+                            if init.get_class_name() == c.get_name() :
                                 n3 = self._get_node( init.get_class_name(), "<init>", init.get_descriptor() )
                                 #n3 = self._get_node( i.get_class_name(), "<init>", i.get_descriptor() )
                                 self.G.add_edge( n3.id, n2.id )
                                 n3.add_edge( n2, {} )
 
-            #elif c.get_superclassname() == "Landroid/os/AsyncTask;":
-            #    for i in self.vm.get_method("doInBackground"):
-            #        if i.get_class_name() == c.get_name():
+            #elif c.get_superclassname() == "Landroid/os/AsyncTask;" :
+            #    for i in self.vm.get_method("doInBackground") :
+            #        if i.get_class_name() == c.get_name() :
             #            n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
             #            n2 = self._get_exist_node( i.get_class_name(), "execute", i.get_descriptor() )
             #            print n1, n2, i.get_descriptor()
-                        #for j in self.vm.get_method("doInBackground"):
+                        #for j in self.vm.get_method("doInBackground") :
                         #    n2 = self._get_exist_node( i.get_class_name(), j.get_name(), j.get_descriptor() )
                         #    print n1, n2
                         # n2 = self._get_node( i.get_class_name(), "
             #    raise("ooo")
 
-        #for j in self.vmx.tainted_packages.get_internal_new_packages():
+        #for j in self.vmx.tainted_packages.get_internal_new_packages() :
         #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
         #                                            j.get_bb().start + j.get_idx(), \
         #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
@@ -3215,16 +3215,16 @@ class GVMAnalysis(object):
                 dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.vm.get_class_manager() )
                 n1 = self._get_exist_node( dst_class_name, dst_method_name, dst_descriptor )
 
-                if n1 == None:
+                if n1 == None :
                     continue
 
                 n1.set_attributes( { "permissions" : 1 } )
                 n1.set_attributes( { "permissions_level" : DVM_PERMISSIONS[ "MANIFEST_PERMISSION" ][ x ][0] } )
                 n1.set_attributes( { "permissions_details" : x } )
 
-                try:
-                    for tmp_perm in PERMISSIONS_RISK[ x ]:
-                        if tmp_perm in DEFAULT_RISKS:
+                try :
+                    for tmp_perm in PERMISSIONS_RISK[ x ] :
+                        if tmp_perm in DEFAULT_RISKS :
                             n2 = self._get_new_node( dst_class_name,
                                                      dst_method_name,
                                                      dst_descriptor + " " + DEFAULT_RISKS[ tmp_perm ][0],
@@ -3234,14 +3234,14 @@ class GVMAnalysis(object):
 
                             n1.add_risk( DEFAULT_RISKS[ tmp_perm ][0] )
                             n1.add_api( x, src_class_name + "-" + src_method_name + "-" + src_descriptor )
-                except KeyError:
+                except KeyError :
                     pass
 
         # Tag DexClassLoader
-        for m, _ in self.vmx.get_tainted_packages().get_packages():
-            if m.get_name() == "Ldalvik/system/DexClassLoader;":
-                for path in m.get_paths():
-                    if path.get_access_flag() == TAINTED_PACKAGE_CREATE:
+        for m, _ in self.vmx.get_tainted_packages().get_packages() :
+            if m.get_name() == "Ldalvik/system/DexClassLoader;" :
+                for path in m.get_paths() :
+                    if path.get_access_flag() == TAINTED_PACKAGE_CREATE :
                         src_class_name, src_method_name, src_descriptor = path.get_src( self.vm.get_class_manager() )
                         n1 = self._get_exist_node( src_class_name, src_method_name, src_descriptor )
                         n2 = self._get_new_node( dst_class_name, dst_method_name, dst_descriptor + " " + "DEXCLASSLOADER",
@@ -3253,11 +3253,11 @@ class GVMAnalysis(object):
 
                         n1.add_risk( "DEXCLASSLOADER" )
 
-    def _get_exist_node(self, class_name, method_name, descriptor):
+    def _get_exist_node(self, class_name, method_name, descriptor) :
         key = "%s %s %s" % (class_name, method_name, descriptor)
-        try:
+        try :
             return self.nodes[ key ]
-        except KeyError:
+        except KeyError :
             return None
 
     def _get_node(self, class_name, method_name, descriptor):
@@ -3271,19 +3271,19 @@ class GVMAnalysis(object):
 
         return self.nodes[key]
 
-    def _get_new_node_from(self, n, label):
+    def _get_new_node_from(self, n, label) :
         return self._get_new_node( n.class_name, n.method_name, n.descriptor + label, label )
 
-    def _get_new_node(self, class_name, method_name, descriptor, label):
+    def _get_new_node(self, class_name, method_name, descriptor, label) :
         key = "%s %s %s" % (class_name, method_name, descriptor)
-        if key not in self.nodes:
+        if key not in self.nodes :
             self.nodes[ key ] = NodeF( len(self.nodes), class_name, method_name, descriptor, label, False )
             self.nodes_id[ self.nodes[ key ].id ] = self.nodes[ key ]
 
         return self.nodes[ key ]
 
-    def set_new_attributes(self, cm):
-        for i in self.G.nodes():
+    def set_new_attributes(self, cm) :
+        for i in self.G.nodes() :
             n1 = self.nodes_id[ i ]
             m1 = self.vm.get_method_descriptor( n1.class_name, n1.method_name, n1.descriptor )
 
@@ -3291,7 +3291,7 @@ class GVMAnalysis(object):
 
             n1.set_attributes( H )
 
-    def export_to_gexf(self):
+    def export_to_gexf(self) :
         buff = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         buff += "<gexf xmlns=\"http://www.gephi.org/gexf\" xmlns:viz=\"http://www.gephi.org/gexf/viz\">\n"
         buff += "<graph type=\"static\">\n"
@@ -3310,7 +3310,7 @@ class GVMAnalysis(object):
         buff += "</attributes>\n"
 
         buff += "<nodes>\n"
-        for node in self.G.nodes():
+        for node in self.G.nodes() :
             buff += "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label))
             buff += self.nodes_id[ node ].get_attributes_gexf()
             buff += "</node>\n"
@@ -3319,7 +3319,7 @@ class GVMAnalysis(object):
 
         buff += "<edges>\n"
         nb = 0
-        for edge in self.G.edges():
+        for edge in self.G.edges() :
             buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
             nb += 1
         buff += "</edges>\n"
@@ -3330,7 +3330,7 @@ class GVMAnalysis(object):
 
         return buff
 
-    def export_to_gml(self):
+    def export_to_gml(self) :
         buff = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
         buff += "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n"
 
@@ -3339,14 +3339,14 @@ class GVMAnalysis(object):
 
         buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
-        for node in self.G.nodes():
+        for node in self.G.nodes() :
             buff += "<node id=\"%d\">\n" % (node)
             #fd.write( "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label)) )
             buff += self.nodes_id[ node ].get_attributes_gml()
             buff += "</node>\n"
 
         nb = 0
-        for edge in self.G.edges():
+        for edge in self.G.edges() :
             buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
             nb += 1
 
@@ -3409,7 +3409,7 @@ class NodeF(object):
     def get_attributes_gexf(self):
         buff = ""
 
-        if self.attributes[ "color" ] != None:
+        if self.attributes[ "color" ] != None :
             buff += "<viz:color r=\"%d\" g=\"%d\" b=\"%d\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
 
         buff += "<attvalues>\n"
@@ -3418,9 +3418,9 @@ class NodeF(object):
         buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["descriptor"], escape(self.descriptor))
 
 
-        if self.attributes[ "type" ] != DEFAULT_NODE_TYPE:
+        if self.attributes[ "type" ] != DEFAULT_NODE_TYPE :
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["type"], self.attributes[ "type" ])
-        if self.attributes[ "permissions" ] != DEFAULT_NODE_PERM:
+        if self.attributes[ "permissions" ] != DEFAULT_NODE_PERM :
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions"], self.attributes[ "permissions" ])
             buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions_level"], self.attributes[ "permissions_level_name" ])
 
@@ -3431,7 +3431,7 @@ class NodeF(object):
 
         return buff
 
-    def get_attributes_gml(self):
+    def get_attributes_gml(self) :
         buff = ""
 
         buff += "<data key=\"d6\">\n"
@@ -3442,7 +3442,7 @@ class NodeF(object):
         width = max(width, len(self.descriptor))
 
         buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 8 * width)
-        if self.attributes[ "color" ] != None:
+        if self.attributes[ "color" ] != None :
             buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
 
         buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"
@@ -3456,33 +3456,33 @@ class NodeF(object):
 
         return buff
 
-    def get_attributes(self):
+    def get_attributes(self) :
         return self.attributes
 
-    def get_attribute(self, name):
+    def get_attribute(self, name) :
         return self.attributes[ name ]
 
-    def set_attributes(self, values):
-        for i in values:
-            if i == "permissions":
+    def set_attributes(self, values) :
+        for i in values :
+            if i == "permissions" :
                 self.attributes[ "permissions" ] += values[i]
-            elif i == "permissions_level":
-                if values[i] > self.attributes[ "permissions_level" ]:
+            elif i == "permissions_level" :
+                if values[i] > self.attributes[ "permissions_level" ] :
                     self.attributes[ "permissions_level" ] = PERMISSIONS_LEVEL[ values[i] ]
                     self.attributes[ "permissions_level_name" ] = values[i]
                     self.attributes[ "color" ] = COLOR_PERMISSIONS_LEVEL[ values[i] ]
-            elif i == "permissions_details":
+            elif i == "permissions_details" :
                 self.attributes[ i ].add( values[i] )
-            else:
+            else :
                 self.attributes[ i ] = values[i]
 
-    def add_risk(self, risk):
-        if risk not in self.risks:
+    def add_risk(self, risk) :
+        if risk not in self.risks :
             self.risks.append( risk )
 
-    def add_api(self, perm, api):
-        if perm not in self.api:
+    def add_api(self, perm, api) :
+        if perm not in self.api :
             self.api[ perm ] = []
 
-        if api not in self.api[ perm ]:
+        if api not in self.api[ perm ] :
             self.api[ perm ].append( api )

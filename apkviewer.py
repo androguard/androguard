@@ -32,36 +32,37 @@ option_1 = { 'name' : ('-o', '--output'), 'help' : 'directory output', 'nargs' :
 
 options = [option_0, option_1]
 
-def create_directory( class_name, output ):
+def create_directory( class_name, output ) :
     output_name = output
-    if output_name[-1] != "/":
+    if output_name[-1] != "/" :
         output_name = output_name + "/"
 
-    try:
+    try :
         os.makedirs( output_name + class_name )
-    except OSError:
+    except OSError :
         pass
 
-def create_directories( vm, output ):
-    for class_name in vm.get_classes_names():
+def create_directories( vm, output ) :
+    for class_name in vm.get_classes_names() :
         z = os.path.split( class_name )[0]
         create_directory( z[1:], output )
 
-def main(options, arguments):
-    if options.input != None and options.output != None:
+def main(options, arguments) :
+    if options.input != None and options.output != None :
+
         ret_type = androconf.is_android( options.input )
         vm = None
         a = None
-        if ret_type == "APK":
+        if ret_type == "APK"  :
             a = apk.APK( options.input )
-            if a.is_valid_APK():
+            if a.is_valid_APK() :
                 vm = dvm.DalvikVMFormat( a.get_dex() )
-            else:
+            else :
                 print "INVALID APK"
-        elif ret_type == "DEX":
-            try:
+        elif ret_type == "DEX" :
+            try :
                 vm = dvm.DalvikVMFormat( read(options.input) )
-            except Exception, e:
+            except Exception, e :
                 print "INVALID DEX", e
 
 
@@ -81,12 +82,12 @@ def main(options, arguments):
         androconf.save_to_disk( buff,  options.output + "/" + "methodcalls.graphml" )
 
         buff = dd.export_dex_to_gml()
-        for i in buff:
+        for i in buff :
             androconf.save_to_disk( buff[i], options.output + "/" + i + ".graphml" )
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
    parser = OptionParser()
-   for option in options:
+   for option in options :
 	  param = option['name']
 	  del option['name']
 	  parser.add_option(*param, **option)

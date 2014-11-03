@@ -38,68 +38,68 @@ option_4 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information',
 
 options = [option_0, option_1, option_2, option_3, option_4]
 
-def display(ret, debug):
+def display(ret, debug) :
     print "---->", ret[0]
     sys.stdout.flush()
 
-def main(options, arguments):
-    if options.database == None or options.config == None:
+def main(options, arguments) :
+    if options.database == None or options.config == None :
         return
 
     s = dalvik_elsign.MSignature( options.database, options.config, options.verbose != None, ps = dalvik_elsign.PublicSignature)
 
-    if options.input != None:
+    if options.input != None :
         ret_type = androconf.is_android( options.input )
 
         print os.path.basename(options.input), ":",
         sys.stdout.flush()
-        if ret_type == "APK":
-            try:
+        if ret_type == "APK" :
+            try :
                 a = apk.APK( options.input )
-                if a.is_valid_APK():
+                if a.is_valid_APK() :
                     display( s.check_apk( a ), options.verbose )
-                else:
+                else :
                     print "INVALID"
-            except Exception, e:
+            except Exception, e :
                 print "ERROR", e
 
-        elif ret_type == "DEX":
+        elif ret_type == "DEX" :
             display( s.check_dex( read(options.input) ), options.verbose )
-    elif options.directory != None:
-        for root, dirs, files in os.walk( options.directory, followlinks=True ):
-            if files != []:
-                for f in files:
+    elif options.directory != None :
+        for root, dirs, files in os.walk( options.directory, followlinks=True ) :
+            if files != [] :
+                for f in files :
                     real_filename = root
-                    if real_filename[-1] != "/":
+                    if real_filename[-1] != "/" :
                         real_filename += "/"
                     real_filename += f
 
                     ret_type = androconf.is_android( real_filename )
-                    if ret_type == "APK":
+                    if ret_type == "APK"  :
                         print os.path.basename( real_filename ), ":",
                         sys.stdout.flush()
-                        try:
+                        try :
                             a = apk.APK( real_filename )
-                            if a.is_valid_APK():
+                            if a.is_valid_APK() :
                                 display( s.check_apk( a ), options.verbose )
-                            else:
+                            else :
                                 print "INVALID APK"
-                        except Exception, e:
+                        except Exception, e :
                             print "ERROR", e
-                    elif ret_type == "DEX":
-                        try:
+                    elif ret_type == "DEX" :
+                        try :
                             print os.path.basename( real_filename ), ":",
                             sys.stdout.flush()
                             display( s.check_dex( read(real_filename) ), options.verbose )
-                        except Exception, e:
+                        except Exception, e :
                             print "ERROR", e
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androsign version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

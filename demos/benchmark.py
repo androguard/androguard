@@ -53,8 +53,8 @@ import androguard, analysis
 TEST = "./apks/"
 
 l = []
-for i in os.walk( TEST ):
-    for j in i[2]:
+for i in os.walk( TEST ) :
+    for j in i[2] :
         l.append( i[0] + j )
 
 print len(l), l

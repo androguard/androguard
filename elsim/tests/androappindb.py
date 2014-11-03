@@ -46,57 +46,57 @@ option_4 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2, option_3, option_4]
 
 
-def check_one_file(d1, dx1):
+def check_one_file(d1, dx1) :
   print "Similarities ...."
   e = ElsimDB( options.database )
   print e.percentages(d1, dx1)
 
-def check_one_directory(directory):
-    for root, dirs, files in os.walk( directory, followlinks=True ):
-        if files != []:
-            for f in files:
+def check_one_directory(directory) :
+    for root, dirs, files in os.walk( directory, followlinks=True ) :
+        if files != [] :
+            for f in files :
                 real_filename = root
-                if real_filename[-1] != "/":
+                if real_filename[-1] != "/" :
                     real_filename += "/"
                 real_filename += f
 
                 print "filename: %s ..." % real_filename
                 ret_type = androconf.is_android( real_filename )
-                if ret_type == "APK":
+                if ret_type == "APK" :
                     a = apk.APK( real_filename )
                     d1 = dvm.DalvikVMFormat( a.get_dex() )
-                elif ret_type == "DEX":
+                elif ret_type == "DEX" :
                     d1 = dvm.DalvikVMFormat( read(real_filename) )
 
                 dx1 = analysis.VMAnalysis( d1 )
                 check_one_file( d1, dx1 )
 
-def main(options, arguments):
-    if options.input != None and options.database != None:
+def main(options, arguments) :
+    if options.input != None and options.database != None :
         ret_type = androconf.is_android( options.input )
-        if ret_type == "APK":
+        if ret_type == "APK" :
             a = apk.APK( options.input )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
-        elif ret_type == "DEX":
+        elif ret_type == "DEX" :
             d1 = dvm.DalvikVMFormat( read(options.input) )
 
         dx1 = analysis.VMAnalysis( d1 )
 
         check_one_file(d1, dx1)
 
-    elif options.directory != None and options.database != None:
+    elif options.directory != None and options.database != None :
       check_one_directory( options.directory )
 
-    elif options.database != None and options.listdatabase != None:
+    elif options.database != None and options.listdatabase != None :
         db = DBFormat( options.database )
         db.show()
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androappindb version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

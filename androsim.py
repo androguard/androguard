@@ -45,16 +45,16 @@ option_10 = { 'name' : ('-l', '--library'), 'help' : 'use python library (python
 
 options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
-def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, new=True, library=True):
+def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, new=True, library=True) :
     d2 = None
     ret_type = androconf.is_android( file_input )
-    if ret_type == "APK":
+    if ret_type == "APK" :
         a = apk.APK( file_input )
         d2 = dvm.DalvikVMFormat( a.get_dex() )
-    elif ret_type == "DEX":
+    elif ret_type == "DEX" :
         d2 = dvm.DalvikVMFormat( read(file_input) )
 
-    if d2 == None:
+    if d2 == None :
       return
     dx2 = analysis.VMAnalysis( d2 )
 
@@ -63,33 +63,33 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
     print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
 
 
-    if options.display:
+    if options.display :
         print "SIMILAR methods:"
         diff_methods = el.get_similar_elements()
-        for i in diff_methods:
+        for i in diff_methods :
             el.show_element( i )
 
         print "IDENTICAL methods:"
         new_methods = el.get_identical_elements()
-        for i in new_methods:
+        for i in new_methods :
             el.show_element( i )
 
         print "NEW methods:"
         new_methods = el.get_new_elements()
-        for i in new_methods:
+        for i in new_methods :
             el.show_element( i, False )
 
         print "DELETED methods:"
         del_methods = el.get_deleted_elements()
-        for i in del_methods:
+        for i in del_methods :
             el.show_element( i )
 
         print "SKIPPED methods:"
         skipped_methods = el.get_skipped_elements()
-        for i in skipped_methods:
+        for i in skipped_methods :
             el.show_element( i )
 
-    if view_strings:
+    if view_strings :
         els = elsim.Elsim( ProxyDalvikStringMultiple(d1, dx1),
                            ProxyDalvikStringMultiple(d2, dx2),
                            FILTERS_DALVIK_SIM_STRING,
@@ -101,39 +101,39 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
         els.show()
         print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
 
-        if options.display:
+        if options.display :
           print "SIMILAR strings:"
           diff_strings = els.get_similar_elements()
-          for i in diff_strings:
+          for i in diff_strings :
             els.show_element( i )
 
           print "IDENTICAL strings:"
           new_strings = els.get_identical_elements()
-          for i in new_strings:
+          for i in new_strings :
             els.show_element( i )
 
           print "NEW strings:"
           new_strings = els.get_new_elements()
-          for i in new_strings:
+          for i in new_strings :
             els.show_element( i, False )
 
           print "DELETED strings:"
           del_strings = els.get_deleted_elements()
-          for i in del_strings:
+          for i in del_strings :
             els.show_element( i )
 
           print "SKIPPED strings:"
           skipped_strings = els.get_skipped_elements()
-          for i in skipped_strings:
+          for i in skipped_strings :
             els.show_element( i )
 
 
-def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True):
-    for root, dirs, files in os.walk( directory, followlinks=True ):
-        if files != []:
-            for f in files:
+def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True) :
+    for root, dirs, files in os.walk( directory, followlinks=True ) :
+        if files != [] :
+            for f in files :
                 real_filename = root
-                if real_filename[-1] != "/":
+                if real_filename[-1] != "/" :
                     real_filename += "/"
                 real_filename += f
 
@@ -141,20 +141,20 @@ def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False
                 check_one_file(a, d1, dx1, FS, threshold, real_filename, view_strings, new, library)
 
 ############################################################
-def main(options, arguments):
-    if options.input != None:
+def main(options, arguments) :
+    if options.input != None :
         a = None
         ret_type = androconf.is_android( options.input[0] )
-        if ret_type == "APK":
+        if ret_type == "APK" :
             a = apk.APK( options.input[0] )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
-        elif ret_type == "DEX":
+        elif ret_type == "DEX" :
             d1 = dvm.DalvikVMFormat( read(options.input[0]) )
 
         dx1 = analysis.VMAnalysis( d1 )
 
         threshold = None
-        if options.threshold != None:
+        if options.threshold != None :
             threshold = float(options.threshold)
 
         FS = FILTERS_DALVIK_SIM
@@ -162,26 +162,26 @@ def main(options, arguments):
         FS[elsim.FILTER_SKIPPED_METH].set_size( options.size )
 
         new = True
-        if options.new != None:
+        if options.new != None :
           new = False
 
         library = True
-        if options.library != None:
+        if options.library != None :
             library = options.library
-            if options.library == "python":
+            if options.library == "python" :
                 library = False
 
-        if os.path.isdir( options.input[1] ) == False:
+        if os.path.isdir( options.input[1] ) == False :
             check_one_file( a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
-        else:
+        else :
             check_one_directory(a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
 
-    elif options.version != None:
+    elif options.version != None :
         print "Androsim version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__":
+if __name__ == "__main__" :
     parser = OptionParser()
-    for option in options:
+    for option in options :
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)
