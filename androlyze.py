@@ -26,7 +26,6 @@ from androguard.core import *
 from androguard.core.androgen import *
 from androguard.core.androconf import *
 from androguard.core.bytecode import *
-from androguard.core.bytecodes.jvm import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
 
@@ -257,23 +256,6 @@ def ExportElfToPython(e):
     for function in e.get_functions():
         name = "FUNCTION_" + function.name
         setattr(e, name, function)
-
-
-def AnalyzeJAR(filename, raw=False):
-    androconf.debug("JAR ...")
-    a = JAR(filename, raw)
-
-    d = AnalyzeClasses(a.get_classes())
-
-    return a, d
-
-
-def AnalyzeClasses(classes):
-  d = {}
-  for i in classes:
-    d[i[0]] = JVMFormat(i[1])
-
-  return d
 
 
 def main(options, arguments):
