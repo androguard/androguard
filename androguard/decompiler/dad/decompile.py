@@ -185,7 +185,7 @@ class DvClass(object):
         self.access = util.get_access_class(access)
         self.prototype = prototype % (' '.join(self.access), self.name)
 
-        self.interfaces = dvclass.interfaces
+        self.interfaces = dvclass.get_interfaces()
         self.superclass = dvclass.get_superclassname()
 
         logger.info('Class : %s', self.name)
