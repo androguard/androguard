@@ -16,7 +16,6 @@
 # limitations under the License.
 
 from androguard.core import androconf
-from androguard.core.bytecodes import jvm
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes import apk
 from androguard.core.analysis import analysis
@@ -122,11 +121,7 @@ class Androguard(object):
             else:
                 raise( "Unknown format" )
 
-            if isinstance(bc, list):
-                for j in bc:
-                    self.__bc.append( (j[0], BC( jvm.JVMFormat(j[1]) ) ) )
-            else:
-                self.__bc.append( (i, BC( bc )) )
+            self.__bc.append( (i, BC( bc )) )
 
     def ianalyze(self):
         for i in self.get_bc():
@@ -246,7 +241,7 @@ class AndroguardS(object):
         """
            This method returns the VMFormat which correspond to the file
 
-           @rtype: L{jvm.JVMFormat} or L{dvm.DalvikVMFormat}
+           @rtype: L{dvm.DalvikVMFormat}
         """
         return self.__a.get_vm()
 
