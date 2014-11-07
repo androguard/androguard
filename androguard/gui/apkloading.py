@@ -1,7 +1,7 @@
 from androguard.core import androconf
 from PySide import QtCore
 
-from androguard.gui.androlyze import AnalyzeAPK, load_session
+from androguard.androlyze import AnalyzeAPK, load_session
 
 import os.path
 
