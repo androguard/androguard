@@ -15,12 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re, random, string, cPickle
+import re, random, cPickle
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem
 from androguard.core.bytecodes import jvm, dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
-from androguard.util import read
 
 class ContextField(object):
     def __init__(self, mode):

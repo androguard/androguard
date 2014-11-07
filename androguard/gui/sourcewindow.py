@@ -1,13 +1,10 @@
 from PySide import QtCore, QtGui
 from androguard.core import androconf
-from androguard.gui.helpers import display2classmethod, class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
+from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
 from androguard.gui.highlighter import Highlighter
 from androguard.gui.renamewindow import RenameDialog
 
-from androguard.core.bytecodes.dvm import EncodedField, EncodedMethod
-from androguard.decompiler.dad.decompile import DvMethod
-
-import sys, os
+import os
 
 BINDINGS_NAMES = ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']
 
