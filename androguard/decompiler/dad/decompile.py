@@ -231,10 +231,9 @@ class DvClass(object):
             superclass = superclass[1:-1].replace('/', '.')
             prototype += ' extends %s' % superclass
 
-        if self.interfaces is not None:
-            interfaces = self.interfaces[1:-1].split(' ')
+        if len(self.interfaces) > 0:
             prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in interfaces])
+                        [n[1:-1].replace('/', '.') for n in self.interfaces])
 
         source.append('%s {\n' % prototype)
         for name, field in sorted(self.fields.iteritems()):
@@ -280,14 +279,13 @@ class DvClass(object):
             list_proto.append(('EXTEND', ' extends '))
             list_proto.append(('NAME_SUPERCLASS', '%s' % superclass))
 
-        if self.interfaces is not None:
-            interfaces = self.interfaces[1:-1].split(' ')
+        if len(self.interfaces) > 0:
             list_proto.append(('IMPLEMENTS', ' implements '))
-            for i in range(len(interfaces)):
+            for i, interface in enumerate(self.interfaces):
                 if i != 0:
                     list_proto.append(('COMMA', ', '))
                 list_proto.append(
-                    ('NAME_INTERFACE', interfaces[i][1:-1].replace('/', '.')))
+                    ('NAME_INTERFACE', interface[1:-1].replace('/', '.')))
         list_proto.append(('PROTOTYPE_END', ' {\n'))
         source.append(("PROTOTYPE", list_proto))
 
