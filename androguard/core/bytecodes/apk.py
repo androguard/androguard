@@ -731,7 +731,11 @@ class StringBlock(object):
             androconf.warning("ooo")
 
         for i in range(0, size):
-            self.m_strings.append(unpack('=b', buff.read(1))[0])
+            try:
+                self.m_strings.append(unpack('=b', buff.read(1))[0])
+            except Exception, e:
+                androconf.warning("lalala")
+                pass
 
         if self.stylesOffset != 0:
             size = self.chunkSize - self.stylesOffset
@@ -741,7 +745,11 @@ class StringBlock(object):
                 androconf.warning("ooo")
 
             for i in range(0, size / 4):
-                self.m_styles.append(unpack('<i', buff.read(4))[0])
+                try:
+                    self.m_styles.append(unpack('<i', buff.read(4))[0])
+                except Exception, e:
+                    androconf.warning("lalala")
+                    pass
 
     def getString(self, idx):
         if idx in self._cache:
