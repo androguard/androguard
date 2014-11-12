@@ -562,9 +562,11 @@ class APK(object):
 
         cert = chilkat.CkCert()
         f = self.get_file(filename)
-        success = cert.LoadFromBinary2(f, len(f))
-
+        data = chilkat.CkByteData()
+        data.append2(f, len(f))
+        success = cert.LoadFromBinary(data)
         return success, cert
+
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
