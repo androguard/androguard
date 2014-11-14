@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
 # This file is part of Androguard.
 #
@@ -20,8 +20,6 @@
 
 import sys, os, cmd, threading, code, re
 
-from optparse import OptionParser
-
 from androguard.core import *
 from androguard.core.androgen import *
 from androguard.core.androconf import *
@@ -38,7 +36,7 @@ from androguard.decompiler.decompiler import *
 from androguard.core import androconf
 from androguard.util import read
 
-from IPython.frontend.terminal.embed import InteractiveShellEmbed
+from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.config.loader import Config
 
 from cPickle import dumps, loads
@@ -297,14 +295,3 @@ def main(options, arguments):
 
     elif options.version != None:
         print "Androlyze version %s" % androconf.ANDROGUARD_VERSION
-
-if __name__ == "__main__":
-    parser = OptionParser()
-    for option in options:
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
-
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)
