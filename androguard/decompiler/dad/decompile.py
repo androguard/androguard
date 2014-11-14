@@ -165,10 +165,8 @@ class DvClass(object):
         self.name = name[:-1]
 
         self.vma = vma
-        self.methods = dict((meth.get_method_idx(), meth)
-                            for meth in dvclass.get_methods())
-        self.fields = dict((field.get_name(), field)
-                           for field in dvclass.get_fields())
+        self.methods = dvclass.get_methods()[:]
+        self.fields = dvclass.get_fields()[:]
         self.subclasses = {}
         self.code = []
         self.inner = False
@@ -190,8 +188,8 @@ class DvClass(object):
 
         logger.info('Class : %s', self.name)
         logger.info('Methods added :')
-        for index, meth in self.methods.iteritems():
-            logger.info('%s (%s, %s)', index, self.name, meth.name)
+        for meth in self.methods:
+            logger.info('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
         logger.info('')
 
     def add_subclass(self, innername, dvclass):
@@ -202,24 +200,20 @@ class DvClass(object):
         return self.methods
 
     def process_method(self, num):
-        methods = self.methods
-        if num in methods:
-            method = methods[num]
-            if not isinstance(method, DvMethod):
-                method.set_instructions([i for i in method.get_instructions()])
-                meth = methods[num] = DvMethod(self.vma.get_method(method))
-                meth.process()
-                method.set_instructions([])
-            else:
-                method.process()
+        method = self.methods[num]
+        if not isinstance(method, DvMethod):
+            method.set_instructions([i for i in method.get_instructions()])
+            self.methods[num] = DvMethod(self.vma.get_method(method))
+            self.methods[num].process()
+            method.set_instructions([])
         else:
-            logger.error('Method %s not found.', num)
+            method.process()
 
     def process(self):
         for klass in self.subclasses.values():
             klass.process()
-        for meth in self.methods:
-            self.process_method(meth)
+        for i in range(len(self.methods)):
+            self.process_method(i)
 
     def get_source(self):
         source = []
@@ -237,7 +231,8 @@ class DvClass(object):
                         [n[1:-1].replace('/', '.') for n in interfaces])
 
         source.append('%s {\n' % prototype)
-        for name, field in sorted(self.fields.iteritems()):
+        for field in self.fields:
+            name = field.get_name()
             access = util.get_access_field(field.get_access_flags())
             f_type = util.get_type(field.get_descriptor())
             source.append('    ')
@@ -257,7 +252,7 @@ class DvClass(object):
         for klass in self.subclasses.values():
             source.append(klass.get_source())
 
-        for _, method in self.methods.iteritems():
+        for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(method.get_source())
         source.append('}\n')
@@ -291,7 +286,7 @@ class DvClass(object):
         list_proto.append(('PROTOTYPE_END', ' {\n'))
         source.append(("PROTOTYPE", list_proto))
 
-        for field in self.fields.values():
+        for field in self.fields:
             field_access_flags = field.get_access_flags()
             access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
                         util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
@@ -312,7 +307,7 @@ class DvClass(object):
         for klass in self.subclasses.values():
             source.append((klass, klass.get_source()))
 
-        for _, method in self.methods.iteritems():
+        for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(("METHOD", method.get_source_ext()))
         source.append(("CLASS_END", [('CLASS_END', '}\n')]))
@@ -403,8 +398,8 @@ def main():
             logger.error('%s not found.', cls_name)
         else:
             logger.info('======================')
-            for method_id, method in cls.get_methods().items():
-                logger.info('%d: %s', method_id, method.name)
+            for i, method in enumerate(cls.get_methods()):
+                logger.info('%d: %s', i, method.name)
             logger.info('======================')
             meth = raw_input('Method: ')
             if meth == '*':
