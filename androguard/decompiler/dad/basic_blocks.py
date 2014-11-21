@@ -311,8 +311,8 @@ def build_node_from_block(block, vmap, gen_ret, exception_type=None):
             _ins = INSTRUCTION_SET[0]
         # fill-array-data
         if opcode == 0x26:
-            fillaray = block.get_special_ins(idx)
-            lins.append(_ins(ins, vmap, fillaray))
+            fillarray = block.get_special_ins(idx)
+            lins.append(_ins(ins, vmap, fillarray))
         # invoke-kind[/range]
         elif (0x6e <= opcode <= 0x72 or 0x74 <= opcode <= 0x78):
             lins.append(_ins(ins, vmap, gen_ret))
