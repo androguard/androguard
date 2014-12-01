@@ -29,8 +29,6 @@ TYPE_DESCRIPTOR = {
     'J': 'long',
     'F': 'float',
     'D': 'double',
-    'STR': 'String',
-    'StringBuilder': 'String',
 }
 
 ACCESS_FLAGS_CLASSES = {

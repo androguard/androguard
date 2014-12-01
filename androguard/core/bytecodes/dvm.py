@@ -81,8 +81,6 @@ TYPE_DESCRIPTOR = {
     'J': 'long',
     'F': 'float',
     'D': 'double',
-    'STR': 'String',
-    'StringBuilder': 'String'
 }
 
 def get_access_flags_string(value):
