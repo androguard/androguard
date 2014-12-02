@@ -18,6 +18,7 @@
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
+from androguard.decompiler.dad.instruction import MoveExceptionExpression
 from androguard.decompiler.dad.node import Node
 
 
@@ -31,6 +32,7 @@ class BasicBlock(Node):
         self.ins_range = None
         self.loc_ins = None
         self.var_to_declare = set()
+        self.catch_type = None
 
     def get_ins(self):
         return self.ins
@@ -56,6 +58,9 @@ class BasicBlock(Node):
         self.ins_range = [num, last_ins_num]
         self.loc_ins = None
         return last_ins_num
+
+    def set_catch_type(self, _type):
+        self.catch_type = _type
 
 
 class StatementBlock(BasicBlock):
@@ -281,16 +286,23 @@ class TryBlock(BasicBlock):
 
 class CatchBlock(BasicBlock):
     def __init__(self, node):
-        self.exception = node.ins[0]
-        node.ins.pop(0)
+        first_ins = node.ins[0]
+        self.exception_ins = None
+        if isinstance(first_ins, MoveExceptionExpression):
+            self.exception_ins = first_ins
+            node.ins.pop(0)
         super(CatchBlock, self).__init__('Catch-%s' % node.name, node.ins)
         self.catch_start = node
+        self.catch_type = node.catch_type
 
     def visit(self, visitor):
         visitor.visit_catch_node(self)
 
     def visit_exception(self, visitor):
-        visitor.visit_ins(self.exception)
+        if self.exception_ins:
+            visitor.visit_ins(self.exception_ins)
+        else:
+            visitor.write(self.catch_type)
 
     def __str__(self):
         return 'Catch(%s)' % self.name

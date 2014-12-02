@@ -415,7 +415,7 @@ class Writer(object):
             var_type = var.get_type() or 'unknownType'
             self.write('%s%s v%s' % (
                 self.space(), get_type(var_type),
-                var.value()), data="DECLARATION")
+                var.name), data="DECLARATION")
             self.end_ins()
 
     def visit_constant(self, cst):

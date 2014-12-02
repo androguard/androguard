@@ -898,6 +898,9 @@ def sputshort(ins, vmap):
 def get_args(vmap, param_type, largs):
     num_param = 0
     args = []
+    if len(param_type) > len(largs):
+        logger.warning('len(param_type) > len(largs) !')
+        return args
     for type_ in param_type:
         param = largs[num_param]
         args.append(param)

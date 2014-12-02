@@ -165,8 +165,8 @@ class DvClass(object):
         self.name = name[:-1]
 
         self.vma = vma
-        self.methods = dvclass.get_methods()[:]
-        self.fields = dvclass.get_fields()[:]
+        self.methods = dvclass.get_methods()
+        self.fields = dvclass.get_fields()
         self.subclasses = {}
         self.code = []
         self.inner = False
@@ -393,7 +393,7 @@ def main():
     if cls_name == '*':
         machine.process_and_show()
     else:
-        cls = machine.get_class(cls_name.decode('utf8'))
+        cls = machine.get_class(cls_name)
         if cls is None:
             logger.error('%s not found.', cls_name)
         else:

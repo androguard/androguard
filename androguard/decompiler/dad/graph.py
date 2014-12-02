@@ -19,6 +19,7 @@ import logging
 from collections import defaultdict
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
+from androguard.decompiler.dad.util import get_type
 from androguard.decompiler.dad.instruction import Variable
 
 logger = logging.getLogger('dad.graph')
@@ -402,6 +403,7 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
             if exception_node is None:
                 exception_node = build_node_from_block(exception_target,
                                                         vmap, gen_ret, _type)
+                exception_node.set_catch_type(get_type(_type))
                 exception_node.in_catch = True
                 block_to_node[exception_target] = exception_node
             graph.add_catch_edge(node, exception_node)
