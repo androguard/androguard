@@ -299,21 +299,21 @@ def constwidehigh16(ins, vmap):
 # const-string vAA ( 8b )
 def conststring(ins, vmap):
     logger.debug('ConstString : %s', ins.get_output())
-    cst = Constant(ins.get_raw_string(), 'STR')
+    cst = Constant(ins.get_raw_string(), 'Ljava/lang/String;')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-string/jumbo vAA ( 8b )
 def conststringjumbo(ins, vmap):
     logger.debug('ConstStringJumbo %s', ins.get_output())
-    cst = Constant(ins.get_raw_string(), 'STR')
+    cst = Constant(ins.get_raw_string(), 'Ljava/lang/String;')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     logger.debug('ConstClass : %s', ins.get_output())
-    cst = Constant(util.get_type(ins.get_string()), 'class')
+    cst = Constant(util.get_type(ins.get_string()), 'Ljava/lang/Class;')
     return assign_const(ins.AA, cst, vmap)
 
 

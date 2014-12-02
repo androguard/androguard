@@ -98,7 +98,7 @@ class Constant(IRForm):
                 return visitor.visit_constant('false')
             else:
                 return visitor.visit_constant('true')
-        elif self.type == 'class':
+        elif self.type == 'Ljava/lang/Class;':
             return visitor.visit_base_class(self.cst, data=self.cst)
         elif self.type in 'IJB':
             return visitor.visit_constant(self.cst2)
