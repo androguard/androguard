@@ -103,7 +103,7 @@ def update_chain(graph, loc, du, ud):
             # the new dead instruction, and we delete it.
             # We also make sure that def_loc is not < 0. This is the case when
             # the current variable is a method parameter.
-            if  def_loc >= 0 and not du[(var, def_loc)]:
+            if def_loc >= 0 and not du[(var, def_loc)]:
                 du.pop((var, def_loc))
                 def_ins = graph.get_ins_from_loc(def_loc)
                 if def_ins.is_call():
