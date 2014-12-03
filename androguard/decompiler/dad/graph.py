@@ -102,7 +102,7 @@ class Graph(object):
             num = node.number_ins(num)
             end_node = num - 1
             self.loc_to_ins.update(node.get_loc_with_ins())
-            self.loc_to_node[(start_node, end_node)] = node
+            self.loc_to_node[start_node, end_node] = node
 
     def get_ins_from_loc(self, loc):
         return self.loc_to_ins.get(loc)
