@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import androguard.decompiler.dad.util as util
 
 class IRForm(object):
     def __init__(self):
@@ -71,7 +72,7 @@ class IRForm(object):
 
 
 class Constant(IRForm):
-    def __init__(self, value, atype, int_value=None):
+    def __init__(self, value, atype, int_value=None, descriptor=None):
         self.v = 'c%s' % value
         self.cst = value
         if int_value is None:
@@ -79,6 +80,8 @@ class Constant(IRForm):
         else:
             self.cst2 = int_value
         self.type = atype
+
+        self.clsdesc = descriptor
 
     def get_used_vars(self):
         return []
@@ -110,9 +113,11 @@ class Constant(IRForm):
 
 
 class BaseClass(IRForm):
-    def __init__(self, name):
+    def __init__(self, name, descriptor=None):
         self.v = 'c%s' % name
         self.cls = name
+
+        self.clsdesc = descriptor
 
     def is_const(self):
         return True
@@ -369,10 +374,12 @@ class StaticInstruction(IRForm):
     def __init__(self, rhs, klass, ftype, name):
         super(StaticInstruction, self).__init__()
         self.rhs = rhs.v
-        self.cls = klass
+        self.cls = util.get_type(klass)
         self.ftype = ftype
         self.name = name
         self.var_map[rhs.v] = rhs
+
+        self.clsdesc = klass
 
     def has_side_effect(self):
         return True
@@ -414,9 +421,11 @@ class InstanceInstruction(IRForm):
         self.lhs = lhs.v
         self.rhs = rhs.v
         self.atype = atype
-        self.cls = klass
+        self.cls = util.get_type(klass)
         self.name = name
         self.var_map.update([(lhs.v, lhs), (rhs.v, rhs)])
+
+        self.clsdesc = klass
 
     def has_side_effect(self):
         return True
@@ -469,7 +478,7 @@ class InstanceInstruction(IRForm):
 
 
 class NewInstance(IRForm):
-    def __init__(self, ins_type):
+    def __init__(self, ins_type, descriptor=None):
         super(NewInstance, self).__init__()
         self.type = ins_type
 
@@ -490,7 +499,7 @@ class NewInstance(IRForm):
 
 
 class InvokeInstruction(IRForm):
-    def __init__(self, clsname, name, base, rtype, ptype, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args, triple):
         super(InvokeInstruction, self).__init__()
         self.cls = clsname
         self.name = name
@@ -501,6 +510,9 @@ class InvokeInstruction(IRForm):
         self.var_map[base.v] = base
         for arg in args:
             self.var_map[arg.v] = arg
+
+        self.triple = triple
+        assert(triple[1] == name)
 
     def get_type(self):
         if self.name == '<init>':
@@ -576,22 +588,22 @@ class InvokeInstruction(IRForm):
 
 
 class InvokeRangeInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, rtype, ptype, args):
+    def __init__(self, clsname, name, rtype, ptype, args, triple):
         base = args.pop(0)
         super(InvokeRangeInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, args)
+                                                    rtype, ptype, args, triple)
 
 
 class InvokeDirectInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, base, rtype, ptype, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args, triple):
         super(InvokeDirectInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, args)
+                                                    rtype, ptype, args, triple)
 
 
 class InvokeStaticInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, base, rtype, ptype, args):
+    def __init__(self, clsname, name, base, rtype, ptype, args, triple):
         super(InvokeStaticInstruction, self).__init__(clsname, name, base,
-                                                    rtype, ptype, args)
+                                                    rtype, ptype, args, triple)
 
     def get_used_vars(self):
         v_m = self.var_map
@@ -695,11 +707,13 @@ class SwitchExpression(IRForm):
 
 
 class CheckCastExpression(IRForm):
-    def __init__(self, arg, _type):
+    def __init__(self, arg, _type, descriptor=None):
         super(CheckCastExpression, self).__init__()
         self.arg = arg.v
         self.var_map[arg.v] = arg
         self.type = _type
+
+        self.clsdesc = descriptor
 
     def is_const(self):
         return self.var_map[self.arg].is_const()
@@ -1161,6 +1175,7 @@ class UnaryExpression(IRForm):
 class CastExpression(UnaryExpression):
     def __init__(self, op, atype, arg):
         super(CastExpression, self).__init__(op, arg, atype)
+        self.clsdesc = atype
 
     def is_const(self):
         return self.var_map[self.arg].is_const()
@@ -1296,10 +1311,12 @@ class InstanceExpression(IRForm):
     def __init__(self, arg, klass, ftype, name):
         super(InstanceExpression, self).__init__()
         self.arg = arg.v
-        self.cls = klass
+        self.cls = util.get_type(klass)
         self.ftype = ftype
         self.name = name
         self.var_map[arg.v] = arg
+
+        self.clsdesc = klass
 
     def get_type(self):
         return self.ftype
@@ -1335,9 +1352,11 @@ class InstanceExpression(IRForm):
 class StaticExpression(IRForm):
     def __init__(self, cls_name, field_type, field_name):
         super(StaticExpression, self).__init__()
-        self.cls = cls_name
+        self.cls = util.get_type(cls_name)
         self.ftype = field_type
         self.name = field_name
+
+        self.clsdesc = cls_name
 
     def get_type(self):
         return self.ftype
