@@ -2385,7 +2385,7 @@ class MethodIdItem(object):
         return [ self.get_class_name(), self.get_name(), self.get_proto() ]
 
     def get_triple(self):
-        return self.get_class_name(), self.get_name(), self.get_real_descriptor()
+        return self.get_class_name()[1:-1], self.get_name(), self.get_real_descriptor()
 
     def show(self):
         bytecode._PrintSubBanner("Method Id Item")

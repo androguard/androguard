@@ -478,7 +478,7 @@ class InstanceInstruction(IRForm):
 
 
 class NewInstance(IRForm):
-    def __init__(self, ins_type, descriptor=None):
+    def __init__(self, ins_type):
         super(NewInstance, self).__init__()
         self.type = ins_type
 
