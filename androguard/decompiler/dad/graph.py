@@ -117,125 +117,6 @@ class Graph(object):
         self.get_node_from_loc(loc).remove_ins(loc, ins)
         self.loc_to_ins.pop(loc)
 
-    def split_if_nodes(self):
-        '''
-        Split IfNodes in two nodes, the first node is the header node, the
-        second one is only composed of the jump condition.
-        '''
-        node_map = {n: n for n in self.nodes}
-        to_update = set()
-        for node in self.nodes[:]:
-            if node.type.is_cond:
-                if len(node.get_ins()) > 1:
-                    pre_ins = node.get_ins()[:-1]
-                    last_ins = node.get_ins()[-1]
-                    pre_node = StatementBlock('%s-pre' % node.name, pre_ins)
-                    cond_node = CondBlock('%s-cond' % node.name, [last_ins])
-                    node_map[node] = pre_node
-                    node_map[pre_node] = pre_node
-                    node_map[cond_node] = cond_node
-
-                    pre_node.copy_from(node)
-                    cond_node.copy_from(node)
-                    for var in node.var_to_declare:
-                        pre_node.add_variable_declaration(var)
-                    pre_node.type.is_stmt = True
-                    cond_node.true = node.true
-                    cond_node.false = node.false
-
-                    for pred in self.all_preds(node):
-                        pred_node = node_map[pred]
-                        # Verify that the link is not an exception link
-                        if node not in self.sucs(pred):
-                            self.add_catch_edge(pred_node, pre_node)
-                            continue
-                        if pred is node:
-                            pred_node = cond_node
-                        if pred.type.is_cond:  # and not (pred is node):
-                            if pred.true is node:
-                                pred_node.true = pre_node
-                            if pred.false is node:
-                                pred_node.false = pre_node
-                        self.add_edge(pred_node, pre_node)
-                    for suc in self.sucs(node):
-                        self.add_edge(cond_node, node_map[suc])
-
-                    # We link all the exceptions to the pre node instead of the
-                    # condition node, which should not trigger any of them.
-                    for suc in self.catch_edges.get(node, []):
-                        self.add_catch_edge(pre_node, node_map[suc])
-
-                    if node is self.entry:
-                        self.entry = pre_node
-
-                    self.add_node(pre_node)
-                    self.add_node(cond_node)
-                    self.add_edge(pre_node, cond_node)
-                    pre_node.update_attribute_with(node_map)
-                    cond_node.update_attribute_with(node_map)
-                    self.remove_node(node)
-            else:
-                to_update.add(node)
-        for node in to_update:
-            node.update_attribute_with(node_map)
-
-    def simplify(self):
-        '''
-        Simplify the CFG by merging/deleting statement nodes when possible:
-        If statement B follows statement A and if B has no other predecessor
-        besides A, then we can merge A and B into a new statement node.
-        We also remove nodes which do nothing except redirecting the control
-        flow (nodes which only contains a goto).
-        '''
-        redo = True
-        while redo:
-            redo = False
-            node_map = {}
-            to_update = set()
-            for node in self.nodes[:]:
-                if node.type.is_stmt and node in self.nodes:
-                    sucs = self.all_sucs(node)
-                    if len(sucs) != 1:
-                        continue
-                    suc = sucs[0]
-                    if len(node.get_ins()) == 0:
-                        if any(pred.type.is_switch
-                               for pred in self.all_preds(node)):
-                            continue
-                        if node is suc:
-                            continue
-                        node_map[node] = suc
-
-                        for pred in self.all_preds(node):
-                            pred.update_attribute_with(node_map)
-                            if node not in self.sucs(pred):
-                                self.add_catch_edge(pred, suc)
-                                continue
-                            self.add_edge(pred, suc)
-                        redo = True
-                        if node is self.entry:
-                            self.entry = suc
-                        self.remove_node(node)
-                    elif (suc.type.is_stmt and
-                          len(self.all_preds(suc)) == 1 and
-                          not (suc in self.catch_edges) and
-                          not ((node is suc) or (suc is self.entry))):
-                        ins_to_merge = suc.get_ins()
-                        node.add_ins(ins_to_merge)
-                        for var in suc.var_to_declare:
-                            node.add_variable_declaration(var)
-                        new_suc = self.sucs(suc)[0]
-                        if new_suc:
-                            self.add_edge(node, new_suc)
-                        for exception_suc in self.catch_edges.get(suc, []):
-                            self.add_catch_edge(node, exception_suc)
-                        redo = True
-                        self.remove_node(suc)
-                else:
-                    to_update.add(node)
-            for node in to_update:
-                node.update_attribute_with(node_map)
-
     def compute_rpo(self):
         '''
         Number the nodes in reverse post order.
@@ -294,6 +175,127 @@ class Graph(object):
     def __iter__(self):
         for node in self.nodes:
             yield node
+
+
+def split_if_nodes(graph):
+    '''
+    Split IfNodes in two nodes, the first node is the header node, the
+    second one is only composed of the jump condition.
+    '''
+    node_map = {n: n for n in graph}
+    to_update = set()
+    for node in graph.nodes[:]:
+        if node.type.is_cond:
+            if len(node.get_ins()) > 1:
+                pre_ins = node.get_ins()[:-1]
+                last_ins = node.get_ins()[-1]
+                pre_node = StatementBlock('%s-pre' % node.name, pre_ins)
+                cond_node = CondBlock('%s-cond' % node.name, [last_ins])
+                node_map[node] = pre_node
+                node_map[pre_node] = pre_node
+                node_map[cond_node] = cond_node
+
+                pre_node.copy_from(node)
+                cond_node.copy_from(node)
+                for var in node.var_to_declare:
+                    pre_node.add_variable_declaration(var)
+                pre_node.type.is_stmt = True
+                cond_node.true = node.true
+                cond_node.false = node.false
+
+                for pred in graph.all_preds(node):
+                    pred_node = node_map[pred]
+                    # Verify that the link is not an exception link
+                    if node not in graph.sucs(pred):
+                        graph.add_catch_edge(pred_node, pre_node)
+                        continue
+                    if pred is node:
+                        pred_node = cond_node
+                    if pred.type.is_cond:  # and not (pred is node):
+                        if pred.true is node:
+                            pred_node.true = pre_node
+                        if pred.false is node:
+                            pred_node.false = pre_node
+                    graph.add_edge(pred_node, pre_node)
+                for suc in graph.sucs(node):
+                    graph.add_edge(cond_node, node_map[suc])
+
+                # We link all the exceptions to the pre node instead of the
+                # condition node, which should not trigger any of them.
+                for suc in graph.catch_edges.get(node, []):
+                    graph.add_catch_edge(pre_node, node_map[suc])
+
+                if node is graph.entry:
+                    graph.entry = pre_node
+
+                graph.add_node(pre_node)
+                graph.add_node(cond_node)
+                graph.add_edge(pre_node, cond_node)
+                pre_node.update_attribute_with(node_map)
+                cond_node.update_attribute_with(node_map)
+                graph.remove_node(node)
+        else:
+            to_update.add(node)
+    for node in to_update:
+        node.update_attribute_with(node_map)
+
+
+def simplify(graph):
+    '''
+    Simplify the CFG by merging/deleting statement nodes when possible:
+    If statement B follows statement A and if B has no other predecessor
+    besides A, then we can merge A and B into a new statement node.
+    We also remove nodes which do nothing except redirecting the control
+    flow (nodes which only contains a goto).
+    '''
+    redo = True
+    while redo:
+        redo = False
+        node_map = {}
+        to_update = set()
+        for node in graph.nodes[:]:
+            if node.type.is_stmt and node in graph:
+                sucs = graph.all_sucs(node)
+                if len(sucs) != 1:
+                    continue
+                suc = sucs[0]
+                if len(node.get_ins()) == 0:
+                    if any(pred.type.is_switch
+                            for pred in graph.all_preds(node)):
+                        continue
+                    if node is suc:
+                        continue
+                    node_map[node] = suc
+
+                    for pred in graph.all_preds(node):
+                        pred.update_attribute_with(node_map)
+                        if node not in graph.sucs(pred):
+                            graph.add_catch_edge(pred, suc)
+                            continue
+                        graph.add_edge(pred, suc)
+                    redo = True
+                    if node is graph.entry:
+                        graph.entry = suc
+                    graph.remove_node(node)
+                elif (suc.type.is_stmt and
+                      len(graph.all_preds(suc)) == 1 and
+                      not (suc in graph.catch_edges) and
+                      not ((node is suc) or (suc is graph.entry))):
+                    ins_to_merge = suc.get_ins()
+                    node.add_ins(ins_to_merge)
+                    for var in suc.var_to_declare:
+                        node.add_variable_declaration(var)
+                    new_suc = graph.sucs(suc)[0]
+                    if new_suc:
+                        graph.add_edge(node, new_suc)
+                    for exception_suc in graph.catch_edges.get(suc, []):
+                        graph.add_catch_edge(node, exception_suc)
+                    redo = True
+                    graph.remove_node(suc)
+            else:
+                to_update.add(node)
+        for node in to_update:
+            node.update_attribute_with(node_map)
 
 
 def dom_lt(graph):

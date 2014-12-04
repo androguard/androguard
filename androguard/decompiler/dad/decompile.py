@@ -31,7 +31,7 @@ from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 dead_code_elimination,
                                                 register_propagation,
                                                 split_variables)
-from androguard.decompiler.dad.graph import construct
+from androguard.decompiler.dad.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
 from androguard.util import read
@@ -115,11 +115,11 @@ class DvMethod(object):
         # graph to delete these nodes.
         # We start by restructuring the graph by spliting the conditional nodes
         # into a pre-header and a header part.
-        graph.split_if_nodes()
+        split_if_nodes(graph)
         # We then simplify the graph by merging multiple statement nodes into
         # a single statement node when possible. This also delete empty nodes.
 
-        graph.simplify()
+        simplify(graph)
         graph.compute_rpo()
 
         if not __debug__:
