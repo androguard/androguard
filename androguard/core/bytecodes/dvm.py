@@ -371,7 +371,7 @@ def determineException(vm, m):
 
         handler_catch = value[1]
         if handler_catch.get_size() <= 0:
-            z.append( [ "any", handler_catch.get_catch_all_addr() * 2 ] )
+            z.append( [ "Ljava/lang/Throwable;", handler_catch.get_catch_all_addr() * 2 ] )
 
         for handler in handler_catch.get_handlers():
             z.append( [ vm.get_cm_type( handler.get_type_idx() ), handler.get_addr() * 2 ] )
@@ -2365,6 +2365,15 @@ class MethodIdItem(object):
       proto = self.get_proto()
       return proto[0] + proto[1]
 
+    def get_real_descriptor(self):
+      """
+          Return the real descriptor (i.e. without extra spaces)
+
+          :rtype: string
+      """
+      proto = self.get_proto()
+      return proto[0].replace(' ','') + proto[1]
+
     def get_name(self):
         """
             Return the name of the method
@@ -2375,6 +2384,9 @@ class MethodIdItem(object):
 
     def get_list(self):
         return [ self.get_class_name(), self.get_name(), self.get_proto() ]
+
+    def get_triple(self):
+        return self.get_class_name()[1:-1], self.get_name(), self.get_real_descriptor()
 
     def show(self):
         bytecode._PrintSubBanner("Method Id Item")
@@ -2940,6 +2952,9 @@ class EncodedMethod(object):
           :rtype: string
         """
         return self.name
+
+    def get_triple(self):
+        return self.CM.get_method_ref( self.method_idx ).get_triple()
 
     def add_inote(self, msg, idx, off=None):
         """

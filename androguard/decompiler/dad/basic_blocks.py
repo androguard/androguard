@@ -20,7 +20,7 @@ from collections import defaultdict
 from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.dad.instruction import MoveExceptionExpression
 from androguard.decompiler.dad.node import Node
-
+from androguard.decompiler.dad.util import get_type
 
 logger = logging.getLogger('dad.basic_blocks')
 
@@ -302,7 +302,7 @@ class CatchBlock(BasicBlock):
         if self.exception_ins:
             visitor.visit_ins(self.exception_ins)
         else:
-            visitor.write(self.catch_type)
+            visitor.write(get_type(self.catch_type))
 
     def __str__(self):
         return 'Catch(%s)' % self.name

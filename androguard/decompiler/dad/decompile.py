@@ -25,6 +25,9 @@ import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
+from androguard.decompiler.dad.ast import (JSONWriter, parse_descriptor,
+    literal_string, literal_null, literal_int, literal_long, literal_float,
+    literal_double, literal_bool, dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
@@ -47,6 +50,38 @@ def auto_vm(filename):
         return dvm.DalvikOdexVMFormat(read(filename))
     return None
 
+# No seperate DvField class currently
+def get_field_ast(field):
+    triple = field.get_class_name()[1:-1], field.get_name(), field.get_descriptor()
+
+    expr = None
+    if field.init_value:
+        vt = field.init_value.get_value_type()
+        val = field.init_value.value
+
+        if vt == dvm.VALUE_STRING:
+            expr = literal_string(val)
+        elif vt in (dvm.VALUE_INT, dvm.VALUE_SHORT, dvm.VALUE_CHAR, dvm.VALUE_BYTE):
+            expr = literal_int(val)
+        elif vt == dvm.VALUE_LONG:
+            expr = literal_long(val)
+        elif vt == dvm.VALUE_DOUBLE:
+            expr = literal_double(val)
+        elif vt == dvm.VALUE_FLOAT:
+            expr = literal_float(val)
+        elif vt == dvm.VALUE_NULL:
+            expr = literal_null()
+        elif vt == dvm.VALUE_BOOLEAN:
+            expr = literal_bool(val)
+        else:
+            expr = dummy('???')
+
+    return {
+        'triple': triple,
+        'type': parse_descriptor(field.get_descriptor()),
+        'flags': util.get_access_field(field.get_access_flags()),
+        'expr': expr,
+    }
 
 class DvMethod(object):
     def __init__(self, methanalysis):
@@ -59,12 +94,14 @@ class DvMethod(object):
         self.var_to_name = defaultdict()
         self.writer = None
         self.graph = None
+        self.ast = None
 
         self.access = util.get_access_method(method.get_access_flags())
 
         desc = method.get_descriptor()
         self.type = desc.split(')')[-1]
         self.params_type = util.get_params_type(desc)
+        self.triple = method.get_triple()
 
         self.exceptions = methanalysis.exceptions.exceptions
 
@@ -74,7 +111,7 @@ class DvMethod(object):
         else:
             start = code.registers_size - code.ins_size
             if 'static' not in self.access:
-                self.var_to_name[start] = ThisParam(start, self.name)
+                self.var_to_name[start] = ThisParam(start, self.cls_name)
                 self.lparams.append(start)
                 start += 1
             num_param = 0
@@ -88,7 +125,7 @@ class DvMethod(object):
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
                 (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
-    def process(self):
+    def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
 
         # Native methods... no blocks.
@@ -132,9 +169,14 @@ class DvMethod(object):
             util.create_png(self.cls_name, self.name, graph,
                                                     '/tmp/dad/structured')
 
-        self.writer = Writer(graph, self)
-        self.writer.write_method()
-        del graph
+        if doAST:
+            self.ast = JSONWriter(graph, self).get_ast()
+        else:
+            self.writer = Writer(graph, self)
+            self.writer.write_method()
+
+    def get_ast(self):
+        return self.ast
 
     def show_source(self):
         print self.get_source()
@@ -185,6 +227,7 @@ class DvClass(object):
 
         self.interfaces = dvclass.get_interfaces()
         self.superclass = dvclass.get_superclassname()
+        self.thisclass = dvclass.get_name()
 
         logger.info('Class : %s', self.name)
         logger.info('Methods added :')
@@ -199,21 +242,36 @@ class DvClass(object):
     def get_methods(self):
         return self.methods
 
-    def process_method(self, num):
+    def process_method(self, num, doAST=False):
         method = self.methods[num]
         if not isinstance(method, DvMethod):
             method.set_instructions([i for i in method.get_instructions()])
             self.methods[num] = DvMethod(self.vma.get_method(method))
-            self.methods[num].process()
+            self.methods[num].process(doAST=doAST)
             method.set_instructions([])
         else:
-            method.process()
+            method.process(doAST=doAST)
 
-    def process(self):
+    def process(self, doAST=False):
         for klass in self.subclasses.values():
-            klass.process()
+            klass.process(doAST=doAST)
         for i in range(len(self.methods)):
-            self.process_method(i)
+            self.process_method(i, doAST=doAST)
+
+    def get_ast(self):
+        fields = [get_field_ast(f) for f in self.fields]
+        methods = [m.get_ast() for m in self.methods if m.ast is not None]
+        isInterface = 'interface' in self.access
+        return {
+            'rawname': self.thisclass[1:-1],
+            'name': parse_descriptor(self.thisclass),
+            'super': parse_descriptor(self.superclass),
+            'flags': self.access,
+            'isInterface': isInterface,
+            'interfaces': map(parse_descriptor, self.interfaces),
+            'fields': fields,
+            'methods': methods,
+        }
 
     def get_source(self):
         source = []
