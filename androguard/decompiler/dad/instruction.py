@@ -715,6 +715,8 @@ class CheckCastExpression(IRForm):
 
         self.clsdesc = descriptor
 
+        self.clsdesc = descriptor
+
     def is_const(self):
         return self.var_map[self.arg].is_const()
 
