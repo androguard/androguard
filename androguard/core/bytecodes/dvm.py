@@ -2012,7 +2012,8 @@ class ProtoIdItem(object):
     def reload(self):
         self.shorty_idx_value = self.__CM.get_string( self.shorty_idx )
         self.return_type_idx_value = self.__CM.get_type( self.return_type_idx )
-        self.parameters_off_value = self.__CM.get_type_list( self.parameters_off )
+        params = self.__CM.get_type_list( self.parameters_off )
+        self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
         """
@@ -3220,7 +3221,7 @@ class ClassDefItem(object):
         self.class_data_off = unpack("=I", buff.read(4))[0]
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
-        self.interfaces = None
+        self.interfaces = []
         self.class_data_item = None
         self.static_values = None
 
@@ -3231,9 +3232,7 @@ class ClassDefItem(object):
     def reload(self):
         self.name = self.__CM.get_type( self.class_idx )
         self.sname = self.__CM.get_type( self.superclass_idx )
-
-        if self.interfaces_off != 0:
-            self.interfaces = self.__CM.get_type_list( self.interfaces_off )
+        self.interfaces = self.__CM.get_type_list( self.interfaces_off )
 
         if self.class_data_off != 0:
             self.class_data_item = self.__CM.get_class_data_item( self.class_data_off )
@@ -6883,7 +6882,6 @@ class ClassManager(object):
         self.__obj_offset = {}
         self.__item_offset = {}
 
-        self.__cached_type_list = {}
         self.__cached_proto = {}
 
         self.recode_ascii_string = config["RECODE_ASCII_STRING"]
@@ -7025,18 +7023,11 @@ class ClassManager(object):
 
     def get_type_list(self, off):
         if off == 0:
-            return "()"
-
-        if off in self.__cached_type_list:
-            return self.__cached_type_list[ off ]
+            return []
 
         for i in self.__manage_item[ "TYPE_TYPE_LIST" ]:
             if i.get_type_list_off() == off:
-                ret =  "(" + i.get_string() + ")"
-                self.__cached_type_list[ off ] = ret
-                return ret
-
-        return None
+                return [type_.get_string() for type_ in i.get_list()]
 
     def get_type(self, idx):
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )
