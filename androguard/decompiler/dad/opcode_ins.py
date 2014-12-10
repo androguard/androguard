@@ -313,7 +313,8 @@ def conststringjumbo(ins, vmap):
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     logger.debug('ConstClass : %s', ins.get_output())
-    cst = Constant(util.get_type(ins.get_string()), 'Ljava/lang/Class;')
+    cst = Constant(util.get_type(ins.get_string()), 'Ljava/lang/Class;',
+        descriptor=ins.get_string())
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -335,14 +336,17 @@ def checkcast(ins, vmap):
     logger.debug('CheckCast: %s', ins.get_output())
     cast_type = util.get_type(ins.get_translated_kind())
     cast_var = get_variables(vmap, ins.AA)
-    return AssignExpression(cast_var, CheckCastExpression(cast_var, cast_type))
+    cast_expr = CheckCastExpression(cast_var, cast_type,
+        descriptor=ins.get_translated_kind())
+    return AssignExpression(cast_var, cast_expr)
 
 
 # instance-of vA, vB ( 4b, 4b )
 def instanceof(ins, vmap):
     logger.debug('InstanceOf : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
-    reg_c = BaseClass(util.get_type(ins.get_translated_kind()))
+    reg_c = BaseClass(util.get_type(ins.get_translated_kind()),
+        descriptor=ins.get_translated_kind())
     exp = BinaryExpression('instanceof', reg_b, reg_c, 'Z')
     return AssignExpression(reg_a, exp)
 
@@ -633,7 +637,6 @@ def aputshort(ins, vmap):
 def iget(ins, vmap):
     logger.debug('IGet : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -643,7 +646,6 @@ def iget(ins, vmap):
 def igetwide(ins, vmap):
     logger.debug('IGetWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -653,7 +655,6 @@ def igetwide(ins, vmap):
 def igetobject(ins, vmap):
     logger.debug('IGetObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -663,7 +664,6 @@ def igetobject(ins, vmap):
 def igetboolean(ins, vmap):
     logger.debug('IGetBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -673,7 +673,6 @@ def igetboolean(ins, vmap):
 def igetbyte(ins, vmap):
     logger.debug('IGetByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -683,7 +682,6 @@ def igetbyte(ins, vmap):
 def igetchar(ins, vmap):
     logger.debug('IGetChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -693,7 +691,6 @@ def igetchar(ins, vmap):
 def igetshort(ins, vmap):
     logger.debug('IGetShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = InstanceExpression(b, klass, ftype, name)
     return AssignExpression(a, exp)
@@ -703,7 +700,6 @@ def igetshort(ins, vmap):
 def iput(ins, vmap):
     logger.debug('IPut %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -712,7 +708,6 @@ def iput(ins, vmap):
 def iputwide(ins, vmap):
     logger.debug('IPutWide %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -721,7 +716,6 @@ def iputwide(ins, vmap):
 def iputobject(ins, vmap):
     logger.debug('IPutObject %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -730,7 +724,6 @@ def iputobject(ins, vmap):
 def iputboolean(ins, vmap):
     logger.debug('IPutBoolean %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -739,7 +732,6 @@ def iputboolean(ins, vmap):
 def iputbyte(ins, vmap):
     logger.debug('IPutByte %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -748,7 +740,6 @@ def iputbyte(ins, vmap):
 def iputchar(ins, vmap):
     logger.debug('IPutChar %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -757,7 +748,6 @@ def iputchar(ins, vmap):
 def iputshort(ins, vmap):
     logger.debug('IPutShort %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
-    klass = util.get_type(klass)
     a, b = get_variables(vmap, ins.A, ins.B)
     return InstanceInstruction(a, b, klass, atype, name)
 
@@ -766,7 +756,6 @@ def iputshort(ins, vmap):
 def sget(ins, vmap):
     logger.debug('SGet : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -776,7 +765,6 @@ def sget(ins, vmap):
 def sgetwide(ins, vmap):
     logger.debug('SGetWide : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -786,7 +774,6 @@ def sgetwide(ins, vmap):
 def sgetobject(ins, vmap):
     logger.debug('SGetObject : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -796,7 +783,6 @@ def sgetobject(ins, vmap):
 def sgetboolean(ins, vmap):
     logger.debug('SGetBoolean : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -806,7 +792,6 @@ def sgetboolean(ins, vmap):
 def sgetbyte(ins, vmap):
     logger.debug('SGetByte : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -816,7 +801,6 @@ def sgetbyte(ins, vmap):
 def sgetchar(ins, vmap):
     logger.debug('SGetChar : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -826,7 +810,6 @@ def sgetchar(ins, vmap):
 def sgetshort(ins, vmap):
     logger.debug('SGetShort : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     exp = StaticExpression(klass, atype, name)
     a = get_variables(vmap, ins.AA)
     return AssignExpression(a, exp)
@@ -836,7 +819,6 @@ def sgetshort(ins, vmap):
 def sput(ins, vmap):
     logger.debug('SPut : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -845,7 +827,6 @@ def sput(ins, vmap):
 def sputwide(ins, vmap):
     logger.debug('SPutWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -854,7 +835,6 @@ def sputwide(ins, vmap):
 def sputobject(ins, vmap):
     logger.debug('SPutObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -863,7 +843,6 @@ def sputobject(ins, vmap):
 def sputboolean(ins, vmap):
     logger.debug('SPutBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -872,7 +851,6 @@ def sputboolean(ins, vmap):
 def sputbyte(ins, vmap):
     logger.debug('SPutByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -881,7 +859,6 @@ def sputbyte(ins, vmap):
 def sputchar(ins, vmap):
     logger.debug('SPutChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -890,7 +867,6 @@ def sputchar(ins, vmap):
 def sputshort(ins, vmap):
     logger.debug('SPutShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
-    klass = util.get_type(klass)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
@@ -924,7 +900,7 @@ def invokevirtual(ins, vmap, ret):
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, args)
+                            param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -941,7 +917,7 @@ def invokesuper(ins, vmap, ret):
     superclass = BaseClass('super')
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, superclass, ret_type,
-                            param_type, args)
+                            param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -965,7 +941,7 @@ def invokedirect(ins, vmap, ret):
     else:
         returned = ret.new()
     exp = InvokeDirectInstruction(cls_name, name, base, ret_type,
-                            param_type, args)
+                            param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -979,10 +955,10 @@ def invokestatic(ins, vmap, ret):
     param_type = util.get_params_type(param_type)
     largs = [ins.C, ins.D, ins.E, ins.F, ins.G]
     args = get_args(vmap, param_type, largs)
-    base = BaseClass(cls_name)
+    base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                  param_type, args)
+                                  param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -999,7 +975,7 @@ def invokeinterface(ins, vmap, ret):
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, args)
+                            param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1016,7 +992,8 @@ def invokevirtualrange(ins, vmap, ret):
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                 param_type, [this_arg] + args)
+                                 param_type, [this_arg] + args,
+                                 method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1038,7 +1015,8 @@ def invokesuperrange(ins, vmap, ret):
         ret.set_to(base)
     superclass = BaseClass('super')
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [superclass] + args)
+                                param_type, [superclass] + args,
+                                method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1060,7 +1038,8 @@ def invokedirectrange(ins, vmap, ret):
         returned = base
         ret.set_to(base)
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [this_arg] + args)
+                                param_type, [this_arg] + args,
+                                method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1074,10 +1053,10 @@ def invokestaticrange(ins, vmap, ret):
     param_type = util.get_params_type(param_type)
     largs = range(ins.CCCC, ins.NNNN + 1)
     args = get_args(vmap, param_type, largs)
-    base = BaseClass(cls_name)
+    base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                param_type, args)
+                                param_type, args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1094,7 +1073,8 @@ def invokeinterfacerange(ins, vmap, ret):
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
     exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [base_arg] + args)
+                                param_type, [base_arg] + args,
+                                method.get_triple())
     return AssignExpression(returned, exp)
 
 
