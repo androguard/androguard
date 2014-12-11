@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2012/2013, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012/2013/2014, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
