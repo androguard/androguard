@@ -258,8 +258,8 @@ def const(ins, vmap):
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
 def consthigh16(ins, vmap):
     logger.debug('ConstHigh16 : %s', ins.get_output())
-    value = unpack('=f', '\x00\x00' + pack('=h', ins.BBBB))[0]
-    cst = Constant(value, 'I', ins.BBBB)
+    value = unpack('=f', pack('=i', ins.BBBB<<16))[0]
+    cst = Constant(value, 'I', ins.BBBB<<16)
     return assign_const(ins.AA, cst, vmap)
 
 
