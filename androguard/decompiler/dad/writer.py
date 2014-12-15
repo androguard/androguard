@@ -419,7 +419,7 @@ class Writer(object):
             self.end_ins()
 
     def visit_constant(self, cst):
-        if isinstance(cst, str) or isinstance(cst, unicode):
+        if isinstance(cst, basestring):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst, data="CONSTANT_INTEGER")  # INTEGER or also others?
 
@@ -670,7 +670,7 @@ class Writer(object):
 
 def string(s):
     ret = ['"']
-    for c in s:
+    for c in s.decode('utf8'):
         if c >= ' ' and c < '\x7f':
             if c == "'" or c == '"' or c == '\\':
                 ret.append('\\')
@@ -687,4 +687,4 @@ def string(s):
         ret.append('%x' % ((i >> 4) & 0x0f))
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
-    return ''.join(ret)
+    return ''.join(ret).encode('utf8')
