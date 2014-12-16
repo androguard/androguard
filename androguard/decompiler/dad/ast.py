@@ -192,7 +192,7 @@ def visit_expr(op):
         expr = visit_expr(arg)
         atype = arg.get_type()
         if atype == 'Z':
-            if op == opcode_ins.Op.EQUAL:
+            if op.op == opcode_ins.Op.EQUAL:
                 expr = unary_prefix('!', expr)
         elif atype in 'VBSCIJFD':
             expr = binary_infix(op.op, expr, literal_int(0))
