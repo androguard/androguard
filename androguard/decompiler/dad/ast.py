@@ -265,6 +265,8 @@ def visit_expr(op):
     if isinstance(op, instruction.NewInstance):
         return dummy("new ", parse_descriptor(op.type))
     if isinstance(op, instruction.Param):
+        if isinstance(op, instruction.ThisParam):
+            return local('this')
         return local('p{}'.format(op.v))
     if isinstance(op, instruction.StaticExpression):
         triple = op.clsdesc[1:-1], op.name, op.ftype
@@ -276,8 +278,6 @@ def visit_expr(op):
         return assignment(lhs, rhs)
     if isinstance(op, instruction.SwitchExpression):
         return visit_expr(op.var_map[op.src])
-    if isinstance(op, instruction.ThisParam):
-        return local('this')
     if isinstance(op, instruction.UnaryExpression):
         lhs = op.var_map.get(op.arg)
         if isinstance(op, instruction.CastExpression):
