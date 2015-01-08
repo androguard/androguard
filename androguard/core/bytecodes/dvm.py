@@ -1,6 +1,6 @@
 # This file is part of Androguard.
 #
-# Copyright (C) 2012/2013, Anthony Desnos <desnos at t0t0.fr>
+# Copyright (C) 2012/2013/2014, Anthony Desnos <desnos at t0t0.fr>
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,8 +81,6 @@ TYPE_DESCRIPTOR = {
     'J': 'long',
     'F': 'float',
     'D': 'double',
-    'STR': 'String',
-    'StringBuilder': 'String'
 }
 
 def get_access_flags_string(value):
@@ -373,7 +371,7 @@ def determineException(vm, m):
 
         handler_catch = value[1]
         if handler_catch.get_size() <= 0:
-            z.append( [ "any", handler_catch.get_catch_all_addr() * 2 ] )
+            z.append( [ "Ljava/lang/Throwable;", handler_catch.get_catch_all_addr() * 2 ] )
 
         for handler in handler_catch.get_handlers():
             z.append( [ vm.get_cm_type( handler.get_type_idx() ), handler.get_addr() * 2 ] )
@@ -1769,7 +1767,7 @@ def utf8_to_string(buff, length):
             chars.append(unichr(value))
         else:
             warning('at offset %x: illegal utf8' % buff.get_idx())
-    return ''.join(chars)
+    return ''.join(chars).encode('utf-8')
 
 
 class StringDataItem(object):
@@ -2014,7 +2012,8 @@ class ProtoIdItem(object):
     def reload(self):
         self.shorty_idx_value = self.__CM.get_string( self.shorty_idx )
         self.return_type_idx_value = self.__CM.get_type( self.return_type_idx )
-        self.parameters_off_value = self.__CM.get_type_list( self.parameters_off )
+        params = self.__CM.get_type_list( self.parameters_off )
+        self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
         """
@@ -2366,6 +2365,15 @@ class MethodIdItem(object):
       proto = self.get_proto()
       return proto[0] + proto[1]
 
+    def get_real_descriptor(self):
+      """
+          Return the real descriptor (i.e. without extra spaces)
+
+          :rtype: string
+      """
+      proto = self.get_proto()
+      return proto[0].replace(' ','') + proto[1]
+
     def get_name(self):
         """
             Return the name of the method
@@ -2376,6 +2384,9 @@ class MethodIdItem(object):
 
     def get_list(self):
         return [ self.get_class_name(), self.get_name(), self.get_proto() ]
+
+    def get_triple(self):
+        return self.get_class_name()[1:-1], self.get_name(), self.get_real_descriptor()
 
     def show(self):
         bytecode._PrintSubBanner("Method Id Item")
@@ -2942,6 +2953,9 @@ class EncodedMethod(object):
         """
         return self.name
 
+    def get_triple(self):
+        return self.CM.get_method_ref( self.method_idx ).get_triple()
+
     def add_inote(self, msg, idx, off=None):
         """
             Add a message to a specific instruction by using (default) the index of the address if specified
@@ -3222,7 +3236,7 @@ class ClassDefItem(object):
         self.class_data_off = unpack("=I", buff.read(4))[0]
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
-        self.interfaces = None
+        self.interfaces = []
         self.class_data_item = None
         self.static_values = None
 
@@ -3233,9 +3247,7 @@ class ClassDefItem(object):
     def reload(self):
         self.name = self.__CM.get_type( self.class_idx )
         self.sname = self.__CM.get_type( self.superclass_idx )
-
-        if self.interfaces_off != 0:
-            self.interfaces = self.__CM.get_type_list( self.interfaces_off )
+        self.interfaces = self.__CM.get_type_list( self.interfaces_off )
 
         if self.class_data_off != 0:
             self.class_data_item = self.__CM.get_class_data_item( self.class_data_off )
@@ -6885,7 +6897,6 @@ class ClassManager(object):
         self.__obj_offset = {}
         self.__item_offset = {}
 
-        self.__cached_type_list = {}
         self.__cached_proto = {}
 
         self.recode_ascii_string = config["RECODE_ASCII_STRING"]
@@ -7027,18 +7038,11 @@ class ClassManager(object):
 
     def get_type_list(self, off):
         if off == 0:
-            return "()"
-
-        if off in self.__cached_type_list:
-            return self.__cached_type_list[ off ]
+            return []
 
         for i in self.__manage_item[ "TYPE_TYPE_LIST" ]:
             if i.get_type_list_off() == off:
-                ret =  "(" + i.get_string() + ")"
-                self.__cached_type_list[ off ] = ret
-                return ret
-
-        return None
+                return [type_.get_string() for type_ in i.get_list()]
 
     def get_type(self, idx):
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( idx )

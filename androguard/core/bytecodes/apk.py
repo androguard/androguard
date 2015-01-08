@@ -562,9 +562,11 @@ class APK(object):
 
         cert = chilkat.CkCert()
         f = self.get_file(filename)
-        success = cert.LoadFromBinary2(f, len(f))
-
+        data = chilkat.CkByteData()
+        data.append2(f, len(f))
+        success = cert.LoadFromBinary(data)
         return success, cert
+
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
@@ -633,14 +635,14 @@ class APK(object):
                 return None
 
     def get_signature_name(self):
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA)$")
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.DSA)$")
         for i in self.get_files():
             if signature_expr.search(i):
                 return i
         return None
 
     def get_signature(self):
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA)$")
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.DSA)$")
         for i in self.get_files():
             if signature_expr.search(i):
                 return self.get_file(i)

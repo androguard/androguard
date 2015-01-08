@@ -72,15 +72,11 @@ http://code.google.com/p/androguard/issues/list
 Androguard + tools: Anthony Desnos <desnos at t0t0.fr>
 DAD (DAD is A Decompiler): Geoffroy Gueguen <geoffroy dot gueguen at gmail dot com>
 
-5 -] Contributors
+5 -] Licenses
 
-Craig Smith <agent dot craig at gmail dot com>: 64 bits patch + magic tricks
+5.1 --] Androguard
 
-6 -] Licenses
-
-6.1 --] Androguard
-
-Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
+Copyright (C) 2012/2013/2014, Anthony Desnos <desnos at t0t0.fr>
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,9 +91,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-6.2 -] DAD
+5.2 -] DAD
 
-Copyright (C) 2012, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
+Copyright (C) 2012/2013/2014, Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");

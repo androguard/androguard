@@ -1,7 +1,6 @@
 from PySide import QtCore, QtGui
 
 from androguard.core import androconf
-from androguard.gui.helpers import classmethod2display
 from androguard.gui.xrefwindow import XrefDialog
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.helpers import class2dotclass, classdot2class
