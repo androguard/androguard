@@ -283,6 +283,12 @@ class DvClass(object):
             source.append('package %s;\n' % self.package)
 
         superclass, prototype = self.superclass, self.prototype
+        if(prototype.find("$")>0): #by nkbai@163.com delete outer classname
+            prototype=prototype.strip();
+            spaceSplits=prototype.split(" ");
+            className=spaceSplits[-1]
+            spaceSplits[-1]=className[className.find('$')+1:]
+            prototype=' '.join(spaceSplits);
         if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
             prototype += ' extends %s' % superclass
