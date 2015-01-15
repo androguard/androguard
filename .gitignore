@@ -1,2 +1,5 @@
 *.pyc
-*.pyo
+*.pyoandroguard.egg-info/
+build/
+dist/
+t.py
