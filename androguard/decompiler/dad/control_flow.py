@@ -292,6 +292,8 @@ def short_circuit_struct(graph, idom, node_map):
                 if node in (then, els):
                     continue
                 if then.type.is_cond and len(graph.preds(then)) == 1:
+                    if node in (then.true, then.false):
+                        continue
                     if then.false is els:  # node && t
                         change = True
                         merged_node = MergeNodes(node, then, True, False)
@@ -303,6 +305,8 @@ def short_circuit_struct(graph, idom, node_map):
                         merged_node.true = els
                         merged_node.false = then.false
                 elif els.type.is_cond and len(graph.preds(els)) == 1:
+                    if node in (els.false, els.true):
+                        continue
                     if els.false is then:  # !node && e
                         change = True
                         merged_node = MergeNodes(node, els, True, True)

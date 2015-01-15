@@ -1,103 +1,46 @@
-#!/usr/bin/env python
-
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Androguard is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
-
-import sys, os, cmd, threading, code, re
-
 from androguard.core import *
 from androguard.core.androgen import *
-from androguard.core.androconf import *
 from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
-
 from androguard.core.analysis.analysis import *
 from androguard.core.analysis.ganalysis import *
-from androguard.core.analysis.risk import *
 from androguard.decompiler.decompiler import *
 
-
-from androguard.core import androconf
-from androguard.util import read
-
-from IPython.terminal.embed import InteractiveShellEmbed
-from IPython.config.loader import Config
-
 from cPickle import dumps, loads
-
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
-option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open an interactive shell to play more easily with objects', 'action' : 'count' }
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
-option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
-
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_8]
-
-
-def init_print_colors():
-    from IPython.utils import coloransi, io
-    default_colors(coloransi.TermColors)
-    CONF["PRINT_FCT"] = io.stdout.write
-
-
-def interact():
-    cfg = Config()
-    ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
-    init_print_colors()
-    ipshell()
-
+from androguard.core import androconf
 
 def save_session(l, filename):
-    """
-        save your session !
+  """
+      save your session !
 
-        :param l: a list of objects
-        :type: a list of object
-        :param filename: output filename to save the session
-        :type filename: string
+      :param l: a list of objects
+      :type: a list of object
+      :param filename: output filename to save the session
+      :type filename: string
 
-        :Example:
-            save_session([a, vm, vmx], "msession.json")
-    """
-    with open(filename, "w") as fd:
-        fd.write(dumps(l, -1))
+      :Example:
+          save_session([a, vm, vmx], "msession.json")
+  """
+  with open(filename, "w") as fd:
+     fd.write(dumps(l, -1))
 
 
 def load_session(filename):
-    """
-        load your session !
+  """
+      load your session !
 
-        :param filename: the filename where the session has been saved
-        :type filename: string
+      :param filename: the filename where the session has been saved
+      :type filename: string
 
-        :rtype: the elements of your session :)
+      :rtype: the elements of your session :)
 
-        :Example:
-            a, vm, vmx = load_session("mysession.json")
-    """
-    return loads(read(filename, binary=False))
+      :Example:
+          a, vm, vmx = load_session("mysession.json")
+  """
+  return loads(read(filename, binary=False))
 
-
-def AnalyzeAPK(filename, raw=False, decompiler=None):
+def AnalyzeAPK(filename, raw=False, decompiler="dad"):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
@@ -116,7 +59,7 @@ def AnalyzeAPK(filename, raw=False, decompiler=None):
     return a, d, dx
 
 
-def AnalyzeDex(filename, raw=False, decompiler=None):
+def AnalyzeDex(filename, raw=False, decompiler="dad"):
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -157,7 +100,7 @@ def AnalyzeDex(filename, raw=False, decompiler=None):
     return d, dx
 
 
-def AnalyzeODex(filename, raw=False, decompiler=None):
+def AnalyzeODex(filename, raw=False, decompiler="dad"):
     """
         Analyze an android odex file and setup all stuff for a more quickly analysis !
 
@@ -254,44 +197,3 @@ def ExportElfToPython(e):
     for function in e.get_functions():
         name = "FUNCTION_" + function.name
         setattr(e, name, function)
-
-
-def main(options, arguments):
-    if options.shell != None:
-        interact()
-
-    elif options.input != None:
-        _a = AndroguardS( options.input )
-
-        if options.pretty != None:
-          init_print_colors()
-
-        if options.display != None:
-            if options.pretty != None:
-                _a.ianalyze()
-                _a.pretty_show()
-            else:
-                _a.show()
-
-        elif options.method != None:
-            for method in _a.get("method", options.method):
-                if options.pretty != None:
-                    _a.ianalyze()
-                    method.pretty_show()
-                else:
-                    method.show()
-
-        elif options.field != None:
-            for field in _a.get("field", options.field):
-                field.show()
-
-        elif options.xpermissions != None:
-            _a.ianalyze()
-            perms_access = _a.get_analysis().get_permissions( [] )
-            for perm in perms_access:
-                print "PERM : ", perm
-                for path in perms_access[ perm ]:
-                    show_Path( _a.get_vm(), path )
-
-    elif options.version != None:
-        print "Androlyze version %s" % androconf.ANDROGUARD_VERSION
