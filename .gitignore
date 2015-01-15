@@ -3,3 +3,4 @@
 build/
 dist/
 t.py
+androguard.egg-info/
