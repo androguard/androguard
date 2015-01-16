@@ -105,7 +105,7 @@ def literal_string(s):
     }
 
     buf = ['"']
-    for c in s:
+    for c in s.decode('utf8'):
         if c in escapes:
             buf.append(escapes[c])
         elif ' ' <= c < '\x7f':
