@@ -1,6 +1,6 @@
 from PySide import QtCore, QtGui
 
-from androguard.androlyze import save_session
+from androguard.misc import save_session
 from androguard.core import androconf
 from androguard.gui.apkloading import ApkLoadingThread
 from androguard.gui.treewindow import TreeWindow
