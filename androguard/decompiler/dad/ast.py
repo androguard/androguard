@@ -368,7 +368,8 @@ class JSONWriter(object):
 
         # DAD doesn't create any params for abstract methods
         if len(params) != len(m.params_type):
-            assert('abstract' in flags and not params)
+            assert('abstract' in flags or 'native' in flags)
+            assert(not params)
             params = range(len(m.params_type))
 
         paramdecls = []
