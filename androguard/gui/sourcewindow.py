@@ -15,6 +15,11 @@ class SourceDocument(QtGui.QTextDocument):
         super(SourceDocument, self).__init__(parent)
         self.parent = parent
 
+        # Set font to be fixed-width
+        font = self.defaultFont()
+        font.setFamily("Courier New")
+        self.setDefaultFont(font)
+
         cursor = QtGui.QTextCursor(self) # position=0x0
         state = 0
         self.binding = {}
