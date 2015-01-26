@@ -71,6 +71,8 @@ class SourceWindow(QtGui.QTextBrowser):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
 
+        self.cursorPositionChanged.connect(self.selection_changed)
+
         # No need to call reload_java_sources() here because
         # it is called in MainWindow.currentTabChanged() function
         # that will be called when displaying the tab
@@ -127,6 +129,17 @@ class SourceWindow(QtGui.QTextBrowser):
         if PYGMENTS:
             PygmentsHighlighter(self.doc, lexer=JavaLexer())
 
+    @QtCore.Slot()
+    def selection_changed(self):
+        '''Used to detect when cursor change position and to auto select word
+           underneath it'''
+
+        cur = self.textCursor()
+        if len(cur.selectedText()) == 0:
+            cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
+            self.setTextCursor(cur)
+            androconf.debug("cursor: %s" % cur.selectedText())
+
     def createActions(self):
         self.xrefAct = QtGui.QAction("Xref from...", self,
                 statusTip="List the references where this element is used",
@@ -153,7 +166,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Xref asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -195,7 +208,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Rename asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -233,7 +246,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Goto asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -266,7 +279,7 @@ class SourceWindow(QtGui.QTextBrowser):
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in self.doc.binding.keys():
-            self.mainwin.showStatus(str(self.doc.binding[start]) + ' at position: (%d, %d)' % (start, end))
+            self.mainwin.showStatus('%s at position: (%d, %d)' % (str(self.doc.binding[start]), start, end))
         else:
             self.mainwin.showStatus("No info available.")
 

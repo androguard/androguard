@@ -20,7 +20,7 @@ class XrefDialog(QtGui.QDialog):
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
             androconf.warning("Bad XrefDialog creation")
             return
-        
+
         if not method:
             title = "Xrefs to %s" % path.split("/")[-1]
         else:
@@ -34,7 +34,7 @@ class XrefDialog(QtGui.QDialog):
 
     @classmethod
     def get_xrefs_list(cls, d, path, method=""):
-        '''Static method called before creating a XrefDialog 
+        '''Static method called before creating a XrefDialog
            to check if there are xrefs to display
             path: complete path of the class we are looking an xref from
             method (optional): method of the class we are looking xref from
