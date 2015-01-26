@@ -18,13 +18,13 @@ def classmethod2func(class_, method_):
 
     return "%s.%s" % (class2func(class_), method2func(method_))
 
-def classmethod2display(class_, method_):
+def classmethod2display(class_, method_, descriptor_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
     into a beautiful :) string to display Xrefs: 
     "Lcom/mwr/example/sieve/AddEntryActivity; -> onCreate"
     '''
 
-    return "%s -> %s" % (class_, method_)
+    return "%s -> %s ( %s )" % (class_, method_, descriptor_)
 
 def display2classmethod(display):
     '''Opposite of classmethod2display.

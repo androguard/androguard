@@ -18,13 +18,13 @@ class XrefDialog(QtGui.QDialog):
         super(XrefDialog, self).__init__(parent)
 
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
-            print "WARNING, bad XrefDialog creation"
+            androconf.warning("Bad XrefDialog creation")
             return
         
         if not method:
-            title = "Xrefs to " + path.split("/")[-1]
+            title = "Xrefs to %s" % path.split("/")[-1]
         else:
-            title = "Xrefs to " + path.split("/")[-1] + " -> " + method
+            title = "Xrefs to %s -> %s" % (path.split("/")[-1], method)
 
         self.setWindowTitle(title)
         layout = QtGui.QGridLayout()
@@ -76,10 +76,11 @@ class XrefDialog(QtGui.QDialog):
         androconf.debug("%d XREFs found" % len(xref_items))
 #        print xref_items
         xrefs = []
-        for i in range(len(xref_items)):
-            class_ = xref_items[i][0].get_class_name()
-            method_ = xref_items[i][0].get_name()
-            xrefs.append(classmethod2display(class_, method_))
+        for xref_item in xref_items:
+            class_ = xref_item[0].get_class_name()
+            method_ = xref_item[0].get_name()
+            descriptor_ = xref_item[0].get_descriptor()
+            xrefs.append(classmethod2display(class_, method_, descriptor_))
 #        print xrefs
         return xrefs
 
