@@ -1,8 +1,14 @@
 from PySide import QtCore, QtGui
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
-from androguard.gui.highlighter import Highlighter
 from androguard.gui.renamewindow import RenameDialog
+
+PYGMENTS = True
+try:
+    from IPython.qt.console.pygments_highlighter import PygmentsHighlighter
+    from pygments.lexers import JavaLexer
+except:
+    PYGMENTS = False
 
 import os
 
@@ -118,7 +124,8 @@ class SourceWindow(QtGui.QTextBrowser):
 
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
-        Highlighter(self.doc)
+        if PYGMENTS:
+            PygmentsHighlighter(self.doc, lexer=JavaLexer())
 
     def createActions(self):
         self.xrefAct = QtGui.QAction("Xref from...", self,
