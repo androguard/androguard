@@ -339,6 +339,10 @@ class PathVar(object):
   def get_access_flag(self):
     return self.access_flag
 
+  def get_src(self, cm):
+    method = cm.get_method_ref( self.idx )
+    return method.get_class_name(), method.get_name(), method.get_descriptor()
+
   def get_dst(self, cm):
     method = cm.get_method_ref( self.dst_idx )
     return method.get_class_name(), method.get_name(), method.get_descriptor()
