@@ -135,8 +135,11 @@ class DvMethod(object):
         # Native methods... no blocks.
         if self.start_block is None:
             logger.debug('Native Method.')
-            self.writer = Writer(None, self)
-            self.writer.write_method()
+            if doAST:
+                self.ast = JSONWriter(None, self).get_ast()
+            else:
+                self.writer = Writer(None, self)
+                self.writer.write_method()
             return
 
         graph = construct(self.start_block, self.var_to_name, self.exceptions)
