@@ -12,7 +12,12 @@ except:
 
 import os
 
-BINDINGS_NAMES = ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']
+BINDINGS_NAMES = [
+    'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
+    'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT',
+    'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW',
+    'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION'
+]
 
 class SourceDocument(QtGui.QTextDocument):
     '''QTextDocument associated with the SourceWindow.'''
@@ -71,7 +76,7 @@ class SourceWindow(QtGui.QTextBrowser):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
 
-        self.cursorPositionChanged.connect(self.selection_changed)
+        self.cursorPositionChanged.connect(self.cursor_position_changed)
 
         # No need to call reload_java_sources() here because
         # it is called in MainWindow.currentTabChanged() function
@@ -130,7 +135,7 @@ class SourceWindow(QtGui.QTextBrowser):
             PygmentsHighlighter(self.doc, lexer=JavaLexer())
 
     @QtCore.Slot()
-    def selection_changed(self):
+    def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word
            underneath it'''
 
@@ -139,6 +144,18 @@ class SourceWindow(QtGui.QTextBrowser):
             cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
             self.setTextCursor(cur)
             androconf.debug("cursor: %s" % cur.selectedText())
+
+    def keyPressEvent(self, event):
+        '''Keyboard shortcuts'''
+        key = event.key()
+        if key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_G:
+            self.actionGoto()
+        elif key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_I:
+            self.actionInfo()
 
     def createActions(self):
         self.xrefAct = QtGui.QAction("Xref from...", self,
