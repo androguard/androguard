@@ -45,26 +45,26 @@ option_7 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 
 options = [option_0, option_1, option_2, option_3, option_5, option_6, option_7]
 
-def main(options, arguments) :
+def main(options, arguments):
     details = False
-    if options.display != None :
+    if options.display != None:
         details = True
 
-    if options.input != None :
+    if options.input != None:
         ret_type = androconf.is_android( options.input[0] )
-        if ret_type == "APK" :
+        if ret_type == "APK":
             a = apk.APK( options.input[0] )
             d1 = dvm.DalvikVMFormat( a.get_dex() )
-        elif ret_type == "DEX" :
+        elif ret_type == "DEX":
             d1 = dvm.DalvikVMFormat( read(options.input[0]) )
 
         dx1 = analysis.VMAnalysis( d1 )
 
         ret_type = androconf.is_android( options.input[1] )
-        if ret_type == "APK" :
+        if ret_type == "APK":
             a = apk.APK( options.input[1] )
             d2 = dvm.DalvikVMFormat( a.get_dex() )
-        elif ret_type == "DEX" :
+        elif ret_type == "DEX":
             d2 = dvm.DalvikVMFormat( read(options.input[1]) )
 
         dx2 = analysis.VMAnalysis( d2 )
@@ -73,7 +73,7 @@ def main(options, arguments) :
         sys.stdout.flush()
 
         threshold = None
-        if options.threshold != None :
+        if options.threshold != None:
             threshold = float(options.threshold)
 
         FS = FILTERS_DALVIK_SIM
@@ -83,7 +83,7 @@ def main(options, arguments) :
         el.show()
 
         e1 = elsim.split_elements( el, el.get_similar_elements() )
-        for i in e1 :
+        for i in e1:
             j = e1[ i ]
             elb = elsim.Elsim( ProxyDalvikMethod(i), ProxyDalvikMethod(j), FILTERS_DALVIK_BB, threshold, options.compressor )
             #elb.show()
@@ -96,20 +96,20 @@ def main(options, arguments) :
 
         print "NEW METHODS"
         enew = el.get_new_elements()
-        for i in enew :
+        for i in enew:
             el.show_element( i, False )
 
         print "DELETED METHODS"
         edel = el.get_deleted_elements()
-        for i in edel :
+        for i in edel:
             el.show_element( i )
 
-    elif options.version != None :
+    elif options.version != None:
         print "Androdiff version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

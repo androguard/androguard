@@ -29,8 +29,6 @@ TYPE_DESCRIPTOR = {
     'J': 'long',
     'F': 'float',
     'D': 'double',
-    'STR': 'String',
-    'StringBuilder': 'String',
 }
 
 ACCESS_FLAGS_CLASSES = {
@@ -133,7 +131,7 @@ def common_dom(idom, cur, pred):
 
 def merge_inner(clsdict):
     '''
-    Merge the inner class(es) of a class :
+    Merge the inner class(es) of a class:
     e.g class A { ... } class A$foo{ ... } class A$bar{ ... }
        ==> class A { class foo{...} class bar{...} ... }
     '''

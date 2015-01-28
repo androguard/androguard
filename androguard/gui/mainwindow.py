@@ -1,10 +1,10 @@
 from PySide import QtCore, QtGui
 
+from androguard.misc import save_session
 from androguard.core import androconf
 from androguard.gui.apkloading import ApkLoadingThread
 from androguard.gui.treewindow import TreeWindow
 from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.androlyze import save_session
 from androguard.gui.helpers import class2func
 
 import os
@@ -161,7 +161,7 @@ class MainWindow(QtGui.QMainWindow):
         helpMenu.addAction("About &Qt", QtGui.qApp.aboutQt)
 
     def updateDockWithTree(self, empty=False):
-        '''Update the classes tree. Called when 
+        '''Update the classes tree. Called when
             - a new APK has been imported
             - a classe has been renamed (displayed in the tree)
         '''

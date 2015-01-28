@@ -34,8 +34,8 @@ option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'actio
 options = [option_0, option_1, option_2]
 
 
-def main(options, arguments) :
-    if options.input != None :
+def main(options, arguments):
+    if options.input != None:
         buff = ""
 
         ret_type = androconf.is_android(options.input)
@@ -49,19 +49,19 @@ def main(options, arguments) :
             print "Unknown file type"
             return
 
-        if options.output != None :
+        if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
             fd.write( buff )
             fd.close()
-        else :
+        else:
             print buff
 
-    elif options.version != None :
+    elif options.version != None:
         print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = OptionParser()
-    for option in options :
+    for option in options:
         param = option['name']
         del option['name']
         parser.add_option(*param, **option)

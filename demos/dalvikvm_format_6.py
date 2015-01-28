@@ -24,14 +24,14 @@ def hexdump(src, length=8, off=0):
     return b'\n'.join(result)
 
 class MDalvikVMFormat(object):
-    def __init__(self, vm, vmx) :
+    def __init__(self, vm, vmx):
         self.vm = vm
         self.vmx = vmx
 
-    def modify_instruction(self, class_name, method_name, descriptor, offset, instructions) :
+    def modify_instruction(self, class_name, method_name, descriptor, offset, instructions):
         pass
 
-    def test_save(self) :
+    def test_save(self):
         original_buff = self.vm.get_buff()
 
         b1 = original_buff
@@ -55,24 +55,24 @@ class MDalvikVMFormat(object):
 
         return b2
 
-    def check(self, b1, b2, off) :
-        if hashlib.md5( b1 ).hexdigest() != hashlib.md5( b2 ).hexdigest() :
+    def check(self, b1, b2, off):
+        if hashlib.md5( b1 ).hexdigest() != hashlib.md5( b2 ).hexdigest():
             j = 0
             end = max(len(b1), len(b2))
-            while j < end :
-                if j < off :
+            while j < end:
+                if j < off:
                   j += 1
                   continue
 
-                if j >= len(b1) :
+                if j >= len(b1):
                     print "OUT OF B1 @ OFFSET 0x%x(%d)" % (j,j)
                     raise("ooo")
 
-                if j >= len(b2) :
+                if j >= len(b2):
                     print "OUT OF B2 @ OFFSET 0x%x(%d)" % (j,j)
                     raise("ooo")
 
-                if b1[j] != b2[j] :
+                if b1[j] != b2[j]:
                     print "BEGIN @ OFFSET 0x%x" % j
                     print "ORIG : "
                     print hexdump(b1[j - 8: j + 8], off=j-8) + "\n"

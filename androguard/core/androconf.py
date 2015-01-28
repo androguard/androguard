@@ -195,10 +195,10 @@ def str2long(s):
 
     return l
 
-def random_string() :
+def random_string():
     return random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] )
 
-def is_android(filename) :
+def is_android(filename):
     """Return the type of the file
 
         @param filename : the filename
@@ -233,7 +233,7 @@ def is_android_raw(raw):
 
     return val
 
-def is_valid_android_raw(raw) :
+def is_valid_android_raw(raw):
   return raw.find("classes.dex") != -1
 
 # from scapy
@@ -245,16 +245,16 @@ log_runtime = logging.getLogger("andro.runtime")          # logs at runtime
 log_interactive = logging.getLogger("andro.interactive")  # logs in interactive functions
 log_loading = logging.getLogger("andro.loading")          # logs when loading andro
 
-def set_lazy() :
+def set_lazy():
   CONF["LAZY_ANALYSIS"] = True
 
-def set_debug() :
+def set_debug():
     log_andro.setLevel( logging.DEBUG )
 
-def set_info() :
+def set_info():
     log_andro.setLevel(logging.INFO)
 
-def get_debug() :
+def get_debug():
     return log_andro.getEffectiveLevel() == logging.DEBUG
 
 def warning(x):
@@ -262,7 +262,7 @@ def warning(x):
     import traceback
     traceback.print_exc()
 
-def error(x) :
+def error(x):
     log_runtime.error(x)
     raise()
 
@@ -272,10 +272,10 @@ def debug(x):
 def info(x):
     log_runtime.info(x)
 
-def set_options(key, value) :
+def set_options(key, value):
     CONF[ key ] = value
 
-def save_to_disk(buff, output) :
+def save_to_disk(buff, output):
     with open(output, "w") as fd:
         fd.write(buff)
 

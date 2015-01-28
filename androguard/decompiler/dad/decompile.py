@@ -25,13 +25,16 @@ import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
+from androguard.decompiler.dad.ast import (JSONWriter, parse_descriptor,
+    literal_string, literal_null, literal_int, literal_long, literal_float,
+    literal_double, literal_bool, dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
                                                 dead_code_elimination,
                                                 register_propagation,
                                                 split_variables)
-from androguard.decompiler.dad.graph import construct
+from androguard.decompiler.dad.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
 from androguard.util import read
@@ -47,6 +50,42 @@ def auto_vm(filename):
         return dvm.DalvikOdexVMFormat(read(filename))
     return None
 
+# No seperate DvField class currently
+def get_field_ast(field):
+    triple = field.get_class_name()[1:-1], field.get_name(), field.get_descriptor()
+
+    expr = None
+    if field.init_value:
+        vt = field.init_value.get_value_type()
+        val = field.init_value.value
+
+        # TODO: Add other types once dvm.EncodedValue parses them correctly
+        if vt == dvm.VALUE_STRING:
+            expr = literal_string(val)
+        # elif vt in (dvm.VALUE_INT, dvm.VALUE_SHORT, dvm.VALUE_CHAR):
+        #     expr = literal_int(val)
+        elif vt == dvm.VALUE_BYTE:
+            x = ord(val)
+            expr = literal_int(x - 256 if x >= 128 else x)
+        # elif vt == dvm.VALUE_LONG:
+        #     expr = literal_long(val)
+        # elif vt == dvm.VALUE_DOUBLE:
+        #     expr = literal_double(val)
+        # elif vt == dvm.VALUE_FLOAT:
+        #     expr = literal_float(val)
+        elif vt == dvm.VALUE_NULL:
+            expr = literal_null()
+        elif vt == dvm.VALUE_BOOLEAN:
+            expr = literal_bool(val)
+        else:
+            expr = dummy('???')
+
+    return {
+        'triple': triple,
+        'type': parse_descriptor(field.get_descriptor()),
+        'flags': util.get_access_field(field.get_access_flags()),
+        'expr': expr,
+    }
 
 class DvMethod(object):
     def __init__(self, methanalysis):
@@ -59,12 +98,14 @@ class DvMethod(object):
         self.var_to_name = defaultdict()
         self.writer = None
         self.graph = None
+        self.ast = None
 
         self.access = util.get_access_method(method.get_access_flags())
 
         desc = method.get_descriptor()
         self.type = desc.split(')')[-1]
         self.params_type = util.get_params_type(desc)
+        self.triple = method.get_triple()
 
         self.exceptions = methanalysis.exceptions.exceptions
 
@@ -74,7 +115,7 @@ class DvMethod(object):
         else:
             start = code.registers_size - code.ins_size
             if 'static' not in self.access:
-                self.var_to_name[start] = ThisParam(start, self.name)
+                self.var_to_name[start] = ThisParam(start, self.cls_name)
                 self.lparams.append(start)
                 start += 1
             num_param = 0
@@ -88,14 +129,17 @@ class DvMethod(object):
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
                 (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
-    def process(self):
+    def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
 
         # Native methods... no blocks.
         if self.start_block is None:
             logger.debug('Native Method.')
-            self.writer = Writer(None, self)
-            self.writer.write_method()
+            if doAST:
+                self.ast = JSONWriter(None, self).get_ast()
+            else:
+                self.writer = Writer(None, self)
+                self.writer.write_method()
             return
 
         graph = construct(self.start_block, self.var_to_name, self.exceptions)
@@ -115,11 +159,11 @@ class DvMethod(object):
         # graph to delete these nodes.
         # We start by restructuring the graph by spliting the conditional nodes
         # into a pre-header and a header part.
-        graph.split_if_nodes()
+        split_if_nodes(graph)
         # We then simplify the graph by merging multiple statement nodes into
         # a single statement node when possible. This also delete empty nodes.
 
-        graph.simplify()
+        simplify(graph)
         graph.compute_rpo()
 
         if not __debug__:
@@ -132,9 +176,14 @@ class DvMethod(object):
             util.create_png(self.cls_name, self.name, graph,
                                                     '/tmp/dad/structured')
 
-        self.writer = Writer(graph, self)
-        self.writer.write_method()
-        del graph
+        if doAST:
+            self.ast = JSONWriter(graph, self).get_ast()
+        else:
+            self.writer = Writer(graph, self)
+            self.writer.write_method()
+
+    def get_ast(self):
+        return self.ast
 
     def show_source(self):
         print self.get_source()
@@ -165,10 +214,8 @@ class DvClass(object):
         self.name = name[:-1]
 
         self.vma = vma
-        self.methods = dict((meth.get_method_idx(), meth)
-                            for meth in dvclass.get_methods())
-        self.fields = dict((field.get_name(), field)
-                           for field in dvclass.get_fields())
+        self.methods = dvclass.get_methods()
+        self.fields = dvclass.get_fields()
         self.subclasses = {}
         self.code = []
         self.inner = False
@@ -185,13 +232,14 @@ class DvClass(object):
         self.access = util.get_access_class(access)
         self.prototype = prototype % (' '.join(self.access), self.name)
 
-        self.interfaces = dvclass.interfaces
+        self.interfaces = dvclass.get_interfaces()
         self.superclass = dvclass.get_superclassname()
+        self.thisclass = dvclass.get_name()
 
         logger.info('Class : %s', self.name)
         logger.info('Methods added :')
-        for index, meth in self.methods.iteritems():
-            logger.info('%s (%s, %s)', index, self.name, meth.name)
+        for meth in self.methods:
+            logger.info('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
         logger.info('')
 
     def add_subclass(self, innername, dvclass):
@@ -201,25 +249,36 @@ class DvClass(object):
     def get_methods(self):
         return self.methods
 
-    def process_method(self, num):
-        methods = self.methods
-        if num in methods:
-            method = methods[num]
-            if not isinstance(method, DvMethod):
-                method.set_instructions([i for i in method.get_instructions()])
-                meth = methods[num] = DvMethod(self.vma.get_method(method))
-                meth.process()
-                method.set_instructions([])
-            else:
-                method.process()
+    def process_method(self, num, doAST=False):
+        method = self.methods[num]
+        if not isinstance(method, DvMethod):
+            method.set_instructions([i for i in method.get_instructions()])
+            self.methods[num] = DvMethod(self.vma.get_method(method))
+            self.methods[num].process(doAST=doAST)
+            method.set_instructions([])
         else:
-            logger.error('Method %s not found.', num)
+            method.process(doAST=doAST)
 
-    def process(self):
+    def process(self, doAST=False):
         for klass in self.subclasses.values():
-            klass.process()
-        for meth in self.methods:
-            self.process_method(meth)
+            klass.process(doAST=doAST)
+        for i in range(len(self.methods)):
+            self.process_method(i, doAST=doAST)
+
+    def get_ast(self):
+        fields = [get_field_ast(f) for f in self.fields]
+        methods = [m.get_ast() for m in self.methods if m.ast is not None]
+        isInterface = 'interface' in self.access
+        return {
+            'rawname': self.thisclass[1:-1],
+            'name': parse_descriptor(self.thisclass),
+            'super': parse_descriptor(self.superclass),
+            'flags': self.access,
+            'isInterface': isInterface,
+            'interfaces': map(parse_descriptor, self.interfaces),
+            'fields': fields,
+            'methods': methods,
+        }
 
     def get_source(self):
         source = []
@@ -231,13 +290,13 @@ class DvClass(object):
             superclass = superclass[1:-1].replace('/', '.')
             prototype += ' extends %s' % superclass
 
-        if self.interfaces is not None:
-            interfaces = self.interfaces[1:-1].split(' ')
+        if len(self.interfaces) > 0:
             prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in interfaces])
+                        [n[1:-1].replace('/', '.') for n in self.interfaces])
 
         source.append('%s {\n' % prototype)
-        for name, field in sorted(self.fields.iteritems()):
+        for field in self.fields:
+            name = field.get_name()
             access = util.get_access_field(field.get_access_flags())
             f_type = util.get_type(field.get_descriptor())
             source.append('    ')
@@ -257,7 +316,7 @@ class DvClass(object):
         for klass in self.subclasses.values():
             source.append(klass.get_source())
 
-        for _, method in self.methods.iteritems():
+        for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(method.get_source())
         source.append('}\n')
@@ -280,18 +339,17 @@ class DvClass(object):
             list_proto.append(('EXTEND', ' extends '))
             list_proto.append(('NAME_SUPERCLASS', '%s' % superclass))
 
-        if self.interfaces is not None:
-            interfaces = self.interfaces[1:-1].split(' ')
+        if len(self.interfaces) > 0:
             list_proto.append(('IMPLEMENTS', ' implements '))
-            for i in range(len(interfaces)):
+            for i, interface in enumerate(self.interfaces):
                 if i != 0:
                     list_proto.append(('COMMA', ', '))
                 list_proto.append(
-                    ('NAME_INTERFACE', interfaces[i][1:-1].replace('/', '.')))
+                    ('NAME_INTERFACE', interface[1:-1].replace('/', '.')))
         list_proto.append(('PROTOTYPE_END', ' {\n'))
         source.append(("PROTOTYPE", list_proto))
 
-        for field in self.fields.values():
+        for field in self.fields:
             field_access_flags = field.get_access_flags()
             access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
                         util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
@@ -312,7 +370,7 @@ class DvClass(object):
         for klass in self.subclasses.values():
             source.append((klass, klass.get_source()))
 
-        for _, method in self.methods.iteritems():
+        for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(("METHOD", method.get_source_ext()))
         source.append(("CLASS_END", [('CLASS_END', '}\n')]))
@@ -398,13 +456,13 @@ def main():
     if cls_name == '*':
         machine.process_and_show()
     else:
-        cls = machine.get_class(cls_name.decode('utf8'))
+        cls = machine.get_class(cls_name)
         if cls is None:
             logger.error('%s not found.', cls_name)
         else:
             logger.info('======================')
-            for method_id, method in cls.get_methods().items():
-                logger.info('%d: %s', method_id, method.name)
+            for i, method in enumerate(cls.get_methods()):
+                logger.info('%d: %s', i, method.name)
             logger.info('======================')
             meth = raw_input('Method: ')
             if meth == '*':

@@ -42,36 +42,36 @@ def Exit( msg ):
 def Warning( msg ):
     warning(msg)
 
-def _PrintBanner() :
+def _PrintBanner():
     print_fct = CONF["PRINT_FCT"]
     print_fct("*" * 75 + "\n")
 
-def _PrintSubBanner(title=None) :
+def _PrintSubBanner(title=None):
   print_fct = CONF["PRINT_FCT"]
-  if title == None :
+  if title == None:
     print_fct("#" * 20 + "\n")
-  else :
+  else:
     print_fct("#" * 10 + " " + title + "\n")
 
-def _PrintNote(note, tab=0) :
+def _PrintNote(note, tab=0):
   print_fct = CONF["PRINT_FCT"]
   note_color = CONF["COLORS"]["NOTE"]
   normal_color = CONF["COLORS"]["NORMAL"]
   print_fct("\t" * tab + "%s# %s%s" % (note_color, note, normal_color) + "\n")
 
 # Print arg into a correct format
-def _Print(name, arg) :
+def _Print(name, arg):
     buff = name + " "
 
-    if type(arg).__name__ == 'int' :
+    if type(arg).__name__ == 'int':
         buff += "0x%x" % arg
-    elif type(arg).__name__ == 'long' :
+    elif type(arg).__name__ == 'long':
         buff += "0x%x" % arg
-    elif type(arg).__name__ == 'str' :
+    elif type(arg).__name__ == 'str':
         buff += "%s" % arg
-    elif isinstance(arg, SV) :
+    elif isinstance(arg, SV):
         buff += "0x%x" % arg.get_value()
-    elif isinstance(arg, SVs) :
+    elif isinstance(arg, SVs):
         buff += arg.get_value().__str__()
 
     print buff
@@ -564,63 +564,63 @@ class SV(object):
     def _get(self):
         return pack(self.__size, self.__value)
 
-    def __str__(self) :
+    def __str__(self):
         return "0x%x" % self.__value
 
-    def __int__(self) :
+    def __int__(self):
         return self.__value
 
-    def get_value_buff(self) :
+    def get_value_buff(self):
         return self._get()
 
-    def get_value(self) :
+    def get_value(self):
         return self.__value
 
-    def set_value(self, attr) :
+    def set_value(self, attr):
         self.__value = attr
 
 class SVs(object):
-    def __init__(self, size, ntuple, buff) :
+    def __init__(self, size, ntuple, buff):
         self.__size = size
 
         self.__value = ntuple._make( unpack( self.__size, buff ) )
 
-    def _get(self) :
+    def _get(self):
         l = []
-        for i in self.__value._fields :
+        for i in self.__value._fields:
             l.append( getattr( self.__value, i ) )
         return pack( self.__size, *l)
 
-    def _export(self) :
+    def _export(self):
         return [ x for x in self.__value._fields ]
 
-    def get_value_buff(self) :
+    def get_value_buff(self):
         return self._get()
 
-    def get_value(self) :
+    def get_value(self):
         return self.__value
 
-    def set_value(self, attr) :
+    def set_value(self, attr):
         self.__value = self.__value._replace( **attr )
 
-    def __str__(self) :
+    def __str__(self):
         return self.__value.__str__()
 
-def object_to_str(obj) :
-    if isinstance(obj, str) :
+def object_to_str(obj):
+    if isinstance(obj, str):
         return obj
-    elif isinstance(obj, bool) :
+    elif isinstance(obj, bool):
         return ""
-    elif isinstance(obj, int) :
+    elif isinstance(obj, int):
         return pack("<L", obj)
-    elif obj == None :
+    elif obj == None:
         return ""
-    else :
+    else:
         #print type(obj), obj
         return obj.get_raw()
 
-class MethodBC(object) :
-    def show(self, value) :
+class MethodBC(object):
+    def show(self, value):
         getattr(self, "show_" + value)()
 
 
@@ -642,14 +642,14 @@ class BuffHandle(object):
         data = self.read(size)
         return data
 
-    def read_b(self, size) :
+    def read_b(self, size):
         return self.__buff[ self.__idx : self.__idx + size ]
 
     def read_at(self, offset, size):
         return self.__buff[ offset : offset + size ]
 
-    def read(self, size) :
-        if isinstance(size, SV) :
+    def read(self, size):
+        if isinstance(size, SV):
             size = size.value
 
         buff = self.__buff[ self.__idx : self.__idx + size ]
@@ -657,11 +657,11 @@ class BuffHandle(object):
 
         return buff
 
-    def end(self) :
+    def end(self):
         return self.__idx == len(self.__buff)
 
 class Buff(object):
-    def __init__(self, offset, buff) :
+    def __init__(self, offset, buff):
         self.offset = offset
         self.buff = buff
 
@@ -670,7 +670,7 @@ class Buff(object):
 
 class _Bytecode(object):
     def __init__(self, buff):
-        try :
+        try:
             import psyco
             psyco.full()
         except ImportError:
@@ -679,8 +679,8 @@ class _Bytecode(object):
         self.__buff = buff
         self.__idx = 0
 
-    def read(self, size) :
-        if isinstance(size, SV) :
+    def read(self, size):
+        if isinstance(size, SV):
             size = size.value
 
         buff = self.__buff[ self.__idx : self.__idx + size ]
@@ -688,42 +688,42 @@ class _Bytecode(object):
 
         return buff
 
-    def readat(self, off) :
-        if isinstance(off, SV) :
+    def readat(self, off):
+        if isinstance(off, SV):
             off = off.value
 
         return self.__buff[ off : ]
 
-    def read_b(self, size) :
+    def read_b(self, size):
         return self.__buff[ self.__idx : self.__idx + size ]
 
-    def set_idx(self, idx) :
+    def set_idx(self, idx):
         self.__idx = idx
 
-    def get_idx(self) :
+    def get_idx(self):
         return self.__idx
 
-    def add_idx(self, idx) :
+    def add_idx(self, idx):
         self.__idx += idx
 
-    def register(self, type_register, fct) :
+    def register(self, type_register, fct):
         self.__registers[ type_register ].append( fct )
 
-    def get_buff(self) :
+    def get_buff(self):
         return self.__buff
 
-    def length_buff(self) :
+    def length_buff(self):
         return len( self.__buff )
 
-    def set_buff(self, buff) :
+    def set_buff(self, buff):
         self.__buff = buff
 
-    def save(self, filename) :
+    def save(self, filename):
         buff = self._save()
         with open(filename, "w") as fd:
             fd.write( buff )
 
-def FormatClassToJava(input) :
+def FormatClassToJava(input):
     """
        Transoform a typical xml format class into java format
 
@@ -732,21 +732,21 @@ def FormatClassToJava(input) :
     """
     return "L" + input.replace(".", "/") + ";"
 
-def FormatClassToPython(input) :
+def FormatClassToPython(input):
     i = input[:-1]
     i = i.replace("/", "_")
     i = i.replace("$", "_")
 
     return i
 
-def FormatNameToPython(input) :
+def FormatNameToPython(input):
     i = input.replace("<", "")
     i = i.replace(">", "")
     i = i.replace("$", "_")
 
     return i
 
-def FormatDescriptorToPython(input) :
+def FormatDescriptorToPython(input):
     i = input.replace("/", "_")
     i = i.replace(";", "")
     i = i.replace("[", "")
