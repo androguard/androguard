@@ -191,8 +191,7 @@ class MainWindow(QtGui.QMainWindow):
         self.tree = TreeWindow(win=self)
         self.tree.setWindowTitle("Tree model")
         self.dock.setWidget(self.tree)
-        paths = self.d.get_classes_names(update=True)
-        self.tree.insertTree(paths)
+        self.tree.fill(self.d.get_classes())
 
     def openSourceWindow(self, path, method=""):
         '''Main function to open a .java source window
