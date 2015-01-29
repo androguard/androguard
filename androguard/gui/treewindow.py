@@ -3,7 +3,7 @@ from PySide import QtCore, QtGui
 from androguard.core import androconf
 from androguard.gui.xrefwindow import XrefDialog
 from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.helpers import class2dotclass, classdot2class
+from androguard.gui.helpers import classdot2class, Signature
 
 class TreeWindow(QtGui.QTreeWidget):
     '''TODO
@@ -17,32 +17,25 @@ class TreeWindow(QtGui.QTreeWidget):
         self.createActions()
         self.header().close()
 
-    def insertTree(self, paths):
+    def fill(self, classes):
         '''Parse all the paths (['Lcom/sogeti/example/myclass/MyActivity$1;', ...])
-           and build a tree using the QTreeWidgetItem insertion method.
+           and build a tree using the QTreeWidgetItem insertion method.'''
 
-           NB: This algo works because in alphabetical order thanks to sort()
-        '''
-
-        paths.sort()
-        d = {} # dict of QTreeWodgetItem indexed by paths (already browsed)
-        for p in paths:
-            p = class2dotclass(p)
-            elements = p.split(".")
-            #add folders if does not exist
-            for i in range(len(elements)):
-                parent_str = ".".join(elements[:i])
-                current_str = elements[i]
-                path = (parent_str, current_str)
-                if path not in d.keys():
-                    if not parent_str:
-                        e = QtGui.QTreeWidgetItem(self, [elements[i]])
-                    else:
-                        elements2 = parent_str.split(".")
-                        # we are sure it exists due to algorithm
-                        e = QtGui.QTreeWidgetItem(d[(".".join(elements2[:-1]), elements2[-1])], [elements[i]])
-                    d[path] = e
-                    #self.expandItem(e) #HAX to expand all items during loading
+        root_path_node = ({}, self)
+        for c in sorted(classes, key=lambda c: c.name):
+            sig = Signature(c)
+            path_node = root_path_node
+            # Namespaces
+            for path in sig.class_path:
+                if path not in path_node[0]:
+                    path_node[0][path] = ({},
+                            QtGui.QTreeWidgetItem(path_node[1]))
+                    path_node[0][path][1].setText(0, path)
+                path_node = path_node[0][path]
+            # Class
+            path_node[0][path] = ({},
+                    QtGui.QTreeWidgetItem(path_node[1]))
+            path_node[0][path][1].setText(0, sig.class_name)
 
     def item2path(self, item, column=0):
         '''Browse all parents from QTreeWidgetItem item

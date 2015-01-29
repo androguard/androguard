@@ -1,12 +1,23 @@
 from PySide import QtCore, QtGui
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
-from androguard.gui.highlighter import Highlighter
 from androguard.gui.renamewindow import RenameDialog
+
+PYGMENTS = True
+try:
+    from IPython.qt.console.pygments_highlighter import PygmentsHighlighter
+    from pygments.lexers import JavaLexer
+except:
+    PYGMENTS = False
 
 import os
 
-BINDINGS_NAMES = ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']
+BINDINGS_NAMES = [
+    'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
+    'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT',
+    'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW',
+    'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION'
+]
 
 class SourceDocument(QtGui.QTextDocument):
     '''QTextDocument associated with the SourceWindow.'''
@@ -14,6 +25,11 @@ class SourceDocument(QtGui.QTextDocument):
     def __init__(self, parent=None, lines=[]):
         super(SourceDocument, self).__init__(parent)
         self.parent = parent
+
+        # Set font to be fixed-width
+        font = self.defaultFont()
+        font.setFamily("Courier New")
+        self.setDefaultFont(font)
 
         cursor = QtGui.QTextCursor(self) # position=0x0
         state = 0
@@ -59,6 +75,8 @@ class SourceWindow(QtGui.QTextBrowser):
 
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
+
+        self.cursorPositionChanged.connect(self.cursor_position_changed)
 
         # No need to call reload_java_sources() here because
         # it is called in MainWindow.currentTabChanged() function
@@ -113,7 +131,31 @@ class SourceWindow(QtGui.QTextBrowser):
 
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
-        Highlighter(self.doc)
+        if PYGMENTS:
+            PygmentsHighlighter(self.doc, lexer=JavaLexer())
+
+    @QtCore.Slot()
+    def cursor_position_changed(self):
+        '''Used to detect when cursor change position and to auto select word
+           underneath it'''
+
+        cur = self.textCursor()
+        if len(cur.selectedText()) == 0:
+            cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
+            self.setTextCursor(cur)
+            androconf.debug("cursor: %s" % cur.selectedText())
+
+    def keyPressEvent(self, event):
+        '''Keyboard shortcuts'''
+        key = event.key()
+        if key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_G:
+            self.actionGoto()
+        elif key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_I:
+            self.actionInfo()
 
     def createActions(self):
         self.xrefAct = QtGui.QAction("Xref from...", self,
@@ -141,7 +183,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Xref asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -183,7 +225,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Rename asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -221,7 +263,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Goto asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -254,7 +296,7 @@ class SourceWindow(QtGui.QTextBrowser):
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in self.doc.binding.keys():
-            self.mainwin.showStatus(str(self.doc.binding[start]) + ' at position: (%d, %d)' % (start, end))
+            self.mainwin.showStatus('%s at position: (%d, %d)' % (str(self.doc.binding[start]), start, end))
         else:
             self.mainwin.showStatus("No info available.")
 

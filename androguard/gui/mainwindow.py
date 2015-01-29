@@ -9,6 +9,14 @@ from androguard.gui.helpers import class2func
 
 import os
 
+class CustomTabBar(QtGui.QTabBar):
+    '''Subclass QTabBar to implement middle-click closing of tabs'''
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.MidButton:
+            self.tabCloseRequested.emit(self.tabAt(event.pos()))
+        super(QtGui.QTabBar, self).mouseReleaseEvent(event)
+
 class MainWindow(QtGui.QMainWindow):
 
     '''Main window:
@@ -45,11 +53,6 @@ class MainWindow(QtGui.QMainWindow):
                 "<p><b>AndroGui</b> is basically a Gui for Androguard :)." \
                 "<br>So we named it AndroGui :p. </p>")
 
-    def newFile(self):
-        #TODO: by replacing newFile with closeFile
-        # and close androguard saved info and save .ag?
-        self.cleanCentral()
-
     def setupApkLoading(self):
         self.apkLoadingThread = ApkLoadingThread()
         self.connect(self.apkLoadingThread,
@@ -76,26 +79,40 @@ class MainWindow(QtGui.QMainWindow):
         '''User clicked Open menu. Display a Dialog to ask which APK to open.'''
         if not path:
             path = QtGui.QFileDialog.getOpenFileName(self, "Open File",
-                    '', "APK Files (*.apk)")
+                    '', "APK Files (*.apk);;Androguard Session (*.ag)")
             path = str(path[0])
 
         if path:
             self.showStatus("Analyzing %s..." % str(path))
             self.apkLoadingThread.load(path)
 
-    def saveSession(self):
+    def saveFile(self, path=None):
+        '''User clicked Save menu. Display a Dialog to ask whwre to save.'''
+        if not path:
+            path = QtGui.QFileDialog.getSaveFileName(self, "Save File",
+                    '', "Androguard Session (*.ag)")
+            path = str(path[0])
+
+        if path:
+            self.showStatus("Saving %s..." % str(path))
+            self.saveSession(path)
+
+    def saveSession(self, path=None):
         '''Save androguard session to same name as APK name except ending with .ag'''
+        path = self.apkLoadingThread.session_path if not path else path
+        if not path:
+            return
         if not hasattr(self, "a") or not hasattr(self, "d") or not hasattr(self, "x"):
-            print "WARNING: session not saved because no Dalvik elements"
+            androconf.warning("session not saved because no Dalvik elements")
             return
         try:
-            save_session([self.a, self.d, self.x], self.apkLoadingThread.session_path)
+            save_session([self.a, self.d, self.x], path)
         except RuntimeError, e:
-            print "ERROR:" + str(e)
-            #http://stackoverflow.com/questions/2134706/hitting-maximum-recursion-depth-using-pythons-pickle-cpickle
-            print "Try increasing sys.recursionlimit"
-            os.remove(self.apkLoadingThread.session_path)
-            print "WARNING: session not saved"
+            androconf.error(str(e))
+            # http://stackoverflow.com/questions/2134706/hitting-maximum-recursion-depth-using-pythons-pickle-cpickle
+            androconf.error("Try increasing sys.recursionlimit")
+            os.remove(path)
+            androconf.warning("Session not saved")
 
     def quit(self):
         '''Clicked in File menu to exit or CTRL+Q to close main window'''
@@ -126,6 +143,7 @@ class MainWindow(QtGui.QMainWindow):
     def setupCentral(self):
         '''Setup empty window supporting tabs at startup. '''
         self.central = QtGui.QTabWidget()
+        self.central.setTabBar(CustomTabBar())
         self.central.setTabsClosable(True)
         self.central.tabCloseRequested.connect(self.tabCloseRequestedHandler)
         self.central.currentChanged.connect(self.currentTabChanged)
@@ -149,8 +167,8 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = QtGui.QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
         fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
+        fileMenu.addAction("&Save...", self.saveFile, "Ctrl+S")
         fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
 
     def setupHelpMenu(self):
@@ -173,8 +191,7 @@ class MainWindow(QtGui.QMainWindow):
         self.tree = TreeWindow(win=self)
         self.tree.setWindowTitle("Tree model")
         self.dock.setWidget(self.tree)
-        paths = self.d.get_classes_names(update=True)
-        self.tree.insertTree(paths)
+        self.tree.fill(self.d.get_classes())
 
     def openSourceWindow(self, path, method=""):
         '''Main function to open a .java source window

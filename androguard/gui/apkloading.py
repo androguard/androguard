@@ -10,15 +10,21 @@ class ApkLoadingThread(QtCore.QThread):
     def __init__(self, parent=None):
         QtCore.QThread.__init__(self, parent)
         self.apk_path = None
+        self.session_path = None
 
     def load(self, apk_path):
         self.apk_path = apk_path
-        self.session_path = self.apk_path[:-4] + '.ag'
+        if apk_path.endswith(".apk"):
+            self.session_path = self.apk_path[:-4] + '.ag'
+        elif apk_path.endswith(".ag"):
+            self.session_path = apk_path
+        else:
+            return
         self.start(QtCore.QThread.LowestPriority)
 
     def load_androguard_session(self):
-        if not self.apk_path.endswith('.apk'):
-            print "Not loading session. APK not supported"
+        if not self.apk_path.endswith(".apk") and not self.apk_path.endswith(".ag"):
+            androconf.warning("Not loading session. APK not supported")
             return False
         if os.path.isfile(self.session_path):
             androconf.debug("Loading previous session")
