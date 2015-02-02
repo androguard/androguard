@@ -42,8 +42,7 @@ class SourceDocument(QtGui.QTextDocument):
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
 
-#class SourceWindow(QtGui.QTextEdit):
-class SourceWindow(QtGui.QTextBrowser):
+class SourceWindow(QtGui.QTextEdit):
     '''Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
@@ -60,12 +59,6 @@ class SourceWindow(QtGui.QTextBrowser):
         self.path = path
         self.title = path.split("/")[-1].replace(';', '')
 
-        self.ospath = "/".join(path.split("/")[:-1])[1:]
-        self.osfile = self.title + ".html"
-        try:
-            os.makedirs(self.ospath)
-        except OSError:
-            pass
         arg = class2func(self.path)
         self.class_item = getattr(self.mainwin.d, arg)
 
@@ -111,15 +104,6 @@ class SourceWindow(QtGui.QTextBrowser):
 
         androconf.debug("Getting sources for %s" % self.path)
         lines = self.class_item.get_source_ext()
-
-        filename = os.path.join(self.ospath, self.osfile)
-        androconf.debug("Writing file: %s" % filename)
-        with open(filename, 'wb') as fd:
-            for section, L in lines:
-                for t in L:
-    #                if t[0] in BINDINGS_NAMES:
-    #                    self.binding[cursor.position()] = t
-                    fd.write(t[1])
 
         #TODO: delete doc when tab is closed? not deleted by "self" :(
         if hasattr(self, "doc"):
