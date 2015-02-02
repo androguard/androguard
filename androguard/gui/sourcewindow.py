@@ -66,11 +66,9 @@ class SourceWindow(QtGui.QTextBrowser):
             os.makedirs(self.ospath)
         except OSError:
             pass
-
         arg = class2func(self.path)
         self.class_item = getattr(self.mainwin.d, arg)
 
-        self.createActions()
         self.setReadOnly(True)
 
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -156,27 +154,26 @@ class SourceWindow(QtGui.QTextBrowser):
             self.actionXref()
         elif key == QtCore.Qt.Key_I:
             self.actionInfo()
-
-    def createActions(self):
-        self.xrefAct = QtGui.QAction("Xref from...", self,
-                statusTip="List the references where this element is used",
-                triggered=self.actionXref)
-        self.gotoAct = QtGui.QAction("Go to...", self,
-                statusTip="Go to element definition",
-                triggered=self.actionGoto)
-        self.renameAct = QtGui.QAction("Rename...", self,
-                statusTip="Rename an element (class, method, ...)",
-                triggered=self.actionRename)
-        self.infoAct = QtGui.QAction("Info...", self,
-                statusTip="Display info of an element (anything useful in the document)",
-                triggered=self.actionInfo)
+        elif key == QtCore.Qt.Key_R:
+            self.reload_java_sources()
 
     def CustomContextMenuHandler(self, pos):
         menu = QtGui.QMenu(self)
-        menu.addAction(self.xrefAct)
-        menu.addAction(self.gotoAct)
-        menu.addAction(self.renameAct)
-        menu.addAction(self.infoAct)
+        menu.addAction(QtGui.QAction("Xref from...", self,
+                statusTip="List the references where this element is used",
+                triggered=self.actionXref))
+        menu.addAction(QtGui.QAction("Go to...", self,
+                statusTip="Go to element definition",
+                triggered=self.actionGoto))
+        menu.addAction(QtGui.QAction("Rename...", self,
+                statusTip="Rename an element (class, method, ...)",
+                triggered=self.actionRename))
+        menu.addAction(QtGui.QAction("Info...", self,
+                statusTip="Display info of an element (anything useful in the document)",
+                triggered=self.actionInfo))
+        menu.addAction(QtGui.QAction("Reload sources...", self,
+                statusTip="Reload sources (needed when renaming changed other tabs)",
+                triggered=self.reload_java_sources))
         menu.exec_(QtGui.QCursor.pos())
 
     def actionXref(self):

@@ -156,8 +156,6 @@ class MainWindow(QtGui.QMainWindow):
         androconf.debug("curentTabChanged -> %d" % index)
         if index == -1:
             return # all tab closed
-        sourcewin = self.central.widget(index)
-        sourcewin.reload_java_sources()
 
     def cleanCentral(self):
         #TOFIX: Removes all the pages, but does not delete them.
@@ -201,6 +199,7 @@ class MainWindow(QtGui.QMainWindow):
         sourcewin = self.getMeSourceWindowIfExists(path)
         if not sourcewin:
             sourcewin = SourceWindow(win=self, path=path)
+            sourcewin.reload_java_sources()
             self.central.addTab(sourcewin, sourcewin.title)
             self.central.setTabToolTip(self.central.indexOf(sourcewin), sourcewin.path)
         if method:
