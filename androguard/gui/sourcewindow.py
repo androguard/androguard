@@ -176,8 +176,8 @@ class SourceWindow(QtGui.QTextEdit):
         t = self.doc.binding[start]
         if t[0] == 'NAME_METHOD_PROTOTYPE':
             class_ = self.path
-            method_ = t[1]
-            if method_ == self.title:
+            method_ = t[2].method
+            if t[1] == self.title:
                 method_ = 'init'
         elif t[0] == 'NAME_METHOD_INVOKE':
             class_, method_ = t[2].split(' -> ')

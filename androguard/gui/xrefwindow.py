@@ -33,7 +33,7 @@ class XrefDialog(QtGui.QDialog):
         self.setLayout(layout)
 
     @classmethod
-    def get_xrefs_list(cls, d, path, method=""):
+    def get_xrefs_list(cls, d, path, method=None):
         '''Static method called before creating a XrefDialog
            to check if there are xrefs to display
             path: complete path of the class we are looking an xref from
@@ -49,12 +49,25 @@ class XrefDialog(QtGui.QDialog):
         if not method:
             item = class_item
         else:
-            arg2 = method2func(method)
+            arg3 = None
+            if isinstance(method, str):
+                arg2 = method2func(method)
+            else:
+                arg2 = method2func(method.get_name())
+                arg3 = method2func("%s/%s" % (method.get_name(),
+                    method.get_descriptor()))
             try:
                 item = getattr(class_item, arg2)
             except AttributeError:
-                androconf.debug("no method: %s in class: %s" % (arg2, arg))
-                return None
+                if arg3 != None:
+                    try:
+                        item = getattr(class_item, arg3)
+                    except AttributeError:
+                        androconf.debug("no method: %s in class: %s" % (arg3, arg))
+                        return None
+                else:
+                    androconf.debug("no method: %s in class: %s" % (arg2, arg))
+                    return None
         androconf.debug("Getting XREFs for: %s" % arg)
         if not hasattr(item, "XREFfrom"):
             androconf.debug("No xref found")

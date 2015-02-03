@@ -18,7 +18,8 @@ def class2func(path):
     return func
 
 def method2func(method):
-    return "METHOD_" + method.replace("/", "_")
+    return "METHOD_" + method.replace("/", "_").replace("[", "").replace("(",
+            "").replace(")", "").replace(";", "")
 
 def classmethod2func(class_, method_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
