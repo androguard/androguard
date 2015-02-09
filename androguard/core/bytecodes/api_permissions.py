@@ -265,7 +265,7 @@ DVM_PERMISSIONS_BY_PERMISSION = {
 		("F", "isSecureContainerMounted", "(Ljava/lang/String;)"),
 	],
 },
-"UPDATE_DEVICE_STATS			" : {
+"UPDATE_DEVICE_STATS" : {
 	"Lcom/android/internal/app/IUsageStats$Stub$Proxy;" : [
 		("F", "noteLaunchTime", "(LComponentName;)"),
 	],
@@ -2874,7 +2874,7 @@ DVM_PERMISSIONS_BY_ELEMENT = {
 	"Landroid/os/storage/IMountService$Stub$Proxy;-getSecureContainerList-()" : "ASEC_ACCESS",
 	"Landroid/os/storage/IMountService$Stub$Proxy;-getSecureContainerPath-(Ljava/lang/String;)" : "ASEC_ACCESS",
 	"Landroid/os/storage/IMountService$Stub$Proxy;-isSecureContainerMounted-(Ljava/lang/String;)" : "ASEC_ACCESS",
-	"Lcom/android/internal/app/IUsageStats$Stub$Proxy;-noteLaunchTime-(LComponentName;)" : "UPDATE_DEVICE_STATS			",
+	"Lcom/android/internal/app/IUsageStats$Stub$Proxy;-noteLaunchTime-(LComponentName;)" : "UPDATE_DEVICE_STATS",
 	"Landroid/net/sip/SipAudioCall;-startAudio-()" : "RECORD_AUDIO",
 	"Landroid/media/MediaRecorder;-setAudioSource-(I)" : "RECORD_AUDIO",
 	"Landroid/speech/SpeechRecognizer;-cancel-()" : "RECORD_AUDIO",
