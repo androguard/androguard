@@ -1715,9 +1715,6 @@ class EncodedArrayItem(object):
     def reload(self):
         pass
 
-    def get_value(self):
-        return self.value
-
     def show(self):
         bytecode._PrintSubBanner("Encoded Array Item")
         self.value.show()
@@ -7977,10 +7974,6 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_determineException(self):
         return determineException
-
-    #FIXME: DVM_TOSTRING() is unused variable
-    def get_DVM_TOSTRING(self):
-        return DVM_TOSTRING()
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
