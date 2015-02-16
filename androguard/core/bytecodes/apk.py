@@ -694,14 +694,14 @@ def show_Certificate(cert):
 # Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
-
+CHUNK_STRINGPOOL_TYPE = 0x001C0001
+CHUNK_NULL_TYPE = 0x00000000
 
 class StringBlock(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
         self._cache = {}
-        self.header = unpack('<h', buff.read(2))[0]
-        self.header_size = unpack('<h', buff.read(2))[0]
+        self.header_size, self.header = self.skipNullPadding(buff)
 
         self.chunkSize = unpack('<i', buff.read(4))[0]
         self.stringCount = unpack('<i', buff.read(4))[0]
@@ -744,6 +744,21 @@ class StringBlock(object):
 
             for i in range(0, size / 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
+
+    def skipNullPadding(self, buff):
+        def readNext(buff, first_run=True):
+            header = unpack('<i', buff.read(4))[0]
+
+            if header == CHUNK_NULL_TYPE and first_run:
+                androconf.info("Skipping null padding in StringBlock header")
+                header = readNext(buff, first_run=False)
+            elif header != CHUNK_STRINGPOOL_TYPE:
+                androconf.warning("Invalid StringBlock header")
+
+            return header
+
+        header = readNext(buff)
+        return header >> 8, header & 0xFF
 
     def getString(self, idx):
         if idx in self._cache:
@@ -1702,7 +1717,7 @@ class ARSCResTableConfig(object):
 
         self.exceedingSize = self.size - 36
         if self.exceedingSize > 0:
-            androconf.warning("too much bytes !")
+            androconf.info("Skipping padding bytes!")
             self.padding = buff.read(self.exceedingSize)
 
         #print "ARSCResTableConfig", hex(self.start), hex(self.size), hex(self.imsi), hex(self.locale), repr(self.get_language()), repr(self.get_country()), hex(self.screenType), hex(self.input), hex(self.screenSize), hex(self.version), hex(self.screenConfig), hex(self.screenSizeDp)
