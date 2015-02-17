@@ -697,7 +697,6 @@ UTF8_FLAG = 0x00000100
 CHUNK_STRINGPOOL_TYPE = 0x001C0001
 CHUNK_NULL_TYPE = 0x00000000
 
-
 class StringBlock(object):
     def __init__(self, buff):
         self.start = buff.get_idx()
@@ -752,6 +751,21 @@ class StringBlock(object):
                     self.m_styles.append(unpack('<i', buff.read(4))[0])
                 except Exception, e:
                     androconf.warning("ooo")
+
+    def skipNullPadding(self, buff):
+        def readNext(buff, first_run=True):
+            header = unpack('<i', buff.read(4))[0]
+
+            if header == CHUNK_NULL_TYPE and first_run:
+                androconf.info("Skipping null padding in StringBlock header")
+                header = readNext(buff, first_run=False)
+            elif header != CHUNK_STRINGPOOL_TYPE:
+                androconf.warning("Invalid StringBlock header")
+
+            return header
+
+        header = readNext(buff)
+        return header >> 8, header & 0xFF
 
     def skipNullPadding(self, buff):
         def readNext(buff, first_run=True):
