@@ -56,7 +56,7 @@ def main(options, arguments):
     if options.input != None:
         ret_type = androconf.is_android( options.input )
         if ret_type == "APK":
-            a = apk.APK( options.input ，zipmodule=2 )
+            a = apk.APK( options.input, zipmodule=2 )
             analyze_app( options.input, ri, a )
         elif ret_type == "DEX":
             analyze_dex( options.input, ri, read(options.input, binary=False) )
