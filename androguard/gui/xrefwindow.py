@@ -18,13 +18,13 @@ class XrefDialog(QtGui.QDialog):
         super(XrefDialog, self).__init__(parent)
 
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
-            print "WARNING, bad XrefDialog creation"
+            androconf.warning("Bad XrefDialog creation")
             return
-        
+
         if not method:
-            title = "Xrefs to " + path.split("/")[-1]
+            title = "Xrefs to %s" % path.split("/")[-1]
         else:
-            title = "Xrefs to " + path.split("/")[-1] + " -> " + method
+            title = "Xrefs to %s -> %s" % (path.split("/")[-1], method)
 
         self.setWindowTitle(title)
         layout = QtGui.QGridLayout()
@@ -33,8 +33,8 @@ class XrefDialog(QtGui.QDialog):
         self.setLayout(layout)
 
     @classmethod
-    def get_xrefs_list(cls, d, path, method=""):
-        '''Static method called before creating a XrefDialog 
+    def get_xrefs_list(cls, d, path, method=None):
+        '''Static method called before creating a XrefDialog
            to check if there are xrefs to display
             path: complete path of the class we are looking an xref from
             method (optional): method of the class we are looking xref from
@@ -49,12 +49,25 @@ class XrefDialog(QtGui.QDialog):
         if not method:
             item = class_item
         else:
-            arg2 = method2func(method)
+            arg3 = None
+            if isinstance(method, str):
+                arg2 = method2func(method)
+            else:
+                arg2 = method2func(method.get_name())
+                arg3 = method2func("%s/%s" % (method.get_name(),
+                    method.get_descriptor()))
             try:
                 item = getattr(class_item, arg2)
             except AttributeError:
-                androconf.debug("no method: %s in class: %s" % (arg2, arg))
-                return None
+                if arg3 != None:
+                    try:
+                        item = getattr(class_item, arg3)
+                    except AttributeError:
+                        androconf.debug("no method: %s in class: %s" % (arg3, arg))
+                        return None
+                else:
+                    androconf.debug("no method: %s in class: %s" % (arg2, arg))
+                    return None
         androconf.debug("Getting XREFs for: %s" % arg)
         if not hasattr(item, "XREFfrom"):
             androconf.debug("No xref found")
@@ -76,10 +89,11 @@ class XrefDialog(QtGui.QDialog):
         androconf.debug("%d XREFs found" % len(xref_items))
 #        print xref_items
         xrefs = []
-        for i in range(len(xref_items)):
-            class_ = xref_items[i][0].get_class_name()
-            method_ = xref_items[i][0].get_name()
-            xrefs.append(classmethod2display(class_, method_))
+        for xref_item in xref_items:
+            class_ = xref_item[0].get_class_name()
+            method_ = xref_item[0].get_name()
+            descriptor_ = xref_item[0].get_descriptor()
+            xrefs.append(classmethod2display(class_, method_, descriptor_))
 #        print xrefs
         return xrefs
 

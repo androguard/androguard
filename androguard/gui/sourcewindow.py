@@ -1,12 +1,23 @@
 from PySide import QtCore, QtGui
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
-from androguard.gui.highlighter import Highlighter
 from androguard.gui.renamewindow import RenameDialog
+
+PYGMENTS = True
+try:
+    from IPython.qt.console.pygments_highlighter import PygmentsHighlighter
+    from pygments.lexers import JavaLexer
+except:
+    PYGMENTS = False
 
 import os
 
-BINDINGS_NAMES = ['NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE', 'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT', 'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW', 'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION']
+BINDINGS_NAMES = [
+    'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
+    'NAME_FIELD', 'NAME_METHOD_PROTOTYPE', 'NAME_ARG', 'NAME_CLASS_ASSIGNMENT',
+    'NAME_PARAM', 'NAME_BASE_CLASS', 'NAME_METHOD_INVOKE', 'NAME_CLASS_NEW',
+    'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION'
+]
 
 class SourceDocument(QtGui.QTextDocument):
     '''QTextDocument associated with the SourceWindow.'''
@@ -14,6 +25,11 @@ class SourceDocument(QtGui.QTextDocument):
     def __init__(self, parent=None, lines=[]):
         super(SourceDocument, self).__init__(parent)
         self.parent = parent
+
+        # Set font to be fixed-width
+        font = self.defaultFont()
+        font.setFamily("Courier New")
+        self.setDefaultFont(font)
 
         cursor = QtGui.QTextCursor(self) # position=0x0
         state = 0
@@ -26,8 +42,7 @@ class SourceDocument(QtGui.QTextDocument):
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
 
-#class SourceWindow(QtGui.QTextEdit):
-class SourceWindow(QtGui.QTextBrowser):
+class SourceWindow(QtGui.QTextEdit):
     '''Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
@@ -44,21 +59,15 @@ class SourceWindow(QtGui.QTextBrowser):
         self.path = path
         self.title = path.split("/")[-1].replace(';', '')
 
-        self.ospath = "/".join(path.split("/")[:-1])[1:]
-        self.osfile = self.title + ".html"
-        try:
-            os.makedirs(self.ospath)
-        except OSError:
-            pass
-
         arg = class2func(self.path)
         self.class_item = getattr(self.mainwin.d, arg)
 
-        self.createActions()
         self.setReadOnly(True)
 
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
+
+        self.cursorPositionChanged.connect(self.cursor_position_changed)
 
         # No need to call reload_java_sources() here because
         # it is called in MainWindow.currentTabChanged() function
@@ -96,15 +105,6 @@ class SourceWindow(QtGui.QTextBrowser):
         androconf.debug("Getting sources for %s" % self.path)
         lines = self.class_item.get_source_ext()
 
-        filename = os.path.join(self.ospath, self.osfile)
-        androconf.debug("Writing file: %s" % filename)
-        with open(filename, 'wb') as fd:
-            for section, L in lines:
-                for t in L:
-    #                if t[0] in BINDINGS_NAMES:
-    #                    self.binding[cursor.position()] = t
-                    fd.write(t[1])
-
         #TODO: delete doc when tab is closed? not deleted by "self" :(
         if hasattr(self, "doc"):
             del self.doc
@@ -113,35 +113,58 @@ class SourceWindow(QtGui.QTextBrowser):
 
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
-        Highlighter(self.doc)
+        if PYGMENTS:
+            PygmentsHighlighter(self.doc, lexer=JavaLexer())
 
-    def createActions(self):
-        self.xrefAct = QtGui.QAction("Xref from...", self,
-                statusTip="List the references where this element is used",
-                triggered=self.actionXref)
-        self.gotoAct = QtGui.QAction("Go to...", self,
-                statusTip="Go to element definition",
-                triggered=self.actionGoto)
-        self.renameAct = QtGui.QAction("Rename...", self,
-                statusTip="Rename an element (class, method, ...)",
-                triggered=self.actionRename)
-        self.infoAct = QtGui.QAction("Info...", self,
-                statusTip="Display info of an element (anything useful in the document)",
-                triggered=self.actionInfo)
+    @QtCore.Slot()
+    def cursor_position_changed(self):
+        '''Used to detect when cursor change position and to auto select word
+           underneath it'''
+
+        cur = self.textCursor()
+        if len(cur.selectedText()) == 0:
+            cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
+            self.setTextCursor(cur)
+            androconf.debug("cursor: %s" % cur.selectedText())
+
+    def keyPressEvent(self, event):
+        '''Keyboard shortcuts'''
+        key = event.key()
+        if key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_G:
+            self.actionGoto()
+        elif key == QtCore.Qt.Key_X:
+            self.actionXref()
+        elif key == QtCore.Qt.Key_I:
+            self.actionInfo()
+        elif key == QtCore.Qt.Key_R:
+            self.reload_java_sources()
 
     def CustomContextMenuHandler(self, pos):
         menu = QtGui.QMenu(self)
-        menu.addAction(self.xrefAct)
-        menu.addAction(self.gotoAct)
-        menu.addAction(self.renameAct)
-        menu.addAction(self.infoAct)
+        menu.addAction(QtGui.QAction("Xref from...", self,
+                statusTip="List the references where this element is used",
+                triggered=self.actionXref))
+        menu.addAction(QtGui.QAction("Go to...", self,
+                statusTip="Go to element definition",
+                triggered=self.actionGoto))
+        menu.addAction(QtGui.QAction("Rename...", self,
+                statusTip="Rename an element (class, method, ...)",
+                triggered=self.actionRename))
+        menu.addAction(QtGui.QAction("Info...", self,
+                statusTip="Display info of an element (anything useful in the document)",
+                triggered=self.actionInfo))
+        menu.addAction(QtGui.QAction("Reload sources...", self,
+                statusTip="Reload sources (needed when renaming changed other tabs)",
+                triggered=self.reload_java_sources))
         menu.exec_(QtGui.QCursor.pos())
 
     def actionXref(self):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Xref asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -153,8 +176,8 @@ class SourceWindow(QtGui.QTextBrowser):
         t = self.doc.binding[start]
         if t[0] == 'NAME_METHOD_PROTOTYPE':
             class_ = self.path
-            method_ = t[1]
-            if method_ == self.title:
+            method_ = t[2].method
+            if t[1] == self.title:
                 method_ = 'init'
         elif t[0] == 'NAME_METHOD_INVOKE':
             class_, method_ = t[2].split(' -> ')
@@ -183,7 +206,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Rename asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -221,7 +244,7 @@ class SourceWindow(QtGui.QTextBrowser):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        selection = cursor.selection().toPlainText()
+        selection = cursor.selectedText()
         androconf.debug("Goto asked for '%s' (%d, %d)" % (selection, start, end))
 
         if start not in self.doc.binding.keys():
@@ -254,7 +277,7 @@ class SourceWindow(QtGui.QTextBrowser):
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in self.doc.binding.keys():
-            self.mainwin.showStatus(str(self.doc.binding[start]) + ' at position: (%d, %d)' % (start, end))
+            self.mainwin.showStatus('%s at position: (%d, %d)' % (str(self.doc.binding[start]), start, end))
         else:
             self.mainwin.showStatus("No info available.")
 
