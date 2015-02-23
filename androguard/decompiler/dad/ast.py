@@ -472,6 +472,7 @@ class JSONWriter(object):
 
         follow = cond.follow['if']
         if cond.false is cond.true:
+            self.add(expression_stmt(self.get_cond(cond)))
             self.visit_node(cond.true)
             return
 
