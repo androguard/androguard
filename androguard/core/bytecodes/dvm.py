@@ -7077,10 +7077,14 @@ class ClassManager(object):
         return self.__manage_item[ "TYPE_METHOD_ID_ITEM" ].get( idx )
 
     def set_hook_class_name(self, class_def, value):
+        python_export = True
         _type = self.__manage_item[ "TYPE_TYPE_ID_ITEM" ].get( class_def.get_class_idx() )
         self.set_hook_string( _type, value )
 
-        self.vm._delete_python_export_class( class_def )
+        try:
+            self.vm._delete_python_export_class( class_def )
+        except AttributeError:
+            python_export = False
 
         class_def.reload()
 
@@ -7093,7 +7097,8 @@ class ClassManager(object):
         for i in class_def.get_fields():
           i.reload()
 
-        self.vm._create_python_export_class( class_def )
+        if python_export:
+            self.vm._create_python_export_class( class_def )
 
     def set_hook_method_name(self, encoded_method, value):
         python_export = True

@@ -339,6 +339,10 @@ class PathVar(object):
   def get_access_flag(self):
     return self.access_flag
 
+  def get_src(self, cm):
+    method = cm.get_method_ref( self.idx )
+    return method.get_class_name(), method.get_name(), method.get_descriptor()
+
   def get_dst(self, cm):
     method = cm.get_method_ref( self.dst_idx )
     return method.get_class_name(), method.get_name(), method.get_descriptor()
@@ -753,7 +757,26 @@ def show_DynCode(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    paths = dx.get_tainted_packages().search_methods( "Ldalvik/system/DexClassLoader;", ".", ".")
+    paths = []
+    paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/BaseDexClassLoader;",
+                                                "<init>",
+                                                "."))
+    
+    paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/PathClassLoader;",
+                                                "<init>",
+                                                "."))
+    
+    paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
+                                                "<init>",
+                                                "."))
+    
+    paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
+                                                "<init>",
+                                                "."))
+    
+    paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
+                                                "loadDex",
+                                                "."))
     show_Paths( dx.get_vm(), paths )
 
 
@@ -806,26 +829,31 @@ def is_dyn_code(dx):
         :type dx: a :class:`VMAnalysis` object
         :rtype: boolean
     """
+    if dx.get_tainted_packages().search_methods("Ldalvik/system/BaseDexClassLoader;",
+                                                "<init>",
+                                                "."):
+        return True
+    
+    if dx.get_tainted_packages().search_methods("Ldalvik/system/PathClassLoader;",
+                                                "<init>",
+                                                "."):
+        return True
+    
     if dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
-                                                ".",
+                                                "<init>",
                                                 "."):
         return True
-
-    if dx.get_tainted_packages().search_methods("Ljava/security/ClassLoader;",
-                                                "defineClass",
+    
+    if dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
+                                                "<init>",
                                                 "."):
         return True
-
-    if dx.get_tainted_packages().search_methods("Ljava/security/SecureClassLoader;",
-                                                "defineClass",
+    
+    if dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
+                                                "loadDex",
                                                 "."):
         return True
-
-    if dx.get_tainted_packages().search_methods("Ljava/net/URLClassLoader;",
-                                                ".",
-                                                "."):
-        return True
-
+    
     return False
 
 

@@ -1,3 +1,13 @@
+class Signature:
+
+    def __init__(self, cls, method=None, descriptor=None):
+        self.cls = cls
+        self.class_components = self.cls.name.strip('L').strip(';').split('/')
+        self.class_path = self.class_components[:-1]
+        self.class_name = self.class_components[-1]
+        self.method = method
+        self.descriptor = descriptor
+
 def class2func(path):
     ''' Convert a path such as 'Landroid/support/v4/app/ActivityCompat;'
         into a method string 'CLASS_Landroid_support_v4_app_ActivityCompat'
@@ -8,7 +18,8 @@ def class2func(path):
     return func
 
 def method2func(method):
-    return "METHOD_" + method.replace("/", "_")
+    return "METHOD_" + method.replace("/", "_").replace("[", "").replace("(",
+            "").replace(")", "").replace(";", "")
 
 def classmethod2func(class_, method_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
@@ -18,13 +29,13 @@ def classmethod2func(class_, method_):
 
     return "%s.%s" % (class2func(class_), method2func(method_))
 
-def classmethod2display(class_, method_):
+def classmethod2display(class_, method_, descriptor_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
     into a beautiful :) string to display Xrefs: 
     "Lcom/mwr/example/sieve/AddEntryActivity; -> onCreate"
     '''
 
-    return "%s -> %s" % (class_, method_)
+    return "%s -> %s ( %s )" % (class_, method_, descriptor_)
 
 def display2classmethod(display):
     '''Opposite of classmethod2display.
@@ -52,18 +63,6 @@ def classdot2class(path):
         return path
 
     new_name = 'L' + path.replace('.', '/') + ';'
-    return new_name
-
-def class2dotclass(path):
-    '''Opposite of classdot2class.
-       Convert a path 'Landroid/support/v4/app/ActivityCompat'
-       into a string such as 'android.support.v4.app.ActivityCompat'
-    '''
-    if path[0] != 'L' or path[-1] != ';':
-        print "WARNING: %s not a Lclass; name" % path
-        return path
-
-    new_name = path[1:-1].replace("/", ".")
     return new_name
 
 def proto2methodprotofunc(proto):
