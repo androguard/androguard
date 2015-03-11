@@ -394,12 +394,12 @@ class JSONWriter(object):
         }
 
     def _visit_condition(self, cond):
-        left = self.get_cond(cond.cond1)
-        right = self.get_cond(cond.cond2)
+        if cond.isnot:
+            cond.cond1.neg()
+        left = parenthesis(self.get_cond(cond.cond1))
+        right = parenthesis(self.get_cond(cond.cond2))
         op = '&&' if cond.isand else '||'
         res = binary_infix(op, left, right)
-        if cond.isnot:
-            res = unary_prefix('!', res)
         return res
 
     def get_cond(self, node):
@@ -472,6 +472,7 @@ class JSONWriter(object):
 
         follow = cond.follow['if']
         if cond.false is cond.true:
+            self.add(expression_stmt(self.get_cond(cond)))
             self.visit_node(cond.true)
             return
 
