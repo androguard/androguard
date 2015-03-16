@@ -62,7 +62,7 @@ def get_field_ast(field):
         elif field.proto == 'B':
             expr = literal_hex_int(struct.unpack('<b', val)[0])
         else:
-            expr = dummy('???')
+            expr = dummy(str(val))
 
     return {
         'triple': triple,
