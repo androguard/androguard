@@ -56,27 +56,11 @@ def get_field_ast(field):
 
     expr = None
     if field.init_value:
-        vt = field.init_value.get_value_type()
         val = field.init_value.value
-
-        # TODO: Add other types once dvm.EncodedValue parses them correctly
-        if vt == dvm.VALUE_STRING:
+        if field.get_descriptor() == 'Ljava/lang/String;':
             expr = literal_string(val)
-        # elif vt in (dvm.VALUE_INT, dvm.VALUE_SHORT, dvm.VALUE_CHAR):
-        #     expr = literal_int(val)
-        elif vt == dvm.VALUE_BYTE:
-            x = ord(val)
-            expr = literal_int(x - 256 if x >= 128 else x)
-        # elif vt == dvm.VALUE_LONG:
-        #     expr = literal_long(val)
-        # elif vt == dvm.VALUE_DOUBLE:
-        #     expr = literal_double(val)
-        # elif vt == dvm.VALUE_FLOAT:
-        #     expr = literal_float(val)
-        elif vt == dvm.VALUE_NULL:
-            expr = literal_null()
-        elif vt == dvm.VALUE_BOOLEAN:
-            expr = literal_bool(val)
+        elif field.proto == 'B':
+            expr = literal_hex_int(struct.unpack('<b', val)[0])
         else:
             expr = dummy('???')
 

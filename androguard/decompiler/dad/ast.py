@@ -120,6 +120,7 @@ def literal_class(desc):
 
 def literal_bool(b): return literal(str(b).lower(), ('.boolean', 0))
 def literal_int(b): return literal(str(b), ('.int', 0))
+def literal_hex_int(b): return literal(hex(b), ('.int', 0))
 def literal_long(b): return literal(str(b)+'L', ('.long', 0))
 def literal_float(f): return literal(str(f)+'f', ('.float', 0))
 def literal_double(f): return literal(str(f), ('.double', 0))
