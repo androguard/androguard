@@ -57,12 +57,13 @@ def get_field_ast(field):
     expr = None
     if field.init_value:
         val = field.init_value.value
-        if field.get_descriptor() == 'Ljava/lang/String;':
-            expr = literal_string(val)
-        elif field.proto == 'B':
-            expr = literal_hex_int(struct.unpack('<b', val)[0])
-        else:
-            expr = dummy(str(val))
+        expr = dummy(str(val))
+
+        if val is not None:
+            if field.get_descriptor() == 'Ljava/lang/String;':
+                expr = literal_string(val)
+            elif field.proto == 'B':
+                expr = literal_hex_int(struct.unpack('<b', val)[0])
 
     return {
         'triple': triple,
