@@ -27,7 +27,7 @@ from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (JSONWriter, parse_descriptor,
     literal_string, literal_null, literal_int, literal_long, literal_float,
-    literal_double, literal_bool, dummy)
+    literal_double, literal_bool, literal_hex_int, dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
