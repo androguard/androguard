@@ -22,21 +22,22 @@ from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
 def array_access(arr, ind): return ['ArrayAccess', [arr, ind]]
 def array_creation(tn, params, dim): return ['ArrayCreation', [tn] + params, dim]
 def array_initializer(params, tn=None): return ['ArrayInitializer', params, tn]
-def assignment(lhs, rhs): return ['Assignment', [lhs, rhs]]
-def binary_infix(op, left, right): return ['BinaryInfix', op, left, right]
+def assignment(lhs, rhs, op=''): return ['Assignment', [lhs, rhs], op]
+def binary_infix(op, left, right): return ['BinaryInfix', [left, right], op]
 def cast(tn, arg): return ['Cast', [tn, arg]]
-def field_access(triple, left): return ['FieldAccess', triple, left]
+def field_access(triple, left): return ['FieldAccess', [left], triple]
 def literal(result, tt): return ['Literal', result, tt]
 def local(name): return ['Local', name]
 
 def method_invocation(triple, name, base, params):
     if base is None:
-        return ['MethodInvocation', triple, name, False, params]
-    return ['MethodInvocation', triple, name, True, [base]+params]
+        return ['MethodInvocation', params, triple, name, False]
+    return ['MethodInvocation', [base]+params, triple, name, True]
 
 def parenthesis(expr): return ['Parenthesis', [expr]]
 def typen(baset, dim): return ['TypeName', (baset, dim)]
-def unary_prefix(op, left): return ['UnaryPrefix', op, left]
+def unary_prefix(op, left): return ['Unary', [left], op, False]
+def unary_postfix(left, op): return ['Unary', [left], op, True]
 def var_decl(typen, var): return [typen, var]
 
 def dummy(*args): return ['Dummy', args]
@@ -143,6 +144,16 @@ def visit_arr_data(value):
             tab.append(struct.unpack('<b', data[i])[0])
     return array_initializer(map(literal_int, tab))
 
+def write_inplace_if_possible(lhs, rhs):
+    if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+        exp_rhs = rhs.var_map[rhs.arg2]
+        # post increment/decrement
+        if rhs.op in '+-' and isinstance(exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
+            return unary_postfix(visit_expr(lhs), rhs.op * 2)
+        # compound assignment
+        return assignment(visit_expr(lhs), visit_expr(exp_rhs), op=rhs.op)
+    return assignment(visit_expr(lhs), visit_expr(rhs))
+
 def visit_expr(op):
     if isinstance(op, instruction.ArrayLengthExpression):
         expr = visit_expr(op.var_map[op.array])
@@ -162,7 +173,7 @@ def visit_expr(op):
         rhs = op.rhs
         if lhs is None:
             return visit_expr(rhs)
-        return assignment(visit_expr(lhs), visit_expr(rhs))
+        return write_inplace_if_possible(lhs, rhs)
 
     if isinstance(op, instruction.BaseClass):
         if op.clsdesc is None:
@@ -254,7 +265,11 @@ def visit_expr(op):
         return dummy("monitor enter(", visit_expr(op.var_map[op.ref]), ")")
     if isinstance(op, instruction.MonitorExitExpression):
         return dummy("monitor exit(", visit_expr(op.var_map[op.ref]), ")")
-    if isinstance(op, (instruction.MoveExpression, instruction.MoveResultExpression)):
+    if isinstance(op, instruction.MoveExpression):
+        lhs = op.var_map.get(op.lhs)
+        rhs = op.var_map.get(op.rhs)
+        return write_inplace_if_possible(lhs, rhs)
+    if isinstance(op, instruction.MoveResultExpression):
         lhs = op.var_map.get(op.lhs)
         rhs = op.var_map.get(op.rhs)
         return assignment(visit_expr(lhs), visit_expr(rhs))
@@ -316,6 +331,11 @@ def visit_ins(op, isCtor=False):
             if op2.name == '<init>' and len(op2.args) == 0:
                 if isinstance(op2.var_map[op2.base], instruction.ThisParam):
                     return None
+
+    # MoveExpression is skipped when lhs = rhs
+    if isinstance(op, instruction.MoveExpression):
+        if op.var_map.get(op.lhs) is op.var_map.get(op.rhs):
+            return None
 
     return expression_stmt(visit_expr(op))
 
