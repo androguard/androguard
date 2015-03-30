@@ -27,7 +27,7 @@ from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (JSONWriter, parse_descriptor,
     literal_string, literal_null, literal_int, literal_long, literal_float,
-    literal_double, literal_bool, dummy)
+    literal_double, literal_bool, literal_hex_int, dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
@@ -56,29 +56,14 @@ def get_field_ast(field):
 
     expr = None
     if field.init_value:
-        vt = field.init_value.get_value_type()
         val = field.init_value.value
+        expr = dummy(str(val))
 
-        # TODO: Add other types once dvm.EncodedValue parses them correctly
-        if vt == dvm.VALUE_STRING:
-            expr = literal_string(val)
-        # elif vt in (dvm.VALUE_INT, dvm.VALUE_SHORT, dvm.VALUE_CHAR):
-        #     expr = literal_int(val)
-        elif vt == dvm.VALUE_BYTE:
-            x = ord(val)
-            expr = literal_int(x - 256 if x >= 128 else x)
-        # elif vt == dvm.VALUE_LONG:
-        #     expr = literal_long(val)
-        # elif vt == dvm.VALUE_DOUBLE:
-        #     expr = literal_double(val)
-        # elif vt == dvm.VALUE_FLOAT:
-        #     expr = literal_float(val)
-        elif vt == dvm.VALUE_NULL:
-            expr = literal_null()
-        elif vt == dvm.VALUE_BOOLEAN:
-            expr = literal_bool(val)
-        else:
-            expr = dummy('???')
+        if val is not None:
+            if field.get_descriptor() == 'Ljava/lang/String;':
+                expr = literal_string(val)
+            elif field.proto == 'B':
+                expr = literal_hex_int(struct.unpack('<b', val)[0])
 
     return {
         'triple': triple,
