@@ -8,8 +8,8 @@ def init():
               "inverse": {v: k for k, v in resources['attr'].iteritems()}
           },
           "styles": {
-              "forward": {k: int(v) for k, v in resources['style'].iteritems()},
-              "inverse": {int(v): k for k, v in resources['style'].iteritems()}
+              "forward": {k: v for k, v in resources['style'].iteritems()},
+              "inverse": {v: k for k, v in resources['style'].iteritems()}
           }
   }
 
