@@ -212,7 +212,7 @@ class Signature(object):
         strings_method = self.tainted_variables.get_strings_by_method( analysis_method.get_method() )
         for s in strings_method:
             for path in strings_method[s]:
-                l.append( ( path[1], "S%d" % len(s) ) )
+                l.append( ( path[1], "S%d" % len(s.var) ) )
         return l
 
 
