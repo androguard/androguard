@@ -476,11 +476,11 @@ class HeaderItem(object):
       self.class_defs_size = len(self.class_off_obj.class_def)
       self.class_defs_off = self.class_off_obj.get_off()
 
-      #self.data_size = len(self.data_off_obj)
-      self.data_off = self.data_off_obj[0].get_off()
+      self.data_size = len(self.data_off_obj.map_item)
+      self.data_off = self.data_off_obj.get_off()
 
       return pack("=Q", self.magic) +                                 \
-             pack("=I", self.checksum) +                              \
+             pack("=i", self.checksum) +                              \
              pack("=20s", self.signature) +                           \
              pack("=I", self.file_size) +                             \
              pack("=I", self.header_size) +                           \
