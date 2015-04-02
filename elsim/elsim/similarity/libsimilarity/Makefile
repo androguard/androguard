@@ -1,7 +1,7 @@
 SRC	= 	similarity.c
 
-LDFLAGS =	-lm -lbz2 -lz -llzma -lsnappy
-CFLAGS  +=   -Wall -fPIC
+LDFLAGS +=	-lm -lbz2 -lz -llzma -lsnappy
+CFLAGS  +=	-Wall -fPIC
 mkdir	=	mkdir -p
 CD      =       cd
 RM      =       rm -f
@@ -13,7 +13,6 @@ LIBNAME = "libsimilarity"
 
 OBJ	= $(SRC:.c=.o)
 
-.SILENT:
 
 all :   ZIP $(OBJ) LIBSIMILARITY
 
@@ -40,5 +39,4 @@ clean :
 	cd vcblocksort && make clean
 
 %.o   : %.c
-	echo " CC $@"
 	$(CC) $(CFLAGS) -c -o $@ $<

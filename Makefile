@@ -2,8 +2,6 @@ CD      =       cd
 RM      =       rm -f
 
 
-.SILENT:
-
 all :   LIBS
 
 LIBS :

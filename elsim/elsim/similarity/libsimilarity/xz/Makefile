@@ -1,6 +1,6 @@
 SRC	= 	xz.c
 
-LDFLAGS =	-llzma
+LDFLAGS +=	-llzma
 CFLAGS  +=      -Wall -fPIC       
 mkdir	=	mkdir -p
 CD      =       cd
@@ -8,7 +8,6 @@ RM      =       rm -f
 
 OBJ	= $(SRC:.c=.o)
 
-.SILENT:
 
 all :  $(OBJ) test
 
@@ -20,5 +19,4 @@ clean :
 	$(RM) *.o test_xz
 
 %.o   : %.c
-	echo " CC $@"
 	$(CC) $(CFLAGS) -c -o $@ $<

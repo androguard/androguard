@@ -1,6 +1,6 @@
 SRC	= 	smaz.c
 
-LDFLAGS =
+LDFLAGS +=
 CFLAGS  +=      -Wall -fPIC      
 mkdir	=	mkdir -p
 CD      =       cd
@@ -8,7 +8,6 @@ RM      =       rm -f
 
 OBJ	= $(SRC:.c=.o)
 
-.SILENT:
 
 all :  $(OBJ) test
 
@@ -20,5 +19,4 @@ clean :
 	$(RM) *.o test_smaz
 
 %.o   : %.c
-	echo " CC $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
