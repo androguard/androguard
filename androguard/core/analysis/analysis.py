@@ -622,10 +622,23 @@ def get_Path(vm, path):
 def show_Paths(vm, paths):
     """
         Show paths of packages
+        :param vm: the object which represents the dex file
         :param paths: a list of :class:`PathP` objects
     """
     for path in paths:
         show_Path( vm, path )
+
+
+def get_Paths(vm, paths):
+    """
+        Return paths of packages
+        :param vm: the object which represents the dex file
+        :param paths: a list of :class:`PathP` objects
+    """
+    full_paths = []
+    for path in paths:
+        full_paths.append(get_Path( vm, path ))
+    return full_paths
 
 
 def show_PathVariable(vm, paths):
@@ -761,19 +774,19 @@ def show_DynCode(dx):
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/BaseDexClassLoader;",
                                                 "<init>",
                                                 "."))
-    
+
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/PathClassLoader;",
                                                 "<init>",
                                                 "."))
-    
+
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
                                                 "<init>",
                                                 "."))
-    
+
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
                                                 "<init>",
                                                 "."))
-    
+
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
                                                 "loadDex",
                                                 "."))
@@ -786,10 +799,7 @@ def show_NativeMethods(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    d = dx.get_vm()
-    for i in d.get_methods():
-        if i.get_access_flags() & 0x100:
-            print i.get_class_name(), i.get_name(), i.get_descriptor()
+    print get_NativeMethods(dx)
 
 
 def show_ReflectionCode(dx):
@@ -800,6 +810,34 @@ def show_ReflectionCode(dx):
     """
     paths = dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;", ".", ".")
     show_Paths(dx.get_vm(), paths)
+
+
+def get_NativeMethods(dx):
+    """
+        Return the native methods
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype: [tuple]
+    """
+    d = dx.get_vm()
+    native_methods = []
+    for i in d.get_methods():
+        if i.get_access_flags() & 0x100:
+            native_methods.append(
+                (i.get_class_name(), i.get_name(), i.get_descriptor()))
+    return native_methods
+
+
+def get_ReflectionCode(dx):
+    """
+        Return the reflection code
+        :param dx : the analysis virtual machine
+        :type dx: a :class:`VMAnalysis` object
+        :rtype: [dict]
+    """
+    paths = dx.get_tainted_packages().search_methods(
+        "Ljava/lang/reflect/Method;", ".", ".")
+    return get_Paths(dx.get_vm(), paths)
 
 
 def is_crypto_code(dx):
@@ -833,27 +871,27 @@ def is_dyn_code(dx):
                                                 "<init>",
                                                 "."):
         return True
-    
+
     if dx.get_tainted_packages().search_methods("Ldalvik/system/PathClassLoader;",
                                                 "<init>",
                                                 "."):
         return True
-    
+
     if dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
                                                 "<init>",
                                                 "."):
         return True
-    
+
     if dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
                                                 "<init>",
                                                 "."):
         return True
-    
+
     if dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
                                                 "loadDex",
                                                 "."):
         return True
-    
+
     return False
 
 
