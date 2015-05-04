@@ -31,6 +31,8 @@ import re
 
 from xml.dom import minidom
 
+PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", None) #loading default permission module
+
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
 # 0: chilkat
@@ -203,6 +205,7 @@ class APK(object):
                     self.valid_apk = True
 
         self.get_files_types()
+        PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
 
     def get_AndroidManifest(self):
         """
@@ -521,6 +524,30 @@ class APK(object):
                 l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
             except KeyError:
                 l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
+
+        return l
+    
+    def get_requested_permissions(self):
+        """
+            Returns all requested permissions.
+            
+            :rtype: list of string
+        """
+        return self.permissions
+    
+    def get_aosp_permissions_details(self):
+        """
+            Return requested aosp permissions with details.
+
+            :rtype: dictionary
+        """
+        l = {}
+
+        for i in self.permissions:
+            try:
+                l[i] = PERMISSION_MODULE.AOSP_PERMISSIONS[i]
+            except KeyError:
+                continue #if we have not found permission do nothing
 
         return l
 
