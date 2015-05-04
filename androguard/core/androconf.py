@@ -21,6 +21,7 @@ import logging
 import types
 import random
 import string
+import imp
 
 ANDROGUARD_VERSION = "2.0"
 
@@ -100,6 +101,9 @@ CONF = {
     "PRINT_FCT": sys.stdout.write,
     "LAZY_ANALYSIS": False,
     "MAGIC_PATH_FILE": None,
+    
+    "PATH_TO_API_SPECIFIC_RESOURCE_MODULES" : "../androguard/core/api_specific_resources",
+    "DEFAULT_API" : 19,
 }
 
 
@@ -353,3 +357,28 @@ def color_range( startcolor, goalcolor, steps ):
     goal_tuple = make_color_tuple(goalcolor)
 
     return interpolate_tuple(start_tuple, goal_tuple, steps)
+
+
+def load_api_specific_resource_module(resource_name, api):
+    permissions_path = os.path.join(CONF["PATH_TO_API_SPECIFIC_RESOURCE_MODULES"], resource_name)
+    
+    api_specific_module_name = "%s_%s%s" % (resource_name, 'api', api)
+    
+    try:
+        f, filename, description = imp.find_module(api_specific_module_name, [permissions_path])
+    except:
+        info("Cannot find %s resource module for api version %s!" % (resource_name, api))
+        try:
+            api_specific_module_name = "%s_%s%s" % (resource_name, 'api', CONF["DEFAULT_API"])
+            f, filename, description = imp.find_module(api_specific_module_name, [permissions_path])
+        except:
+            error("Cannot find %s default resource module!" % resource_name)
+            #TODO: raise exception? which? 
+    
+    try:
+        module = imp.load_module(api_specific_module_name, f, filename, description)
+    finally:
+        if f: f.close()
+    
+    debug("Module loaded: %s" % module)
+    return module
