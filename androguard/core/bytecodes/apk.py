@@ -687,10 +687,11 @@ class APK(object):
             except KeyError:
                 print "\t", i, "%x" % self.files_crc32[i]
 
-        print "PERMISSIONS: "
-        details_permissions = self.get_details_permissions()
-        for i in details_permissions:
-            print "\t", i, details_permissions[i]
+        print "REQUESTED PERMISSIONS:"
+        requested_permissions = self.get_requested_permissions()
+        for i in requested_permissions:
+            print "\t", i
+        
         print "MAIN ACTIVITY: ", self.get_main_activity()
 
         print "ACTIVITIES: "
