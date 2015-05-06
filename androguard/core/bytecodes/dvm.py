@@ -214,7 +214,7 @@ def readsleb128(buff):
     result = 0
     shift = 0
 
-    while (True):
+    for x in range(0, 5):
        cur = ord( buff.read(1) )
        result |= (cur & 0x7f) << shift
        shift += 7
