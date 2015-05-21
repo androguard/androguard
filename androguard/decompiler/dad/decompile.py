@@ -248,7 +248,11 @@ class DvClass(object):
         for klass in self.subclasses.values():
             klass.process(doAST=doAST)
         for i in range(len(self.methods)):
-            self.process_method(i, doAST=doAST)
+            try:
+                self.process_method(i, doAST=doAST)
+            except Exception as e:
+                logger.debug(
+                    'Error decompiling method %s: %s', self.methods[i], e)
 
     def get_ast(self):
         fields = [get_field_ast(f) for f in self.fields]
