@@ -6622,6 +6622,9 @@ class DalvikCode(object):
 
       return length
 
+    def set_off(self, off):
+        self.__off = off
+
     def get_off(self):
         return self.__off
 
@@ -7423,6 +7426,8 @@ class DalvikVMFormat(bytecode._Bytecode):
             l.append( j )
 
             c_length = j.get_length()
+            if isinstance(j, StringDataItem):
+                c_length += 1
             h[ j ] = idx + length
             h_r[ idx + length ] = j
             s[ idx + length ] = c_length
@@ -7451,14 +7456,15 @@ class DalvikVMFormat(bytecode._Bytecode):
 
       self.header.file_size = idx
 
-      last_idx = 0
       for i in l:
         idx = h[ i ]
-        i.set_off( h[ i ] )
-
-#        print i, hex(h[ i ])
-
-        last_idx = idx + s[ idx ]
+        i.set_off(idx)
+        if isinstance(i,CodeItem):
+            last_idx = idx
+            for j in i.get_obj():
+                j.set_off(last_idx)
+                #j.set_debug_info_off(0)
+                last_idx += j.get_size()
 
       last_idx = 0
       buff = ""
@@ -7470,6 +7476,8 @@ class DalvikVMFormat(bytecode._Bytecode):
           buff += "\x00" * (idx - last_idx)
 
         buff += i.get_raw()
+        if isinstance(i, StringDataItem):
+            buff += "\x00"
         last_idx = idx + s[ idx ]
 
       debug("GLOBAL SIZE %d" % len(buff))
