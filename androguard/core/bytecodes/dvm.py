@@ -5681,7 +5681,7 @@ DALVIK_OPCODES_FORMAT = {
   0x1e : [Instruction11x, [ "monitor-exit" ] ],
   0x1f : [Instruction21c, [ "check-cast", KIND_TYPE ] ],
   0x20 : [Instruction22c, [ "instance-of", KIND_TYPE ] ],
-  0x21 : [Instruction12x, [ "array-length", KIND_TYPE ] ],
+  0x21 : [Instruction12x, [ "array-length" ] ],
   0x22 : [Instruction21c, [ "new-instance", KIND_TYPE ] ],
   0x23 : [Instruction22c, [ "new-array", KIND_TYPE ] ],
 
