@@ -231,6 +231,24 @@ class APK(object):
         """
         return self.filename
 
+    def get_app_name(self):
+        """
+            Return the appname of the APK
+
+            :rtype: string
+        """        
+        app_elem = self.get_AndroidManifest().getElementsByTagName("application")[0]
+        app_name = app_elem.getAttribute("android:label")
+        if app_name.startswith("@"):
+            res_parser = self.get_android_resources()
+            app_name = ''
+            for package_name in res_parser.get_packages_names():
+                app_name = res_parser.get_string(package_name, 'app_name')
+                if app_name:
+                    app_name = app_name[1]
+                    break
+        return app_name
+
     def get_package(self):
         """
             Return the name of the package
