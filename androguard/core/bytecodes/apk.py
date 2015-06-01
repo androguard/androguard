@@ -31,6 +31,8 @@ import re
 
 from xml.dom import minidom
 
+PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", None) #loading default permission module
+
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
 # 0: chilkat
@@ -203,6 +205,7 @@ class APK(object):
                     self.valid_apk = True
 
         self.get_files_types()
+        PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
 
     def get_AndroidManifest(self):
         """
@@ -227,6 +230,24 @@ class APK(object):
             :rtype: string
         """
         return self.filename
+
+    def get_app_name(self):
+        """
+            Return the appname of the APK
+
+            :rtype: string
+        """        
+        app_elem = self.get_AndroidManifest().getElementsByTagName("application")[0]
+        app_name = app_elem.getAttribute("android:label")
+        if app_name.startswith("@"):
+            res_parser = self.get_android_resources()
+            app_name = ''
+            for package_name in res_parser.get_packages_names():
+                app_name = res_parser.get_string(package_name, 'app_name')
+                if app_name:
+                    app_name = app_name[1]
+                    break
+        return app_name
 
     def get_package(self):
         """
@@ -523,6 +544,30 @@ class APK(object):
                 l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
 
         return l
+    
+    def get_requested_permissions(self):
+        """
+            Returns all requested permissions.
+            
+            :rtype: list of string
+        """
+        return self.permissions
+    
+    def get_aosp_permissions_details(self):
+        """
+            Return requested aosp permissions with details.
+
+            :rtype: dictionary
+        """
+        l = {}
+
+        for i in self.permissions:
+            try:
+                l[i] = PERMISSION_MODULE.AOSP_PERMISSIONS[i]
+            except KeyError:
+                continue #if we have not found permission do nothing
+
+        return l
 
     def get_max_sdk_version(self):
         """
@@ -660,10 +705,11 @@ class APK(object):
             except KeyError:
                 print "\t", i, "%x" % self.files_crc32[i]
 
-        print "PERMISSIONS: "
-        details_permissions = self.get_details_permissions()
-        for i in details_permissions:
-            print "\t", i, details_permissions[i]
+        print "REQUESTED PERMISSIONS:"
+        requested_permissions = self.get_requested_permissions()
+        for i in requested_permissions:
+            print "\t", i
+        
         print "MAIN ACTIVITY: ", self.get_main_activity()
 
         print "ACTIVITIES: "

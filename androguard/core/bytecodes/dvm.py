@@ -211,31 +211,21 @@ def readuleb128p1(buff):
   return readuleb128( buff ) - 1
 
 def readsleb128(buff):
-    result = unpack( '=b', buff.read(1) )[0]
+    result = 0
+    shift = 0
 
-    if result <= 0x7f:
-        result = (result << 25)
-        if result > 0x7fffffff:
-            result = (0x7fffffff & result) - 0x80000000
-        result = result >> 25
-    else:
-        cur = unpack( '=b', buff.read(1) )[0]
-        result = (result & 0x7f) | ((cur & 0x7f) << 7)
-        if cur <= 0x7f:
-            result = (result << 18) >> 18
-        else:
-            cur = unpack( '=b', buff.read(1) )[0]
-            result |= (cur & 0x7f) << 14
-            if cur <= 0x7f:
-                result = (result << 11) >> 11
-            else:
-                cur = unpack( '=b', buff.read(1) )[0]
-                result |= (cur & 0x7f) << 21
-                if cur <= 0x7f:
-                    result = (result << 4) >> 4
-                else:
-                    cur = unpack( '=b', buff.read(1) )[0]
-                    result |= cur << 28
+    for x in range(0, 5):
+       cur = ord( buff.read(1) )
+       result |= (cur & 0x7f) << shift
+       shift += 7
+
+       if not cur & 0x80:
+          bit_left = max(32 - shift, 0)
+          result = result << bit_left
+          if result > 0x7fffffff:
+              result = (0x7fffffff & result) - 0x80000000
+          result = result >> bit_left
+          break
 
     return result
 
@@ -5681,7 +5671,7 @@ DALVIK_OPCODES_FORMAT = {
   0x1e : [Instruction11x, [ "monitor-exit" ] ],
   0x1f : [Instruction21c, [ "check-cast", KIND_TYPE ] ],
   0x20 : [Instruction22c, [ "instance-of", KIND_TYPE ] ],
-  0x21 : [Instruction12x, [ "array-length", KIND_TYPE ] ],
+  0x21 : [Instruction12x, [ "array-length" ] ],
   0x22 : [Instruction21c, [ "new-instance", KIND_TYPE ] ],
   0x23 : [Instruction22c, [ "new-array", KIND_TYPE ] ],
 
@@ -6632,6 +6622,9 @@ class DalvikCode(object):
 
       return length
 
+    def set_off(self, off):
+        self.__off = off
+
     def get_off(self):
         return self.__off
 
@@ -7433,6 +7426,8 @@ class DalvikVMFormat(bytecode._Bytecode):
             l.append( j )
 
             c_length = j.get_length()
+            if isinstance(j, StringDataItem):
+                c_length += 1
             h[ j ] = idx + length
             h_r[ idx + length ] = j
             s[ idx + length ] = c_length
@@ -7461,14 +7456,15 @@ class DalvikVMFormat(bytecode._Bytecode):
 
       self.header.file_size = idx
 
-      last_idx = 0
       for i in l:
         idx = h[ i ]
-        i.set_off( h[ i ] )
-
-#        print i, hex(h[ i ])
-
-        last_idx = idx + s[ idx ]
+        i.set_off(idx)
+        if isinstance(i,CodeItem):
+            last_idx = idx
+            for j in i.get_obj():
+                j.set_off(last_idx)
+                #j.set_debug_info_off(0)
+                last_idx += j.get_size()
 
       last_idx = 0
       buff = ""
@@ -7480,6 +7476,8 @@ class DalvikVMFormat(bytecode._Bytecode):
           buff += "\x00" * (idx - last_idx)
 
         buff += i.get_raw()
+        if isinstance(i, StringDataItem):
+            buff += "\x00"
         last_idx = idx + s[ idx ]
 
       debug("GLOBAL SIZE %d" % len(buff))
