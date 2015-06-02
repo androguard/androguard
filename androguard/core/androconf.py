@@ -102,7 +102,7 @@ CONF = {
     "LAZY_ANALYSIS": False,
     "MAGIC_PATH_FILE": None,
     
-    "PATH_TO_API_SPECIFIC_RESOURCE_MODULES" : "../androguard/core/api_specific_resources",
+    "PATH_TO_API_SPECIFIC_RESOURCE_MODULES" : os.path.dirname(os.path.realpath(__file__)) + "/api_specific_resources",
     "DEFAULT_API" : 19,
 }
 
