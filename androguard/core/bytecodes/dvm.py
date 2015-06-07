@@ -3937,7 +3937,11 @@ class FillArrayData(object):
         self.element_width = unpack("=H", buff[2:4])[0]
         self.size = unpack("=I", buff[4:8])[0]
 
-        self.data = buff[self.format_general_size:self.format_general_size + (self.size * self.element_width) + 1]
+        buf_len = self.size * self.element_width
+        if buf_len % 2:
+            buf_len += 1
+
+        self.data = buff[self.format_general_size:self.format_general_size + buf_len]
 
     def add_note(self, msg):
       """
