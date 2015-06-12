@@ -640,6 +640,7 @@ class APK(object):
             :rtype: dict
         '''
         return self.declared_permissions
+    
     def get_max_sdk_version(self):
         """
             Return the android:maxSdkVersion attribute
@@ -775,7 +776,12 @@ class APK(object):
                 print "\t", i, self.files[i], "%x" % self.files_crc32[i]
             except KeyError:
                 print "\t", i, "%x" % self.files_crc32[i]
-
+        
+        print "DECLARED PERMISSIONS:"
+        declared_permissions = self.get_declared_permissions()
+        for i in declared_permissions:
+            print "\t", i
+        
         print "REQUESTED PERMISSIONS:"
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
