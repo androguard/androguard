@@ -549,9 +549,22 @@ class APK(object):
         """
             Returns all requested permissions.
             
-            :rtype: list of string
+            :rtype: list of strings
         """
         return self.permissions
+    
+    def get_aosp_permissions(self):
+        '''
+            Returns permissions declared within AOSP project.
+            
+            :rtype: list of strings
+        '''
+        aosp_permissions = []
+        all_permissions = self.get_requested_permissions()
+        for perm in all_permissions:
+            if perm in PERMISSION_MODULE.AOSP_PERMISSIONS.keys():
+                aosp_permissions.append(perm)
+        return aosp_permissions
     
     def get_aosp_permissions_details(self):
         """
@@ -560,13 +573,11 @@ class APK(object):
             :rtype: dictionary
         """
         l = {}
-
         for i in self.permissions:
             try:
                 l[i] = PERMISSION_MODULE.AOSP_PERMISSIONS[i]
             except KeyError:
                 continue #if we have not found permission do nothing
-
         return l
 
     def get_max_sdk_version(self):
