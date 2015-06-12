@@ -553,9 +553,9 @@ class APK(object):
         """
         return self.permissions
     
-    def get_aosp_permissions(self):
+    def get_requested_aosp_permissions(self):
         '''
-            Returns permissions declared within AOSP project.
+            Returns requested permissions declared within AOSP project.
             
             :rtype: list of strings
         '''
@@ -566,9 +566,9 @@ class APK(object):
                 aosp_permissions.append(perm)
         return aosp_permissions
     
-    def get_aosp_permissions_details(self):
+    def get_requested_aosp_permissions_details(self):
         """
-            Return requested aosp permissions with details.
+            Returns requested aosp permissions with details.
 
             :rtype: dictionary
         """
@@ -579,6 +579,19 @@ class APK(object):
             except KeyError:
                 continue #if we have not found permission do nothing
         return l
+    
+    def get_requested_third_party_permissions(self):
+        '''
+            Returns list of requested permissions not declared within AOSP project.
+            
+            :rtype: list of strings
+        '''
+        third_party_permissions = []
+        all_permissions = self.get_requested_permissions()
+        for perm in all_permissions:
+            if perm not in PERMISSION_MODULE.AOSP_PERMISSIONS.keys():
+                third_party_permissions.append(perm)
+        return third_party_permissions
 
     def get_max_sdk_version(self):
         """
