@@ -237,14 +237,14 @@ with codecs.open(api_specific_mappings_module_path, 'w', 'utf-8') as perm_py_mod
     perm_py_module.write("%s = {\n" % METHODS_MAPPING_PARAM_NAME)
     for method in methods_mapping.keys():
         permissions = methods_mapping.get(method)
-        perms_string = ", ".join(['"%s"' % prm for prm in permissions])
+        perms_string = ", ".join(["'%s'" % prm for prm in permissions])
         perm_py_module.write("\t'%s' : [%s],\n" % (method, perms_string))
     perm_py_module.write("}\n\n")
  
     perm_py_module.write("%s = {\n" % FIELDS_MAPPING_PARAM_NAME)
     for field in fields_mapping.keys():
         permissions = fields_mapping.get(field)
-        perms_string = ", ".join(['"%s"' % prm for prm in permissions])
+        perms_string = ", ".join(["'%s'" % prm for prm in permissions])
         perm_py_module.write("\t'%s' : [%s],\n" % (field, perms_string))
     perm_py_module.write("}\n")
     perm_py_module.write("#################################################\n")
