@@ -409,6 +409,9 @@ class TaintedVariables(object):
 
         self.__cache_field_by_method = {}
         self.__cache_string_by_method = {}
+        
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
     # functions to get particulars elements
     def get_string(self, s):
@@ -458,20 +461,20 @@ class TaintedVariables(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
-        for f, f1 in self.get_fields():
+        for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
-                if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
+                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
+                for p in perm_intersection:
                     try:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p].extend(self.toPathVariable(f))
                     except KeyError:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p] = []
+                        permissions[p].extend(self.toPathVariable(f))
 
         return permissions
 
