@@ -1172,9 +1172,9 @@ class TaintedPackages(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
         classes = self.__vm.get_classes_names()
 
@@ -1183,21 +1183,17 @@ class TaintedPackages(object):
             for j in paths:
                 src_class_name, src_method_name, src_descriptor = j.get_src( self.__vm.get_class_manager() )
                 dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
-                if src_class_name in classes and m.get_name() not in classes:
+                if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        tmp = dst_descriptor
-                        tmp = tmp[ : tmp.rfind(")") + 1 ]
-
-                        #data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
-                        data = "%s-%s-%s" % (m.get_name(), dst_method_name, tmp)
-
-                        if data in DVM_PERMISSIONS_BY_ELEMENT:
-                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
+                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+                            for p in perm_intersection:
                                 try:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p].append(j)
                                 except KeyError:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p] = []
+                                    permissions[p].append(j)
 
         return permissions
 
