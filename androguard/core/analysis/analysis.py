@@ -1153,7 +1153,7 @@ class TaintedPackages(object):
 
     def get_permissions_method(self, method):
         permissions = set()
-
+        permissions.
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
@@ -1716,8 +1716,10 @@ class VMAnalysis(object):
     def get_permissions_method(self, method):
         permissions_f = self.get_tainted_packages().get_permissions_method( method )
         permissions_v = self.get_tainted_variables().get_permissions_method( method )
-
-        return list( set( permissions_f + permissions_v ) )
+        
+        all_permissions_of_method = permissions_f.union(permissions_v)
+        
+        return list(all_permissions_of_method)
 
     def get_tainted_variables(self):
         """
