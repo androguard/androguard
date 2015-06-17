@@ -17,7 +17,8 @@
 
 import re, random, cPickle
 
-from androguard.core.androconf import error, warning, debug, is_ascii_problem
+from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
+    load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
@@ -945,6 +946,9 @@ class TaintedPackages(object):
         self.__vm = _vm
         self.__packages = {}
         self.__methods = {}
+        
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
     def _add_pkg(self, name):
         if name not in self.__packages:
