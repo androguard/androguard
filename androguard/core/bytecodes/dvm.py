@@ -7335,6 +7335,15 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__cache_methods = None
         self.__cached_methods_idx = None
 
+    def get_api_version(self):
+        '''
+            This method returns api version that should be used for loading api
+            specific resources.
+            
+            :rtype: int
+        '''
+        return self.api_version
+    
     def get_classes_def_item(self):
         """
             This function returns the class def item
