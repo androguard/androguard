@@ -1158,9 +1158,9 @@ class TaintedPackages(object):
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
-                dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
-                if dst_method_name == method:
+                if j.get_method() == method:
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                        dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
                         if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
                             permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
