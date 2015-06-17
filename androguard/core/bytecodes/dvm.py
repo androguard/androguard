@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from androguard.core import bytecode
+from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF, debug, warning, is_android_raw
 from androguard.util import read
 
@@ -7286,9 +7287,19 @@ class DalvikVMFormat(bytecode._Bytecode):
         :Example:
           DalvikVMFormat( read("classes.dex") )
     """
-    def __init__(self, buff, decompiler=None, config=None):
+    def __init__(self, buff, decompiler=None, config=None, using_api=None):
+        #to allow to pass apk object ==> we do not need to pass additionally target version
+        if isinstance(buff, APK):
+            self.api_version = buff.get_target_sdk_version()
+            buff = buff.get_dex() #getting dex from APK file
+        elif using_api:
+            self.api_version = using_api
+        else:
+            self.api_version = CONF["DEFAULT_API"]
+            
+        #TODO: can using_api be added to config parameter?    
         super(DalvikVMFormat, self).__init__(buff)
-
+        
         self.config = config
         if not self.config:
           self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
