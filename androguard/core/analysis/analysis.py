@@ -439,17 +439,16 @@ class TaintedVariables(object):
 
     # permission functions
     def get_permissions_method(self, method):
-        permissions = []
+        permissions = set()
 
         for f, f1 in self.get_fields():
-            data = "%s-%s-%s" % (f1[0], f1[1], f1[2])
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
                 for path in f.get_paths():
-                    access, idx = path[0]
+                    #access, idx = path[0]
                     m_idx = path[1]
                     if m_idx == method.get_idx():
-                        if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions:
-                            permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
 
         return permissions
 
@@ -1164,8 +1163,8 @@ class TaintedPackages(object):
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
                         if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
                             permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
-        #TODO: Check if definitely need list
-        return list(permissions)
+        
+        return permissions
 
     def get_permissions(self, permissions_needed):
         """
