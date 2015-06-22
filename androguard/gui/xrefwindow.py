@@ -2,7 +2,6 @@ from PySide import QtCore, QtGui
 from androguard.core import androconf
 from androguard.gui.helpers import display2classmethod, class2func, classmethod2display, method2func
 
-
 class XrefDialogClass(QtGui.QDialog):
     '''Dialog holding our Xref listview.
         parent: SourceWindow that started the new XrefDialog
@@ -28,12 +27,12 @@ class XrefDialogClass(QtGui.QDialog):
         xrefs_from = class_analysis.get_xref_from()
         for ref_class in xrefs_from:
             for ref_method in xrefs_from[ref_class]:
-                xrefs_list.append(('F', ref_class.get_vm_class(), ref_method))
+                xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
 
         xrefs_to = class_analysis.get_xref_to()
         for ref_class in xrefs_to:
             for ref_method in xrefs_to[ref_class]:
-                xrefs_list.append(('T', ref_class.get_vm_class(), ref_method))
+                xrefs_list.append(('To', ref_class.get_vm_class(), ref_method))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -67,11 +66,11 @@ class XrefDialogMethod(QtGui.QDialog):
 
         xrefs_from = self.method_analysis.get_xref_from()
         for ref_class, ref_method in xrefs_from:
-            xrefs_list.append(('F', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
 
         xrefs_to = self.method_analysis.get_xref_to()
         for ref_class, ref_method in xrefs_to:
-            xrefs_list.append(('T', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('To', ref_class.get_vm_class(), ref_method))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -105,11 +104,11 @@ class XrefDialogField(QtGui.QDialog):
 
         xrefs_read = self.field_analysis.get_xref_read()
         for ref_class, ref_method in xrefs_read:
-            xrefs_list.append(('R', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('Read', ref_class.get_vm_class(), ref_method))
 
         xrefs_write = self.field_analysis.get_xref_write()
         for ref_class, ref_method in xrefs_write:
-            xrefs_list.append(('W', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('Write', ref_class.get_vm_class(), ref_method))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -141,7 +140,7 @@ class XrefDialogString(QtGui.QDialog):
 
         xrefs_from = self.string_analysis.get_xref_from()
         for ref_class, ref_method in xrefs_from:
-            xrefs_list.append(('F', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -225,46 +224,90 @@ class XrefDialog(QtGui.QDialog):
 #        print xrefs
         return xrefs
 
-class XrefListView(QtGui.QListView):
-    '''List view implemented inside the XrefDialog to list all the Xref of
-       a particular class or method.
-    '''
-
+class XrefListView(QtGui.QWidget):
     def __init__(self, parent=None, win=None, xrefs=None):
         super(XrefListView, self).__init__(parent)
-
-        self.setMinimumSize(600, 400) #TODO: adjust window depending on text displayed
-        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-        self.mainwin = win
         self.parent = parent
+        self.mainwin = win
         self.xrefs = xrefs
 
-        self.doubleClicked.connect(self.doubleClickedHandler)
+        self.setMinimumSize(600, 400)
 
-        model = QtGui.QStandardItemModel(self)
-        for x in xrefs:
-            value = "%s:%s" % (x[0], x[2])
-            item = QtGui.QStandardItem(value)
-            model.appendRow(item)
-        self.setModel(model)
+        self.filterPatternLineEdit = QtGui.QLineEdit()
+        self.filterPatternLabel = QtGui.QLabel("&Filter origin pattern:")
+        self.filterPatternLabel.setBuddy(self.filterPatternLineEdit)
+        self.filterPatternLineEdit.textChanged.connect(self.filterRegExpChanged)
 
-    def doubleClickedHandler(self, index):
-        '''Signal sent by PySide when a QModelIndex element is clicked'''
-        print "doubleClickedHandler", index, index.data()
+        self.xrefwindow = XrefValueWindow(self, win, self.xrefs)
 
-        xref_method = None
-        xref_class = None
-        for xref in self.xrefs:
-            if str(xref[2]) == index.data()[2:]:
-                xref_method = xref[2]
-                xref_class = xref[1]
+        sourceLayout = QtGui.QVBoxLayout()
+        sourceLayout.addWidget(self.xrefwindow)
+        sourceLayout.addWidget(self.filterPatternLabel)
+        sourceLayout.addWidget(self.filterPatternLineEdit)
 
-        if xref_method:
-            print type(xref_class), type(xref_method)
-            self.mainwin.openSourceWindow(current_class=xref_class,
-                                          method=xref_method)
-            self.parent.close()
-            return
+        self.setLayout(sourceLayout)
 
-        self.mainwin.showStatus("Impossible to find the xref ....")
-        return
+    def filterRegExpChanged(self, value):
+        regExp = QtCore.QRegExp(value)
+        self.xrefwindow.proxyModel.setFilterRegExp(regExp)
+
+    def close(self):
+        self.parent.close()
+
+class XrefValueWindow(QtGui.QTreeView):
+    def __init__(self, parent=None, win=None, xrefs=None):
+        super(XrefValueWindow, self).__init__(parent)
+        self.parent = parent
+        self.mainwin = win
+        self.xrefs = xrefs
+
+        self.reverse_strings = {}
+
+        self.proxyModel = QtGui.QSortFilterProxyModel()
+        self.proxyModel.setDynamicSortFilter(True)
+
+        self.model = QtGui.QStandardItemModel(len(self.xrefs), 2, self)
+
+        self.model.setHeaderData(0, QtCore.Qt.Horizontal, "Origin")
+        self.model.setHeaderData(1, QtCore.Qt.Horizontal, "Method")
+
+        row = 0
+        for ref in xrefs:
+            self.model.setData(self.model.index(row, 0, QtCore.QModelIndex()), ref[0])
+            self.model.setData(self.model.index(row, 1, QtCore.QModelIndex()), "%s" % ref[2])
+
+            row += 1
+
+        self.proxyModel.setSourceModel(self.model)
+
+        self.setRootIsDecorated(False)
+        self.setAlternatingRowColors(True)
+        self.setModel(self.proxyModel)
+        self.setSortingEnabled(True)
+        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+
+        self.doubleClicked.connect(self.slotDoubleClicked)
+
+    def slotDoubleClicked(self, mi):
+        mi = self.proxyModel.mapToSource(mi)
+        row = mi.row()
+        column = mi.column()
+
+        if column == 1:
+            data = mi.data()
+            xref_method = None
+            xref_class = None
+            for xref in self.xrefs:
+                if str(xref[2]) == data:
+                    xref_method = xref[2]
+                    xref_class = xref[1]
+                    break
+
+            if xref_class and xref_method:
+                self.mainwin.openSourceWindow(current_class=xref_class,
+                                              method=xref_method)
+                self.parent.close()
+                return
+            else:
+                self.mainwin.showStatus("Impossible to find the xref ....")
+                return

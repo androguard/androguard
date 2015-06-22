@@ -7312,6 +7312,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.classes_names = None
         self.__cache_methods = None
         self.__cached_methods_idx = None
+        self.__cache_fields = None
 
     def get_classes_def_item(self):
         """
@@ -7678,10 +7679,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 for j in i.get_methods():
                     self.__cache_methods[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
 
-        try:
-            return self.__cache_methods[ key ]
-        except KeyError:
-            return None
+        return self.__cache_methods.get(key)
 
     def get_methods_descriptor(self, class_name, method_name):
         """
@@ -7750,12 +7748,16 @@ class DalvikVMFormat(bytecode._Bytecode):
 
             :rtype: None or a :class:`EncodedField` object
         """
-        for i in self.classes.class_def:
-            if class_name == i.get_name():
+
+        key = class_name + field_name + descriptor
+
+        if self.__cache_fields == None:
+            self.__cache_fields = {}
+            for i in self.classes.class_def:
                 for j in i.get_fields():
-                    if field_name == j.get_name() and descriptor == j.get_descriptor():
-                        return j
-        return None
+                    self.__cache_fields[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
+
+        return self.__cache_fields.get(key)
 
     def get_strings(self):
         """

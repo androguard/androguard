@@ -1807,10 +1807,11 @@ class newVMAnalysis(object):
                                     self.classes[current_class.get_name()].AddMXrefTo(current_method, self.classes[class_info], method_item)
                                     self.classes[class_info].AddMXrefFrom(method_item, self.classes[current_class.get_name()], current_method)
 
-                                # Internal xref related to class manipulation
-                                if class_info in instances_class_name and class_info != current_class.get_name():
-                                    self.classes[current_class.get_name()].AddXrefTo(self.classes[class_info], current_method)
-                                    self.classes[class_info].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+                                    # Internal xref related to class manipulation
+                                    if class_info in instances_class_name and class_info != current_class.get_name():
+                                        self.classes[current_class.get_name()].AddXrefTo(self.classes[class_info], method_item)
+                                        self.classes[class_info].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+
                     elif op_value >= 0x1a and op_value <= 0x1b:
                         string_value = self.vm.get_cm_string(instruction.get_ref_kind())
                         if string_value not in self.strings:
