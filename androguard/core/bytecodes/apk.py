@@ -311,14 +311,20 @@ class APK(object):
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = ms.buffer(buffer)
-                self.files[i] = self._patch_magic(buffer, self.files[i])
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
                 self.files_crc32[i] = crc32(buffer)
         else:
             m = magic.Magic(magic_file=self.magic_file)
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = m.from_buffer(buffer)
-                self.files[i] = self._patch_magic(buffer, self.files[i])
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
                 self.files_crc32[i] = crc32(buffer)
 
         return self.files
