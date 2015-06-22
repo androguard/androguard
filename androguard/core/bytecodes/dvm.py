@@ -211,52 +211,26 @@ def readuleb128p1(buff):
   return readuleb128( buff ) - 1
 
 def readsleb128(buff):
-    result = 0
-    shift = 0
+  result = 0
+  shift = 0
 
-    for x in range(0, 5):
-       cur = ord( buff.read(1) )
-       result |= (cur & 0x7f) << shift
-       shift += 7
+  for x in range(0, 5):
+     cur = ord( buff.read(1) )
+     result |= (cur & 0x7f) << shift
+     shift += 7
 
-       if not cur & 0x80:
-          bit_left = max(32 - shift, 0)
-          result = result << bit_left
-          if result > 0x7fffffff:
-              result = (0x7fffffff & result) - 0x80000000
-          result = result >> bit_left
-          break
-
-    return result
-
-def get_sbyte(buff):
-  return unpack( '=b', buff.read(1) )[0]
-
-def readsleb128_2(buff):
-  result = get_sbyte(buff)
-  if result <= 0x7f:
-    result = (result << 25) >> 25
-  else:
-    cur = get_sbyte(buff)
-    result = (result & 0x7f) | ((cur & 0x7f) << 7)
-    if cur <= 0x7f:
-      result = (result << 18) >> 18
-    else:
-      cur = get_sbyte(buff)
-      result |= (cur & 0x7f) << 14
-      if cur <= 0x7f:
-        result = (result << 11) >> 11
-      else:
-        cur = get_sbyte(buff)
-        result |= (cur & 0x7f) << 21
-        if cur <= 0x7f:
-          result = (result << 4) >> 4
-        else:
-          cur = get_sbyte(buff)
-          result |= cur << 28
+     if not cur & 0x80:
+        bit_left = max(32 - shift, 0)
+        result = result << bit_left
+        if result > 0x7fffffff:
+            result = (0x7fffffff & result) - 0x80000000
+        result = result >> bit_left
+        break
 
   return result
 
+def get_sbyte(buff):
+  return unpack( '=b', buff.read(1) )[0]
 
 def writeuleb128(value):
     remaining = value >> 7
@@ -2658,6 +2632,9 @@ class EncodedField(object):
         except AttributeError:
             pass
 
+    def __str__(self):
+        return "%s->%s %s [access_flags=%s]\n" % (self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string())
+
 class EncodedMethod(object):
     """
         This class can parse an encoded_method of a dex file
@@ -2792,6 +2769,12 @@ class EncodedMethod(object):
 
         bytecode._PrintDefault("- return: %s\n" % get_type(ret[1]))
         bytecode._PrintSubBanner()
+
+    def __str__(self):
+        return "%s->%s%s [access_flags=%s]" % (self.get_class_name(),
+                                               self.get_name(),
+                                               self.get_descriptor(),
+                                               self.get_access_flags_string())
 
     def show_info(self):
         """
@@ -3248,6 +3231,10 @@ class ClassDefItem(object):
 
             if self.class_data_item != None:
                 self.class_data_item.set_static_fields( self.static_values.get_value() )
+
+    def __str__(self):
+        return "%s->%s" % (self.get_superclassname(),
+                           self.get_name())
 
     def get_methods(self):
         """
@@ -6710,8 +6697,6 @@ class MapItem(object):
       return self.size
 
     def next(self, buff, cm):
-        debug("%s @ 0x%x(%d) %x %x" % (TYPE_MAP_ITEM[self.type], buff.get_idx(), buff.get_idx(), self.size, self.offset))
-
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM":
             self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
 
