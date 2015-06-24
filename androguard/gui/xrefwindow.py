@@ -24,21 +24,23 @@ class XrefDialogClass(QtGui.QDialog):
 
         xrefs_list = []
 
+        ref_kind_map = {0:"Class instanciation", 1:"Class reference"}
+
         xrefs_from = class_analysis.get_xref_from()
         for ref_class in xrefs_from:
-            for ref_method in xrefs_from[ref_class]:
-                xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
+            for ref_kind, ref_method in xrefs_from[ref_class]:
+                xrefs_list.append(('From', ref_kind_map[ref_kind], ref_method, ref_class.get_vm_class()))
 
         xrefs_to = class_analysis.get_xref_to()
         for ref_class in xrefs_to:
-            for ref_method in xrefs_to[ref_class]:
-                xrefs_list.append(('To', ref_class.get_vm_class(), ref_method))
+            for ref_kind, ref_method in xrefs_to[ref_class]:
+                xrefs_list.append(('To', ref_kind_map[ref_kind], ref_method, ref_class.get_vm_class()))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
 
         xreflayout = QtGui.QGridLayout()
-        xrefwin = XrefListView(self, win=win, xrefs=xrefs_list)
+        xrefwin = XrefListView(self, win=win, xrefs=xrefs_list, headers=["Origin", "Kind", "Method"])
         xreflayout.addWidget(xrefwin, 0, 0)
 
         buttonsLayout = QtGui.QHBoxLayout()
@@ -66,11 +68,11 @@ class XrefDialogMethod(QtGui.QDialog):
 
         xrefs_from = self.method_analysis.get_xref_from()
         for ref_class, ref_method in xrefs_from:
-            xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('From', ref_method, ref_class.get_vm_class()))
 
         xrefs_to = self.method_analysis.get_xref_to()
         for ref_class, ref_method in xrefs_to:
-            xrefs_list.append(('To', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('To', ref_method, ref_class.get_vm_class()))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -104,11 +106,11 @@ class XrefDialogField(QtGui.QDialog):
 
         xrefs_read = self.field_analysis.get_xref_read()
         for ref_class, ref_method in xrefs_read:
-            xrefs_list.append(('Read', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('Read', ref_method, ref_class.get_vm_class()))
 
         xrefs_write = self.field_analysis.get_xref_write()
         for ref_class, ref_method in xrefs_write:
-            xrefs_list.append(('Write', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('Write', ref_method, ref_class.get_vm_class()))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -140,7 +142,7 @@ class XrefDialogString(QtGui.QDialog):
 
         xrefs_from = self.string_analysis.get_xref_from()
         for ref_class, ref_method in xrefs_from:
-            xrefs_list.append(('From', ref_class.get_vm_class(), ref_method))
+            xrefs_list.append(('From', ref_method, ref_class.get_vm_class()))
 
         closeButton = QtGui.QPushButton("Close")
         closeButton.clicked.connect(self.close)
@@ -225,11 +227,12 @@ class XrefDialog(QtGui.QDialog):
         return xrefs
 
 class XrefListView(QtGui.QWidget):
-    def __init__(self, parent=None, win=None, xrefs=None):
+    def __init__(self, parent=None, win=None, xrefs=None, headers=["Origin", "Method"]):
         super(XrefListView, self).__init__(parent)
         self.parent = parent
         self.mainwin = win
         self.xrefs = xrefs
+        self.headers = headers
 
         self.setMinimumSize(600, 400)
 
@@ -238,7 +241,7 @@ class XrefListView(QtGui.QWidget):
         self.filterPatternLabel.setBuddy(self.filterPatternLineEdit)
         self.filterPatternLineEdit.textChanged.connect(self.filterRegExpChanged)
 
-        self.xrefwindow = XrefValueWindow(self, win, self.xrefs)
+        self.xrefwindow = XrefValueWindow(self, win, self.xrefs, self.headers)
 
         sourceLayout = QtGui.QVBoxLayout()
         sourceLayout.addWidget(self.xrefwindow)
@@ -255,27 +258,29 @@ class XrefListView(QtGui.QWidget):
         self.parent.close()
 
 class XrefValueWindow(QtGui.QTreeView):
-    def __init__(self, parent=None, win=None, xrefs=None):
+    def __init__(self, parent=None, win=None, xrefs=None, headers=None):
         super(XrefValueWindow, self).__init__(parent)
         self.parent = parent
         self.mainwin = win
         self.xrefs = xrefs
+        self.headers = headers
 
         self.reverse_strings = {}
 
         self.proxyModel = QtGui.QSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
 
-        self.model = QtGui.QStandardItemModel(len(self.xrefs), 2, self)
+        self.model = QtGui.QStandardItemModel(len(self.xrefs), len(self.headers), self)
 
-        self.model.setHeaderData(0, QtCore.Qt.Horizontal, "Origin")
-        self.model.setHeaderData(1, QtCore.Qt.Horizontal, "Method")
+        column = 0
+        for header in headers:
+            self.model.setHeaderData(column, QtCore.Qt.Horizontal, header)
+            column += 1
 
         row = 0
         for ref in xrefs:
-            self.model.setData(self.model.index(row, 0, QtCore.QModelIndex()), ref[0])
-            self.model.setData(self.model.index(row, 1, QtCore.QModelIndex()), "%s" % ref[2])
-
+            for column in range(len(self.headers)):
+                self.model.setData(self.model.index(row, column, QtCore.QModelIndex()), "%s" % ref[column])
             row += 1
 
         self.proxyModel.setSourceModel(self.model)
@@ -293,14 +298,14 @@ class XrefValueWindow(QtGui.QTreeView):
         row = mi.row()
         column = mi.column()
 
-        if column == 1:
+        if column == len(self.headers) - 1:
             data = mi.data()
             xref_method = None
             xref_class = None
             for xref in self.xrefs:
-                if str(xref[2]) == data:
-                    xref_method = xref[2]
-                    xref_class = xref[1]
+                if str(xref[-2]) == data:
+                    xref_method = xref[-2]
+                    xref_class = xref[-1]
                     break
 
             if xref_class and xref_method:

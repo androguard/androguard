@@ -27,7 +27,7 @@ class MainWindow(QtGui.QMainWindow):
        self.tree: TreeWindow(QTreeWidget) in self.dock
     '''
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, input_file=None):
         super(MainWindow, self).__init__(parent)
         self.session = None
 
@@ -43,6 +43,9 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle("Androguard GUI")
 
         self.showStatus("Androguard GUI")
+
+        if input_file != None:
+            self.openFile(input_file)
 
     def showStatus(self, msg):
         '''Helper function called by any window to display a message
