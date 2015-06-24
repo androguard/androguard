@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #################################################
-### Extracted from platform version: 2.3.2 
+### Extracted from platform version: 2.3.2
 #################################################
 AOSP_PERMISSIONS = {
 	'android.permission.BIND_WALLPAPER' : {'permissionGroup' : '', 'description' : 'Allows the holder to bind to the top-level interface of a wallpaper. Should never be needed for normal applications.', 'protectionLevel' : 'signatureOrSystem', 'label' : 'bind to a wallpaper'},
@@ -181,5 +181,3 @@ AOSP_PERMISSION_GROUPS = {
 	'android.permission-group.PHONE_CALLS' : {'description' : 'Monitor, record, and process phone calls.', 'label' : 'Phone calls'},
 }
 #################################################
-
-

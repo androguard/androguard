@@ -25,7 +25,6 @@ def save_session(l, filename):
   with open(filename, "w") as fd:
      fd.write(dumps(l, -1))
 
-
 def load_session(filename):
   """
       load your session !
@@ -57,7 +56,6 @@ def AnalyzeAPK(filename, raw=False, decompiler="dad"):
     a = APK(filename, raw)
     d, dx = AnalyzeDex(a.get_dex(), raw=True, decompiler=decompiler)
     return a, d, dx
-
 
 def AnalyzeDex(filename, raw=False, decompiler="dad"):
     """
