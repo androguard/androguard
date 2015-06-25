@@ -1685,6 +1685,8 @@ class FieldClassAnalysis(object):
 
         return data
 
+REF_NEW_INSTANCE = 0
+REF_CLASS_USAGE = 1
 
 class ClassAnalysis(object):
     def __init__(self, classobj):
@@ -1721,13 +1723,13 @@ class ClassAnalysis(object):
             self._methods[method1] = MethodClassAnalysis(method1)
         self._methods[method1].AddXrefFrom(classobj, method2)
 
-    def AddXrefTo(self, classobj, methodobj):
+    def AddXrefTo(self, ref_kind, classobj, methodobj):
         #debug("Added class xrefto for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
-        self.xrefto[classobj].add(methodobj)
+        self.xrefto[classobj].add((ref_kind, methodobj))
 
-    def AddXrefFrom(self, classobj, methodobj):
+    def AddXrefFrom(self, ref_kind, classobj, methodobj):
         #debug("Added class xreffrom for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
-        self.xreffrom[classobj].add(methodobj)
+        self.xreffrom[classobj].add((ref_kind, methodobj))
 
     def get_xref_from(self):
         return self.xreffrom
@@ -1743,8 +1745,8 @@ class ClassAnalysis(object):
         for ref_class in self.xrefto:
             data += str(ref_class.get_vm_class().get_name()) + " "
             data += "in\n"
-            for ref_method in self.xrefto[ref_class]:
-                data += "%s\n" % ref_method
+            for ref_kind, ref_method in self.xrefto[ref_class]:
+                data += "%d %s\n" % (ref_kind, ref_method)
 
             data += "\n"
 
@@ -1752,8 +1754,8 @@ class ClassAnalysis(object):
         for ref_class in self.xreffrom:
             data += str(ref_class.get_vm_class().get_name()) + " "
             data += "in\n"
-            for ref_method in self.xreffrom[ref_class]:
-                data += "%s\n" % ref_method
+            for ref_kind, ref_method in self.xreffrom[ref_class]:
+                data += "%d %s\n" % (ref_kind, ref_method)
 
             data += "\n"
 
@@ -1792,8 +1794,14 @@ class newVMAnalysis(object):
 
                         # Internal xref related to class manipulation
                         if type_info in instances_class_name and type_info != current_class.get_name():
-                            self.classes[current_class.get_name()].AddXrefTo(self.classes[type_info], current_method)
-                            self.classes[type_info].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+                            # new instance
+                            if op_value == 0x22:
+                                self.classes[current_class.get_name()].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[current_class.get_name()], current_method)
+                            # class reference
+                            else:
+                                self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
 
                     elif ((op_value >= 0x6e and op_value <= 0x72) or
                         (op_value >= 0x74 and op_value <= 0x78)):
@@ -1809,8 +1817,8 @@ class newVMAnalysis(object):
 
                                     # Internal xref related to class manipulation
                                     if class_info in instances_class_name and class_info != current_class.get_name():
-                                        self.classes[current_class.get_name()].AddXrefTo(self.classes[class_info], method_item)
-                                        self.classes[class_info].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+                                        self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item)
+                                        self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
 
                     elif op_value >= 0x1a and op_value <= 0x1b:
                         string_value = self.vm.get_cm_string(instruction.get_ref_kind())
