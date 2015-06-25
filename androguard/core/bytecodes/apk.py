@@ -21,7 +21,7 @@ from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.util import read
 
-from androguard.core.resources import public as SYSTEM_RESOURCES
+from androguard.core.resources import public
 
 import StringIO
 from struct import pack, unpack
@@ -30,8 +30,6 @@ from zlib import crc32
 import re
 
 from xml.dom import minidom
-
-PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", None) #loading default permission module
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
@@ -222,8 +220,7 @@ class APK(object):
                     self.valid_apk = True
 
         self.get_files_types()
-        PERMISSION_MODULE = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
-    
+        self.permission_module = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -268,7 +265,7 @@ class APK(object):
             Return the appname of the APK
 
             :rtype: string
-        """        
+        """
         app_elem = self.get_AndroidManifest().getElementsByTagName("application")[0]
         app_name = app_elem.getAttribute("android:label")
         if app_name.startswith("@"):
@@ -345,14 +342,20 @@ class APK(object):
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = ms.buffer(buffer)
-                self.files[i] = self._patch_magic(buffer, self.files[i])
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
                 self.files_crc32[i] = crc32(buffer)
         else:
             m = magic.Magic(magic_file=self.magic_file)
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = m.from_buffer(buffer)
-                self.files[i] = self._patch_magic(buffer, self.files[i])
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
                 self.files_crc32[i] = crc32(buffer)
 
         return self.files
@@ -576,7 +579,7 @@ class APK(object):
                 l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
 
         return l
-    
+
     def get_requested_permissions(self):
         """
             Returns all requested permissions.
@@ -594,7 +597,7 @@ class APK(object):
         aosp_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm in PERMISSION_MODULE.AOSP_PERMISSIONS.keys():
+            if perm in self.permission_module.AOSP_PERMISSIONS.keys():
                 aosp_permissions.append(perm)
         return aosp_permissions
     
@@ -607,7 +610,7 @@ class APK(object):
         l = {}
         for i in self.permissions:
             try:
-                l[i] = PERMISSION_MODULE.AOSP_PERMISSIONS[i]
+                l[i] = self.permission_module.AOSP_PERMISSIONS[i]
             except KeyError:
                 continue #if we have not found permission do nothing
         return l
@@ -621,7 +624,7 @@ class APK(object):
         third_party_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm not in PERMISSION_MODULE.AOSP_PERMISSIONS.keys():
+            if perm not in self.permission_module.AOSP_PERMISSIONS.keys():
                 third_party_permissions.append(perm)
         return third_party_permissions
 
@@ -786,7 +789,7 @@ class APK(object):
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
             print "\t", i
-        
+
         print "MAIN ACTIVITY: ", self.get_main_activity()
 
         print "ACTIVITIES: "
@@ -1221,8 +1224,8 @@ class AXMLParser(object):
         res = self.sb.getString( name )
         if not res:
             attr = self.m_resourceIDs[name]
-            if attr in SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:'+SYSTEM_RESOURCES['attributes']['inverse'][attr]
+            if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
+                res = 'android:'+public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
 
         return res
 

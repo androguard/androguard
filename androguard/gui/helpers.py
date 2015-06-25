@@ -1,10 +1,11 @@
-class Signature:
+class Signature(object):
 
     def __init__(self, cls, method=None, descriptor=None):
         self.cls = cls
         self.class_components = self.cls.name.strip('L').strip(';').split('/')
         self.class_path = self.class_components[:-1]
         self.class_name = self.class_components[-1]
+        self.full_class_name = self.cls.name
         self.method = method
         self.descriptor = descriptor
 
@@ -31,7 +32,7 @@ def classmethod2func(class_, method_):
 
 def classmethod2display(class_, method_, descriptor_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
-    into a beautiful :) string to display Xrefs: 
+    into a beautiful :) string to display Xrefs:
     "Lcom/mwr/example/sieve/AddEntryActivity; -> onCreate"
     '''
 
