@@ -597,7 +597,7 @@ class APK(object):
         aosp_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm in self.permission_module.AOSP_PERMISSIONS.keys():
+            if perm in self.permission_module["AOSP_PERMISSIONS"].keys():
                 aosp_permissions.append(perm)
         return aosp_permissions
     
@@ -610,7 +610,7 @@ class APK(object):
         l = {}
         for i in self.permissions:
             try:
-                l[i] = self.permission_module.AOSP_PERMISSIONS[i]
+                l[i] = self.permission_module["AOSP_PERMISSIONS"][i]
             except KeyError:
                 continue #if we have not found permission do nothing
         return l
@@ -624,7 +624,7 @@ class APK(object):
         third_party_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm not in self.permission_module.AOSP_PERMISSIONS.keys():
+            if perm not in self.permission_module["AOSP_PERMISSIONS"].keys():
                 third_party_permissions.append(perm)
         return third_party_permissions
 
