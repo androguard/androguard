@@ -86,17 +86,20 @@ TYPE_LEN = {
 
 def get_access_class(access):
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_CLASSES[flag] for flag in sorted_access]
+    return [ACCESS_FLAGS_CLASSES.get(flag, 'unkn_%d' % flag)
+            for flag in sorted_access]
 
 
 def get_access_method(access):
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_METHODS[flag] for flag in sorted_access]
+    return [ACCESS_FLAGS_METHODS.get(flag, 'unkn_%d' % flag)
+            for flag in sorted_access]
 
 
 def get_access_field(access):
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_FIELDS[flag] for flag in sorted_access]
+    return [ACCESS_FLAGS_FIELDS.get(flag, 'unkn_%d' % flag)
+            for flag in sorted_access]
 
 
 def build_path(graph, node1, node2, path=None):

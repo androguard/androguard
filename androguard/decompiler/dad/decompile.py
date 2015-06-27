@@ -46,7 +46,7 @@ def auto_vm(filename):
         return dvm.DalvikVMFormat(apk.APK(filename).get_dex())
     elif ret == 'DEX':
         return dvm.DalvikVMFormat(read(filename))
-    elif ret == 'ODEX':
+    elif ret == 'DEY':
         return dvm.DalvikOdexVMFormat(read(filename))
     return None
 
