@@ -409,7 +409,7 @@ class TaintedVariables(object):
 
         self.__cache_field_by_method = {}
         self.__cache_string_by_method = {}
-        
+
         self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
         self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
@@ -947,7 +947,7 @@ class TaintedPackages(object):
         self.__vm = _vm
         self.__packages = {}
         self.__methods = {}
-        
+
         self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
         self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
@@ -1152,7 +1152,6 @@ class TaintedPackages(object):
 
     def get_permissions_method(self, method):
         permissions = set()
-        permissions.
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
@@ -1162,7 +1161,7 @@ class TaintedPackages(object):
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
                         if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
                             permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
-        
+
         return permissions
 
     def get_permissions(self, permissions_needed):
@@ -1975,9 +1974,9 @@ class VMAnalysis(object):
     def get_permissions_method(self, method):
         permissions_f = self.get_tainted_packages().get_permissions_method( method )
         permissions_v = self.get_tainted_variables().get_permissions_method( method )
-        
+
         all_permissions_of_method = permissions_f.union(permissions_v)
-        
+
         return list(all_permissions_of_method)
 
     def get_tainted_variables(self):
