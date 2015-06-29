@@ -7,9 +7,8 @@ setup(
     version = '3.0',
     packages = find_packages(),
     scripts = ['androaxml.py', 'androcsign.py', 'androdiff.py', 'androgexf.py',
-               'androlyze.py', 'androrisk.py', 'androsign.py',
-               'androsim.py', 'androxgmml.py', 'apkviewer.py',
-               'androdd.py', 'androapkinfo.py', 'androgui.py',
+               'androlyze.py', 'androsign.py', 'androsim.py', 'apkviewer.py',
+               'androdd.py', 'androgui.py',
                ],
     install_requires=['distribute'],
 )
