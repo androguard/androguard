@@ -17,7 +17,8 @@
 
 import re, random, cPickle, collections
 
-from androguard.core.androconf import error, warning, debug, is_ascii_problem
+from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
+    load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
@@ -408,6 +409,9 @@ class TaintedVariables(object):
 
         self.__cache_field_by_method = {}
         self.__cache_string_by_method = {}
+        
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
     # functions to get particulars elements
     def get_string(self, s):
@@ -435,17 +439,16 @@ class TaintedVariables(object):
 
     # permission functions
     def get_permissions_method(self, method):
-        permissions = []
+        permissions = set()
 
         for f, f1 in self.get_fields():
-            data = "%s-%s-%s" % (f1[0], f1[1], f1[2])
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
                 for path in f.get_paths():
-                    access, idx = path[0]
+                    #access, idx = path[0]
                     m_idx = path[1]
                     if m_idx == method.get_idx():
-                        if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions:
-                            permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
 
         return permissions
 
@@ -457,20 +460,20 @@ class TaintedVariables(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
-        for f, f1 in self.get_fields():
+        for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
-                if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
+                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
+                for p in perm_intersection:
                     try:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p].extend(self.toPathVariable(f))
                     except KeyError:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p] = []
+                        permissions[p].extend(self.toPathVariable(f))
 
         return permissions
 
@@ -944,6 +947,9 @@ class TaintedPackages(object):
         self.__vm = _vm
         self.__packages = {}
         self.__methods = {}
+        
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
 
     def _add_pkg(self, name):
         if name not in self.__packages:
@@ -1145,19 +1151,18 @@ class TaintedPackages(object):
             return []
 
     def get_permissions_method(self, method):
-        permissions = []
-
+        permissions = set()
+        permissions.
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
                 if j.get_method() == method:
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        tmp = j.get_descriptor()
-                        tmp = tmp[ : tmp.rfind(")") + 1 ]
-                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), tmp)
-                        if data in DVM_PERMISSIONS_BY_ELEMENT:
-                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions:
-                                permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+                        dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
+                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
+                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+        
         return permissions
 
     def get_permissions(self, permissions_needed):
@@ -1167,9 +1172,9 @@ class TaintedPackages(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
         classes = self.__vm.get_classes_names()
 
@@ -1178,21 +1183,17 @@ class TaintedPackages(object):
             for j in paths:
                 src_class_name, src_method_name, src_descriptor = j.get_src( self.__vm.get_class_manager() )
                 dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
-                if src_class_name in classes and m.get_name() not in classes:
+                if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        tmp = dst_descriptor
-                        tmp = tmp[ : tmp.rfind(")") + 1 ]
-
-                        #data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
-                        data = "%s-%s-%s" % (m.get_name(), dst_method_name, tmp)
-
-                        if data in DVM_PERMISSIONS_BY_ELEMENT:
-                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
+                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+                            for p in perm_intersection:
                                 try:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p].append(j)
                                 except KeyError:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p] = []
+                                    permissions[p].append(j)
 
         return permissions
 
@@ -1974,8 +1975,10 @@ class VMAnalysis(object):
     def get_permissions_method(self, method):
         permissions_f = self.get_tainted_packages().get_permissions_method( method )
         permissions_v = self.get_tainted_variables().get_permissions_method( method )
-
-        return list( set( permissions_f + permissions_v ) )
+        
+        all_permissions_of_method = permissions_f.union(permissions_v)
+        
+        return list(all_permissions_of_method)
 
     def get_tainted_variables(self):
         """
