@@ -458,9 +458,13 @@ class DecompilerDAD(object):
         mx = self.vmx.get_method(m)
         z = decompile.DvMethod(mx)
         z.process()
+        return z.get_source()
 
-        result = z.get_source()
-        return result
+    def get_ast_method(self, m):
+        mx = self.vmx.get_method(m)
+        z = decompile.DvMethod(mx)
+        z.process(doAST=True)
+        return z.get_ast()
 
     def display_source(self, m):
         result = self.get_source_method(m)
@@ -474,10 +478,12 @@ class DecompilerDAD(object):
     def get_source_class(self, _class):
         c = decompile.DvClass(_class, self.vmx)
         c.process()
+        return c.get_source()
 
-        result = c.get_source()
-
-        return result
+    def get_ast_class(self, _class):
+        c = decompile.DvClass(_class, self.vmx)
+        c.process(doAST=True)
+        return c.get_ast()
 
     def get_source_class_ext(self, _class):
         c = decompile.DvClass(_class, self.vmx)

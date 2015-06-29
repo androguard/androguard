@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from androguard.core import bytecode
+from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF, debug, warning, is_android_raw
 from androguard.util import read
 
@@ -211,52 +212,26 @@ def readuleb128p1(buff):
   return readuleb128( buff ) - 1
 
 def readsleb128(buff):
-    result = 0
-    shift = 0
+  result = 0
+  shift = 0
 
-    for x in range(0, 5):
-       cur = ord( buff.read(1) )
-       result |= (cur & 0x7f) << shift
-       shift += 7
+  for x in range(0, 5):
+     cur = ord( buff.read(1) )
+     result |= (cur & 0x7f) << shift
+     shift += 7
 
-       if not cur & 0x80:
-          bit_left = max(32 - shift, 0)
-          result = result << bit_left
-          if result > 0x7fffffff:
-              result = (0x7fffffff & result) - 0x80000000
-          result = result >> bit_left
-          break
-
-    return result
-
-def get_sbyte(buff):
-  return unpack( '=b', buff.read(1) )[0]
-
-def readsleb128_2(buff):
-  result = get_sbyte(buff)
-  if result <= 0x7f:
-    result = (result << 25) >> 25
-  else:
-    cur = get_sbyte(buff)
-    result = (result & 0x7f) | ((cur & 0x7f) << 7)
-    if cur <= 0x7f:
-      result = (result << 18) >> 18
-    else:
-      cur = get_sbyte(buff)
-      result |= (cur & 0x7f) << 14
-      if cur <= 0x7f:
-        result = (result << 11) >> 11
-      else:
-        cur = get_sbyte(buff)
-        result |= (cur & 0x7f) << 21
-        if cur <= 0x7f:
-          result = (result << 4) >> 4
-        else:
-          cur = get_sbyte(buff)
-          result |= cur << 28
+     if not cur & 0x80:
+        bit_left = max(32 - shift, 0)
+        result = result << bit_left
+        if result > 0x7fffffff:
+            result = (0x7fffffff & result) - 0x80000000
+        result = result >> bit_left
+        break
 
   return result
 
+def get_sbyte(buff):
+  return unpack( '=b', buff.read(1) )[0]
 
 def writeuleb128(value):
     remaining = value >> 7
@@ -2658,6 +2633,9 @@ class EncodedField(object):
         except AttributeError:
             pass
 
+    def __str__(self):
+        return "%s->%s %s [access_flags=%s]\n" % (self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string())
+
 class EncodedMethod(object):
     """
         This class can parse an encoded_method of a dex file
@@ -2792,6 +2770,12 @@ class EncodedMethod(object):
 
         bytecode._PrintDefault("- return: %s\n" % get_type(ret[1]))
         bytecode._PrintSubBanner()
+
+    def __str__(self):
+        return "%s->%s%s [access_flags=%s]" % (self.get_class_name(),
+                                               self.get_name(),
+                                               self.get_descriptor(),
+                                               self.get_access_flags_string())
 
     def show_info(self):
         """
@@ -3249,6 +3233,10 @@ class ClassDefItem(object):
             if self.class_data_item != None:
                 self.class_data_item.set_static_fields( self.static_values.get_value() )
 
+    def __str__(self):
+        return "%s->%s" % (self.get_superclassname(),
+                           self.get_name())
+
     def get_methods(self):
         """
             Return all methods of this class
@@ -3424,6 +3412,9 @@ class ClassDefItem(object):
 
     def get_source_ext(self):
       return self.__CM.decompiler_ob.get_source_class_ext(self)
+
+    def get_ast(self):
+      return self.__CM.decompiler_ob.get_ast_class(self)
 
     def set_name(self, value):
         self.__CM.set_hook_class_name( self, value )
@@ -3937,7 +3928,11 @@ class FillArrayData(object):
         self.element_width = unpack("=H", buff[2:4])[0]
         self.size = unpack("=I", buff[4:8])[0]
 
-        self.data = buff[self.format_general_size:self.format_general_size + (self.size * self.element_width) + 1]
+        buf_len = self.size * self.element_width
+        if buf_len % 2:
+            buf_len += 1
+
+        self.data = buff[self.format_general_size:self.format_general_size + buf_len]
 
     def add_note(self, msg):
       """
@@ -6710,8 +6705,6 @@ class MapItem(object):
       return self.size
 
     def next(self, buff, cm):
-        debug("%s @ 0x%x(%d) %x %x" % (TYPE_MAP_ITEM[self.type], buff.get_idx(), buff.get_idx(), self.size, self.offset))
-
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM":
             self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
 
@@ -7286,9 +7279,19 @@ class DalvikVMFormat(bytecode._Bytecode):
         :Example:
           DalvikVMFormat( read("classes.dex") )
     """
-    def __init__(self, buff, decompiler=None, config=None):
+    def __init__(self, buff, decompiler=None, config=None, using_api=None):
+        #to allow to pass apk object ==> we do not need to pass additionally target version
+        if isinstance(buff, APK):
+            self.api_version = buff.get_target_sdk_version()
+            buff = buff.get_dex() #getting dex from APK file
+        elif using_api:
+            self.api_version = using_api
+        else:
+            self.api_version = CONF["DEFAULT_API"]
+            
+        #TODO: can using_api be added to config parameter?    
         super(DalvikVMFormat, self).__init__(buff)
-
+        
         self.config = config
         if not self.config:
           self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
@@ -7323,7 +7326,17 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.classes_names = None
         self.__cache_methods = None
         self.__cached_methods_idx = None
+        self.__cache_fields = None
 
+    def get_api_version(self):
+        '''
+            This method returns api version that should be used for loading api
+            specific resources.
+            
+            :rtype: int
+        '''
+        return self.api_version
+    
     def get_classes_def_item(self):
         """
             This function returns the class def item
@@ -7689,10 +7702,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 for j in i.get_methods():
                     self.__cache_methods[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
 
-        try:
-            return self.__cache_methods[ key ]
-        except KeyError:
-            return None
+        return self.__cache_methods.get(key)
 
     def get_methods_descriptor(self, class_name, method_name):
         """
@@ -7761,12 +7771,16 @@ class DalvikVMFormat(bytecode._Bytecode):
 
             :rtype: None or a :class:`EncodedField` object
         """
-        for i in self.classes.class_def:
-            if class_name == i.get_name():
+
+        key = class_name + field_name + descriptor
+
+        if self.__cache_fields == None:
+            self.__cache_fields = {}
+            for i in self.classes.class_def:
                 for j in i.get_fields():
-                    if field_name == j.get_name() and descriptor == j.get_descriptor():
-                        return j
-        return None
+                    self.__cache_fields[ j.get_class_name() + j.get_name() + j.get_descriptor() ] = j
+
+        return self.__cache_fields.get(key)
 
     def get_strings(self):
         """

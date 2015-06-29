@@ -15,9 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re, random, cPickle
+import re, random, cPickle, collections
 
-from androguard.core.androconf import error, warning, debug, is_ascii_problem
+from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
+    load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
@@ -409,6 +410,9 @@ class TaintedVariables(object):
         self.__cache_field_by_method = {}
         self.__cache_string_by_method = {}
 
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
+
     # functions to get particulars elements
     def get_string(self, s):
         try:
@@ -435,17 +439,16 @@ class TaintedVariables(object):
 
     # permission functions
     def get_permissions_method(self, method):
-        permissions = []
+        permissions = set()
 
         for f, f1 in self.get_fields():
-            data = "%s-%s-%s" % (f1[0], f1[1], f1[2])
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
                 for path in f.get_paths():
-                    access, idx = path[0]
+                    #access, idx = path[0]
                     m_idx = path[1]
                     if m_idx == method.get_idx():
-                        if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions:
-                            permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
 
         return permissions
 
@@ -457,25 +460,24 @@ class TaintedVariables(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
-        for f, f1 in self.get_fields():
+        for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-
-            if data in DVM_PERMISSIONS_BY_ELEMENT:
-                if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
+                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
+                for p in perm_intersection:
                     try:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p].extend(self.toPathVariable(f))
                     except KeyError:
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                        permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].extend( self.toPathVariable( f ) )
+                        permissions[p] = []
+                        permissions[p].extend(self.toPathVariable(f))
 
         return permissions
 
     # global functions
-
     def get_strings(self):
         for i in self.__vars[ TAINTED_STRING ]:
             yield self.__vars[ TAINTED_STRING ][ i ], i
@@ -946,6 +948,9 @@ class TaintedPackages(object):
         self.__packages = {}
         self.__methods = {}
 
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
+
     def _add_pkg(self, name):
         if name not in self.__packages:
             self.__packages[ name ] = TaintedPackage( self.__vm, name )
@@ -1146,19 +1151,17 @@ class TaintedPackages(object):
             return []
 
     def get_permissions_method(self, method):
-        permissions = []
-
+        permissions = set()
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
                 if j.get_method() == method:
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        tmp = j.get_descriptor()
-                        tmp = tmp[ : tmp.rfind(")") + 1 ]
-                        data = "%s-%s-%s" % (m.get_info(), j.get_name(), tmp)
-                        if data in DVM_PERMISSIONS_BY_ELEMENT:
-                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] not in permissions:
-                                permissions.append( DVM_PERMISSIONS_BY_ELEMENT[ data ] )
+                        dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
+                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
+                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+
         return permissions
 
     def get_permissions(self, permissions_needed):
@@ -1168,9 +1171,9 @@ class TaintedPackages(object):
         """
         permissions = {}
 
-        pn = permissions_needed
+        pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = DVM_PERMISSIONS_BY_PERMISSION.keys()
+            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
 
         classes = self.__vm.get_classes_names()
 
@@ -1179,21 +1182,17 @@ class TaintedPackages(object):
             for j in paths:
                 src_class_name, src_method_name, src_descriptor = j.get_src( self.__vm.get_class_manager() )
                 dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
-                if src_class_name in classes and m.get_name() not in classes:
+                if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        tmp = dst_descriptor
-                        tmp = tmp[ : tmp.rfind(")") + 1 ]
-
-                        #data = "%s-%s-%s" % (m.get_info(), j.get_name(), j.get_descriptor())
-                        data = "%s-%s-%s" % (m.get_name(), dst_method_name, tmp)
-
-                        if data in DVM_PERMISSIONS_BY_ELEMENT:
-                            if DVM_PERMISSIONS_BY_ELEMENT[ data ] in pn:
+                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
+                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+                            for p in perm_intersection:
                                 try:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p].append(j)
                                 except KeyError:
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ] = []
-                                    permissions[ DVM_PERMISSIONS_BY_ELEMENT[ data ] ].append( j )
+                                    permissions[p] = []
+                                    permissions[p].append(j)
 
         return permissions
 
@@ -1474,7 +1473,7 @@ class MethodAnalysis(object):
             for handler in i[2:]:
                 l.append( handler[1] )
 
-        debug("Creating basic blocks")
+        debug("Creating basic blocks in %s" % self.method)
         idx = 0
         for i in instructions:
             # index is a destination
@@ -1601,6 +1600,266 @@ SIGNATURES = {
 
 from sign import Signature
 
+class StringAnalysis(object):
+    def __init__(self, value):
+        self.value = value
+        self.xreffrom = set()
+
+    def AddXrefFrom(self, classobj, methodobj):
+        #debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
+        self.xreffrom.add((classobj, methodobj))
+
+    def get_xref_from(self):
+        return self.xreffrom
+
+    def __str__(self):
+        data = "XREFto for string %s in\n" % repr(self.value)
+        for ref_class, ref_method in self.xreffrom:
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+        return data
+
+
+class MethodClassAnalysis(object):
+    def __init__(self, method):
+        self.method = method
+        self.xrefto = set()
+        self.xreffrom = set()
+
+    def AddXrefTo(self, classobj, methodobj):
+        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        self.xrefto.add((classobj, methodobj))
+
+    def AddXrefFrom(self, classobj, methodobj):
+        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        self.xreffrom.add((classobj, methodobj))
+
+    def get_xref_from(self):
+        return self.xreffrom
+
+    def get_xref_to(self):
+        return self.xrefto
+
+    def __str__(self):
+        data = "XREFto for %s\n" % self.method
+        for ref_class, ref_method in self.xrefto:
+            data += "in\n"
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+
+        data += "XREFFrom for %s\n" % self.method
+        for ref_class, ref_method in self.xreffrom:
+            data += "in\n"
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+
+        return data
+
+class FieldClassAnalysis(object):
+    def __init__(self, field):
+        self.field = field
+        self.xrefread = set()
+        self.xrefwrite = set()
+
+    def AddXrefRead(self, classobj, methodobj):
+        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        self.xrefread.add((classobj, methodobj))
+
+    def AddXrefWrite(self, classobj, methodobj):
+        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        self.xrefwrite.add((classobj, methodobj))
+
+    def get_xref_read(self):
+        return self.xrefread
+
+    def get_xref_write(self):
+        return self.xrefwrite
+
+    def __str__(self):
+        data = "XREFRead for %s\n" % self.field
+        for ref_class, ref_method in self.xrefread:
+            data += "in\n"
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+
+        data += "XREFWrite for %s\n" % self.field
+        for ref_class, ref_method in self.xrefwrite:
+            data += "in\n"
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+
+        return data
+
+REF_NEW_INSTANCE = 0
+REF_CLASS_USAGE = 1
+
+class ClassAnalysis(object):
+    def __init__(self, classobj):
+        self._class = classobj
+        self._methods = {}
+        self._fields = {}
+
+        self.xrefto = collections.defaultdict(set)
+        self.xreffrom = collections.defaultdict(set)
+
+    def get_method_analysis(self, method):
+        return self._methods.get(method)
+
+    def get_field_analysis(self, field):
+        return self._fields.get(field)
+
+    def AddFXrefRead(self, method, classobj, field):
+        if field not in self._fields:
+            self._fields[field] = FieldClassAnalysis(field)
+        self._fields[field].AddXrefRead(classobj, method)
+
+    def AddFXrefWrite(self, method, classobj, field):
+        if field not in self._fields:
+            self._fields[field] = FieldClassAnalysis(field)
+        self._fields[field].AddXrefWrite(classobj, method)
+
+    def AddMXrefTo(self, method1, classobj, method2):
+        if method1 not in self._methods:
+            self._methods[method1] = MethodClassAnalysis(method1)
+        self._methods[method1].AddXrefTo(classobj, method2)
+
+    def AddMXrefFrom(self, method1, classobj, method2):
+        if method1 not in self._methods:
+            self._methods[method1] = MethodClassAnalysis(method1)
+        self._methods[method1].AddXrefFrom(classobj, method2)
+
+    def AddXrefTo(self, ref_kind, classobj, methodobj):
+        #debug("Added class xrefto for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
+        self.xrefto[classobj].add((ref_kind, methodobj))
+
+    def AddXrefFrom(self, ref_kind, classobj, methodobj):
+        #debug("Added class xreffrom for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
+        self.xreffrom[classobj].add((ref_kind, methodobj))
+
+    def get_xref_from(self):
+        return self.xreffrom
+
+    def get_xref_to(self):
+        return self.xrefto
+
+    def get_vm_class(self):
+        return self._class
+
+    def __str__(self):
+        data = "XREFto for %s\n" % self._class
+        for ref_class in self.xrefto:
+            data += str(ref_class.get_vm_class().get_name()) + " "
+            data += "in\n"
+            for ref_kind, ref_method in self.xrefto[ref_class]:
+                data += "%d %s\n" % (ref_kind, ref_method)
+
+            data += "\n"
+
+        data += "XREFFrom for %s\n" % self._class
+        for ref_class in self.xreffrom:
+            data += str(ref_class.get_vm_class().get_name()) + " "
+            data += "in\n"
+            for ref_kind, ref_method in self.xreffrom[ref_class]:
+                data += "%d %s\n" % (ref_kind, ref_method)
+
+            data += "\n"
+
+        return data
+
+class newVMAnalysis(object):
+    def __init__(self, vm):
+        self.vm = vm
+        self.classes = {}
+        self.strings = {}
+
+        for current_class in self.vm.get_classes():
+            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+
+    def create_xref(self):
+        debug("Creating XREF/DREF")
+
+        instances_class_name = self.classes.keys()
+        external_instances = {}
+
+        for current_class in self.vm.get_classes():
+            for current_method in current_class.get_methods():
+                debug("Creating XREF for %s" % current_method)
+
+                code = current_method.get_code()
+                if code == None:
+                    continue
+
+                off = 0
+                bc = code.get_bc()
+                for instruction in bc.get_instructions():
+                    op_value = instruction.get_op_value()
+                    if op_value in [0x1c, 0x22]:
+                        idx_type = instruction.get_ref_kind()
+                        type_info = self.vm.get_cm_type(idx_type)
+
+                        # Internal xref related to class manipulation
+                        if type_info in instances_class_name and type_info != current_class.get_name():
+                            # new instance
+                            if op_value == 0x22:
+                                self.classes[current_class.get_name()].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[current_class.get_name()], current_method)
+                            # class reference
+                            else:
+                                self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
+
+                    elif ((op_value >= 0x6e and op_value <= 0x72) or
+                        (op_value >= 0x74 and op_value <= 0x78)):
+                            idx_meth = instruction.get_ref_kind()
+                            method_info = self.vm.get_cm_method(idx_meth)
+                            if method_info:
+                                class_info = method_info[0]
+
+                                method_item = self.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                                if method_item:
+                                    self.classes[current_class.get_name()].AddMXrefTo(current_method, self.classes[class_info], method_item)
+                                    self.classes[class_info].AddMXrefFrom(method_item, self.classes[current_class.get_name()], current_method)
+
+                                    # Internal xref related to class manipulation
+                                    if class_info in instances_class_name and class_info != current_class.get_name():
+                                        self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item)
+                                        self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
+
+                    elif op_value >= 0x1a and op_value <= 0x1b:
+                        string_value = self.vm.get_cm_string(instruction.get_ref_kind())
+                        if string_value not in self.strings:
+                            self.strings[string_value] = StringAnalysis(string_value)
+                        self.strings[string_value].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+
+                    elif op_value >= 0x52 and op_value <= 0x6d:
+                        idx_field = instruction.get_ref_kind()
+                        field_info = self.vm.get_cm_field(idx_field)
+                        field_item = self.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                        if field_item:
+                            # read access to a field
+                            if (op_value >= 0x52 and op_value <= 0x58) or (op_value >= 0x60 and op_value <= 0x66):
+                                self.classes[current_class.get_name()].AddFXrefRead(current_method, self.classes[current_class.get_name()], field_item)
+                            # write access to a field
+                            else:
+                                self.classes[current_class.get_name()].AddFXrefWrite(current_method, self.classes[current_class.get_name()], field_item)
+
+                    off += instruction.get_length()
+
+    def get_method(self, method):
+        return MethodAnalysis( self.vm, method, None )
+
+    def get_method_by_name(self, class_name, method_name, method_descriptor):
+        print class_name, method_name, method_descriptor
+        if class_name in self.classes:
+            for method in self.classes[class_name].get_vm_class().get_methods():
+                print method.get_name(), method.get_descriptor()
+                if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
+                    return method
+        return None
+
+    def is_class_present(self, class_name):
+        return class_name in self.classes
+
+    def get_class_analysis(self, class_name):
+        return self.classes.get(class_name)
+
+    def get_strings_analysis(self):
+        return self.strings
 
 class VMAnalysis(object):
     """
@@ -1612,11 +1871,11 @@ class VMAnalysis(object):
        :Example:
             VMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
     """
-    def __init__(self, _vm):
-        self.__vm = _vm
+    def __init__(self, vm):
+        self.vm = vm
 
-        self.tainted_variables = TaintedVariables( self.__vm )
-        self.tainted_packages = TaintedPackages( self.__vm )
+        self.tainted_variables = TaintedVariables( self.vm )
+        self.tainted_packages = TaintedPackages( self.vm )
 
         self.tainted = { "variables" : self.tainted_variables,
                          "packages" : self.tainted_packages,
@@ -1624,20 +1883,20 @@ class VMAnalysis(object):
 
         self.signature = None
 
-        for i in self.__vm.get_all_fields():
+        for i in self.vm.get_all_fields():
             self.tainted_variables.add( [ i.get_class_name(), i.get_descriptor(), i.get_name() ], TAINTED_FIELD )
 
         self.methods = []
         self.hmethods = {}
         self.__nmethods = {}
-        for i in self.__vm.get_methods():
-            x = MethodAnalysis( self.__vm, i, self )
+        for i in self.vm.get_methods():
+            x = MethodAnalysis( self.vm, i, self )
             self.methods.append( x )
             self.hmethods[ i ] = x
             self.__nmethods[ i.get_name() ] = x
 
     def get_vm(self):
-        return self.__vm
+        return self.vm
 
     def get_method(self, method):
         """
@@ -1716,7 +1975,9 @@ class VMAnalysis(object):
         permissions_f = self.get_tainted_packages().get_permissions_method( method )
         permissions_v = self.get_tainted_variables().get_permissions_method( method )
 
-        return list( set( permissions_f + permissions_v ) )
+        all_permissions_of_method = permissions_f.union(permissions_v)
+
+        return list(all_permissions_of_method)
 
     def get_tainted_variables(self):
         """
@@ -1797,7 +2058,6 @@ class uVMAnalysis(VMAnalysis):
   def get_tainted_variables(self):
         self._resolve()
         return self.tainted_variables
-
 
 def is_ascii_obfuscation(vm):
     for classe in vm.get_classes():
