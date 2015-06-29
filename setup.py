@@ -7,7 +7,7 @@ setup(
     version = '3.0',
     packages = find_packages(),
     scripts = ['androaxml.py', 'androcsign.py', 'androdiff.py', 'androgexf.py',
-               'androlyze.py', 'andromercury.py', 'androrisk.py', 'androsign.py',
+               'androlyze.py', 'androrisk.py', 'androsign.py',
                'androsim.py', 'androxgmml.py', 'apkviewer.py',
                'androdd.py', 'androapkinfo.py', 'androgui.py',
                ],

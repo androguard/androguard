@@ -133,12 +133,18 @@ class SourceWindow(QtGui.QTextEdit):
     def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word
            underneath it'''
+        androconf.debug("cursor_position_changed")
 
         cur = self.textCursor()
+        androconf.debug(cur.position())
+        androconf.debug(cur.selectedText())
         if len(cur.selectedText()) == 0:
             cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
             self.setTextCursor(cur)
             androconf.debug("cursor: %s" % cur.selectedText())
+        else:
+            androconf.debug("cursor: no selection %s" % cur.selectedText())
+
 
     def keyPressEvent(self, event):
         '''Keyboard shortcuts'''

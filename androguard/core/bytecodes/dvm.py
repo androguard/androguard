@@ -3412,6 +3412,9 @@ class ClassDefItem(object):
     def get_source_ext(self):
       return self.__CM.decompiler_ob.get_source_class_ext(self)
 
+    def get_ast(self):
+      return self.__CM.decompiler_ob.get_ast_class(self)
+
     def set_name(self, value):
         self.__CM.set_hook_class_name( self, value )
 
