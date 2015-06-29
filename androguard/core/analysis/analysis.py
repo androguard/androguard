@@ -1883,20 +1883,20 @@ class VMAnalysis(object):
 
         self.signature = None
 
-        for i in self.__vm.get_all_fields():
+        for i in self.vm.get_all_fields():
             self.tainted_variables.add( [ i.get_class_name(), i.get_descriptor(), i.get_name() ], TAINTED_FIELD )
 
         self.methods = []
         self.hmethods = {}
         self.__nmethods = {}
-        for i in self.__vm.get_methods():
+        for i in self.vm.get_methods():
             x = MethodAnalysis( self.vm, i, self )
             self.methods.append( x )
             self.hmethods[ i ] = x
             self.__nmethods[ i.get_name() ] = x
 
     def get_vm(self):
-        return self.__vm
+        return self.vm
 
     def get_method(self, method):
         """
