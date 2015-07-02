@@ -30,12 +30,21 @@ class TreeWindow(QtGui.QTreeWidget):
                 sig = Signature(c)
                 path_node = self.root_path_node
 
-                # Namespaces
-                for path in sig.class_path:
+                path = None
+                if sig.class_path == []:
+                    path = '.'
                     if path not in path_node[0]:
                         path_node[0][path] = ({}, QtGui.QTreeWidgetItem(path_node[1]))
                         path_node[0][path][1].setText(0, path)
                     path_node = path_node[0][path]
+                else:
+                    # Namespaces
+                    for path in sig.class_path:
+                        if path not in path_node[0]:
+                            path_node[0][path] = ({}, QtGui.QTreeWidgetItem(path_node[1]))
+                            path_node[0][path][1].setText(0, path)
+                        path_node = path_node[0][path]
+
                 # Class
                 path_node[0][path] = ({}, QtGui.QTreeWidgetItem(path_node[1]))
 

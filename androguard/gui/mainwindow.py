@@ -132,12 +132,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def quit(self):
         '''Clicked in File menu to exit or CTRL+Q to close main window'''
-        self.saveSession("default.ag")
         QtGui.qApp.quit()
 
     def closeEvent(self, event):
         '''Clicked [x] to close main window'''
-        self.saveSession("default.ag")
         event.accept()
 
     def setupEmptyTree(self):
