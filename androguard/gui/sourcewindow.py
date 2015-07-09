@@ -72,11 +72,6 @@ class SourceWindow(QtGui.QTextEdit):
 
         self.cursorPositionChanged.connect(self.cursor_position_changed)
 
-
-        # No need to call reload_java_sources() here because
-        # it is called in MainWindow.currentTabChanged() function
-        # that will be called when displaying the tab
-
     def browse_to_method(self, method):
         '''Scroll to the right place were the method is.
 
