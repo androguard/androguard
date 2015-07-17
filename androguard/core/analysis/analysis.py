@@ -443,12 +443,12 @@ class TaintedVariables(object):
 
         for f, f1 in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
+            if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys():
                 for path in f.get_paths():
                     #access, idx = path[0]
                     m_idx = path[1]
                     if m_idx == method.get_idx():
-                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"][data])
 
         return permissions
 
@@ -462,12 +462,12 @@ class TaintedVariables(object):
 
         pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
+            pn = set(self.AOSP_PERMISSIONS_MODULE["AOSP_PERMISSIONS"].keys())
 
         for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-            if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS.keys():
-                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_FIELDS[data])
+            if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys():
+                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"][data])
                 for p in perm_intersection:
                     try:
                         permissions[p].extend(self.toPathVariable(f))
@@ -1159,8 +1159,8 @@ class TaintedPackages(object):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
                         dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
-                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
-                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys():
+                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
 
         return permissions
 
@@ -1173,7 +1173,7 @@ class TaintedPackages(object):
 
         pn = set(permissions_needed)
         if permissions_needed == []:
-            pn = set(self.AOSP_PERMISSIONS_MODULE.AOSP_PERMISSIONS.keys())
+            pn = set(self.AOSP_PERMISSIONS_MODULE["AOSP_PERMISSIONS"].keys())
 
         classes = self.__vm.get_classes_names()
 
@@ -1185,8 +1185,8 @@ class TaintedPackages(object):
                 if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
-                        if data in self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS.keys():
-                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE.AOSP_PERMISSIONS_BY_METHODS[data])
+                        if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys():
+                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
                             for p in perm_intersection:
                                 try:
                                     permissions[p].append(j)
