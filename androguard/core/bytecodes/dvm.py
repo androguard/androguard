@@ -2889,7 +2889,7 @@ class EncodedMethod(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if self._code != None:
+        if self.code != None:
             return self.code.get_bc().get_instruction(idx, off)
         return None
 
