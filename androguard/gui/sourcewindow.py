@@ -6,7 +6,7 @@ from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
 PYGMENTS = True
 try:
-    from IPython.qt.console.pygments_highlighter import PygmentsHighlighter
+    from qtconsole.pygments_highlighter import PygmentsHighlighter
     from pygments.lexers import JavaLexer
 except:
     PYGMENTS = False
