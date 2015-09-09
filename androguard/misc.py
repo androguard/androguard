@@ -10,6 +10,11 @@ from androguard.decompiler.decompiler import *
 from cPickle import dumps, loads
 from androguard.core import androconf
 
+def init_print_colors():
+    from IPython.utils import coloransi, io
+    androconf.default_colors(coloransi.TermColors)
+    CONF["PRINT_FCT"] = io.stdout.write
+
 def save_session(l, filename):
   """
       save your session !
@@ -79,24 +84,10 @@ def AnalyzeDex(filename, raw=False, decompiler="dad"):
     androconf.debug("Export VM to python namespace")
     d.create_python_export()
 
-    androconf.debug("VMAnalysis ...")
-    dx = uVMAnalysis(d)
-
-    androconf.debug("GVMAnalysis ...")
-    gx = GVMAnalysis(dx, None)
-
-    d.set_vmanalysis(dx)
-    d.set_gvmanalysis(gx)
-
+    dx = RunStaticAnalysis(d)
     RunDecompiler(d, dx, decompiler)
 
-    androconf.debug("XREF ...")
-    d.create_xref()
-    androconf.debug("DREF ...")
-    d.create_dref()
-
     return d, dx
-
 
 def AnalyzeODex(filename, raw=False, decompiler="dad"):
     """
@@ -119,24 +110,20 @@ def AnalyzeODex(filename, raw=False, decompiler="dad"):
     androconf.debug("Export VM to python namespace")
     d.create_python_export()
 
-    androconf.debug("VMAnalysis ...")
-    dx = uVMAnalysis(d)
-
-    androconf.debug("GVMAnalysis ...")
-    gx = GVMAnalysis(dx, None)
-
-    d.set_vmanalysis(dx)
-    d.set_gvmanalysis(gx)
-
+    dx = RunStaticAnalysis(d)
     RunDecompiler(d, dx, decompiler)
-
-    androconf.debug("XREF ...")
-    d.create_xref()
-    androconf.debug("DREF ...")
-    d.create_dref()
 
     return d, dx
 
+def RunStaticAnalysis(d):
+    androconf.debug("RunStaticAnalysis ...")
+    dx = newVMAnalysis(d)
+    androconf.debug("XREF ...")
+    dx.create_xref()
+
+    d.set_vmanalysis(dx)
+
+    return dx
 
 def RunDecompiler(d, dx, decompiler):
     """

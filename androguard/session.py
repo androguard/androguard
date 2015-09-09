@@ -10,8 +10,9 @@ from androguard.misc import save_session, load_session
 
 class Session(object):
 
-    def __init__(self):
+    def __init__(self, export_ipython=False):
         self.setupObjects()
+        self.export_ipython = export_ipython
 
 
     def save(self, filename):
@@ -50,11 +51,7 @@ class Session(object):
         androconf.debug("add DEX:%s" % digest)
 
         d = DalvikVMFormat(data)
-        androconf.debug("VMAnalysis ...")
-        dx = newVMAnalysis(d)
-        dx.create_xref()
-
-        d.set_decompiler(DecompilerDAD(d, dx))
+        dx = self.runAnalysis(d)
 
         androconf.debug("added DEX:%s" % digest)
 
@@ -62,7 +59,37 @@ class Session(object):
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
+        if self.export_ipython:
+            d.create_python_export()
+
         return (digest, d, dx)
+
+    def addDEY(self, filename, data):
+        digest = hashlib.sha256(data).hexdigest()
+        androconf.debug("add DEY:%s" % digest)
+
+        d = DalvikOdexVMFormat(data)
+        dx = self.runAnalysis(d)
+
+        androconf.debug("added DEY:%s" % digest)
+
+        self.analyzed_dex[digest] = (d, dx)
+        self.analyzed_files[filename].append(digest)
+        self.analyzed_digest[digest] = filename
+
+        if self.export_ipython:
+            d.create_python_export()
+
+        return (digest, d, dx)
+
+    def runAnalysis(self, d):
+        androconf.debug("VMAnalysis ...")
+        dx = newVMAnalysis(d)
+        dx.create_xref()
+
+        d.set_decompiler(DecompilerDAD(d, dx))
+
+        return dx
 
     def add(self, filename, raw_data):
         ret = is_android_raw(raw_data)
@@ -74,6 +101,8 @@ class Session(object):
                 self.addDEX(filename, apk.get_dex())
             elif ret == "DEX":
                 self.addDEX(filename, raw_data)
+            elif ret == "DEY":
+                self.addDEY(filename, raw_data)
             else:
                 return False
             return True

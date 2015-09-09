@@ -2602,14 +2602,6 @@ class EncodedField(object):
 
     def show(self):
         """
-            Display the information about the field
-        """
-        colors = bytecode.disable_print_colors()
-        self.pretty_show()
-        bytecode.enable_print_colors(colors)
-
-    def pretty_show(self):
-        """
             Display the information (with a pretty print) about the field
         """
         bytecode._PrintSubBanner("Field Information")
@@ -2786,37 +2778,14 @@ class EncodedMethod(object):
 
     def show(self):
         """
-            Display the information about the method
-        """
-        colors = bytecode.disable_print_colors()
-        self.pretty_show()
-        bytecode.enable_print_colors(colors)
-
-    def pretty_show(self):
-        """
             Display the information (with a pretty print) about the method
         """
         self.show_info()
         self.show_notes()
         if self.code != None:
-            self.each_params_by_register( self.code.get_registers_size(), self.get_descriptor() )
-            if self.CM.get_vmanalysis() == None:
-                self.code.show()
-            else:
-                self.code.pretty_show( self.CM.get_vmanalysis().get_method( self ) )
-                self.show_xref()
-
-    def show_xref(self):
-        """
-            Display where the method is called or which method is called
-        """
-        try:
-            bytecode._PrintSubBanner("XREF")
-            bytecode._PrintXRef("F", self.XREFfrom.items)
-            bytecode._PrintXRef("T", self.XREFto.items)
-            bytecode._PrintSubBanner()
-        except AttributeError:
-            pass
+            self.each_params_by_register(self.code.get_registers_size(),
+                                         self.get_descriptor())
+            self.code.show(self.CM.get_vmanalysis().get_method(self))
 
     def show_notes(self):
       """
@@ -3123,9 +3092,6 @@ class ClassDataItem(object):
             i.reload()
 
     def show(self):
-        self.pretty_show()
-
-    def pretty_show(self):
         bytecode._PrintSubBanner("Class Data Item")
         bytecode._PrintDefault("static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d\n" % \
                 (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size))
@@ -3140,11 +3106,11 @@ class ClassDataItem(object):
 
         bytecode._PrintSubBanner("Direct Methods")
         for i in self.direct_methods:
-            i.pretty_show()
+            i.show()
 
         bytecode._PrintSubBanner("Virtual Methods")
         for i in self.virtual_methods:
-            i.pretty_show()
+            i.show()
 
     def get_obj(self):
         return [ i for i in self.static_fields ] + \
@@ -6302,21 +6268,7 @@ class DCode(object):
             idx += i.get_length()
         return None
 
-    def show(self):
-        """
-            Display this object
-        """
-        nb = 0
-        idx = 0
-        for i in self.get_instructions():
-            print "%-8d(%08x)" % (nb, idx),
-            i.show(nb)
-            print
-
-            idx += i.get_length()
-            nb += 1
-
-    def pretty_show(self, m_a):
+    def show(self, m_a):
         """
             Display (with a pretty print) this object
 
@@ -6539,18 +6491,13 @@ class DalvikCode(object):
 
       bytecode._PrintBanner()
 
-    def show(self):
+    def show(self, m_a):
         self._begin_show()
-        self.code.show()
+        self.code.show(m_a)
         self._end_show()
 
     def _end_show(self):
       bytecode._PrintBanner()
-
-    def pretty_show(self, m_a):
-        self._begin_show()
-        self.code.pretty_show(m_a)
-        self._end_show()
 
     def get_obj(self):
         return [self.code, self.tries, self.handlers]
@@ -6824,19 +6771,6 @@ class MapItem(object):
             else:
                 self.item.show()
 
-    def pretty_show(self):
-        bytecode._Print( "\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[ self.type ])
-
-        if self.item != None:
-            if isinstance( self.item, list ):
-                for i in self.item:
-                    if isinstance(i, ClassDataItem):
-                        i.pretty_show()
-                    else:
-                        i.show()
-            else:
-                self.item.show()
-
     def get_obj(self):
         return self.item
 
@@ -7101,27 +7035,27 @@ class ClassManager(object):
 
           debug("try deleting old name in python...")
           try:
-            delattr(class_def, name)
+            delattr(class_def.M, name)
             debug("success with regular name")
           except AttributeError:
             debug("WARNING: fail with regular name")
             #python_export = False
 
             try:
-              name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
+              name = bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
             except AttributeError:
               name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
             try:
-              delattr(class_def, name)
+              delattr(class_def.M, name)
               debug("success with name containing prototype")
             except AttributeError:
               debug("WARNING: fail with name containing prototype")
               python_export = False
 
           if python_export:
-            name = "METHOD_" + bytecode.FormatNameToPython(value)
-            setattr(class_def, name, encoded_method)
+            name = bytecode.FormatNameToPython(value)
+            setattr(class_def.M, name, encoded_method)
             debug("new name in python: created: %s." % name)
           else:
             debug("skipping creating new name in python")
@@ -7137,19 +7071,19 @@ class ClassManager(object):
         class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( field.get_class_idx() )
         if class_def != None:
           try:
-            name = "FIELD_" + bytecode.FormatNameToPython( encoded_field.get_name() )
+            name = bytecode.FormatNameToPython( encoded_field.get_name() )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython( encoded_field.get_descriptor() )
 
 
           try:
-            delattr( class_def, name )
+            delattr( class_def.F, name )
           except AttributeError:
             python_export = False
 
           if python_export:
-            name = "FIELD_" + bytecode.FormatNameToPython( value )
-            setattr( class_def, name, encoded_field )
+            name = bytecode.FormatNameToPython( value )
+            setattr( class_def.F, name, encoded_field )
 
         field.reload()
 
@@ -7224,21 +7158,12 @@ class MapList(object):
 
     def show(self):
         """
-            Print the MapList object
-        """
-        bytecode._Print("MAP_LIST SIZE", self.size)
-        for i in self.map_item:
-            if i.item != self:
-                i.show()
-
-    def pretty_show(self):
-        """
             Print with a pretty display the MapList object
         """
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item:
             if i.item != self:
-                i.pretty_show()
+                i.show()
 
     def get_obj(self):
       return [ x.get_obj() for x in self.map_item ]
@@ -7288,10 +7213,10 @@ class DalvikVMFormat(bytecode._Bytecode):
             self.api_version = using_api
         else:
             self.api_version = CONF["DEFAULT_API"]
-            
-        #TODO: can using_api be added to config parameter?    
+
+        #TODO: can using_api be added to config parameter?
         super(DalvikVMFormat, self).__init__(buff)
-        
+
         self.config = config
         if not self.config:
           self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
@@ -7332,11 +7257,11 @@ class DalvikVMFormat(bytecode._Bytecode):
         '''
             This method returns api version that should be used for loading api
             specific resources.
-            
+
             :rtype: int
         '''
         return self.api_version
-    
+
     def get_classes_def_item(self):
         """
             This function returns the class def item
@@ -7407,12 +7332,6 @@ class DalvikVMFormat(bytecode._Bytecode):
           Show the all information in the object
         """
         self.map_list.show()
-
-    def pretty_show(self):
-        """
-          Show (but pretty !) the all information in the object
-        """
-        self.map_list.pretty_show()
 
     def save(self):
       """
@@ -7815,122 +7734,12 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         return "DEX"
 
-    def create_xref(self, python_export=True):
-        """
-            Create XREF for this object
-
-            :param python_export (boolean): export xref in each method
-        """
-        gvm = self.CM.get_gvmanalysis()
-
-        for _class in self.get_classes():
-            key = _class.get_name()
-            if key in gvm.nodes:
-              _class.XREFfrom = XREF()
-              for i in gvm.GI.successors(gvm.nodes[key].id):
-                xref = gvm.nodes_id[i]
-                xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                if python_export == True:
-                    name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                    bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                    bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-                    setattr(_class.XREFfrom, name, xref_meth)
-                _class.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
-
-            for method in _class.get_methods():
-                method.XREFfrom = XREF()
-                method.XREFto = XREF()
-
-                key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
-
-                if key in gvm.nodes:
-                    for i in gvm.G.predecessors(gvm.nodes[key].id):
-                        xref = gvm.nodes_id[i]
-                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
-                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-
-                            if python_export == True:
-                                setattr(method.XREFfrom, name, xref_meth)
-                            method.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
-
-                    for i in gvm.G.successors(gvm.nodes[key].id):
-                        xref = gvm.nodes_id[i]
-                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
-                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-
-                            if python_export == True:
-                                setattr(method.XREFto, name, xref_meth)
-                            method.XREFto.add(xref_meth, gvm.nodes[key].edges[xref])
-
-    def create_dref(self, python_export=True):
-        """
-            Create DREF for this object
-
-            :param python_export (boolean): export dref in each field
-        """
-        vmx = self.CM.get_vmanalysis()
-
-        for _class in self.get_classes():
-            for field in _class.get_fields():
-                field.DREFr = DREF()
-                field.DREFw = DREF()
-
-                paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
-
-                if paths != None:
-                    access = {}
-                    access["R"] = {}
-                    access["W"] = {}
-
-                    for path in paths.get_paths():
-                        access_val, idx = path[0]
-                        m_idx = path[1]
-
-                        if access_val == 'R':
-                            dref_meth = self.get_method_by_idx( m_idx )
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-
-                            if python_export == True:
-                                setattr( field.DREFr, name, dref_meth )
-
-                            try:
-                                access["R"][ dref_meth ].append( idx )
-                            except KeyError:
-                                access["R"][ dref_meth ] = []
-                                access["R"][ dref_meth ].append( idx )
-
-                        else:
-                            dref_meth = self.get_method_by_idx( m_idx )
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-
-                            if python_export == True:
-                                setattr( field.DREFw, name, dref_meth )
-
-                            try:
-                                access["W"][ dref_meth ].append( idx )
-                            except KeyError:
-                                access["W"][ dref_meth ] = []
-                                access["W"][ dref_meth ].append( idx )
-
-                    for i in access["R"]:
-                        field.DREFr.add( i, access["R"][i] )
-                    for i in access["W"]:
-                        field.DREFw.add( i, access["W"][i] )
-
     def create_python_export(self):
         """
             Export classes/methods/fields' names in the python namespace
         """
+        setattr(self, "C", ExportObject())
+
         for _class in self.get_classes():
           self._create_python_export_class(_class)
 
@@ -7940,46 +7749,53 @@ class DalvikVMFormat(bytecode._Bytecode):
     def _create_python_export_class(self, _class, delete=False):
         if _class != None:
             ### Class
-            name = "CLASS_" + bytecode.FormatClassToPython( _class.get_name() )
+            name = bytecode.FormatClassToPython( _class.get_name() )
             if delete:
-              delattr( self, name )
+              delattr( self.C, name )
               return
             else:
-              setattr( self, name, _class )
+              setattr( self.C, name, _class )
+              setattr( _class, "M", ExportObject())
+              setattr( _class, "F", ExportObject())
 
-            ### Methods
-            m = {}
-            for method in _class.get_methods():
-                if method.get_name() not in m:
-                    m[ method.get_name() ] = []
-                m[ method.get_name() ].append( method )
+            self._create_python_export_methods(_class, delete)
+            self._create_python_export_fields(_class, delete)
 
-            for i in m:
-                if len(m[i]) == 1:
-                    j = m[i][0]
-                    name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
-                else:
-                    for j in m[i]:
-                        name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
+    def _create_python_export_methods(self, _class, delete):
+        m = {}
+        for method in _class.get_methods():
+            if method.get_name() not in m:
+                m[method.get_name()] = []
+            m[method.get_name()].append( method )
 
-            ### Fields
-            f = {}
-            for field in _class.get_fields():
-                if field.get_name() not in f:
-                    f[ field.get_name() ] = []
-                f[ field.get_name() ].append( field )
+        for i in m:
+            if len(m[i]) == 1:
+                j = m[i][0]
+                name = bytecode.FormatNameToPython(j.get_name())
+                setattr(_class.M, name, j)
+            else:
+                for j in m[i]:
+                    name = (bytecode.FormatNameToPython(j.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(j.get_descriptor()))
+                    setattr(_class.M, name, j)
 
-            for i in f:
-                if len(f[i]) == 1:
-                    j = f[i][0]
-                    name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
-                else:
-                    for j in f[i]:
-                        name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
+    def _create_python_export_fields(self, _class, delete):
+        f = {}
+        for field in _class.get_fields():
+            if field.get_name() not in f:
+                f[ field.get_name() ] = []
+            f[ field.get_name() ].append( field )
+
+        for i in f:
+            if len(f[i]) == 1:
+                j = f[i][0]
+                name = bytecode.FormatNameToPython( j.get_name() )
+                setattr( _class.F, name, j )
+            else:
+                for j in f[i]:
+                    name = bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
+                    setattr( _class.F, name, j )
 
     def get_BRANCH_DVM_OPCODES(self):
         return BRANCH_DVM_OPCODES
@@ -8397,21 +8213,5 @@ def get_bytecodes_methodx(method, mx):
 
     return i_buffer
 
-
-def auto(filename, raw=None):
-  """
-      :param filename:
-      :param raw:
-      :type filename:
-      :type raw:
-  """
-  data_raw = raw
-  if raw == None:
-    data_raw = read(filename)
-    ret_type = is_android_raw(data_raw[:10])
-    if ret_type == "DEX":
-      return DalvikVMFormat(data_raw)
-    elif ret_type == "ODEX":
-      return DalvikOdexVMFormat(data_raw)
-
-  return None
+class ExportObject(object):
+    pass
