@@ -906,7 +906,7 @@ class StringBlock(object):
 
         self.m_stringOffsets = []
         self.m_styleOffsets = []
-        self.m_strings = []
+        self.m_charbuff = ""
         self.m_styles = []
 
         for i in range(0, self.stringCount):
@@ -923,8 +923,7 @@ class StringBlock(object):
         if (size % 4) != 0:
             androconf.warning("ooo")
 
-        for i in range(0, size):
-            self.m_strings.append(unpack('=b', buff.read(1))[0])
+        self.m_charbuff = buff.read(size)
 
         if self.stylesOffset != 0:
             size = self.chunkSize - self.stylesOffset
@@ -960,75 +959,66 @@ class StringBlock(object):
 
         offset = self.m_stringOffsets[idx]
 
-        if not self.m_isUTF8:
-            length = self.getShort2(self.m_strings, offset)
-            offset += 2
-            self._cache[idx] = self.decode(self.m_strings, offset, length)
+        if self.m_isUTF8:
+            self._cache[idx] = self.decode8(offset)
         else:
-            offset += self.getVarint(self.m_strings, offset)[1]
-            varint = self.getVarint(self.m_strings, offset)
-
-            offset += varint[1]
-            length = varint[0]
-
-            self._cache[idx] = self.decode2(self.m_strings, offset, length)
+            self._cache[idx] = self.decode16(offset)
 
         return self._cache[idx]
 
     def getStyle(self, idx):
-        print idx
-        print idx in self.m_styleOffsets, self.m_styleOffsets[idx]
+        # WTF?
+        # print idx
+        # print idx in self.m_styleOffsets, self.m_styleOffsets[idx]
 
-        print self.m_styles[0]
+        # print self.m_styles[0]
+        return self.m_styles[idx]
 
-    def decode(self, array, offset, length):
-        length = length * 2
-        length = length + length % 2
+    def decode8(self, offset):
+        str_len, skip = self.decodeLength(offset, 1)
+        offset += skip
 
-        data = "" 
+        encoded_bytes, skip = self.decodeLength(offset, 1)
+        offset += skip
 
-        for i in range(0, length):
-            t_data = pack("=b", self.m_strings[offset + i])
-            data += unicode(t_data, errors='ignore')
-            if data[-2:] == "\x00\x00":
-                break
+        data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        end_zero = data.find("\x00\x00")
-        if end_zero != -1:
-            data = data[:end_zero]
+        return self.decode_bytes(data, 'utf-8', str_len)
 
-        return data.decode("utf-16", 'replace')
+    def decode16(self, offset):
+        str_len, skip = self.decodeLength(offset, 2)
+        offset += skip
 
-    def decode2(self, array, offset, length):
-        data = ""
+        encoded_bytes = str_len * 2
 
-        for i in range(0, length):
-            t_data = pack("=b", self.m_strings[offset + i])
-            data += unicode(t_data, errors='ignore')
+        data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        return data.decode("utf-8", 'replace')
+        return self.decode_bytes(data, 'utf-16', str_len)
 
-    def getVarint(self, array, offset):
-        val = array[offset]
-        more = (val & 0x80) != 0
-        val &= 0x7f
+    def decode_bytes(self, data, encoding, str_len):
+        string = data.decode(encoding, 'replace')
+        if len(string) != str_len:
+            androconf.warning("invalid decoded string length")
+        return string
 
-        if not more:
-            return val, 1
-        return val << 8 | array[offset + 1] & 0xff, 2
+    def decodeLength(self, offset, sizeof_char):
+        length = ord(self.m_charbuff[offset])
 
-    def getShort(self, array, offset):
-        value = array[offset / 4]
-        if ((offset % 4) / 2) == 0:
-            return value & 0xFFFF
+        sizeof_2chars = sizeof_char << 1
+        fmt_chr = 'B' if sizeof_char == 1 else 'H'
+        fmt = "<2" + fmt_chr
+
+        length1, length2 = unpack(fmt, self.m_charbuff[offset:(offset + sizeof_2chars)])
+
+        highbit = 0x80 << (8 * (sizeof_char - 1))
+
+        if (length & highbit) != 0:
+            return ((length1 & ~highbit) << (8 * sizeof_char)) | length2, sizeof_2chars
         else:
-            return value >> 16
-
-    def getShort2(self, array, offset):
-        return (array[offset + 1] & 0xff) << 8 | array[offset] & 0xff
+            return length1, sizeof_char
 
     def show(self):
-        print "StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(self.chunkSize), hex(self.stringsOffset), self.m_stringOffsets
+        print "StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(self.chunkSize), hex(self.stringsOffset), hex(self.flags)
         for i in range(0, len(self.m_stringOffsets)):
             print i, repr(self.getString(i))
 
@@ -1505,14 +1495,16 @@ class ARSCParser(object):
     def __init__(self, raw_buff):
         self.analyzed = False
         self.buff = bytecode.BuffHandle(raw_buff)
-        #print "SIZE", hex(self.buff.size())
+        # print "SIZE", hex(self.buff.size())
 
         self.header = ARSCHeader(self.buff)
         self.packageCount = unpack('<i', self.buff.read(4))[0]
 
-        #print hex(self.packageCount)
+        # print hex(self.packageCount)
 
         self.stringpool_main = StringBlock(self.buff)
+
+        # self.stringpool_main.show()
 
         self.next_header = ARSCHeader(self.buff)
         self.packages = {}
@@ -1531,9 +1523,8 @@ class ARSCParser(object):
             mTableStrings = StringBlock(self.buff)
             mKeyStrings = StringBlock(self.buff)
 
-            #self.stringpool_main.show()
-            #self.mTableStrings.show()
-            #self.mKeyStrings.show()
+            # mTableStrings.show()
+            # mKeyStrings.show()
 
             self.packages[package_name].append(current_package)
             self.packages[package_name].append(mTableStrings)
