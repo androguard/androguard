@@ -6,9 +6,9 @@ import argparse
 import sys
 
 from androguard.core import androconf
-from androguard.misc import *
 from androguard.session import Session
 from androguard.gui.mainwindow import MainWindow
+from androguard.misc import init_print_colors
 
 from PySide import QtCore, QtGui
 from threading import Thread
@@ -24,7 +24,7 @@ class IpythonConsole(Thread):
         cfg = Config()
         ipshell = InteractiveShellEmbed(
             config=cfg,
-            banner1="Androlyze version %s" % androconf.ANDROGUARD_VERSION)
+            banner1="Androguard version %s" % androconf.ANDROGUARD_VERSION)
         init_print_colors()
         ipshell()
 

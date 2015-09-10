@@ -1852,6 +1852,18 @@ class newVMAnalysis(object):
                     return method
         return None
 
+    def get_method_analysis(self, method):
+        class_analysis = self.get_class_analysis(method.get_class_name())
+        if class_analysis:
+            return class_analysis.get_method_analysis(method)
+        return None
+
+    def get_field_analysis(self, field):
+        class_analysis = self.get_class_analysis(field.get_class_name())
+        if class_analysis:
+            return class_analysis.get_field_analysis(field)
+        return None
+
     def is_class_present(self, class_name):
         return class_name in self.classes
 

@@ -14,7 +14,6 @@ class Session(object):
         self.setupObjects()
         self.export_ipython = export_ipython
 
-
     def save(self, filename):
         save_session([self.analyzed_files,
                       self.analyzed_digest,
@@ -88,6 +87,7 @@ class Session(object):
         dx.create_xref()
 
         d.set_decompiler(DecompilerDAD(d, dx))
+        d.set_vmanalysis(dx)
 
         return dx
 
@@ -156,3 +156,13 @@ class Session(object):
             d, dx = self.analyzed_dex[digest]
             nb += len(dx.get_strings_analysis())
         return nb
+
+    def get_objects_apk(self, filename):
+        digest = self.analyzed_files.get(filename)
+        if digest:
+            a = self.analyzed_apk[digest[0]]
+            d = self.analyzed_dex[digest[1]][0]
+            dx = self.analyzed_dex[digest[1]][1]
+
+            return a, d, dx
+        return None
