@@ -7068,7 +7068,7 @@ class ClassManager(object):
         class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( method.get_class_idx() )
         if class_def != None:
           try:
-            name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() )
+            name = bytecode.FormatNameToPython( encoded_method.get_name() )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
