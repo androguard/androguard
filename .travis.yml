@@ -7,6 +7,9 @@ install:
   - "pip install -r requirements.txt"
 # command to run tests
 script:
+  # DEX tests
+  - python tests/test_dex.py
+  # APK tests
   # DAD tests
   - python androguard/decompiler/dad/tests/dataflow_test.py
   - python androguard/decompiler/dad/tests/dominator_test.py
