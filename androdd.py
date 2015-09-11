@@ -25,7 +25,6 @@ import re
 
 from optparse import OptionParser
 
-from androguard.core.androgen import Androguard
 from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import dvm
@@ -40,9 +39,8 @@ option_3 = { 'name' : ('-j', '--jar'), 'help' : 'output jar file', 'action' : 'c
 option_4 = { 'name' : ('-f', '--format'), 'help' : 'write the method in specific format (png, ...)', 'nargs' : 1 }
 
 option_5 = { 'name' : ('-l', '--limit'), 'help' : 'limit analysis to specific methods/classes by using a regexp', 'nargs' : 1}
-option_6 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
+options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 
 def valid_class_name(class_name):
@@ -201,8 +199,6 @@ def main(options, arguments):
     if options.input != None and options.output != None:
         a = Androguard([options.input])
         export_apps_to_format(options.input, a, options.output, options.limit, options.jar, options.decompiler, options.format)
-    elif options.version != None:
-        print "Androdd version %s" % androconf.ANDROGUARD_VERSION
     else:
       print "Please, specify an input file and an output directory"
 
