@@ -4,7 +4,6 @@ from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
-from androguard.core.analysis.ganalysis import *
 from androguard.decompiler.decompiler import *
 
 from cPickle import dumps, loads

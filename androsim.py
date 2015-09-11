@@ -50,7 +50,7 @@ def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, ne
     ret_type = androconf.is_android( file_input )
     if ret_type == "APK":
         a = apk.APK( file_input )
-        d2 = dvm.DalvikVMFormat( a.get_dex() )
+        d2 = dvm.DalvikVMFormat( a.get_dex().next() )
     elif ret_type == "DEX":
         d2 = dvm.DalvikVMFormat( read(file_input) )
 
@@ -147,7 +147,7 @@ def main(options, arguments):
         ret_type = androconf.is_android( options.input[0] )
         if ret_type == "APK":
             a = apk.APK( options.input[0] )
-            d1 = dvm.DalvikVMFormat( a.get_dex() )
+            d1 = dvm.DalvikVMFormat( a.get_dex().next() )
         elif ret_type == "DEX":
             d1 = dvm.DalvikVMFormat( read(options.input[0]) )
 
