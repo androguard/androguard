@@ -1,5 +1,7 @@
 # Androguard
 
+https://travis-ci.org/androguard/androguard.svg?branch=master
+
 ## Features
 
 Androguard is a full python tool to play with Android files.
