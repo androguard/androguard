@@ -7,7 +7,7 @@ sys.path.append(PATH_INSTALL)
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
 
-class AXMLTest(unittest.TestCase):
+class AnalysisTest(unittest.TestCase):
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
             d = dvm.DalvikVMFormat(fd.read())

@@ -4,15 +4,32 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.analysis import auto
-from androguard.core.androconf import set_debug
+from androguard.core.bytecodes import dvm
 
 class DexTest(unittest.TestCase):
     def testDex(self):
-        pass
+        with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
+            d = dvm.DalvikVMFormat(fd.read())
+            self.assertTrue(d)
+
+            classes = d.get_classes()
+            self.assertTrue(classes)
+            self.assertEqual(len(classes), 340)
+
+            methods = d.get_methods()
+            self.assertTrue(methods)
+            self.assertEqual(len(methods), 2600)
+
+            fields = d.get_fields()
+            self.assertTrue(fields)
+            self.assertEqual(len(fields), 803)
 
     def testMultiDex(self):
         pass
 
+class InstructionTest(unittest.TestCase):
+    def testNOP(self):
+        pass
+        
 if __name__ == '__main__':
     unittest.main()
