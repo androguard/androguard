@@ -4,16 +4,14 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import dvm
-from androguard.core.analysis import analysis
+from androguard.core.bytecodes import apk
 
-class AXMLTest(unittest.TestCase):
-    def testDex(self):
-        with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
-            d = dvm.DalvikVMFormat(fd.read())
-            dx = analysis.newVMAnalysis(d)
-            self.assertTrue(dx)
-
+class ARSCTest(unittest.TestCase):
+    def testARSC(self):
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk", "r") as fd:
+            a = apk.APK(fd.read(), True)
+            arsc = a.get_android_resources()
+            self.assertTrue(arsc)
 
 if __name__ == '__main__':
     unittest.main()
