@@ -482,10 +482,8 @@ class APK(object):
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(tag_name):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
-                value = self.format_value( value )
-
-
-                l.append( str( value ) )
+                value = self.format_value(value)
+                l.append(str(value))
         return l
 
     def format_value(self, value):
@@ -540,15 +538,15 @@ class APK(object):
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName("activity"):
-                for sitem in item.getElementsByTagName( "action" ):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
+                for sitem in item.getElementsByTagName("action"):
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
-                        x.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
+                        x.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
 
-                for sitem in item.getElementsByTagName( "category" ):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
+                for sitem in item.getElementsByTagName("category"):
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.category.LAUNCHER":
-                        y.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
+                        y.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
 
         z = x.intersection(y)
         if len(z) > 0:
@@ -636,9 +634,9 @@ class APK(object):
                 perm = i[pos+1:]
 
             try:
-                l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
+                l[i] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm]
             except KeyError:
-                l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
+                l[i] = ["normal", "Unknown permission from android reference", "Unknown permission from android reference"]
 
         return l
 
@@ -674,9 +672,10 @@ class APK(object):
             try:
                 l[i] = self.permission_module["AOSP_PERMISSIONS"][i]
             except KeyError:
-                continue #if we have not found permission do nothing
+                # if we have not found permission do nothing
+                continue
         return l
-    
+
     def get_requested_third_party_permissions(self):
         '''
             Returns list of requested permissions not declared within AOSP project.
@@ -751,7 +750,6 @@ class APK(object):
         success = cert.LoadFromBinary(data)
         return success, cert
 
-
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
             Create a new zip file
@@ -772,7 +770,7 @@ class APK(object):
             zout = zipfile.ZipFile(filename, 'w')
 
         for item in self.zip.infolist():
-            if deleted_files != None:
+            if deleted_files is not None:
                 if re.match(deleted_files, item.filename) == None:
                     if item.filename in new_files:
                         zout.writestr(item, new_files[item.filename])
@@ -816,7 +814,8 @@ class APK(object):
                 self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
                 return self.arsc["resources.arsc"]
             except KeyError:
-                import traceback; traceback.print_exc();
+                import traceback
+                traceback.print_exc()
                 return None
 
     def get_signature_name(self):
@@ -842,12 +841,12 @@ class APK(object):
                 print "\t", i, self.files[i], "%x" % self.files_crc32[i]
             except KeyError:
                 print "\t", i, "%x" % self.files_crc32[i]
-        
+
         print "DECLARED PERMISSIONS:"
         declared_permissions = self.get_declared_permissions()
         for i in declared_permissions:
             print "\t", i
-        
+
         print "REQUESTED PERMISSIONS:"
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
@@ -887,6 +886,7 @@ def show_Certificate(cert):
 UTF8_FLAG = 0x00000100
 CHUNK_STRINGPOOL_TYPE = 0x001C0001
 CHUNK_NULL_TYPE = 0x00000000
+
 
 class StringBlock(object):
     def __init__(self, buff):
@@ -967,11 +967,7 @@ class StringBlock(object):
         return self._cache[idx]
 
     def getStyle(self, idx):
-        # WTF?
-        # print idx
-        # print idx in self.m_styleOffsets, self.m_styleOffsets[idx]
-
-        # print self.m_styles[0]
+        # FIXME
         return self.m_styles[idx]
 
     def decode8(self, offset):
@@ -1018,7 +1014,13 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print "StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(self.chunkSize), hex(self.stringsOffset), hex(self.flags)
+        print "StringBlock(%x, %x, %x, %x, %x, %x" % (
+            self.start,
+            self.header,
+            self.header_size,
+            self.chunkSize,
+            self.stringsOffset,
+            self.flags)
         for i in range(0, len(self.m_stringOffsets)):
             print i, repr(self.getString(i))
 
@@ -1148,8 +1150,6 @@ class AXMLParser(object):
                     self.buff.read(4)
                     self.buff.read(4)
                     (prefix, uri) = self.m_prefixuriL.pop()
-                    #del self.m_prefixuri[ prefix ]
-                    #del self.m_uriprefix[ uri ]
 
                 continue
 
@@ -1231,7 +1231,9 @@ class AXMLParser(object):
         buff = ""
         for i in self.m_uriprefix:
             if i not in self.visited_ns:
-                buff += "xmlns:%s=\"%s\"\n" % (self.sb.getString(self.m_uriprefix[i]), self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
+                buff += "xmlns:%s=\"%s\"\n" % (
+                    self.sb.getString(self.m_uriprefix[i]),
+                    self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
                 self.visited_ns.append(i)
         return buff
 
@@ -1274,7 +1276,7 @@ class AXMLParser(object):
         if name == -1:
             return ""
 
-        res = self.sb.getString( name )
+        res = self.sb.getString(name)
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
@@ -1295,11 +1297,9 @@ class AXMLParser(object):
         valueType = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_TYPE]
         if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_STRING]
-            return self.sb.getString( valueString )
+            return self.sb.getString(valueString)
         # WIP
         return ""
-        #int valueData=m_attributes[offset+ATTRIBUTE_IX_VALUE_DATA];
-        #return TypedValue.coerceToString(valueType,valueData);
 
 TYPE_ATTRIBUTE          = 2
 TYPE_DIMENSION          = 5
@@ -1399,7 +1399,6 @@ class AXMLPrinter(object):
 
         while True and self.axml.is_valid():
             _type = self.axml.next()
-#           print "tagtype = ", _type
 
             if _type == START_DOCUMENT:
                 self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1408,8 +1407,10 @@ class AXMLPrinter(object):
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
-                    self.buff += "%s%s=\"%s\"\n" % (self.getPrefix(
-                        self.axml.getAttributePrefix(i)), self.axml.getAttributeName(i), self._escape(self.getAttributeValue(i)))
+                    self.buff += "%s%s=\"%s\"\n" % (
+                        self.getPrefix(self.axml.getAttributePrefix(i)),
+                        self.axml.getAttributeName(i),
+                        self._escape(self.getAttributeValue(i)))
 
                 self.buff += u'>\n'
 
@@ -1441,7 +1442,7 @@ class AXMLPrinter(object):
         return minidom.parseString(self.get_buff())
 
     def getPrefix(self, prefix):
-        if prefix == None or len(prefix) == 0:
+        if prefix is None or len(prefix) == 0:
             return u''
 
         return prefix + u':'
@@ -1495,16 +1496,11 @@ class ARSCParser(object):
     def __init__(self, raw_buff):
         self.analyzed = False
         self.buff = bytecode.BuffHandle(raw_buff)
-        # print "SIZE", hex(self.buff.size())
 
         self.header = ARSCHeader(self.buff)
         self.packageCount = unpack('<i', self.buff.read(4))[0]
 
-        # print hex(self.packageCount)
-
         self.stringpool_main = StringBlock(self.buff)
-
-        # self.stringpool_main.show()
 
         self.next_header = ARSCHeader(self.buff)
         self.packages = {}
@@ -1522,9 +1518,6 @@ class ARSCParser(object):
 
             mTableStrings = StringBlock(self.buff)
             mKeyStrings = StringBlock(self.buff)
-
-            # mTableStrings.show()
-            # mKeyStrings.show()
 
             self.packages[package_name].append(current_package)
             self.packages[package_name].append(mTableStrings)
@@ -1604,7 +1597,6 @@ class ARSCParser(object):
                                 self.resource_values[ate.mResId][a_res_type.config] = ate
                                 self.resource_keys[package_name][a_res_type.get_type()][ate.get_value()] = ate.mResId
 
-                                # print ate.is_public(), a_res_type.get_type(), ate.get_value(), hex(ate.mResId)
                                 if ate.get_index() != -1:
                                     c_value["public"].append((a_res_type.get_type(), ate.get_value(), ate.mResId))
 
@@ -1631,11 +1623,7 @@ class ARSCParser(object):
                                 elif a_res_type.get_type() == "dimen":
                                     c_value["dimen"].append(self.get_resource_dimen(ate))
 
-                                #elif a_res_type.get_type() == "style":
-                                #    c_value["style"].append(self.get_resource_style(ate))
-
                                 nb_i += 1
-                        # androconf.warning("%s" % map(lambda k: { k: len(c_value[k])}, c_value.keys()))
                         nb += 3 + nb_i - 1  # -1 to account for the nb+=1 on the next line
                 nb += 1
 
@@ -1663,14 +1651,27 @@ class ARSCParser(object):
 
     def get_resource_color(self, ate):
         entry_data = ate.key.get_data()
-        return [ate.get_value(), "#%02x%02x%02x%02x" % (((entry_data >> 24) & 0xFF), ((entry_data >> 16) & 0xFF), ((entry_data >> 8) & 0xFF), (entry_data & 0xFF))]
+        return [
+            ate.get_value(),
+            "#%02x%02x%02x%02x" % (
+                ((entry_data >> 24) & 0xFF),
+                ((entry_data >> 16) & 0xFF),
+                ((entry_data >> 8) & 0xFF),
+                (entry_data & 0xFF))
+        ]
 
     def get_resource_dimen(self, ate):
         try:
-            return [ate.get_value(), "%s%s" % (complexToFloat(ate.key.get_data()), DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])]
+            return [
+                ate.get_value(), "%s%s" % (
+                    complexToFloat(ate.key.get_data()),
+                    DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])
+                ]
         except IndexError:
-            androconf.debug("Out of range dimention unit index for %s: %s" % (complexToFloat(ate.key.get_data()), ate.key.get_data() & COMPLEX_UNIT_MASK))
-            return [ate.get_value(), ate.key.get_data(), ate]
+            androconf.debug("Out of range dimension unit index for %s: %s" % (
+                complexToFloat(ate.key.get_data()),
+                ate.key.get_data() & COMPLEX_UNIT_MASK))
+            return [ate.get_value(), ate.key.get_data()]
 
     # FIXME
     def get_resource_style(self, ate):
@@ -1848,19 +1849,15 @@ class ARSCParser(object):
         def resolve(self, res_id):
             result = []
             self._resolve_into_result(result, res_id, self.wanted_config)
-            # print "resolved into %s" % result
             return result
 
         def _resolve_into_result(self, result, res_id, config):
-            # print "resolve: @%x into %s" % (res_id, id(result))
             configs = self.resources.get_res_configs(res_id, config)
-            # print "resolving %x with config %r, got configs: %s" % (res_id, config, configs)
             if configs:
                 for config, ate in configs:
                     self.put_ate_value(result, ate, config)
 
         def put_ate_value(self, result, ate, config):
-            # print "get_ate: %r into %s" % (ate, id(result))
             if ate.is_complex():
                 complex_array = []
                 result.append(config, complex_array)
@@ -1868,10 +1865,8 @@ class ARSCParser(object):
                     self.put_item_value(complex_array, item, config, complex_=True)
             else:
                 self.put_item_value(result, ate.key, config, complex_=False)
-            # print "got_ate: %s" % (result)
 
         def put_item_value(self, result, item, config, complex_):
-            # print "get_item: %r into %s" % (item, id(result))
             if item.is_reference():
                 res_id = item.get_data()
                 if res_id:
@@ -1884,7 +1879,6 @@ class ARSCParser(object):
                     result.append(item.format_value())
                 else:
                     result.append((config, item.format_value()))
-            # print "got_item: %s" % (result)
 
     def get_resolved_res_configs(self, rid, config=None):
         resolver = ARSCParser.ResourceResolver(self, config)
@@ -1965,8 +1959,6 @@ class ARSCHeader(object):
         self.header_size = unpack('<h', buff.read(2))[0]
         self.size = unpack('<I', buff.read(4))[0]
 
-        #print "ARSCHeader", hex(self.start), hex(self.type), hex(self.header_size), hex(self.size)
-
 
 class ARSCResTablePackage(object):
     def __init__(self, buff):
@@ -1978,8 +1970,6 @@ class ARSCResTablePackage(object):
         self.keyStrings = unpack('<I', buff.read(4))[0]
         self.lastPublicKey = unpack('<I', buff.read(4))[0]
         self.mResId = self.id << 24
-
-        #print "ARSCResTablePackage", hex(self.start), hex(self.id), hex(self.mResId), repr(self.name.decode("utf-16", errors='replace')), hex(self.typeStrings), hex(self.lastPublicType), hex(self.keyStrings), hex(self.lastPublicKey)
 
     def get_name(self):
         name = self.name.decode("utf-16", 'replace')
@@ -1995,8 +1985,6 @@ class ARSCResTypeSpec(object):
         self.res0 = unpack('<b', buff.read(1))[0]
         self.res1 = unpack('<h', buff.read(2))[0]
         self.entryCount = unpack('<I', buff.read(4))[0]
-
-        #print "ARSCResTypeSpec", hex(self.start), hex(self.id), hex(self.res0), hex(self.res1), hex(self.entryCount), "table:" + self.parent.mTableStrings.getString(self.id - 1)
 
         self.typespec_entries = []
         for i in range(0, self.entryCount):
@@ -2014,8 +2002,6 @@ class ARSCResType(object):
         self.entriesStart = unpack('<i', buff.read(4))[0]
         self.mResId = (0xff000000 & self.parent.get_mResId()) | self.id << 16
         self.parent.set_mResId(self.mResId)
-
-        #print "ARSCResType", hex(self.start), hex(self.id), hex(self.res0), hex(self.res1), hex(self.entryCount), hex(self.entriesStart), hex(self.mResId), "table:" + self.parent.mTableStrings.getString(self.id - 1)
 
         self.config = ARSCResTableConfig(buff)
 
@@ -2082,8 +2068,6 @@ class ARSCResTableConfig(object):
             self.screenSizeDp = 0
             self.exceedingSize = 0
 
-        #print "ARSCResTableConfig", hex(self.start), hex(self.size), hex(self.imsi), hex(self.locale), repr(self.get_language()), repr(self.get_country()), hex(self.screenType), hex(self.input), hex(self.screenSize), hex(self.version), hex(self.screenConfig), hex(self.screenSizeDp)
-
     def get_language(self):
         x = self.locale & 0x0000ffff
         return chr(x & 0x00ff) + chr((x & 0xff00) >> 8)
@@ -2127,8 +2111,6 @@ class ARSCResTableEntry(object):
         self.flags = unpack('<H', buff.read(2))[0]
         self.index = unpack('<I', buff.read(4))[0]
 
-        #print "ARSCResTableEntry", hex(self.start), hex(self.mResId), hex(self.size), hex(self.flags), hex(self.index), self.is_complex()#, hex(self.mResId)
-
         if self.flags & 1:
             self.item = ARSCComplex(buff, parent)
         else:
@@ -2171,8 +2153,6 @@ class ARSCComplex(object):
         for i in range(0, self.count):
             self.items.append((unpack('<I', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
 
-        #print "ARSCComplex", hex(self.start), self.id_parent, self.count, repr(self.parent.mKeyStrings.getString(self.id_parent))
-
     def __repr__(self):
         return "ARSCComplex(%x, %d, %d)" % (self.start, self.id_parent, self.count)
 
@@ -2185,8 +2165,6 @@ class ARSCResStringPoolRef(object):
         self.skip_bytes = buff.read(3)
         self.data_type = unpack('<B', buff.read(1))[0]
         self.data = unpack('<I', buff.read(4))[0]
-
-        #print "ARSCResStringPoolRef", hex(self.start), hex(self.data_type), hex(self.data)#, "key:" + self.parent.mKeyStrings.getString(self.index), self.parent.stringpool_main.getString(self.data)
 
     def get_data_value(self):
         return self.parent.stringpool_main.getString(self.data)
