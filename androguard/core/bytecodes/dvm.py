@@ -356,7 +356,7 @@ class HeaderItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -398,28 +398,28 @@ class HeaderItem(object):
 
     def get_obj(self):
       if self.map_off_obj == None:
-        self.map_off_obj = self.__CM.get_item_by_offset( self.map_off )
+        self.map_off_obj = self.CM.get_item_by_offset( self.map_off )
 
       if self.string_off_obj == None:
-        self.string_off_obj = self.__CM.get_item_by_offset( self.string_ids_off )
+        self.string_off_obj = self.CM.get_item_by_offset( self.string_ids_off )
 
       if self.type_off_obj == None:
-        self.type_off_obj = self.__CM.get_item_by_offset( self.type_ids_off )
+        self.type_off_obj = self.CM.get_item_by_offset( self.type_ids_off )
 
       if self.proto_off_obj == None:
-        self.proto_off_obj = self.__CM.get_item_by_offset( self.proto_ids_off )
+        self.proto_off_obj = self.CM.get_item_by_offset( self.proto_ids_off )
 
       if self.field_off_obj == None:
-        self.field_off_obj = self.__CM.get_item_by_offset( self.field_ids_off )
+        self.field_off_obj = self.CM.get_item_by_offset( self.field_ids_off )
 
       if self.method_off_obj == None:
-        self.method_off_obj = self.__CM.get_item_by_offset( self.method_ids_off )
+        self.method_off_obj = self.CM.get_item_by_offset( self.method_ids_off )
 
       if self.class_off_obj == None:
-        self.class_off_obj = self.__CM.get_item_by_offset( self.class_defs_off )
+        self.class_off_obj = self.CM.get_item_by_offset( self.class_defs_off )
 
       if self.data_off_obj == None:
-        self.data_off_obj = self.__CM.get_item_by_offset( self.data_off )
+        self.data_off_obj = self.CM.get_item_by_offset( self.data_off )
 
       self.map_off = self.map_off_obj.get_off()
 
@@ -504,7 +504,7 @@ class AnnotationOffItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self,  buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.annotation_off = unpack("=I", buff.read( 4 ) )[0]
 
     def show(self):
@@ -513,7 +513,7 @@ class AnnotationOffItem(object):
 
     def get_obj(self):
         if self.annotation_off != 0:
-          self.annotation_off = self.__CM.get_obj_by_offset( self.annotation_off ).get_off()
+          self.annotation_off = self.CM.get_obj_by_offset( self.annotation_off ).get_off()
 
         return pack("=I", self.annotation_off)
 
@@ -533,7 +533,7 @@ class AnnotationSetItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
         self.annotation_off_item = []
 
@@ -587,7 +587,7 @@ class AnnotationSetRefItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self,  buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
 
     def get_annotations_off(self):
@@ -605,7 +605,7 @@ class AnnotationSetRefItem(object):
 
     def get_obj(self):
         if self.annotations_off != 0:
-          self.annotations_off = self.__CM.get_obj_by_offset( self.annotations_off ).get_off()
+          self.annotations_off = self.CM.get_obj_by_offset( self.annotations_off ).get_off()
 
         return pack("=I", self.annotations_off)
 
@@ -624,7 +624,7 @@ class AnnotationSetRefList(object):
     def __init__(self, buff, cm):
         self.offset = buff.get_idx()
 
-        self.__CM = cm
+        self.CM = cm
         self.list = []
 
         self.size = unpack("=I", buff.read( 4 ) )[0]
@@ -674,7 +674,7 @@ class FieldAnnotation(object):
     def __init__(self, buff, cm):
         self.offset = buff.get_idx()
 
-        self.__CM = cm
+        self.CM = cm
         self.field_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
 
@@ -706,7 +706,7 @@ class FieldAnnotation(object):
 
     def get_obj(self):
         if self.annotations_off != 0:
-          self.annotations_off = self.__CM.get_obj_by_offset( self.annotations_off ).get_off()
+          self.annotations_off = self.CM.get_obj_by_offset( self.annotations_off ).get_off()
 
         return pack("=I", self.field_idx) + pack("=I", self.annotations_off)
 
@@ -728,7 +728,7 @@ class MethodAnnotation(object):
     def __init__(self, buff, cm):
         self.offset = buff.get_idx()
 
-        self.__CM = cm
+        self.CM = cm
         self.method_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
 
@@ -760,7 +760,7 @@ class MethodAnnotation(object):
 
     def get_obj(self):
         if self.annotations_off != 0:
-          self.annotations_off = self.__CM.get_obj_by_offset( self.annotations_off ).get_off()
+          self.annotations_off = self.CM.get_obj_by_offset( self.annotations_off ).get_off()
 
         return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
 
@@ -782,7 +782,7 @@ class ParameterAnnotation(object):
     def __init__(self, buff, cm):
         self.offset = buff.get_idx()
 
-        self.__CM = cm
+        self.CM = cm
         self.method_idx = unpack("=I", buff.read( 4 ) )[0]
         self.annotations_off = unpack("=I", buff.read( 4 ) )[0]
 
@@ -814,7 +814,7 @@ class ParameterAnnotation(object):
 
     def get_obj(self):
         if self.annotations_off != 0:
-          self.annotations_off = self.__CM.get_obj_by_offset( self.annotations_off ).get_off()
+          self.annotations_off = self.CM.get_obj_by_offset( self.annotations_off ).get_off()
 
         return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
 
@@ -834,7 +834,7 @@ class AnnotationsDirectoryItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -942,7 +942,7 @@ class AnnotationsDirectoryItem(object):
 
     def get_obj(self):
         if self.class_annotations_off != 0:
-          self.class_annotations_off = self.__CM.get_obj_by_offset( self.class_annotations_off ).get_off()
+          self.class_annotations_off = self.CM.get_obj_by_offset( self.class_annotations_off ).get_off()
 
         return pack("=I", self.class_annotations_off) +     \
                pack("=I", self.annotated_fields_size) +               \
@@ -978,7 +978,7 @@ class TypeItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.type_idx = unpack("=H", buff.read(2))[0]
 
     def get_type_idx(self):
@@ -995,7 +995,7 @@ class TypeItem(object):
 
           :rtype: string
         """
-        return self.__CM.get_type( self.type_idx )
+        return self.CM.get_type( self.type_idx )
 
     def show(self):
         bytecode._PrintSubBanner("Type Item")
@@ -1020,7 +1020,7 @@ class TypeList(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -1292,7 +1292,7 @@ VALUE_BOOLEAN   = 0x1f    # boolean (0..1) (none)  one-bit value; 0 for false an
 
 class DebugInfoItemEmpty(object):
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
         self.__buff = buff
@@ -1307,7 +1307,7 @@ class DebugInfoItemEmpty(object):
     def reload(self):
         offset = self.offset
 
-        n = self.__CM.get_next_offset_item( offset )
+        n = self.CM.get_next_offset_item( offset )
 
         s_idx = self.__buff.get_idx()
         self.__buff.set_idx( offset )
@@ -1336,7 +1336,7 @@ class EncodedArray(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.size = readuleb128( buff )
@@ -1392,7 +1392,7 @@ class EncodedValue(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.val = unpack("=B", buff.read(1))[0]
         self.value_arg = self.val >> 5
@@ -1490,7 +1490,7 @@ class AnnotationElement(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.name_idx = readuleb128( buff )
@@ -1536,7 +1536,7 @@ class EncodedAnnotation(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.type_idx = readuleb128( buff )
@@ -1601,7 +1601,7 @@ class AnnotationItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -1661,7 +1661,7 @@ class EncodedArrayItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
         self.value = EncodedArray( buff, cm )
@@ -1745,7 +1745,7 @@ class StringDataItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -1807,7 +1807,7 @@ class StringIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.string_data_off = unpack("=I", buff.read(4))[0]
@@ -1835,7 +1835,7 @@ class StringIdItem(object):
 
     def get_obj(self):
         if self.string_data_off != 0:
-          self.string_data_off = self.__CM.get_string_by_offset( self.string_data_off ).get_off()
+          self.string_data_off = self.CM.get_string_by_offset( self.string_data_off ).get_off()
 
         return pack("=I", self.string_data_off)
 
@@ -1855,7 +1855,7 @@ class TypeIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.descriptor_idx = unpack("=I", buff.read( 4 ) )[0]
@@ -1878,7 +1878,7 @@ class TypeIdItem(object):
       return self.descriptor_idx_value
 
     def reload(self):
-        self.descriptor_idx_value = self.__CM.get_string( self.descriptor_idx )
+        self.descriptor_idx_value = self.CM.get_string( self.descriptor_idx )
 
     def show(self):
         bytecode._PrintSubBanner("Type Id Item")
@@ -1903,7 +1903,7 @@ class TypeHIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -1962,7 +1962,7 @@ class ProtoIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.shorty_idx = unpack("=I", buff.read(4))[0]
@@ -1975,9 +1975,9 @@ class ProtoIdItem(object):
         self.parameters_off_value = None
 
     def reload(self):
-        self.shorty_idx_value = self.__CM.get_string( self.shorty_idx )
-        self.return_type_idx_value = self.__CM.get_type( self.return_type_idx )
-        params = self.__CM.get_type_list( self.parameters_off )
+        self.shorty_idx_value = self.CM.get_string( self.shorty_idx )
+        self.return_type_idx_value = self.CM.get_type( self.return_type_idx )
+        params = self.CM.get_type_list( self.parameters_off )
         self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
@@ -2037,7 +2037,7 @@ class ProtoIdItem(object):
 
     def get_obj(self):
         if self.parameters_off != 0:
-          self.parameters_off = self.__CM.get_obj_by_offset( self.parameters_off ).get_off()
+          self.parameters_off = self.CM.get_obj_by_offset( self.parameters_off ).get_off()
 
         return pack("=I", self.shorty_idx) + pack("=I", self.return_type_idx) + pack("=I", self.parameters_off)
 
@@ -2057,7 +2057,7 @@ class ProtoHIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -2109,7 +2109,7 @@ class FieldIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.class_idx = unpack("=H", buff.read(2))[0]
@@ -2121,9 +2121,9 @@ class FieldIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        self.class_idx_value = self.__CM.get_type( self.class_idx )
-        self.type_idx_value = self.__CM.get_type( self.type_idx )
-        self.name_idx_value = self.__CM.get_string( self.name_idx )
+        self.class_idx_value = self.CM.get_type( self.class_idx )
+        self.type_idx_value = self.CM.get_type( self.type_idx )
+        self.name_idx_value = self.CM.get_string( self.name_idx )
 
     def get_class_idx(self):
       """
@@ -2265,7 +2265,7 @@ class MethodIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.class_idx = unpack("=H", buff.read(2))[0]
@@ -2277,9 +2277,9 @@ class MethodIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        self.class_idx_value = self.__CM.get_type( self.class_idx )
-        self.proto_idx_value = self.__CM.get_proto( self.proto_idx )
-        self.name_idx_value = self.__CM.get_string( self.name_idx )
+        self.class_idx_value = self.CM.get_type( self.class_idx )
+        self.proto_idx_value = self.CM.get_proto( self.proto_idx )
+        self.name_idx_value = self.CM.get_string( self.name_idx )
 
     def get_class_idx(self):
         """
@@ -2377,7 +2377,7 @@ class MethodHIdItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -2602,14 +2602,6 @@ class EncodedField(object):
 
     def show(self):
         """
-            Display the information about the field
-        """
-        colors = bytecode.disable_print_colors()
-        self.pretty_show()
-        bytecode.enable_print_colors(colors)
-
-    def pretty_show(self):
-        """
             Display the information (with a pretty print) about the field
         """
         bytecode._PrintSubBanner("Field Information")
@@ -2619,19 +2611,28 @@ class EncodedField(object):
         if init_value != None:
             bytecode._PrintDefault( "\tinit value: %s\n" % str( init_value.get_value() ) )
 
-        self.show_dref()
+        self.show_xref(self.CM.get_vmanalysis().get_field_analysis(self))
 
-    def show_dref(self):
+
+    def show_xref(self, f_a):
         """
             Display where this field is read or written
         """
-        try:
-            bytecode._PrintSubBanner("DREF")
-            bytecode._PrintDRef("R", self.DREFr.items)
-            bytecode._PrintDRef("W", self.DREFw.items)
-            bytecode._PrintSubBanner()
-        except AttributeError:
-            pass
+        bytecode._PrintSubBanner("XREF Read")
+        xrefs_from = f_a.get_xref_read()
+        for ref_class, ref_method in xrefs_from:
+            bytecode._PrintDefault(ref_method)
+            bytecode._PrintDefault('\n')
+
+        bytecode._PrintDefault('\n')
+
+        bytecode._PrintSubBanner("XREF Write")
+        xrefs_to = f_a.get_xref_write()
+        for ref_class, ref_method in xrefs_to:
+            bytecode._PrintDefault(ref_method)
+            bytecode._PrintDefault('\n')
+
+
 
     def __str__(self):
         return "%s->%s %s [access_flags=%s]\n" % (self.get_class_name(), self.get_name(), self.get_descriptor(), self.get_access_flags_string())
@@ -2786,37 +2787,30 @@ class EncodedMethod(object):
 
     def show(self):
         """
-            Display the information about the method
-        """
-        colors = bytecode.disable_print_colors()
-        self.pretty_show()
-        bytecode.enable_print_colors(colors)
-
-    def pretty_show(self):
-        """
             Display the information (with a pretty print) about the method
         """
         self.show_info()
         self.show_notes()
         if self.code != None:
-            self.each_params_by_register( self.code.get_registers_size(), self.get_descriptor() )
-            if self.CM.get_vmanalysis() == None:
-                self.code.show()
-            else:
-                self.code.pretty_show( self.CM.get_vmanalysis().get_method( self ) )
-                self.show_xref()
+            self.each_params_by_register(self.code.get_registers_size(),
+                                         self.get_descriptor())
+            self.code.show(self.CM.get_vmanalysis().get_method(self))
+            self.show_xref(self.CM.get_vmanalysis().get_method_analysis(self))
 
-    def show_xref(self):
-        """
-            Display where the method is called or which method is called
-        """
-        try:
-            bytecode._PrintSubBanner("XREF")
-            bytecode._PrintXRef("F", self.XREFfrom.items)
-            bytecode._PrintXRef("T", self.XREFto.items)
-            bytecode._PrintSubBanner()
-        except AttributeError:
-            pass
+    def show_xref(self, m_a):
+        bytecode._PrintSubBanner("XREF From")
+        xrefs_from = m_a.get_xref_from()
+        for ref_class, ref_method in xrefs_from:
+            bytecode._PrintDefault(ref_method)
+            bytecode._PrintDefault('\n')
+
+        bytecode._PrintDefault('\n')
+
+        bytecode._PrintSubBanner("XREF To")
+        xrefs_to = m_a.get_xref_to()
+        for ref_class, ref_method in xrefs_to:
+            bytecode._PrintDefault(ref_method)
+            bytecode._PrintDefault('\n')
 
     def show_notes(self):
       """
@@ -2889,7 +2883,7 @@ class EncodedMethod(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if self._code != None:
+        if self.code != None:
             return self.code.get_bc().get_instruction(idx, off)
         return None
 
@@ -2986,7 +2980,7 @@ class ClassDataItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -3123,9 +3117,6 @@ class ClassDataItem(object):
             i.reload()
 
     def show(self):
-        self.pretty_show()
-
-    def pretty_show(self):
         bytecode._PrintSubBanner("Class Data Item")
         bytecode._PrintDefault("static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d\n" % \
                 (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size))
@@ -3140,11 +3131,11 @@ class ClassDataItem(object):
 
         bytecode._PrintSubBanner("Direct Methods")
         for i in self.direct_methods:
-            i.pretty_show()
+            i.show()
 
         bytecode._PrintSubBanner("Virtual Methods")
         for i in self.virtual_methods:
-            i.pretty_show()
+            i.show()
 
     def get_obj(self):
         return [ i for i in self.static_fields ] + \
@@ -3198,7 +3189,7 @@ class ClassDefItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.class_idx = unpack("=I", buff.read(4))[0]
@@ -3219,16 +3210,16 @@ class ClassDefItem(object):
         self.access_flags_string = None
 
     def reload(self):
-        self.name = self.__CM.get_type( self.class_idx )
-        self.sname = self.__CM.get_type( self.superclass_idx )
-        self.interfaces = self.__CM.get_type_list( self.interfaces_off )
+        self.name = self.CM.get_type( self.class_idx )
+        self.sname = self.CM.get_type( self.superclass_idx )
+        self.interfaces = self.CM.get_type_list( self.interfaces_off )
 
         if self.class_data_off != 0:
-            self.class_data_item = self.__CM.get_class_data_item( self.class_data_off )
+            self.class_data_item = self.CM.get_class_data_item( self.class_data_off )
             self.class_data_item.reload()
 
         if self.static_values_off != 0:
-            self.static_values = self.__CM.get_encoded_array_item ( self.static_values_off )
+            self.static_values = self.CM.get_encoded_array_item ( self.static_values_off )
 
             if self.class_data_item != None:
                 self.class_data_item.set_static_fields( self.static_values.get_value() )
@@ -3386,18 +3377,38 @@ class ClassDefItem(object):
                                self.annotations_off,
                                self.class_data_off,
                                self.static_values_off))
-        self.show_xref()
+        self.show_xref(self.CM.get_vmanalysis().get_class_analysis(self.get_name()))
 
-    def show_xref(self):
+    def show_xref(self, c_a):
         """
             Display where the method is called or which method is called
         """
-        try:
-            bytecode._PrintSubBanner("XREF")
-            bytecode._PrintXRef("F", self.XREFfrom.items)
-            bytecode._PrintSubBanner()
-        except AttributeError:
-            pass
+        bytecode._PrintSubBanner("XREF From")
+        xrefs_from = c_a.get_xref_from()
+        for ref_class in xrefs_from:
+            if ref_class.get_vm_class().get_name() == self.get_name():
+                continue
+            for ref_kind, ref_method in xrefs_from[ref_class]:
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
+
+        bytecode._PrintDefault('\n')
+
+        ref_kind_map = {0:"Class instanciation", 1:"Class reference"}
+
+        bytecode._PrintSubBanner("XREF To")
+        xrefs_to = c_a.get_xref_to()
+        for ref_class in xrefs_to:
+            if ref_class.get_vm_class().get_name() == self.get_name():
+                continue
+            bytecode._PrintDefault(ref_class.get_vm_class().get_name())
+            bytecode._PrintDefault(' -->\n')
+            for ref_kind, ref_method in xrefs_to[ref_class]:
+                bytecode._PrintDefault(ref_kind_map[ref_kind])
+                bytecode._PrintDefault(' ')
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
+
 
     def source(self):
         """
@@ -3405,32 +3416,32 @@ class ClassDefItem(object):
 
             :rtype: string
         """
-        self.__CM.decompiler_ob.display_all(self)
+        self.CM.decompiler_ob.display_all(self)
 
     def get_source(self):
-      return self.__CM.decompiler_ob.get_source_class(self)
+      return self.CM.decompiler_ob.get_source_class(self)
 
     def get_source_ext(self):
-      return self.__CM.decompiler_ob.get_source_class_ext(self)
+      return self.CM.decompiler_ob.get_source_class_ext(self)
 
     def get_ast(self):
-      return self.__CM.decompiler_ob.get_ast_class(self)
+      return self.CM.decompiler_ob.get_ast_class(self)
 
     def set_name(self, value):
-        self.__CM.set_hook_class_name( self, value )
+        self.CM.set_hook_class_name( self, value )
 
     def get_obj(self):
       if self.interfaces_off != 0:
-        self.interfaces_off = self.__CM.get_obj_by_offset( self.interfaces_off ).get_off()
+        self.interfaces_off = self.CM.get_obj_by_offset( self.interfaces_off ).get_off()
 
       if self.annotations_off != 0:
-        self.annotations_off = self.__CM.get_obj_by_offset( self.annotations_off ).get_off()
+        self.annotations_off = self.CM.get_obj_by_offset( self.annotations_off ).get_off()
 
       if self.class_data_off != 0:
-        self.class_data_off = self.__CM.get_obj_by_offset( self.class_data_off ).get_off()
+        self.class_data_off = self.CM.get_obj_by_offset( self.class_data_off ).get_off()
 
       if self.static_values_off != 0:
-        self.static_values_off = self.__CM.get_obj_by_offset( self.static_values_off ).get_off()
+        self.static_values_off = self.CM.get_obj_by_offset( self.static_values_off ).get_off()
 
       return  pack("=I", self.class_idx) +          \
               pack("=I", self.access_flags) +       \
@@ -3457,7 +3468,7 @@ class ClassHDefItem(object):
         :type cm: :class:`ClassManager`
     """
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -6302,21 +6313,7 @@ class DCode(object):
             idx += i.get_length()
         return None
 
-    def show(self):
-        """
-            Display this object
-        """
-        nb = 0
-        idx = 0
-        for i in self.get_instructions():
-            print "%-8d(%08x)" % (nb, idx),
-            i.show(nb)
-            print
-
-            idx += i.get_length()
-            nb += 1
-
-    def pretty_show(self, m_a):
+    def show(self, m_a):
         """
             Display (with a pretty print) this object
 
@@ -6354,7 +6351,7 @@ class TryItem(object):
     def __init__(self, buff, cm):
         self.offset = buff.get_idx()
 
-        self.__CM = cm
+        self.CM = cm
 
         self.start_addr = unpack("=I", buff.read(4))[0]
         self.insn_count = unpack("=H", buff.read(2))[0]
@@ -6406,7 +6403,7 @@ class DalvikCode(object):
         :type cm: :class:`ClassManager` object
     """
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
         self.offset = buff.get_idx()
 
         self.int_padding = ""
@@ -6427,7 +6424,7 @@ class DalvikCode(object):
 
         ushort = calcsize('=H')
 
-        self.code = DCode(self.__CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
+        self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
 
         if (self.insns_size % 2 == 1):
             self.padding = unpack("=H", buff.read(2))[0]
@@ -6436,9 +6433,9 @@ class DalvikCode(object):
         self.handlers = None
         if self.tries_size > 0:
             for i in xrange(0, self.tries_size):
-                self.tries.append(TryItem(buff, self.__CM))
+                self.tries.append(TryItem(buff, self.CM))
 
-            self.handlers = EncodedCatchHandlerList(buff, self.__CM)
+            self.handlers = EncodedCatchHandlerList(buff, self.CM)
 
     def get_registers_size(self):
         """
@@ -6510,7 +6507,7 @@ class DalvikCode(object):
 
             :rtype: :class:`DebugInfoItem`
         """
-        return self.__CM.get_debug_off(self.debug_info_off)
+        return self.CM.get_debug_off(self.debug_info_off)
 
     def get_bc(self):
         """
@@ -6539,18 +6536,13 @@ class DalvikCode(object):
 
       bytecode._PrintBanner()
 
-    def show(self):
+    def show(self, m_a):
         self._begin_show()
-        self.code.show()
+        self.code.show(m_a)
         self._end_show()
 
     def _end_show(self):
       bytecode._PrintBanner()
-
-    def pretty_show(self, m_a):
-        self._begin_show()
-        self.code.pretty_show(m_a)
-        self._end_show()
 
     def get_obj(self):
         return [self.code, self.tries, self.handlers]
@@ -6625,7 +6617,7 @@ class DalvikCode(object):
 
 class CodeItem(object):
     def __init__(self, size, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.offset = buff.get_idx()
 
@@ -6672,7 +6664,7 @@ class CodeItem(object):
 
 class MapItem(object):
     def __init__(self, buff, cm):
-        self.__CM = cm
+        self.CM = cm
 
         self.off = buff.get_idx()
 
@@ -6685,7 +6677,7 @@ class MapItem(object):
 
         buff.set_idx( self.offset )
 
-        lazy_analysis = self.__CM.get_lazy_analysis()
+        lazy_analysis = self.CM.get_lazy_analysis()
 
         if lazy_analysis:
           self.next_lazy(buff, cm)
@@ -6824,19 +6816,6 @@ class MapItem(object):
             else:
                 self.item.show()
 
-    def pretty_show(self):
-        bytecode._Print( "\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[ self.type ])
-
-        if self.item != None:
-            if isinstance( self.item, list ):
-                for i in self.item:
-                    if isinstance(i, ClassDataItem):
-                        i.pretty_show()
-                    else:
-                        i.show()
-            else:
-                self.item.show()
-
     def get_obj(self):
         return self.item
 
@@ -6932,12 +6911,6 @@ class ClassManager(object):
 
     def set_vmanalysis(self, vmanalysis):
         self.vmanalysis_ob = vmanalysis
-
-    def get_gvmanalysis(self):
-        return self.gvmanalysis_ob
-
-    def set_gvmanalysis(self, gvmanalysis):
-        self.gvmanalysis_ob = gvmanalysis
 
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
@@ -7095,33 +7068,33 @@ class ClassManager(object):
         class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( method.get_class_idx() )
         if class_def != None:
           try:
-            name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() )
+            name = bytecode.FormatNameToPython( encoded_method.get_name() )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
           debug("try deleting old name in python...")
           try:
-            delattr(class_def, name)
+            delattr(class_def.M, name)
             debug("success with regular name")
           except AttributeError:
             debug("WARNING: fail with regular name")
             #python_export = False
 
             try:
-              name = "METHOD_" + bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
+              name = bytecode.FormatNameToPython( encoded_method.get_name() + '_' + encoded_method.proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','') )
             except AttributeError:
               name += "_" + bytecode.FormatDescriptorToPython(encoded_method.get_descriptor())
 
             try:
-              delattr(class_def, name)
+              delattr(class_def.M, name)
               debug("success with name containing prototype")
             except AttributeError:
               debug("WARNING: fail with name containing prototype")
               python_export = False
 
           if python_export:
-            name = "METHOD_" + bytecode.FormatNameToPython(value)
-            setattr(class_def, name, encoded_method)
+            name = bytecode.FormatNameToPython(value)
+            setattr(class_def.M, name, encoded_method)
             debug("new name in python: created: %s." % name)
           else:
             debug("skipping creating new name in python")
@@ -7137,19 +7110,19 @@ class ClassManager(object):
         class_def = self.__manage_item[ "TYPE_CLASS_DEF_ITEM" ].get_class_idx( field.get_class_idx() )
         if class_def != None:
           try:
-            name = "FIELD_" + bytecode.FormatNameToPython( encoded_field.get_name() )
+            name = bytecode.FormatNameToPython( encoded_field.get_name() )
           except AttributeError:
             name += "_" + bytecode.FormatDescriptorToPython( encoded_field.get_descriptor() )
 
 
           try:
-            delattr( class_def, name )
+            delattr( class_def.F, name )
           except AttributeError:
             python_export = False
 
           if python_export:
-            name = "FIELD_" + bytecode.FormatNameToPython( value )
-            setattr( class_def, name, encoded_field )
+            name = bytecode.FormatNameToPython( value )
+            setattr( class_def.F, name, encoded_field )
 
         field.reload()
 
@@ -7224,21 +7197,12 @@ class MapList(object):
 
     def show(self):
         """
-            Print the MapList object
-        """
-        bytecode._Print("MAP_LIST SIZE", self.size)
-        for i in self.map_item:
-            if i.item != self:
-                i.show()
-
-    def pretty_show(self):
-        """
             Print with a pretty display the MapList object
         """
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item:
             if i.item != self:
-                i.pretty_show()
+                i.show()
 
     def get_obj(self):
       return [ x.get_obj() for x in self.map_item ]
@@ -7283,15 +7247,15 @@ class DalvikVMFormat(bytecode._Bytecode):
         #to allow to pass apk object ==> we do not need to pass additionally target version
         if isinstance(buff, APK):
             self.api_version = buff.get_target_sdk_version()
-            buff = buff.get_dex() #getting dex from APK file
+            buff = buff.get_dex().next() #getting dex from APK file
         elif using_api:
             self.api_version = using_api
         else:
             self.api_version = CONF["DEFAULT_API"]
-            
-        #TODO: can using_api be added to config parameter?    
+
+        #TODO: can using_api be added to config parameter?
         super(DalvikVMFormat, self).__init__(buff)
-        
+
         self.config = config
         if not self.config:
           self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
@@ -7332,11 +7296,11 @@ class DalvikVMFormat(bytecode._Bytecode):
         '''
             This method returns api version that should be used for loading api
             specific resources.
-            
+
             :rtype: int
         '''
         return self.api_version
-    
+
     def get_classes_def_item(self):
         """
             This function returns the class def item
@@ -7407,12 +7371,6 @@ class DalvikVMFormat(bytecode._Bytecode):
           Show the all information in the object
         """
         self.map_list.show()
-
-    def pretty_show(self):
-        """
-          Show (but pretty !) the all information in the object
-        """
-        self.map_list.pretty_show()
 
     def save(self):
       """
@@ -7815,122 +7773,12 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         return "DEX"
 
-    def create_xref(self, python_export=True):
-        """
-            Create XREF for this object
-
-            :param python_export (boolean): export xref in each method
-        """
-        gvm = self.CM.get_gvmanalysis()
-
-        for _class in self.get_classes():
-            key = _class.get_name()
-            if key in gvm.nodes:
-              _class.XREFfrom = XREF()
-              for i in gvm.GI.successors(gvm.nodes[key].id):
-                xref = gvm.nodes_id[i]
-                xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                if python_export == True:
-                    name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                    bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                    bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-                    setattr(_class.XREFfrom, name, xref_meth)
-                _class.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
-
-            for method in _class.get_methods():
-                method.XREFfrom = XREF()
-                method.XREFto = XREF()
-
-                key = "%s %s %s" % (method.get_class_name(), method.get_name(), method.get_descriptor())
-
-                if key in gvm.nodes:
-                    for i in gvm.G.predecessors(gvm.nodes[key].id):
-                        xref = gvm.nodes_id[i]
-                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
-                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-
-                            if python_export == True:
-                                setattr(method.XREFfrom, name, xref_meth)
-                            method.XREFfrom.add(xref_meth, xref.edges[gvm.nodes[key]])
-
-                    for i in gvm.G.successors(gvm.nodes[key].id):
-                        xref = gvm.nodes_id[i]
-                        xref_meth = self.get_method_descriptor(xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
-                            name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
-                            bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
-                            bytecode.FormatDescriptorToPython(xref_meth.get_descriptor())
-
-                            if python_export == True:
-                                setattr(method.XREFto, name, xref_meth)
-                            method.XREFto.add(xref_meth, gvm.nodes[key].edges[xref])
-
-    def create_dref(self, python_export=True):
-        """
-            Create DREF for this object
-
-            :param python_export (boolean): export dref in each field
-        """
-        vmx = self.CM.get_vmanalysis()
-
-        for _class in self.get_classes():
-            for field in _class.get_fields():
-                field.DREFr = DREF()
-                field.DREFw = DREF()
-
-                paths = vmx.tainted_variables.get_field( field.get_class_name(), field.get_name(), field.get_descriptor() )
-
-                if paths != None:
-                    access = {}
-                    access["R"] = {}
-                    access["W"] = {}
-
-                    for path in paths.get_paths():
-                        access_val, idx = path[0]
-                        m_idx = path[1]
-
-                        if access_val == 'R':
-                            dref_meth = self.get_method_by_idx( m_idx )
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-
-                            if python_export == True:
-                                setattr( field.DREFr, name, dref_meth )
-
-                            try:
-                                access["R"][ dref_meth ].append( idx )
-                            except KeyError:
-                                access["R"][ dref_meth ] = []
-                                access["R"][ dref_meth ].append( idx )
-
-                        else:
-                            dref_meth = self.get_method_by_idx( m_idx )
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                            bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
-                            bytecode.FormatDescriptorToPython( dref_meth.get_descriptor() )
-
-                            if python_export == True:
-                                setattr( field.DREFw, name, dref_meth )
-
-                            try:
-                                access["W"][ dref_meth ].append( idx )
-                            except KeyError:
-                                access["W"][ dref_meth ] = []
-                                access["W"][ dref_meth ].append( idx )
-
-                    for i in access["R"]:
-                        field.DREFr.add( i, access["R"][i] )
-                    for i in access["W"]:
-                        field.DREFw.add( i, access["W"][i] )
-
     def create_python_export(self):
         """
             Export classes/methods/fields' names in the python namespace
         """
+        setattr(self, "C", ExportObject())
+
         for _class in self.get_classes():
           self._create_python_export_class(_class)
 
@@ -7940,46 +7788,91 @@ class DalvikVMFormat(bytecode._Bytecode):
     def _create_python_export_class(self, _class, delete=False):
         if _class != None:
             ### Class
-            name = "CLASS_" + bytecode.FormatClassToPython( _class.get_name() )
+            name = bytecode.FormatClassToPython( _class.get_name() )
             if delete:
-              delattr( self, name )
+              delattr( self.C, name )
               return
             else:
-              setattr( self, name, _class )
+              setattr( self.C, name, _class )
+              setattr( _class, "M", ExportObject())
+              setattr( _class, "F", ExportObject())
 
-            ### Methods
-            m = {}
-            for method in _class.get_methods():
-                if method.get_name() not in m:
-                    m[ method.get_name() ] = []
-                m[ method.get_name() ].append( method )
+            self._create_python_export_methods(_class, delete)
+            self._create_python_export_fields(_class, delete)
 
-            for i in m:
-                if len(m[i]) == 1:
-                    j = m[i][0]
-                    name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
-                else:
-                    for j in m[i]:
-                        name = "METHOD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
+    def _create_python_export_methods(self, _class, delete):
+        m = {}
+        for method in _class.get_methods():
+            if method.get_name() not in m:
+                m[method.get_name()] = []
+            m[method.get_name()].append( method )
+            setattr(method, "XF", ExportObject())
+            setattr(method, "XT", ExportObject())
 
-            ### Fields
-            f = {}
-            for field in _class.get_fields():
-                if field.get_name() not in f:
-                    f[ field.get_name() ] = []
-                f[ field.get_name() ].append( field )
+            m_a = self.CM.get_vmanalysis().get_method_analysis(method)
+            if m_a:
+                xrefs_from = m_a.get_xref_from()
+                for ref_class, ref_method in xrefs_from:
+                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(ref_method.get_descriptor()))
+                    setattr(method.XF, name, ref_method)
 
-            for i in f:
-                if len(f[i]) == 1:
-                    j = f[i][0]
-                    name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() )
-                    setattr( _class, name, j )
-                else:
-                    for j in f[i]:
-                        name = "FIELD_" + bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
-                        setattr( _class, name, j )
+                xrefs_to = m_a.get_xref_to()
+                for ref_class, ref_method in xrefs_to:
+                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(ref_method.get_descriptor()))
+                    setattr(method.XT, name, ref_method)
+
+
+        for i in m:
+            if len(m[i]) == 1:
+                j = m[i][0]
+                name = bytecode.FormatNameToPython(j.get_name())
+                setattr(_class.M, name, j)
+            else:
+                for j in m[i]:
+                    name = (bytecode.FormatNameToPython(j.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(j.get_descriptor()))
+                    setattr(_class.M, name, j)
+
+    def _create_python_export_fields(self, _class, delete):
+        f = {}
+        for field in _class.get_fields():
+            if field.get_name() not in f:
+                f[ field.get_name() ] = []
+            f[ field.get_name() ].append( field )
+            setattr(field, "XR", ExportObject())
+            setattr(field, "XW", ExportObject())
+
+            f_a = self.CM.get_vmanalysis().get_field_analysis(field)
+            if f_a:
+                xrefs_from = f_a.get_xref_read()
+                for ref_class, ref_method in xrefs_from:
+                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(ref_method.get_descriptor()))
+                    setattr(field.XR, name, ref_method)
+
+                xrefs_to = f_a.get_xref_write()
+                for ref_class, ref_method in xrefs_to:
+                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
+                            "_" +
+                            bytecode.FormatDescriptorToPython(ref_method.get_descriptor()))
+                    setattr(field.XW, name, ref_method)
+
+
+        for i in f:
+            if len(f[i]) == 1:
+                j = f[i][0]
+                name = bytecode.FormatNameToPython( j.get_name() )
+                setattr( _class.F, name, j )
+            else:
+                for j in f[i]:
+                    name = bytecode.FormatNameToPython( j.get_name() ) + "_" + bytecode.FormatDescriptorToPython( j.get_descriptor() )
+                    setattr( _class.F, name, j )
 
     def get_BRANCH_DVM_OPCODES(self):
         return BRANCH_DVM_OPCODES
@@ -8397,21 +8290,5 @@ def get_bytecodes_methodx(method, mx):
 
     return i_buffer
 
-
-def auto(filename, raw=None):
-  """
-      :param filename:
-      :param raw:
-      :type filename:
-      :type raw:
-  """
-  data_raw = raw
-  if raw == None:
-    data_raw = read(filename)
-    ret_type = is_android_raw(data_raw[:10])
-    if ret_type == "DEX":
-      return DalvikVMFormat(data_raw)
-    elif ret_type == "ODEX":
-      return DalvikOdexVMFormat(data_raw)
-
-  return None
+class ExportObject(object):
+    pass

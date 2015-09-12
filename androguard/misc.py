@@ -1,14 +1,17 @@
 from androguard.core import *
-from androguard.core.androgen import *
 from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
-from androguard.core.analysis.ganalysis import *
 from androguard.decompiler.decompiler import *
 
 from cPickle import dumps, loads
 from androguard.core import androconf
+
+def init_print_colors():
+    from IPython.utils import coloransi, io
+    androconf.default_colors(coloransi.TermColors)
+    CONF["PRINT_FCT"] = io.stdout.write
 
 def save_session(l, filename):
   """
@@ -39,106 +42,68 @@ def load_session(filename):
   """
   return loads(read(filename, binary=False))
 
-def AnalyzeAPK(filename, raw=False, decompiler="dad"):
+def AnalyzeAPK(filename, decompiler="dad", session=None):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
         :param filename: the filename of the android application or a buffer which represents the application
         :type filename: string
-        :param raw: True is you would like to use a buffer (optional)
-        :type raw: boolean
         :param decompiler: ded, dex2jad, dad (optional)
         :type decompiler: string
 
         :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("APK ...")
-    a = APK(filename, raw)
-    d, dx = AnalyzeDex(a.get_dex(), raw=True, decompiler=decompiler)
-    return a, d, dx
+    androconf.debug("AnalyzeAPK")
 
-def AnalyzeDex(filename, raw=False, decompiler="dad"):
+    if not session:
+        session = CONF["SESSION"]
+
+    with open(filename, "r") as fd:
+        data = fd.read()
+
+    session.add(filename, data)
+    return session.get_objects_apk(filename)
+
+def AnalyzeDex(filename, decompiler="dad", session=None):
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
         :param filename: the filename of the android dex file or a buffer which represents the dex file
         :type filename: string
-        :param raw: True is you would like to use a buffer (optional)
-        :type raw: boolean
 
         :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("DalvikVMFormat ...")
+    androconf.debug("AnalyzeDex")
 
-    d = None
-    if raw == False:
-        d = DalvikVMFormat(read(filename))
-    else:
-        d = DalvikVMFormat(filename)
+    if not session:
+        session = CONF["SESSION"]
 
-    androconf.debug("Export VM to python namespace")
-    d.create_python_export()
+    with open(filename, "r") as fd:
+        data = fd.read()
 
-    androconf.debug("VMAnalysis ...")
-    dx = uVMAnalysis(d)
-
-    androconf.debug("GVMAnalysis ...")
-    gx = GVMAnalysis(dx, None)
-
-    d.set_vmanalysis(dx)
-    d.set_gvmanalysis(gx)
-
-    RunDecompiler(d, dx, decompiler)
-
-    androconf.debug("XREF ...")
-    d.create_xref()
-    androconf.debug("DREF ...")
-    d.create_dref()
-
-    return d, dx
+    return session.addDEX(data)
 
 
-def AnalyzeODex(filename, raw=False, decompiler="dad"):
+def AnalyzeODex(filename, decompiler="dad", session=None):
     """
         Analyze an android odex file and setup all stuff for a more quickly analysis !
 
         :param filename: the filename of the android dex file or a buffer which represents the dex file
         :type filename: string
-        :param raw: True is you would like to use a buffer (optional)
-        :type raw: boolean
 
         :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("DalvikOdexVMFormat ...")
-    d = None
-    if raw == False:
-        d = DalvikOdexVMFormat(read(filename))
-    else:
-        d = DalvikOdexVMFormat(filename)
+    androconf.debug("AnalyzeODex")
 
-    androconf.debug("Export VM to python namespace")
-    d.create_python_export()
+    if not session:
+        session = CONF["SESSION"]
 
-    androconf.debug("VMAnalysis ...")
-    dx = uVMAnalysis(d)
+    with open(filename, "r") as fd:
+        data = fd.read()
 
-    androconf.debug("GVMAnalysis ...")
-    gx = GVMAnalysis(dx, None)
+    return session.addDEY(data)
 
-    d.set_vmanalysis(dx)
-    d.set_gvmanalysis(gx)
-
-    RunDecompiler(d, dx, decompiler)
-
-    androconf.debug("XREF ...")
-    d.create_xref()
-    androconf.debug("DREF ...")
-    d.create_dref()
-
-    return d, dx
-
-
-def RunDecompiler(d, dx, decompiler):
+def RunDecompiler(d, dx, decompiler, session=None):
     """
         Run the decompiler on a specific analysis
 
@@ -176,7 +141,7 @@ def RunDecompiler(d, dx, decompiler):
         d.set_decompiler(DecompilerDAD(d, dx))
 
 
-def AnalyzeElf(filename, raw=False):
+def AnalyzeElf(filename, raw=False, session=None):
     # avoid to install smiasm for everybody
     from androguard.core.binaries.elf import ELF
 
@@ -191,7 +156,7 @@ def AnalyzeElf(filename, raw=False):
     return e
 
 
-def ExportElfToPython(e):
+def ExportElfToPython(e, session=None):
     for function in e.get_functions():
         name = "FUNCTION_" + function.name
         setattr(e, name, function)

@@ -105,6 +105,7 @@ CONF = {
     "MAGIC_PATH_FILE": None,
 
     "DEFAULT_API" : 19,
+    "SESSION" : None,
 }
 
 

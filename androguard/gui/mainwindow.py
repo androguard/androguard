@@ -19,9 +19,9 @@ class MainWindow(QtGui.QMainWindow):
        self.tree: TreeWindow(QTreeWidget) in self.dock
     '''
 
-    def __init__(self, parent=None, input_file=None):
+    def __init__(self, parent=None, session=Session(), input_file=None):
         super(MainWindow, self).__init__(parent)
-        self.session = None
+        self.session = session
 
         self.setupSession()
 
@@ -53,8 +53,6 @@ class MainWindow(QtGui.QMainWindow):
                 "<br>Have fun !</p>")
 
     def setupSession(self):
-        self.session = Session()
-
         self.fileLoadingThread = FileLoadingThread(self.session)
         self.connect(self.fileLoadingThread,
                 QtCore.SIGNAL("loadedFile(bool)"),

@@ -29,6 +29,7 @@ from xml.sax.saxutils import escape
 from zlib import crc32
 import re
 import collections
+import sys
 
 from xml.dom import minidom
 
@@ -131,6 +132,13 @@ def sign_apk(filename, keystore, storepass):
     stdout, stderr = compile.communicate()
 
 
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class FileNotPresent(Error):
+    pass
+
 ######################################################## APK FORMAT ########################################################
 class APK(object):
     """
@@ -201,7 +209,7 @@ class APK(object):
 
                     for item in self.xml[i].getElementsByTagName('uses-permission'):
                         self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
-                    
+
                     #getting details of the declared permissions
                     for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                         d_perm_name = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
@@ -209,7 +217,7 @@ class APK(object):
                         d_perm_description = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
                         d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
                         d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
-                        
+
                         d_perm_details = {
                                 "label" : d_perm_label,
                                 "description" : d_perm_description,
@@ -217,7 +225,7 @@ class APK(object):
                                 "protectionLevel" : d_perm_protectionLevel,
                         }
                         self.declared_permissions[d_perm_name] = d_perm_details
-                    
+
                     self.valid_apk = True
 
         self.get_files_types()
@@ -227,7 +235,7 @@ class APK(object):
         if not string.startswith('@string/'):
             return string
         string_key = string[9:]
-        
+
         res_parser = self.get_android_resources()
         string_value = ''
         for package_name in res_parser.get_packages_names():
@@ -236,7 +244,7 @@ class APK(object):
                 string_value = extracted_values[1]
                 break
         return string_value
-    
+
     def get_AndroidManifest(self):
         """
             Return the Android Manifest XML file
@@ -461,7 +469,7 @@ class APK(object):
         try:
             return self.zip.read(filename)
         except KeyError:
-            return ""
+            raise FileNotPresent(filename)
 
     def get_dex(self):
         """
@@ -469,7 +477,15 @@ class APK(object):
 
             :rtype: string
         """
-        return self.get_file("classes.dex")
+        try:
+            yield self.get_file("classes.dex")
+
+            # Multidex support
+            basename = "classes%d.dex"
+            for i in xrange(2, sys.maxint):
+                yield self.get_file(basename % i)
+        except FileNotPresent:
+            pass
 
     def get_elements(self, tag_name, attribute):
         """
@@ -643,15 +659,15 @@ class APK(object):
     def get_requested_permissions(self):
         """
             Returns all requested permissions.
-            
+
             :rtype: list of strings
         """
         return self.permissions
-    
+
     def get_requested_aosp_permissions(self):
         '''
             Returns requested permissions declared within AOSP project.
-            
+
             :rtype: list of strings
         '''
         aosp_permissions = []
@@ -660,7 +676,7 @@ class APK(object):
             if perm in self.permission_module["AOSP_PERMISSIONS"].keys():
                 aosp_permissions.append(perm)
         return aosp_permissions
-    
+
     def get_requested_aosp_permissions_details(self):
         """
             Returns requested aosp permissions with details.
@@ -679,7 +695,7 @@ class APK(object):
     def get_requested_third_party_permissions(self):
         '''
             Returns list of requested permissions not declared within AOSP project.
-            
+
             :rtype: list of strings
         '''
         third_party_permissions = []
@@ -692,19 +708,19 @@ class APK(object):
     def get_declared_permissions(self):
         '''
             Returns list of the declared permissions.
-            
+
             :rtype: list of strings
         '''
         return self.declared_permissions.keys()
-    
+
     def get_declared_permissions_details(self):
         '''
             Returns declared permissions with the details.
-            
+
             :rtype: dict
         '''
         return self.declared_permissions
-    
+
     def get_max_sdk_version(self):
         """
             Return the android:maxSdkVersion attribute

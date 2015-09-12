@@ -1763,11 +1763,11 @@ class ClassAnalysis(object):
 
 class newVMAnalysis(object):
     def __init__(self, vm):
-        self.vm = vm
+        self.vms = [vm]
         self.classes = {}
         self.strings = {}
 
-        for current_class in self.vm.get_classes():
+        for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
 
     def create_xref(self):
@@ -1776,7 +1776,8 @@ class newVMAnalysis(object):
         instances_class_name = self.classes.keys()
         external_instances = {}
 
-        for current_class in self.vm.get_classes():
+        last_vm = self.vms[-1]
+        for current_class in last_vm.get_classes():
             for current_method in current_class.get_methods():
                 debug("Creating XREF for %s" % current_method)
 
@@ -1790,7 +1791,7 @@ class newVMAnalysis(object):
                     op_value = instruction.get_op_value()
                     if op_value in [0x1c, 0x22]:
                         idx_type = instruction.get_ref_kind()
-                        type_info = self.vm.get_cm_type(idx_type)
+                        type_info = last_vm.get_cm_type(idx_type)
 
                         # Internal xref related to class manipulation
                         if type_info in instances_class_name and type_info != current_class.get_name():
@@ -1806,11 +1807,11 @@ class newVMAnalysis(object):
                     elif ((op_value >= 0x6e and op_value <= 0x72) or
                         (op_value >= 0x74 and op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
-                            method_info = self.vm.get_cm_method(idx_meth)
+                            method_info = last_vm.get_cm_method(idx_meth)
                             if method_info:
                                 class_info = method_info[0]
 
-                                method_item = self.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                                method_item = last_vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
                                 if method_item:
                                     self.classes[current_class.get_name()].AddMXrefTo(current_method, self.classes[class_info], method_item)
                                     self.classes[class_info].AddMXrefFrom(method_item, self.classes[current_class.get_name()], current_method)
@@ -1821,15 +1822,15 @@ class newVMAnalysis(object):
                                         self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
 
                     elif op_value >= 0x1a and op_value <= 0x1b:
-                        string_value = self.vm.get_cm_string(instruction.get_ref_kind())
+                        string_value = last_vm.get_cm_string(instruction.get_ref_kind())
                         if string_value not in self.strings:
                             self.strings[string_value] = StringAnalysis(string_value)
                         self.strings[string_value].AddXrefFrom(self.classes[current_class.get_name()], current_method)
 
                     elif op_value >= 0x52 and op_value <= 0x6d:
                         idx_field = instruction.get_ref_kind()
-                        field_info = self.vm.get_cm_field(idx_field)
-                        field_item = self.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                        field_info = last_vm.get_cm_field(idx_field)
+                        field_item = last_vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
                         if field_item:
                             # read access to a field
                             if (op_value >= 0x52 and op_value <= 0x58) or (op_value >= 0x60 and op_value <= 0x66):
@@ -1841,7 +1842,10 @@ class newVMAnalysis(object):
                     off += instruction.get_length()
 
     def get_method(self, method):
-        return MethodAnalysis( self.vm, method, None )
+        for vm in self.vms:
+            if method in vm.get_methods():
+                return MethodAnalysis(vm, method, None)
+        return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
         print class_name, method_name, method_descriptor
@@ -1852,6 +1856,18 @@ class newVMAnalysis(object):
                     return method
         return None
 
+    def get_method_analysis(self, method):
+        class_analysis = self.get_class_analysis(method.get_class_name())
+        if class_analysis:
+            return class_analysis.get_method_analysis(method)
+        return None
+
+    def get_field_analysis(self, field):
+        class_analysis = self.get_class_analysis(field.get_class_name())
+        if class_analysis:
+            return class_analysis.get_field_analysis(field)
+        return None
+
     def is_class_present(self, class_name):
         return class_name in self.classes
 
@@ -1860,6 +1876,13 @@ class newVMAnalysis(object):
 
     def get_strings_analysis(self):
         return self.strings
+
+    def add(self, vm):
+        self.vms.append(vm)
+
+        for current_class in vm.get_classes():
+            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+
 
 class VMAnalysis(object):
     """

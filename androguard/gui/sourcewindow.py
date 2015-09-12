@@ -193,7 +193,6 @@ class SourceWindow(QtGui.QTextEdit):
         class_ = None
         method_ = None
         t = self.doc.binding[start]
-        print t
 
         if t[0] == 'NAME_METHOD_PROTOTYPE':
             method_ = t[1]
@@ -215,7 +214,6 @@ class SourceWindow(QtGui.QTextEdit):
                 return
 
             method_analysis = class_analysis.get_method_analysis(current_analysis.get_method_by_name(method_class_name, method_name, method_proto))
-            print method_analysis
             if not method_analysis:
                 self.mainwin.showStatus("No xref returned (no method_analysis object).")
                 return
@@ -232,7 +230,6 @@ class SourceWindow(QtGui.QTextEdit):
                 return
 
             field_analysis = class_analysis.get_field_analysis(field_)
-            print field_analysis
             if not field_analysis:
                 self.mainwin.showStatus("No xref returned (no field_analysis object).")
                 return

@@ -43,7 +43,7 @@ from androguard.util import read
 def auto_vm(filename):
     ret = androconf.is_android(filename)
     if ret == 'APK':
-        return dvm.DalvikVMFormat(apk.APK(filename).get_dex())
+        return dvm.DalvikVMFormat(apk.APK(filename).get_dex().next())
     elif ret == 'DEX':
         return dvm.DalvikVMFormat(read(filename))
     elif ret == 'DEY':
@@ -308,6 +308,9 @@ class DvClass(object):
         for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(method.get_source())
+            else:
+                source.append(DvMethod(self.vma.get_method(method)).get_source())
+
         source.append('}\n')
         return ''.join(source)
 
