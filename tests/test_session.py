@@ -4,16 +4,26 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import dvm
-from androguard.core.analysis import analysis
+from androguard import session
 
-class AnalysisTest(unittest.TestCase):
-    def testDex(self):
+class SessionTest(unittest.TestCase):
+    def testSessionDex(self):
+        s = session.Session()
         with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
-            d = dvm.DalvikVMFormat(fd.read())
-            dx = analysis.newVMAnalysis(d)
-            self.assertTrue(dx)
+            s.add("examples/android/TestsAndroguard/bin/classes.dex", fd.read())
+            self.assertEqual(len(s.analyzed_apk), 0)
+            self.assertEqual(len(s.analyzed_files), 1)
+            self.assertEqual(len(s.analyzed_digest), 1)
+            self.assertEqual(len(s.analyzed_dex), 1)
 
+    def testSessionAPK(self):
+        s = session.Session()
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk", "r") as fd:
+            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk", fd.read())
+            self.assertEqual(len(s.analyzed_apk), 1)
+            self.assertEqual(len(s.analyzed_files), 1)
+            self.assertEqual(len(s.analyzed_digest), 2)
+            self.assertEqual(len(s.analyzed_dex), 1)
 
 if __name__ == '__main__':
     unittest.main()
