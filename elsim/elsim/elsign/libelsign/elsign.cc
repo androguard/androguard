@@ -1257,7 +1257,7 @@ static PyMethodDef Elsign_methods[] = {
 
 PyObject *entropy(PyObject *self, PyObject* args)
 {
-    char *input; size_t input_size;
+    char *input = NULL; size_t input_size = 0;
 
     int ok = PyArg_ParseTuple( args, "s#", &input, &input_size );
     if(!ok) return PyInt_FromLong(-1);
