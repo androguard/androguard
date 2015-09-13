@@ -27,25 +27,6 @@ from androguard.session import Session
 
 TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
-                  42,
-                  -42,
-                  0,
-
-                  42,
-                  -42,
-                  0,
-
-                  42.0,
-                  -42.0,
-                  0.0,
-
-                  42.0,
-                  -42.0,
-                  0.0,
-            ],
-}
-
 VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
         -5.0,
         -4,
@@ -144,6 +125,7 @@ VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
         -123456789123456789.555555555,
         -606384730,
         -123456790519087104,
+        -606384730,
         3.5
         ],
 }
@@ -166,7 +148,8 @@ for method in d.get_methods():
     if key not in VALUES:
         continue
 
-    print method.get_class_name(), method.get_name(), method.get_descriptor()
+    print "METHOD", method.get_class_name(), method.get_name(), method.get_descriptor()
+
     code = method.get_code()
     bc = code.get_bc()
 
@@ -176,7 +159,10 @@ for method in d.get_methods():
             i.show(0)
             formatted_operands = i.get_formatted_operands()
             print formatted_operands
-            for f in formatted_operands:
-                test(f, VALUES[ key ].pop(0))
+            if not formatted_operands:
+                VALUES[key].pop(0)
+            else:
+                for f in formatted_operands:
+                    test(f, VALUES[key].pop(0))
 
         idx += i.get_length()
