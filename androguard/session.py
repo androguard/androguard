@@ -55,6 +55,9 @@ class Session(object):
         androconf.debug("added DEX:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
+        if filename not in self.analyzed_files:
+            self.analyzed_files[filename] = []
+
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
@@ -73,6 +76,9 @@ class Session(object):
         androconf.debug("added DEY:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
+        if filename not in self.analyzed_files:
+            self.analyzed_files[filename] = []
+
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 

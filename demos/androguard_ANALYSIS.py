@@ -4,38 +4,33 @@ import sys, hashlib
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL + "./")
 
-from androguard.core.androgen import AndroguardS
-from androguard.core.analysis import analysis
+from androguard.session import Session
 
 OUTPUT = "./output/"
-#TEST  = 'examples/java/test/orig/Test1.class'
-#TEST  = 'examples/java/Demo1/orig/DES.class'
-#TEST  = 'examples/java/Demo1/orig/Util.class'
-#TEST = "apks/DroidDream/tmp/classes.dex"
-#TEST = "./examples/android/TCDiff/bin/classes.dex"
-TEST = "apks/iCalendar.apk"
-#TEST = "apks/adrd/5/8370959.dex"
 
-def display_CFG(a, x, classes):
-    for method in a.get_methods():
-        g = x.get_method( method )
+TEST = "examples/android/TestsAndroguard/bin/TestActivity.apk"
+
+def display_CFG(d, dx, classes):
+    for method in d.get_methods():
+        g = dx.get_method( method )
 
         print method.get_class_name(), method.get_name(), method.get_descriptor()
         for i in g.basic_blocks.get():
             print "\t %s %x %x" % (i.name, i.start, i.end), '[ NEXT = ', ', '.join( "%x-%x-%s" % (j[0], j[1], j[2].get_name()) for j in i.childs ), ']', '[ PREV = ', ', '.join( j[2].get_name() for j in i.fathers ), ']'
 
 
-def display_STRINGS(a, x, classes):
+def display_STRINGS(dx):
     print "STRINGS"
-    for s, _ in x.get_tainted_variables().get_strings():
-        print "String : ", repr(s.get_info())
-        analysis.show_PathVariable( a, s.get_paths() )
+    strings = dx.get_strings_analysis()
+    for s in strings:
+        print s, " --> "
+        print strings[s]
 
-def display_FIELDS(a, x, classes):
+def display_FIELDS(d, dx):
     print "FIELDS"
-    for f, _ in x.get_tainted_variables().get_fields():
-        print "field : ", repr(f.get_info())
-        analysis.show_PathVariable( a, f.get_paths() )
+    for f in d.get_fields():
+        print f
+        print dx.get_field_analysis(f)
 
 def display_PACKAGES(a, x, classes):
     print "CREATED PACKAGES"
@@ -73,27 +68,29 @@ def display_OBJECT_CREATED(a, x, class_name):
     print "Search object", class_name
     analysis.show_Paths( a, x.get_tainted_packages().search_objects( class_name ) )
 
-a = AndroguardS( TEST )
-x = analysis.uVMAnalysis( a.get_vm() )
+s = Session()
+with open(TEST, "r") as fd:
+    s.add(TEST, fd.read())
 
-#print a.get_vm().get_strings()
-print a.get_vm().get_regex_strings( "access" )
-print a.get_vm().get_regex_strings( "(long).*2" )
-print a.get_vm().get_regex_strings( ".*(t\_t).*" )
+a, d, dx = s.get_objects_apk(TEST)
 
-classes = a.get_vm().get_classes_names()
-vm = a.get_vm()
+print d.get_strings()
+print d.get_regex_strings( "access" )
+print d.get_regex_strings( "(long).*2" )
+print d.get_regex_strings( ".*(t\_t).*" )
 
-display_CFG( a, x, classes )
-display_STRINGS( vm, x, classes )
-display_FIELDS( vm, x, classes )
-display_PACKAGES( vm, x, classes )
-display_PACKAGES_IE( vm, x, classes )
-display_PACKAGES_II( vm, x, classes )
-display_PERMISSION( vm, x, classes )
+classes = d.get_classes_names()
 
-display_SEARCH_PACKAGES( a, x, classes, "Landroid/telephony/" )
-display_SEARCH_PACKAGES( a, x, classes, "Ljavax/crypto/" )
-display_SEARCH_METHODS( a, x, classes, "Ljavax/crypto/", "generateSecret", "." )
+display_CFG(d, dx, classes)
+display_STRINGS(dx)
+display_FIELDS(d, dx)
+display_PACKAGES(d, dx)
+display_PACKAGES_IE(d, dx)
+display_PACKAGES_II(d, dx)
+display_PERMISSION(d, dx)
 
-display_OBJECT_CREATED( a, x, "." )
+display_SEARCH_PACKAGES(dx, "Landroid/telephony/")
+display_SEARCH_PACKAGES(dx, "Ljavax/crypto/")
+display_SEARCH_METHODS(dx, "Ljavax/crypto/", "generateSecret", ".")
+
+display_OBJECT_CREATED(dx,  "." )

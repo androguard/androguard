@@ -23,10 +23,8 @@ import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.androgen import AndroguardS
-from androguard.core.analysis import analysis
+from androguard.session import Session
 
-#TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
@@ -158,9 +156,11 @@ def test(got, expected):
     print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
 
 
-a = AndroguardS( TEST_CASE )
+s = Session()
+with open(TEST_CASE, "r") as fd:
+    digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
-for method in a.get_methods():
+for method in d.get_methods():
     key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
 
     if key not in VALUES:
@@ -171,12 +171,12 @@ for method in a.get_methods():
     bc = code.get_bc()
 
     idx = 0
-    for i in bc.get():
-        #print "\t", "%x" % idx, i.get_name(), i.get_operands()
+    for i in bc.get_instructions():
         if "const" in i.get_name():
+            i.show(0)
             formatted_operands = i.get_formatted_operands()
+            print formatted_operands
             for f in formatted_operands:
-#                print i.get_name(), i.get_operands(), i.get_formatted_operands()
-                test( f[1], VALUES[ key ].pop(0) )
+                test(f, VALUES[ key ].pop(0))
 
         idx += i.get_length()

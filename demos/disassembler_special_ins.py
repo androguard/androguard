@@ -5,16 +5,16 @@ import sys, hashlib
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.androgen import AndroguardS
-from androguard.core.analysis import analysis
+from androguard.session import Session
 
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-a = AndroguardS( TEST )
-x = analysis.VMAnalysis( a.get_vm() )
+s = Session()
+with open(TEST, "r") as fd:
+    digest, d, dx = s.addDEX(TEST, fd.read())
 
-for method in a.get_methods():
-    g = x.get_method( method )
+for method in d.get_methods():
+    g = dx.get_method( method )
 
     if method.get_code() == None:
       continue
