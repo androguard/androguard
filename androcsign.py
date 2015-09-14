@@ -28,33 +28,55 @@ from elsim.elsign import dalvik_elsign
 
 from optparse import OptionParser
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-r', '--remove'), 'help' : 'remote the signature', 'nargs' : 1 }
-option_2 = { 'name' : ('-o', '--output'), 'help' : 'output database', 'nargs' : 1 }
-option_3 = { 'name' : ('-l', '--list'), 'help' : 'list signatures in database', 'nargs' : 1 }
-option_4 = { 'name' : ('-c', '--check'), 'help' : 'check signatures in database', 'nargs' : 1 }
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_0 = {
+    'name': ('-i', '--input'),
+    'help': 'file : use this filename',
+    'nargs': 1
+}
+option_1 = {
+    'name': ('-r', '--remove'),
+    'help': 'remote the signature',
+    'nargs': 1
+}
+option_2 = {'name': ('-o', '--output'), 'help': 'output database', 'nargs': 1}
+option_3 = {
+    'name': ('-l', '--list'),
+    'help': 'list signatures in database',
+    'nargs': 1
+}
+option_4 = {
+    'name': ('-c', '--check'),
+    'help': 'check signatures in database',
+    'nargs': 1
+}
+option_5 = {
+    'name': ('-v', '--version'),
+    'help': 'version of the API',
+    'action': 'count'
+}
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
+
 
 def main(options, arguments):
     s = dalvik_elsign.CSignature(pcs=dalvik_elsign.PublicCSignature)
     if options.input != None:
-        ret = s.add_file( read( options.input) )
+        ret = s.add_file(read(options.input))
         if ret != None and options.output != None:
-            s.add_indb( ret, options.output )
+            s.add_indb(ret, options.output)
 
     elif options.list != None:
-        s.list_indb( options.list )
+        s.list_indb(options.list)
 
     elif options.remove != None:
-        s.remove_indb( options.remove, options.output )
+        s.remove_indb(options.remove, options.output)
 
     elif options.check != None:
-        s.check_db( options.check )
+        s.check_db(options.check)
 
     elif options.version != None:
         print "Androcsign version %s" % androconf.ANDROGUARD_VERSION
+
 
 if __name__ == "__main__":
     parser = OptionParser()

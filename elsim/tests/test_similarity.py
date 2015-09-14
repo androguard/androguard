@@ -314,12 +314,6 @@ TESTS = { "ZLIB"        : ZLIB_COMPRESS,
         }
 
 if __name__ == "__main__":
-    try:
-        import psyco
-        psyco.full()
-    except ImportError:
-        pass
-
     n = SIMILARITY( "elsim/similarity/libsimilarity/libsimilarity.so" )
 
     #TestRDTSC( n )

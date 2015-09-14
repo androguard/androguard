@@ -1,6 +1,7 @@
 from PySide import QtCore, QtGui
 from androguard.core import androconf
 
+
 class RenameDialog(QtGui.QDialog):
     '''
         parent: SourceWindow that started the new XrefDialog
@@ -8,7 +9,7 @@ class RenameDialog(QtGui.QDialog):
 
     def __init__(self, parent=None, win=None, element="", info=()):
         super(RenameDialog, self).__init__(parent)
-    
+
         self.sourceWin = parent
         self.info = info
         self.element = element
@@ -36,6 +37,6 @@ class RenameDialog(QtGui.QDialog):
         self.close()
 
     def okClicked(self):
-        self.sourceWin.renameElement(self.element, self.lineEdit.text(), self.info)
+        self.sourceWin.renameElement(self.element, self.lineEdit.text(),
+                                     self.info)
         self.close()
-    

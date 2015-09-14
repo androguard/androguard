@@ -8,6 +8,7 @@ from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 from androguard.misc import save_session, load_session
 
+
 class Session(object):
 
     def __init__(self, export_ipython=False):
@@ -15,13 +16,12 @@ class Session(object):
         self.export_ipython = export_ipython
 
     def save(self, filename):
-        save_session([self.analyzed_files,
-                      self.analyzed_digest,
-                      self.analyzed_apk,
-                      self.analyzed_dex], filename)
+        save_session([self.analyzed_files, self.analyzed_digest,
+                      self.analyzed_apk, self.analyzed_dex], filename)
 
     def load(self, filename):
-        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(filename)
+        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(
+            filename)
 
     def setupObjects(self):
         self.analyzed_files = collections.OrderedDict()
@@ -55,6 +55,9 @@ class Session(object):
         androconf.debug("added DEX:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
+        if filename not in self.analyzed_files:
+            self.analyzed_files[filename] = []
+
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
@@ -73,6 +76,9 @@ class Session(object):
         androconf.debug("added DEY:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
+        if filename not in self.analyzed_files:
+            self.analyzed_files[filename] = []
+
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
@@ -102,13 +108,14 @@ class Session(object):
             digest = hashlib.sha256(raw_data).hexdigest()
             if ret == "APK":
                 apk_digest, apk = self.addAPK(filename, raw_data)
-                dex_files = list(apk.get_dex())
+                dex_files = list(apk.get_all_dex())
 
                 if dex_files:
                     dex_digest, _, dx = self.addDEX(filename, dex_files[0])
                     self.analyzed_apk[digest].append(dex_digest)
                     for i in range(1, len(dex_files)):
-                        dex_digest, _, _ = self.addDEX(filename, dex_files[i], dx)
+                        dex_digest, _, _ = self.addDEX(filename, dex_files[i],
+                                                       dx)
                         self.analyzed_apk[digest].append(dex_digest)
             elif ret == "DEX":
                 self.addDEX(filename, raw_data)
@@ -159,7 +166,8 @@ class Session(object):
     def get_strings(self):
         for digest in self.analyzed_dex:
             d, dx = self.analyzed_dex[digest]
-            yield digest, self.analyzed_digest[digest], dx.get_strings_analysis()
+            yield digest, self.analyzed_digest[digest], dx.get_strings_analysis(
+            )
 
     def get_nb_strings(self):
         nb = 0

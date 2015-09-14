@@ -23,35 +23,36 @@ from dvm_permissions_unformatted import PERMISSIONS
 from permissions_by_hand import PERMISSIONS_BY_HAND
 
 BASIC_TYPES = {
-   "byte" : "B",
-   "char" : "C",
-   "double" : "D",
-   "float" : "F",
-   "int" : "I",
-   "long" : "J",
-   "short" : "S",
-   "boolean" : "B",
-   "void" : "V",
+    "byte": "B",
+    "char": "C",
+    "double": "D",
+    "float": "F",
+    "int": "I",
+    "long": "J",
+    "short": "S",
+    "boolean": "B",
+    "void": "V",
 }
 
 ADVANCED_TYPES = {
-    "String" : "Ljava/lang/String;",
-    "List" : "Ljava/util/List;",
-    "AccountManagerFuture" : "Landroid/accounts/AccountManagerFuture;",
-    "CellLocation" : "Landroid/telephony/CellLocation;",
-    "Uri" : "Landroid/net/Uri;",
-    "Cursor" : "Landroid/database/Cursor;",
-    "Set" : "Ljava/util/Set;",
-    "BluetoothServerSocket" : "Landroid/bluetooth/BluetoothServerSocket;",
-    "BluetoothSocket" : "Landroid/bluetooth/BluetoothSocket;",
-    "DownloadManager.Request" : "Landroid/app/DownloadManager/Request;",
-    "PendingIntent" : "Landroid/app/PendingIntent;",
-    "SmsManager" : "Landroid/telephony/SmsManager;",
-    "Bitmap" : "Landroid/graphics/Bitmap;",
-    "IBinder" : "Landroid/os/IBinder;",
+    "String": "Ljava/lang/String;",
+    "List": "Ljava/util/List;",
+    "AccountManagerFuture": "Landroid/accounts/AccountManagerFuture;",
+    "CellLocation": "Landroid/telephony/CellLocation;",
+    "Uri": "Landroid/net/Uri;",
+    "Cursor": "Landroid/database/Cursor;",
+    "Set": "Ljava/util/Set;",
+    "BluetoothServerSocket": "Landroid/bluetooth/BluetoothServerSocket;",
+    "BluetoothSocket": "Landroid/bluetooth/BluetoothSocket;",
+    "DownloadManager.Request": "Landroid/app/DownloadManager/Request;",
+    "PendingIntent": "Landroid/app/PendingIntent;",
+    "SmsManager": "Landroid/telephony/SmsManager;",
+    "Bitmap": "Landroid/graphics/Bitmap;",
+    "IBinder": "Landroid/os/IBinder;",
 }
 
-def translateDescParams( desc_params ):
+
+def translateDescParams(desc_params):
     desc_params = desc_params.replace(" ", "")
     buff = ""
 
@@ -61,32 +62,33 @@ def translateDescParams( desc_params ):
             if "[" in elem:
                 tab = "[" * string.count(elem, "[")
 
-                elem = elem[ : tab.find("[") - 2 ]
+                elem = elem[:tab.find("[") - 2]
 
             if elem not in BASIC_TYPES:
                 if elem in ADVANCED_TYPES:
-                    buff += tab + ADVANCED_TYPES[ elem ] + " "
+                    buff += tab + ADVANCED_TYPES[elem] + " "
                 else:
                     buff += tab + "L" + elem.replace(".", "/") + "; "
             else:
-                buff += tab + BASIC_TYPES[ elem ] + " "
+                buff += tab + BASIC_TYPES[elem] + " "
 
     buff = buff[:-1]
     return buff
 
-def translateDescReturn( desc_return ):
+
+def translateDescReturn(desc_return):
     buff = ""
     for elem in desc_return.split(" "):
         tab = ""
         if "[" in elem:
             tab = "[" * string.count(elem, "[")
-            elem = elem[ : tab.find("[") - 2 ]
+            elem = elem[:tab.find("[") - 2]
 
         if elem in BASIC_TYPES:
-            buff += tab + BASIC_TYPES[ elem ] + " "
+            buff += tab + BASIC_TYPES[elem] + " "
         else:
             if elem in ADVANCED_TYPES:
-                buff += tab + ADVANCED_TYPES[ elem ] + " "
+                buff += tab + ADVANCED_TYPES[elem] + " "
             else:
                 if "." in elem:
                     buff += tab + "L" + elem.replace(".", "/") + "; "
@@ -94,26 +96,30 @@ def translateDescReturn( desc_return ):
     buff = buff[:-1]
     return buff
 
-def translateToCLASS( desc_params, desc_return ):
+
+def translateToCLASS(desc_params, desc_return):
     print desc_params, desc_return,
 
-    buff = "(" + translateDescParams( desc_params[ desc_params.find("(") + 1 : -1 ] ) + ")" + translateDescReturn( desc_return )
+    buff = "(" + translateDescParams(desc_params[desc_params.find(
+        "(") + 1:-1]) + ")" + translateDescReturn(desc_return)
     print "----->", buff
 
-    return [ desc_params[ : desc_params.find("(") ], buff ]
+    return [desc_params[:desc_params.find("(")], buff]
 
-def translateToCLASS2( constant_name, desc_return ):
-    return [ constant_name, translateDescReturn( desc_return ) ]
 
-PERMISSIONS.update( PERMISSIONS_BY_HAND )
+def translateToCLASS2(constant_name, desc_return):
+    return [constant_name, translateDescReturn(desc_return)]
+
+
+PERMISSIONS.update(PERMISSIONS_BY_HAND)
 
 for perm in PERMISSIONS:
     for package in PERMISSIONS[perm]:
         for element in PERMISSIONS[perm][package]:
             if element[0] == "F":
-                element.extend( translateToCLASS( element[1], element[2] ) )
+                element.extend(translateToCLASS(element[1], element[2]))
             elif element[0] == "C":
-                element.extend( translateToCLASS2( element[1], element[2] ) )
+                element.extend(translateToCLASS2(element[1], element[2]))
 
 with open("./core/bytecodes/api_permissions.py", "w") as fd:
     fd.write("DVM_PERMISSIONS_BY_PERMISSION = {\n")
@@ -125,16 +131,17 @@ with open("./core/bytecodes/api_permissions.py", "w") as fd:
             fd.write("\t\"L%s;\" : [\n" % package.replace(".", "/"))
 
             for element in PERMISSIONS[perm][package]:
-                fd.write("\t\t(\"%s\", \"%s\", \"%s\"),\n" % (element[0], element[-2], element[-1]) )
+                fd.write("\t\t(\"%s\", \"%s\", \"%s\"),\n" %
+                         (element[0], element[-2], element[-1]))
 
             fd.write("\t],\n")
         fd.write("},\n")
     fd.write("}\n\n")
 
-
     fd.write("DVM_PERMISSIONS_BY_ELEMENT = { \n")
     for perm in PERMISSIONS:
         for package in PERMISSIONS[perm]:
             for element in PERMISSIONS[perm][package]:
-                fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(".", "/"), element[-2], element[-1], perm))
+                fd.write("\t\"L%s;-%s-%s\" : \"%s\",\n" % (package.replace(
+                    ".", "/"), element[-2], element[-1], perm))
     fd.write("}\n")

@@ -11,7 +11,7 @@ from androguard.util import read
 TEST = "./examples/dalvik/test/bin/classes.dex"
 TEST_OUTPUT = "./examples/dalvik/test/bin/classes_output.dex"
 
-j = dvm.DalvikVMFormat( read(TEST, binary=False) )
+j = dvm.DalvikVMFormat(read(TEST, binary=False))
 
 # Modify the name of each field
 #for field in j.get_fields():
@@ -23,5 +23,5 @@ j = dvm.DalvikVMFormat( read(TEST, binary=False) )
 #      method.set_name( random.choice( string.letters ) + ''.join([ random.choice(string.letters + string.digits) for i in range(10 - 1) ] ) )
 
 # SAVE CLASS
-with open( TEST_OUTPUT, "w" ) as fd:
-	fd.write( j.save() )
+with open(TEST_OUTPUT, "w") as fd:
+    fd.write(j.save())

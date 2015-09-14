@@ -20,7 +20,7 @@ for method in vm.get_methods():
     mx = vmx.get_method(method)
 
     if method.get_code() == None:
-      continue
+        continue
 
     print method.get_class_name(), method.get_name(), method.get_descriptor()
 

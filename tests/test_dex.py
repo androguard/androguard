@@ -6,9 +6,12 @@ sys.path.append(PATH_INSTALL)
 
 from androguard.core.bytecodes import dvm
 
+
 class DexTest(unittest.TestCase):
+
     def testDex(self):
-        with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
+        with open("examples/android/TestsAndroguard/bin/classes.dex",
+                  "r") as fd:
             d = dvm.DalvikVMFormat(fd.read())
             self.assertTrue(d)
 
@@ -27,9 +30,13 @@ class DexTest(unittest.TestCase):
     def testMultiDex(self):
         pass
 
+
 class InstructionTest(unittest.TestCase):
+
     def testNOP(self):
-        pass
-        
+        instruction = dvm.Instruction10x(None, "\x00\x00")
+        self.assertEqual(instruction.get_name(), "nop")
+
+
 if __name__ == '__main__':
     unittest.main()

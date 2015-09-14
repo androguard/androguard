@@ -24,29 +24,42 @@ from optparse import OptionParser
 from androguard.core.analysis import auto
 from androguard.core.androconf import set_debug
 
-option_0 = {'name': ('-d', '--directory'), 'help': 'directory input', 'nargs': 1}
+option_0 = {
+    'name': ('-d', '--directory'),
+    'help': 'directory input',
+    'nargs': 1
+}
 option_1 = {'name': ('-v', '--verbose'), 'help': 'add debug', 'action': 'count'}
 options = [option_0, option_1]
 
 
 class AndroLog(object):
-  def __init__(self, id_file, filename):
-    self.id_file = id_file
+
+    def __init__(self, id_file, filename):
+        self.id_file = id_file
+        self.filename = filename
+
+
+class AndroTest(auto.DirectoryAndroAnalysis):
+
+    def analysis_app(self, log, apkobj, dexobj, adexobj):
+        print log.id_file, log.filename, apkobj, dexobj, adexobj
 
 
 def main(options, arguments):
-  if options.verbose:
-    set_debug()
+    if options.verbose:
+        set_debug()
 
-  if options.directory:
-    settings = {
-      "my": auto.DirectoryAndroAnalysis(options.directory),
-      "log": AndroLog,
-      "max_fetcher": 3,
-    }
+    if options.directory:
+        settings = {
+            "my": AndroTest(options.directory),
+            "log": AndroLog,
+            "max_fetcher": 3,
+        }
 
-    aa = auto.AndroAuto(settings)
-    aa.go()
+        aa = auto.AndroAuto(settings)
+        aa.go()
+
 
 if __name__ == "__main__":
     parser = OptionParser()

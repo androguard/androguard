@@ -38,16 +38,31 @@ from androguard.misc import *
 from IPython.terminal.embed import InteractiveShellEmbed
 from traitlets.config import Config
 
-option_0 = { 'name' : ('-s', '--shell'), 'help' : 'open an interactive shell to play more easily with objects', 'action' : 'count' }
-option_1 = { 'name' : ('-v', '--version'), 'help' : 'version of Androguard', 'action' : 'count' }
-option_2 = { 'name' : ('-d', '--debug'), 'help' : 'verbose mode', 'action' : 'count' }
+option_0 = {
+    'name': ('-s', '--shell'),
+    'help': 'open an interactive shell to play more easily with objects',
+    'action': 'count'
+}
+option_1 = {
+    'name': ('-v', '--version'),
+    'help': 'version of Androguard',
+    'action': 'count'
+}
+option_2 = {
+    'name': ('-d', '--debug'),
+    'help': 'verbose mode',
+    'action': 'count'
+}
 
 options = [option_0, option_1, option_2]
+
 
 def interact():
     CONF["SESSION"] = Session(True)
     cfg = Config()
-    ipshell = InteractiveShellEmbed(config=cfg, banner1="Androguard version %s" % ANDROGUARD_VERSION)
+    ipshell = InteractiveShellEmbed(
+        config=cfg,
+        banner1="Androguard version %s" % ANDROGUARD_VERSION)
     init_print_colors()
     ipshell()
 
@@ -61,6 +76,7 @@ def main(options, arguments):
 
     elif options.version != None:
         print "Androguard version %s" % androconf.ANDROGUARD_VERSION
+
 
 if __name__ == "__main__":
     parser = OptionParser()

@@ -23,6 +23,7 @@ def patch_dex(m):
                 instructions[0].BBBB = 0x4141
                 i.set_instructions(instructions)
 
+
 FILENAME_INPUT = "./examples/android/Invalid/Invalid.apk"
 FILENAME_OUTPUT = "./toto.apk"
 

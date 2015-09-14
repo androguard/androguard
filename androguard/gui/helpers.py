@@ -9,6 +9,7 @@ class Signature(object):
         self.method = method
         self.descriptor = descriptor
 
+
 def class2func(path):
     ''' Convert a path such as 'Landroid/support/v4/app/ActivityCompat;'
         into a method string 'CLASS_Landroid_support_v4_app_ActivityCompat'
@@ -18,9 +19,11 @@ def class2func(path):
     func = "CLASS_" + path.replace("/", "_").replace("$", "_").replace(";", "")
     return func
 
+
 def method2func(method):
-    return "METHOD_" + method.replace("/", "_").replace("[", "").replace("(",
-            "").replace(")", "").replace(";", "")
+    return "METHOD_" + method.replace("/", "_").replace("[", "").replace(
+        "(", "").replace(")", "").replace(";", "")
+
 
 def classmethod2func(class_, method_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
@@ -30,6 +33,7 @@ def classmethod2func(class_, method_):
 
     return "%s.%s" % (class2func(class_), method2func(method_))
 
+
 def classmethod2display(class_, method_, descriptor_):
     '''Convert two strings such as "Lcom/mwr/example/sieve/AddEntryActivity;" and "onCreate"
     into a beautiful :) string to display Xrefs:
@@ -38,12 +42,14 @@ def classmethod2display(class_, method_, descriptor_):
 
     return "%s -> %s ( %s )" % (class_, method_, descriptor_)
 
+
 def display2classmethod(display):
     '''Opposite of classmethod2display.
     '''
 
     L = display.split(" -> ")
     return (L[0], L[1])
+
 
 def classdot2func(path):
     ''' Convert a path such as 'android.support.v4.app.ActivityCompat'
@@ -53,6 +59,7 @@ def classdot2func(path):
 
     func = "CLASS_L" + path.replace(".", "_").replace("$", "_")
     return func
+
 
 def classdot2class(path):
     ''' Convert a path such as 'android.support.v4.app.ActivityCompat'
@@ -66,9 +73,11 @@ def classdot2class(path):
     new_name = 'L' + path.replace('.', '/') + ';'
     return new_name
 
+
 def proto2methodprotofunc(proto):
     '''Convert a prototype such as 'Ljava/lang/String;'
        into a string 'Ljava_lang_String" so we can append that to the
        'METHOD_myMethod' if its export python name contains the prototype
     '''
-    return proto.replace(' ','').replace('(','').replace('[','').replace(')','').replace('/','_').replace(';','')
+    return proto.replace(' ', '').replace('(', '').replace('[', '').replace(
+        ')', '').replace('/', '_').replace(';', '')

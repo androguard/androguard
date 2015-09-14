@@ -20,6 +20,7 @@ BINDINGS_NAMES = [
     'NAME_CLASS_INSTANCE', 'NAME_VARIABLE', 'NAME_CLASS_EXCEPTION'
 ]
 
+
 class SourceDocument(QtGui.QTextDocument):
     '''QTextDocument associated with the SourceWindow.'''
 
@@ -32,7 +33,7 @@ class SourceDocument(QtGui.QTextDocument):
         font.setFamily("Courier New")
         self.setDefaultFont(font)
 
-        cursor = QtGui.QTextCursor(self) # position=0x0
+        cursor = QtGui.QTextCursor(self)  # position=0x0
         state = 0
         self.binding = {}
 
@@ -43,6 +44,7 @@ class SourceDocument(QtGui.QTextDocument):
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
 
+
 class SourceWindow(QtGui.QTextEdit):
     '''Each tab is implemented as a Source Window class.
        Attributes:
@@ -52,7 +54,14 @@ class SourceWindow(QtGui.QTextEdit):
         class_item: ClassDefItem i.e. class.java object for which we create the tab
     '''
 
-    def __init__(self, parent=None, win=None, current_class=None, current_title=None, current_filename=None, current_digest=None, session=None):
+    def __init__(self,
+                 parent=None,
+                 win=None,
+                 current_class=None,
+                 current_title=None,
+                 current_filename=None,
+                 current_digest=None,
+                 session=None):
         super(SourceWindow, self).__init__(parent)
         androconf.debug("New source tab for: %s" % current_class)
 
@@ -87,11 +96,11 @@ class SourceWindow(QtGui.QTextEdit):
         androconf.debug("Browsing to %s -> %s" % (self.current_class, method))
 
         # debug
-#        if False:
-#            for k, v in self.doc.infoBlocks.items():
-#                print k
-#                print v
-#                print "-"*10
+        #        if False:
+        #            for k, v in self.doc.infoBlocks.items():
+        #                print k
+        #                print v
+        #                print "-"*10
 
     def reload_java_sources(self):
         '''Reload completely the sources by asking Androguard
@@ -104,7 +113,9 @@ class SourceWindow(QtGui.QTextEdit):
         androconf.debug("Getting sources for %s" % self.current_class)
 
         lines = []
-        lines.append(("COMMENTS", [("COMMENT", "/*\n * filename:%s\n * digest:%s\n */\n" % (self.current_filename, self.current_digest))]))
+        lines.append(("COMMENTS", [(
+            "COMMENT", "/*\n * filename:%s\n * digest:%s\n */\n" % (
+                self.current_filename, self.current_digest))]))
         lines.extend(self.current_class.get_source_ext())
 
         #TODO: delete doc when tab is closed? not deleted by "self" :(
@@ -140,7 +151,6 @@ class SourceWindow(QtGui.QTextEdit):
         else:
             androconf.debug("cursor: no selection %s" % cur.selectedText())
 
-
     def keyPressEvent(self, event):
         '''Keyboard shortcuts'''
         key = event.key()
@@ -159,24 +169,36 @@ class SourceWindow(QtGui.QTextEdit):
 
     def CustomContextMenuHandler(self, pos):
         menu = QtGui.QMenu(self)
-        menu.addAction(QtGui.QAction("Xref ...", self,
-                statusTip="List the references where this element is used",
-                triggered=self.actionXref))
-        menu.addAction(QtGui.QAction("Go to...", self,
-                statusTip="Go to element definition",
-                triggered=self.actionGoto))
-        menu.addAction(QtGui.QAction("Rename...", self,
-                statusTip="Rename an element (class, method, ...)",
-                triggered=self.actionRename))
-        menu.addAction(QtGui.QAction("Info...", self,
-                statusTip="Display info of an element (anything useful in the document)",
-                triggered=self.actionInfo))
-        menu.addAction(QtGui.QAction("Reload sources...", self,
-                statusTip="Reload sources (needed when renaming changed other tabs)",
-                triggered=self.reload_java_sources))
-        menu.addAction(QtGui.QAction("Open bytecodes...", self,
-                statusTip="",
-                triggered=self.display_bytecodes))
+        menu.addAction(QtGui.QAction(
+            "Xref ...",
+            self,
+            statusTip="List the references where this element is used",
+            triggered=self.actionXref))
+        menu.addAction(QtGui.QAction("Go to...",
+                                     self,
+                                     statusTip="Go to element definition",
+                                     triggered=self.actionGoto))
+        menu.addAction(
+            QtGui.QAction("Rename...",
+                          self,
+                          statusTip="Rename an element (class, method, ...)",
+                          triggered=self.actionRename))
+        menu.addAction(QtGui.QAction(
+            "Info...",
+            self,
+            statusTip=
+            "Display info of an element (anything useful in the document)",
+            triggered=self.actionInfo))
+        menu.addAction(QtGui.QAction(
+            "Reload sources...",
+            self,
+            statusTip=
+            "Reload sources (needed when renaming changed other tabs)",
+            triggered=self.reload_java_sources))
+        menu.addAction(QtGui.QAction("Open bytecodes...",
+                                     self,
+                                     statusTip="",
+                                     triggered=self.display_bytecodes))
         menu.exec_(QtGui.QCursor.pos())
 
     def actionXref(self):
@@ -184,10 +206,12 @@ class SourceWindow(QtGui.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Xref asked for '%s' (%d, %d)" % (selection, start, end))
+        androconf.debug("Xref asked for '%s' (%d, %d)" %
+                        (selection, start, end))
 
         if start not in self.doc.binding.keys():
-            self.mainwin.showStatus("Xref not available. No info for: '%s'." % selection)
+            self.mainwin.showStatus("Xref not available. No info for: '%s'." %
+                                    selection)
             return
 
         class_ = None
@@ -206,40 +230,58 @@ class SourceWindow(QtGui.QTextEdit):
             method_proto = proto_
             current_analysis = self.session.get_analysis(self.current_class)
 
-            androconf.debug("Found corresponding method: %s %s %s in source file: %s" % (method_class_name, method_name, method_proto, self.current_filename))
+            androconf.debug(
+                "Found corresponding method: %s %s %s in source file: %s" %
+                (method_class_name, method_name, method_proto,
+                 self.current_filename))
 
-            class_analysis = current_analysis.get_class_analysis(self.current_class.get_name())
+            class_analysis = current_analysis.get_class_analysis(
+                self.current_class.get_name())
             if not class_analysis:
-                self.mainwin.showStatus("No xref returned (no class_analysis object).")
+                self.mainwin.showStatus(
+                    "No xref returned (no class_analysis object).")
                 return
 
-            method_analysis = class_analysis.get_method_analysis(current_analysis.get_method_by_name(method_class_name, method_name, method_proto))
+            method_analysis = class_analysis.get_method_analysis(
+                current_analysis.get_method_by_name(method_class_name,
+                                                    method_name, method_proto))
             if not method_analysis:
-                self.mainwin.showStatus("No xref returned (no method_analysis object).")
+                self.mainwin.showStatus(
+                    "No xref returned (no method_analysis object).")
                 return
 
-            xwin = XrefDialogMethod(parent=self.mainwin, win=self.mainwin, current_class=self.current_class, class_analysis=class_analysis, method_analysis=method_analysis)
+            xwin = XrefDialogMethod(parent=self.mainwin,
+                                    win=self.mainwin,
+                                    current_class=self.current_class,
+                                    class_analysis=class_analysis,
+                                    method_analysis=method_analysis)
             xwin.show()
         elif t[0] == 'NAME_FIELD':
             field_ = t[3]
 
             current_analysis = self.session.get_analysis(self.current_class)
-            class_analysis = current_analysis.get_class_analysis(self.current_class.get_name())
+            class_analysis = current_analysis.get_class_analysis(
+                self.current_class.get_name())
             if not class_analysis:
-                self.mainwin.showStatus("No xref returned (no class_analysis object).")
+                self.mainwin.showStatus(
+                    "No xref returned (no class_analysis object).")
                 return
 
             field_analysis = class_analysis.get_field_analysis(field_)
             if not field_analysis:
-                self.mainwin.showStatus("No xref returned (no field_analysis object).")
+                self.mainwin.showStatus(
+                    "No xref returned (no field_analysis object).")
                 return
 
-            xwin = XrefDialogField(parent=self.mainwin, win=self.mainwin, current_class=self.current_class, class_analysis=class_analysis, field_analysis=field_analysis)
+            xwin = XrefDialogField(parent=self.mainwin,
+                                   win=self.mainwin,
+                                   current_class=self.current_class,
+                                   class_analysis=class_analysis,
+                                   field_analysis=field_analysis)
             xwin.show()
         else:
             self.mainwin.showStatus("No xref returned.")
             return
-
 
         #elif t[0] == 'NAME_METHOD_INVOKE':
         #    class_, method_ = t[2].split(' -> ')
@@ -253,18 +295,17 @@ class SourceWindow(QtGui.QTextEdit):
         #    self.mainwin.showStatus("Xref not available. Info ok: '%s' but object not supported." % selection)
         #    return
 
-
-
-
     def actionRename(self):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Rename asked for '%s' (%d, %d)" % (selection, start, end))
+        androconf.debug("Rename asked for '%s' (%d, %d)" %
+                        (selection, start, end))
 
         if start not in self.doc.binding.keys():
-            self.mainwin.showStatus("Rename not available. No info for: '%s'." % selection)
+            self.mainwin.showStatus("Rename not available. No info for: '%s'." %
+                                    selection)
             return
 
         # Double check if we support the renaming for the type of
@@ -275,23 +316,34 @@ class SourceWindow(QtGui.QTextEdit):
             method_ = t[1]
             if method_ == self.title:
                 method_ = 'init'
-            androconf.debug("Found corresponding method: %s -> %s in source file: %s" % (class_, method_, self.current_filename))
+            androconf.debug(
+                "Found corresponding method: %s -> %s in source file: %s" %
+                (class_, method_, self.current_filename))
         elif t[0] == 'NAME_METHOD_INVOKE':
             class_, method_ = t[2].split(' -> ')
             if class_ == 'this':
                 class_ = self.current_class
-            androconf.debug("Found corresponding method: %s -> %s in source file: %s" % (class_, method_, self.current_filename))
+            androconf.debug(
+                "Found corresponding method: %s -> %s in source file: %s" %
+                (class_, method_, self.current_filename))
         elif t[0] == 'NAME_PROTOTYPE':
             class_ = t[2] + '.' + t[1]
-            androconf.debug("Found corresponding class: %s in source file: %s" % (class_, self.current_filename))
+            androconf.debug("Found corresponding class: %s in source file: %s" %
+                            (class_, self.current_filename))
         elif t[0] == 'NAME_FIELD':
             field_ = t[1]
-            androconf.debug("Found corresponding field: %s in source file: %s" % (field_, self.current_filename))
+            androconf.debug("Found corresponding field: %s in source file: %s" %
+                            (field_, self.current_filename))
         else:
-            self.mainwin.showStatus("Rename not available. Info ok: '%s' but object not supported." % selection)
+            self.mainwin.showStatus(
+                "Rename not available. Info ok: '%s' but object not supported."
+                % selection)
             return
 
-        rwin = RenameDialog(parent=self, win=self.mainwin, element=selection, info=(start, end))
+        rwin = RenameDialog(parent=self,
+                            win=self.mainwin,
+                            element=selection,
+                            info=(start, end))
         rwin.show()
 
     def actionGoto(self):
@@ -299,10 +351,12 @@ class SourceWindow(QtGui.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Goto asked for '%s' (%d, %d)" % (selection, start, end))
+        androconf.debug("Goto asked for '%s' (%d, %d)" %
+                        (selection, start, end))
 
         if start not in self.doc.binding.keys():
-            self.mainwin.showStatus("Goto not available. No info for: '%s'." % selection)
+            self.mainwin.showStatus("Goto not available. No info for: '%s'." %
+                                    selection)
             return
 
         t = self.doc.binding[start]
@@ -313,13 +367,18 @@ class SourceWindow(QtGui.QTextEdit):
             else:
                 class_ = classdot2class(class_)
         else:
-            self.mainwin.showStatus("Goto not available. Info ok: '%s' but object not supported." % selection)
+            self.mainwin.showStatus(
+                "Goto not available. Info ok: '%s' but object not supported." %
+                selection)
             return
 
-        androconf.debug("Found corresponding method: %s -> %s in source file: %s" % (class_, method_, self.path))
+        androconf.debug(
+            "Found corresponding method: %s -> %s in source file: %s" %
+            (class_, method_, self.path))
 
         if not self.mainwin.doesClassExist(class_):
-            self.mainwin.showStatus("Goto not available. Class: %s not in database." % class_)
+            self.mainwin.showStatus(
+                "Goto not available. Class: %s not in database." % class_)
             return
 
         self.mainwin.openSourceWindow(class_, method=method_)
@@ -331,7 +390,8 @@ class SourceWindow(QtGui.QTextEdit):
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in self.doc.binding.keys():
-            self.mainwin.showStatus('%s at position: (%d, %d)' % (str(self.doc.binding[start]), start, end))
+            self.mainwin.showStatus('%s at position: (%d, %d)' %
+                                    (str(self.doc.binding[start]), start, end))
         else:
             self.mainwin.showStatus("No info available.")
 
@@ -363,7 +423,8 @@ class SourceWindow(QtGui.QTextEdit):
         '''Called back after a user chose a new name for an element.
         '''
 
-        androconf.debug("Renaming %s into %s in %s" % (oldname, newname, self.current_filename))
+        androconf.debug("Renaming %s into %s in %s" %
+                        (oldname, newname, self.current_filename))
         start, end = info
         try:
             t = self.doc.binding[start]
@@ -373,23 +434,25 @@ class SourceWindow(QtGui.QTextEdit):
 
         # Determine type of the to-be-renamed element and Androguard internal objects
         type_ = None
-        if t[0] == 'NAME_METHOD_PROTOTYPE': # method definition in a class
+        if t[0] == 'NAME_METHOD_PROTOTYPE':  # method definition in a class
             method_ = t[1]
             if method_ == self.title:
                 method_ = 'init'
 
             proto_ = t[2].method.proto
-            androconf.debug("Found: class=%s, method=%s, proto=%s" % (self.current_class, method_, proto_))
+            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+                            (self.current_class, method_, proto_))
             type_ = "METHOD"
-        elif t[0] == 'NAME_METHOD_INVOKE': # method call in a method
+        elif t[0] == 'NAME_METHOD_INVOKE':  # method call in a method
             class_, method_ = t[2].split(' -> ')
             class_ = classdot2class(class_)
             if class_ == 'this':
                 class_ = self.path
             proto_ = proto2methodprotofunc("".join(t[3]) + t[4])
-            androconf.debug("Found: class=%s, method=%s, proto=%s" % (class_, method_, proto_))
+            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+                            (class_, method_, proto_))
             type_ = "METHOD"
-        elif t[0] == 'NAME_PROTOTYPE': # class definition on top of a class
+        elif t[0] == 'NAME_PROTOTYPE':  # class definition on top of a class
             class_ = t[2] + '.' + t[1]
             package_ = t[2]
             androconf.debug("Found: package=%s, class=%s" % (package_, class_))
@@ -398,7 +461,9 @@ class SourceWindow(QtGui.QTextEdit):
             field_item = t[3]
             type_ = "FIELD"
         else:
-            self.mainwin.showStatus("Rename not available. Info found: '%s' but object not supported." % selection)
+            self.mainwin.showStatus(
+                "Rename not available. Info found: '%s' but object not supported."
+                % selection)
             return
 
         # Do the actual renaming
@@ -412,18 +477,18 @@ class SourceWindow(QtGui.QTextEdit):
             method_proto = proto_
             current_analysis = self.session.get_analysis(self.current_class)
 
-
-            method_item = current_analysis.get_method_by_name(method_class_name, method_name, method_proto)
+            method_item = current_analysis.get_method_by_name(
+                method_class_name, method_name, method_proto)
             if not method_item:
                 self.mainwin.showStatus("Impossible to find the method")
                 return
 
-            method_item.set_name(str(newname)) #unicode to ascii
+            method_item.set_name(str(newname))  #unicode to ascii
         elif type_ == "CLASS":
             newname_class = classdot2class(package_ + '.' + newname)
             self.mainwin.showStatus("New name: %s" % newname_class)
-            class_item = self.current_class #getattr(self.mainwin.d, classdot2func(class_))
-            class_item.set_name(str(newname_class)) #unicode to ascii
+            class_item = self.current_class  #getattr(self.mainwin.d, classdot2func(class_))
+            class_item.set_name(str(newname_class))  #unicode to ascii
             self.mainwin.updateDockWithTree()
         elif type_ == 'FIELD':
             if self.field_name_exist(newname):

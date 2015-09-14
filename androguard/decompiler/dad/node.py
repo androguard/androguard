@@ -17,16 +17,22 @@
 
 
 class MakeProperties(type):
+
     def __init__(cls, name, bases, dct):
+
         def _wrap_set(names, name):
+
             def fun(self, value):
                 for field in names:
                     self.__dict__[field] = (name == field) and value
+
             return fun
 
         def _wrap_get(name):
+
             def fun(self):
                 return self.__dict__[name]
+
             return fun
 
         super(MakeProperties, cls).__init__(name, bases, dct)
@@ -39,7 +45,7 @@ class MakeProperties(type):
                     delattr(cls, key)
         for attr in attrs:
             setattr(cls, attr[1:],
-                        property(_wrap_get(attr), _wrap_set(attrs, attr)))
+                    property(_wrap_get(attr), _wrap_set(attrs, attr)))
         cls._attrs = attrs
 
     def __call__(cls, *args, **kwds):
@@ -76,6 +82,7 @@ class NodeType(object):
 
 
 class Node(object):
+
     def __init__(self, name):
         self.name = name
         self.num = 0
@@ -116,6 +123,7 @@ class Node(object):
 
 
 class Interval(object):
+
     def __init__(self, head):
         self.name = 'Interval-%s' % head.name
         self.content = set([head])
@@ -130,7 +138,7 @@ class Interval(object):
             return True
         # If the interval contains intervals, we need to check them
         return any(item in node for node in self.content
-                                if isinstance(node, Interval))
+                   if isinstance(node, Interval))
 
     def add_node(self, node):
         if node in self.content:

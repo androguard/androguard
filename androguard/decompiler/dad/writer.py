@@ -19,19 +19,15 @@ import logging
 from struct import unpack
 from androguard.decompiler.dad.util import get_type
 from androguard.decompiler.dad.opcode_ins import Op
-from androguard.decompiler.dad.instruction import (Constant, ThisParam,
-                                                   BinaryExpression,
-                                                   BaseClass,
-                                                   InstanceExpression,
-                                                   NewInstance,
-                                                   Variable,
-                                                   BinaryCompExpression)
-
+from androguard.decompiler.dad.instruction import (
+    Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
+    NewInstance, Variable, BinaryCompExpression)
 
 logger = logging.getLogger('dad.writer')
 
 
 class Writer(object):
+
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -105,8 +101,14 @@ class Writer(object):
 
     #TODO: prefer this class as write_ind_visit_end that should be deprecated
     # at the end
-    def write_ind_visit_end_ext(self, lhs, before, s, after, rhs=None,
-                                data=None, subsection='UNKNOWN_SUBSECTION'):
+    def write_ind_visit_end_ext(self,
+                                lhs,
+                                before,
+                                s,
+                                after,
+                                rhs=None,
+                                data=None,
+                                subsection='UNKNOWN_SUBSECTION'):
         self.write_ind()
         lhs.visit(self)
         self.write(before + s + after)
@@ -124,7 +126,10 @@ class Writer(object):
                                   exp_rhs.get_int_value() == 1:
                 return self.write_ind_visit_end(lhs, rhs.op * 2, data=rhs)
             return self.write_ind_visit_end(
-                lhs, ' %s= ' % rhs.op, exp_rhs, data=rhs)
+                lhs,
+                ' %s= ' % rhs.op,
+                exp_rhs,
+                data=rhs)
         return self.write_ind_visit_end(lhs, ' = ', rhs, data=rhs)
 
     def visit_ins(self, ins):
@@ -149,22 +154,20 @@ class Writer(object):
             self.write(name)
             self.write_ext(('NAME_METHOD_PROTOTYPE', '%s' % name, self.method))
         else:
-            self.write(
-                '%s %s' % (get_type(self.method.type), self.method.name))
+            self.write('%s %s' % (get_type(self.method.type), self.method.name))
             self.write_ext(
                 ('PROTOTYPE_TYPE', '%s' % get_type(self.method.type)))
             self.write_ext(('SPACE', ' '))
             self.write_ext(
-                ('NAME_METHOD_PROTOTYPE',
-                '%s' % self.method.name, self.method))
+                ('NAME_METHOD_PROTOTYPE', '%s' % self.method.name, self.method))
         params = self.method.lparams
         if 'static' not in access:
             params = params[1:]
         proto = ''
         self.write_ext(('PARENTHESIS_START', '('))
         if self.method.params_type:
-            proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
-                        p_type, param in zip(self.method.params_type, params)])
+            proto = ', '.join(['%s p%s' % (get_type(p_type), param) for p_type,
+                               param in zip(self.method.params_type, params)])
             first = True
             for p_type, param in zip(self.method.params_type, params):
                 if not first:
@@ -173,8 +176,7 @@ class Writer(object):
                     first = False
                 self.write_ext(('ARG_TYPE', '%s' % get_type(p_type)))
                 self.write_ext(('SPACE', ' '))
-                self.write_ext(
-                    ('NAME_ARG', 'p%s' % param, p_type, self.method))
+                self.write_ext(('NAME_ARG', 'p%s' % param, p_type, self.method))
         self.write_ext(('PARENTHESIS_END', ')'))
         self.write('(%s)' % proto)
         if self.graph is None:
@@ -283,7 +285,7 @@ class Writer(object):
         elif follow is not None:
             if cond.true in (follow, self.next_case) or\
                                                 cond.num > cond.true.num:
-                             # or cond.true.num > cond.false.num:
+                # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
@@ -343,7 +345,8 @@ class Writer(object):
             self.inc_ind()
             for case in switch.node_to_case[node]:
                 self.write(
-                    '%scase %d:\n' % (self.space(), case), data="CASE_XX")
+                    '%scase %d:\n' % (self.space(), case),
+                    data="CASE_XX")
             if i + 1 < len(cases):
                 self.next_case = cases[i + 1]
             else:
@@ -414,14 +417,15 @@ class Writer(object):
         if not var.declared:
             var_type = var.get_type() or 'unknownType'
             self.write('%s%s v%s' % (
-                self.space(), get_type(var_type),
-                var.name), data="DECLARATION")
+                self.space(), get_type(var_type), var.name),
+                       data="DECLARATION")
             self.end_ins()
 
     def visit_constant(self, cst):
         if isinstance(cst, basestring):
             return self.write(string(cst), data="CONSTANT_STRING")
-        self.write('%r' % cst, data="CONSTANT_INTEGER")  # INTEGER or also others?
+        self.write('%r' % cst,
+                   data="CONSTANT_INTEGER")  # INTEGER or also others?
 
     def visit_base_class(self, cls, data=None):
         self.write(cls)
@@ -477,8 +481,13 @@ class Writer(object):
 
     def visit_put_instance(self, lhs, name, rhs, data=None):
         self.write_ind_visit_end_ext(
-            lhs, '.', '%s' % name, ' = ', rhs,
-            data=data, subsection='NAME_CLASS_ASSIGNMENT')
+            lhs,
+            '.',
+            '%s' % name,
+            ' = ',
+            rhs,
+            data=data,
+            subsection='NAME_CLASS_ASSIGNMENT')
 
     def visit_new(self, atype, data=None):
         self.write('new %s' % get_type(atype))
@@ -519,8 +528,8 @@ class Writer(object):
             self.write('.%s' % name)
             self.write_ext(('INVOKE', '.'))
             self.write_ext(
-                ('NAME_METHOD_INVOKE',
-                 '%s' % name, call_name, ptype, rtype, base, invokeInstr))
+                ('NAME_METHOD_INVOKE', '%s' % name, call_name, ptype, rtype,
+                 base, invokeInstr))
         self.write('(', data="PARAM_START")
         comma = False
         for arg in args:
@@ -596,8 +605,7 @@ class Writer(object):
         var.declared = True
         var_type = var.get_type() or 'unknownType'
         self.write('%s v%s' % (get_type(var_type), var.name))
-        self.write_ext(
-            ('EXCEPTION_TYPE', '%s' % get_type(var_type), data.type))
+        self.write_ext(('EXCEPTION_TYPE', '%s' % get_type(var_type), data.type))
         self.write_ext(('SPACE', ' '))
         self.write_ext(
             ('NAME_CLASS_EXCEPTION', 'v%s' % var.value(), data.type, data))
