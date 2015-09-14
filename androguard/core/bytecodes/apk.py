@@ -862,14 +862,9 @@ class APK(object):
         try:
             return self.arsc["resources.arsc"]
         except KeyError:
-            try:
-                self.arsc["resources.arsc"] = ARSCParser(self.zip.read(
-                    "resources.arsc"))
-                return self.arsc["resources.arsc"]
-            except KeyError:
-                import traceback
-                traceback.print_exc()
-                return None
+            self.arsc["resources.arsc"] = ARSCParser(self.zip.read(
+                "resources.arsc"))
+            return self.arsc["resources.arsc"]
 
     def get_signature_name(self):
         signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.DSA)$")
