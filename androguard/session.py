@@ -108,7 +108,7 @@ class Session(object):
             digest = hashlib.sha256(raw_data).hexdigest()
             if ret == "APK":
                 apk_digest, apk = self.addAPK(filename, raw_data)
-                dex_files = list(apk.get_dex())
+                dex_files = list(apk.get_all_dex())
 
                 if dex_files:
                     dex_digest, _, dx = self.addDEX(filename, dex_files[0])

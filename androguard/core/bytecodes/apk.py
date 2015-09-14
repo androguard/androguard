@@ -423,7 +423,18 @@ class APK(object):
         """
             Return the raw data of the classes dex file
 
-            :rtype: string
+            :rtype: a string
+        """
+        try:
+            return self.get_file("classes.dex")
+        except FileNotPresent:
+            return ""
+
+    def get_all_dex(self):
+        """
+            Return the raw data of all classes dex files
+
+            :rtype: a generator
         """
         try:
             yield self.get_file("classes.dex")
