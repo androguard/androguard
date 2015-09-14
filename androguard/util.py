@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def read(filename, binary=True):
-	with open(filename, 'rb' if binary else 'r') as f:
-		return f.read()
+    with open(filename, 'rb' if binary else 'r') as f:
+        return f.read()

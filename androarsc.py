@@ -27,13 +27,32 @@ from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.util import read
 
-
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android resources(arsc))', 'nargs' : 1 }
-option_1 = { 'name' : ('-p', '--package'), 'help' : 'select the package (optional)', 'nargs' : 1 }
-option_2 = { 'name' : ('-l', '--locale'), 'help' : 'select the locale (optional)', 'nargs' : 1 }
-option_3 = { 'name' : ('-t', '--type'), 'help' : 'select the type (string, interger, public, ...)', 'nargs' : 1 }
-option_4 = { 'name' : ('-o', '--output'), 'help' : 'filename output', 'nargs' : 1 }
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_0 = {
+    'name': ('-i', '--input'),
+    'help': 'filename input (APK or android resources(arsc))',
+    'nargs': 1
+}
+option_1 = {
+    'name': ('-p', '--package'),
+    'help': 'select the package (optional)',
+    'nargs': 1
+}
+option_2 = {
+    'name': ('-l', '--locale'),
+    'help': 'select the locale (optional)',
+    'nargs': 1
+}
+option_3 = {
+    'name': ('-t', '--type'),
+    'help': 'select the type (string, interger, public, ...)',
+    'nargs': 1
+}
+option_4 = {'name': ('-o', '--output'), 'help': 'filename output', 'nargs': 1}
+option_5 = {
+    'name': ('-v', '--version'),
+    'help': 'version of the API',
+    'action': 'count'
+}
 options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 
@@ -66,7 +85,9 @@ def main(options, arguments):
             ttype = options.type or "public"
             locale = options.locale or '\x00\x00'
 
-            buff = minidom.parseString(getattr(arscobj, "get_" + ttype + "_resources")(package, locale)).toprettyxml()
+            buff = minidom.parseString(getattr(
+                arscobj, "get_" + ttype + "_resources")(package,
+                                                        locale)).toprettyxml()
 
         if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
@@ -77,6 +98,7 @@ def main(options, arguments):
 
     elif options.version != None:
         print "Androarsc version %s" % androconf.ANDROGUARD_VERSION
+
 
 if __name__ == "__main__":
     parser = OptionParser()

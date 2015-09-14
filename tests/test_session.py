@@ -6,10 +6,13 @@ sys.path.append(PATH_INSTALL)
 
 from androguard import session
 
+
 class SessionTest(unittest.TestCase):
+
     def testSessionDex(self):
         s = session.Session()
-        with open("examples/android/TestsAndroguard/bin/classes.dex", "r") as fd:
+        with open("examples/android/TestsAndroguard/bin/classes.dex",
+                  "r") as fd:
             s.add("examples/android/TestsAndroguard/bin/classes.dex", fd.read())
             self.assertEqual(len(s.analyzed_apk), 0)
             self.assertEqual(len(s.analyzed_files), 1)
@@ -18,8 +21,10 @@ class SessionTest(unittest.TestCase):
 
     def testSessionAPK(self):
         s = session.Session()
-        with open("examples/android/TestsAndroguard/bin/TestActivity.apk", "r") as fd:
-            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk", fd.read())
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  "r") as fd:
+            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  fd.read())
             self.assertEqual(len(s.analyzed_apk), 1)
             self.assertEqual(len(s.analyzed_files), 1)
             self.assertEqual(len(s.analyzed_digest), 2)
@@ -27,9 +32,12 @@ class SessionTest(unittest.TestCase):
 
     def testSessionSave(self):
         s = session.Session()
-        with open("examples/android/TestsAndroguard/bin/TestActivity.apk", "r") as fd:
-            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk", fd.read())
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  "r") as fd:
+            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  fd.read())
             s.save("test_session")
+
 
 if __name__ == '__main__':
     unittest.main()

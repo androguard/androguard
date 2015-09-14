@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-
 '''Androguard Gui'''
 
 import argparse
@@ -13,7 +12,9 @@ from androguard.misc import init_print_colors
 from PySide import QtCore, QtGui
 from threading import Thread
 
+
 class IpythonConsole(Thread):
+
     def __init__(self):
         Thread.__init__(self)
 
@@ -27,6 +28,7 @@ class IpythonConsole(Thread):
             banner1="Androguard version %s" % androconf.ANDROGUARD_VERSION)
         init_print_colors()
         ipshell()
+
 
 if __name__ == '__main__':
 

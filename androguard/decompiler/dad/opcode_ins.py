@@ -18,25 +18,18 @@
 import logging
 from struct import pack, unpack
 import androguard.decompiler.dad.util as util
-from androguard.decompiler.dad.instruction import (ArrayLengthExpression,
-                            ArrayLoadExpression, ArrayStoreInstruction,
-                            AssignExpression, BaseClass, BinaryCompExpression,
-                            BinaryExpression, BinaryExpression2Addr,
-                            BinaryExpressionLit, CastExpression,
-                            CheckCastExpression, ConditionalExpression,
-                            ConditionalZExpression, Constant,
-                            FillArrayExpression, FilledArrayExpression,
-                            InstanceExpression, InstanceInstruction,
-                            InvokeInstruction, InvokeDirectInstruction,
-                            InvokeRangeInstruction, InvokeStaticInstruction,
-                            MonitorEnterExpression, MonitorExitExpression,
-                            MoveExceptionExpression, MoveExpression,
-                            MoveResultExpression, NewArrayExpression,
-                            NewInstance, NopExpression, ThrowExpression,
-                            Variable, ReturnInstruction, StaticExpression,
-                            StaticInstruction, SwitchExpression, ThisParam,
-                            UnaryExpression)
-
+from androguard.decompiler.dad.instruction import (
+    ArrayLengthExpression, ArrayLoadExpression, ArrayStoreInstruction,
+    AssignExpression, BaseClass, BinaryCompExpression, BinaryExpression,
+    BinaryExpression2Addr, BinaryExpressionLit, CastExpression,
+    CheckCastExpression, ConditionalExpression, ConditionalZExpression,
+    Constant, FillArrayExpression, FilledArrayExpression, InstanceExpression,
+    InstanceInstruction, InvokeInstruction, InvokeDirectInstruction,
+    InvokeRangeInstruction, InvokeStaticInstruction, MonitorEnterExpression,
+    MonitorExitExpression, MoveExceptionExpression, MoveExpression,
+    MoveResultExpression, NewArrayExpression, NewInstance, NopExpression,
+    ThrowExpression, Variable, ReturnInstruction, StaticExpression,
+    StaticInstruction, SwitchExpression, ThisParam, UnaryExpression)
 
 logger = logging.getLogger('dad.opcode_ins')
 
@@ -101,14 +94,14 @@ def assign_cast_exp(val_a, val_b, val_op, op_type, vmap):
 
 def assign_binary_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b, reg_c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b,
-                                                    reg_c, op_type))
+    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b, reg_c,
+                                                    op_type))
 
 
 def assign_binary_2addr_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
-    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a,
-                                                         reg_b, op_type))
+    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
+                                                         op_type))
 
 
 def assign_lit(op_type, val_cst, val_a, val_b, vmap):
@@ -258,8 +251,8 @@ def const(ins, vmap):
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
 def consthigh16(ins, vmap):
     logger.debug('ConstHigh16 : %s', ins.get_output())
-    value = unpack('=f', pack('=i', ins.BBBB<<16))[0]
-    cst = Constant(value, 'I', ins.BBBB<<16)
+    value = unpack('=f', pack('=i', ins.BBBB << 16))[0]
+    cst = Constant(value, 'I', ins.BBBB << 16)
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -290,8 +283,7 @@ def constwide(ins, vmap):
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
 def constwidehigh16(ins, vmap):
     logger.debug('ConstWideHigh16 : %s', ins.get_output())
-    value = unpack('=d',
-                    '\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
+    value = unpack('=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
     cst = Constant(value, 'D', ins.BBBB)
     return assign_const(ins.AA, cst, vmap)
 
@@ -313,8 +305,9 @@ def conststringjumbo(ins, vmap):
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     logger.debug('ConstClass : %s', ins.get_output())
-    cst = Constant(util.get_type(ins.get_string()), 'Ljava/lang/Class;',
-        descriptor=ins.get_string())
+    cst = Constant(util.get_type(ins.get_string()),
+                   'Ljava/lang/Class;',
+                   descriptor=ins.get_string())
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -336,8 +329,9 @@ def checkcast(ins, vmap):
     logger.debug('CheckCast: %s', ins.get_output())
     cast_type = util.get_type(ins.get_translated_kind())
     cast_var = get_variables(vmap, ins.AA)
-    cast_expr = CheckCastExpression(cast_var, cast_type,
-        descriptor=ins.get_translated_kind())
+    cast_expr = CheckCastExpression(cast_var,
+                                    cast_type,
+                                    descriptor=ins.get_translated_kind())
     return AssignExpression(cast_var, cast_expr)
 
 
@@ -346,7 +340,7 @@ def instanceof(ins, vmap):
     logger.debug('InstanceOf : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     reg_c = BaseClass(util.get_type(ins.get_translated_kind()),
-        descriptor=ins.get_translated_kind())
+                      descriptor=ins.get_translated_kind())
     exp = BinaryExpression('instanceof', reg_b, reg_c, 'Z')
     return AssignExpression(reg_a, exp)
 
@@ -377,8 +371,7 @@ def newarray(ins, vmap):
 # filled-new-array {vD, vE, vF, vG, vA} ( 4b each )
 def fillednewarray(ins, vmap, ret):
     logger.debug('FilledNewArray : %s', ins.get_output())
-    c, d, e, f, g = get_variables(vmap, ins.C, ins.D,
-                                  ins.E, ins.F, ins.G)
+    c, d, e, f, g = get_variables(vmap, ins.C, ins.D, ins.E, ins.F, ins.G)
     array_type = ins.cm.get_type(ins.BBBB)
     exp = FilledArrayExpression(ins.A, array_type, [c, d, e, f, g][:ins.A])
     return AssignExpression(ret, exp)
@@ -899,8 +892,8 @@ def invokevirtual(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, args, method.get_triple())
+    exp = InvokeInstruction(cls_name, name, c, ret_type, param_type, args,
+                            method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -916,8 +909,8 @@ def invokesuper(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     superclass = BaseClass('super')
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, superclass, ret_type,
-                            param_type, args, method.get_triple())
+    exp = InvokeInstruction(cls_name, name, superclass, ret_type, param_type,
+                            args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -940,8 +933,8 @@ def invokedirect(ins, vmap, ret):
             ret.set_to(base)
     else:
         returned = ret.new()
-    exp = InvokeDirectInstruction(cls_name, name, base, ret_type,
-                            param_type, args, method.get_triple())
+    exp = InvokeDirectInstruction(cls_name, name, base, ret_type, param_type,
+                                  args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -957,8 +950,8 @@ def invokestatic(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                  param_type, args, method.get_triple())
+    exp = InvokeStaticInstruction(cls_name, name, base, ret_type, param_type,
+                                  args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -974,8 +967,8 @@ def invokeinterface(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, c, ret_type,
-                            param_type, args, method.get_triple())
+    exp = InvokeInstruction(cls_name, name, c, ret_type, param_type, args,
+                            method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -991,9 +984,8 @@ def invokevirtualrange(ins, vmap, ret):
     this_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                 param_type, [this_arg] + args,
-                                 method.get_triple())
+    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
+                                 [this_arg] + args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1014,9 +1006,8 @@ def invokesuperrange(ins, vmap, ret):
         returned = base
         ret.set_to(base)
     superclass = BaseClass('super')
-    exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [superclass] + args,
-                                method.get_triple())
+    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
+                                 [superclass] + args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1037,9 +1028,8 @@ def invokedirectrange(ins, vmap, ret):
     else:
         returned = base
         ret.set_to(base)
-    exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [this_arg] + args,
-                                method.get_triple())
+    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
+                                 [this_arg] + args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1055,8 +1045,8 @@ def invokestaticrange(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeStaticInstruction(cls_name, name, base, ret_type,
-                                param_type, args, method.get_triple())
+    exp = InvokeStaticInstruction(cls_name, name, base, ret_type, param_type,
+                                  args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1072,9 +1062,8 @@ def invokeinterfacerange(ins, vmap, ret):
     base_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeRangeInstruction(cls_name, name, ret_type,
-                                param_type, [base_arg] + args,
-                                method.get_triple())
+    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
+                                 [base_arg] + args, method.get_triple())
     return AssignExpression(returned, exp)
 
 
@@ -1718,261 +1707,248 @@ def ushrintlit8(ins, vmap):
     logger.debug('UShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
+
 INSTRUCTION_SET = [
     # 0x00
-    nop,               # nop
-    move,              # move
-    movefrom16,        # move/from16
-    move16,            # move/16
-    movewide,          # move-wide
-    movewidefrom16,    # move-wide/from16
-    movewide16,        # move-wide/16
-    moveobject,        # move-object
+    nop,  # nop
+    move,  # move
+    movefrom16,  # move/from16
+    move16,  # move/16
+    movewide,  # move-wide
+    movewidefrom16,  # move-wide/from16
+    movewide16,  # move-wide/16
+    moveobject,  # move-object
     moveobjectfrom16,  # move-object/from16
-    moveobject16,      # move-object/16
-    moveresult,        # move-result
-    moveresultwide,    # move-result-wide
+    moveobject16,  # move-object/16
+    moveresult,  # move-result
+    moveresultwide,  # move-result-wide
     moveresultobject,  # move-result-object
-    moveexception,     # move-exception
-    returnvoid,        # return-void
-    return_reg,        # return
-
+    moveexception,  # move-exception
+    returnvoid,  # return-void
+    return_reg,  # return
     # 0x10
-    returnwide,        # return-wide
-    returnobject,      # return-object
-    const4,            # const/4
-    const16,           # const/16
-    const,             # const
-    consthigh16,       # const/high16
-    constwide16,       # const-wide/16
-    constwide32,       # const-wide/32
-    constwide,         # const-wide
-    constwidehigh16,   # const-wide/high16
-    conststring,       # const-string
+    returnwide,  # return-wide
+    returnobject,  # return-object
+    const4,  # const/4
+    const16,  # const/16
+    const,  # const
+    consthigh16,  # const/high16
+    constwide16,  # const-wide/16
+    constwide32,  # const-wide/32
+    constwide,  # const-wide
+    constwidehigh16,  # const-wide/high16
+    conststring,  # const-string
     conststringjumbo,  # const-string/jumbo
-    constclass,        # const-class
-    monitorenter,      # monitor-enter
-    monitorexit,       # monitor-exit
-    checkcast,         # check-cast
-
+    constclass,  # const-class
+    monitorenter,  # monitor-enter
+    monitorexit,  # monitor-exit
+    checkcast,  # check-cast
     # 0x20
-    instanceof,           # instance-of
-    arraylength,          # array-length
-    newinstance,          # new-instance
-    newarray,             # new-array
-    fillednewarray,       # filled-new-array
+    instanceof,  # instance-of
+    arraylength,  # array-length
+    newinstance,  # new-instance
+    newarray,  # new-array
+    fillednewarray,  # filled-new-array
     fillednewarrayrange,  # filled-new-array/range
-    fillarraydata,        # fill-array-data
-    throw,                # throw
-    goto,                 # goto
-    goto16,               # goto/16
-    goto32,               # goto/32
-    packedswitch,         # packed-switch
-    sparseswitch,         # sparse-switch
-    cmplfloat,            # cmpl-float
-    cmpgfloat,            # cmpg-float
-    cmpldouble,           # cmpl-double
-
+    fillarraydata,  # fill-array-data
+    throw,  # throw
+    goto,  # goto
+    goto16,  # goto/16
+    goto32,  # goto/32
+    packedswitch,  # packed-switch
+    sparseswitch,  # sparse-switch
+    cmplfloat,  # cmpl-float
+    cmpgfloat,  # cmpg-float
+    cmpldouble,  # cmpl-double
     # 0x30
     cmpgdouble,  # cmpg-double
-    cmplong,     # cmp-long
-    ifeq,        # if-eq
-    ifne,        # if-ne
-    iflt,        # if-lt
-    ifge,        # if-ge
-    ifgt,        # if-gt
-    ifle,        # if-le
-    ifeqz,       # if-eqz
-    ifnez,       # if-nez
-    ifltz,       # if-ltz
-    ifgez,       # if-gez
-    ifgtz,       # if-gtz
-    iflez,       # if-l
-    nop,         # unused
-    nop,         # unused
-
+    cmplong,  # cmp-long
+    ifeq,  # if-eq
+    ifne,  # if-ne
+    iflt,  # if-lt
+    ifge,  # if-ge
+    ifgt,  # if-gt
+    ifle,  # if-le
+    ifeqz,  # if-eqz
+    ifnez,  # if-nez
+    ifltz,  # if-ltz
+    ifgez,  # if-gez
+    ifgtz,  # if-gtz
+    iflez,  # if-l
+    nop,  # unused
+    nop,  # unused
     # 0x40
-    nop,          # unused
-    nop,          # unused
-    nop,          # unused
-    nop,          # unused
-    aget,         # aget
-    agetwide,     # aget-wide
-    agetobject,   # aget-object
+    nop,  # unused
+    nop,  # unused
+    nop,  # unused
+    nop,  # unused
+    aget,  # aget
+    agetwide,  # aget-wide
+    agetobject,  # aget-object
     agetboolean,  # aget-boolean
-    agetbyte,     # aget-byte
-    agetchar,     # aget-char
-    agetshort,    # aget-short
-    aput,         # aput
-    aputwide,     # aput-wide
-    aputobject,   # aput-object
+    agetbyte,  # aget-byte
+    agetchar,  # aget-char
+    agetshort,  # aget-short
+    aput,  # aput
+    aputwide,  # aput-wide
+    aputobject,  # aput-object
     aputboolean,  # aput-boolean
-    aputbyte,     # aput-byte
-
+    aputbyte,  # aput-byte
     # 0x50
-    aputchar,     # aput-char
-    aputshort,    # aput-short
-    iget,         # iget
-    igetwide,     # iget-wide
-    igetobject,   # iget-object
+    aputchar,  # aput-char
+    aputshort,  # aput-short
+    iget,  # iget
+    igetwide,  # iget-wide
+    igetobject,  # iget-object
     igetboolean,  # iget-boolean
-    igetbyte,     # iget-byte
-    igetchar,     # iget-char
-    igetshort,    # iget-short
-    iput,         # iput
-    iputwide,     # iput-wide
-    iputobject,   # iput-object
+    igetbyte,  # iget-byte
+    igetchar,  # iget-char
+    igetshort,  # iget-short
+    iput,  # iput
+    iputwide,  # iput-wide
+    iputobject,  # iput-object
     iputboolean,  # iput-boolean
-    iputbyte,     # iput-byte
-    iputchar,     # iput-char
-    iputshort,    # iput-short
-
+    iputbyte,  # iput-byte
+    iputchar,  # iput-char
+    iputshort,  # iput-short
     # 0x60
-    sget,           # sget
-    sgetwide,       # sget-wide
-    sgetobject,     # sget-object
-    sgetboolean,    # sget-boolean
-    sgetbyte,       # sget-byte
-    sgetchar,       # sget-char
-    sgetshort,      # sget-short
-    sput,           # sput
-    sputwide,       # sput-wide
-    sputobject,     # sput-object
-    sputboolean,    # sput-boolean
-    sputbyte,       # sput-byte
-    sputchar,       # sput-char
-    sputshort,      # sput-short
+    sget,  # sget
+    sgetwide,  # sget-wide
+    sgetobject,  # sget-object
+    sgetboolean,  # sget-boolean
+    sgetbyte,  # sget-byte
+    sgetchar,  # sget-char
+    sgetshort,  # sget-short
+    sput,  # sput
+    sputwide,  # sput-wide
+    sputobject,  # sput-object
+    sputboolean,  # sput-boolean
+    sputbyte,  # sput-byte
+    sputchar,  # sput-char
+    sputshort,  # sput-short
     invokevirtual,  # invoke-virtual
-    invokesuper,    # invoke-super
-
+    invokesuper,  # invoke-super
     # 0x70
-    invokedirect,          # invoke-direct
-    invokestatic,          # invoke-static
-    invokeinterface,       # invoke-interface
-    nop,                   # unused
-    invokevirtualrange,    # invoke-virtual/range
-    invokesuperrange,      # invoke-super/range
-    invokedirectrange,     # invoke-direct/range
-    invokestaticrange,     # invoke-static/range
+    invokedirect,  # invoke-direct
+    invokestatic,  # invoke-static
+    invokeinterface,  # invoke-interface
+    nop,  # unused
+    invokevirtualrange,  # invoke-virtual/range
+    invokesuperrange,  # invoke-super/range
+    invokedirectrange,  # invoke-direct/range
+    invokestaticrange,  # invoke-static/range
     invokeinterfacerange,  # invoke-interface/range
-    nop,                   # unused
-    nop,                   # unused
-    negint,                # neg-int
-    notint,                # not-int
-    neglong,               # neg-long
-    notlong,               # not-long
-    negfloat,              # neg-float
-
+    nop,  # unused
+    nop,  # unused
+    negint,  # neg-int
+    notint,  # not-int
+    neglong,  # neg-long
+    notlong,  # not-long
+    negfloat,  # neg-float
     # 0x80
-    negdouble,      # neg-double
-    inttolong,      # int-to-long
-    inttofloat,     # int-to-float
-    inttodouble,    # int-to-double
-    longtoint,      # long-to-int
-    longtofloat,    # long-to-float
-    longtodouble,   # long-to-double
-    floattoint,     # float-to-int
-    floattolong,    # float-to-long
+    negdouble,  # neg-double
+    inttolong,  # int-to-long
+    inttofloat,  # int-to-float
+    inttodouble,  # int-to-double
+    longtoint,  # long-to-int
+    longtofloat,  # long-to-float
+    longtodouble,  # long-to-double
+    floattoint,  # float-to-int
+    floattolong,  # float-to-long
     floattodouble,  # float-to-double
-    doubletoint,    # double-to-int
-    doubletolong,   # double-to-long
+    doubletoint,  # double-to-int
+    doubletolong,  # double-to-long
     doubletofloat,  # double-to-float
-    inttobyte,      # int-to-byte
-    inttochar,      # int-to-char
-    inttoshort,     # int-to-short
-
+    inttobyte,  # int-to-byte
+    inttochar,  # int-to-char
+    inttoshort,  # int-to-short
     # 0x90
-    addint,   # add-int
-    subint,   # sub-int
-    mulint,   # mul-int
-    divint,   # div-int
-    remint,   # rem-int
-    andint,   # and-int
-    orint,    # or-int
-    xorint,   # xor-int
-    shlint,   # shl-int
-    shrint,   # shr-int
+    addint,  # add-int
+    subint,  # sub-int
+    mulint,  # mul-int
+    divint,  # div-int
+    remint,  # rem-int
+    andint,  # and-int
+    orint,  # or-int
+    xorint,  # xor-int
+    shlint,  # shl-int
+    shrint,  # shr-int
     ushrint,  # ushr-int
     addlong,  # add-long
     sublong,  # sub-long
     mullong,  # mul-long
     divlong,  # div-long
     remlong,  # rem-long
-
     # 0xa0
-    andlong,    # and-long
-    orlong,     # or-long
-    xorlong,    # xor-long
-    shllong,    # shl-long
-    shrlong,    # shr-long
-    ushrlong,   # ushr-long
-    addfloat,   # add-float
-    subfloat,   # sub-float
-    mulfloat,   # mul-float
-    divfloat,   # div-float
-    remfloat,   # rem-float
+    andlong,  # and-long
+    orlong,  # or-long
+    xorlong,  # xor-long
+    shllong,  # shl-long
+    shrlong,  # shr-long
+    ushrlong,  # ushr-long
+    addfloat,  # add-float
+    subfloat,  # sub-float
+    mulfloat,  # mul-float
+    divfloat,  # div-float
+    remfloat,  # rem-float
     adddouble,  # add-double
     subdouble,  # sub-double
     muldouble,  # mul-double
     divdouble,  # div-double
     remdouble,  # rem-double
-
     # 0xb0
-    addint2addr,   # add-int/2addr
-    subint2addr,   # sub-int/2addr
-    mulint2addr,   # mul-int/2addr
-    divint2addr,   # div-int/2addr
-    remint2addr,   # rem-int/2addr
-    andint2addr,   # and-int/2addr
-    orint2addr,    # or-int/2addr
-    xorint2addr,   # xor-int/2addr
-    shlint2addr,   # shl-int/2addr
-    shrint2addr,   # shr-int/2addr
+    addint2addr,  # add-int/2addr
+    subint2addr,  # sub-int/2addr
+    mulint2addr,  # mul-int/2addr
+    divint2addr,  # div-int/2addr
+    remint2addr,  # rem-int/2addr
+    andint2addr,  # and-int/2addr
+    orint2addr,  # or-int/2addr
+    xorint2addr,  # xor-int/2addr
+    shlint2addr,  # shl-int/2addr
+    shrint2addr,  # shr-int/2addr
     ushrint2addr,  # ushr-int/2addr
     addlong2addr,  # add-long/2addr
     sublong2addr,  # sub-long/2addr
     mullong2addr,  # mul-long/2addr
     divlong2addr,  # div-long/2addr
     remlong2addr,  # rem-long/2addr
-
     # 0xc0
-    andlong2addr,    # and-long/2addr
-    orlong2addr,     # or-long/2addr
-    xorlong2addr,    # xor-long/2addr
-    shllong2addr,    # shl-long/2addr
-    shrlong2addr,    # shr-long/2addr
-    ushrlong2addr,   # ushr-long/2addr
-    addfloat2addr,   # add-float/2addr
-    subfloat2addr,   # sub-float/2addr
-    mulfloat2addr,   # mul-float/2addr
-    divfloat2addr,   # div-float/2addr
-    remfloat2addr,   # rem-float/2addr
+    andlong2addr,  # and-long/2addr
+    orlong2addr,  # or-long/2addr
+    xorlong2addr,  # xor-long/2addr
+    shllong2addr,  # shl-long/2addr
+    shrlong2addr,  # shr-long/2addr
+    ushrlong2addr,  # ushr-long/2addr
+    addfloat2addr,  # add-float/2addr
+    subfloat2addr,  # sub-float/2addr
+    mulfloat2addr,  # mul-float/2addr
+    divfloat2addr,  # div-float/2addr
+    remfloat2addr,  # rem-float/2addr
     adddouble2addr,  # add-double/2addr
     subdouble2addr,  # sub-double/2addr
     muldouble2addr,  # mul-double/2addr
     divdouble2addr,  # div-double/2addr
     remdouble2addr,  # rem-double/2addr
-
     # 0xd0
     addintlit16,  # add-int/lit16
-    rsubint,      # rsub-int
+    rsubint,  # rsub-int
     mulintlit16,  # mul-int/lit16
     divintlit16,  # div-int/lit16
     remintlit16,  # rem-int/lit16
     andintlit16,  # and-int/lit16
-    orintlit16,   # or-int/lit16
+    orintlit16,  # or-int/lit16
     xorintlit16,  # xor-int/lit16
-    addintlit8,   # add-int/lit8
+    addintlit8,  # add-int/lit8
     rsubintlit8,  # rsub-int/lit8
-    mulintlit8,   # mul-int/lit8
-    divintlit8,   # div-int/lit8
-    remintlit8,   # rem-int/lit8
-    andintlit8,   # and-int/lit8
-    orintlit8,    # or-int/lit8
-    xorintlit8,   # xor-int/lit8
-
+    mulintlit8,  # mul-int/lit8
+    divintlit8,  # div-int/lit8
+    remintlit8,  # rem-int/lit8
+    andintlit8,  # and-int/lit8
+    orintlit8,  # or-int/lit8
+    xorintlit8,  # xor-int/lit8
     # 0xe0
-    shlintlit8,   # shl-int/lit8
-    shrintlit8,   # shr-int/lit8
+    shlintlit8,  # shl-int/lit8
+    shrintlit8,  # shr-int/lit8
     ushrintlit8,  # ushr-int/lit8
 ]

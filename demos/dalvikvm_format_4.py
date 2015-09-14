@@ -12,14 +12,14 @@ from androguard.util import read
 
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
-j = dvm.DalvikVMFormat( read(TEST, binary=False) )
-jx = analysis.VMAnalysis( j )
+j = dvm.DalvikVMFormat(read(TEST, binary=False))
+jx = analysis.VMAnalysis(j)
 
 #d = decompiler.DecompilerDex2Jad( j )
 #d = decompiler.DecompilerDed( j )
-d = decompiler.DecompilerDAD( j, jx )
+d = decompiler.DecompilerDAD(j, jx)
 
-j.set_decompiler( d )
+j.set_decompiler(d)
 
 # SHOW METHODS
 for i in j.get_methods():
