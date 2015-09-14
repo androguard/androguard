@@ -224,9 +224,11 @@ class DefaultAndroAnalysis(object):
       :param log: an object which corresponds to a unique app
       :param dexobj: a :class:`DalvikVMFormat` object
 
-      :rytpe: a :class:`VMAnalysis` object
+      :rytpe: a :class:`newVMAnalysis` object
     """
-    return analysis.uVMAnalysis(dexobj)
+    vm_analysis = analysis.newVMAnalysis(dexobj)
+    vm_analysis.create_xref()
+    return vm_analysis
 
   def analysis_axml(self, log, axmlobj):
     """

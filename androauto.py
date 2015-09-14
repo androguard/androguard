@@ -32,7 +32,11 @@ options = [option_0, option_1]
 class AndroLog(object):
   def __init__(self, id_file, filename):
     self.id_file = id_file
+    self.filename = filename
 
+class AndroTest(auto.DirectoryAndroAnalysis):
+    def analysis_app(self, log, apkobj, dexobj, adexobj):
+        print log.id_file, log.filename, apkobj, dexobj, adexobj
 
 def main(options, arguments):
   if options.verbose:
@@ -40,7 +44,7 @@ def main(options, arguments):
 
   if options.directory:
     settings = {
-      "my": auto.DirectoryAndroAnalysis(options.directory),
+      "my": AndroTest(options.directory),
       "log": AndroLog,
       "max_fetcher": 3,
     }
