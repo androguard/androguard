@@ -69,7 +69,7 @@ class ChilkatZip(object):
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None:
+        while e is not None:
             e.get_FileName(filename)
             self.files.append(filename.getString())
             e = e.NextEntry()
@@ -79,7 +79,7 @@ class ChilkatZip(object):
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None:
+        while e is not None:
             e.get_FileName(filename)
 
             if re.match(patterns, filename.getString()) != None:
@@ -91,7 +91,7 @@ class ChilkatZip(object):
 
     def remplace_file(self, filename, buff):
         entry = self.zip.GetEntryByName(filename)
-        if entry != None:
+        if entry is not None:
             obj = chilkat.CkByteData()
             obj.append2(buff, len(buff))
             return entry.ReplaceData(obj)
@@ -177,7 +177,7 @@ class APK(object):
 
         self.magic_file = magic_file
 
-        if raw == True:
+        if raw is True:
             self.__raw = filename
         else:
             self.__raw = read(filename)
@@ -213,14 +213,12 @@ class APK(object):
                     ] = self.xml[i].documentElement.getAttributeNS(
                         NS_ANDROID_URI, "versionName")
 
-                    for item in self.xml[i].getElementsByTagName(
-                        'uses-permission'):
+                    for item in self.xml[i].getElementsByTagName('uses-permission'):
                         self.permissions.append(str(item.getAttributeNS(
                             NS_ANDROID_URI, "name")))
 
-                    #getting details of the declared permissions
-                    for d_perm_item in self.xml[i].getElementsByTagName(
-                        'permission'):
+                    # getting details of the declared permissions
+                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                         d_perm_name = self._get_res_string_value(str(
                             d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
                         d_perm_label = self._get_res_string_value(str(
@@ -303,7 +301,7 @@ class APK(object):
         if app_name.startswith("@"):
             res_id = int(app_name[1:], 16)
             res_parser = self.get_android_resources()
-            
+
             try:
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
@@ -315,8 +313,8 @@ class APK(object):
 
     def get_app_icon(self, max_dpi=65536):
         """
-            Return the first non-greater density than max_dpi icon file name, 
-            unless exact icon resolution is set in the manifest, in which case 
+            Return the first non-greater density than max_dpi icon file name,
+            unless exact icon resolution is set in the manifest, in which case
             return the exact file
 
             :rtype: string
@@ -640,17 +638,18 @@ class APK(object):
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(category):
-                if self.format_value(item.getAttributeNS(NS_ANDROID_URI,
-                                                         "name")) == name:
+                if self.format_value(
+                        item.getAttributeNS(NS_ANDROID_URI, "name")
+                        ) == name:
                     for sitem in item.getElementsByTagName("intent-filter"):
                         for ssitem in sitem.getElementsByTagName("action"):
-                            if ssitem.getAttributeNS(NS_ANDROID_URI,
-                                                     "name") not in d["action"]:
+                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
+                                    not in d["action"]:
                                 d["action"].append(ssitem.getAttributeNS(
                                     NS_ANDROID_URI, "name"))
                         for ssitem in sitem.getElementsByTagName("category"):
-                            if ssitem.getAttributeNS(
-                                NS_ANDROID_URI, "name") not in d["category"]:
+                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
+                                    not in d["category"]:
                                 d["category"].append(ssitem.getAttributeNS(
                                     NS_ANDROID_URI, "name"))
 
@@ -937,8 +936,9 @@ def show_Certificate(cert):
         cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(),
         cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
 
-######################################################## AXML FORMAT ########################################################
-# Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
+################################## AXML FORMAT ########################################
+# Translated from 
+# http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
 CHUNK_STRINGPOOL_TYPE = 0x001C0001
@@ -1181,8 +1181,8 @@ class AXMLParser(object):
                     androconf.warning("Invalid chunk size")
 
                 for i in range(0, chunkSize / 4 - 2):
-                    self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0
-                                                                             ])
+                    self.m_resourceIDs.append(
+                        unpack('<L', self.buff.read(4))[0])
 
                 continue
 
@@ -1389,25 +1389,25 @@ TYPE_REFERENCE = 1
 TYPE_STRING = 3
 
 TYPE_TABLE = {
-    TYPE_ATTRIBUTE          : "attribute",
-    TYPE_DIMENSION          : "dimension",
-    TYPE_FLOAT              : "float",
-    TYPE_FRACTION           : "fraction",
-    TYPE_INT_BOOLEAN        : "int_boolean",
-    TYPE_INT_COLOR_ARGB4    : "int_color_argb4",
-    TYPE_INT_COLOR_ARGB8    : "int_color_argb8",
-    TYPE_INT_COLOR_RGB4     : "int_color_rgb4",
-    TYPE_INT_COLOR_RGB8     : "int_color_rgb8",
-    TYPE_INT_DEC            : "int_dec",
-    TYPE_INT_HEX            : "int_hex",
-    TYPE_NULL               : "null",
-    TYPE_REFERENCE          : "reference",
-    TYPE_STRING             : "string",
+    TYPE_ATTRIBUTE: "attribute",
+    TYPE_DIMENSION: "dimension",
+    TYPE_FLOAT: "float",
+    TYPE_FRACTION: "fraction",
+    TYPE_INT_BOOLEAN: "int_boolean",
+    TYPE_INT_COLOR_ARGB4: "int_color_argb4",
+    TYPE_INT_COLOR_ARGB8: "int_color_argb8",
+    TYPE_INT_COLOR_RGB4: "int_color_rgb4",
+    TYPE_INT_COLOR_RGB8: "int_color_rgb8",
+    TYPE_INT_DEC: "int_dec",
+    TYPE_INT_HEX: "int_hex",
+    TYPE_NULL: "null",
+    TYPE_REFERENCE: "reference",
+    TYPE_STRING: "string",
 }
 
-RADIX_MULTS             =   [ 0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010 ]
-DIMENSION_UNITS         =   [ "px","dip","sp","pt","in","mm" ]
-FRACTION_UNITS          =   [ "%", "%p" ]
+RADIX_MULTS = [0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010]
+DIMENSION_UNITS = ["px", "dip", "sp", "pt", "in", "mm"]
+FRACTION_UNITS = ["%", "%p"]
 
 COMPLEX_UNIT_MASK = 15
 
@@ -2287,7 +2287,10 @@ class ARSCResStringPoolRef(object):
         return self.data_type == TYPE_REFERENCE
 
     def __repr__(self):
-        return "ARSCResStringPoolRef(%x, %s, %x)" % (self.start, TYPE_TABLE.get(self.data_type, "0x%x" % self.data_type), self.data)
+        return "ARSCResStringPoolRef(%x, %s, %x)" % (
+            self.start,
+            TYPE_TABLE.get(self.data_type, "0x%x" % self.data_type),
+            self.data)
 
 
 def get_arsc_info(arscobj):
