@@ -27,12 +27,6 @@ PERMS_RE = None
 
 PERMS_API = {}
 
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 class Constant(object):
     def __init__(self, name, perms, desc_return):
         self.name = name

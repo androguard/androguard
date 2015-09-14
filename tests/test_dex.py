@@ -29,7 +29,8 @@ class DexTest(unittest.TestCase):
 
 class InstructionTest(unittest.TestCase):
     def testNOP(self):
-        pass
-        
+        instruction = dvm.Instruction10x(None, "\x00\x00")
+        self.assertEqual(instruction.get_name(), "nop")
+
 if __name__ == '__main__':
     unittest.main()

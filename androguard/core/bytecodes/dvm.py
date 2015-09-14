@@ -4362,8 +4362,6 @@ class Instruction10x(Instruction):
       i16 = unpack("=H", buff[0:2])[0]
       self.OP = i16 & 0xff
 
-      #log_andro.debug("OP:%x %s" % (self.OP, args[0]))
-
     def get_output(self, idx=-1):
       return ""
 

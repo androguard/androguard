@@ -670,12 +670,6 @@ class Buff(object):
 
 class _Bytecode(object):
     def __init__(self, buff):
-        try:
-            import psyco
-            psyco.full()
-        except ImportError:
-            pass
-
         self.__buff = buff
         self.__idx = 0
 
