@@ -1607,6 +1607,8 @@ class ARSCParser(object):
                 elif header.type == RES_TABLE_TYPE_TYPE:
                     a_res_type = ARSCResType(self.buff, pc)
                     self.packages[package_name].append(a_res_type)
+                    self.resource_configs[package_name][a_res_type].add(
+                       a_res_type.config)
 
                     entries = []
                     for i in range(0, a_res_type.entryCount):
@@ -2008,12 +2010,12 @@ class ARSCParser(object):
     def get_type_configs(self, package_name, type_name=None):
         if package_name is None:
             package_name = self.get_packages_names()[0]
-        result = collections.defaultdict([])
+        result = collections.defaultdict(list)
 
-        for res_type in self.resource_configs:
+        for res_type, configs in self.resource_configs[package_name].items():
             if res_type.get_package_name() == package_name and (
                     type_name is None or res_type.get_type() == type_name):
-                result[res_type.get_type()].append(res_type)
+                result[res_type.get_type()].extend(configs)
 
         return result
 
@@ -2120,7 +2122,7 @@ class ARSCResTableConfig(object):
             cls.DEFAULT = ARSCResTableConfig(None)
         return cls.DEFAULT
 
-    def __init__(self, buff):
+    def __init__(self, buff=None, **kwargs):
         if buff is not None:
             self.start = buff.get_idx()
             self.size = unpack('<I', buff.read(4))[0]
@@ -2147,14 +2149,42 @@ class ARSCResTableConfig(object):
         else:
             self.start = 0
             self.size = 0
-            self.imsi = 0
+            self.imsi = \
+                ((kwargs.pop('mcc', 0) & 0xffff) << 0) + \
+                ((kwargs.pop('mnc', 0) & 0xffff) << 16)
+
             self.locale = 0
-            self.screenType = 0
-            self.input = 0
-            self.screenSize = 0
-            self.version = 0
-            self.screenConfig = 0
-            self.screenSizeDp = 0
+            for char_ix, char in kwargs.pop('locale', "")[0:4]:
+                self.locale += (ord(char) << (char_ix * 8))
+
+            self.screenType = \
+                ((kwargs.pop('orientation', 0) & 0xff) << 0) + \
+                ((kwargs.pop('touchscreen', 0) & 0xff) << 8) + \
+                ((kwargs.pop('density', 0) & 0xffff) << 16)
+
+            self.input = \
+                ((kwargs.pop('keyboard', 0) & 0xff) << 0) + \
+                ((kwargs.pop('navigation', 0) & 0xff) << 8) + \
+                ((kwargs.pop('inputFlags', 0) & 0xff) << 16) + \
+                ((kwargs.pop('inputPad0', 0) & 0xff) << 24)
+
+            self.screenSize = \
+                ((kwargs.pop('screenWidth', 0) & 0xffff) << 0) + \
+                ((kwargs.pop('screenHeight', 0) & 0xffff) << 16)
+
+            self.version = \
+                ((kwargs.pop('sdkVersion', 0) & 0xffff) << 0) + \
+                ((kwargs.pop('minorVersion', 0) & 0xffff) << 16)
+
+            self.screenConfig = \
+                ((kwargs.pop('screenLayout', 0) & 0xff) << 0) + \
+                ((kwargs.pop('uiMode', 0) & 0xff) << 8) + \
+                ((kwargs.pop('smallestScreenWidthDp', 0) & 0xffff) << 16)
+
+            self.screenSizeDp = \
+                ((kwargs.pop('screenWidthDp', 0) & 0xffff) << 0) + \
+                ((kwargs.pop('screenHeightDp', 0) & 0xffff) << 16)
+
             self.exceedingSize = 0
 
     def get_language(self):
