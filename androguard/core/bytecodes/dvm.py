@@ -2763,19 +2763,20 @@ class EncodedField(object):
         """
             Display where this field is read or written
         """
-        bytecode._PrintSubBanner("XREF Read")
-        xrefs_from = f_a.get_xref_read()
-        for ref_class, ref_method in xrefs_from:
-            bytecode._PrintDefault(ref_method)
+        if f_a:
+            bytecode._PrintSubBanner("XREF Read")
+            xrefs_from = f_a.get_xref_read()
+            for ref_class, ref_method in xrefs_from:
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
+
             bytecode._PrintDefault('\n')
 
-        bytecode._PrintDefault('\n')
-
-        bytecode._PrintSubBanner("XREF Write")
-        xrefs_to = f_a.get_xref_write()
-        for ref_class, ref_method in xrefs_to:
-            bytecode._PrintDefault(ref_method)
-            bytecode._PrintDefault('\n')
+            bytecode._PrintSubBanner("XREF Write")
+            xrefs_to = f_a.get_xref_write()
+            for ref_class, ref_method in xrefs_to:
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
 
     def __str__(self):
         return "%s->%s %s [access_flags=%s]\n" % (
