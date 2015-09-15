@@ -2948,19 +2948,20 @@ class EncodedMethod(object):
             self.show_xref(self.CM.get_vmanalysis().get_method_analysis(self))
 
     def show_xref(self, m_a):
-        bytecode._PrintSubBanner("XREF From")
-        xrefs_from = m_a.get_xref_from()
-        for ref_class, ref_method in xrefs_from:
-            bytecode._PrintDefault(ref_method)
+        if m_a:
+            bytecode._PrintSubBanner("XREF From")
+            xrefs_from = m_a.get_xref_from()
+            for ref_class, ref_method in xrefs_from:
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
+
             bytecode._PrintDefault('\n')
 
-        bytecode._PrintDefault('\n')
-
-        bytecode._PrintSubBanner("XREF To")
-        xrefs_to = m_a.get_xref_to()
-        for ref_class, ref_method in xrefs_to:
-            bytecode._PrintDefault(ref_method)
-            bytecode._PrintDefault('\n')
+            bytecode._PrintSubBanner("XREF To")
+            xrefs_to = m_a.get_xref_to()
+            for ref_class, ref_method in xrefs_to:
+                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault('\n')
 
     def show_notes(self):
         """
@@ -3543,30 +3544,31 @@ class ClassDefItem(object):
             Display where the method is called or which method is called
         """
         bytecode._PrintSubBanner("XREF From")
-        xrefs_from = c_a.get_xref_from()
-        for ref_class in xrefs_from:
-            if ref_class.get_vm_class().get_name() == self.get_name():
-                continue
-            for ref_kind, ref_method in xrefs_from[ref_class]:
-                bytecode._PrintDefault(ref_method)
-                bytecode._PrintDefault('\n')
+        if c_a:
+            xrefs_from = c_a.get_xref_from()
+            for ref_class in xrefs_from:
+                if ref_class.get_vm_class().get_name() == self.get_name():
+                    continue
+                for ref_kind, ref_method in xrefs_from[ref_class]:
+                    bytecode._PrintDefault(ref_method)
+                    bytecode._PrintDefault('\n')
 
-        bytecode._PrintDefault('\n')
+            bytecode._PrintDefault('\n')
 
-        ref_kind_map = {0: "Class instanciation", 1: "Class reference"}
+            ref_kind_map = {0: "Class instanciation", 1: "Class reference"}
 
-        bytecode._PrintSubBanner("XREF To")
-        xrefs_to = c_a.get_xref_to()
-        for ref_class in xrefs_to:
-            if ref_class.get_vm_class().get_name() == self.get_name():
-                continue
-            bytecode._PrintDefault(ref_class.get_vm_class().get_name())
-            bytecode._PrintDefault(' -->\n')
-            for ref_kind, ref_method in xrefs_to[ref_class]:
-                bytecode._PrintDefault(ref_kind_map[ref_kind])
-                bytecode._PrintDefault(' ')
-                bytecode._PrintDefault(ref_method)
-                bytecode._PrintDefault('\n')
+            bytecode._PrintSubBanner("XREF To")
+            xrefs_to = c_a.get_xref_to()
+            for ref_class in xrefs_to:
+                if ref_class.get_vm_class().get_name() == self.get_name():
+                    continue
+                bytecode._PrintDefault(ref_class.get_vm_class().get_name())
+                bytecode._PrintDefault(' -->\n')
+                for ref_kind, ref_method in xrefs_to[ref_class]:
+                    bytecode._PrintDefault(ref_kind_map[ref_kind])
+                    bytecode._PrintDefault(' ')
+                    bytecode._PrintDefault(ref_method)
+                    bytecode._PrintDefault('\n')
 
     def source(self):
         """
