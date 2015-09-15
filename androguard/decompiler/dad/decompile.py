@@ -311,11 +311,7 @@ class DvClass(object):
             source.append(klass.get_source())
 
         for method in self.methods:
-            if isinstance(method, DvMethod):
-                source.append(method.get_source())
-            else:
-                source.append(DvMethod(self.vma.get_method(method)).get_source(
-                ))
+            source.append(method.get_source())
 
         source.append('}\n')
         return ''.join(source)
