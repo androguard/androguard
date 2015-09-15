@@ -82,7 +82,7 @@ def main(options, arguments):
         ret_type = androconf.is_android(options.input[0])
         if ret_type == "APK":
             a = apk.APK(options.input[0])
-            d1 = dvm.DalvikVMFormat(a.get_dex().next())
+            d1 = dvm.DalvikVMFormat(a.get_dex())
         elif ret_type == "DEX":
             d1 = dvm.DalvikVMFormat(read(options.input[0]))
 
@@ -91,7 +91,7 @@ def main(options, arguments):
         ret_type = androconf.is_android(options.input[1])
         if ret_type == "APK":
             a = apk.APK(options.input[1])
-            d2 = dvm.DalvikVMFormat(a.get_dex().next())
+            d2 = dvm.DalvikVMFormat(a.get_dex())
         elif ret_type == "DEX":
             d2 = dvm.DalvikVMFormat(read(options.input[1]))
 
