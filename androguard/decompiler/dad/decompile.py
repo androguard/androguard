@@ -205,7 +205,6 @@ class DvClass(object):
         self.vma = vma
         self.methods = dvclass.get_methods()
         self.fields = dvclass.get_fields()
-        self.subclasses = {}
         self.code = []
         self.inner = False
 
@@ -232,10 +231,6 @@ class DvClass(object):
                         meth.name)
         logger.info('')
 
-    def add_subclass(self, innername, dvclass):
-        self.subclasses[innername] = dvclass
-        dvclass.inner = True
-
     def get_methods(self):
         return self.methods
 
@@ -250,8 +245,6 @@ class DvClass(object):
             method.process(doAST=doAST)
 
     def process(self, doAST=False):
-        for klass in self.subclasses.values():
-            klass.process(doAST=doAST)
         for i in range(len(self.methods)):
             try:
                 self.process_method(i, doAST=doAST)
@@ -307,11 +300,9 @@ class DvClass(object):
             else:
                 source.append('%s %s;\n' % (f_type, name))
 
-        for klass in self.subclasses.values():
-            source.append(klass.get_source())
-
         for method in self.methods:
-            source.append(method.get_source())
+            if isinstance(method, DvMethod):
+                source.append(method.get_source())
 
         source.append('}\n')
         return ''.join(source)
@@ -360,10 +351,6 @@ class DvClass(object):
                         'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
                                                                     ';\n')]))
 
-        #TODO: call get_source_ext for each subclass?
-        for klass in self.subclasses.values():
-            source.append((klass, klass.get_source()))
-
         for method in self.methods:
             if isinstance(method, DvMethod):
                 source.append(("METHOD", method.get_source_ext()))
@@ -374,9 +361,7 @@ class DvClass(object):
         print self.get_source()
 
     def __repr__(self):
-        if not self.subclasses:
-            return 'Class(%s)' % self.name
-        return 'Class(%s) -- Subclasses(%s)' % (self.name, self.subclasses)
+        return 'Class(%s)' % self.name
 
 
 class DvMachine(object):
