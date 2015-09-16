@@ -101,7 +101,7 @@ class Session(object):
 
         return dx
 
-    def add(self, filename, raw_data):
+    def add(self, filename, raw_data, dx=None):
         ret = is_android_raw(raw_data)
         if ret:
             self.analyzed_files[filename] = []
@@ -111,16 +111,16 @@ class Session(object):
                 dex_files = list(apk.get_all_dex())
 
                 if dex_files:
-                    dex_digest, _, dx = self.addDEX(filename, dex_files[0])
+                    dex_digest, _, dx = self.addDEX(filename, dex_files[0], dx)
                     self.analyzed_apk[digest].append(dex_digest)
                     for i in range(1, len(dex_files)):
                         dex_digest, _, _ = self.addDEX(filename, dex_files[i],
                                                        dx)
                         self.analyzed_apk[digest].append(dex_digest)
             elif ret == "DEX":
-                self.addDEX(filename, raw_data)
+                self.addDEX(filename, raw_data, dx)
             elif ret == "DEY":
-                self.addDEY(filename, raw_data)
+                self.addDEY(filename, raw_data, dx)
             else:
                 return False
             return True

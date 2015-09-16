@@ -1821,13 +1821,11 @@ class ClassAnalysis(object):
             self._methods[method1] = MethodClassAnalysis(method1)
         self._methods[method1].AddXrefFrom(classobj, method2)
 
-    def AddXrefTo(self, ref_kind, classobj, methodobj):
-        #debug("Added class xrefto for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
-        self.xrefto[classobj].add((ref_kind, methodobj))
+    def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
+        self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
-    def AddXrefFrom(self, ref_kind, classobj, methodobj):
-        #debug("Added class xreffrom for %s to %s" % (self._class.get_name(), classobj.get_vm_class().get_name()))
-        self.xreffrom[classobj].add((ref_kind, methodobj))
+    def AddXrefFrom(self, ref_kind, classobj, methodobj, offset):
+        self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
     def get_xref_from(self):
         return self.xreffrom
@@ -1902,21 +1900,21 @@ class newVMAnalysis(object):
                                 self.classes[current_class.get_name(
                                 )].AddXrefTo(REF_NEW_INSTANCE,
                                              self.classes[type_info],
-                                             current_method)
+                                             current_method, off)
                                 self.classes[type_info].AddXrefFrom(
                                     REF_NEW_INSTANCE,
                                     self.classes[current_class.get_name()],
-                                    current_method)
+                                    current_method, off)
                             # class reference
                             else:
                                 self.classes[current_class.get_name(
                                 )].AddXrefTo(REF_CLASS_USAGE,
                                              self.classes[type_info],
-                                             current_method)
+                                             current_method, off)
                                 self.classes[type_info].AddXrefFrom(
                                     REF_CLASS_USAGE,
                                     self.classes[current_class.get_name()],
-                                    current_method)
+                                    current_method, off)
 
                     elif ((op_value >= 0x6e and op_value <= 0x72) or
                           (op_value >= 0x74 and op_value <= 0x78)):
@@ -1944,11 +1942,11 @@ class newVMAnalysis(object):
                                     self.classes[current_class.get_name(
                                     )].AddXrefTo(REF_CLASS_USAGE,
                                                  self.classes[class_info],
-                                                 method_item)
+                                                 method_item, off)
                                     self.classes[class_info].AddXrefFrom(
                                         REF_CLASS_USAGE,
                                         self.classes[current_class.get_name()],
-                                        current_method)
+                                        current_method, off)
 
                     elif op_value >= 0x1a and op_value <= 0x1b:
                         string_value = last_vm.get_cm_string(
@@ -2025,8 +2023,9 @@ class newVMAnalysis(object):
         self.vms.append(vm)
 
         for current_class in vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(
-                current_class)
+            if current_class.get_name() not in self.classes:
+                self.classes[current_class.get_name()] = ClassAnalysis(
+                    current_class)
 
 
 class VMAnalysis(object):
