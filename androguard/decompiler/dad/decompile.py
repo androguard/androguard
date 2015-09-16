@@ -254,7 +254,10 @@ class DvClass(object):
 
     def get_ast(self):
         fields = [get_field_ast(f) for f in self.fields]
-        methods = [m.get_ast() for m in self.methods if m.ast is not None]
+        methods = []
+        for m in self.methods:
+          if isinstance(m, DvMethod) and m.ast:
+            methods.append(m.get_ast())
         isInterface = 'interface' in self.access
         return {
             'rawname': self.thisclass[1:-1],
