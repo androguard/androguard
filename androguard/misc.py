@@ -86,7 +86,7 @@ def AnalyzeDex(filename, decompiler="dad", session=None):
     with open(filename, "r") as fd:
         data = fd.read()
 
-    return session.addDEX(data)
+    return session.addDEX(filename, data)
 
 
 def AnalyzeODex(filename, decompiler="dad", session=None):
@@ -106,7 +106,7 @@ def AnalyzeODex(filename, decompiler="dad", session=None):
     with open(filename, "r") as fd:
         data = fd.read()
 
-    return session.addDEY(data)
+    return session.addDEY(filename, data)
 
 
 def RunDecompiler(d, dx, decompiler, session=None):
