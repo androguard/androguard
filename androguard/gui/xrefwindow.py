@@ -33,13 +33,13 @@ class XrefDialogClass(QtGui.QDialog):
 
         xrefs_from = class_analysis.get_xref_from()
         for ref_class in xrefs_from:
-            for ref_kind, ref_method in xrefs_from[ref_class]:
+            for ref_kind, ref_method, _ in xrefs_from[ref_class]:
                 xrefs_list.append(('From', ref_kind_map[ref_kind], ref_method,
                                    ref_class.get_vm_class()))
 
         xrefs_to = class_analysis.get_xref_to()
         for ref_class in xrefs_to:
-            for ref_kind, ref_method in xrefs_to[ref_class]:
+            for ref_kind, ref_method, _ in xrefs_to[ref_class]:
                 xrefs_list.append(('To', ref_kind_map[ref_kind], ref_method,
                                    ref_class.get_vm_class()))
 
