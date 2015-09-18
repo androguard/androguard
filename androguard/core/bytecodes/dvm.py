@@ -84,6 +84,14 @@ TYPE_DESCRIPTOR = {
 }
 
 
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+
+class InvalidInstruction(Error):
+    pass
+
 def get_access_flags_string(value):
     """
       Transform an access flags to the corresponding string
@@ -6320,15 +6328,23 @@ def get_instruction(cm, op_value, buff, odex=False):
 
 
 def get_extented_instruction(cm, op_value, buff):
-    return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0](cm, buff)
-
+    try:
+        return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0](cm, buff)
+    except struct.error:
+        raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
 
 def get_optimized_instruction(cm, op_value, buff):
-    return DALVIK_OPCODES_OPTIMIZED[op_value][0](cm, buff)
+    try:
+        return DALVIK_OPCODES_OPTIMIZED[op_value][0](cm, buff)
+    except struct.error:
+        raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
 
 
 def get_instruction_payload(op_value, buff):
-    return DALVIK_OPCODES_PAYLOAD[op_value][0](buff)
+    try:
+        return DALVIK_OPCODES_PAYLOAD[op_value][0](buff)
+    except struct.error:
+        raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
 
 
 class LinearSweepAlgorithm(object):
