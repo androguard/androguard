@@ -280,10 +280,8 @@ class BasicBlocks(object):
         This class represents all basic blocks of a method
     """
 
-    def __init__(self, _vm, tv):
+    def __init__(self, _vm):
         self.__vm = _vm
-        self.tainted = tv
-
         self.bb = []
 
     def push(self, bb):
@@ -297,24 +295,6 @@ class BasicBlocks(object):
             if idx >= i.get_start() and idx < i.get_end():
                 return i
         return None
-
-    def get_tainted_integers(self):
-        try:
-            return self.tainted.get_tainted_integers()
-        except:
-            return None
-
-    def get_tainted_packages(self):
-        try:
-            return self.tainted.get_tainted_packages()
-        except:
-            return None
-
-    def get_tainted_variables(self):
-        try:
-            return self.tainted.get_tainted_variables()
-        except:
-            return None
 
     def get(self):
         """
@@ -402,20 +382,15 @@ class MethodAnalysis(object):
     """
         This class analyses in details a method of a class/dex file
 
-        :param vm: the object which represent the dex file
-        :param method: the original method
-        :param tv: a virtual object to get access to tainted information
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
     """
 
-    def __init__(self, vm, method, tv):
+    def __init__(self, vm, method):
         self.__vm = vm
         self.method = method
 
-        self.tainted = tv
-
-        self.basic_blocks = BasicBlocks(self.__vm, self.tainted)
+        self.basic_blocks = BasicBlocks(self.__vm)
         self.exceptions = Exceptions(self.__vm)
 
         code = self.method.get_code()
@@ -515,10 +490,6 @@ class MethodAnalysis(object):
     def get_method(self):
         return self.method
 
-    def get_local_variables(self):
-        return self.tainted.get_tainted_variables().get_local_variables(
-            self.method)
-
     def show(self):
         print "METHOD", self.method.get_class_name(), self.method.get_name(
         ), self.method.get_descriptor()
@@ -537,15 +508,6 @@ class MethodAnalysis(object):
                 ), method.get_descriptor()
                 for context in methods[method]:
                     print "\t\t\t |---|", context.details
-
-    def create_tags(self):
-        """
-          Create the tags for the method
-      """
-        self.tags = Tags()
-        for i in self.tainted.get_tainted_packages().get_packages_by_method(
-            self.method):
-            self.tags.emit_by_classname(i)
 
     def get_tags(self):
         """
@@ -858,7 +820,7 @@ class newVMAnalysis(object):
     def get_method(self, method):
         for vm in self.vms:
             if method in vm.get_methods():
-                return MethodAnalysis(vm, method, None)
+                return MethodAnalysis(vm, method)
         return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
