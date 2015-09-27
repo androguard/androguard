@@ -216,9 +216,19 @@ def export_apps_to_format(filename,
 
             print "bytecodes ...",
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
-            with open(filename + ".ag", "w") as fd:
-                fd.write(bytecode_buff)
+            try:
+                with open(filename + ".ag", "w") as fd:
+                    fd.write(bytecode_buff)
+            except IOError:
+                with open(safe_filename(filename) + ".ag", "w") as fd:
+                    fd.write(bytecode_buff)
             print
+
+
+def safe_filename(filename):
+    valid_chars = "/\-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = ''.join(c for c in s if c in valid_chars)
+    return filename
 
 
 def main(options, arguments):
