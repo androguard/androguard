@@ -555,7 +555,12 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(tag_name):
+            if self.xml[i] is None :
+                continue
+            tag = self.xml[i].getElementsByTagName(tag_name)
+            if item is None:
+                return None
+            for item in tag:
                 skip_this_item = False
                 for attr, val in attribute_filter.items():
                     attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
