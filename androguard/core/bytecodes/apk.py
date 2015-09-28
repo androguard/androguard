@@ -17,7 +17,6 @@
 
 from androguard.core import bytecode
 from androguard.core import androconf
-from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.util import read
 
 from androguard.core.resources import public
