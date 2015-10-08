@@ -17,8 +17,7 @@
 
 from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
-from androguard.core.androconf import CONF, debug, warning, is_android_raw
-from androguard.util import read
+from androguard.core.androconf import CONF, debug, warning
 
 import sys
 import re
@@ -1780,9 +1779,6 @@ class EncodedArrayItem(object):
 
     def reload(self):
         pass
-
-    def get_value(self):
-        return self.value
 
     def show(self):
         bytecode._PrintSubBanner("Encoded Array Item")
@@ -8188,9 +8184,6 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_determineException(self):
         return determineException
-
-    def get_DVM_TOSTRING(self):
-        return DVM_TOSTRING()
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)

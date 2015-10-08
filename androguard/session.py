@@ -102,7 +102,7 @@ class Session(object):
         return dx
 
     def add(self, filename, raw_data, dx=None):
-        ret = is_android_raw(raw_data)
+        ret = androconf.is_android_raw(raw_data)
         if ret:
             self.analyzed_files[filename] = []
             digest = hashlib.sha256(raw_data).hexdigest()

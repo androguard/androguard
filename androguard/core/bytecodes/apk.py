@@ -39,7 +39,6 @@ NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 # 2: patch zipfile module
 ZIPMODULE = 1
 
-import sys
 if sys.hexversion < 0x2070000:
     try:
         import chilkat

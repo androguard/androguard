@@ -620,7 +620,7 @@ REF_CLASS_USAGE = 1
 class ClassAnalysis(object):
 
     def __init__(self, classobj):
-        self._class = classobj
+        self.orig_class = classobj
         self._methods = {}
         self._fields = {}
 
@@ -666,24 +666,24 @@ class ClassAnalysis(object):
         return self.xrefto
 
     def get_vm_class(self):
-        return self._class
+        return self.orig_class
 
     def __str__(self):
-        data = "XREFto for %s\n" % self._class
+        data = "XREFto for %s\n" % self.orig_class
         for ref_class in self.xrefto:
             data += str(ref_class.get_vm_class().get_name()) + " "
             data += "in\n"
-            for ref_kind, ref_method in self.xrefto[ref_class]:
-                data += "%d %s\n" % (ref_kind, ref_method)
+            for ref_kind, ref_method, ref_offset in self.xrefto[ref_class]:
+                data += "%d %s 0x%x\n" % (ref_kind, ref_method, ref_offset)
 
             data += "\n"
 
-        data += "XREFFrom for %s\n" % self._class
+        data += "XREFFrom for %s\n" % self.orig_class
         for ref_class in self.xreffrom:
             data += str(ref_class.get_vm_class().get_name()) + " "
             data += "in\n"
-            for ref_kind, ref_method in self.xreffrom[ref_class]:
-                data += "%d %s\n" % (ref_kind, ref_method)
+            for ref_kind, ref_method, ref_offset in self.xreffrom[ref_class]:
+                data += "%d %s 0x%x\n" % (ref_kind, ref_method, ref_offset)
 
             data += "\n"
 
@@ -824,10 +824,8 @@ class newVMAnalysis(object):
         return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
-        print class_name, method_name, method_descriptor
         if class_name in self.classes:
             for method in self.classes[class_name].get_vm_class().get_methods():
-                print method.get_name(), method.get_descriptor()
                 if method.get_name() == method_name and method.get_descriptor(
                 ) == method_descriptor:
                     return method
@@ -837,6 +835,12 @@ class newVMAnalysis(object):
         class_analysis = self.get_class_analysis(method.get_class_name())
         if class_analysis:
             return class_analysis.get_method_analysis(method)
+        return None
+
+    def get_method_analysis_by_name(self, class_name, method_name, method_descriptor):
+        method = self.get_method_by_name(class_name, method_name, method_descriptor)
+        if method:
+            return self.get_method_analysis(method)
         return None
 
     def get_field_analysis(self, field):
