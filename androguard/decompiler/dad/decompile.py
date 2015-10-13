@@ -373,7 +373,7 @@ class DvMachine(object):
         vm = auto_vm(name)
         if vm is None:
             raise ValueError('Format not recognised: %s' % name)
-        self.vma = analysis.uVMAnalysis(vm)
+        self.vma = analysis.newVMAnalysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
         #util.merge_inner(self.classes)

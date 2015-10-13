@@ -705,7 +705,6 @@ class newVMAnalysis(object):
         debug("Creating XREF/DREF")
 
         instances_class_name = self.classes.keys()
-        external_instances = {}
 
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
