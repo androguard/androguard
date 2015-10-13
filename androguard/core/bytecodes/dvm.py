@@ -2956,7 +2956,7 @@ class EncodedMethod(object):
         if m_a:
             bytecode._PrintSubBanner("XREF From")
             xrefs_from = m_a.get_xref_from()
-            for ref_class, ref_method in xrefs_from:
+            for ref_class, ref_method, _ in xrefs_from:
                 bytecode._PrintDefault(ref_method)
                 bytecode._PrintDefault('\n')
 
@@ -2964,7 +2964,7 @@ class EncodedMethod(object):
 
             bytecode._PrintSubBanner("XREF To")
             xrefs_to = m_a.get_xref_to()
-            for ref_class, ref_method in xrefs_to:
+            for ref_class, ref_method, _ in xrefs_to:
                 bytecode._PrintDefault(ref_method)
                 bytecode._PrintDefault('\n')
 
@@ -8114,14 +8114,14 @@ class DalvikVMFormat(bytecode._Bytecode):
             m_a = self.CM.get_vmanalysis().get_method_analysis(method)
             if m_a:
                 xrefs_from = m_a.get_xref_from()
-                for ref_class, ref_method in xrefs_from:
+                for ref_class, ref_method, _ in xrefs_from:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
                                 ref_method.get_descriptor()))
                     setattr(method.XF, name, ref_method)
 
                 xrefs_to = m_a.get_xref_to()
-                for ref_class, ref_method in xrefs_to:
+                for ref_class, ref_method, _ in xrefs_to:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
                                 ref_method.get_descriptor()))

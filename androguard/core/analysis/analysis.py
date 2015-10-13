@@ -546,13 +546,13 @@ class MethodClassAnalysis(object):
         self.xrefto = set()
         self.xreffrom = set()
 
-    def AddXrefTo(self, classobj, methodobj):
+    def AddXrefTo(self, classobj, methodobj, offset):
         #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
-        self.xrefto.add((classobj, methodobj))
+        self.xrefto.add((classobj, methodobj, offset))
 
-    def AddXrefFrom(self, classobj, methodobj):
+    def AddXrefFrom(self, classobj, methodobj, offset):
         #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
-        self.xreffrom.add((classobj, methodobj))
+        self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
         return self.xreffrom
@@ -562,15 +562,15 @@ class MethodClassAnalysis(object):
 
     def __str__(self):
         data = "XREFto for %s\n" % self.method
-        for ref_class, ref_method in self.xrefto:
+        for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
                                 )
 
         data += "XREFFrom for %s\n" % self.method
-        for ref_class, ref_method in self.xreffrom:
+        for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
                                 )
 
         return data
@@ -643,15 +643,15 @@ class ClassAnalysis(object):
             self._fields[field] = FieldClassAnalysis(field)
         self._fields[field].AddXrefWrite(classobj, method)
 
-    def AddMXrefTo(self, method1, classobj, method2):
+    def AddMXrefTo(self, method1, classobj, method2, offset):
         if method1 not in self._methods:
             self._methods[method1] = MethodClassAnalysis(method1)
-        self._methods[method1].AddXrefTo(classobj, method2)
+        self._methods[method1].AddXrefTo(classobj, method2, offset)
 
-    def AddMXrefFrom(self, method1, classobj, method2):
+    def AddMXrefFrom(self, method1, classobj, method2, offset):
         if method1 not in self._methods:
             self._methods[method1] = MethodClassAnalysis(method1)
-        self._methods[method1].AddXrefFrom(classobj, method2)
+        self._methods[method1].AddXrefFrom(classobj, method2, offset)
 
     def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
@@ -763,11 +763,13 @@ class newVMAnalysis(object):
                                     self.classes[current_class.get_name(
                                     )].AddMXrefTo(current_method,
                                                   self.classes[class_info],
-                                                  method_item)
+                                                  method_item,
+                                                  off)
                                     self.classes[class_info].AddMXrefFrom(
                                         method_item,
                                         self.classes[current_class.get_name()],
-                                        current_method)
+                                        current_method,
+                                        off)
 
                                     # Internal xref related to class manipulation
                                     if class_info in instances_class_name and class_info != current_class.get_name(

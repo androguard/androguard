@@ -84,11 +84,11 @@ class XrefDialogMethod(QtGui.QDialog):
         xrefs_list = []
 
         xrefs_from = self.method_analysis.get_xref_from()
-        for ref_class, ref_method in xrefs_from:
+        for ref_class, ref_method, _ in xrefs_from:
             xrefs_list.append(('From', ref_method, ref_class.get_vm_class()))
 
         xrefs_to = self.method_analysis.get_xref_to()
-        for ref_class, ref_method in xrefs_to:
+        for ref_class, ref_method, _ in xrefs_to:
             xrefs_list.append(('To', ref_method, ref_class.get_vm_class()))
 
         closeButton = QtGui.QPushButton("Close")
