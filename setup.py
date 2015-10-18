@@ -15,4 +15,4 @@ setup(
              'androsim.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['distribute'],)
+    setup_requires=['setuptools'],)
