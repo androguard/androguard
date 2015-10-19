@@ -3007,11 +3007,11 @@ class EncodedMethod(object):
         """
         return self.code
 
-    def is_set_instructions(self):
+    def is_cached_instructions(self):
         if self.code == None:
             return False
 
-        return self.code.get_bc().is_set_instructions()
+        return self.code.get_bc().is_cached_instructions()
 
     def get_instructions(self):
         """
@@ -6439,7 +6439,6 @@ class DCode(object):
 
         self.notes = {}
         self.cached_instructions = []
-        self.rcache = 0
 
         self.idx = 0
 
@@ -6470,11 +6469,11 @@ class DCode(object):
         """
         self.idx = idx
 
-    def is_set_instructions(self):
-        if cached_instructions:
+    def is_cached_instructions(self):
+        if self.cached_instructions:
             return True
         return False
-    
+
     def set_instructions(self, instructions):
         """
           Set the instructions
@@ -6496,23 +6495,10 @@ class DCode(object):
                 yield i
 
         else:
-            if self.rcache >= 5:
-                lsa = LinearSweepAlgorithm()
-                for i in lsa.get_instructions(self.CM, self.size, self.insn,
-                                              self.idx):
-                    self.cached_instructions.append(i)
-
-                for i in self.cached_instructions:
-                    yield i
-            else:
-                self.rcache += 1
-                if self.size >= 1000:
-                    self.rcache = 5
-
-                lsa = LinearSweepAlgorithm()
-                for i in lsa.get_instructions(self.CM, self.size, self.insn,
-                                              self.idx):
-                    yield i
+            lsa = LinearSweepAlgorithm()
+            for i in lsa.get_instructions(self.CM, self.size, self.insn,
+                                          self.idx):
+                yield i
 
     def reload(self):
         pass
