@@ -3007,6 +3007,12 @@ class EncodedMethod(object):
         """
         return self.code
 
+    def is_set_instructions(self):
+        if self.code == None:
+            return False
+
+        return self.code.get_bc().is_set_instructions()
+
     def get_instructions(self):
         """
             Get the instructions
@@ -6464,6 +6470,11 @@ class DCode(object):
         """
         self.idx = idx
 
+    def is_set_instructions(self):
+        if cached_instructions:
+            return True
+        return False
+    
     def set_instructions(self, instructions):
         """
           Set the instructions

@@ -237,10 +237,17 @@ class DvClass(object):
     def process_method(self, num, doAST=False):
         method = self.methods[num]
         if not isinstance(method, DvMethod):
-            method.set_instructions([i for i in method.get_instructions()])
+            # Do not change the instructions if it is already cached in the past
+            cached = False
+            if not method.is_set_instructions():
+                method.set_instructions([i for i in method.get_instructions()])
+                cached = True
+
             self.methods[num] = DvMethod(self.vma.get_method(method))
             self.methods[num].process(doAST=doAST)
-            method.set_instructions([])
+
+            if cached:
+                method.set_instructions([])
         else:
             method.process(doAST=doAST)
 
