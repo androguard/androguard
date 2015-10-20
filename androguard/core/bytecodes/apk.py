@@ -866,17 +866,47 @@ class APK(object):
             return self.arsc["resources.arsc"]
 
     def get_signature_name(self):
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.DSA)$")
+        """
+            Return the name of the first signature file found.
+        """
+        return self.get_signature_names_list()[0]
+
+    def get_signature_names(self):
+        """
+             Return a list of the signature file names.
+        """
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signatures = []
+
         for i in self.get_files():
             if signature_expr.search(i):
-                return i
+                signatures.append(i)
+
+        if len(signatures) > 0:
+            return signatures
+
         return None
 
     def get_signature(self):
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.DSA)$")
+        """
+            Return the data of the first signature file found.
+        """
+        return self.get_signature_list()[0]
+
+    def get_signatures(self):
+        """
+            Return a list of the data of the signature files.
+        """
+        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signature_datas = []
+
         for i in self.get_files():
             if signature_expr.search(i):
-                return self.get_file(i)
+                signature_datas.append(self.get_file(i))
+
+        if len(signature_datas) > 0:
+            return signature_datas
+
         return None
 
     def show(self):
