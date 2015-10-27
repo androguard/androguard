@@ -698,7 +698,7 @@ class newVMAnalysis(object):
         self.strings = {}
 
         for current_class in vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(
+            self.classes[current_class.get_name()] = 3(
                 current_class)
 
     def create_xref(self):
