@@ -406,8 +406,15 @@ def method2format(output, _format="png", mx=None, raw=None):
 
     d = pydot.graph_from_dot_data(buff)
     if d:
-        getattr(d, "write_" + _format.lower())(output)
+        try:
+            getattr(d, "write_" + _format.lower())(output)
+        except IOError:
+            getattr(d, "write_" + _format.lower())(_safe_filename(output))
 
+def _safe_filename(filename):
+    valid_chars = "/\-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = ''.join(c for c in filename if c in valid_chars)
+    return filename
 
 def method2png(output, mx, raw=False):
     """

@@ -28,7 +28,7 @@ from optparse import OptionParser
 from androguard.core import androconf
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import dvm
-from androguard.core.bytecode import method2dot, method2format
+from androguard.core.bytecode import method2dot, method2format, _safe_filename
 from androguard.decompiler import decompiler
 
 option_0 = {
@@ -216,8 +216,12 @@ def export_apps_to_format(filename,
 
             print "bytecodes ...",
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
-            with open(filename + ".ag", "w") as fd:
-                fd.write(bytecode_buff)
+            try:
+                with open(filename + ".ag", "w") as fd:
+                    fd.write(bytecode_buff)
+            except IOError:
+                with open(_safe_filename(filename) + ".ag", "w") as fd:
+                    fd.write(bytecode_buff)
             print
 
 
