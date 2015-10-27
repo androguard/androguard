@@ -1,23 +1,5 @@
 #!/usr/bin/env python
 
-# This file is part of Androguard.
-#
-# Copyright (C) 2012/2013, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Androguard is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Androguard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
-
 import shutil
 import sys
 import os
@@ -26,8 +8,10 @@ import re
 from optparse import OptionParser
 
 from androguard.core import androconf
+from androguard import session
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import dvm
+
 from androguard.core.bytecode import method2dot, method2format
 from androguard.decompiler import decompiler
 
@@ -88,7 +72,7 @@ def create_directory(class_name, output):
 
 
 def export_apps_to_format(filename,
-                          a,
+                          s,
                           output,
                           methods_filter=None,
                           jar=None,
@@ -113,18 +97,11 @@ def export_apps_to_format(filename,
         output_name = output_name + "/"
 
     dump_classes = []
-    for vm in a.get_vms():
-        print "Analysis ...",
-        sys.stdout.flush()
-        vmx = analysis.VMAnalysis(vm)
-        print "End"
-
+    for vm, vmx in s.get_objects_dex():
         print "Decompilation ...",
         sys.stdout.flush()
 
-        if not decompiler_type:
-            vm.set_decompiler(decompiler.DecompilerDAD(vm, vmx))
-        elif decompiler_type == "dex2jad":
+        if decompiler_type == "dex2jad":
             vm.set_decompiler(decompiler.DecompilerDex2Jad(
                 vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
                               ], androconf.CONF["PATH_JAD"],
@@ -146,8 +123,7 @@ def export_apps_to_format(filename,
                     "BIN_FERNFLOWER"
                 ], androconf.CONF["OPTIONS_FERNFLOWER"
                                  ], androconf.CONF["TMP_DIRECTORY"]))
-        else:
-            raise ("invalid decompiler !")
+
         print "End"
 
         if options.jar:
@@ -207,7 +183,6 @@ def export_apps_to_format(filename,
                 current_class = vm.get_class(method.get_class_name())
                 current_filename_class = valid_class_name(
                     current_class.get_name())
-                create_directory(filename_class, output)
 
                 current_filename_class = output_name + current_filename_class + ".java"
                 with open(current_filename_class, "w") as fd:
@@ -223,9 +198,11 @@ def export_apps_to_format(filename,
 
 def main(options, arguments):
     if options.input != None and options.output != None:
-        a = Androguard([options.input])
-        export_apps_to_format(options.input, a, options.output, options.limit,
-                              options.jar, options.decompiler, options.format)
+        s = session.Session()
+        with open(options.input, "r") as fd:
+            s.add(options.input, fd.read())
+            export_apps_to_format(options.input, s, options.output, options.limit,
+                                  options.jar, options.decompiler, options.format)
     else:
         print "Please, specify an input file and an output directory"
 

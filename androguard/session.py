@@ -194,3 +194,7 @@ class Session(object):
                 dx = dex_file[1]
             return a, d, dx
         return None
+
+    def get_objects_dex(self):
+        for digest in self.analyzed_dex:
+            yield self.analyzed_dex[digest]
