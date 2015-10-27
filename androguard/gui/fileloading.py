@@ -36,6 +36,8 @@ class FileLoadingThread(QtCore.QThread):
                 elif file_type == "SESSION":
                     self.session.load(file_path)
                     self.emit(QtCore.SIGNAL("loadedFile(bool)"), True)
+                else:
+                    self.emit(QtCore.SIGNAL("loadedFile(bool)"), False)
             except Exception as e:
                 androconf.debug(e)
                 androconf.debug(traceback.format_exc())
