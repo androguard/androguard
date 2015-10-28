@@ -522,6 +522,7 @@ class StringAnalysis(object):
 
     def __init__(self, value):
         self.value = value
+        self.orig_value = value
         self.xreffrom = set()
 
     def AddXrefFrom(self, classobj, methodobj):
@@ -531,8 +532,17 @@ class StringAnalysis(object):
     def get_xref_from(self):
         return self.xreffrom
 
+    def set_value(self, value):
+        self.value = value
+
+    def get_value(self):
+        return self.value
+
+    def get_orig_value(self):
+        return self.orig_value
+
     def __str__(self):
-        data = "XREFto for string %s in\n" % repr(self.value)
+        data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
                                 )
