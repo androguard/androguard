@@ -21,7 +21,7 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from androguard.core.androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
 
 
 def disable_print_colors():
