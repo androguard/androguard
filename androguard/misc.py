@@ -7,7 +7,7 @@ from androguard.core.analysis.analysis import *
 from androguard.core.analysis.ganalysis import *
 from androguard.decompiler.decompiler import *
 
-from cPickle import dumps, loads
+from pickle import dumps, loads
 from androguard.core import androconf
 
 def save_session(l, filename):

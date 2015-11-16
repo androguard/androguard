@@ -95,10 +95,10 @@ def translateDescReturn( desc_return ):
     return buff
 
 def translateToCLASS( desc_params, desc_return ):
-    print desc_params, desc_return,
+    print(desc_params, desc_return, end=' ')
 
     buff = "(" + translateDescParams( desc_params[ desc_params.find("(") + 1 : -1 ] ) + ")" + translateDescReturn( desc_return )
-    print "----->", buff
+    print("----->", buff)
 
     return [ desc_params[ : desc_params.find("(") ], buff ]
 

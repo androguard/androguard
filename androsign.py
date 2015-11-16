@@ -39,7 +39,7 @@ option_4 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information',
 options = [option_0, option_1, option_2, option_3, option_4]
 
 def display(ret, debug):
-    print "---->", ret[0]
+    print("---->", ret[0])
     sys.stdout.flush()
 
 def main(options, arguments):
@@ -51,7 +51,7 @@ def main(options, arguments):
     if options.input != None:
         ret_type = androconf.is_android( options.input )
 
-        print os.path.basename(options.input), ":",
+        print(os.path.basename(options.input), ":", end=' ')
         sys.stdout.flush()
         if ret_type == "APK":
             try:
@@ -59,9 +59,9 @@ def main(options, arguments):
                 if a.is_valid_APK():
                     display( s.check_apk( a ), options.verbose )
                 else:
-                    print "INVALID"
-            except Exception, e:
-                print "ERROR", e
+                    print("INVALID")
+            except Exception as e:
+                print("ERROR", e)
 
         elif ret_type == "DEX":
             display( s.check_dex( read(options.input) ), options.verbose )
@@ -76,26 +76,26 @@ def main(options, arguments):
 
                     ret_type = androconf.is_android( real_filename )
                     if ret_type == "APK":
-                        print os.path.basename( real_filename ), ":",
+                        print(os.path.basename( real_filename ), ":", end=' ')
                         sys.stdout.flush()
                         try:
                             a = apk.APK( real_filename )
                             if a.is_valid_APK():
                                 display( s.check_apk( a ), options.verbose )
                             else:
-                                print "INVALID APK"
-                        except Exception, e:
-                            print "ERROR", e
+                                print("INVALID APK")
+                        except Exception as e:
+                            print("ERROR", e)
                     elif ret_type == "DEX":
                         try:
-                            print os.path.basename( real_filename ), ":",
+                            print(os.path.basename( real_filename ), ":", end=' ')
                             sys.stdout.flush()
                             display( s.check_dex( read(real_filename) ), options.verbose )
-                        except Exception, e:
-                            print "ERROR", e
+                        except Exception as e:
+                            print("ERROR", e)
 
     elif options.version != None:
-        print "Androsign version %s" % androconf.ANDROGUARD_VERSION
+        print("Androsign version %s" % androconf.ANDROGUARD_VERSION)
 
 if __name__ == "__main__":
     parser = OptionParser()

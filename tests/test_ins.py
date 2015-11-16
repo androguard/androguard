@@ -80,7 +80,7 @@ def test(got, expected):
     else:
         prefix = '  X '
 
-    print '\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    print('\t%s got: %s expected: %s' % (prefix, repr(got), repr(expected)))
 
 def getVal(i):
     op = i.get_operands()
@@ -105,7 +105,7 @@ def check(a, values):
         if key not in values:
             continue
 
-        print "CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor()
+        print("CHECKING ...", method.get_class_name(), method.get_name(), method.get_descriptor())
         code = method.get_code()
         bc = code.get_bc()
 
@@ -130,4 +130,4 @@ for i in TESTS_CASES:
     check( a, VALUES[i] )
 
     x = analysis.VMAnalysis( a.get_vm() )
-    print x
+    print(x)

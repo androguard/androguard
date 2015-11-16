@@ -82,7 +82,7 @@ def get_permission_details(manifest_dir):
     strings_document = None
     strings_document_path = os.path.join(manifest_dir, STRINGS_REL_PATH) 
     if os.path.exists(strings_document_path):
-        print "Parsing file: %s" % strings_document_path
+        print("Parsing file: %s" % strings_document_path)
         strings_document = None
         try:
             strings_document = minidom.parse(strings_document_path)
@@ -103,7 +103,7 @@ def get_permission_details(manifest_dir):
     
     
     manifest_path = os.path.join(manifest_dir, ANDROID_MANIFEST_NAME)
-    print "Working with file: %s" % manifest_path
+    print("Working with file: %s" % manifest_path)
     #getting permissions
     manifest_document = None
     try:
@@ -161,27 +161,27 @@ def get_permission_details(manifest_dir):
 
 
 
-print "Starting analysis [%s] ..." % PATH_TO_AOSP_ROOT
+print("Starting analysis [%s] ..." % PATH_TO_AOSP_ROOT)
 
 platform_version, sdk_version = getPlatformVersions(aosp_root_dir=PATH_TO_AOSP_ROOT)
-print "Detected sdk_version [%s], platform_version [%s]..." % (platform_version, sdk_version)
+print("Detected sdk_version [%s], platform_version [%s]..." % (platform_version, sdk_version))
 if sdk_version == None:
-    print "Cannot detect SDK version. Exiting!"
+    print("Cannot detect SDK version. Exiting!")
     exit(1)
 
-print "Checking if we already have the file with the version..."
+print("Checking if we already have the file with the version...")
 perms_module_name = "%s_api%s.py" % (AOSP_PERMISSION_MODULE_NAME, sdk_version)
 perms_module_path = os.path.join(AOSP_PERMISSION_MODULE_PATH, perms_module_name)
 if os.path.exists(perms_module_path):
-    print "API specific file for this version already exists!"
-    print "If you want create a file for newer version, please, delete file: %s" % perms_module_path
+    print("API specific file for this version already exists!")
+    print("If you want create a file for newer version, please, delete file: %s" % perms_module_path)
     exit(1)
     
 
 permissions = {}
 permission_groups = {}
  
-print "Searching aosp for all manifest files..."
+print("Searching aosp for all manifest files...")
 dirs_with_manifest = get_all_dirs_with_manifest(root_dir_path=PATH_TO_AOSP_ROOT)
 for m_dir in dirs_with_manifest:
     perms, perm_groups = get_permission_details(m_dir)
@@ -195,11 +195,11 @@ for m_dir in dirs_with_manifest:
 #print "Permission:\n", permissions
 #print "Permission Groups:\n", permission_groups
  
-print "Checking if folder exists..."
+print("Checking if folder exists...")
 if not os.path.exists(AOSP_PERMISSION_MODULE_PATH):
     os.makedirs(AOSP_PERMISSION_MODULE_PATH)
  
-print "Appending found information to the permission file..."
+print("Appending found information to the permission file...")
 with codecs.open(perms_module_path, 'w', 'utf-8') as perm_py_module:
     perm_py_module.write("#!/usr/bin/python\n")
     perm_py_module.write("# -*- coding: %s -*-\n" % "utf-8")
@@ -209,16 +209,16 @@ with codecs.open(perms_module_path, 'w', 'utf-8') as perm_py_module:
      
      
     perm_py_module.write("%s = {\n" % AOSP_PERMISSIONS_PARAM_NAME)
-    for p_key in permissions.keys():
+    for p_key in list(permissions.keys()):
         properties = permissions.get(p_key)
-        props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(prop_key)) for prop_key in properties.keys()])
+        props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(prop_key)) for prop_key in list(properties.keys())])
         perm_py_module.write("\t'%s' : {%s},\n" % (p_key, props_string))
     perm_py_module.write("}\n\n")
  
     perm_py_module.write("%s = {\n" % AOSP_PERMISSION_GROUPS_PARAM_NAME)
-    for pg_key in permission_groups.keys():
+    for pg_key in list(permission_groups.keys()):
         properties = permission_groups.get(pg_key)
-        props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(prop_key)) for prop_key in properties.keys()])
+        props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(prop_key)) for prop_key in list(properties.keys())])
         perm_py_module.write("\t'%s' : {%s},\n" % (pg_key, props_string))
     perm_py_module.write("}\n")
     perm_py_module.write("#################################################\n")
@@ -226,4 +226,4 @@ with codecs.open(perms_module_path, 'w', 'utf-8') as perm_py_module:
      
  
  
-print "Done..."
+print("Done...")

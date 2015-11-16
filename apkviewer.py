@@ -57,12 +57,12 @@ def main(options, arguments):
             if a.is_valid_APK():
                 vm = dvm.DalvikVMFormat( a.get_dex() )
             else:
-                print "INVALID APK"
+                print("INVALID APK")
         elif ret_type == "DEX":
             try:
                 vm = dvm.DalvikVMFormat( read(options.input) )
-            except Exception, e:
-                print "INVALID DEX", e
+            except Exception as e:
+                print("INVALID DEX", e)
 
 
         vmx = analysis.VMAnalysis( vm )

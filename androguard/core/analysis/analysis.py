@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re, random, cPickle, collections
+import re, random, pickle, collections
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
     load_api_specific_resource_module
@@ -113,7 +113,7 @@ class BreakBlock(object):
 
     def show(self):
         for i in self._ins:
-            print "\t\t",
+            print("\t\t", end=' ')
             i.show(0)
 
 DVM_FIELDS_ACCESS = {
@@ -443,7 +443,7 @@ class TaintedVariables(object):
 
         for f, f1 in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-            if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys():
+            if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys()):
                 for path in f.get_paths():
                     #access, idx = path[0]
                     m_idx = path[1]
@@ -466,7 +466,7 @@ class TaintedVariables(object):
 
         for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
-            if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys():
+            if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys()):
                 perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"][data])
                 for p in perm_intersection:
                     try:
@@ -567,32 +567,32 @@ def show_Path(vm, path):
   if isinstance(path, PathVar):
     dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
     info_var = path.get_var_info()
-    print "%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
+    print("%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
                                           info_var,
                                           path.get_idx(),
                                           dst_class_name,
                                           dst_method_name,
-                                          dst_descriptor)
+                                          dst_descriptor))
   else:
     if path.get_access_flag() == TAINTED_PACKAGE_CALL:
       src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
       dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
 
-      print "%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
+      print("%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
                                                   src_class_name,
                                                   src_method_name,
                                                   src_descriptor,
                                                   path.get_idx(),
                                                   dst_class_name,
                                                   dst_method_name,
-                                                  dst_descriptor)
+                                                  dst_descriptor))
     else:
       src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      print "%d %s->%s%s (0x%x)" % (path.get_access_flag(),
+      print("%d %s->%s%s (0x%x)" % (path.get_access_flag(),
                                     src_class_name,
                                     src_method_name,
                                     src_descriptor,
-                                    path.get_idx())
+                                    path.get_idx()))
 
 def get_Path(vm, path):
   x = {}
@@ -648,7 +648,7 @@ def show_PathVariable(vm, paths):
       access, idx = path[0]
       m_idx = path[1]
       method = vm.get_cm_method(m_idx)
-      print "%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1])
+      print("%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1]))
 
 
 class PathP(object):
@@ -743,15 +743,15 @@ class TaintedPackage(object):
 
     def show(self):
         cm = self.vm.get_class_manager()
-        print self.get_name()
+        print(self.get_name())
         for _type in self.paths:
-            print "\t -->", _type
+            print("\t -->", _type)
             if _type == TAINTED_PACKAGE_CALL:
                 for path in self.paths[_type]:
-                    print "\t\t => %s <-- %x in %s" % (path.get_dst(cm), path.get_idx(), path.get_src(cm))
+                    print("\t\t => %s <-- %x in %s" % (path.get_dst(cm), path.get_idx(), path.get_src(cm)))
             else:
                 for path in self.paths[_type]:
-                    print "\t\t => %x in %s" % (path.get_idx(), path.get_src(cm))
+                    print("\t\t => %x in %s" % (path.get_idx(), path.get_src(cm)))
 
 def show_Permissions(dx):
     """
@@ -762,7 +762,7 @@ def show_Permissions(dx):
     p = dx.get_permissions( [] )
 
     for i in p:
-        print i, ":"
+        print(i, ":")
         for j in p[i]:
             show_Path( dx.get_vm(), j )
 
@@ -801,7 +801,7 @@ def show_NativeMethods(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    print get_NativeMethods(dx)
+    print(get_NativeMethods(dx))
 
 
 def show_ReflectionCode(dx):
@@ -1159,7 +1159,7 @@ class TaintedPackages(object):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
                         dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
-                        if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys():
+                        if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys()):
                             permissions.update(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
 
         return permissions
@@ -1185,7 +1185,7 @@ class TaintedPackages(object):
                 if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
                         data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
-                        if data in self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys():
+                        if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys()):
                             perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
                             for p in perm_intersection:
                                 try:
@@ -1536,21 +1536,21 @@ class MethodAnalysis(object):
         return self.tainted.get_tainted_variables().get_local_variables( self.method )
 
     def show(self):
-        print "METHOD", self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor()
+        print("METHOD", self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
-            print "\t", i
+            print("\t", i)
             i.show()
-            print ""
+            print("")
 
     def show_methods(self):
-        print "\t #METHODS :"
+        print("\t #METHODS :")
         for i in self.__bb:
             methods = i.get_methods()
             for method in methods:
-                print "\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor()
+                print("\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor())
                 for context in methods[method]:
-                    print "\t\t\t |---|", context.details
+                    print("\t\t\t |---|", context.details)
 
     def create_tags(self):
       """
@@ -1598,7 +1598,7 @@ SIGNATURES = {
                 SIGNATURE_HEX : {},
             }
 
-from sign import Signature
+from .sign import Signature
 
 class StringAnalysis(object):
     def __init__(self, value):
@@ -1773,7 +1773,7 @@ class newVMAnalysis(object):
     def create_xref(self):
         debug("Creating XREF/DREF")
 
-        instances_class_name = self.classes.keys()
+        instances_class_name = list(self.classes.keys())
         external_instances = {}
 
         for current_class in self.vm.get_classes():
@@ -1844,10 +1844,10 @@ class newVMAnalysis(object):
         return MethodAnalysis( self.vm, method, None )
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
-        print class_name, method_name, method_descriptor
+        print(class_name, method_name, method_descriptor)
         if class_name in self.classes:
             for method in self.classes[class_name].get_vm_class().get_methods():
-                print method.get_name(), method.get_descriptor()
+                print(method.get_name(), method.get_descriptor())
                 if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
                     return method
         return None

@@ -39,9 +39,9 @@ def disassemble(dex, offset, size):
         nb = 0
         idx = offset
         for i in d.disassemble(offset, size):
-            print "%-8d(%08x)" % (nb, idx),
+            print("%-8d(%08x)" % (nb, idx), end=' ')
             i.show(idx)
-            print
+            print()
 
             idx += i.get_length()
             nb += 1

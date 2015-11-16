@@ -47,7 +47,7 @@ class BasicReachDef(object):
                 if kill is not None:
                     self.defs[node][kill].add(i)
                     self.def_to_loc[kill].add(i)
-            for defs, values in self.defs[node].iteritems():
+            for defs, values in self.defs[node].items():
                 self.DB[node].add(max(values))
 
     def run(self):
@@ -148,7 +148,7 @@ def dead_code_elimination(graph, du, ud):
 
 
 def clear_path_node(graph, reg, loc1, loc2):
-    for loc in xrange(loc1, loc2):
+    for loc in range(loc1, loc2):
         ins = graph.get_ins_from_loc(loc)
         logger.debug('  treat loc: %d, ins: %s', loc, ins)
         if ins is None:
@@ -362,7 +362,7 @@ def split_variables(graph, lvars, DU, UD):
         nb_vars = max(lvars) + 1
     else:
         nb_vars = 0
-    for var, versions in variables.iteritems():
+    for var, versions in variables.items():
         nversions = len(versions)
         if nversions == 1:
             continue
@@ -449,7 +449,7 @@ def build_def_use(graph, lparams):
                                                             analysis.R[node])
                     UD[var, i].extend(intersect)
     DU = defaultdict(list)
-    for var_loc, defs_loc in UD.items():
+    for var_loc, defs_loc in list(UD.items()):
         var, loc = var_loc
         for def_loc in defs_loc:
             DU[var, def_loc].append(loc)

@@ -99,12 +99,12 @@ def main(options, arguments):
             _a.ianalyze()
             perms_access = _a.get_analysis().get_permissions( [] )
             for perm in perms_access:
-                print "PERM : ", perm
+                print("PERM : ", perm)
                 for path in perms_access[ perm ]:
                     show_Path( _a.get_vm(), path )
 
     elif options.version != None:
-        print "Androlyze version %s" % androconf.ANDROGUARD_VERSION
+        print("Androlyze version %s" % androconf.ANDROGUARD_VERSION)
 
 if __name__ == "__main__":
     parser = OptionParser()

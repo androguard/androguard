@@ -27,7 +27,7 @@ def test(got, expected):
         prefix = ' OK '
     else:
         prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
+    print('%s got: %s expected: %s' % (prefix, repr(got), repr(expected)), end=' ')
     return (got == expected)
 
 

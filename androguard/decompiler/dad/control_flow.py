@@ -76,7 +76,7 @@ def intervals(graph):
             interv_heads[head].compute_end(graph)
 
     # Edges is a mapping of 'Interval -> [header nodes of interval successors]'
-    for interval, heads in edges.items():
+    for interval, heads in list(edges.items()):
         for head in heads:
             interval_graph.add_edge(interval, interv_heads[head])
 
@@ -187,7 +187,7 @@ def loop_struct(graphs_list, intervals_list):
     first_graph = graphs_list[0]
     for i, graph in enumerate(graphs_list):
         interval = intervals_list[i]
-        for head in sorted(interval.keys(), key=lambda x: x.num):
+        for head in sorted(list(interval.keys()), key=lambda x: x.num):
             loop_nodes = []
             for node in graph.all_preds(head):
                 if node.interval is head.interval:
@@ -203,7 +203,7 @@ def if_struct(graph, idoms):
     for node in graph.post_order():
         if node.type.is_cond:
             ldominates = []
-            for n, idom in idoms.iteritems():
+            for n, idom in idoms.items():
                 if node is idom and len(graph.reverse_edges.get(n, [])) > 1:
                     ldominates.append(n)
             if len(ldominates) > 0:
@@ -227,7 +227,7 @@ def switch_struct(graph, idoms):
                 if idoms[suc] is not node:
                     m = common_dom(idoms, node, suc)
             ldominates = []
-            for n, dom in idoms.iteritems():
+            for n, dom in idoms.items():
                 if m is dom and len(graph.all_preds(n)) > 1:
                     ldominates.append(n)
             if len(ldominates) > 0:
@@ -260,7 +260,7 @@ def short_circuit_struct(graph, idom, node_map):
         condition = Condition(node1, node2, is_and, is_not)
 
         new_node = ShortCircuitBlock(new_name, condition)
-        for old_n, new_n in node_map.iteritems():
+        for old_n, new_n in node_map.items():
             if new_n in (node1, node2):
                 node_map[old_n] = new_node
         node_map[node1] = new_node
@@ -400,7 +400,7 @@ def catch_struct(graph, idoms):
 
 
 def update_dom(idoms, node_map):
-    for n, dom in idoms.iteritems():
+    for n, dom in idoms.items():
         idoms[n] = node_map.get(dom, dom)
 
 

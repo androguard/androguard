@@ -108,7 +108,7 @@ class Graph(object):
         return self.loc_to_ins.get(loc)
 
     def get_node_from_loc(self, loc):
-        for (start, end), node in self.loc_to_node.iteritems():
+        for (start, end), node in self.loc_to_node.items():
             if start <= loc <= end:
                 return node
 
@@ -335,7 +335,7 @@ def dom_lt(graph):
     # Step 1:
     semi = {v: 0 for v in graph.nodes}
     n = _dfs(graph.entry, 0)
-    for i in xrange(n, 1, -1):
+    for i in range(n, 1, -1):
         w = vertex[i]
     # Step 2:
         for v in pred[w]:

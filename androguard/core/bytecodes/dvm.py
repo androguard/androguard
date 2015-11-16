@@ -252,7 +252,7 @@ def writesleb128(value):
     end = 0
     buff = ""
 
-    if (value & (-sys.maxint - 1)) == 0:
+    if (value & (-sys.maxsize - 1)) == 0:
         end = 0
     else:
         end = -1
@@ -538,7 +538,7 @@ class AnnotationSetItem(object):
         self.annotation_off_item = []
 
         self.size = unpack("=I", buff.read( 4 ) )[0]
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.annotation_off_item.append( AnnotationOffItem(buff, cm) )
 
     def get_annotation_off_item(self):
@@ -628,7 +628,7 @@ class AnnotationSetRefList(object):
         self.list = []
 
         self.size = unpack("=I", buff.read( 4 ) )[0]
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.list.append( AnnotationSetRefItem(buff, cm) )
 
     def get_list(self):
@@ -844,15 +844,15 @@ class AnnotationsDirectoryItem(object):
         self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
 
         self.field_annotations = []
-        for i in xrange(0, self.annotated_fields_size):
+        for i in range(0, self.annotated_fields_size):
             self.field_annotations.append( FieldAnnotation( buff, cm ) )
 
         self.method_annotations = []
-        for i in xrange(0, self.annotated_methods_size):
+        for i in range(0, self.annotated_methods_size):
             self.method_annotations.append( MethodAnnotation( buff, cm ) )
 
         self.parameter_annotations = []
-        for i in xrange(0, self.annotated_parameters_size):
+        for i in range(0, self.annotated_parameters_size):
             self.parameter_annotations.append( ParameterAnnotation( buff, cm ) )
 
     def get_class_annotations_off(self):
@@ -1033,7 +1033,7 @@ class TypeList(object):
         self.size = unpack("=I", buff.read( 4 ) )[0]
 
         self.list = []
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.list.append( TypeItem( buff, cm ) )
 
     def get_pad(self):
@@ -1189,7 +1189,7 @@ class DebugInfoItem(object):
         #print "line", self.line_start, "params", self.parameters_size
 
         self.parameter_names = []
-        for i in xrange(0, self.parameters_size):
+        for i in range(0, self.parameters_size):
             self.parameter_names.append( readuleb128p1( buff ) )
 
         self.bytecodes = []
@@ -1342,7 +1342,7 @@ class EncodedArray(object):
         self.size = readuleb128( buff )
 
         self.values = []
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.values.append( EncodedValue(buff, cm) )
 
     def get_size(self):
@@ -1543,7 +1543,7 @@ class EncodedAnnotation(object):
         self.size = readuleb128( buff )
 
         self.elements = []
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.elements.append( AnnotationElement( buff, cm ) )
 
     def get_type_idx(self):
@@ -1703,7 +1703,7 @@ class EncodedArrayItem(object):
 def utf8_to_string(buff, length):
     chars = []
 
-    for _ in xrange(length):
+    for _ in range(length):
         first_char = ord(buff.read(1))
         value = first_char >> 4
         if value in (0x00, 0x01, 0x02, 0x03,
@@ -1718,7 +1718,7 @@ def utf8_to_string(buff, length):
             value = ((first_char & 0x1f) << 6) | (second_char & 0x3f)
             if value != 0 and value < 0x80:
                 warning('at offset %x: utf8 should have been represented with one byte encoding' % buff.get_idx())
-            chars.append(unichr(value))
+            chars.append(chr(value))
         elif value == 0x0e:
             second_char = ord(buff.read(1))
             if second_char & 0xc0 != 0x80:
@@ -1729,7 +1729,7 @@ def utf8_to_string(buff, length):
             value = ((first_char & 0x0f) << 12) | ((second_char & 0x3f) << 6) | (third_char & 0x3f)
             if value < 0x800:
                 warning('at offset %x: utf8 should have been represented with two-byte encoding' % buff.get_idx())
-            chars.append(unichr(value))
+            chars.append(chr(value))
         else:
             warning('at offset %x: illegal utf8' % buff.get_idx())
     return ''.join(chars).encode('utf-8')
@@ -1908,7 +1908,7 @@ class TypeHIdItem(object):
         self.offset = buff.get_idx()
 
         self.type = []
-        for i in xrange(0, size):
+        for i in range(0, size):
             self.type.append( TypeIdItem( buff, cm ) )
 
     def get_type(self):
@@ -2063,7 +2063,7 @@ class ProtoHIdItem(object):
 
         self.proto = []
 
-        for i in xrange(0, size):
+        for i in range(0, size):
             self.proto.append( ProtoIdItem(buff, cm) )
 
     def set_off(self, off):
@@ -2213,7 +2213,7 @@ class FieldHIdItem(object):
         self.offset = buff.get_idx()
 
         self.elem = []
-        for i in xrange(0, size):
+        for i in range(0, size):
             self.elem.append( FieldIdItem(buff, cm) )
 
     def set_off(self, off):
@@ -2238,7 +2238,7 @@ class FieldHIdItem(object):
     def show(self):
         nb = 0
         for i in self.elem:
-            print nb,
+            print(nb, end=' ')
             i.show()
             nb = nb + 1
 
@@ -2382,7 +2382,7 @@ class MethodHIdItem(object):
         self.offset = buff.get_idx()
 
         self.methods = []
-        for i in xrange(0, size):
+        for i in range(0, size):
             self.methods.append( MethodIdItem(buff, cm) )
 
     def set_off(self, off):
@@ -2402,10 +2402,10 @@ class MethodHIdItem(object):
             i.reload()
 
     def show(self):
-        print "METHOD_ID_ITEM"
+        print("METHOD_ID_ITEM")
         nb = 0
         for i in self.methods:
-            print nb,
+            print(nb, end=' ')
             i.show()
             nb = nb + 1
 
@@ -2432,7 +2432,7 @@ class ProtoIdItemInvalid(object):
         return "(AG:IPI:invalid_return_type)"
 
     def show(self):
-        print "AG:IPI:invalid_proto_item", self.get_shorty(), self.get_return_type(), self.get_params()
+        print("AG:IPI:invalid_proto_item", self.get_shorty(), self.get_return_type(), self.get_params())
 
 class FieldIdItemInvalid(object):
     def get_class_name(self):
@@ -2451,7 +2451,7 @@ class FieldIdItemInvalid(object):
         return [ self.get_class_name(), self.get_type(), self.get_name() ]
 
     def show(self):
-        print "AG:IFI:invalid_field_item"
+        print("AG:IFI:invalid_field_item")
 
 class MethodIdItemInvalid(object):
     def get_class_name(self):
@@ -2470,7 +2470,7 @@ class MethodIdItemInvalid(object):
         return [ self.get_class_name(), self.get_name(), self.get_proto() ]
 
     def show(self):
-        print "AG:IMI:invalid_method_item"
+        print("AG:IMI:invalid_method_item")
 
 
 class EncodedField(object):
@@ -2745,7 +2745,7 @@ class EncodedMethod(object):
             info["registers"] = (0, nb - len(params) - 1)
             j = 0
             info["params"] = []
-            for i in xrange(nb - len(params), nb):
+            for i in range(nb - len(params), nb):
               info["params"].append((i, get_type(params[j])))
               j += 1
           else:
@@ -2762,7 +2762,7 @@ class EncodedMethod(object):
         if params:
             bytecode._PrintDefault("- local registers: v%d...v%d\n" % (0, nb - len(params) - 1))
             j = 0
-            for i in xrange(nb - len(params), nb):
+            for i in range(nb - len(params), nb):
                 bytecode._PrintDefault("- v%d: %s\n" % (i, get_type(params[j])))
                 j += 1
         else:
@@ -3093,12 +3093,12 @@ class ClassDataItem(object):
         if value != None:
             values = value.get_values()
             if len(values) <= len(self.static_fields):
-                for i in xrange(0, len(values)):
+                for i in range(0, len(values)):
                     self.static_fields[i].set_init_value( values[i] )
 
     def _load_elements(self, size, l, Type, buff, cm):
         prev = 0
-        for i in xrange(0, size):
+        for i in range(0, size):
             el = Type(buff, cm)
             el.adjust_idx( prev )
 
@@ -3463,7 +3463,7 @@ class ClassHDefItem(object):
 
         self.class_def = []
 
-        for i in xrange(0, size):
+        for i in range(0, size):
             idx = buff.get_idx()
 
             class_def = ClassDefItem( buff, cm )
@@ -3575,7 +3575,7 @@ class EncodedCatchHandler(object):
 
         self.handlers = []
 
-        for i in xrange(0, abs(self.size)):
+        for i in range(0, abs(self.size)):
             self.handlers.append( EncodedTypeAddrPair(buff) )
 
         if self.size <= 0:
@@ -3655,7 +3655,7 @@ class EncodedCatchHandlerList(object):
         self.size = readuleb128( buff )
         self.list = []
 
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.list.append( EncodedCatchHandler(buff, cm) )
 
 
@@ -3819,7 +3819,7 @@ class Instruction(object):
         """
             Print the instruction
         """
-        print self.get_name() + " " + self.get_output(idx),
+        print(self.get_name() + " " + self.get_output(idx), end=' ')
 
     def show_buff(self, idx):
         """
@@ -3978,7 +3978,7 @@ class FillArrayData(object):
         data = self.get_data()
 
         buff += repr(data) + " | "
-        for i in xrange(0, len(data)):
+        for i in range(0, len(data)):
           buff += "\\x%02x" % ord(data[i])
 
         return buff
@@ -4005,7 +4005,7 @@ class FillArrayData(object):
         """
         buff = self.get_name() + " "
 
-        for i in xrange(0, len(self.data)):
+        for i in range(0, len(self.data)):
             buff += "\\x%02x" % ord(self.data[i])
         return buff
 
@@ -4013,7 +4013,7 @@ class FillArrayData(object):
         """
             Print the instruction
         """
-        print self.show_buff(pos),
+        print(self.show_buff(pos), end=' ')
 
     def get_length(self):
         """
@@ -4044,11 +4044,11 @@ class SparseSwitch(object):
         self.targets = []
 
         idx = self.format_general_size
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.keys.append(unpack('=l', buff[idx:idx + 4])[0])
             idx += 4
 
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
             idx += 4
 
@@ -4130,7 +4130,7 @@ class SparseSwitch(object):
             :rtype: string
         """
         buff = self.get_name() + " "
-        for i in xrange(0, len(self.keys)):
+        for i in range(0, len(self.keys)):
             buff += "%x:%x " % (self.keys[i], self.targets[i])
 
         return buff
@@ -4139,7 +4139,7 @@ class SparseSwitch(object):
         """
             Print the instruction
         """
-        print self.show_buff(pos),
+        print(self.show_buff(pos), end=' ')
 
     def get_length(self):
         return self.format_general_size + (self.size * calcsize('<L')) * 2
@@ -4171,7 +4171,7 @@ class PackedSwitch(object):
         if (max_size * 4) > len(buff):
             max_size = len(buff) - idx - 8
 
-        for i in xrange(0, max_size):
+        for i in range(0, max_size):
             self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
             idx += 4
 
@@ -4264,7 +4264,7 @@ class PackedSwitch(object):
         """
             Print the instruction
         """
-        print self.show_buff(pos),
+        print(self.show_buff(pos), end=' ')
 
     def get_length(self):
         return self.format_general_size + (self.size * calcsize('=L'))
@@ -6124,7 +6124,7 @@ class LinearSweepAlgorithm(object):
               try:
                 obj = get_extented_instruction(cm, op_value, insn[idx:])
                 classic_instruction = False
-              except struct.error, why:
+              except struct.error as why:
                 warning("error while decoding instruction ..." + why.__str__())
 
             # optimized instructions ?
@@ -6309,9 +6309,9 @@ class DCode(object):
         nb = 0
         idx = 0
         for i in self.get_instructions():
-            print "%-8d(%08x)" % (nb, idx),
+            print("%-8d(%08x)" % (nb, idx), end=' ')
             i.show(nb)
-            print
+            print()
 
             idx += i.get_length()
             nb += 1
@@ -6435,7 +6435,7 @@ class DalvikCode(object):
         self.tries = []
         self.handlers = None
         if self.tries_size > 0:
-            for i in xrange(0, self.tries_size):
+            for i in range(0, self.tries_size):
                 self.tries.append(TryItem(buff, self.__CM))
 
             self.handlers = EncodedCatchHandlerList(buff, self.__CM)
@@ -6632,7 +6632,7 @@ class CodeItem(object):
         self.code = []
         self.__code_off = {}
 
-        for i in xrange(0, size):
+        for i in range(0, size):
             x = DalvikCode( buff, cm )
             self.code.append( x )
             self.__code_off[ x.get_off() ] = x
@@ -6654,7 +6654,7 @@ class CodeItem(object):
             i.reload()
 
     def show(self):
-        print "CODE_ITEM"
+        print("CODE_ITEM")
         for i in self.code:
             i.show()
 
@@ -6706,7 +6706,7 @@ class MapItem(object):
 
     def next(self, buff, cm):
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM":
-            self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ StringIdItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CODE_ITEM":
             self.item = CodeItem( self.size, buff, cm )
@@ -6730,31 +6730,31 @@ class MapItem(object):
             self.item = HeaderItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ANNOTATION_ITEM":
-            self.item = [ AnnotationItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ AnnotationItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ANNOTATION_SET_ITEM":
-            self.item = [ AnnotationSetItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ AnnotationSetItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ANNOTATIONS_DIRECTORY_ITEM":
-            self.item = [ AnnotationsDirectoryItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ AnnotationsDirectoryItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ANNOTATION_SET_REF_LIST":
-            self.item = [ AnnotationSetRefList( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ AnnotationSetRefList( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_TYPE_LIST":
-            self.item = [ TypeList( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ TypeList( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_DATA_ITEM":
-            self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ StringDataItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM":
             self.item = DebugInfoItemEmpty( buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM":
-            self.item = [ EncodedArrayItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ EncodedArrayItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CLASS_DATA_ITEM":
-            self.item = [ ClassDataItem(buff, cm) for i in xrange(0, self.size) ]
+            self.item = [ ClassDataItem(buff, cm) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_MAP_LIST":
             pass # It's me I think !!!
@@ -6764,7 +6764,7 @@ class MapItem(object):
 
     def next_lazy(self, buff, cm):
         if TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_ID_ITEM":
-            self.item = [ StringIdItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ StringIdItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CODE_ITEM":
             self.item = CodeItem( self.size, buff, cm )
@@ -6788,19 +6788,19 @@ class MapItem(object):
             self.item = HeaderItem( self.size, buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_TYPE_LIST":
-            self.item = [ TypeList( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ TypeList( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_STRING_DATA_ITEM":
-            self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ StringDataItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM":
             self.item = DebugInfoItemEmpty( buff, cm )
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM":
-            self.item = [ EncodedArrayItem( buff, cm ) for i in xrange(0, self.size) ]
+            self.item = [ EncodedArrayItem( buff, cm ) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_CLASS_DATA_ITEM":
-            self.item = [ ClassDataItem(buff, cm) for i in xrange(0, self.size) ]
+            self.item = [ ClassDataItem(buff, cm) for i in range(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_MAP_LIST":
             pass # It's me I think !!!
@@ -7182,7 +7182,7 @@ class MapList(object):
         self.size = unpack("=I", buff.read( 4 ) )[0]
 
         self.map_item = []
-        for i in xrange(0, self.size):
+        for i in range(0, self.size):
             idx = buff.get_idx()
 
             mi = MapItem( buff, self.CM )
@@ -8209,13 +8209,13 @@ class OdexHeaderItem(object):
         self.padding = unpack("=I", buff.read(4))[0]
 
     def show(self):
-        print "dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset,
+        print("dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset,
                                                                                                                   self.dex_length,
                                                                                                                   self.deps_offset,
                                                                                                                   self.deps_length,
                                                                                                                   self.aux_offset,
                                                                                                                   self.aux_length,
-                                                                                                                  self.flags)
+                                                                                                                  self.flags))
 
     def get_raw(self):
       return pack("=I", self.dex_offset) +    \
@@ -8333,7 +8333,7 @@ def get_params_info(nb, proto):
     if params:
         i_buffer += "# - local registers: v%d...v%d\n" % (0, nb - len(params) - 1)
         j = 0
-        for i in xrange(nb - len(params), nb):
+        for i in range(nb - len(params), nb):
             i_buffer += "# - v%d:%s\n" % (i, get_type(params[j]))
             j += 1
     else:

@@ -186,14 +186,14 @@ class SourceWindow(QtGui.QTextEdit):
         selection = cursor.selectedText()
         androconf.debug("Xref asked for '%s' (%d, %d)" % (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Xref not available. No info for: '%s'." % selection)
             return
 
         class_ = None
         method_ = None
         t = self.doc.binding[start]
-        print t
+        print(t)
 
         if t[0] == 'NAME_METHOD_PROTOTYPE':
             method_ = t[1]
@@ -215,7 +215,7 @@ class SourceWindow(QtGui.QTextEdit):
                 return
 
             method_analysis = class_analysis.get_method_analysis(current_analysis.get_method_by_name(method_class_name, method_name, method_proto))
-            print method_analysis
+            print(method_analysis)
             if not method_analysis:
                 self.mainwin.showStatus("No xref returned (no method_analysis object).")
                 return
@@ -232,7 +232,7 @@ class SourceWindow(QtGui.QTextEdit):
                 return
 
             field_analysis = class_analysis.get_field_analysis(field_)
-            print field_analysis
+            print(field_analysis)
             if not field_analysis:
                 self.mainwin.showStatus("No xref returned (no field_analysis object).")
                 return
@@ -266,7 +266,7 @@ class SourceWindow(QtGui.QTextEdit):
         selection = cursor.selectedText()
         androconf.debug("Rename asked for '%s' (%d, %d)" % (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Rename not available. No info for: '%s'." % selection)
             return
 
@@ -304,7 +304,7 @@ class SourceWindow(QtGui.QTextEdit):
         selection = cursor.selectedText()
         androconf.debug("Goto asked for '%s' (%d, %d)" % (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Goto not available. No info for: '%s'." % selection)
             return
 
@@ -333,7 +333,7 @@ class SourceWindow(QtGui.QTextEdit):
         end = cursor.selectionEnd()
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
-        if start in self.doc.binding.keys():
+        if start in list(self.doc.binding.keys()):
             self.mainwin.showStatus('%s at position: (%d, %d)' % (str(self.doc.binding[start]), start, end))
         else:
             self.mainwin.showStatus("No info available.")

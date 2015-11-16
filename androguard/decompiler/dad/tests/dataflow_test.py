@@ -87,7 +87,7 @@ class DataflowTest(unittest.TestCase):
                 n4: [n5, n8], n5: [n6, n7], n6: [n8],
                 n7: [n8], n8: [n9]}
         preds = collections.defaultdict(list)
-        for pred, lsucs in sucs.iteritems():
+        for pred, lsucs in sucs.items():
             for suc in lsucs:
                 preds[suc].append(pred)
 

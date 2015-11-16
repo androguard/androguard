@@ -155,7 +155,7 @@ def test(got, expected):
         prefix = ' OK '
     else:
         prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    print('%s got: %s expected: %s' % (prefix, repr(got), repr(expected)))
 
 
 a = AndroguardS( TEST_CASE )
@@ -166,7 +166,7 @@ for method in a.get_methods():
     if key not in VALUES:
         continue
 
-    print method.get_class_name(), method.get_name(), method.get_descriptor()
+    print(method.get_class_name(), method.get_name(), method.get_descriptor())
     code = method.get_code()
     bc = code.get_bc()
 

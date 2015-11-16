@@ -15,9 +15,9 @@ class ARM2(object):
         b = r_bin.RBin ()
         b.load("./apks/exploits/617efb2d51ad5c4aed50b76119ad880c6adcd4d2e386b3170930193525b0563d", None)
         baddr= b.get_baddr()
-        print '-> Sections'
+        print('-> Sections')
         for i in b.get_sections ():
-            print 'offset=0x%08x va=0x%08x size=%05i %s' % (i.offset, baddr+i.rva, i.size, i.name)
+            print('offset=0x%08x va=0x%08x size=%05i %s' % (i.offset, baddr+i.rva, i.size, i.name))
 
         core = r_core.RCore()
         core.config.set_i("io.va", 1)
@@ -29,35 +29,35 @@ class ARM2(object):
         core.anal_all()
 
         for fcn in core.anal.get_fcns():
-            print type(fcn), fcn.type, "%x" % fcn.addr, fcn.ninstr, fcn.name
+            print(type(fcn), fcn.type, "%x" % fcn.addr, fcn.ninstr, fcn.name)
             #                    if (fcn.type == FcnType_FCN or fcn.type == FcnType_SYM):
 
         for s in core.bin.get_entries():
-            print s, type(s), s.rva, "%x" % s.offset
+            print(s, type(s), s.rva, "%x" % s.offset)
 
 
         #a = r_asm.RAsm()
         for s in core.bin.get_symbols():
-            print s, s.name, s.rva, s.offset, s.size
+            print(s, s.name, s.rva, s.offset, s.size)
             if s.name == "rootshell":
                 #print core.disassemble_bytes( 0x8000 + s.offset, s.size )
 
                 #core.assembler.mdisassemble( 0x8000 + s.offset, s.size )
                 z = core.op_anal( 0x8000 + s.offset )
-                print z.mnemonic
+                print(z.mnemonic)
 
                 raise("oo")
 
-                print core.bin.bins, core.bin.user
+                print(core.bin.bins, core.bin.user)
                 d = core.bin.read_at( 0x8000 + s.offset, x, s.size )
-                print d
+                print(d)
                 raise("ooo")
                 j = 0
                 while j < s.size:
                     v = core.disassemble( 0x8000 + s.offset + j )
                     v1 = core.op_str( 0x8000 + s.offset + j )
 
-                    print v1
+                    print(v1)
                 #    print 0x8000 + s.offset + j, j, v.inst_len, v.buf_asm
                     j += v.inst_len
 

@@ -20,8 +20,8 @@ from idaapi import *
 from idautils import *
 from idc import *
 
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-import cPickle
+from xmlrpc.server import SimpleXMLRPCServer
+import pickle
 
 def is_connected():
     return True
@@ -44,7 +44,7 @@ def wrapper_get_raw(oops):
                 F[ function_ea ].append( (head, GetMnem(head), GetOpnd(head, 0), GetOpnd(head, 1), GetOpnd(head, 2)) )
 
                 refs = CodeRefsFrom(head, 0)
-                refs = set(filter(lambda x: x>=f_start and x<=f_end, refs))
+                refs = set([x for x in refs if x>=f_start and x<=f_end])
 
                 if refs:
                     next_head = NextHead(head, f_end)
@@ -83,21 +83,21 @@ def wrapper_get_raw(oops):
         bb_addr.reverse()
         F[ function_ea ].append( (bb_addr, sorted(edges)) )
 
-    return cPickle.dumps( F )
+    return pickle.dumps( F )
 
 def wrapper_Heads(oops):
-    start, end = cPickle.loads(oops)
-    return cPickle.dumps( [ x for x in Heads( start, end ) ] )
+    start, end = pickle.loads(oops)
+    return pickle.dumps( [ x for x in Heads( start, end ) ] )
 
 def wrapper_Functions(oops):
-    return cPickle.dumps( [ x for x in Functions() ] )
+    return pickle.dumps( [ x for x in Functions() ] )
 
 def wrapper_get_function(oops):
-    name = cPickle.loads(oops)
+    name = pickle.loads(oops)
     for function_ea in Functions():
         if GetFunctionName(function_ea) == name:
-            return cPickle.dumps( function_ea )
-    return cPickle.dumps( -1 )
+            return pickle.dumps( function_ea )
+    return pickle.dumps( -1 )
 
 def wrapper_quit(oops):
     qexit(0)
@@ -109,7 +109,7 @@ class IDAWrapper(object):
         #fd.write( str(type(params[0])) + "\n" )
         #fd.close()
 
-        params = cPickle.loads( *params )
+        params = pickle.loads( *params )
         if isinstance(params, tuple) == False:
             params = (params,)
 
@@ -124,8 +124,8 @@ class IDAWrapper(object):
                 z = getattr(idautils, a, None)
                 ret = z( *params )
                 if type(ret).__name__=='generator':
-                    return cPickle.dumps( [ i for i in ret ] )
-                return cPickle.dumps( ret )
+                    return pickle.dumps( [ i for i in ret ] )
+                return pickle.dumps( ret )
 
         for a in dir(idc):
             #fd.write( "\t" + a + "\n" )
@@ -133,10 +133,10 @@ class IDAWrapper(object):
                 z = getattr(idc, a, None)
                 ret = z( *params )
                 if type(ret).__name__=='generator':
-                    return cPickle.dumps( [ i for i in ret ] )
-                return cPickle.dumps( ret )
+                    return pickle.dumps( [ i for i in ret ] )
+                return pickle.dumps( ret )
 
-        return cPickle.dumps( [] )
+        return pickle.dumps( [] )
 
 def main():
     autoWait()

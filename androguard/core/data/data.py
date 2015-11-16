@@ -87,10 +87,10 @@ class Data(object):
         return self.gvmx.export_to_gml()
 
     def export_methods_to_gml(self):
-        print self.gvmx.G
+        print(self.gvmx.G)
 
         for node in self.gvmx.G.nodes():
-            print self.gvmx.nodes_id[ node ].method_name, self.gvmx.nodes_id[ node ].get_attributes()
+            print(self.gvmx.nodes_id[ node ].method_name, self.gvmx.nodes_id[ node ].get_attributes())
 
     def export_apk_to_gml(self):
         if self.apk_data != None:
@@ -221,7 +221,7 @@ class DexViewer(object):
 
             buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
-            print name
+            print(name)
 
             buff_nodes = ""
             buff_edges = ""
@@ -237,7 +237,7 @@ class DexViewer(object):
 
                 for i in mx.basic_blocks.get():
                     id_i = self.new_id(i, l_id)
-                    print i, id_i, i.exception_analysis
+                    print(i, id_i, i.exception_analysis)
 
                     buff_nodes += self.add_node( i, id_i )
 
@@ -249,7 +249,7 @@ class DexViewer(object):
                         val = 2
 
                     for j in i.childs:
-                        print "\t", j
+                        print("\t", j)
 
                         id_j = self.new_id(j[-1], l_id)
                         buff_edges += self.add_edge(i, id_i, j[-1], id_j, l_eid, val)
@@ -321,7 +321,7 @@ class ApkViewer(object):
         self.G.add_node( root )
 
         for x, y, z in self.a.get_files_information():
-            print x, y, z, os.path.basename(x)
+            print(x, y, z, os.path.basename(x))
 
             l = []
             splitall( x, l )
@@ -359,7 +359,7 @@ class ApkViewer(object):
 
 
         for node in self.G.nodes():
-            print node
+            print(node)
 
             buff += "<node id=\"%d\">\n" % self.ids[node]
             buff += "<data key=\"d6\">\n"

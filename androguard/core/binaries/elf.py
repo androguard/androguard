@@ -75,7 +75,7 @@ class ELF(object):
     def create_symbol_pool(self):
         dll_dyn_funcs = get_import_address_elf(self.E)
         self.symbol_pool = asmbloc.asm_symbol_pool()
-        for (n,f), ads in dll_dyn_funcs.items():
+        for (n,f), ads in list(dll_dyn_funcs.items()):
             for ad in ads:
                 l  = self.symbol_pool.getby_name_create("%s_%s"%(n, f))
                 l.offset = ad
@@ -90,12 +90,12 @@ class ELF(object):
 
     def create_functions(self):
         try:
-            for k, v in self.E.sh.symtab.symbols.items():
+            for k, v in list(self.E.sh.symtab.symbols.items()):
                 if v.size != 0:
                     self.functions.append( Function(self.CM, k, v) )
         except AttributeError:
             pass
 
-        for k, v in self.E.sh.dynsym.symbols.items():
+        for k, v in list(self.E.sh.dynsym.symbols.items()):
             if v.size != 0:
                 self.functions.append( Function(self.CM, k, v) )

@@ -602,7 +602,7 @@ def export_system(system, directory):
 
     import fuzzy.doc.structure.dot.dot
     import subprocess
-    for name,rule in system.rules.items():
+    for name,rule in list(system.rules.items()):
             cmd = "dot -T png -o '%s/fuzzy-Rule %s.png'" % (directory,name)
             f = subprocess.Popen(cmd, shell=True, bufsize=32768, stdin=subprocess.PIPE).stdin
             fuzzy.doc.structure.dot.dot.print_header(f,"XXX")
@@ -613,8 +613,8 @@ def export_system(system, directory):
     fuzzy.doc.structure.dot.dot.printDot(system,f)
 
     d.overscan=0
-    in_vars = [name for name,var in system.variables.items() if isinstance(var,fuzzy.InputVariable.InputVariable)]
-    out_vars = [name for name,var in system.variables.items() if isinstance(var,fuzzy.OutputVariable.OutputVariable)]
+    in_vars = [name for name,var in list(system.variables.items()) if isinstance(var,fuzzy.InputVariable.InputVariable)]
+    out_vars = [name for name,var in list(system.variables.items()) if isinstance(var,fuzzy.OutputVariable.OutputVariable)]
 
     if len(in_vars) == 2 and not (
             isinstance(system.variables[in_vars[0]].fuzzify,fuzzy.fuzzify.Dict.Dict)
@@ -758,12 +758,12 @@ class FuzzyRisk(object):
           score_order_sign[ method ] = self.get_method_score( method.get_length(),
                                libelsign.entropy( vmx.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
                                libelsign.entropy( vmx.get_method_signature(method, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
-                               map(lambda perm : (perm, DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]), vmx.get_permissions_method( method )),
+                               [(perm, DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]) for perm in vmx.get_permissions_method( method )],
           )
 
 
       for v in sorted(score_order_sign, key=lambda x : score_order_sign[x], reverse=True):
-          print v.get_name(), v.get_class_name(), v.get_descriptor(), v.get_length(), score_order_sign[ v ]
+          print(v.get_name(), v.get_class_name(), v.get_descriptor(), v.get_length(), score_order_sign[ v ])
 
       ##########################
 
@@ -832,7 +832,7 @@ class FuzzyRisk(object):
           except KeyError:
               pass
 
-      print length, android_entropy, java_entropy, val_permissions
+      print(length, android_entropy, java_entropy, val_permissions)
 
       output_values = {"output_method_one_score" : 0.0}
       input_val = {}
@@ -1029,7 +1029,7 @@ class MethodScore(object):
             except KeyError:
                 pass
 
-        print length, matches, android_entropy, java_entropy, similarity_matches, val_permissions
+        print(length, matches, android_entropy, java_entropy, similarity_matches, val_permissions)
 
         output_values = {"output_method_score" : 0.0}
         input_val = {}

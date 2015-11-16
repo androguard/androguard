@@ -118,7 +118,7 @@ class DecompilerDex2Jad(object):
         return self.classes[class_name]
 
     def display_source(self, method):
-        print self.get_source_method(method)
+        print(self.get_source_method(method))
 
     def get_source_class(self, _class):
         return self.classes[_class.get_name()]
@@ -135,7 +135,7 @@ class DecompilerDex2Jad(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
-        print self.get_all(_class.get_name())
+        print(self.get_all(_class.get_name()))
 
 
 class DecompilerDex2WineJad(object):
@@ -198,7 +198,7 @@ class DecompilerDex2WineJad(object):
         return self.classes[class_name]
 
     def display_source(self, method):
-        print self.get_source_method(method)
+        print(self.get_source_method(method))
 
     def get_source_class(self, _class):
         return self.classes[_class.get_name()]
@@ -215,7 +215,7 @@ class DecompilerDex2WineJad(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
-        print self.get_all(_class.get_name())
+        print(self.get_all(_class.get_name()))
 
 class DecompilerDed(object):
     def __init__(self, vm, path="./decompiler/ded/", bin_ded="ded.sh", tmp_dir="/tmp/"):
@@ -273,7 +273,7 @@ class DecompilerDed(object):
         return result
 
     def display_source(self, method):
-        print self.get_source_method(method)
+        print(self.get_source_method(method))
 
     def get_all(self, class_name):
         if class_name not in self.classes:
@@ -288,7 +288,7 @@ class DecompilerDed(object):
         return self.classes[_class.get_name()]
 
     def display_all(self, _class):
-        print self.get_all(_class.get_name())
+        print(self.get_all(_class.get_name()))
 
 
 class DecompilerDex2Fernflower(object):
@@ -365,7 +365,7 @@ class DecompilerDex2Fernflower(object):
         return self.classes[class_name]
 
     def display_source(self, method):
-        print self.get_source_method(method)
+        print(self.get_source_method(method))
 
     def get_source_class(self, _class):
         return self.classes[_class.get_name()]
@@ -382,7 +382,7 @@ class DecompilerDex2Fernflower(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
-        print self.get_all(_class.get_name())
+        print(self.get_all(_class.get_name()))
 
 
 class MethodFilter(Filter):
@@ -473,7 +473,7 @@ class DecompilerDAD(object):
             lexer = get_lexer_by_name("java", stripall=True)
             formatter = TerminalFormatter()
             result = highlight(result, lexer, formatter)
-        print result
+        print(result)
 
     def get_source_class(self, _class):
         c = decompile.DvClass(_class, self.vmx)
@@ -500,7 +500,7 @@ class DecompilerDAD(object):
             lexer = get_lexer_by_name("java", stripall=True)
             formatter = TerminalFormatter()
             result = highlight(result, lexer, formatter)
-        print result
+        print(result)
 
     def get_all(self, class_name):
         pass

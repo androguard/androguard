@@ -98,13 +98,13 @@ class TreeWindow(QtGui.QTreeWidget):
             self.mainwin.showStatus("No xref returned (no analysis object).")
             return
 
-        print current_analysis
+        print(current_analysis)
         class_analysis = current_analysis.get_class_analysis(current_class.get_name())
         if not class_analysis:
             self.mainwin.showStatus("No xref returned (no class_analysis object).")
             return
 
-        print class_analysis
+        print(class_analysis)
 
         xwin = XrefDialogClass(parent=self.mainwin, win=self.mainwin, current_class=current_class, class_analysis=class_analysis)
         xwin.show()

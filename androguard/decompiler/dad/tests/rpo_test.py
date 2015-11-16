@@ -26,7 +26,7 @@ class RpoTest(unittest.TestCase):
 
     def _createGraphFrom(self, edges):
         node_map = {}
-        for n, childs in edges.iteritems():
+        for n, childs in edges.items():
             if n is None:
                 continue
             parent_node = self._getNode(node_map, n)
@@ -37,7 +37,7 @@ class RpoTest(unittest.TestCase):
         return node_map
 
     def _verifyRpo(self, node_map, expected_rpo):
-        for n1, n2 in expected_rpo.iteritems():
+        for n1, n2 in expected_rpo.items():
             self.assertEqual(node_map[n1].num, n2)
 
     def setUp(self):

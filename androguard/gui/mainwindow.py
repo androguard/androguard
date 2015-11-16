@@ -115,7 +115,7 @@ class MainWindow(QtGui.QMainWindow):
         '''Save androguard session.'''
         try:
             self.session.save(path)
-        except RuntimeError, e:
+        except RuntimeError as e:
             androconf.error(str(e))
             # http://stackoverflow.com/questions/2134706/hitting-maximum-recursion-depth-using-pythons-pickle-cpickle
             androconf.error("Try increasing sys.recursionlimit")

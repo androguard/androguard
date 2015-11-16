@@ -112,7 +112,7 @@ def literal_string(s):
         elif ' ' <= c < '\x7f':
             buf.append(c)
         else:
-            buf.append('\u{:04x}'.format(ord(c)))
+            buf.append('\\u{:04x}'.format(ord(c)))
     buf.append('"')
     return literal(''.join(buf), ('java/lang/String', 0))
 
@@ -142,7 +142,7 @@ def visit_arr_data(value):
     else:  # FIXME: other cases
         for i in range(value.size):
             tab.append(struct.unpack('<b', data[i])[0])
-    return array_initializer(map(literal_int, tab))
+    return array_initializer(list(map(literal_int, tab)))
 
 def write_inplace_if_possible(lhs, rhs):
     if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
@@ -250,7 +250,7 @@ def visit_expr(op):
     if isinstance(op, instruction.InvokeInstruction):
         base = op.var_map[op.base]
         params = [op.var_map[arg] for arg in op.args]
-        params = map(visit_expr, params)
+        params = list(map(visit_expr, params))
         if op.name == '<init>':
             if isinstance(base, instruction.ThisParam):
                 return method_invocation(op.triple, 'this', None, params)
@@ -391,7 +391,7 @@ class JSONWriter(object):
         if len(params) != len(m.params_type):
             assert('abstract' in flags or 'native' in flags)
             assert(not params)
-            params = range(len(m.params_type))
+            params = list(range(len(m.params_type)))
 
         paramdecls = []
         for ptype, name in zip(m.params_type, params):
@@ -429,7 +429,7 @@ class JSONWriter(object):
         elif isinstance(node, basic_blocks.LoopBlock):
             return self.get_cond(node.cond)
         else:
-            assert(type(node) == basic_blocks.CondBlock)
+            assert(isinstance(node, basic_blocks.CondBlock))
             assert(len(node.ins) == 1)
             return visit_expr(node.ins[-1])
 

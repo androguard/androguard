@@ -16,7 +16,7 @@
 # limitations under the License.
 
 import os
-import Queue
+import queue
 import threading
 import time
 import zlib
@@ -104,14 +104,14 @@ class AndroAuto(object):
             myandro.analysis_app(log, a, d, dx)
 
           myandro.finish(log)
-        except Exception, why:
+        except Exception as why:
           myandro.crash(log, why)
           myandro.finish(log)
 
         del a, d, dx, axmlobj, arscobj
         q.task_done()
 
-    q = Queue.Queue(self.settings["max_fetcher"])
+    q = queue.Queue(self.settings["max_fetcher"])
     for i in range(self.settings["max_fetcher"]):
       t = threading.Thread(target=worker, args=[i, q])
       t.daemon = True

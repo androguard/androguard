@@ -46,7 +46,7 @@ def main(options, arguments):
             ap = apk.AXMLPrinter(read(options.input))
             buff = minidom.parseString(ap.get_buff()).toprettyxml(encoding="utf-8")
         else:
-            print "Unknown file type"
+            print("Unknown file type")
             return
 
         if options.output != None:
@@ -54,10 +54,10 @@ def main(options, arguments):
             fd.write( buff )
             fd.close()
         else:
-            print buff
+            print(buff)
 
     elif options.version != None:
-        print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
+        print("Androaxml version %s" % androconf.ANDROGUARD_VERSION)
 
 if __name__ == "__main__":
     parser = OptionParser()

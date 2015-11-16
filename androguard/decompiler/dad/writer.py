@@ -419,7 +419,7 @@ class Writer(object):
             self.end_ins()
 
     def visit_constant(self, cst):
-        if isinstance(cst, basestring):
+        if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst, data="CONSTANT_INTEGER")  # INTEGER or also others?
 
