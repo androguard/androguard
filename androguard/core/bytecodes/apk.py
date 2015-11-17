@@ -180,10 +180,10 @@ class APK(object):
             self.zip = ChilkatZip(self.__raw)
         elif zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
         else:
             import zipfile
-            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
 
         for i in self.zip.namelist():
             if i == "AndroidManifest.xml":
@@ -200,7 +200,7 @@ class APK(object):
 
                     for item in self.xml[i].getElementsByTagName('uses-permission'):
                         self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
-                    
+
                     #getting details of the declared permissions
                     for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                         d_perm_name = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
@@ -208,7 +208,7 @@ class APK(object):
                         d_perm_description = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
                         d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
                         d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
-                        
+
                         d_perm_details = {
                                 "label" : d_perm_label,
                                 "description" : d_perm_description,
@@ -216,7 +216,7 @@ class APK(object):
                                 "protectionLevel" : d_perm_protectionLevel,
                         }
                         self.declared_permissions[d_perm_name] = d_perm_details
-                    
+
                     self.valid_apk = True
 
         self.get_files_types()
@@ -226,7 +226,7 @@ class APK(object):
         if not string.startswith('@string/'):
             return string
         string_key = string[9:]
-        
+
         res_parser = self.get_android_resources()
         string_value = ''
         for package_name in res_parser.get_packages_names():
@@ -235,7 +235,7 @@ class APK(object):
                 string_value = extracted_values[1]
                 break
         return string_value
-    
+
     def get_AndroidManifest(self):
         """
             Return the Android Manifest XML file
@@ -583,15 +583,15 @@ class APK(object):
     def get_requested_permissions(self):
         """
             Returns all requested permissions.
-            
+
             :rtype: list of strings
         """
         return self.permissions
-    
+
     def get_requested_aosp_permissions(self):
         '''
             Returns requested permissions declared within AOSP project.
-            
+
             :rtype: list of strings
         '''
         aosp_permissions = []
@@ -600,7 +600,7 @@ class APK(object):
             if perm in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 aosp_permissions.append(perm)
         return aosp_permissions
-    
+
     def get_requested_aosp_permissions_details(self):
         """
             Returns requested aosp permissions with details.
@@ -614,11 +614,11 @@ class APK(object):
             except KeyError:
                 continue #if we have not found permission do nothing
         return l
-    
+
     def get_requested_third_party_permissions(self):
         '''
             Returns list of requested permissions not declared within AOSP project.
-            
+
             :rtype: list of strings
         '''
         third_party_permissions = []
@@ -631,19 +631,19 @@ class APK(object):
     def get_declared_permissions(self):
         '''
             Returns list of the declared permissions.
-            
+
             :rtype: list of strings
         '''
         return list(self.declared_permissions.keys())
-    
+
     def get_declared_permissions_details(self):
         '''
             Returns declared permissions with the details.
-            
+
             :rtype: dict
         '''
         return self.declared_permissions
-    
+
     def get_max_sdk_version(self):
         """
             Return the android:maxSdkVersion attribute
@@ -779,12 +779,12 @@ class APK(object):
                 print("\t", i, self.files[i], "%x" % self.files_crc32[i])
             except KeyError:
                 print("\t", i, "%x" % self.files_crc32[i])
-        
+
         print("DECLARED PERMISSIONS:")
         declared_permissions = self.get_declared_permissions()
         for i in declared_permissions:
             print("\t", i)
-        
+
         print("REQUESTED PERMISSIONS:")
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
@@ -870,7 +870,7 @@ class StringBlock(object):
             if (size % 4) != 0:
                 androconf.warning("ooo")
 
-            for i in range(0, size / 4):
+            for i in range(0, int(size / 4)):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
 
     def skipNullPadding(self, buff):
@@ -1063,7 +1063,7 @@ class AXMLParser(object):
                 if chunkSize < 8 or chunkSize % 4 != 0:
                     androconf.warning("Invalid chunk size")
 
-                for i in range(0, chunkSize / 4 - 2):
+                for i in range(0, int(chunkSize / 4 - 2)):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
 
                 continue
