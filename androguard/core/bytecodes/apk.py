@@ -28,7 +28,6 @@ from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
 import re
-from tempfile import mkstemp
 
 from xml.dom import minidom
 
@@ -195,14 +194,7 @@ class APK(object):
             if i != "AndroidManifest.xml":
                 continue
             self.axml[i] = AXMLPrinter(self.zip.read(i))
-            _buff = self.axml[i].get_buff()
-            outfd, outsock_path = mkstemp()
-            with open(outsock_path,'w') as f:
-                f.write(_buff)
-            print("==========================================================")
-            print(outsock_path)
-            print("==========================================================")
-            self.xml[i] = minidom.parseString(_buff)
+            self.xml[i] = minidom.parseString(self.axml[i].get_buff())
 
             if self.xml[i] != None:
                 self.package = self.xml[i].documentElement.getAttribute("package")

@@ -1454,7 +1454,7 @@ class EncodedValue(object):
         ret = 0
         shift = 0
         for b in buf:
-            ret |= ord(b) << shift
+            ret |= b << shift
             shift += 8
 
         return ret, buf
@@ -1753,8 +1753,8 @@ class StringDataItem(object):
 
         self.data = utf8_to_string(buff, self.utf16_size)
         expected = buff.read(1)
-        if expected != '\x00':
-            warning('\x00 expected at offset: %x, found: %x' % (buff.get_idx(), expected))
+        if expected != b'\x00':
+            warning('\x00 expected at offset: %x, found: %s' % (buff.get_idx(), expected.decode()))
 
     def get_utf16_size(self):
       """
@@ -1978,6 +1978,7 @@ class ProtoIdItem(object):
         self.shorty_idx_value = self.__CM.get_string( self.shorty_idx )
         self.return_type_idx_value = self.__CM.get_type( self.return_type_idx )
         params = self.__CM.get_type_list( self.parameters_off )
+        params = [p.decode() for p in params]
         self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
@@ -2502,7 +2503,12 @@ class EncodedField(object):
         name = self.CM.get_field( self.field_idx )
         self.class_name = name[0]
         self.name = name[2]
-        self.proto = ''.join(i for i in name[1])
+        ts = []
+        for _t in name[1]:
+            if type(_t) == bytes:
+                _t = _t.decode()
+            ts.append(str(_t))
+        self.proto = ''.join(i for i in ts)
 
     def set_init_value(self, value):
         """
@@ -2720,7 +2726,12 @@ class EncodedMethod(object):
 
         self.class_name = v[0]
         self.name = v[1]
-        self.proto = ''.join(i for i in v[2])
+        new_v2 = []
+        for _v in v[2]:
+            if type(_v) == bytes:
+                _v = _v.decode()
+            new_v2.append(str(_v))
+        self.proto = ''.join(i for i in new_v2)
 
         self.code = self.CM.get_code( self.code_off )
 
@@ -7288,10 +7299,10 @@ class DalvikVMFormat(bytecode._Bytecode):
             self.api_version = using_api
         else:
             self.api_version = CONF["DEFAULT_API"]
-            
-        #TODO: can using_api be added to config parameter?    
+
+        #TODO: can using_api be added to config parameter?
         super(DalvikVMFormat, self).__init__(buff)
-        
+
         self.config = config
         if not self.config:
           self.config = {"RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
@@ -7332,11 +7343,11 @@ class DalvikVMFormat(bytecode._Bytecode):
         '''
             This method returns api version that should be used for loading api
             specific resources.
-            
+
             :rtype: int
         '''
         return self.api_version
-    
+
     def get_classes_def_item(self):
         """
             This function returns the class def item
