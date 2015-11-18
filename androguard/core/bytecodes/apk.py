@@ -28,6 +28,7 @@ from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
 import re
+from tempfile import mkstemp
 
 from xml.dom import minidom
 
@@ -53,6 +54,12 @@ if sys.hexversion < 0x2070000:
         ZIPMODULE = 1
 else:
     ZIPMODULE = 1
+
+def _range(a, b, step=None):
+    if step is None:
+        return range(int(a), int(b))
+    return range(int(a), int(b), step)
+
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip(object):
@@ -184,40 +191,45 @@ class APK(object):
         else:
             import zipfile
             self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
-
         for i in self.zip.namelist():
-            if i == "AndroidManifest.xml":
-                self.axml[i] = AXMLPrinter(self.zip.read(i))
-                try:
-                    self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                except:
-                    self.xml[i] = None
+            if i != "AndroidManifest.xml":
+                continue
+            self.axml[i] = AXMLPrinter(self.zip.read(i))
+            _buff = self.axml[i].get_buff()
+            outfd, outsock_path = mkstemp()
+            with open(outsock_path,'w') as f:
+                f.write(_buff)
+            print("==========================================================")
+            print(outsock_path)
+            print("==========================================================")
+            self.xml[i] = minidom.parseString(_buff)
 
-                if self.xml[i] != None:
-                    self.package = self.xml[i].documentElement.getAttribute("package")
-                    self.androidversion["Code"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
-                    self.androidversion["Name"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
+            if self.xml[i] != None:
+                self.package = self.xml[i].documentElement.getAttribute("package")
+                self.androidversion["Code"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
+                self.androidversion["Name"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
 
-                    for item in self.xml[i].getElementsByTagName('uses-permission'):
-                        self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
+                for item in self.xml[i].getElementsByTagName('uses-permission'):
+                    self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
 
-                    #getting details of the declared permissions
-                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                        d_perm_name = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                        d_perm_label = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
-                        d_perm_description = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
-                        d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
-                        d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
+                #getting details of the declared permissions
+                for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                    d_perm_name = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                    d_perm_label = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
+                    d_perm_description = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
+                    d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
+                    d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
 
-                        d_perm_details = {
-                                "label" : d_perm_label,
-                                "description" : d_perm_description,
-                                "permissionGroup" : d_perm_permissionGroup,
-                                "protectionLevel" : d_perm_protectionLevel,
-                        }
-                        self.declared_permissions[d_perm_name] = d_perm_details
+                    d_perm_details = {
+                            "label" : d_perm_label,
+                            "description" : d_perm_description,
+                            "permissionGroup" : d_perm_permissionGroup,
+                            "protectionLevel" : d_perm_protectionLevel,
+                    }
+                    self.declared_permissions[d_perm_name] = d_perm_details
 
-                    self.valid_apk = True
+                self.valid_apk = True
+            break
 
         self.get_files_types()
         self.permission_module = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
@@ -361,7 +373,7 @@ class APK(object):
         return self.files
 
     def _patch_magic(self, buffer, orig):
-        if ("Zip" in orig) or ("DBase" in orig):
+        if (b"Zip" in orig) or (b"DBase" in orig):
             val = androconf.is_android_raw(buffer)
             if val == "APK":
                 if androconf.is_valid_android_raw(buffer):
@@ -725,10 +737,7 @@ class APK(object):
 
             :rtype: :class:`AXMLPrinter`
         """
-        try:
-            return self.axml["AndroidManifest.xml"]
-        except KeyError:
-            return None
+        return self.axml.get("AndroidManifest.xml")
 
     def get_android_manifest_xml(self):
         """
@@ -846,10 +855,10 @@ class StringBlock(object):
         self.m_strings = []
         self.m_styles = []
 
-        for i in range(0, self.stringCount):
+        for i in _range(0, self.stringCount):
             self.m_stringOffsets.append(unpack('<i', buff.read(4))[0])
 
-        for i in range(0, self.styleOffsetCount):
+        for i in _range(0, self.styleOffsetCount):
             self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
 
         size = self.chunkSize - self.stringsOffset
@@ -860,7 +869,7 @@ class StringBlock(object):
         if (size % 4) != 0:
             androconf.warning("ooo")
 
-        for i in range(0, size):
+        for i in _range(0, size):
             self.m_strings.append(unpack('=b', buff.read(1))[0])
 
         if self.stylesOffset != 0:
@@ -870,7 +879,7 @@ class StringBlock(object):
             if (size % 4) != 0:
                 androconf.warning("ooo")
 
-            for i in range(0, int(size / 4)):
+            for i in _range(0, int(size / 4)):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
 
     def skipNullPadding(self, buff):
@@ -890,7 +899,7 @@ class StringBlock(object):
 
     def getString(self, idx):
         if idx in self._cache:
-            return self._cache[idx]
+            return self._cache[idx].replace("\x00", "")
 
         if idx < 0 or not self.m_stringOffsets or idx >= len(self.m_stringOffsets):
             return ""
@@ -910,7 +919,7 @@ class StringBlock(object):
 
             self._cache[idx] = self.decode2(self.m_strings, offset, length)
 
-        return self._cache[idx]
+        return self._cache[idx].replace("\x00", "")
 
     def getStyle(self, idx):
         print(idx)
@@ -924,7 +933,7 @@ class StringBlock(object):
 
         data = ""
 
-        for i in range(0, length):
+        for i in _range(0, length):
             t_data = pack("=b", self.m_strings[offset + i])
             data += str(t_data, errors='ignore')
             if data[-2:] == "\x00\x00":
@@ -934,12 +943,12 @@ class StringBlock(object):
         if end_zero != -1:
             data = data[:end_zero]
 
-        return data.decode("utf-16", 'replace')
+        return data
 
     def decode2(self, array, offset, length):
         data = ""
 
-        for i in range(0, length):
+        for i in _range(0, length):
             t_data = pack("=b", self.m_strings[offset + i])
             data += str(t_data, errors='ignore')
 
@@ -966,7 +975,7 @@ class StringBlock(object):
 
     def show(self):
         print("StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(self.chunkSize), hex(self.stringsOffset), self.m_stringOffsets)
-        for i in range(0, len(self.m_stringOffsets)):
+        for i in _range(0, len(self.m_stringOffsets)):
             print(i, repr(self.getString(i)))
 
 ATTRIBUTE_IX_NAMESPACE_URI  = 0
@@ -1063,7 +1072,7 @@ class AXMLParser(object):
                 if chunkSize < 8 or chunkSize % 4 != 0:
                     androconf.warning("Invalid chunk size")
 
-                for i in range(0, int(chunkSize / 4 - 2)):
+                for i in _range(0, int(chunkSize / 4 - 2)):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
 
                 continue
@@ -1117,10 +1126,10 @@ class AXMLParser(object):
 
                 self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
 
-                for i in range(0, attributeCount * ATTRIBUTE_LENGHT):
+                for i in _range(0, attributeCount * ATTRIBUTE_LENGHT):
                     self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
 
-                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
+                for i in _range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
                     self.m_attributes[i] = self.m_attributes[i] >> 24
 
                 self.m_event = START_TAG
@@ -1295,7 +1304,7 @@ class AXMLPrinter(object):
                 self.buff += '<' + self.getPrefix(self.axml.getPrefix()) + self.axml.getName() + '\n'
                 self.buff += self.axml.getXMLNS()
 
-                for i in range(0, self.axml.getAttributeCount()):
+                for i in _range(0, self.axml.getAttributeCount()):
                     self.buff += "%s%s=\"%s\"\n" % (self.getPrefix(
                         self.axml.getAttributePrefix(i)), self.axml.getAttributeName(i), self._escape(self.getAttributeValue(i)))
 
@@ -1320,7 +1329,7 @@ class AXMLPrinter(object):
         return escape(s)
 
     def get_buff(self):
-        return self.buff.encode('utf-8')
+        return self.buff
 
     def get_xml(self):
         return minidom.parseString(self.get_buff()).toprettyxml(encoding="utf-8")
@@ -1419,7 +1428,7 @@ class ARSCParser(object):
         self.packages = {}
         self.values = {}
 
-        for i in range(0, self.packageCount):
+        for i in _range(0, self.packageCount):
             current_package = ARSCResTablePackage(self.buff)
             package_name = current_package.get_name()
 
@@ -1451,7 +1460,7 @@ class ARSCParser(object):
                     self.packages[package_name].append(a_res_type)
 
                     entries = []
-                    for i in range(0, a_res_type.entryCount):
+                    for i in _range(0, a_res_type.entryCount):
                         current_package.mResId = current_package.mResId & 0xffff0000 | i
                         entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
 
@@ -1805,7 +1814,7 @@ class ARSCResTypeSpec(object):
         #print "ARSCResTypeSpec", hex(self.start), hex(self.id), hex(self.res0), hex(self.res1), hex(self.entryCount), "table:" + self.parent.mTableStrings.getString(self.id - 1)
 
         self.typespec_entries = []
-        for i in range(0, self.entryCount):
+        for i in _range(0, self.entryCount):
             self.typespec_entries.append(unpack('<i', buff.read(4))[0])
 
 
@@ -1906,7 +1915,7 @@ class ARSCComplex(object):
         self.count = unpack('<i', buff.read(4))[0]
 
         self.items = []
-        for i in range(0, self.count):
+        for i in _range(0, self.count):
             self.items.append((unpack('<i', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
 
         #print "ARSCComplex", hex(self.start), self.id_parent, self.count, repr(self.parent.mKeyStrings.getString(self.id_parent))
