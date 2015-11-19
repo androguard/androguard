@@ -6862,8 +6862,8 @@ class DalvikCode(object):
             pack("=I", self.insns_size) + \
             code_raw
 
-       # if (self.insns_size % 2 == 1):
-       #     buff += pack("=H", self.padding)
+        # if (self.insns_size % 2 == 1):
+        #     buff += pack("=H", self.padding)
 
         if self.tries_size > 0:
             buff += ''.join(i.get_raw() for i in self.tries)
@@ -7271,7 +7271,7 @@ class ClassManager(object):
 
                     self.__obj_offset[i.get_off()] = i
 
-                    if sdi == True:
+                    if sdi:
                         self.__strings_off[goff] = i
             else:
                 self.__manage_item_off.append(c_item.get_offset())
@@ -8160,7 +8160,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                     xref = gvm.nodes_id[i]
                     xref_meth = self.get_method_descriptor(
                         xref.class_name, xref.method_name, xref.descriptor)
-                    if python_export == True:
+                    if python_export:
                         name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
                             bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
                             bytecode.FormatDescriptorToPython(
@@ -8186,7 +8186,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                                 bytecode.FormatDescriptorToPython(
                                     xref_meth.get_descriptor())
 
-                            if python_export == True:
+                            if python_export:
                                 setattr(method.XREFfrom, name, xref_meth)
                             method.XREFfrom.add(
                                 xref_meth, xref.edges[gvm.nodes[key]])
@@ -8201,7 +8201,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                                 bytecode.FormatDescriptorToPython(
                                     xref_meth.get_descriptor())
 
-                            if python_export == True:
+                            if python_export:
                                 setattr(method.XREFto, name, xref_meth)
                             method.XREFto.add(
                                 xref_meth, gvm.nodes[key].edges[xref])
@@ -8238,7 +8238,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                                 bytecode.FormatDescriptorToPython(
                                     dref_meth.get_descriptor())
 
-                            if python_export == True:
+                            if python_export:
                                 setattr(field.DREFr, name, dref_meth)
 
                             try:
@@ -8254,7 +8254,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                                 bytecode.FormatDescriptorToPython(
                                     dref_meth.get_descriptor())
 
-                            if python_export == True:
+                            if python_export:
                                 setattr(field.DREFw, name, dref_meth)
 
                             try:
@@ -8402,7 +8402,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 treeMap[nodeId].id = nodeId
                 treeMap[nodeId].title = title
 
-            if not parentId in treeMap:
+            if parentId not in treeMap:
                 treeMap[parentId] = bytecode.Node(0, '')
             treeMap[parentId].children.append(treeMap[nodeId])
 
