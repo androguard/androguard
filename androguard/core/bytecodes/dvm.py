@@ -4242,7 +4242,7 @@ class FillArrayData(object):
 
             :rtype: int
         """
-        return ((self.size * self.element_width + 1) / 2 + 4) * 2
+        return int(((self.size * self.element_width + 1) / 2 + 4) * 2)
 
     def get_raw(self):
         return pack("=H", self.ident) + pack("=H", self.element_width) + pack("=I", self.size) + self.data
@@ -4364,7 +4364,7 @@ class SparseSwitch(object):
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
-        return self.format_general_size + (self.size * calcsize('<L')) * 2
+        return int(self.format_general_size + (self.size * calcsize('<L')) * 2)
 
     def get_raw(self):
         return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack("=l", i) for i in self.keys) + ''.join(pack("=l", i) for i in self.targets)
@@ -4490,7 +4490,7 @@ class PackedSwitch(object):
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
-        return self.format_general_size + (self.size * calcsize('=L'))
+        return int(self.format_general_size + (self.size * calcsize('=L')))
 
     def get_raw(self):
         return pack("=H", self.ident) + pack("=H", self.size) + pack("=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
@@ -6390,8 +6390,7 @@ class LinearSweepAlgorithm(object):
         while idx < max_idx:
             obj = None
             classic_instruction = True
-
-            op_value = unpack('=B', insn[idx])[0]
+            op_value = unpack('=B', bytes([insn[idx], ]))[0]
 
             # print "%x %x" % (op_value, idx)
 
@@ -6423,7 +6422,7 @@ class LinearSweepAlgorithm(object):
 
             # classical instructions
             if classic_instruction:
-                op_value = unpack('=B', insn[idx])[0]
+                op_value = unpack('=B', bytes([insn[idx], ]))[0]
                 obj = get_instruction(cm, op_value, insn[idx:], self.odex)
 
             # emit instruction
@@ -6851,7 +6850,7 @@ class DalvikCode(object):
 
     def get_raw(self):
         code_raw = self.code.get_raw()
-        self.insns_size = (len(code_raw) / 2) + (len(code_raw) % 2)
+        self.insns_size = int((len(code_raw) / 2) + (len(code_raw) % 2))
 
         buff = self.int_padding
         buff += pack("=H", self.registers_size) + \
