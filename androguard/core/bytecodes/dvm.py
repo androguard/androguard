@@ -1015,7 +1015,7 @@ class AnnotationsDirectoryItem(object):
 
     def get_raw(self):
         return self.get_obj() + \
-            ''.join(i.get_raw() for i in self.field_annotations)  +      \
+            ''.join(i.get_raw() for i in self.field_annotations) +      \
             ''.join(i.get_raw() for i in self.method_annotations) +     \
             ''.join(i.get_raw() for i in self.parameter_annotations)
 
@@ -2347,7 +2347,7 @@ class FieldIdItem(object):
             self.class_idx_value, self.type_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return  pack("=H", self.class_idx) + \
+        return pack("=H", self.class_idx) + \
             pack("=H", self.type_idx) + \
             pack("=I", self.name_idx)
 
@@ -3346,9 +3346,9 @@ class ClassDataItem(object):
             i.pretty_show()
 
     def get_obj(self):
-        return [ i for i in self.static_fields ] + \
-            [ i for i in self.instance_fields ] + \
-            [ i for i in self.direct_methods ] + \
+        return [i for i in self.static_fields] + \
+            [i for i in self.instance_fields] + \
+            [i for i in self.direct_methods] + \
             [i for i in self.virtual_methods]
 
     def get_raw(self):
@@ -8733,16 +8733,16 @@ def get_bytecodes_methodx(method, mx):
                     # packed/sparse-switch
                     if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
                         values = i.get_special_ins(idx).get_values()
-                        bb_buffer += "[ D:%s " % (i.childs[0][2].name)
+                        bb_buffer += "[D:%s " % (i.childs[0][2].name)
                         bb_buffer += ' '.join("%d:%s" % (values[j], i.childs[j + 1][
-                                              2].name) for j in range(0, len(i.childs) - 1)) + " ]"
+                                              2].name) for j in range(0, len(i.childs) - 1)) + "]"
                     else:
                         # if len(i.childs) == 2:
-                        #    i_buffer += "%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
-                        #    print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + " ]%s" % normal_color)
+                        #    i_buffer += "%s[%s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
+                        #    print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + "]%s" % normal_color)
                         # else:
-                        bb_buffer += "[ " + ' '.join("%s" %
-                                                     c[2].name for c in i.childs) + " ]"
+                        bb_buffer += "[" + ' '.join("%s" %
+                                                     c[2].name for c in i.childs) + "]"
 
                 idx += ins.get_length()
                 nb += 1
