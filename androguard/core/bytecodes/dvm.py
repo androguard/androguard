@@ -32,24 +32,24 @@ ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
 
 
 TYPE_MAP_ITEM = {
-    0x0:      "TYPE_HEADER_ITEM",
-    0x1:      "TYPE_STRING_ID_ITEM",
-    0x2:      "TYPE_TYPE_ID_ITEM",
-    0x3:      "TYPE_PROTO_ID_ITEM",
-    0x4:      "TYPE_FIELD_ID_ITEM",
-    0x5:      "TYPE_METHOD_ID_ITEM",
-    0x6:      "TYPE_CLASS_DEF_ITEM",
-    0x1000:    "TYPE_MAP_LIST",
-    0x1001:    "TYPE_TYPE_LIST",
-    0x1002:    "TYPE_ANNOTATION_SET_REF_LIST",
-    0x1003:    "TYPE_ANNOTATION_SET_ITEM",
-    0x2000:    "TYPE_CLASS_DATA_ITEM",
-    0x2001:    "TYPE_CODE_ITEM",
-    0x2002:    "TYPE_STRING_DATA_ITEM",
-    0x2003:    "TYPE_DEBUG_INFO_ITEM",
-    0x2004:    "TYPE_ANNOTATION_ITEM",
-    0x2005:    "TYPE_ENCODED_ARRAY_ITEM",
-    0x2006:    "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
+    0x0: "TYPE_HEADER_ITEM",
+    0x1: "TYPE_STRING_ID_ITEM",
+    0x2: "TYPE_TYPE_ID_ITEM",
+    0x3: "TYPE_PROTO_ID_ITEM",
+    0x4: "TYPE_FIELD_ID_ITEM",
+    0x5: "TYPE_METHOD_ID_ITEM",
+    0x6: "TYPE_CLASS_DEF_ITEM",
+    0x1000: "TYPE_MAP_LIST",
+    0x1001: "TYPE_TYPE_LIST",
+    0x1002: "TYPE_ANNOTATION_SET_REF_LIST",
+    0x1003: "TYPE_ANNOTATION_SET_ITEM",
+    0x2000: "TYPE_CLASS_DATA_ITEM",
+    0x2001: "TYPE_CODE_ITEM",
+    0x2002: "TYPE_STRING_DATA_ITEM",
+    0x2003: "TYPE_DEBUG_INFO_ITEM",
+    0x2004: "TYPE_ANNOTATION_ITEM",
+    0x2005: "TYPE_ENCODED_ARRAY_ITEM",
+    0x2006: "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
 }
 
 ACCESS_FLAGS = [
@@ -141,7 +141,7 @@ FIELD_WRITE_DVM_OPCODES = [".put"]
 BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 
 BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.",
-                      "return", "return.", "packed-switch$",  "sparse-switch$"]
+                      "return", "return.", "packed-switch$", "sparse-switch$"]
 
 
 def clean_name_instruction(instruction):
@@ -306,7 +306,7 @@ def determineNext(i, end, m):
 
         data = code.get_ins_off(off + end)
 
-        if data != None:
+        if data is not None:
             for target in data.get_targets():
                 x.append(target * 2 + end)
 
@@ -324,7 +324,8 @@ def determineException(vm, m):
     handler_catch_list = m.get_code().get_handlers()
 
     for try_item in m.get_code().get_tries():
-        offset_handler = try_item.get_handler_off() + handler_catch_list.get_off()
+        offset_handler = try_item.get_handler_off() + \
+            handler_catch_list.get_off()
         if offset_handler in h_off:
             h_off[offset_handler].append([try_item])
         else:
@@ -346,8 +347,10 @@ def determineException(vm, m):
         for value in h_off[i]:
             try_value = value[0]
 
-            z = [try_value.get_start_addr() * 2, (try_value.get_start_addr()
-                                                  * 2) + (try_value.get_insn_count() * 2) - 1]
+            z = [
+                try_value.get_start_addr() * 2,
+                (try_value.get_start_addr() * 2) +
+                (try_value.get_insn_count() * 2) - 1]
 
             handler_catch = value[1]
             if handler_catch.get_size() <= 0:
@@ -416,33 +419,33 @@ class HeaderItem(object):
         pass
 
     def get_obj(self):
-        if self.map_off_obj == None:
+        if self.map_off_obj is None:
             self.map_off_obj = self.__CM.get_item_by_offset(self.map_off)
 
-        if self.string_off_obj == None:
+        if self.string_off_obj is None:
             self.string_off_obj = self.__CM.get_item_by_offset(
                 self.string_ids_off)
 
-        if self.type_off_obj == None:
+        if self.type_off_obj is None:
             self.type_off_obj = self.__CM.get_item_by_offset(self.type_ids_off)
 
-        if self.proto_off_obj == None:
+        if self.proto_off_obj is None:
             self.proto_off_obj = self.__CM.get_item_by_offset(
                 self.proto_ids_off)
 
-        if self.field_off_obj == None:
+        if self.field_off_obj is None:
             self.field_off_obj = self.__CM.get_item_by_offset(
                 self.field_ids_off)
 
-        if self.method_off_obj == None:
+        if self.method_off_obj is None:
             self.method_off_obj = self.__CM.get_item_by_offset(
                 self.method_ids_off)
 
-        if self.class_off_obj == None:
+        if self.class_off_obj is None:
             self.class_off_obj = self.__CM.get_item_by_offset(
                 self.class_defs_off)
 
-        if self.data_off_obj == None:
+        if self.data_off_obj is None:
             self.data_off_obj = self.__CM.get_item_by_offset(self.data_off)
 
         self.map_off = self.map_off_obj.get_off()
@@ -502,8 +505,9 @@ class HeaderItem(object):
         bytecode._PrintSubBanner("Header Item")
         bytecode._PrintDefault("magic=%s, checksum=%s, signature=%s\n" % (
             self.magic, self.checksum, self.signature))
-        bytecode._PrintDefault("file_size=%x, header_size=%x, endian_tag=%x\n" % (
-            self.file_size, self.header_size, self.endian_tag))
+        bytecode._PrintDefault(
+            "file_size=%x, header_size=%x, endian_tag=%x\n" % (
+                self.file_size, self.header_size, self.endian_tag))
         bytecode._PrintDefault("link_size=%x, link_off=%x\n" %
                                (self.link_size, self.link_off))
         bytecode._PrintDefault("map_off=%x\n" % (self.map_off))
@@ -533,7 +537,8 @@ class AnnotationOffItem(object):
     """
         This class can parse an annotation_off_item of a dex file
 
-        :param buff: a string which represents a Buff object of the annotation_off_item
+        :param buff: a string which represents a Buff object
+            of the annotation_off_item
         :type buff: Buff object
         :param cm: a ClassManager object
         :type cm: :class:`ClassManager`
@@ -565,7 +570,8 @@ class AnnotationSetItem(object):
     """
         This class can parse an annotation_set_item of a dex file
 
-        :param buff: a string which represents a Buff object of the annotation_set_item
+        :param buff: a string which represents a Buff object of the
+            annotation_set_item
         :type buff: Buff object
         :param cm: a ClassManager object
         :type cm: :class:`ClassManager`
@@ -606,7 +612,8 @@ class AnnotationSetItem(object):
         return pack("=I", self.size)
 
     def get_raw(self):
-        return self.get_obj() + ''.join(i.get_raw() for i in self.annotation_off_item)
+        return self.get_obj() + ''.join(
+            i.get_raw() for i in self.annotation_off_item)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -1587,13 +1594,13 @@ class EncodedValue(object):
         return []
 
     def get_raw(self):
-        if self.raw_value == None:
+        if self.raw_value is None:
             return pack("=B", self.val) + bytecode.object_to_str(self.value)
         else:
             return pack("=B", self.val) + bytecode.object_to_str(self.raw_value)
 
     def get_length(self):
-        if self.raw_value == None:
+        if self.raw_value is None:
             return len(pack("=B", self.val)) + len(bytecode.object_to_str(self.value))
         else:
             return len(pack("=B", self.val)) + len(bytecode.object_to_str(self.raw_value))
@@ -1806,9 +1813,6 @@ class EncodedArrayItem(object):
 
     def reload(self):
         pass
-
-    def get_value(self):
-        return self.value
 
     def show(self):
         bytecode._PrintSubBanner("Encoded Array Item")
@@ -2752,7 +2756,7 @@ class EncodedField(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -2790,7 +2794,7 @@ class EncodedField(object):
         ), self.get_name(), self.get_descriptor(), self.get_access_flags_string()))
 
         init_value = self.get_init_value()
-        if init_value != None:
+        if init_value is not None:
             bytecode._PrintDefault("\tinit value: %s\n" %
                                    str(init_value.get_value()))
 
@@ -2886,7 +2890,7 @@ class EncodedMethod(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -2986,10 +2990,10 @@ class EncodedMethod(object):
         """
         self.show_info()
         self.show_notes()
-        if self.code != None:
+        if self.code is not None:
             self.each_params_by_register(
                 self.code.get_registers_size(), self.get_descriptor())
-            if self.CM.get_vmanalysis() == None:
+            if self.CM.get_vmanalysis() is None:
                 self.code.show()
             else:
                 self.code.pretty_show(
@@ -3035,7 +3039,7 @@ class EncodedMethod(object):
 
           :rtype: int
         """
-        if self.code != None:
+        if self.code is not None:
             return self.code.get_length()
         return 0
 
@@ -3053,7 +3057,7 @@ class EncodedMethod(object):
 
             :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
-        if self.code == None:
+        if self.code is None:
             return []
         return self.code.get_bc().get_instructions()
 
@@ -3064,7 +3068,7 @@ class EncodedMethod(object):
             :param instructions: the list of instructions
             :type instructions: a list of :class:`Instruction`
         """
-        if self.code == None:
+        if self.code is None:
             return []
         return self.code.get_bc().set_instructions(instructions)
 
@@ -3079,7 +3083,7 @@ class EncodedMethod(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if self._code != None:
+        if self._code is not None:
             return self.code.get_bc().get_instruction(idx, off)
         return None
 
@@ -3089,7 +3093,7 @@ class EncodedMethod(object):
 
           :rtype: :class:`DebugInfoItem`
         """
-        if self.code == None:
+        if self.code is None:
             return None
         return self.code.get_debug()
 
@@ -3131,7 +3135,7 @@ class EncodedMethod(object):
             :param off: address of the instruction
             :type off: int
         """
-        if self.code != None:
+        if self.code is not None:
             self.code.add_inote(msg, idx, off)
 
     def add_note(self, msg):
@@ -3150,7 +3154,7 @@ class EncodedMethod(object):
             :param idx: the index
             :type idx: int
         """
-        if self.code != None:
+        if self.code is not None:
             self.code.set_idx(idx)
 
     def set_name(self, value):
@@ -3158,7 +3162,7 @@ class EncodedMethod(object):
         self.reload()
 
     def get_raw(self):
-        if self.code != None:
+        if self.code is not None:
             self.code_off = self.code.get_off()
 
         return writeuleb128(self.method_idx_diff) + writeuleb128(self.access_flags) + writeuleb128(self.code_off)
@@ -3285,7 +3289,7 @@ class ClassDataItem(object):
         self.offset = off
 
     def set_static_fields(self, value):
-        if value != None:
+        if value is not None:
             values = value.get_values()
             if len(values) <= len(self.static_fields):
                 for i in range(0, len(values)):
@@ -3428,7 +3432,7 @@ class ClassDefItem(object):
             self.static_values = self.__CM.get_encoded_array_item(
                 self.static_values_off)
 
-            if self.class_data_item != None:
+            if self.class_data_item is not None:
                 self.class_data_item.set_static_fields(
                     self.static_values.get_value())
 
@@ -3442,7 +3446,7 @@ class ClassDefItem(object):
 
             :rtype: a list of :class:`EncodedMethod` objects
         """
-        if self.class_data_item != None:
+        if self.class_data_item is not None:
             return self.class_data_item.get_methods()
         return []
 
@@ -3452,7 +3456,7 @@ class ClassDefItem(object):
 
             :rtype: a list of :class:`EncodedField` objects
         """
-        if self.class_data_item != None:
+        if self.class_data_item is not None:
             return self.class_data_item.get_fields()
         return []
 
@@ -3562,7 +3566,7 @@ class ClassDefItem(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -6531,7 +6535,7 @@ class DCode(object):
             :param off: address of the instruction
             :type off: int
         """
-        if off != None:
+        if off is not None:
             idx = self.off_to_pos(off)
 
         if idx not in self.notes:
@@ -6550,7 +6554,7 @@ class DCode(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if off != None:
+        if off is not None:
             idx = self.off_to_pos(off)
         return [i for i in self.get_instructions()][idx]
 
@@ -7106,7 +7110,7 @@ class MapItem(object):
             pass  # It's me I think !!!
 
     def reload(self):
-        if self.item != None:
+        if self.item is not None:
             if isinstance(self.item, list):
                 for i in self.item:
                     i.reload()
@@ -7116,7 +7120,7 @@ class MapItem(object):
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
 
-        if self.item != None:
+        if self.item is not None:
             if isinstance(self.item, list):
                 for i in self.item:
                     i.show()
@@ -7126,7 +7130,7 @@ class MapItem(object):
     def pretty_show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
 
-        if self.item != None:
+        if self.item is not None:
             if isinstance(self.item, list):
                 for i in self.item:
                     if isinstance(i, ClassDataItem):
@@ -7198,7 +7202,7 @@ class ClassManager(object):
         self.engine = []
         self.engine.append("python")
 
-        if self.vm != None:
+        if self.vm is not None:
             self.odex_format = self.vm.get_format_type() == "ODEX"
 
     def get_ascii_string(self, s):
@@ -7259,7 +7263,7 @@ class ClassManager(object):
         if type_item == "TYPE_STRING_DATA_ITEM":
             sdi = True
 
-        if item != None:
+        if item is not None:
             if isinstance(item, list):
                 for i in item:
                     goff = i.offset
@@ -7399,7 +7403,7 @@ class ClassManager(object):
 
         class_def = self.__manage_item[
             "TYPE_CLASS_DEF_ITEM"].get_class_idx(method.get_class_idx())
-        if class_def != None:
+        if class_def is not None:
             try:
                 name = "METHOD_" + \
                     bytecode.FormatNameToPython(encoded_method.get_name())
@@ -7449,7 +7453,7 @@ class ClassManager(object):
 
         class_def = self.__manage_item[
             "TYPE_CLASS_DEF_ITEM"].get_class_idx(field.get_class_idx())
-        if class_def != None:
+        if class_def is not None:
             try:
                 name = "FIELD_" + \
                     bytecode.FormatNameToPython(encoded_field.get_name())
@@ -7508,7 +7512,7 @@ class MapList(object):
             buff.set_idx(idx + mi.get_length())
 
             c_item = mi.get_item()
-            if c_item == None:
+            if c_item is None:
                 mi.set_item(self)
                 c_item = mi.get_item()
 
@@ -7885,7 +7889,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                            Maybe needed after using a MyClass.set_name().
             :rtype: a list of string
         """
-        if self.classes_names == None or update:
+        if self.classes_names is None or update:
             self.classes_names = [i.get_name() for i in self.classes.class_def]
         return self.classes_names
 
@@ -7993,7 +7997,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
           :rtype: None or an :class:`EncodedMethod` object
         """
-        if self.__cached_methods_idx == None:
+        if self.__cached_methods_idx is None:
             self.__cached_methods_idx = {}
             for i in self.classes.class_def:
                 for j in i.get_methods():
@@ -8019,7 +8023,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         key = class_name + method_name + descriptor
 
-        if self.__cache_methods == None:
+        if self.__cache_methods is None:
             self.__cache_methods = {}
             for i in self.classes.class_def:
                 for j in i.get_methods():
@@ -8098,7 +8102,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         key = class_name + field_name + descriptor
 
-        if self.__cache_fields == None:
+        if self.__cache_fields is None:
             self.__cache_fields = {}
             for i in self.classes.class_def:
                 for j in i.get_fields():
@@ -8176,7 +8180,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                         xref = gvm.nodes_id[i]
                         xref_meth = self.get_method_descriptor(
                             xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
+                        if xref_meth is not None:
                             name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
                                 bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
                                 bytecode.FormatDescriptorToPython(
@@ -8191,7 +8195,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                         xref = gvm.nodes_id[i]
                         xref_meth = self.get_method_descriptor(
                             xref.class_name, xref.method_name, xref.descriptor)
-                        if xref_meth != None:
+                        if xref_meth is not None:
                             name = bytecode.FormatClassToPython(xref_meth.get_class_name()) + "__" + \
                                 bytecode.FormatNameToPython(xref_meth.get_name()) + "__" + \
                                 bytecode.FormatDescriptorToPython(
@@ -8218,7 +8222,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 paths = vmx.tainted_variables.get_field(
                     field.get_class_name(), field.get_name(), field.get_descriptor())
 
-                if paths != None:
+                if paths is not None:
                     access = {}
                     access["R"] = {}
                     access["W"] = {}
@@ -8275,7 +8279,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self._create_python_export_class(_class, True)
 
     def _create_python_export_class(self, _class, delete=False):
-        if _class != None:
+        if _class is not None:
             # Class
             name = "CLASS_" + bytecode.FormatClassToPython(_class.get_name())
             if delete:
@@ -8330,8 +8334,11 @@ class DalvikVMFormat(bytecode._Bytecode):
     def get_determineException(self):
         return determineException
 
+    """
+    WARNING: This is undefined
     def get_DVM_TOSTRING(self):
         return DVM_TOSTRING()
+    """
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
@@ -8389,7 +8396,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         treeMap[Root.id] = Root
         for element in els:
             nodeId, parentId, title = element
-            if not nodeId in treeMap:
+            if nodeId not in treeMap:
                 treeMap[nodeId] = bytecode.Node(nodeId, title)
             else:
                 treeMap[nodeId].id = nodeId
@@ -8450,7 +8457,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 self._get_objs(h, index, i)
             else:
                 try:
-                    if i != None:
+                    if i is not None:
                         h[i] = {}
                         index[i] = i.offset
                 except AttributeError:
@@ -8705,7 +8712,7 @@ def get_bytecodes_methodx(method, mx):
 
     i_buffer += "# %s->%s%s [access_flags=%s]\n#\n" % (method.get_class_name(
     ), method.get_name(), method.get_descriptor(), method.get_access_flags_string())
-    if method.code != None:
+    if method.code is not None:
         i_buffer += get_params_info(method.code.get_registers_size(),
                                     method.get_descriptor())
 
@@ -8742,7 +8749,7 @@ def get_bytecodes_methodx(method, mx):
 
                 ins_buffer += "\n"
 
-            if i.get_exception_analysis() != None:
+            if i.get_exception_analysis() is not None:
                 ins_buffer += "\t%s\n" % (i.exception_analysis.show_buff())
 
             i_buffer += bb_buffer + "\n" + ins_buffer + "\n"
@@ -8758,7 +8765,7 @@ def auto(filename, raw=None):
         :type raw:
     """
     data_raw = raw
-    if raw == None:
+    if raw is None:
         data_raw = read(filename)
         ret_type = is_android_raw(data_raw[:10])
         if ret_type == "DEX":
