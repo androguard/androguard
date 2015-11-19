@@ -544,7 +544,7 @@ class AnnotationOffItem(object):
         :type cm: :class:`ClassManager`
     """
 
-    def __init__(self,  buff, cm):
+    def __init__(self, buff, cm):
         self.__CM = cm
         self.annotation_off = unpack("=I", buff.read(4))[0]
 
@@ -634,7 +634,7 @@ class AnnotationSetRefItem(object):
         :type cm: :class:`ClassManager`
     """
 
-    def __init__(self,  buff, cm):
+    def __init__(self, buff, cm):
         self.__CM = cm
         self.annotations_off = unpack("=I", buff.read(4))[0]
 
@@ -6187,26 +6187,26 @@ DALVIK_OPCODES_FORMAT = {
     0xea: [Instruction21c, ["sget-wide-volatile", KIND_FIELD]],
     0xeb: [Instruction21c, ["sput-wide-volatile", KIND_FIELD]],
 
-    0xec: [Instruction10x,   ["breakpoint"]],
-    0xed: [Instruction20bc,  ["throw-verification-error", VARIES]],
-    0xee: [Instruction35mi,  ["execute-inline", INLINE_METHOD]],
-    0xef: [Instruction3rmi,  ["execute-inline/range", INLINE_METHOD]],
-    0xf0: [Instruction35c,   ["invoke-object-init/range", KIND_METH]],
-    0xf1: [Instruction10x,   ["return-void-barrier"]],
+    0xec: [Instruction10x, ["breakpoint"]],
+    0xed: [Instruction20bc, ["throw-verification-error", VARIES]],
+    0xee: [Instruction35mi, ["execute-inline", INLINE_METHOD]],
+    0xef: [Instruction3rmi, ["execute-inline/range", INLINE_METHOD]],
+    0xf0: [Instruction35c, ["invoke-object-init/range", KIND_METH]],
+    0xf1: [Instruction10x, ["return-void-barrier"]],
 
-    0xf2: [Instruction22cs,  ["iget-quick", FIELD_OFFSET]],
-    0xf3: [Instruction22cs,  ["iget-wide-quick", FIELD_OFFSET]],
-    0xf4: [Instruction22cs,  ["iget-object-quick", FIELD_OFFSET]],
-    0xf5: [Instruction22cs,  ["iput-quick", FIELD_OFFSET]],
-    0xf6: [Instruction22cs,  ["iput-wide-quick", FIELD_OFFSET]],
-    0xf7: [Instruction22cs,  ["iput-object-quick", FIELD_OFFSET]],
-    0xf8: [Instruction35ms,  ["invoke-virtual-quick", VTABLE_OFFSET]],
-    0xf9: [Instruction3rms,  ["invoke-virtual-quick/range", VTABLE_OFFSET]],
-    0xfa: [Instruction35ms,  ["invoke-super-quick", VTABLE_OFFSET]],
-    0xfb: [Instruction3rms,  ["invoke-super-quick/range", VTABLE_OFFSET]],
-    0xfc: [Instruction22c,   ["iput-object-volatile", KIND_FIELD]],
-    0xfd: [Instruction21c,   ["sget-object-volatile", KIND_FIELD]],
-    0xfe: [Instruction21c,   ["sput-object-volatile", KIND_FIELD]],
+    0xf2: [Instruction22cs, ["iget-quick", FIELD_OFFSET]],
+    0xf3: [Instruction22cs, ["iget-wide-quick", FIELD_OFFSET]],
+    0xf4: [Instruction22cs, ["iget-object-quick", FIELD_OFFSET]],
+    0xf5: [Instruction22cs, ["iput-quick", FIELD_OFFSET]],
+    0xf6: [Instruction22cs, ["iput-wide-quick", FIELD_OFFSET]],
+    0xf7: [Instruction22cs, ["iput-object-quick", FIELD_OFFSET]],
+    0xf8: [Instruction35ms, ["invoke-virtual-quick", VTABLE_OFFSET]],
+    0xf9: [Instruction3rms, ["invoke-virtual-quick/range", VTABLE_OFFSET]],
+    0xfa: [Instruction35ms, ["invoke-super-quick", VTABLE_OFFSET]],
+    0xfb: [Instruction3rms, ["invoke-super-quick/range", VTABLE_OFFSET]],
+    0xfc: [Instruction22c, ["iput-object-volatile", KIND_FIELD]],
+    0xfd: [Instruction21c, ["sget-object-volatile", KIND_FIELD]],
+    0xfe: [Instruction21c, ["sput-object-volatile", KIND_FIELD]],
 }
 
 DALVIK_OPCODES_PAYLOAD = {
