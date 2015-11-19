@@ -3352,10 +3352,10 @@ class ClassDataItem(object):
             [i for i in self.virtual_methods]
 
     def get_raw(self):
-        buff = writeuleb128( self.static_fields_size ) + \
-            writeuleb128( self.instance_fields_size ) + \
-            writeuleb128( self.direct_methods_size ) + \
-            writeuleb128( self.virtual_methods_size ) + \
+        buff = writeuleb128(self.static_fields_size) + \
+            writeuleb128(self.instance_fields_size) + \
+            writeuleb128(self.direct_methods_size) + \
+            writeuleb128(self.virtual_methods_size) + \
             ''.join(i.get_raw() for i in self.static_fields) + \
             ''.join(i.get_raw() for i in self.instance_fields) + \
             ''.join(i.get_raw() for i in self.direct_methods) + \
@@ -3364,9 +3364,9 @@ class ClassDataItem(object):
         return buff
 
     def get_length(self):
-        length = len(writeuleb128( self.static_fields_size )) +   \
-            len(writeuleb128( self.instance_fields_size )) +  \
-            len(writeuleb128( self.direct_methods_size )) +   \
+        length = len(writeuleb128(self.static_fields_size)) +   \
+            len(writeuleb128(self.instance_fields_size)) +  \
+            len(writeuleb128(self.direct_methods_size)) +   \
             len(writeuleb128(self.virtual_methods_size))
 
         for i in self.static_fields:
@@ -3639,7 +3639,7 @@ class ClassDefItem(object):
             self.static_values_off = self.__CM.get_obj_by_offset(
                 self.static_values_off).get_off()
 
-        return  pack("=I", self.class_idx) +          \
+        return pack("=I", self.class_idx) +          \
             pack("=I", self.access_flags) +       \
             pack("=I", self.superclass_idx) +     \
             pack("=I", self.interfaces_off) +     \
@@ -7602,7 +7602,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         :type decompiler: object
 
         :Example:
-          DalvikVMFormat( read("classes.dex") )
+          DalvikVMFormat(read("classes.dex"))
     """
 
     def __init__(self, buff, decompiler=None, config=None, using_api=None):
@@ -8233,8 +8233,8 @@ class DalvikVMFormat(bytecode._Bytecode):
 
                         if access_val == 'R':
                             dref_meth = self.get_method_by_idx(m_idx)
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                                bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
+                            name = bytecode.FormatClassToPython(dref_meth.get_class_name()) + "__" + \
+                                bytecode.FormatNameToPython(dref_meth.get_name()) + "__" + \
                                 bytecode.FormatDescriptorToPython(
                                     dref_meth.get_descriptor())
 
@@ -8249,8 +8249,8 @@ class DalvikVMFormat(bytecode._Bytecode):
 
                         else:
                             dref_meth = self.get_method_by_idx(m_idx)
-                            name = bytecode.FormatClassToPython( dref_meth.get_class_name() ) + "__" + \
-                                bytecode.FormatNameToPython( dref_meth.get_name() ) + "__" + \
+                            name = bytecode.FormatClassToPython(dref_meth.get_class_name()) + "__" + \
+                                bytecode.FormatNameToPython(dref_meth.get_name()) + "__" + \
                                 bytecode.FormatDescriptorToPython(
                                     dref_meth.get_descriptor())
 
@@ -8632,7 +8632,7 @@ class DalvikOdexVMFormat(DalvikVMFormat):
         :type decompiler: object
 
         :Example:
-          DalvikOdexVMFormat( read("classes.odex") )
+          DalvikOdexVMFormat(read("classes.odex"))
     """
 
     def _preload(self, buff):
@@ -8742,7 +8742,7 @@ def get_bytecodes_methodx(method, mx):
                         #    print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + "]%s" % normal_color)
                         # else:
                         bb_buffer += "[" + ' '.join("%s" %
-                                                     c[2].name for c in i.childs) + "]"
+                                                    c[2].name for c in i.childs) + "]"
 
                 idx += ins.get_length()
                 nb += 1
