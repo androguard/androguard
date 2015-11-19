@@ -23,13 +23,15 @@ from idc import *
 from xmlrpc.server import SimpleXMLRPCServer
 import pickle
 
+
 def is_connected():
     return True
+
 
 def wrapper_get_raw(oops):
     F = {}
     for function_ea in Functions():
-        F[ function_ea ] = []
+        F[function_ea] = []
 
         f_start = function_ea
         f_end = GetFunctionAttr(function_ea, FUNCATTR_END)
@@ -37,14 +39,15 @@ def wrapper_get_raw(oops):
         edges = set()
         boundaries = set((f_start,))
 
-        F[ function_ea ].append( GetFunctionName(function_ea) )
+        F[function_ea].append(GetFunctionName(function_ea))
 
         for head in Heads(f_start, f_end):
-            if isCode( GetFlags( head ) ):
-                F[ function_ea ].append( (head, GetMnem(head), GetOpnd(head, 0), GetOpnd(head, 1), GetOpnd(head, 2)) )
+            if isCode(GetFlags(head)):
+                F[function_ea].append((head, GetMnem(head), GetOpnd(
+                    head, 0), GetOpnd(head, 1), GetOpnd(head, 2)))
 
                 refs = CodeRefsFrom(head, 0)
-                refs = set([x for x in refs if x>=f_start and x<=f_end])
+                refs = set([x for x in refs if x >= f_start and x <= f_end])
 
                 if refs:
                     next_head = NextHead(head, f_end)
@@ -57,17 +60,17 @@ def wrapper_get_raw(oops):
                     # For each of the references found, and edge is
                     # created.
                     for r in refs:
-                    # If the flow could also come from the address
-                    # previous to the destination of the branching
-                    # an edge is created.
+                        # If the flow could also come from the address
+                        # previous to the destination of the branching
+                        # an edge is created.
                         if isFlow(GetFlags(r)):
                             edges.add((PrevHead(r, f_start), r))
                         edges.add((head, r))
 
-        #print edges, boundaries
+        # print edges, boundaries
         # Let's build the list of (startEA, startEA) couples
         # for each basic block
-        sorted_boundaries = sorted(boundaries, reverse = True)
+        sorted_boundaries = sorted(boundaries, reverse=True)
         end_addr = PrevHead(f_end, f_start)
         bb_addr = []
         for begin_addr in sorted_boundaries:
@@ -81,35 +84,41 @@ def wrapper_get_raw(oops):
                 end_addr = PrevHead(end_addr, f_start)
         # And finally return the result
         bb_addr.reverse()
-        F[ function_ea ].append( (bb_addr, sorted(edges)) )
+        F[function_ea].append((bb_addr, sorted(edges)))
 
-    return pickle.dumps( F )
+    return pickle.dumps(F)
+
 
 def wrapper_Heads(oops):
     start, end = pickle.loads(oops)
-    return pickle.dumps( [ x for x in Heads( start, end ) ] )
+    return pickle.dumps([x for x in Heads(start, end)])
+
 
 def wrapper_Functions(oops):
-    return pickle.dumps( [ x for x in Functions() ] )
+    return pickle.dumps([x for x in Functions()])
+
 
 def wrapper_get_function(oops):
     name = pickle.loads(oops)
     for function_ea in Functions():
         if GetFunctionName(function_ea) == name:
-            return pickle.dumps( function_ea )
-    return pickle.dumps( -1 )
+            return pickle.dumps(function_ea)
+    return pickle.dumps(-1)
+
 
 def wrapper_quit(oops):
     qexit(0)
 
+
 class IDAWrapper(object):
+
     def _dispatch(self, x, params):
         #fd = open("toto.txt", "w")
         #fd.write( x + "\n" )
         #fd.write( str(type(params[0])) + "\n" )
-        #fd.close()
+        # fd.close()
 
-        params = pickle.loads( *params )
+        params = pickle.loads(*params)
         if isinstance(params, tuple) == False:
             params = (params,)
 
@@ -122,21 +131,22 @@ class IDAWrapper(object):
             #fd.write( "\t" + a + "\n" )
             if a == x:
                 z = getattr(idautils, a, None)
-                ret = z( *params )
-                if type(ret).__name__=='generator':
-                    return pickle.dumps( [ i for i in ret ] )
-                return pickle.dumps( ret )
+                ret = z(*params)
+                if type(ret).__name__ == 'generator':
+                    return pickle.dumps([i for i in ret])
+                return pickle.dumps(ret)
 
         for a in dir(idc):
             #fd.write( "\t" + a + "\n" )
             if a == x:
                 z = getattr(idc, a, None)
-                ret = z( *params )
-                if type(ret).__name__=='generator':
-                    return pickle.dumps( [ i for i in ret ] )
-                return pickle.dumps( ret )
+                ret = z(*params)
+                if type(ret).__name__ == 'generator':
+                    return pickle.dumps([i for i in ret])
+                return pickle.dumps(ret)
 
-        return pickle.dumps( [] )
+        return pickle.dumps([])
+
 
 def main():
     autoWait()

@@ -198,6 +198,7 @@ class Graph(object):
 
     For details on these and other miscellaneous methods, see below.
     """
+
     def __init__(self, data=None, **attr):
         """Initialize a graph with edges, name, graph attributes.
 
@@ -237,17 +238,18 @@ class Graph(object):
         self.adj = {}     # empty adjacency dict
         # attempt to load graph with data
         if data is not None:
-            convert.to_networkx_graph(data,create_using=self)
+            convert.to_networkx_graph(data, create_using=self)
         # load graph attributes (must be after convert)
         self.graph.update(attr)
         self.edge = self.adj
 
     @property
     def name(self):
-        return self.graph.get('name','')
+        return self.graph.get('name', '')
+
     @name.setter
     def name(self, s):
-        self.graph['name']=s
+        self.graph['name'] = s
 
     def __str__(self):
         """Return the graph name.
@@ -280,7 +282,7 @@ class Graph(object):
         """
         return iter(self.node)
 
-    def __contains__(self,n):
+    def __contains__(self, n):
         """Return True if n is a node, False otherwise. Use the expression
         'n in G'.
 
@@ -344,7 +346,6 @@ class Graph(object):
         """
         return self.adj[n]
 
-
     def add_node(self, n, attr_dict=None, **attr):
         """Add a single node n and update node attributes.
 
@@ -389,19 +390,18 @@ class Graph(object):
         """
         # set up attribute dict
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dictionary.")
         if n not in self.node:
             self.adj[n] = {}
             self.node[n] = attr_dict
-        else: # update attr even if node already exists
+        else:  # update attr even if node already exists
             self.node[n].update(attr_dict)
-
 
     def add_nodes_from(self, nodes, **attr):
         """Add multiple nodes.
@@ -450,9 +450,9 @@ class Graph(object):
         """
         for n in nodes:
             try:
-                newnode=n not in self.node
+                newnode = n not in self.node
             except TypeError:
-                nn,ndict = n
+                nn, ndict = n
                 if nn not in self.node:
                     self.adj[nn] = {}
                     newdict = attr.copy()
@@ -469,7 +469,7 @@ class Graph(object):
             else:
                 self.node[n].update(attr)
 
-    def remove_node(self,n):
+    def remove_node(self, n):
         """Remove node n.
 
         Removes the node n and all adjacent edges.
@@ -502,14 +502,14 @@ class Graph(object):
         """
         adj = self.adj
         try:
-            nbrs = list(adj[n].keys()) # keys handles self-loops (allow mutation later)
+            # keys handles self-loops (allow mutation later)
+            nbrs = list(adj[n].keys())
             del self.node[n]
-        except KeyError: # NetworkXError if n not in self
-            raise NetworkXError("The node %s is not in the graph."%(n,))
+        except KeyError:  # NetworkXError if n not in self
+            raise NetworkXError("The node %s is not in the graph." % (n,))
         for u in nbrs:
             del adj[u][n]   # remove all edges n-u in graph
         del adj[n]          # now remove node
-
 
     def remove_nodes_from(self, nodes):
         """Remove multiple nodes.
@@ -542,11 +542,10 @@ class Graph(object):
             try:
                 del self.node[n]
                 for u in list(adj[n].keys()):   # keys() handles self-loops
-                    del adj[u][n]         #(allows mutation of dict in loop)
+                    del adj[u][n]  # (allows mutation of dict in loop)
                 del adj[n]
             except KeyError:
                 pass
-
 
     def nodes_iter(self, data=False):
         """Return an iterator over the nodes.
@@ -721,12 +720,12 @@ class Graph(object):
         """
         # set up attribute dictionary
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dictionary.")
         # add nodes
         if u not in self.node:
@@ -736,11 +735,10 @@ class Graph(object):
             self.adj[v] = {}
             self.node[v] = {}
         # add the edge
-        datadict=self.adj[u].get(v,{})
+        datadict = self.adj[u].get(v, {})
         datadict.update(attr_dict)
         self.adj[u][v] = datadict
         self.adj[v][u] = datadict
-
 
     def add_edges_from(self, ebunch, attr_dict=None, **attr):
         """Add all the edges in ebunch.
@@ -784,36 +782,35 @@ class Graph(object):
         """
         # set up attribute dict
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dictionary.")
         # process ebunch
         for e in ebunch:
-            ne=len(e)
-            if ne==3:
-                u,v,dd = e
-            elif ne==2:
-                u,v = e
+            ne = len(e)
+            if ne == 3:
+                u, v, dd = e
+            elif ne == 2:
+                u, v = e
                 dd = {}
             else:
-                raise NetworkXError(\
-                    "Edge tuple %s must be a 2-tuple or 3-tuple."%(e,))
+                raise NetworkXError(
+                    "Edge tuple %s must be a 2-tuple or 3-tuple." % (e,))
             if u not in self.node:
                 self.adj[u] = {}
                 self.node[u] = {}
             if v not in self.node:
                 self.adj[v] = {}
                 self.node[v] = {}
-            datadict=self.adj[u].get(v,{})
+            datadict = self.adj[u].get(v, {})
             datadict.update(attr_dict)
             datadict.update(dd)
             self.adj[u][v] = datadict
             self.adj[v][u] = datadict
-
 
     def add_weighted_edges_from(self, ebunch, weight='weight', **attr):
         """Add all the edges in ebunch as weighted edges with specified
@@ -846,7 +843,8 @@ class Graph(object):
         >>> G = nx.Graph()   # or DiGraph, MultiGraph, MultiDiGraph, etc
         >>> G.add_weighted_edges_from([(0,1,3.0),(1,2,7.5)])
         """
-        self.add_edges_from(((u,v,{weight:d}) for u,v,d in ebunch),**attr)
+        self.add_edges_from(((u, v, {weight: d})
+                             for u, v, d in ebunch), **attr)
 
     def remove_edge(self, u, v):
         """Remove the edge between u and v.
@@ -880,9 +878,7 @@ class Graph(object):
             if u != v:  # self-loop needs only one entry removed
                 del self.adj[v][u]
         except KeyError:
-            raise NetworkXError("The edge %s-%s is not in the graph"%(u,v))
-
-
+            raise NetworkXError("The edge %s-%s is not in the graph" % (u, v))
 
     def remove_edges_from(self, ebunch):
         """Remove all edges specified in ebunch.
@@ -911,14 +907,13 @@ class Graph(object):
         >>> ebunch=[(1,2),(2,3)]
         >>> G.remove_edges_from(ebunch)
         """
-        adj=self.adj
+        adj = self.adj
         for e in ebunch:
-            u,v = e[:2]  # ignore edge data if present
+            u, v = e[:2]  # ignore edge data if present
             if u in adj and v in adj[u]:
                 del adj[u][v]
                 if u != v:  # self loop needs only one entry removed
                     del adj[v][u]
-
 
     def has_edge(self, u, v):
         """Return True if the edge (u,v) is in the graph.
@@ -962,7 +957,6 @@ class Graph(object):
         except KeyError:
             return False
 
-
     def neighbors(self, n):
         """Return a list of the nodes connected to the node n.
 
@@ -1002,7 +996,7 @@ class Graph(object):
         try:
             return list(self.adj[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the graph."%(n,))
+            raise NetworkXError("The node %s is not in the graph." % (n,))
 
     def neighbors_iter(self, n):
         """Return an iterator over all neighbors of node n.
@@ -1025,7 +1019,7 @@ class Graph(object):
         try:
             return iter(self.adj[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the graph."%(n,))
+            raise NetworkXError("The node %s is not in the graph." % (n,))
 
     def edges(self, nbunch=None, data=False):
         """Return a list of edges.
@@ -1114,25 +1108,24 @@ class Graph(object):
         [(0, 1)]
 
         """
-        seen={}     # helper dict to keep track of multiply stored edges
+        seen = {}     # helper dict to keep track of multiply stored edges
         if nbunch is None:
             nodes_nbrs = list(self.adj.items())
         else:
-            nodes_nbrs=((n,self.adj[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.adj[n]) for n in self.nbunch_iter(nbunch))
         if data:
-            for n,nbrs in nodes_nbrs:
-                for nbr,data in list(nbrs.items()):
+            for n, nbrs in nodes_nbrs:
+                for nbr, data in list(nbrs.items()):
                     if nbr not in seen:
-                        yield (n,nbr,data)
-                seen[n]=1
+                        yield (n, nbr, data)
+                seen[n] = 1
         else:
-            for n,nbrs in nodes_nbrs:
+            for n, nbrs in nodes_nbrs:
                 for nbr in nbrs:
                     if nbr not in seen:
-                        yield (n,nbr)
+                        yield (n, nbr)
                 seen[n] = 1
         del seen
-
 
     def get_edge_data(self, u, v, default=None):
         """Return the attribute dictionary associated with edge (u,v).
@@ -1206,7 +1199,7 @@ class Graph(object):
         [[1], [0, 2], [1, 3], [2]]
 
         """
-        return list(map(list,iter(list(self.adj.values()))))
+        return list(map(list, iter(list(self.adj.values()))))
 
     def adjacency_iter(self):
         """Return an iterator of (node, adjacency dict) tuples for all nodes.
@@ -1269,9 +1262,9 @@ class Graph(object):
 
         """
         if nbunch in self:      # return a single node
-            return next(self.degree_iter(nbunch,weight))[1]
+            return next(self.degree_iter(nbunch, weight))[1]
         else:           # return a dict
-            return dict(self.degree_iter(nbunch,weight))
+            return dict(self.degree_iter(nbunch, weight))
 
     def degree_iter(self, nbunch=None, weight=None):
         """Return an iterator for (node, degree).
@@ -1311,17 +1304,16 @@ class Graph(object):
         if nbunch is None:
             nodes_nbrs = list(self.adj.items())
         else:
-            nodes_nbrs=((n,self.adj[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.adj[n]) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
-            for n,nbrs in nodes_nbrs:
-                yield (n,len(nbrs)+(n in nbrs)) # return tuple (n,degree)
+            for n, nbrs in nodes_nbrs:
+                yield (n, len(nbrs) + (n in nbrs))  # return tuple (n,degree)
         else:
-        # edge weighted graph - degree is sum of nbr edge weights
-            for n,nbrs in nodes_nbrs:
-                yield (n, sum((nbrs[nbr].get(weight,1) for nbr in nbrs)) +
-                              (n in nbrs and nbrs[n].get(weight,1)))
-
+            # edge weighted graph - degree is sum of nbr edge weights
+            for n, nbrs in nodes_nbrs:
+                yield (n, sum((nbrs[nbr].get(weight, 1) for nbr in nbrs)) +
+                       (n in nbrs and nbrs[n].get(weight, 1)))
 
     def clear(self):
         """Remove all nodes and edges from the graph.
@@ -1374,7 +1366,6 @@ class Graph(object):
         """Return True if graph is a multigraph, False otherwise."""
         return False
 
-
     def is_directed(self):
         """Return True if graph is directed, False otherwise."""
         return False
@@ -1418,14 +1409,14 @@ class Graph(object):
         [(0, 1)]
         """
         from networkx import DiGraph
-        G=DiGraph()
-        G.name=self.name
+        G = DiGraph()
+        G.name = self.name
         G.add_nodes_from(self)
-        G.add_edges_from( ((u,v,deepcopy(data))
-                           for u,nbrs in self.adjacency_iter()
-                           for v,data in list(nbrs.items())) )
-        G.graph=deepcopy(self.graph)
-        G.node=deepcopy(self.node)
+        G.add_edges_from(((u, v, deepcopy(data))
+                          for u, nbrs in self.adjacency_iter()
+                          for v, data in list(nbrs.items())))
+        G.graph = deepcopy(self.graph)
+        G.node = deepcopy(self.node)
         return G
 
     def to_undirected(self):
@@ -1504,27 +1495,26 @@ class Graph(object):
         >>> H.edges()
         [(0, 1), (1, 2)]
         """
-        bunch =self.nbunch_iter(nbunch)
+        bunch = self.nbunch_iter(nbunch)
         # create new graph and copy subgraph into it
         H = self.__class__()
         # copy node and attribute dictionaries
         for n in bunch:
-            H.node[n]=self.node[n]
+            H.node[n] = self.node[n]
         # namespace shortcuts for speed
-        H_adj=H.adj
-        self_adj=self.adj
+        H_adj = H.adj
+        self_adj = self.adj
         # add nodes and edges (undirected method)
         for n in H.node:
-            Hnbrs={}
-            H_adj[n]=Hnbrs
-            for nbr,d in list(self_adj[n].items()):
+            Hnbrs = {}
+            H_adj[n] = Hnbrs
+            for nbr, d in list(self_adj[n].items()):
                 if nbr in H_adj:
                     # add both representations of edge: n-nbr and nbr-n
-                    Hnbrs[nbr]=d
-                    H_adj[nbr][n]=d
-        H.graph=self.graph
+                    Hnbrs[nbr] = d
+                    H_adj[nbr][n] = d
+        H.graph = self.graph
         return H
-
 
     def nodes_with_selfloops(self):
         """Return a list of nodes with self loops.
@@ -1549,7 +1539,7 @@ class Graph(object):
         >>> G.nodes_with_selfloops()
         [1]
         """
-        return [ n for n,nbrs in list(self.adj.items()) if n in nbrs ]
+        return [n for n, nbrs in list(self.adj.items()) if n in nbrs]
 
     def selfloop_edges(self, data=False):
         """Return a list of selfloop edges.
@@ -1582,12 +1572,11 @@ class Graph(object):
         [(1, 1, {})]
         """
         if data:
-            return [ (n,n,nbrs[n])
-                     for n,nbrs in list(self.adj.items()) if n in nbrs ]
+            return [(n, n, nbrs[n])
+                    for n, nbrs in list(self.adj.items()) if n in nbrs]
         else:
-            return [ (n,n)
-                     for n,nbrs in list(self.adj.items()) if n in nbrs ]
-
+            return [(n, n)
+                    for n, nbrs in list(self.adj.items()) if n in nbrs]
 
     def number_of_selfloops(self):
         """Return the number of selfloop edges.
@@ -1612,7 +1601,6 @@ class Graph(object):
         1
         """
         return len(self.selfloop_edges())
-
 
     def size(self, weight=None):
         """Return the number of edges.
@@ -1647,7 +1635,7 @@ class Graph(object):
         >>> G.size(weight='weight')
         6.0
         """
-        s=sum(self.degree(weight=weight).values())/2
+        s = sum(self.degree(weight=weight).values()) / 2
         if weight is None:
             return int(s)
         else:
@@ -1684,12 +1672,12 @@ class Graph(object):
         >>> G.number_of_edges(*e)
         1
         """
-        if u is None: return int(self.size())
+        if u is None:
+            return int(self.size())
         if v in self.adj[u]:
             return 1
         else:
             return 0
-
 
     def add_star(self, nodes, **attr):
         """Add a star.
@@ -1716,8 +1704,8 @@ class Graph(object):
 
         """
         nlist = list(nodes)
-        v=nlist[0]
-        edges=((v,n) for n in nlist[1:])
+        v = nlist[0]
+        edges = ((v, n) for n in nlist[1:])
         self.add_edges_from(edges, **attr)
 
     def add_path(self, nodes, **attr):
@@ -1743,7 +1731,7 @@ class Graph(object):
 
         """
         nlist = list(nodes)
-        edges=list(zip(nlist[:-1],nlist[1:]))
+        edges = list(zip(nlist[:-1], nlist[1:]))
         self.add_edges_from(edges, **attr)
 
     def add_cycle(self, nodes, **attr):
@@ -1769,9 +1757,8 @@ class Graph(object):
 
         """
         nlist = list(nodes)
-        edges=list(zip(nlist,nlist[1:]+[nlist[0]]))
+        edges = list(zip(nlist, nlist[1:] + [nlist[0]]))
         self.add_edges_from(edges, **attr)
-
 
     def nbunch_iter(self, nbunch=None):
         """Return an iterator of nodes contained in nbunch that are
@@ -1815,30 +1802,30 @@ class Graph(object):
         nbunch is not hashable, a NetworkXError is raised.
         """
         if nbunch is None:   # include all nodes via iterator
-            bunch=iter(list(self.adj.keys()))
-        elif nbunch in self: # if nbunch is a single node
-            bunch=iter([nbunch])
+            bunch = iter(list(self.adj.keys()))
+        elif nbunch in self:  # if nbunch is a single node
+            bunch = iter([nbunch])
         else:                # if nbunch is a sequence of nodes
-            def bunch_iter(nlist,adj):
+            def bunch_iter(nlist, adj):
                 try:
                     for n in nlist:
                         if n in adj:
                             yield n
                 except TypeError as e:
-                    message=e.args[0]
+                    message = e.args[0]
                     import sys
                     sys.stdout.write(message)
                     # capture error for non-sequence/iterator nbunch.
                     if 'iter' in message:
-                        raise NetworkXError(\
+                        raise NetworkXError(
                             "nbunch is not a node or a sequence of nodes.")
                     # capture error for unhashable node.
                     elif 'hashable' in message:
-                        raise NetworkXError(\
-                            "Node %s in the sequence nbunch is not a valid node."%n)
+                        raise NetworkXError(
+                            "Node %s in the sequence nbunch is not a valid node." % n)
                     else:
                         raise
-            bunch=bunch_iter(nbunch,self.adj)
+            bunch = bunch_iter(nbunch, self.adj)
         return bunch
 
 """Base class for directed graphs."""
@@ -2002,6 +1989,7 @@ class DiGraph(Graph):
 
     For details on these and other miscellaneous methods, see below.
     """
+
     def __init__(self, data=None, **attr):
         """Initialize a graph with edges, name, graph attributes.
 
@@ -2036,8 +2024,8 @@ class DiGraph(Graph):
         {'day': 'Friday'}
 
         """
-        self.graph = {} # dictionary for graph attributes
-        self.node = {} # dictionary for node attributes
+        self.graph = {}  # dictionary for graph attributes
+        self.node = {}  # dictionary for node attributes
         # We store two adjacency lists:
         # the  predecessors of node n are stored in the dict self.pred
         # the successors of node n are stored in the dict self.succ=self.adj
@@ -2047,11 +2035,10 @@ class DiGraph(Graph):
 
         # attempt to load graph with data
         if data is not None:
-            convert.to_networkx_graph(data,create_using=self)
+            convert.to_networkx_graph(data, create_using=self)
         # load graph attributes (must be after convert)
         self.graph.update(attr)
-        self.edge=self.adj
-
+        self.edge = self.adj
 
     def add_node(self, n, attr_dict=None, **attr):
         """Add a single node n and update node attributes.
@@ -2097,20 +2084,19 @@ class DiGraph(Graph):
         """
         # set up attribute dict
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dictionary.")
         if n not in self.succ:
             self.succ[n] = {}
             self.pred[n] = {}
             self.node[n] = attr_dict
-        else: # update attr even if node already exists
+        else:  # update attr even if node already exists
             self.node[n].update(attr_dict)
-
 
     def add_nodes_from(self, nodes, **attr):
         """Add multiple nodes.
@@ -2159,9 +2145,9 @@ class DiGraph(Graph):
         """
         for n in nodes:
             try:
-                newnode=n not in self.succ
+                newnode = n not in self.succ
             except TypeError:
-                nn,ndict = n
+                nn, ndict = n
                 if nn not in self.succ:
                     self.succ[nn] = {}
                     self.pred[nn] = {}
@@ -2212,17 +2198,16 @@ class DiGraph(Graph):
 
         """
         try:
-            nbrs=self.succ[n]
+            nbrs = self.succ[n]
             del self.node[n]
-        except KeyError: # NetworkXError if n not in self
-            raise NetworkXError("The node %s is not in the digraph."%(n,))
+        except KeyError:  # NetworkXError if n not in self
+            raise NetworkXError("The node %s is not in the digraph." % (n,))
         for u in nbrs:
-            del self.pred[u][n] # remove all edges n-u in digraph
+            del self.pred[u][n]  # remove all edges n-u in digraph
         del self.succ[n]          # remove node from succ
         for u in self.pred[n]:
-            del self.succ[u][n] # remove all edges n-u in digraph
+            del self.succ[u][n]  # remove all edges n-u in digraph
         del self.pred[n]          # remove node from pred
-
 
     def remove_nodes_from(self, nbunch):
         """Remove multiple nodes.
@@ -2252,17 +2237,16 @@ class DiGraph(Graph):
         """
         for n in nbunch:
             try:
-                succs=self.succ[n]
+                succs = self.succ[n]
                 del self.node[n]
                 for u in succs:
-                    del self.pred[u][n] # remove all edges n-u in digraph
+                    del self.pred[u][n]  # remove all edges n-u in digraph
                 del self.succ[n]          # now remove node
                 for u in self.pred[n]:
-                    del self.succ[u][n] # remove all edges n-u in digraph
+                    del self.succ[u][n]  # remove all edges n-u in digraph
                 del self.pred[n]          # now remove node
             except KeyError:
-                pass # silent failure on remove
-
+                pass  # silent failure on remove
 
     def add_edge(self, u, v, attr_dict=None, **attr):
         """Add an edge between u and v.
@@ -2314,27 +2298,27 @@ class DiGraph(Graph):
         """
         # set up attribute dict
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dictionary.")
         # add nodes
         if u not in self.succ:
-            self.succ[u]={}
-            self.pred[u]={}
+            self.succ[u] = {}
+            self.pred[u] = {}
             self.node[u] = {}
         if v not in self.succ:
-            self.succ[v]={}
-            self.pred[v]={}
+            self.succ[v] = {}
+            self.pred[v] = {}
             self.node[v] = {}
         # add the edge
-        datadict=self.adj[u].get(v,{})
+        datadict = self.adj[u].get(v, {})
         datadict.update(attr_dict)
-        self.succ[u][v]=datadict
-        self.pred[v][u]=datadict
+        self.succ[u][v] = datadict
+        self.pred[v][u] = datadict
 
     def add_edges_from(self, ebunch, attr_dict=None, **attr):
         """Add all the edges in ebunch.
@@ -2378,25 +2362,25 @@ class DiGraph(Graph):
         """
         # set up attribute dict
         if attr_dict is None:
-            attr_dict=attr
+            attr_dict = attr
         else:
             try:
                 attr_dict.update(attr)
             except AttributeError:
-                raise NetworkXError(\
+                raise NetworkXError(
                     "The attr_dict argument must be a dict.")
         # process ebunch
         for e in ebunch:
             ne = len(e)
-            if ne==3:
-                u,v,dd = e
-                assert hasattr(dd,"update")
-            elif ne==2:
-                u,v = e
+            if ne == 3:
+                u, v, dd = e
+                assert hasattr(dd, "update")
+            elif ne == 2:
+                u, v = e
                 dd = {}
             else:
-                raise NetworkXError(\
-                    "Edge tuple %s must be a 2-tuple or 3-tuple."%(e,))
+                raise NetworkXError(
+                    "Edge tuple %s must be a 2-tuple or 3-tuple." % (e,))
             if u not in self.succ:
                 self.succ[u] = {}
                 self.pred[u] = {}
@@ -2405,12 +2389,11 @@ class DiGraph(Graph):
                 self.succ[v] = {}
                 self.pred[v] = {}
                 self.node[v] = {}
-            datadict=self.adj[u].get(v,{})
+            datadict = self.adj[u].get(v, {})
             datadict.update(attr_dict)
             datadict.update(dd)
             self.succ[u][v] = datadict
             self.pred[v][u] = datadict
-
 
     def remove_edge(self, u, v):
         """Remove the edge between u and v.
@@ -2443,8 +2426,7 @@ class DiGraph(Graph):
             del self.succ[u][v]
             del self.pred[v][u]
         except KeyError:
-            raise NetworkXError("The edge %s-%s not in graph."%(u,v))
-
+            raise NetworkXError("The edge %s-%s not in graph." % (u, v))
 
     def remove_edges_from(self, ebunch):
         """Remove all edges specified in ebunch.
@@ -2474,11 +2456,10 @@ class DiGraph(Graph):
         >>> G.remove_edges_from(ebunch)
         """
         for e in ebunch:
-            (u,v)=e[:2]  # ignore edge data
+            (u, v) = e[:2]  # ignore edge data
             if u in self.succ and v in self.succ[u]:
                 del self.succ[u][v]
                 del self.pred[v][u]
-
 
     def has_successor(self, u, v):
         """Return True if node u has successor v.
@@ -2494,7 +2475,7 @@ class DiGraph(Graph):
         """
         return (u in self.pred and v in self.pred[u])
 
-    def successors_iter(self,n):
+    def successors_iter(self, n):
         """Return an iterator over successor nodes of n.
 
         neighbors_iter() and successors_iter() are the same.
@@ -2502,14 +2483,14 @@ class DiGraph(Graph):
         try:
             return iter(self.succ[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the digraph."%(n,))
+            raise NetworkXError("The node %s is not in the digraph." % (n,))
 
-    def predecessors_iter(self,n):
+    def predecessors_iter(self, n):
         """Return an iterator over predecessor nodes of n."""
         try:
             return iter(self.pred[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the digraph."%(n,))
+            raise NetworkXError("The node %s is not in the digraph." % (n,))
 
     def successors(self, n):
         """Return a list of successor nodes of n.
@@ -2521,7 +2502,6 @@ class DiGraph(Graph):
     def predecessors(self, n):
         """Return a list of predecessor nodes of n."""
         return list(self.predecessors_iter(n))
-
 
     # digraph definitions
     neighbors = successors
@@ -2570,21 +2550,21 @@ class DiGraph(Graph):
 
         """
         if nbunch is None:
-            nodes_nbrs=list(self.adj.items())
+            nodes_nbrs = list(self.adj.items())
         else:
-            nodes_nbrs=((n,self.adj[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.adj[n]) for n in self.nbunch_iter(nbunch))
         if data:
-            for n,nbrs in nodes_nbrs:
-                for nbr,data in list(nbrs.items()):
-                    yield (n,nbr,data)
+            for n, nbrs in nodes_nbrs:
+                for nbr, data in list(nbrs.items()):
+                    yield (n, nbr, data)
         else:
-            for n,nbrs in nodes_nbrs:
+            for n, nbrs in nodes_nbrs:
                 for nbr in nbrs:
-                    yield (n,nbr)
+                    yield (n, nbr)
 
     # alias out_edges to edges
-    out_edges_iter=edges_iter
-    out_edges=Graph.edges
+    out_edges_iter = edges_iter
+    out_edges = Graph.edges
 
     def in_edges_iter(self, nbunch=None, data=False):
         """Return an iterator over the incoming edges.
@@ -2607,17 +2587,17 @@ class DiGraph(Graph):
         edges_iter : return an iterator of edges
         """
         if nbunch is None:
-            nodes_nbrs=list(self.pred.items())
+            nodes_nbrs = list(self.pred.items())
         else:
-            nodes_nbrs=((n,self.pred[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.pred[n]) for n in self.nbunch_iter(nbunch))
         if data:
-            for n,nbrs in nodes_nbrs:
-                for nbr,data in list(nbrs.items()):
-                    yield (nbr,n,data)
+            for n, nbrs in nodes_nbrs:
+                for nbr, data in list(nbrs.items()):
+                    yield (nbr, n, data)
         else:
-            for n,nbrs in nodes_nbrs:
+            for n, nbrs in nodes_nbrs:
                 for nbr in nbrs:
-                    yield (nbr,n)
+                    yield (nbr, n)
 
     def in_edges(self, nbunch=None, data=False):
         """Return a list of the incoming edges.
@@ -2664,22 +2644,22 @@ class DiGraph(Graph):
 
         """
         if nbunch is None:
-            nodes_nbrs=list(zip(iter(list(self.succ.items())),iter(list(self.pred.items()))))
+            nodes_nbrs = list(
+                zip(iter(list(self.succ.items())), iter(list(self.pred.items()))))
         else:
-            nodes_nbrs=list(zip(
-                ((n,self.succ[n]) for n in self.nbunch_iter(nbunch)),
-                ((n,self.pred[n]) for n in self.nbunch_iter(nbunch))))
+            nodes_nbrs = list(zip(
+                ((n, self.succ[n]) for n in self.nbunch_iter(nbunch)),
+                ((n, self.pred[n]) for n in self.nbunch_iter(nbunch))))
 
         if weight is None:
-            for (n,succ),(n2,pred) in nodes_nbrs:
-                yield (n,len(succ)+len(pred))
+            for (n, succ), (n2, pred) in nodes_nbrs:
+                yield (n, len(succ) + len(pred))
         else:
-        # edge weighted graph - degree is sum of edge weights
-            for (n,succ),(n2,pred) in nodes_nbrs:
-               yield (n,
-                      sum((succ[nbr].get(weight,1) for nbr in succ))+
-                      sum((pred[nbr].get(weight,1) for nbr in pred)))
-
+            # edge weighted graph - degree is sum of edge weights
+            for (n, succ), (n2, pred) in nodes_nbrs:
+                yield (n,
+                       sum((succ[nbr].get(weight, 1) for nbr in succ)) +
+                       sum((pred[nbr].get(weight, 1) for nbr in pred)))
 
     def in_degree_iter(self, nbunch=None, weight=None):
         """Return an iterator for (node, in-degree).
@@ -2717,18 +2697,17 @@ class DiGraph(Graph):
 
         """
         if nbunch is None:
-            nodes_nbrs=list(self.pred.items())
+            nodes_nbrs = list(self.pred.items())
         else:
-            nodes_nbrs=((n,self.pred[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.pred[n]) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
-            for n,nbrs in nodes_nbrs:
-                yield (n,len(nbrs))
+            for n, nbrs in nodes_nbrs:
+                yield (n, len(nbrs))
         else:
-        # edge weighted graph - degree is sum of edge weights
-            for n,nbrs in nodes_nbrs:
-                yield (n, sum(data.get(weight,1) for data in list(nbrs.values())))
-
+            # edge weighted graph - degree is sum of edge weights
+            for n, nbrs in nodes_nbrs:
+                yield (n, sum(data.get(weight, 1) for data in list(nbrs.values())))
 
     def out_degree_iter(self, nbunch=None, weight=None):
         """Return an iterator for (node, out-degree).
@@ -2766,18 +2745,17 @@ class DiGraph(Graph):
 
         """
         if nbunch is None:
-            nodes_nbrs=list(self.succ.items())
+            nodes_nbrs = list(self.succ.items())
         else:
-            nodes_nbrs=((n,self.succ[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.succ[n]) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
-            for n,nbrs in nodes_nbrs:
-                yield (n,len(nbrs))
+            for n, nbrs in nodes_nbrs:
+                yield (n, len(nbrs))
         else:
-        # edge weighted graph - degree is sum of edge weights
-            for n,nbrs in nodes_nbrs:
-                yield (n, sum(data.get(weight,1) for data in list(nbrs.values())))
-
+            # edge weighted graph - degree is sum of edge weights
+            for n, nbrs in nodes_nbrs:
+                yield (n, sum(data.get(weight, 1) for data in list(nbrs.values())))
 
     def in_degree(self, nbunch=None, weight=None):
         """Return the in-degree of a node or nodes.
@@ -2817,9 +2795,9 @@ class DiGraph(Graph):
         [0, 1]
         """
         if nbunch in self:      # return a single node
-            return next(self.in_degree_iter(nbunch,weight))[1]
+            return next(self.in_degree_iter(nbunch, weight))[1]
         else:           # return a dict
-            return dict(self.in_degree_iter(nbunch,weight))
+            return dict(self.in_degree_iter(nbunch, weight))
 
     def out_degree(self, nbunch=None, weight=None):
         """Return the out-degree of a node or nodes.
@@ -2857,9 +2835,9 @@ class DiGraph(Graph):
 
         """
         if nbunch in self:      # return a single node
-            return next(self.out_degree_iter(nbunch,weight))[1]
+            return next(self.out_degree_iter(nbunch, weight))[1]
         else:           # return a dict
-            return dict(self.out_degree_iter(nbunch,weight))
+            return dict(self.out_degree_iter(nbunch, weight))
 
     def clear(self):
         """Remove all nodes and edges from the graph.
@@ -2882,11 +2860,9 @@ class DiGraph(Graph):
         self.node.clear()
         self.graph.clear()
 
-
     def is_multigraph(self):
         """Return True if graph is a multigraph, False otherwise."""
         return False
-
 
     def is_directed(self):
         """Return True if graph is directed, False otherwise."""
@@ -2967,22 +2943,21 @@ class DiGraph(Graph):
         See the Python copy module for more information on shallow
         and deep copies, http://docs.python.org/library/copy.html.
         """
-        H=Graph()
-        H.name=self.name
+        H = Graph()
+        H.name = self.name
         H.add_nodes_from(self)
         if reciprocal is True:
-            H.add_edges_from( (u,v,deepcopy(d))
-                              for u,nbrs in self.adjacency_iter()
-                              for v,d in list(nbrs.items())
-                              if v in self.pred[u])
+            H.add_edges_from((u, v, deepcopy(d))
+                             for u, nbrs in self.adjacency_iter()
+                             for v, d in list(nbrs.items())
+                             if v in self.pred[u])
         else:
-            H.add_edges_from( (u,v,deepcopy(d))
-                              for u,nbrs in self.adjacency_iter()
-                              for v,d in list(nbrs.items()) )
-        H.graph=deepcopy(self.graph)
-        H.node=deepcopy(self.node)
+            H.add_edges_from((u, v, deepcopy(d))
+                             for u, nbrs in self.adjacency_iter()
+                             for v, d in list(nbrs.items()))
+        H.graph = deepcopy(self.graph)
+        H.node = deepcopy(self.node)
         return H
-
 
     def reverse(self, copy=True):
         """Return the reverse of the graph.
@@ -2998,18 +2973,17 @@ class DiGraph(Graph):
             the original graph (this changes the original graph).
         """
         if copy:
-            H = self.__class__(name="Reverse of (%s)"%self.name)
+            H = self.__class__(name="Reverse of (%s)" % self.name)
             H.add_nodes_from(self)
-            H.add_edges_from( (v,u,deepcopy(d)) for u,v,d
-                              in self.edges(data=True) )
-            H.graph=deepcopy(self.graph)
-            H.node=deepcopy(self.node)
+            H.add_edges_from((v, u, deepcopy(d)) for u, v, d
+                             in self.edges(data=True))
+            H.graph = deepcopy(self.graph)
+            H.node = deepcopy(self.node)
         else:
-            self.pred,self.succ=self.succ,self.pred
-            self.adj=self.succ
-            H=self
+            self.pred, self.succ = self.succ, self.pred
+            self.adj = self.succ
+            H = self
         return H
-
 
     def subgraph(self, nbunch):
         """Return the subgraph induced on nodes in nbunch.
@@ -3055,33 +3029,33 @@ class DiGraph(Graph):
         H = self.__class__()
         # copy node and attribute dictionaries
         for n in bunch:
-            H.node[n]=self.node[n]
+            H.node[n] = self.node[n]
         # namespace shortcuts for speed
-        H_succ=H.succ
-        H_pred=H.pred
-        self_succ=self.succ
+        H_succ = H.succ
+        H_pred = H.pred
+        self_succ = self.succ
         # add nodes
         for n in H:
-            H_succ[n]={}
-            H_pred[n]={}
+            H_succ[n] = {}
+            H_pred[n] = {}
         # add edges
         for u in H_succ:
-            Hnbrs=H_succ[u]
-            for v,datadict in list(self_succ[u].items()):
+            Hnbrs = H_succ[u]
+            for v, datadict in list(self_succ[u].items()):
                 if v in H_succ:
                     # add both representations of edge: u-v and v-u
-                    Hnbrs[v]=datadict
-                    H_pred[v][u]=datadict
-        H.graph=self.graph
+                    Hnbrs[v] = datadict
+                    H_pred[v][u] = datadict
+        H.graph = self.graph
         return H
 
 
 DEFAULT_RISKS = {
-    INTERNET_RISK : ( "INTERNET_RISK", (195, 255, 0) ),
-    PRIVACY_RISK : ( "PRIVACY_RISK", (255, 255, 51) ),
-    PHONE_RISK : ( "PHONE_RISK", ( 255, 216, 0 ) ),
-    SMS_RISK : ( "SMS_RISK", ( 255, 93, 0 ) ),
-    MONEY_RISK : ( "MONEY_RISK", ( 255, 0, 0 ) ),
+    INTERNET_RISK: ("INTERNET_RISK", (195, 255, 0)),
+    PRIVACY_RISK: ("PRIVACY_RISK", (255, 255, 51)),
+    PHONE_RISK: ("PHONE_RISK", (255, 216, 0)),
+    SMS_RISK: ("SMS_RISK", (255, 93, 0)),
+    MONEY_RISK: ("MONEY_RISK", (255, 0, 0)),
 }
 
 DEXCLASSLOADER_COLOR = (0, 0, 0)
@@ -3090,17 +3064,18 @@ SERVICE_COLOR = (0, 204, 204)
 RECEIVER_COLOR = (204, 51, 204)
 
 ID_ATTRIBUTES = {
-    "type" : 0,
-    "class_name" : 1,
-    "method_name" : 2,
-    "descriptor" : 3,
-    "permissions" : 4,
-    "permissions_level" : 5,
-    "dynamic_code" : 6,
+    "type": 0,
+    "class_name": 1,
+    "method_name": 2,
+    "descriptor": 3,
+    "permissions": 4,
+    "permissions_level": 5,
+    "dynamic_code": 6,
 }
 
 
 class GVMAnalysis(object):
+
     def __init__(self, vmx, apk):
         self.vmx = vmx
         self.vm = self.vmx.get_vm()
@@ -3112,11 +3087,15 @@ class GVMAnalysis(object):
         self.GI = DiGraph()
 
         for j in self.vmx.get_tainted_packages().get_internal_packages():
-            src_class_name, src_method_name, src_descriptor = j.get_src(self.vm.get_class_manager())
-            dst_class_name, dst_method_name, dst_descriptor = j.get_dst(self.vm.get_class_manager())
+            src_class_name, src_method_name, src_descriptor = j.get_src(
+                self.vm.get_class_manager())
+            dst_class_name, dst_method_name, dst_descriptor = j.get_dst(
+                self.vm.get_class_manager())
 
-            n1 = self._get_node(src_class_name, src_method_name, src_descriptor)
-            n2 = self._get_node(dst_class_name, dst_method_name, dst_descriptor)
+            n1 = self._get_node(
+                src_class_name, src_method_name, src_descriptor)
+            n2 = self._get_node(
+                dst_class_name, dst_method_name, dst_descriptor)
 
             self.G.add_edge(n1.id, n2.id)
             n1.add_edge(n2, j)
@@ -3124,9 +3103,11 @@ class GVMAnalysis(object):
         internal_new_packages = self.vmx.tainted_packages.get_internal_new_packages()
         for j in internal_new_packages:
             for path in internal_new_packages[j]:
-                src_class_name, src_method_name, src_descriptor = path.get_src(self.vm.get_class_manager())
+                src_class_name, src_method_name, src_descriptor = path.get_src(
+                    self.vm.get_class_manager())
 
-                n1 = self._get_node(src_class_name, src_method_name, src_descriptor)
+                n1 = self._get_node(
+                    src_class_name, src_method_name, src_descriptor)
                 n2 = self._get_node(j, "", "")
                 self.GI.add_edge(n2.id, n1.id)
                 n1.add_edge(n2, path)
@@ -3134,38 +3115,40 @@ class GVMAnalysis(object):
         if apk != None:
             for i in apk.get_activities():
                 j = bytecode.FormatClassToJava(i)
-                n1 = self._get_exist_node( j, "onCreate", "(Landroid/os/Bundle;)V" )
+                n1 = self._get_exist_node(
+                    j, "onCreate", "(Landroid/os/Bundle;)V")
                 if n1 != None:
-                    n1.set_attributes( { "type" : "activity" } )
-                    n1.set_attributes( { "color" : ACTIVITY_COLOR } )
-                    n2 = self._get_new_node_from( n1, "ACTIVITY" )
-                    n2.set_attributes( { "color" : ACTIVITY_COLOR } )
-                    self.G.add_edge( n2.id, n1.id )
-                    self.entry_nodes.append( n1.id )
+                    n1.set_attributes({"type": "activity"})
+                    n1.set_attributes({"color": ACTIVITY_COLOR})
+                    n2 = self._get_new_node_from(n1, "ACTIVITY")
+                    n2.set_attributes({"color": ACTIVITY_COLOR})
+                    self.G.add_edge(n2.id, n1.id)
+                    self.entry_nodes.append(n1.id)
             for i in apk.get_services():
                 j = bytecode.FormatClassToJava(i)
-                n1 = self._get_exist_node( j, "onCreate", "()V" )
+                n1 = self._get_exist_node(j, "onCreate", "()V")
                 if n1 != None:
-                    n1.set_attributes( { "type" : "service" } )
-                    n1.set_attributes( { "color" : SERVICE_COLOR } )
-                    n2 = self._get_new_node_from( n1, "SERVICE" )
-                    n2.set_attributes( { "color" : SERVICE_COLOR } )
-                    self.G.add_edge( n2.id, n1.id )
-                    self.entry_nodes.append( n1.id )
+                    n1.set_attributes({"type": "service"})
+                    n1.set_attributes({"color": SERVICE_COLOR})
+                    n2 = self._get_new_node_from(n1, "SERVICE")
+                    n2.set_attributes({"color": SERVICE_COLOR})
+                    self.G.add_edge(n2.id, n1.id)
+                    self.entry_nodes.append(n1.id)
             for i in apk.get_receivers():
                 j = bytecode.FormatClassToJava(i)
-                n1 = self._get_exist_node( j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V" )
+                n1 = self._get_exist_node(
+                    j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V")
                 if n1 != None:
-                    n1.set_attributes( { "type" : "receiver" } )
-                    n1.set_attributes( { "color" : RECEIVER_COLOR } )
-                    n2 = self._get_new_node_from( n1, "RECEIVER" )
-                    n2.set_attributes( { "color" : RECEIVER_COLOR } )
-                    self.G.add_edge( n2.id, n1.id )
-                    self.entry_nodes.append( n1.id )
+                    n1.set_attributes({"type": "receiver"})
+                    n1.set_attributes({"color": RECEIVER_COLOR})
+                    n2 = self._get_new_node_from(n1, "RECEIVER")
+                    n2.set_attributes({"color": RECEIVER_COLOR})
+                    self.G.add_edge(n2.id, n1.id)
+                    self.entry_nodes.append(n1.id)
 
         # Specific Java/Android library
         for c in self.vm.get_classes():
-            #if c.get_superclassname() == "Landroid/app/Service;":
+            # if c.get_superclassname() == "Landroid/app/Service;":
             #    n1 = self._get_node( c.get_name(), "<init>", "()V" )
             #    n2 = self._get_node( c.get_name(), "onCreate", "()V" )
 
@@ -3173,67 +3156,77 @@ class GVMAnalysis(object):
             if c.get_superclassname() == "Ljava/lang/Thread;" or c.get_superclassname() == "Ljava/util/TimerTask;":
                 for i in self.vm.get_method("run"):
                     if i.get_class_name() == c.get_name():
-                        n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
-                        n2 = self._get_node( i.get_class_name(), "start", i.get_descriptor() )
+                        n1 = self._get_node(
+                            i.get_class_name(), i.get_name(), i.get_descriptor())
+                        n2 = self._get_node(
+                            i.get_class_name(), "start", i.get_descriptor())
 
                         # link from start to run
-                        self.G.add_edge( n2.id, n1.id )
-                        n2.add_edge( n1, {} )
+                        self.G.add_edge(n2.id, n1.id)
+                        n2.add_edge(n1, {})
 
                         # link from init to start
                         for init in self.vm.get_method("<init>"):
                             if init.get_class_name() == c.get_name():
-                                n3 = self._get_node( init.get_class_name(), "<init>", init.get_descriptor() )
+                                n3 = self._get_node(
+                                    init.get_class_name(), "<init>", init.get_descriptor())
                                 #n3 = self._get_node( i.get_class_name(), "<init>", i.get_descriptor() )
-                                self.G.add_edge( n3.id, n2.id )
-                                n3.add_edge( n2, {} )
+                                self.G.add_edge(n3.id, n2.id)
+                                n3.add_edge(n2, {})
 
-            #elif c.get_superclassname() == "Landroid/os/AsyncTask;":
+            # elif c.get_superclassname() == "Landroid/os/AsyncTask;":
             #    for i in self.vm.get_method("doInBackground"):
             #        if i.get_class_name() == c.get_name():
             #            n1 = self._get_node( i.get_class_name(), i.get_name(), i.get_descriptor() )
             #            n2 = self._get_exist_node( i.get_class_name(), "execute", i.get_descriptor() )
             #            print n1, n2, i.get_descriptor()
-                        #for j in self.vm.get_method("doInBackground"):
+                        # for j in self.vm.get_method("doInBackground"):
                         #    n2 = self._get_exist_node( i.get_class_name(), j.get_name(), j.get_descriptor() )
                         #    print n1, n2
                         # n2 = self._get_node( i.get_class_name(), "
             #    raise("ooo")
 
-        #for j in self.vmx.tainted_packages.get_internal_new_packages():
+        # for j in self.vmx.tainted_packages.get_internal_new_packages():
         #    print "\t %s %s %s %x ---> %s %s %s" % (j.get_method().get_class_name(), j.get_method().get_name(), j.get_method().get_descriptor(), \
         #                                            j.get_bb().start + j.get_idx(), \
-        #                                            j.get_class_name(), j.get_name(), j.get_descriptor())
+        # j.get_class_name(), j.get_name(), j.get_descriptor())
 
         list_permissions = self.vmx.get_permissions([])
         for x in list_permissions:
             for j in list_permissions[x]:
                 if isinstance(j, PathVar):
-                  continue
+                    continue
 
-                src_class_name, src_method_name, src_descriptor = j.get_src( self.vm.get_class_manager() )
-                dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.vm.get_class_manager() )
-                n1 = self._get_exist_node( dst_class_name, dst_method_name, dst_descriptor )
+                src_class_name, src_method_name, src_descriptor = j.get_src(
+                    self.vm.get_class_manager())
+                dst_class_name, dst_method_name, dst_descriptor = j.get_dst(
+                    self.vm.get_class_manager())
+                n1 = self._get_exist_node(
+                    dst_class_name, dst_method_name, dst_descriptor)
 
                 if n1 == None:
                     continue
 
-                n1.set_attributes( { "permissions" : 1 } )
-                n1.set_attributes( { "permissions_level" : DVM_PERMISSIONS[ "MANIFEST_PERMISSION" ][ x ][0] } )
-                n1.set_attributes( { "permissions_details" : x } )
+                n1.set_attributes({"permissions": 1})
+                n1.set_attributes({"permissions_level": DVM_PERMISSIONS[
+                                  "MANIFEST_PERMISSION"][x][0]})
+                n1.set_attributes({"permissions_details": x})
 
                 try:
-                    for tmp_perm in PERMISSIONS_RISK[ x ]:
+                    for tmp_perm in PERMISSIONS_RISK[x]:
                         if tmp_perm in DEFAULT_RISKS:
-                            n2 = self._get_new_node( dst_class_name,
-                                                     dst_method_name,
-                                                     dst_descriptor + " " + DEFAULT_RISKS[ tmp_perm ][0],
-                                                     DEFAULT_RISKS[ tmp_perm ][0] )
-                            n2.set_attributes( { "color" : DEFAULT_RISKS[ tmp_perm ][1] } )
-                            self.G.add_edge( n2.id, n1.id )
+                            n2 = self._get_new_node(dst_class_name,
+                                                    dst_method_name,
+                                                    dst_descriptor + " " +
+                                                    DEFAULT_RISKS[tmp_perm][0],
+                                                    DEFAULT_RISKS[tmp_perm][0])
+                            n2.set_attributes(
+                                {"color": DEFAULT_RISKS[tmp_perm][1]})
+                            self.G.add_edge(n2.id, n1.id)
 
-                            n1.add_risk( DEFAULT_RISKS[ tmp_perm ][0] )
-                            n1.add_api( x, src_class_name + "-" + src_method_name + "-" + src_descriptor )
+                            n1.add_risk(DEFAULT_RISKS[tmp_perm][0])
+                            n1.add_api(x, src_class_name + "-" +
+                                       src_method_name + "-" + src_descriptor)
                 except KeyError:
                     pass
 
@@ -3242,21 +3235,23 @@ class GVMAnalysis(object):
             if m.get_name() == "Ldalvik/system/DexClassLoader;":
                 for path in m.get_paths():
                     if path.get_access_flag() == TAINTED_PACKAGE_CREATE:
-                        src_class_name, src_method_name, src_descriptor = path.get_src( self.vm.get_class_manager() )
-                        n1 = self._get_exist_node( src_class_name, src_method_name, src_descriptor )
-                        n2 = self._get_new_node( dst_class_name, dst_method_name, dst_descriptor + " " + "DEXCLASSLOADER",
-                                                 "DEXCLASSLOADER" )
+                        src_class_name, src_method_name, src_descriptor = path.get_src(
+                            self.vm.get_class_manager())
+                        n1 = self._get_exist_node(
+                            src_class_name, src_method_name, src_descriptor)
+                        n2 = self._get_new_node(dst_class_name, dst_method_name, dst_descriptor + " " + "DEXCLASSLOADER",
+                                                "DEXCLASSLOADER")
 
-                        n1.set_attributes( { "dynamic_code" : "true" } )
-                        n2.set_attributes( { "color" : DEXCLASSLOADER_COLOR } )
-                        self.G.add_edge( n2.id, n1.id )
+                        n1.set_attributes({"dynamic_code": "true"})
+                        n2.set_attributes({"color": DEXCLASSLOADER_COLOR})
+                        self.G.add_edge(n2.id, n1.id)
 
-                        n1.add_risk( "DEXCLASSLOADER" )
+                        n1.add_risk("DEXCLASSLOADER")
 
     def _get_exist_node(self, class_name, method_name, descriptor):
         key = "%s %s %s" % (class_name, method_name, descriptor)
         try:
-            return self.nodes[ key ]
+            return self.nodes[key]
         except KeyError:
             return None
 
@@ -3266,30 +3261,33 @@ class GVMAnalysis(object):
         else:
             key = "%s %s %s" % (class_name, method_name, descriptor)
         if key not in self.nodes:
-            self.nodes[key] = NodeF(len(self.nodes), class_name, method_name, descriptor)
+            self.nodes[key] = NodeF(
+                len(self.nodes), class_name, method_name, descriptor)
             self.nodes_id[self.nodes[key].id] = self.nodes[key]
 
         return self.nodes[key]
 
     def _get_new_node_from(self, n, label):
-        return self._get_new_node( n.class_name, n.method_name, n.descriptor + label, label )
+        return self._get_new_node(n.class_name, n.method_name, n.descriptor + label, label)
 
     def _get_new_node(self, class_name, method_name, descriptor, label):
         key = "%s %s %s" % (class_name, method_name, descriptor)
         if key not in self.nodes:
-            self.nodes[ key ] = NodeF( len(self.nodes), class_name, method_name, descriptor, label, False )
-            self.nodes_id[ self.nodes[ key ].id ] = self.nodes[ key ]
+            self.nodes[key] = NodeF(
+                len(self.nodes), class_name, method_name, descriptor, label, False)
+            self.nodes_id[self.nodes[key].id] = self.nodes[key]
 
-        return self.nodes[ key ]
+        return self.nodes[key]
 
     def set_new_attributes(self, cm):
         for i in self.G.nodes():
-            n1 = self.nodes_id[ i ]
-            m1 = self.vm.get_method_descriptor( n1.class_name, n1.method_name, n1.descriptor )
+            n1 = self.nodes_id[i]
+            m1 = self.vm.get_method_descriptor(
+                n1.class_name, n1.method_name, n1.descriptor)
 
-            H = cm( self.vmx, m1 )
+            H = cm(self.vmx, m1)
 
-            n1.set_attributes( H )
+            n1.set_attributes(H)
 
     def export_to_gexf(self):
         buff = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -3297,33 +3295,39 @@ class GVMAnalysis(object):
         buff += "<graph type=\"static\">\n"
 
         buff += "<attributes class=\"node\" type=\"static\">\n"
-        buff += "<attribute default=\"normal\" id=\"%d\" title=\"type\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "type"]
-        buff += "<attribute id=\"%d\" title=\"class_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "class_name"]
-        buff += "<attribute id=\"%d\" title=\"method_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "method_name"]
-        buff += "<attribute id=\"%d\" title=\"descriptor\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "descriptor"]
+        buff += "<attribute default=\"normal\" id=\"%d\" title=\"type\" type=\"string\"/>\n" % ID_ATTRIBUTES[
+            "type"]
+        buff += "<attribute id=\"%d\" title=\"class_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[
+            "class_name"]
+        buff += "<attribute id=\"%d\" title=\"method_name\" type=\"string\"/>\n" % ID_ATTRIBUTES[
+            "method_name"]
+        buff += "<attribute id=\"%d\" title=\"descriptor\" type=\"string\"/>\n" % ID_ATTRIBUTES[
+            "descriptor"]
 
+        buff += "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[
+            "permissions"]
+        buff += "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[
+            "permissions_level"]
 
-        buff += "<attribute default=\"0\" id=\"%d\" title=\"permissions\" type=\"integer\"/>\n" % ID_ATTRIBUTES[ "permissions"]
-        buff += "<attribute default=\"normal\" id=\"%d\" title=\"permissions_level\" type=\"string\"/>\n" % ID_ATTRIBUTES[ "permissions_level"]
-
-        buff += "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[ "dynamic_code"]
+        buff += "<attribute default=\"false\" id=\"%d\" title=\"dynamic_code\" type=\"boolean\"/>\n" % ID_ATTRIBUTES[
+            "dynamic_code"]
         buff += "</attributes>\n"
 
         buff += "<nodes>\n"
         for node in self.G.nodes():
-            buff += "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label))
-            buff += self.nodes_id[ node ].get_attributes_gexf()
+            buff += "<node id=\"%d\" label=\"%s\">\n" % (
+                node, escape(self.nodes_id[node].label))
+            buff += self.nodes_id[node].get_attributes_gexf()
             buff += "</node>\n"
         buff += "</nodes>\n"
-
 
         buff += "<edges>\n"
         nb = 0
         for edge in self.G.edges():
-            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
+            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[
+                                                                         0], edge[1])
             nb += 1
         buff += "</edges>\n"
-
 
         buff += "</graph>\n"
         buff += "</gexf>\n"
@@ -3342,12 +3346,13 @@ class GVMAnalysis(object):
         for node in self.G.nodes():
             buff += "<node id=\"%d\">\n" % (node)
             #fd.write( "<node id=\"%d\" label=\"%s\">\n" % (node, escape(self.nodes_id[ node ].label)) )
-            buff += self.nodes_id[ node ].get_attributes_gml()
+            buff += self.nodes_id[node].get_attributes_gml()
             buff += "</node>\n"
 
         nb = 0
         for edge in self.G.edges():
-            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[0], edge[1])
+            buff += "<edge id=\"%d\" source=\"%d\" target=\"%d\"/>\n" % (nb, edge[
+                                                                         0], edge[1])
             nb += 1
 
         buff += "</graph>\n"
@@ -3360,21 +3365,22 @@ DEFAULT_NODE_PERM = 0
 DEFAULT_NODE_PERM_LEVEL = -1
 
 PERMISSIONS_LEVEL = {
-    "dangerous" : 3,
-    "signatureOrSystem" : 2,
-    "signature" : 1,
-    "normal" : 0,
+    "dangerous": 3,
+    "signatureOrSystem": 2,
+    "signature": 1,
+    "normal": 0,
 }
 
 COLOR_PERMISSIONS_LEVEL = {
-    "dangerous"                 : (255, 0, 0),
-    "signatureOrSystem"         : (255, 63, 63),
-    "signature"                 : (255, 132, 132),
-    "normal"                    : (255, 181, 181),
+    "dangerous": (255, 0, 0),
+    "signatureOrSystem": (255, 63, 63),
+    "signature": (255, 132, 132),
+    "normal": (255, 181, 181),
 }
 
 
 class NodeF(object):
+
     def __init__(self, id, class_name, method_name, descriptor, label=None, real=True):
         self.class_name = class_name
         self.method_name = method_name
@@ -3397,7 +3403,7 @@ class NodeF(object):
                            "permissions_level": DEFAULT_NODE_PERM_LEVEL,
                            "permissions_details": set(),
                            "dynamic_code": "false",
-                          }
+                           }
 
     def add_edge(self, n, idx):
         try:
@@ -3409,23 +3415,29 @@ class NodeF(object):
     def get_attributes_gexf(self):
         buff = ""
 
-        if self.attributes[ "color" ] != None:
-            buff += "<viz:color r=\"%d\" g=\"%d\" b=\"%d\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
+        if self.attributes["color"] != None:
+            buff += "<viz:color r=\"%d\" g=\"%d\" b=\"%d\"/>\n" % (self.attributes["color"][
+                                                                   0], self.attributes["color"][1], self.attributes["color"][2])
 
         buff += "<attvalues>\n"
-        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["class_name"], escape(self.class_name))
-        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["method_name"], escape(self.method_name))
-        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["descriptor"], escape(self.descriptor))
+        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+            ID_ATTRIBUTES["class_name"], escape(self.class_name))
+        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+            ID_ATTRIBUTES["method_name"], escape(self.method_name))
+        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+            ID_ATTRIBUTES["descriptor"], escape(self.descriptor))
 
+        if self.attributes["type"] != DEFAULT_NODE_TYPE:
+            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+                ID_ATTRIBUTES["type"], self.attributes["type"])
+        if self.attributes["permissions"] != DEFAULT_NODE_PERM:
+            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+                ID_ATTRIBUTES["permissions"], self.attributes["permissions"])
+            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+                ID_ATTRIBUTES["permissions_level"], self.attributes["permissions_level_name"])
 
-        if self.attributes[ "type" ] != DEFAULT_NODE_TYPE:
-            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["type"], self.attributes[ "type" ])
-        if self.attributes[ "permissions" ] != DEFAULT_NODE_PERM:
-            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions"], self.attributes[ "permissions" ])
-            buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["permissions_level"], self.attributes[ "permissions_level_name" ])
-
-
-        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (ID_ATTRIBUTES["dynamic_code"], self.attributes[ "dynamic_code" ])
+        buff += "<attvalue id=\"%d\" value=\"%s\"/>\n" % (
+            ID_ATTRIBUTES["dynamic_code"], self.attributes["dynamic_code"])
 
         buff += "</attvalues>\n"
 
@@ -3441,9 +3453,11 @@ class NodeF(object):
         width = max(len(self.class_name), len(self.method_name))
         width = max(width, len(self.descriptor))
 
-        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (16 * height, 8 * width)
-        if self.attributes[ "color" ] != None:
-            buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (self.attributes[ "color" ][0], self.attributes[ "color" ][1], self.attributes[ "color" ][2])
+        buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (
+            16 * height, 8 * width)
+        if self.attributes["color"] != None:
+            buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (
+                self.attributes["color"][0], self.attributes["color"][1], self.attributes["color"][2])
 
         buff += "<y:NodeLabel alignment=\"left\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"13\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">\n"
 
@@ -3460,29 +3474,31 @@ class NodeF(object):
         return self.attributes
 
     def get_attribute(self, name):
-        return self.attributes[ name ]
+        return self.attributes[name]
 
     def set_attributes(self, values):
         for i in values:
             if i == "permissions":
-                self.attributes[ "permissions" ] += values[i]
+                self.attributes["permissions"] += values[i]
             elif i == "permissions_level":
-                if values[i] > self.attributes[ "permissions_level" ]:
-                    self.attributes[ "permissions_level" ] = PERMISSIONS_LEVEL[ values[i] ]
-                    self.attributes[ "permissions_level_name" ] = values[i]
-                    self.attributes[ "color" ] = COLOR_PERMISSIONS_LEVEL[ values[i] ]
+                if values[i] > self.attributes["permissions_level"]:
+                    self.attributes[
+                        "permissions_level"] = PERMISSIONS_LEVEL[values[i]]
+                    self.attributes["permissions_level_name"] = values[i]
+                    self.attributes[
+                        "color"] = COLOR_PERMISSIONS_LEVEL[values[i]]
             elif i == "permissions_details":
-                self.attributes[ i ].add( values[i] )
+                self.attributes[i].add(values[i])
             else:
-                self.attributes[ i ] = values[i]
+                self.attributes[i] = values[i]
 
     def add_risk(self, risk):
         if risk not in self.risks:
-            self.risks.append( risk )
+            self.risks.append(risk)
 
     def add_api(self, perm, api):
         if perm not in self.api:
-            self.api[ perm ] = []
+            self.api[perm] = []
 
-        if api not in self.api[ perm ]:
-            self.api[ perm ].append( api )
+        if api not in self.api[perm]:
+            self.api[perm].append(api)

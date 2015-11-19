@@ -54,27 +54,29 @@ if sys.hexversion < 0x2070000:
 else:
     ZIPMODULE = 1
 
+
 def _range(a, b, step=None):
     if step is None:
         return range(int(a), int(b))
     return range(int(a), int(b), step)
 
 
-################################################### CHILKAT ZIP FORMAT #####################################################
+################################################### CHILKAT ZIP FORMAT ###
 class ChilkatZip(object):
+
     def __init__(self, raw):
         self.files = []
         self.zip = chilkat.CkZip()
 
-        self.zip.UnlockComponent( CHILKAT_KEY )
+        self.zip.UnlockComponent(CHILKAT_KEY)
 
-        self.zip.OpenFromMemory( raw, len(raw) )
+        self.zip.OpenFromMemory(raw, len(raw))
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
         while e != None:
             e.get_FileName(filename)
-            self.files.append( filename.getString() )
+            self.files.append(filename.getString())
             e = e.NextEntry()
 
     def delete(self, patterns):
@@ -86,33 +88,33 @@ class ChilkatZip(object):
             e.get_FileName(filename)
 
             if re.match(patterns, filename.getString()) != None:
-                el.append( e )
+                el.append(e)
             e = e.NextEntry()
 
         for i in el:
-            self.zip.DeleteEntry( i )
+            self.zip.DeleteEntry(i)
 
     def remplace_file(self, filename, buff):
         entry = self.zip.GetEntryByName(filename)
         if entry != None:
             obj = chilkat.CkByteData()
-            obj.append2( buff, len(buff) )
-            return entry.ReplaceData( obj )
+            obj.append2(buff, len(buff))
+            return entry.ReplaceData(obj)
         return False
 
     def write(self):
         obj = chilkat.CkByteData()
-        self.zip.WriteToMemory( obj )
+        self.zip.WriteToMemory(obj)
         return obj.getBytes()
 
     def namelist(self):
         return self.files
 
     def read(self, elem):
-        e = self.zip.GetEntryByName( elem )
+        e = self.zip.GetEntryByName(elem)
         s = chilkat.CkByteData()
 
-        e.Inflate( s )
+        e.Inflate(s)
         return s.getBytes()
 
 
@@ -136,7 +138,7 @@ def sign_apk(filename, keystore, storepass):
     stdout, stderr = compile.communicate()
 
 
-######################################################## APK FORMAT ########################################################
+######################################################## APK FORMAT ######
 class APK(object):
     """
         This class can access to all elements in an APK file
@@ -157,6 +159,7 @@ class APK(object):
           APK("myfile.apk")
           APK(read("myfile.apk"), raw=True)
     """
+
     def __init__(self, filename, raw=False, mode="r", magic_file=None, zipmodule=ZIPMODULE):
         self.filename = filename
 
@@ -197,26 +200,35 @@ class APK(object):
             self.xml[i] = minidom.parseString(self.axml[i].get_buff())
 
             if self.xml[i] != None:
-                self.package = self.xml[i].documentElement.getAttribute("package")
-                self.androidversion["Code"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
-                self.androidversion["Name"] = self.xml[i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
+                self.package = self.xml[
+                    i].documentElement.getAttribute("package")
+                self.androidversion["Code"] = self.xml[
+                    i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
+                self.androidversion["Name"] = self.xml[
+                    i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
 
                 for item in self.xml[i].getElementsByTagName('uses-permission'):
-                    self.permissions.append(str(item.getAttributeNS(NS_ANDROID_URI, "name")))
+                    self.permissions.append(
+                        str(item.getAttributeNS(NS_ANDROID_URI, "name")))
 
-                #getting details of the declared permissions
+                # getting details of the declared permissions
                 for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                    d_perm_name = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                    d_perm_label = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
-                    d_perm_description = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
-                    d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
-                    d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
+                    d_perm_name = self._get_res_string_value(
+                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                    d_perm_label = self._get_res_string_value(
+                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
+                    d_perm_description = self._get_res_string_value(
+                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
+                    d_perm_permissionGroup = self._get_res_string_value(
+                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
+                    d_perm_protectionLevel = self._get_res_string_value(
+                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
 
                     d_perm_details = {
-                            "label" : d_perm_label,
-                            "description" : d_perm_description,
-                            "permissionGroup" : d_perm_permissionGroup,
-                            "protectionLevel" : d_perm_protectionLevel,
+                        "label": d_perm_label,
+                        "description": d_perm_description,
+                        "permissionGroup": d_perm_permissionGroup,
+                        "protectionLevel": d_perm_protectionLevel,
                     }
                     self.declared_permissions[d_perm_name] = d_perm_details
 
@@ -224,7 +236,8 @@ class APK(object):
             break
 
         self.get_files_types()
-        self.permission_module = androconf.load_api_specific_resource_module("aosp_permissions", self.get_target_sdk_version())
+        self.permission_module = androconf.load_api_specific_resource_module(
+            "aosp_permissions", self.get_target_sdk_version())
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -270,7 +283,8 @@ class APK(object):
 
             :rtype: string
         """
-        app_elem = self.get_AndroidManifest().getElementsByTagName("application")[0]
+        app_elem = self.get_AndroidManifest(
+        ).getElementsByTagName("application")[0]
         app_name = app_elem.getAttribute("android:label")
         if app_name.startswith("@"):
             res_parser = self.get_android_resources()
@@ -369,7 +383,7 @@ class APK(object):
             val = androconf.is_android_raw(buffer)
             if val == "APK":
                 if androconf.is_valid_android_raw(buffer):
-                  return "Android application package file"
+                    return "Android application package file"
             elif val == "AXML":
                 return "Android's binary XML"
 
@@ -388,13 +402,13 @@ class APK(object):
             :rtype: string, string, int
         """
         if self.files == {}:
-          self.get_files_types()
+            self.get_files_types()
 
         for i in self.get_files():
-          try:
-            yield i, self.files[i], self.files_crc32[i]
-          except KeyError:
-            yield i, "", ""
+            try:
+                yield i, self.files[i], self.files_crc32[i]
+            except KeyError:
+                yield i, "", ""
 
     def get_raw(self):
         """
@@ -434,10 +448,9 @@ class APK(object):
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(tag_name):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
-                value = self.format_value( value )
+                value = self.format_value(value)
 
-
-                l.append( str( value ) )
+                l.append(str(value))
         return l
 
     def format_value(self, value):
@@ -482,15 +495,15 @@ class APK(object):
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName("activity"):
-                for sitem in item.getElementsByTagName( "action" ):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
+                for sitem in item.getElementsByTagName("action"):
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
-                        x.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
+                        x.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
 
-                for sitem in item.getElementsByTagName( "category" ):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name" )
+                for sitem in item.getElementsByTagName("category"):
+                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.category.LAUNCHER":
-                        y.add( item.getAttributeNS(NS_ANDROID_URI, "name" ) )
+                        y.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
 
         z = x.intersection(y)
         if len(z) > 0:
@@ -541,10 +554,12 @@ class APK(object):
                     for sitem in item.getElementsByTagName("intent-filter"):
                         for ssitem in sitem.getElementsByTagName("action"):
                             if ssitem.getAttributeNS(NS_ANDROID_URI, "name") not in d["action"]:
-                                d["action"].append(ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
+                                d["action"].append(
+                                    ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
                         for ssitem in sitem.getElementsByTagName("category"):
                             if ssitem.getAttributeNS(NS_ANDROID_URI, "name") not in d["category"]:
-                                d["category"].append(ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
+                                d["category"].append(
+                                    ssitem.getAttributeNS(NS_ANDROID_URI, "name"))
 
         if not d["action"]:
             del d["action"]
@@ -575,12 +590,13 @@ class APK(object):
             pos = i.rfind(".")
 
             if pos != -1:
-                perm = i[pos+1:]
+                perm = i[pos + 1:]
 
             try:
-                l[ i ] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][ perm ]
+                l[i] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm]
             except KeyError:
-                l[ i ] = [ "normal", "Unknown permission from android reference", "Unknown permission from android reference" ]
+                l[i] = ["normal", "Unknown permission from android reference",
+                        "Unknown permission from android reference"]
 
         return l
 
@@ -616,7 +632,7 @@ class APK(object):
             try:
                 l[i] = self.permission_module["AOSP_PERMISSIONS"][i]
             except KeyError:
-                continue #if we have not found permission do nothing
+                continue  # if we have not found permission do nothing
         return l
 
     def get_requested_third_party_permissions(self):
@@ -670,7 +686,7 @@ class APK(object):
 
             :rtype: string
         """
-        return self.get_element( "uses-sdk", "targetSdkVersion" )
+        return self.get_element("uses-sdk", "targetSdkVersion")
 
     def get_libraries(self):
         """
@@ -678,7 +694,7 @@ class APK(object):
 
             :rtype: list
         """
-        return self.get_elements( "uses-library", "name" )
+        return self.get_elements("uses-library", "name")
 
     def get_certificate(self, filename):
         """
@@ -692,7 +708,6 @@ class APK(object):
         data.append2(f, len(f))
         success = cert.LoadFromBinary(data)
         return success, cert
-
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
@@ -752,7 +767,8 @@ class APK(object):
             return self.arsc["resources.arsc"]
         except KeyError:
             try:
-                self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
+                self.arsc["resources.arsc"] = ARSCParser(
+                    self.zip.read("resources.arsc"))
                 return self.arsc["resources.arsc"]
             except KeyError:
                 return None
@@ -815,18 +831,23 @@ class APK(object):
 
 
 def show_Certificate(cert):
-    print("Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS()))
-    print("Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(), cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS()))
+    print("Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(
+    ), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS()))
+    print("Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.subjectC(), cert.subjectCN(
+    ), cert.subjectDN(), cert.subjectE(), cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS()))
 
 
-######################################################## AXML FORMAT ########################################################
-# Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
+######################################################## AXML FORMAT #####
+# Translated from
+# http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
 CHUNK_STRINGPOOL_TYPE = 0x001C0001
 CHUNK_NULL_TYPE = 0x00000000
 
+
 class StringBlock(object):
+
     def __init__(self, buff):
         self.start = buff.get_idx()
         self._cache = {}
@@ -966,16 +987,17 @@ class StringBlock(object):
         return (array[offset + 1] & 0xff) << 8 | array[offset] & 0xff
 
     def show(self):
-        print("StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(self.chunkSize), hex(self.stringsOffset), self.m_stringOffsets)
+        print("StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(
+            self.chunkSize), hex(self.stringsOffset), self.m_stringOffsets)
         for i in _range(0, len(self.m_stringOffsets)):
             print(i, repr(self.getString(i)))
 
-ATTRIBUTE_IX_NAMESPACE_URI  = 0
-ATTRIBUTE_IX_NAME           = 1
-ATTRIBUTE_IX_VALUE_STRING   = 2
-ATTRIBUTE_IX_VALUE_TYPE     = 3
-ATTRIBUTE_IX_VALUE_DATA     = 4
-ATTRIBUTE_LENGHT            = 5
+ATTRIBUTE_IX_NAMESPACE_URI = 0
+ATTRIBUTE_IX_NAME = 1
+ATTRIBUTE_IX_VALUE_STRING = 2
+ATTRIBUTE_IX_VALUE_TYPE = 3
+ATTRIBUTE_IX_VALUE_DATA = 4
+ATTRIBUTE_LENGHT = 5
 
 CHUNK_AXML_FILE = 0x00080003
 CHUNK_RESOURCEIDS = 0x00080180
@@ -987,14 +1009,15 @@ CHUNK_XML_END_TAG = 0x00100103
 CHUNK_XML_TEXT = 0x00100104
 CHUNK_XML_LAST = 0x00100104
 
-START_DOCUMENT              = 0
-END_DOCUMENT                = 1
-START_TAG                   = 2
-END_TAG                     = 3
-TEXT                        = 4
+START_DOCUMENT = 0
+END_DOCUMENT = 1
+START_TAG = 2
+END_TAG = 3
+TEXT = 4
 
 
 class AXMLParser(object):
+
     def __init__(self, raw_buff):
         self.reset()
 
@@ -1065,7 +1088,8 @@ class AXMLParser(object):
                     androconf.warning("Invalid chunk size")
 
                 for i in _range(0, int(chunkSize / 4 - 2)):
-                    self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
+                    self.m_resourceIDs.append(
+                        unpack('<L', self.buff.read(4))[0])
 
                 continue
 
@@ -1119,7 +1143,8 @@ class AXMLParser(object):
                 self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
 
                 for i in _range(0, attributeCount * ATTRIBUTE_LENGHT):
-                    self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
+                    self.m_attributes.append(
+                        unpack('<L', self.buff.read(4))[0])
 
                 for i in _range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
                     self.m_attributes[i] = self.m_attributes[i] >> 24
@@ -1179,7 +1204,8 @@ class AXMLParser(object):
         buff = ""
         for i in self.m_uriprefix:
             if i not in self.visited_ns:
-                buff += "xmlns:%s=\"%s\"\n" % (self.sb.getString(self.m_uriprefix[i]), self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
+                buff += "xmlns:%s=\"%s\"\n" % (self.sb.getString(
+                    self.m_uriprefix[i]), self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
                 self.visited_ns.append(i)
         return buff
 
@@ -1217,62 +1243,63 @@ class AXMLParser(object):
 
     def getAttributeName(self, index):
         offset = self.getAttributeOffset(index)
-        name = self.m_attributes[offset+ATTRIBUTE_IX_NAME]
+        name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
 
         if name == -1:
             return ""
 
-        res = self.sb.getString( name )
+        res = self.sb.getString(name)
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:'+public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
+                res = 'android:' + \
+                    public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
 
         return res
 
     def getAttributeValueType(self, index):
         offset = self.getAttributeOffset(index)
-        return self.m_attributes[offset+ATTRIBUTE_IX_VALUE_TYPE]
+        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
 
     def getAttributeValueData(self, index):
         offset = self.getAttributeOffset(index)
-        return self.m_attributes[offset+ATTRIBUTE_IX_VALUE_DATA]
+        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
     def getAttributeValue(self, index):
         offset = self.getAttributeOffset(index)
-        valueType = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_TYPE]
+        valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
         if valueType == TYPE_STRING:
-            valueString = self.m_attributes[offset+ATTRIBUTE_IX_VALUE_STRING]
-            return self.sb.getString( valueString )
+            valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
+            return self.sb.getString(valueString)
         # WIP
         return ""
-        #int valueData=m_attributes[offset+ATTRIBUTE_IX_VALUE_DATA];
-        #return TypedValue.coerceToString(valueType,valueData);
+        # int valueData=m_attributes[offset+ATTRIBUTE_IX_VALUE_DATA];
+        # return TypedValue.coerceToString(valueType,valueData);
 
-TYPE_ATTRIBUTE          = 2
-TYPE_DIMENSION          = 5
-TYPE_FIRST_COLOR_INT    = 28
-TYPE_FIRST_INT          = 16
-TYPE_FLOAT              = 4
-TYPE_FRACTION           = 6
-TYPE_INT_BOOLEAN        = 18
-TYPE_INT_COLOR_ARGB4    = 30
-TYPE_INT_COLOR_ARGB8    = 28
-TYPE_INT_COLOR_RGB4     = 31
-TYPE_INT_COLOR_RGB8     = 29
-TYPE_INT_DEC            = 16
-TYPE_INT_HEX            = 17
-TYPE_LAST_COLOR_INT     = 31
-TYPE_LAST_INT           = 31
-TYPE_NULL               = 0
-TYPE_REFERENCE          = 1
-TYPE_STRING             = 3
+TYPE_ATTRIBUTE = 2
+TYPE_DIMENSION = 5
+TYPE_FIRST_COLOR_INT = 28
+TYPE_FIRST_INT = 16
+TYPE_FLOAT = 4
+TYPE_FRACTION = 6
+TYPE_INT_BOOLEAN = 18
+TYPE_INT_COLOR_ARGB4 = 30
+TYPE_INT_COLOR_ARGB8 = 28
+TYPE_INT_COLOR_RGB4 = 31
+TYPE_INT_COLOR_RGB8 = 29
+TYPE_INT_DEC = 16
+TYPE_INT_HEX = 17
+TYPE_LAST_COLOR_INT = 31
+TYPE_LAST_INT = 31
+TYPE_NULL = 0
+TYPE_REFERENCE = 1
+TYPE_STRING = 3
 
-RADIX_MULTS             =   [ 0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010 ]
-DIMENSION_UNITS         =   [ "px","dip","sp","pt","in","mm" ]
-FRACTION_UNITS          =   [ "%", "%p" ]
+RADIX_MULTS = [0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010]
+DIMENSION_UNITS = ["px", "dip", "sp", "pt", "in", "mm"]
+FRACTION_UNITS = ["%", "%p"]
 
-COMPLEX_UNIT_MASK        =   15
+COMPLEX_UNIT_MASK = 15
 
 
 def complexToFloat(xcomplex):
@@ -1280,6 +1307,7 @@ def complexToFloat(xcomplex):
 
 
 class AXMLPrinter(object):
+
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
         self.xmlns = False
@@ -1293,7 +1321,9 @@ class AXMLPrinter(object):
             if _type == START_DOCUMENT:
                 self.buff += '<?xml version="1.0" encoding="utf-8"?>\n'
             elif _type == START_TAG:
-                self.buff += '<' + self.getPrefix(self.axml.getPrefix()) + self.axml.getName() + '\n'
+                self.buff += '<' + \
+                    self.getPrefix(self.axml.getPrefix()) + \
+                    self.axml.getName() + '\n'
                 self.buff += self.axml.getXMLNS()
 
                 for i in _range(0, self.axml.getAttributeCount()):
@@ -1303,7 +1333,8 @@ class AXMLPrinter(object):
                 self.buff += '>\n'
 
             elif _type == END_TAG:
-                self.buff += "</%s%s>\n" % (self.getPrefix(self.axml.getPrefix()), self.axml.getName())
+                self.buff += "</%s%s>\n" % (self.getPrefix(
+                    self.axml.getPrefix()), self.axml.getName())
 
             elif _type == TEXT:
                 self.buff += "%s\n" % self.axml.getText()
@@ -1379,40 +1410,41 @@ class AXMLPrinter(object):
         return ""
 
 
-RES_NULL_TYPE               = 0x0000
-RES_STRING_POOL_TYPE        = 0x0001
-RES_TABLE_TYPE              = 0x0002
-RES_XML_TYPE                = 0x0003
+RES_NULL_TYPE = 0x0000
+RES_STRING_POOL_TYPE = 0x0001
+RES_TABLE_TYPE = 0x0002
+RES_XML_TYPE = 0x0003
 
 # Chunk types in RES_XML_TYPE
-RES_XML_FIRST_CHUNK_TYPE    = 0x0100
-RES_XML_START_NAMESPACE_TYPE= 0x0100
-RES_XML_END_NAMESPACE_TYPE  = 0x0101
-RES_XML_START_ELEMENT_TYPE  = 0x0102
-RES_XML_END_ELEMENT_TYPE    = 0x0103
-RES_XML_CDATA_TYPE          = 0x0104
-RES_XML_LAST_CHUNK_TYPE     = 0x017f
+RES_XML_FIRST_CHUNK_TYPE = 0x0100
+RES_XML_START_NAMESPACE_TYPE = 0x0100
+RES_XML_END_NAMESPACE_TYPE = 0x0101
+RES_XML_START_ELEMENT_TYPE = 0x0102
+RES_XML_END_ELEMENT_TYPE = 0x0103
+RES_XML_CDATA_TYPE = 0x0104
+RES_XML_LAST_CHUNK_TYPE = 0x017f
 
 # This contains a uint32_t array mapping strings in the string
 # pool back to resource identifiers.  It is optional.
-RES_XML_RESOURCE_MAP_TYPE   = 0x0180
+RES_XML_RESOURCE_MAP_TYPE = 0x0180
 
 # Chunk types in RES_TABLE_TYPE
-RES_TABLE_PACKAGE_TYPE      = 0x0200
-RES_TABLE_TYPE_TYPE         = 0x0201
-RES_TABLE_TYPE_SPEC_TYPE    = 0x0202
+RES_TABLE_PACKAGE_TYPE = 0x0200
+RES_TABLE_TYPE_TYPE = 0x0201
+RES_TABLE_TYPE_SPEC_TYPE = 0x0202
 
 
 class ARSCParser(object):
+
     def __init__(self, raw_buff):
         self.analyzed = False
         self.buff = bytecode.BuffHandle(raw_buff)
-        #print "SIZE", hex(self.buff.size())
+        # print "SIZE", hex(self.buff.size())
 
         self.header = ARSCHeader(self.buff)
         self.packageCount = unpack('<i', self.buff.read(4))[0]
 
-        #print hex(self.packageCount)
+        # print hex(self.packageCount)
 
         self.stringpool_main = StringBlock(self.buff)
 
@@ -1429,15 +1461,16 @@ class ARSCParser(object):
             mTableStrings = StringBlock(self.buff)
             mKeyStrings = StringBlock(self.buff)
 
-            #self.stringpool_main.show()
-            #self.mTableStrings.show()
-            #self.mKeyStrings.show()
+            # self.stringpool_main.show()
+            # self.mTableStrings.show()
+            # self.mKeyStrings.show()
 
             self.packages[package_name].append(current_package)
             self.packages[package_name].append(mTableStrings)
             self.packages[package_name].append(mKeyStrings)
 
-            pc = PackageContext(current_package, self.stringpool_main, mTableStrings, mKeyStrings)
+            pc = PackageContext(
+                current_package, self.stringpool_main, mTableStrings, mKeyStrings)
 
             current = self.buff.get_idx()
             while not self.buff.end():
@@ -1445,7 +1478,8 @@ class ARSCParser(object):
                 self.packages[package_name].append(header)
 
                 if header.type == RES_TABLE_TYPE_SPEC_TYPE:
-                    self.packages[package_name].append(ARSCResTypeSpec(self.buff, pc))
+                    self.packages[package_name].append(
+                        ARSCResTypeSpec(self.buff, pc))
 
                 elif header.type == RES_TABLE_TYPE_TYPE:
                     a_res_type = ARSCResType(self.buff, pc)
@@ -1454,7 +1488,8 @@ class ARSCParser(object):
                     entries = []
                     for i in _range(0, a_res_type.entryCount):
                         current_package.mResId = current_package.mResId & 0xffff0000 | i
-                        entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
+                        entries.append((unpack('<i', self.buff.read(4))[
+                                       0], current_package.mResId))
 
                     self.packages[package_name].append(entries)
 
@@ -1491,45 +1526,57 @@ class ARSCParser(object):
                         a_res_type = self.packages[package_name][nb + 1]
 
                         if a_res_type.config.get_language() not in self.values[package_name]:
-                            self.values[package_name][a_res_type.config.get_language()] = {}
-                            self.values[package_name][a_res_type.config.get_language()]["public"] = []
+                            self.values[package_name][
+                                a_res_type.config.get_language()] = {}
+                            self.values[package_name][a_res_type.config.get_language()][
+                                "public"] = []
 
-                        c_value = self.values[package_name][a_res_type.config.get_language()]
+                        c_value = self.values[package_name][
+                            a_res_type.config.get_language()]
 
                         entries = self.packages[package_name][nb + 2]
                         nb_i = 0
                         for entry, res_id in entries:
                             if entry != -1:
-                                ate = self.packages[package_name][nb + 3 + nb_i]
+                                ate = self.packages[
+                                    package_name][nb + 3 + nb_i]
 
-                                #print ate.is_public(), a_res_type.get_type(), ate.get_value(), hex(ate.mResId)
+                                # print ate.is_public(), a_res_type.get_type(),
+                                # ate.get_value(), hex(ate.mResId)
                                 if ate.get_index() != -1:
-                                    c_value["public"].append((a_res_type.get_type(), ate.get_value(), ate.mResId))
+                                    c_value["public"].append(
+                                        (a_res_type.get_type(), ate.get_value(), ate.mResId))
 
                                 if a_res_type.get_type() not in c_value:
                                     c_value[a_res_type.get_type()] = []
 
                                 if a_res_type.get_type() == "string":
-                                    c_value["string"].append(self.get_resource_string(ate))
+                                    c_value["string"].append(
+                                        self.get_resource_string(ate))
 
                                 elif a_res_type.get_type() == "id":
                                     if not ate.is_complex():
-                                        c_value["id"].append(self.get_resource_id(ate))
+                                        c_value["id"].append(
+                                            self.get_resource_id(ate))
 
                                 elif a_res_type.get_type() == "bool":
                                     if not ate.is_complex():
-                                        c_value["bool"].append(self.get_resource_bool(ate))
+                                        c_value["bool"].append(
+                                            self.get_resource_bool(ate))
 
                                 elif a_res_type.get_type() == "integer":
-                                    c_value["integer"].append(self.get_resource_integer(ate))
+                                    c_value["integer"].append(
+                                        self.get_resource_integer(ate))
 
                                 elif a_res_type.get_type() == "color":
-                                    c_value["color"].append(self.get_resource_color(ate))
+                                    c_value["color"].append(
+                                        self.get_resource_color(ate))
 
                                 elif a_res_type.get_type() == "dimen":
-                                    c_value["dimen"].append(self.get_resource_dimen(ate))
+                                    c_value["dimen"].append(
+                                        self.get_resource_dimen(ate))
 
-                                #elif a_res_type.get_type() == "style":
+                                # elif a_res_type.get_type() == "style":
                                 #    c_value["style"].append(self.get_resource_style(ate))
 
                                 nb_i += 1
@@ -1591,7 +1638,8 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["public"]:
-                buff += '<public type="%s" name="%s" id="0x%08x" />\n' % (i[0], i[1], i[2])
+                buff += '<public type="%s" name="%s" id="0x%08x" />\n' % (i[0], i[
+                                                                          1], i[2])
         except KeyError:
             pass
 
@@ -1630,7 +1678,8 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>\n' % (i[0], i[
+                                                                     1])
                 except KeyError:
                     pass
 
@@ -1654,7 +1703,8 @@ class ARSCParser(object):
                 if len(i) == 1:
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
-                    buff += '<item type="id" name="%s">%s</item>\n' % (i[0], i[1])
+                    buff += '<item type="id" name="%s">%s</item>\n' % (i[0], i[
+                                                                       1])
         except KeyError:
             pass
 
@@ -1752,6 +1802,7 @@ class ARSCParser(object):
 
 
 class PackageContext(object):
+
     def __init__(self, current_package, stringpool_main, mTableStrings, mKeyStrings):
         self.stringpool_main = stringpool_main
         self.mTableStrings = mTableStrings
@@ -1766,16 +1817,19 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
+
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.type = unpack('<h', buff.read(2))[0]
         self.header_size = unpack('<h', buff.read(2))[0]
         self.size = unpack('<i', buff.read(4))[0]
 
-        #print "ARSCHeader", hex(self.start), hex(self.type), hex(self.header_size), hex(self.size)
+        # print "ARSCHeader", hex(self.start), hex(self.type),
+        # hex(self.header_size), hex(self.size)
 
 
 class ARSCResTablePackage(object):
+
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.id = unpack('<i', buff.read(4))[0]
@@ -1786,7 +1840,10 @@ class ARSCResTablePackage(object):
         self.lastPublicKey = unpack('<i', buff.read(4))[0]
         self.mResId = self.id << 24
 
-        #print "ARSCResTablePackage", hex(self.start), hex(self.id), hex(self.mResId), repr(self.name.decode("utf-16", errors='replace')), hex(self.typeStrings), hex(self.lastPublicType), hex(self.keyStrings), hex(self.lastPublicKey)
+        # print "ARSCResTablePackage", hex(self.start), hex(self.id),
+        # hex(self.mResId), repr(self.name.decode("utf-16", errors='replace')),
+        # hex(self.typeStrings), hex(self.lastPublicType),
+        # hex(self.keyStrings), hex(self.lastPublicKey)
 
     def get_name(self):
         name = self.name.decode("utf-16", 'replace')
@@ -1795,6 +1852,7 @@ class ARSCResTablePackage(object):
 
 
 class ARSCResTypeSpec(object):
+
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1803,7 +1861,9 @@ class ARSCResTypeSpec(object):
         self.res1 = unpack('<h', buff.read(2))[0]
         self.entryCount = unpack('<i', buff.read(4))[0]
 
-        #print "ARSCResTypeSpec", hex(self.start), hex(self.id), hex(self.res0), hex(self.res1), hex(self.entryCount), "table:" + self.parent.mTableStrings.getString(self.id - 1)
+        # print "ARSCResTypeSpec", hex(self.start), hex(self.id),
+        # hex(self.res0), hex(self.res1), hex(self.entryCount), "table:" +
+        # self.parent.mTableStrings.getString(self.id - 1)
 
         self.typespec_entries = []
         for i in _range(0, self.entryCount):
@@ -1811,6 +1871,7 @@ class ARSCResTypeSpec(object):
 
 
 class ARSCResType(object):
+
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1822,7 +1883,10 @@ class ARSCResType(object):
         self.mResId = (0xff000000 & self.parent.get_mResId()) | self.id << 16
         self.parent.set_mResId(self.mResId)
 
-        #print "ARSCResType", hex(self.start), hex(self.id), hex(self.res0), hex(self.res1), hex(self.entryCount), hex(self.entriesStart), hex(self.mResId), "table:" + self.parent.mTableStrings.getString(self.id - 1)
+        # print "ARSCResType", hex(self.start), hex(self.id), hex(self.res0),
+        # hex(self.res1), hex(self.entryCount), hex(self.entriesStart),
+        # hex(self.mResId), "table:" +
+        # self.parent.mTableStrings.getString(self.id - 1)
 
         self.config = ARSCResTableConfig(buff)
 
@@ -1831,6 +1895,7 @@ class ARSCResType(object):
 
 
 class ARSCResTableConfig(object):
+
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.size = unpack('<i', buff.read(4))[0]
@@ -1855,7 +1920,11 @@ class ARSCResTableConfig(object):
             androconf.info("Skipping padding bytes!")
             self.padding = buff.read(self.exceedingSize)
 
-        #print "ARSCResTableConfig", hex(self.start), hex(self.size), hex(self.imsi), hex(self.locale), repr(self.get_language()), repr(self.get_country()), hex(self.screenType), hex(self.input), hex(self.screenSize), hex(self.version), hex(self.screenConfig), hex(self.screenSizeDp)
+        # print "ARSCResTableConfig", hex(self.start), hex(self.size),
+        # hex(self.imsi), hex(self.locale), repr(self.get_language()),
+        # repr(self.get_country()), hex(self.screenType), hex(self.input),
+        # hex(self.screenSize), hex(self.version), hex(self.screenConfig),
+        # hex(self.screenSizeDp)
 
     def get_language(self):
         x = self.locale & 0x0000ffff
@@ -1867,6 +1936,7 @@ class ARSCResTableConfig(object):
 
 
 class ARSCResTableEntry(object):
+
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
@@ -1875,7 +1945,9 @@ class ARSCResTableEntry(object):
         self.flags = unpack('<h', buff.read(2))[0]
         self.index = unpack('<i', buff.read(4))[0]
 
-        #print "ARSCResTableEntry", hex(self.start), hex(self.mResId), hex(self.size), hex(self.flags), hex(self.index), self.is_complex()#, hex(self.mResId)
+        # print "ARSCResTableEntry", hex(self.start), hex(self.mResId),
+        # hex(self.size), hex(self.flags), hex(self.index), self.is_complex()#,
+        # hex(self.mResId)
 
         if self.flags & 1:
             self.item = ARSCComplex(buff, parent)
@@ -1899,6 +1971,7 @@ class ARSCResTableEntry(object):
 
 
 class ARSCComplex(object):
+
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1908,12 +1981,15 @@ class ARSCComplex(object):
 
         self.items = []
         for i in _range(0, self.count):
-            self.items.append((unpack('<i', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
+            self.items.append((unpack('<i', buff.read(4))[
+                              0], ARSCResStringPoolRef(buff, self.parent)))
 
-        #print "ARSCComplex", hex(self.start), self.id_parent, self.count, repr(self.parent.mKeyStrings.getString(self.id_parent))
+        # print "ARSCComplex", hex(self.start), self.id_parent, self.count,
+        # repr(self.parent.mKeyStrings.getString(self.id_parent))
 
 
 class ARSCResStringPoolRef(object):
+
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -1922,7 +1998,10 @@ class ARSCResStringPoolRef(object):
         self.data_type = unpack('<b', buff.read(1))[0]
         self.data = unpack('<i', buff.read(4))[0]
 
-        #print "ARSCResStringPoolRef", hex(self.start), hex(self.data_type), hex(self.data)#, "key:" + self.parent.mKeyStrings.getString(self.index), self.parent.stringpool_main.getString(self.data)
+        # print "ARSCResStringPoolRef", hex(self.start), hex(self.data_type),
+        # hex(self.data)#, "key:" +
+        # self.parent.mKeyStrings.getString(self.index),
+        # self.parent.stringpool_main.getString(self.data)
 
     def get_data_value(self):
         return self.parent.stringpool_main.getString(self.data)
@@ -1943,7 +2022,8 @@ def get_arsc_info(arscobj):
             for ttype in arscobj.get_types(package, locale):
                 buff += "\t\t" + ttype + ":\n"
                 try:
-                    tmp_buff = getattr(arscobj, "get_" + ttype + "_resources")(package, locale).decode("utf-8", 'replace').split("\n")
+                    tmp_buff = getattr(arscobj, "get_" + ttype + "_resources")(
+                        package, locale).decode("utf-8", 'replace').split("\n")
                     for i in tmp_buff:
                         buff += "\t\t\t" + i + "\n"
                 except AttributeError:

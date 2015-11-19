@@ -26,6 +26,7 @@ logger = logging.getLogger('dad.graph')
 
 
 class Graph(object):
+
     def __init__(self):
         self.entry = None
         self.exit = None
@@ -378,6 +379,7 @@ def bfs(start):
 
 
 class GenInvokeRetName(object):
+
     def __init__(self):
         self.num = 0
         self.ret = None
@@ -404,7 +406,7 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
             exception_node = block_to_node.get(exception_target)
             if exception_node is None:
                 exception_node = build_node_from_block(exception_target,
-                                                        vmap, gen_ret, _type)
+                                                       vmap, gen_ret, _type)
                 exception_node.set_catch_type(_type)
                 exception_node.in_catch = True
                 block_to_node[exception_target] = exception_node
@@ -419,7 +421,7 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
             node.add_case(child_node)
         if node.type.is_cond:
             if_target = ((block.end / 2) - (block.last_length / 2) +
-                          node.off_last_ins)
+                         node.off_last_ins)
             child_addr = child_block.start / 2
             if if_target == child_addr:
                 node.true = child_node

@@ -6,6 +6,7 @@ from androguard.misc import *
 import os.path
 import traceback
 
+
 class FileLoadingThread(QtCore.QThread):
 
     def __init__(self, session, parent=None):
@@ -32,7 +33,7 @@ class FileLoadingThread(QtCore.QThread):
                     ret = self.session.add(file_path,
                                            open(file_path, 'r').read())
                     self.emit(QtCore.SIGNAL("loadedFile(bool)"), ret)
-                elif file_type == "SESSION" :
+                elif file_type == "SESSION":
                     self.session.load(file_path)
                     self.emit(QtCore.SIGNAL("loadedFile(bool)"), True)
             except Exception as e:

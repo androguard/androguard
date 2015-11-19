@@ -25,20 +25,23 @@ from miasm.core import bin_stream
 from androguard.core import bytecode
 from androguard.core.androconf import CONF, debug
 
+
 def disasm_at_addr(in_str, ad_to_dis, symbol_pool):
     kargs = {}
     all_bloc = asmbloc.dis_bloc_all(arm_arch.arm_mn, in_str, ad_to_dis, set(),
-                                        symbol_pool=symbol_pool,
-                                        dontdis_retcall = False,
-                                        follow_call = False,
-                                        **kargs)
+                                    symbol_pool=symbol_pool,
+                                    dontdis_retcall=False,
+                                    follow_call=False,
+                                    **kargs)
     for i in all_bloc:
         bytecode._PrintDefault("%s\n" % i.label)
         for j in i.lines:
             bytecode._PrintDefault("\t %s\n" % j)
         bytecode._PrintDefault("\n")
 
+
 class Function(object):
+
     def __init__(self, cm, name, info):
         self.cm = cm
         self.name = name
@@ -46,21 +49,26 @@ class Function(object):
 
     def show(self):
         bytecode._PrintSubBanner("Function")
-        bytecode._PrintDefault("name=%s addr=0x%x\n" % (self.name, self.info.value))
+        bytecode._PrintDefault("name=%s addr=0x%x\n" %
+                               (self.name, self.info.value))
 
-        self.cm.disasm_at_addr( self.info.value )
+        self.cm.disasm_at_addr(self.info.value)
+
 
 class ClassManager(object):
+
     def __init__(self, in_str, symbol_pool):
         self.in_str = in_str
         self.symbol_pool = symbol_pool
 
     def disasm_at_addr(self, ad_to_dis):
-        disasm_at_addr( self.in_str, ad_to_dis, self.symbol_pool )
+        disasm_at_addr(self.in_str, ad_to_dis, self.symbol_pool)
+
 
 class ELF(object):
+
     def __init__(self, buff):
-        self.E = elf_init.ELF( buff )
+        self.E = elf_init.ELF(buff)
 
         self.in_str = bin_stream.bin_stream(self.E.virt)
         self.symbol_pool = None
@@ -68,16 +76,16 @@ class ELF(object):
 
         self.create_symbol_pool()
 
-        self.CM = ClassManager( self.in_str, self.symbol_pool )
+        self.CM = ClassManager(self.in_str, self.symbol_pool)
 
         self.create_functions()
 
     def create_symbol_pool(self):
         dll_dyn_funcs = get_import_address_elf(self.E)
         self.symbol_pool = asmbloc.asm_symbol_pool()
-        for (n,f), ads in list(dll_dyn_funcs.items()):
+        for (n, f), ads in list(dll_dyn_funcs.items()):
             for ad in ads:
-                l  = self.symbol_pool.getby_name_create("%s_%s"%(n, f))
+                l = self.symbol_pool.getby_name_create("%s_%s" % (n, f))
                 l.offset = ad
                 self.symbol_pool.s_offset[l.offset] = l
 
@@ -92,10 +100,10 @@ class ELF(object):
         try:
             for k, v in list(self.E.sh.symtab.symbols.items()):
                 if v.size != 0:
-                    self.functions.append( Function(self.CM, k, v) )
+                    self.functions.append(Function(self.CM, k, v))
         except AttributeError:
             pass
 
         for k, v in list(self.E.sh.dynsym.symbols.items()):
             if v.size != 0:
-                self.functions.append( Function(self.CM, k, v) )
+                self.functions.append(Function(self.CM, k, v))

@@ -19,7 +19,9 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from xml.sax.saxutils import escape, unescape
-import sys, hashlib, os
+import sys
+import hashlib
+import os
 from optparse import OptionParser
 
 from androguard.core.bytecodes import apk, dvm
@@ -27,43 +29,45 @@ from androguard.core.analysis import analysis, ganalysis
 from androguard.core import androconf
 from androguard.util import read
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the gexf', 'nargs' : 1 }
+option_0 = {'name': ('-i', '--input'),
+            'help': 'filename input (dex, apk)', 'nargs': 1}
+option_1 = {'name': ('-o', '--output'),
+            'help': 'filename output of the gexf', 'nargs': 1}
 
 options = [option_0, option_1]
 
+
 def main(options, arguments):
     if options.input != None and options.output != None:
-        ret_type = androconf.is_android( options.input )
+        ret_type = androconf.is_android(options.input)
 
         vm = None
         a = None
         if ret_type == "APK":
-            a = apk.APK( options.input )
+            a = apk.APK(options.input)
             if a.is_valid_APK():
-                vm = dvm.DalvikVMFormat( a.get_dex() )
+                vm = dvm.DalvikVMFormat(a.get_dex())
             else:
                 print("INVALID APK")
         elif ret_type == "DEX":
             try:
-                vm = dvm.DalvikVMFormat( read(options.input) )
+                vm = dvm.DalvikVMFormat(read(options.input))
             except Exception as e:
                 print("INVALID DEX", e)
 
-        vmx = analysis.VMAnalysis( vm )
-        gvmx = ganalysis.GVMAnalysis( vmx, a )
+        vmx = analysis.VMAnalysis(vm)
+        gvmx = ganalysis.GVMAnalysis(vmx, a)
 
         b = gvmx.export_to_gexf()
-        androconf.save_to_disk( b, options.output )
+        androconf.save_to_disk(b, options.output)
 
 if __name__ == "__main__":
-   parser = OptionParser()
-   for option in options:
-	  param = option['name']
-	  del option['name']
-	  parser.add_option(*param, **option)
+    parser = OptionParser()
+    for option in options:
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
 
-
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

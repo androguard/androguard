@@ -22,7 +22,9 @@ from androguard.core.analysis import analysis
 from androguard.core.analysis import ganalysis
 from androguard.util import read
 
+
 class BC(object):
+
     def __init__(self, bc):
         self.__bc = bc
 
@@ -33,12 +35,12 @@ class BC(object):
         return self.__a
 
     def analyze(self):
-        self.__a = analysis.uVMAnalysis( self.__bc )
-        self.__bc.set_vmanalysis( self.__a )
+        self.__a = analysis.uVMAnalysis(self.__bc)
+        self.__bc.set_vmanalysis(self.__a)
 
-        self.__g = ganalysis.GVMAnalysis( self.__a, None )
+        self.__g = ganalysis.GVMAnalysis(self.__a, None)
 
-        self.__bc.set_gvmanalysis( self.__g )
+        self.__bc.set_gvmanalysis(self.__g)
 
         self.__bc.create_xref()
         self.__bc.create_dref()
@@ -47,14 +49,14 @@ class BC(object):
         l = []
         r = getattr(self.__bc, val)(name)
         for i in r:
-            l.append( i )
+            l.append(i)
         return l
 
     def _gets(self, val):
         l = []
         r = getattr(self.__bc, val)()
         for i in r:
-            l.append( i )
+            l.append(i)
         return l
 
     def gets(self, name):
@@ -67,7 +69,7 @@ class BC(object):
         return self.__bc.insert_direct_method(name, method)
 
     def insert_craft_method(self, name, proto, codes):
-        return self.__bc.insert_craft_method( name, proto, codes)
+        return self.__bc.insert_craft_method(name, proto, codes)
 
     def show(self):
         self.__bc.show()
@@ -81,18 +83,20 @@ class BC(object):
     def __getattr__(self, value):
         return getattr(self.__bc, value)
 
+
 class Androguard(object):
     """Androguard is the main object to abstract and manage differents formats
 
        @param files : a list of filenames (filename must be terminated by .class or .dex)
        @param raw : specify if the filename is in fact a raw buffer (default : False) #FIXME
     """
+
     def __init__(self, files, raw=False):
         self.__files = files
 
         self.__orig_raw = {}
         for i in self.__files:
-            self.__orig_raw[ i ] = read(i)
+            self.__orig_raw[i] = read(i)
 
         self.__bc = []
         self._analyze()
@@ -107,21 +111,21 @@ class Androguard(object):
 
     def _analyze(self):
         for i in self.__files:
-            ret_type = androconf.is_android( i )
+            ret_type = androconf.is_android(i)
             if ret_type == "APK":
-                x = apk.APK( i )
-                bc = dvm.DalvikVMFormat( x.get_dex() )
+                x = apk.APK(i)
+                bc = dvm.DalvikVMFormat(x.get_dex())
             elif ret_type == "DEX":
-                bc = dvm.DalvikVMFormat( read(i) )
+                bc = dvm.DalvikVMFormat(read(i))
             elif ret_type == "DEY":
-                bc = dvm.DalvikOdexVMFormat( read(i) )
+                bc = dvm.DalvikOdexVMFormat(read(i))
             elif ret_type == "ELF":
                 from androguard.core.binaries import elf
-                bc = elf.ELF( read(i) )
+                bc = elf.ELF(read(i))
             else:
-                raise( "Unknown format" )
+                raise("Unknown format")
 
-            self.__bc.append( (i, BC( bc )) )
+            self.__bc.append((i, BC(bc)))
 
     def ianalyze(self):
         for i in self.get_bc():
@@ -137,7 +141,7 @@ class Androguard(object):
         """Return raw format of all file"""
         l = []
         for _, bc in self.__bc:
-            l.append( bc._get_raw() )
+            l.append(bc._get_raw())
         return l
 
     def get_orig_raw(self):
@@ -152,7 +156,7 @@ class Androguard(object):
            @param descriptor : the descriptor of the method
         """
         for file_name, bc in self.__bc:
-            x = bc.get_method_descriptor( class_name, method_name, descriptor )
+            x = bc.get_method_descriptor(class_name, method_name, descriptor)
             if x != None:
                 return x, bc
         return None, None
@@ -166,7 +170,7 @@ class Androguard(object):
            @param descriptor : the descriptor of the field
         """
         for file_name, bc in self.__bc:
-            x = bc.get_field_descriptor( class_name, field_name, descriptor )
+            x = bc.get_field_descriptor(class_name, field_name, descriptor)
             if x != None:
                 return x, bc
         return None, None
@@ -187,9 +191,9 @@ class Androguard(object):
         else:
             l = []
             for file_name, bc in self.__bc:
-                l.append( bc.get( name, val ) )
+                l.append(bc.get(name, val))
 
-            return list( self._iterFlatten(l) )
+            return list(self._iterFlatten(l))
 
     def gets(self, name):
         """
@@ -199,12 +203,12 @@ class Androguard(object):
         """
         l = []
         for file_name, bc in self.__bc:
-            l.append( bc.gets( name ) )
+            l.append(bc.gets(name))
 
-        return list( self._iterFlatten(l) )
+        return list(self._iterFlatten(l))
 
     def get_vms(self):
-        return [ i[1].get_vm() for i in self.__bc ]
+        return [i[1].get_vm() for i in self.__bc]
 
     def get_bc(self):
         return self.__bc
@@ -223,19 +227,21 @@ class Androguard(object):
         for _, bc in self.__bc:
             bc.pretty_show()
 
+
 class AndroguardS(object):
     """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
 
        @param filename : the filename to use (filename must be terminated by .class or .dex)
        @param raw : specify if the filename is a raw buffer (default : False)
     """
+
     def __init__(self, filename, raw=False):
         self.__filename = filename
-        self.__orig_a = Androguard( [ filename ], raw )
-        self.__a = self.__orig_a.get( "file", filename )
+        self.__orig_a = Androguard([filename], raw)
+        self.__a = self.__orig_a.get("file", filename)
 
     def get_orig_raw(self):
-        return self.__orig_a.get_orig_raw()[ self.__filename ]
+        return self.__orig_a.get_orig_raw()[self.__filename]
 
     def get_vm(self):
         """

@@ -41,16 +41,25 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.config.loader import Config
 
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-d', '--display'), 'help' : 'display the file in human readable format', 'action' : 'count' }
-option_2 = { 'name' : ('-m', '--method'), 'help' : 'display method(s) respect with a regexp', 'nargs' : 1 }
-option_3 = { 'name' : ('-f', '--field'), 'help' : 'display field(s) respect with a regexp', 'nargs' : 1 }
-option_4 = { 'name' : ('-s', '--shell'), 'help' : 'open an interactive shell to play more easily with objects', 'action' : 'count' }
-option_5 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-option_6 = { 'name' : ('-p', '--pretty'), 'help' : 'pretty print !', 'action' : 'count' }
-option_8 = { 'name' : ('-x', '--xpermissions'), 'help' : 'show paths of permissions', 'action' : 'count' }
+option_0 = {'name': ('-i', '--input'),
+            'help': 'file : use this filename', 'nargs': 1}
+option_1 = {'name': ('-d', '--display'),
+            'help': 'display the file in human readable format', 'action': 'count'}
+option_2 = {'name': ('-m', '--method'),
+            'help': 'display method(s) respect with a regexp', 'nargs': 1}
+option_3 = {'name': ('-f', '--field'),
+            'help': 'display field(s) respect with a regexp', 'nargs': 1}
+option_4 = {'name': ('-s', '--shell'),
+            'help': 'open an interactive shell to play more easily with objects', 'action': 'count'}
+option_5 = {'name': ('-v', '--version'),
+            'help': 'version of the API', 'action': 'count'}
+option_6 = {'name': ('-p', '--pretty'),
+            'help': 'pretty print !', 'action': 'count'}
+option_8 = {'name': ('-x', '--xpermissions'),
+            'help': 'show paths of permissions', 'action': 'count'}
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_8]
+options = [option_0, option_1, option_2, option_3,
+           option_4, option_5, option_6, option_8]
 
 
 def init_print_colors():
@@ -61,7 +70,8 @@ def init_print_colors():
 
 def interact():
     cfg = Config()
-    ipshell = InteractiveShellEmbed(config=cfg, banner1="Androlyze version %s" % ANDROGUARD_VERSION)
+    ipshell = InteractiveShellEmbed(
+        config=cfg, banner1="Androlyze version %s" % ANDROGUARD_VERSION)
     init_print_colors()
     ipshell()
 
@@ -71,10 +81,10 @@ def main(options, arguments):
         interact()
 
     elif options.input != None:
-        _a = AndroguardS( options.input )
+        _a = AndroguardS(options.input)
 
         if options.pretty != None:
-          init_print_colors()
+            init_print_colors()
 
         if options.display != None:
             if options.pretty != None:
@@ -97,11 +107,11 @@ def main(options, arguments):
 
         elif options.xpermissions != None:
             _a.ianalyze()
-            perms_access = _a.get_analysis().get_permissions( [] )
+            perms_access = _a.get_analysis().get_permissions([])
             for perm in perms_access:
                 print("PERM : ", perm)
-                for path in perms_access[ perm ]:
-                    show_Path( _a.get_vm(), path )
+                for path in perms_access[perm]:
+                    show_Path(_a.get_vm(), path)
 
     elif options.version != None:
         print("Androlyze version %s" % androconf.ANDROGUARD_VERSION)

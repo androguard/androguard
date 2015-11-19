@@ -44,19 +44,19 @@ class DominatorTest(unittest.TestCase):
 
     def testFirstGraph(self):
         edges = {
-          'r': ['w1', 'x1', 'z5'],
-          'w1': ['w2'], 'w2': ['w3'], 'w3': ['w4'], 'w4': ['w5'],
-          'x1': ['x2'], 'x2': ['x3'], 'x3': ['x4'], 'x4': ['x5'], 'x5': ['y1'],
-          'y1': ['w1', 'w2', 'w3', 'w4', 'w5', 'y2'],
-          'y2': ['w1', 'w2', 'w3', 'w4', 'w5', 'y3'],
-          'y3': ['w1', 'w2', 'w3', 'w4', 'w5', 'y4'],
-          'y4': ['w1', 'w2', 'w3', 'w4', 'w5', 'y5'],
-          'y5': ['w1', 'w2', 'w3', 'w4', 'w5', 'z1'],
-          'z1': ['z2'],
-          'z2': ['z1', 'z3'],
-          'z3': ['z2', 'z4'],
-          'z4': ['z3', 'z5'],
-          'z5': ['z4']}
+            'r': ['w1', 'x1', 'z5'],
+            'w1': ['w2'], 'w2': ['w3'], 'w3': ['w4'], 'w4': ['w5'],
+            'x1': ['x2'], 'x2': ['x3'], 'x3': ['x4'], 'x4': ['x5'], 'x5': ['y1'],
+            'y1': ['w1', 'w2', 'w3', 'w4', 'w5', 'y2'],
+            'y2': ['w1', 'w2', 'w3', 'w4', 'w5', 'y3'],
+            'y3': ['w1', 'w2', 'w3', 'w4', 'w5', 'y4'],
+            'y4': ['w1', 'w2', 'w3', 'w4', 'w5', 'y5'],
+            'y5': ['w1', 'w2', 'w3', 'w4', 'w5', 'z1'],
+            'z1': ['z2'],
+            'z2': ['z1', 'z3'],
+            'z3': ['z2', 'z4'],
+            'z4': ['z3', 'z5'],
+            'z5': ['z4']}
         expected_dominators = {
             'r': None,
             'w1': 'r', 'w2': 'r', 'w3': 'r', 'w4': 'r', 'w5': 'r',
@@ -171,9 +171,9 @@ class DominatorTest(unittest.TestCase):
                  'e': ['f'],
                  'f': ['a', 'd', 'g']}
         expected_dominators = {'r': None,
-                    'a': 'r', 'b': 'a', 'c': 'b',
-                    'd': 'r', 'e': 'd', 'f': 'e',
-                    'g': 'r'}
+                               'a': 'r', 'b': 'a', 'c': 'b',
+                               'd': 'r', 'e': 'd', 'f': 'e',
+                               'g': 'r'}
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())

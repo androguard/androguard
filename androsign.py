@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os
+import sys
+import os
 
 from optparse import OptionParser
 
@@ -30,43 +31,51 @@ sys.path.append("./elsim/")
 from elsim.elsign import dalvik_elsign
 
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-d', '--directory'), 'help' : 'directory : use this directory', 'nargs' : 1 }
-option_2 = { 'name' : ('-b', '--database'), 'help' : 'database : use this database', 'nargs' : 1 }
-option_3 = { 'name' : ('-c', '--config'), 'help' : 'use this configuration', 'nargs' : 1 }
-option_4 = { 'name' : ('-v', '--verbose'), 'help' : 'display debug information', 'action' : 'count' }
+option_0 = {'name': ('-i', '--input'),
+            'help': 'file : use this filename', 'nargs': 1}
+option_1 = {'name': ('-d', '--directory'),
+            'help': 'directory : use this directory', 'nargs': 1}
+option_2 = {'name': ('-b', '--database'),
+            'help': 'database : use this database', 'nargs': 1}
+option_3 = {'name': ('-c', '--config'),
+            'help': 'use this configuration', 'nargs': 1}
+option_4 = {'name': ('-v', '--verbose'),
+            'help': 'display debug information', 'action': 'count'}
 
 options = [option_0, option_1, option_2, option_3, option_4]
+
 
 def display(ret, debug):
     print("---->", ret[0])
     sys.stdout.flush()
 
+
 def main(options, arguments):
     if options.database == None or options.config == None:
         return
 
-    s = dalvik_elsign.MSignature( options.database, options.config, options.verbose != None, ps = dalvik_elsign.PublicSignature)
+    s = dalvik_elsign.MSignature(options.database, options.config,
+                                 options.verbose != None, ps=dalvik_elsign.PublicSignature)
 
     if options.input != None:
-        ret_type = androconf.is_android( options.input )
+        ret_type = androconf.is_android(options.input)
 
         print(os.path.basename(options.input), ":", end=' ')
         sys.stdout.flush()
         if ret_type == "APK":
             try:
-                a = apk.APK( options.input )
+                a = apk.APK(options.input)
                 if a.is_valid_APK():
-                    display( s.check_apk( a ), options.verbose )
+                    display(s.check_apk(a), options.verbose)
                 else:
                     print("INVALID")
             except Exception as e:
                 print("ERROR", e)
 
         elif ret_type == "DEX":
-            display( s.check_dex( read(options.input) ), options.verbose )
+            display(s.check_dex(read(options.input)), options.verbose)
     elif options.directory != None:
-        for root, dirs, files in os.walk( options.directory, followlinks=True ):
+        for root, dirs, files in os.walk(options.directory, followlinks=True):
             if files != []:
                 for f in files:
                     real_filename = root
@@ -74,23 +83,24 @@ def main(options, arguments):
                         real_filename += "/"
                     real_filename += f
 
-                    ret_type = androconf.is_android( real_filename )
+                    ret_type = androconf.is_android(real_filename)
                     if ret_type == "APK":
-                        print(os.path.basename( real_filename ), ":", end=' ')
+                        print(os.path.basename(real_filename), ":", end=' ')
                         sys.stdout.flush()
                         try:
-                            a = apk.APK( real_filename )
+                            a = apk.APK(real_filename)
                             if a.is_valid_APK():
-                                display( s.check_apk( a ), options.verbose )
+                                display(s.check_apk(a), options.verbose)
                             else:
                                 print("INVALID APK")
                         except Exception as e:
                             print("ERROR", e)
                     elif ret_type == "DEX":
                         try:
-                            print(os.path.basename( real_filename ), ":", end=' ')
+                            print(os.path.basename(real_filename), ":", end=' ')
                             sys.stdout.flush()
-                            display( s.check_dex( read(real_filename) ), options.verbose )
+                            display(s.check_dex(read(real_filename)),
+                                    options.verbose)
                         except Exception as e:
                             print("ERROR", e)
 

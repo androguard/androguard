@@ -15,31 +15,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re, random, pickle, collections
+import re
+import random
+import pickle
+import collections
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
     load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
+
 class ContextField(object):
+
     def __init__(self, mode):
         self.mode = mode
         self.details = []
 
     def set_details(self, details):
         for i in details:
-            self.details.append( i )
+            self.details.append(i)
+
 
 class ContextMethod(object):
+
     def __init__(self):
         self.details = []
 
     def set_details(self, details):
         for i in details:
-            self.details.append( i )
+            self.details.append(i)
+
 
 class ExternalFM(object):
+
     def __init__(self, class_name, name, descriptor):
         self.class_name = class_name
         self.name = name
@@ -54,7 +63,9 @@ class ExternalFM(object):
     def get_descriptor(self):
         return self.descriptor
 
+
 class ToString(object):
+
     def __init__(self, tab):
         self.__tab = tab
         self.__re_tab = {}
@@ -62,7 +73,7 @@ class ToString(object):
         for i in self.__tab:
             self.__re_tab[i] = []
             for j in self.__tab[i]:
-                self.__re_tab[i].append( re.compile( j ) )
+                self.__re_tab[i].append(re.compile(j))
 
         self.__string = ""
 
@@ -78,7 +89,9 @@ class ToString(object):
     def get_string(self):
         return self.__string
 
+
 class BreakBlock(object):
+
     def __init__(self, _vm, idx):
         self._vm = _vm
         self._start = idx
@@ -90,7 +103,6 @@ class BreakBlock(object):
 
         self._fields = {}
         self._methods = {}
-
 
     def get_ops(self):
         return self._ops
@@ -117,44 +129,45 @@ class BreakBlock(object):
             i.show(0)
 
 DVM_FIELDS_ACCESS = {
-      "iget" : "R",
-      "iget-wide" : "R",
-      "iget-object" : "R",
-      "iget-boolean" : "R",
-      "iget-byte" : "R",
-      "iget-char" : "R",
-      "iget-short" : "R",
+    "iget": "R",
+    "iget-wide": "R",
+    "iget-object": "R",
+    "iget-boolean": "R",
+    "iget-byte": "R",
+    "iget-char": "R",
+    "iget-short": "R",
 
-      "iput" : "W",
-      "iput-wide" : "W",
-      "iput-object" : "W",
-      "iput-boolean" : "W",
-      "iput-byte" : "W",
-      "iput-char" : "W",
-      "iput-short" : "W",
+    "iput": "W",
+    "iput-wide": "W",
+    "iput-object": "W",
+    "iput-boolean": "W",
+    "iput-byte": "W",
+    "iput-char": "W",
+    "iput-short": "W",
 
-      "sget" : "R",
-      "sget-wide" : "R",
-      "sget-object" : "R",
-      "sget-boolean" : "R",
-      "sget-byte" : "R",
-      "sget-char" : "R",
-      "sget-short" : "R",
+    "sget": "R",
+    "sget-wide": "R",
+    "sget-object": "R",
+    "sget-boolean": "R",
+    "sget-byte": "R",
+    "sget-char": "R",
+    "sget-short": "R",
 
-      "sput" : "W",
-      "sput-wide" : "W",
-      "sput-object" : "W",
-      "sput-boolean" : "W",
-      "sput-byte" : "W",
-      "sput-char" : "W",
-      "sput-short" : "W",
-   }
+    "sput": "W",
+    "sput-wide": "W",
+    "sput-object": "W",
+    "sput-boolean": "W",
+    "sput-byte": "W",
+    "sput-char": "W",
+    "sput-short": "W",
+}
 
 
 class DVMBasicBlock(object):
     """
         A simple basic block of a dalvik method
     """
+
     def __init__(self, start, vm, method, context):
         self.__vm = vm
         self.method = method
@@ -192,19 +205,19 @@ class DVMBasicBlock(object):
         self.notes = []
 
     def get_instructions(self):
-      """
-        Get all instructions from a basic block.
+        """
+          Get all instructions from a basic block.
 
-        :rtype: Return all instructions in the current basic block
-      """
-      tmp_ins = []
-      idx = 0
-      for i in self.method.get_instructions():
-        if idx >= self.start and idx < self.end:
-          tmp_ins.append(i)
+          :rtype: Return all instructions in the current basic block
+        """
+        tmp_ins = []
+        idx = 0
+        for i in self.method.get_instructions():
+            if idx >= self.start and idx < self.end:
+                tmp_ins.append(i)
 
-        idx += i.get_length()
-      return tmp_ins
+            idx += i.get_length()
+        return tmp_ins
 
     def get_nb_instructions(self):
         return self.nb_instructions
@@ -244,27 +257,29 @@ class DVMBasicBlock(object):
         self.fathers.append(f)
 
     def get_last_length(self):
-      return self.last_length
+        return self.last_length
 
     def set_childs(self, values):
-        #print self, self.start, self.end, values
+        # print self, self.start, self.end, values
         if values == []:
-            next_block = self.context.get_basic_block( self.end + 1 )
+            next_block = self.context.get_basic_block(self.end + 1)
             if next_block != None:
-                self.childs.append( ( self.end - self.get_last_length(), self.end, next_block ) )
+                self.childs.append(
+                    (self.end - self.get_last_length(), self.end, next_block))
         else:
             for i in values:
                 if i != -1:
-                    next_block = self.context.get_basic_block( i )
+                    next_block = self.context.get_basic_block(i)
                     if next_block != None:
-                        self.childs.append( ( self.end - self.get_last_length(), i, next_block) )
+                        self.childs.append(
+                            (self.end - self.get_last_length(), i, next_block))
 
         for c in self.childs:
             if c[2] != None:
-                c[2].set_fathers( ( c[1], c[0], self ) )
+                c[2].set_fathers((c[1], c[0], self))
 
     def push(self, i):
-      try:
+        try:
             self.nb_instructions += 1
             idx = self.end
             self.last_length = i.get_length()
@@ -276,33 +291,38 @@ class DVMBasicBlock(object):
             if (op_value >= 0x52 and op_value <= 0x6d):
                 desc = self.__vm.get_cm_field(i.get_ref_kind())
                 if self.tainted_variables != None:
-                    self.tainted_variables.push_info(TAINTED_FIELD, desc, DVM_FIELDS_ACCESS[i.get_name()][0], idx, self.method)
+                    self.tainted_variables.push_info(TAINTED_FIELD, desc, DVM_FIELDS_ACCESS[
+                                                     i.get_name()][0], idx, self.method)
 
             # invoke
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78):
                 idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method(idx_meth)
                 if self.tainted_packages != None:
-                    self.tainted_packages.push_info(method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth)
+                    self.tainted_packages.push_info(
+                        method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth)
 
             # new_instance
             elif op_value == 0x22:
                 idx_type = i.get_ref_kind()
                 type_info = self.__vm.get_cm_type(idx_type)
                 if self.tainted_packages != None:
-                    self.tainted_packages.push_info(type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None)
+                    self.tainted_packages.push_info(
+                        type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None)
 
             # const-string
             elif (op_value >= 0x1a and op_value <= 0x1b):
                 string_name = self.__vm.get_cm_string(i.get_ref_kind())
                 if self.tainted_variables != None:
-                    self.tainted_variables.push_info(TAINTED_STRING, string_name, "R", idx, self.method)
+                    self.tainted_variables.push_info(
+                        TAINTED_STRING, string_name, "R", idx, self.method)
 
             elif op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c):
                 code = self.method.get_code().get_bc()
-                self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
-      except:
-        pass
+                self.special_ins[idx] = code.get_ins_off(
+                    idx + i.get_ref_off() * 2)
+        except:
+            pass
 
     def get_special_ins(self, idx):
         """
@@ -327,31 +347,35 @@ TAINTED_LOCAL_VARIABLE = 0
 TAINTED_FIELD = 1
 TAINTED_STRING = 2
 
+
 class PathVar(object):
-  def __init__(self, access, idx, dst_idx, info_obj):
-    self.access_flag = access
-    self.idx = idx
-    self.dst_idx = dst_idx
-    self.info_obj = info_obj
 
-  def get_var_info(self):
-    return self.info_obj.get_info()
+    def __init__(self, access, idx, dst_idx, info_obj):
+        self.access_flag = access
+        self.idx = idx
+        self.dst_idx = dst_idx
+        self.info_obj = info_obj
 
-  def get_access_flag(self):
-    return self.access_flag
+    def get_var_info(self):
+        return self.info_obj.get_info()
 
-  def get_src(self, cm):
-    method = cm.get_method_ref( self.idx )
-    return method.get_class_name(), method.get_name(), method.get_descriptor()
+    def get_access_flag(self):
+        return self.access_flag
 
-  def get_dst(self, cm):
-    method = cm.get_method_ref( self.dst_idx )
-    return method.get_class_name(), method.get_name(), method.get_descriptor()
+    def get_src(self, cm):
+        method = cm.get_method_ref(self.idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-  def get_idx(self):
-    return self.idx
+    def get_dst(self, cm):
+        method = cm.get_method_ref(self.dst_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
+
+    def get_idx(self):
+        return self.idx
+
 
 class TaintedVariable(object):
+
     def __init__(self, var, _type):
         self.var = var
         self.type = _type
@@ -364,59 +388,63 @@ class TaintedVariable(object):
 
     def get_info(self):
         if self.type == TAINTED_FIELD:
-            return [ self.var[0], self.var[2], self.var[1] ]
+            return [self.var[0], self.var[2], self.var[1]]
         return self.var
 
     def push(self, access, idx, ref):
         m_idx = ref.get_method_idx()
 
         if m_idx not in self.paths:
-          self.paths[ m_idx ] = []
+            self.paths[m_idx] = []
 
-        self.paths[ m_idx ].append( (access, idx) )
+        self.paths[m_idx].append((access, idx))
 
     def get_paths_access(self, mode):
         for i in self.paths:
-          for j in self.paths[ i ]:
-            for k, v in self.paths[ i ][ j ]:
-              if k in mode:
-                yield i, j, k, v
+            for j in self.paths[i]:
+                for k, v in self.paths[i][j]:
+                    if k in mode:
+                        yield i, j, k, v
 
     def get_paths(self):
         if self.__cache != []:
             return self.__cache
 
         for i in self.paths:
-          for j in self.paths[ i ]:
-              self.__cache.append( [j, i] )
-              #yield j, i
+            for j in self.paths[i]:
+                self.__cache.append([j, i])
+                # yield j, i
         return self.__cache
 
     def get_paths_length(self):
         return len(self.paths)
 
     def show_paths(self, vm):
-        show_PathVariable( vm, self.get_paths() )
+        show_PathVariable(vm, self.get_paths())
+
 
 class TaintedVariables(object):
+
     def __init__(self, _vm):
         self.__vm = _vm
         self.__vars = {
-           TAINTED_LOCAL_VARIABLE : {},
-           TAINTED_FIELD : {},
-           TAINTED_STRING : {},
+            TAINTED_LOCAL_VARIABLE: {},
+            TAINTED_FIELD: {},
+            TAINTED_STRING: {},
         }
 
         self.__cache_field_by_method = {}
         self.__cache_string_by_method = {}
 
-        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
-        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module(
+            "aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module(
+            "api_permission_mappings", self.__vm.get_api_version())
 
     # functions to get particulars elements
     def get_string(self, s):
         try:
-            return self.__vars[ TAINTED_STRING ][ s ]
+            return self.__vars[TAINTED_STRING][s]
         except KeyError:
             return None
 
@@ -424,18 +452,18 @@ class TaintedVariables(object):
         key = class_name + descriptor + name
 
         try:
-            return self.__vars[ TAINTED_FIELD ] [ key ]
+            return self.__vars[TAINTED_FIELD][key]
         except KeyError:
             return None
 
     def toPathVariable(self, obj):
-      z = []
-      for i in obj.get_paths():
-        access, idx = i[0]
-        m_idx = i[1]
+        z = []
+        for i in obj.get_paths():
+            access, idx = i[0]
+            m_idx = i[1]
 
-        z.append( PathVar(access, idx, m_idx, obj ) )
-      return z
+            z.append(PathVar(access, idx, m_idx, obj))
+        return z
 
     # permission functions
     def get_permissions_method(self, method):
@@ -448,7 +476,8 @@ class TaintedVariables(object):
                     #access, idx = path[0]
                     m_idx = path[1]
                     if m_idx == method.get_idx():
-                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"][data])
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE[
+                                           "AOSP_PERMISSIONS_BY_FIELDS"][data])
 
         return permissions
 
@@ -467,7 +496,8 @@ class TaintedVariables(object):
         for f, _ in self.get_fields():
             data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
             if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"].keys()):
-                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_FIELDS"][data])
+                perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE[
+                                                    "AOSP_PERMISSIONS_BY_FIELDS"][data])
                 for p in perm_intersection:
                     try:
                         permissions[p].extend(self.toPathVariable(f))
@@ -479,38 +509,37 @@ class TaintedVariables(object):
 
     # global functions
     def get_strings(self):
-        for i in self.__vars[ TAINTED_STRING ]:
-            yield self.__vars[ TAINTED_STRING ][ i ], i
+        for i in self.__vars[TAINTED_STRING]:
+            yield self.__vars[TAINTED_STRING][i], i
 
     def get_fields(self):
-        for i in self.__vars[ TAINTED_FIELD ]:
-            yield self.__vars[ TAINTED_FIELD ][ i ], i
+        for i in self.__vars[TAINTED_FIELD]:
+            yield self.__vars[TAINTED_FIELD][i], i
 
     # specifics functions
     def get_strings_by_method(self, method):
         z = {}
 
         try:
-            for i in self.__cache_string_by_method[ method.get_method_idx() ]:
-                z[ i ] = []
+            for i in self.__cache_string_by_method[method.get_method_idx()]:
+                z[i] = []
                 for j in i.get_paths():
                     if method.get_method_idx() == j[1]:
-                        z[i].append( j[0] )
+                        z[i].append(j[0])
 
             return z
         except:
             return z
 
-
     def get_fields_by_method(self, method):
         z = {}
 
         try:
-            for i in self.__cache_field_by_method[ method.get_method_idx() ]:
-                z[ i ] = []
+            for i in self.__cache_field_by_method[method.get_method_idx()]:
+                z[i] = []
                 for j in i.get_paths():
                     if method.get_method_idx() == j[1]:
-                        z[i].append( j[0] )
+                        z[i].append(j[0])
             return z
         except:
             return z
@@ -518,107 +547,116 @@ class TaintedVariables(object):
     def add(self, var, _type, _method=None):
         if _type == TAINTED_FIELD:
             key = var[0] + var[1] + var[2]
-            if key not in self.__vars[ TAINTED_FIELD ]:
-                self.__vars[ TAINTED_FIELD ][ key ] = TaintedVariable( var, _type )
+            if key not in self.__vars[TAINTED_FIELD]:
+                self.__vars[TAINTED_FIELD][key] = TaintedVariable(var, _type)
         elif _type == TAINTED_STRING:
-            if var not in self.__vars[ TAINTED_STRING ]:
-                self.__vars[ TAINTED_STRING ][ var ] = TaintedVariable( var, _type )
+            if var not in self.__vars[TAINTED_STRING]:
+                self.__vars[TAINTED_STRING][var] = TaintedVariable(var, _type)
         elif _type == TAINTED_LOCAL_VARIABLE:
-            if _method not in self.__vars[ TAINTED_LOCAL_VARIABLE ]:
-                self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ] = {}
+            if _method not in self.__vars[TAINTED_LOCAL_VARIABLE]:
+                self.__vars[TAINTED_LOCAL_VARIABLE][_method] = {}
 
-            if var not in self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ]:
-                self.__vars[ TAINTED_LOCAL_VARIABLE ][ _method ][ var ] = TaintedVariable( var, _type )
+            if var not in self.__vars[TAINTED_LOCAL_VARIABLE][_method]:
+                self.__vars[TAINTED_LOCAL_VARIABLE][_method][
+                    var] = TaintedVariable(var, _type)
 
     def push_info(self, _type, var, access, idx, ref):
         if _type == TAINTED_FIELD:
-            self.add( var, _type )
+            self.add(var, _type)
             key = var[0] + var[1] + var[2]
-            self.__vars[ _type ][ key ].push( access, idx, ref )
+            self.__vars[_type][key].push(access, idx, ref)
 
             method_idx = ref.get_method_idx()
             if method_idx not in self.__cache_field_by_method:
-                self.__cache_field_by_method[ method_idx ] = set()
+                self.__cache_field_by_method[method_idx] = set()
 
-            self.__cache_field_by_method[ method_idx ].add( self.__vars[ TAINTED_FIELD ][ key ] )
-
+            self.__cache_field_by_method[method_idx].add(
+                self.__vars[TAINTED_FIELD][key])
 
         elif _type == TAINTED_STRING:
-            self.add( var, _type )
-            self.__vars[ _type ][ var ].push( access, idx, ref )
+            self.add(var, _type)
+            self.__vars[_type][var].push(access, idx, ref)
 
             method_idx = ref.get_method_idx()
 
             if method_idx not in self.__cache_string_by_method:
-                self.__cache_string_by_method[ method_idx ] = set()
+                self.__cache_string_by_method[method_idx] = set()
 
-            self.__cache_string_by_method[ method_idx ].add( self.__vars[ TAINTED_STRING ][ var ] )
+            self.__cache_string_by_method[method_idx].add(
+                self.__vars[TAINTED_STRING][var])
 
 TAINTED_PACKAGE_CREATE = 0
 TAINTED_PACKAGE_CALL = 1
 
 TAINTED_PACKAGE = {
-   TAINTED_PACKAGE_CREATE : "C",
-   TAINTED_PACKAGE_CALL : "M"
+    TAINTED_PACKAGE_CREATE: "C",
+    TAINTED_PACKAGE_CALL: "M"
 }
+
+
 def show_Path(vm, path):
-  cm = vm.get_class_manager()
+    cm = vm.get_class_manager()
 
-  if isinstance(path, PathVar):
-    dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
-    info_var = path.get_var_info()
-    print("%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
-                                          info_var,
-                                          path.get_idx(),
-                                          dst_class_name,
-                                          dst_method_name,
-                                          dst_descriptor))
-  else:
-    if path.get_access_flag() == TAINTED_PACKAGE_CALL:
-      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
-
-      print("%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
-                                                  src_class_name,
-                                                  src_method_name,
-                                                  src_descriptor,
-                                                  path.get_idx(),
-                                                  dst_class_name,
-                                                  dst_method_name,
-                                                  dst_descriptor))
+    if isinstance(path, PathVar):
+        dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
+        info_var = path.get_var_info()
+        print("%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
+                                              info_var,
+                                              path.get_idx(),
+                                              dst_class_name,
+                                              dst_method_name,
+                                              dst_descriptor))
     else:
-      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      print("%d %s->%s%s (0x%x)" % (path.get_access_flag(),
-                                    src_class_name,
-                                    src_method_name,
-                                    src_descriptor,
-                                    path.get_idx()))
+        if path.get_access_flag() == TAINTED_PACKAGE_CALL:
+            src_class_name, src_method_name, src_descriptor = path.get_src(cm)
+            dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
+
+            print("%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
+                                                        src_class_name,
+                                                        src_method_name,
+                                                        src_descriptor,
+                                                        path.get_idx(),
+                                                        dst_class_name,
+                                                        dst_method_name,
+                                                        dst_descriptor))
+        else:
+            src_class_name, src_method_name, src_descriptor = path.get_src(cm)
+            print("%d %s->%s%s (0x%x)" % (path.get_access_flag(),
+                                          src_class_name,
+                                          src_method_name,
+                                          src_descriptor,
+                                          path.get_idx()))
+
 
 def get_Path(vm, path):
-  x = {}
-  cm = vm.get_class_manager()
+    x = {}
+    cm = vm.get_class_manager()
 
-  if isinstance(path, PathVar):
-    dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
-    info_var = path.get_var_info()
-    x["src"] = "%s" % info_var
-    x["dst"] = "%s %s %s" % (dst_class_name, dst_method_name, dst_descriptor)
-    x["idx"] = path.get_idx()
+    if isinstance(path, PathVar):
+        dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
+        info_var = path.get_var_info()
+        x["src"] = "%s" % info_var
+        x["dst"] = "%s %s %s" % (
+            dst_class_name, dst_method_name, dst_descriptor)
+        x["idx"] = path.get_idx()
 
-  else:
-    if path.get_access_flag() == TAINTED_PACKAGE_CALL:
-      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      dst_class_name, dst_method_name, dst_descriptor =  path.get_dst( cm )
-
-      x["src"] = "%s %s %s" % (src_class_name, src_method_name, src_descriptor)
-      x["dst"] = "%s %s %s" % (dst_class_name, dst_method_name, dst_descriptor)
     else:
-      src_class_name, src_method_name, src_descriptor =  path.get_src( cm )
-      x["src"] = "%s %s %s" % (src_class_name, src_method_name, src_descriptor)
+        if path.get_access_flag() == TAINTED_PACKAGE_CALL:
+            src_class_name, src_method_name, src_descriptor = path.get_src(cm)
+            dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
 
-    x["idx"] = path.get_idx()
+            x["src"] = "%s %s %s" % (
+                src_class_name, src_method_name, src_descriptor)
+            x["dst"] = "%s %s %s" % (
+                dst_class_name, dst_method_name, dst_descriptor)
+        else:
+            src_class_name, src_method_name, src_descriptor = path.get_src(cm)
+            x["src"] = "%s %s %s" % (
+                src_class_name, src_method_name, src_descriptor)
 
-  return x
+        x["idx"] = path.get_idx()
+
+    return x
 
 
 def show_Paths(vm, paths):
@@ -628,7 +666,7 @@ def show_Paths(vm, paths):
         :param paths: a list of :class:`PathP` objects
     """
     for path in paths:
-        show_Path( vm, path )
+        show_Path(vm, path)
 
 
 def get_Paths(vm, paths):
@@ -639,51 +677,54 @@ def get_Paths(vm, paths):
     """
     full_paths = []
     for path in paths:
-        full_paths.append(get_Path( vm, path ))
+        full_paths.append(get_Path(vm, path))
     return full_paths
 
 
 def show_PathVariable(vm, paths):
     for path in paths:
-      access, idx = path[0]
-      m_idx = path[1]
-      method = vm.get_cm_method(m_idx)
-      print("%s %x %s->%s %s" % (access, idx, method[0], method[1], method[2][0] + method[2][1]))
+        access, idx = path[0]
+        m_idx = path[1]
+        method = vm.get_cm_method(m_idx)
+        print("%s %x %s->%s %s" %
+              (access, idx, method[0], method[1], method[2][0] + method[2][1]))
 
 
 class PathP(object):
-  def __init__(self, access, idx, src_idx, dst_idx):
-    self.access_flag = access
-    self.idx = idx
-    self.src_idx = src_idx
-    self.dst_idx = dst_idx
 
-  def get_access_flag(self):
-    return self.access_flag
+    def __init__(self, access, idx, src_idx, dst_idx):
+        self.access_flag = access
+        self.idx = idx
+        self.src_idx = src_idx
+        self.dst_idx = dst_idx
 
-  def get_dst(self, cm):
-    method = cm.get_method_ref(self.dst_idx)
-    return method.get_class_name(), method.get_name(), method.get_descriptor()
+    def get_access_flag(self):
+        return self.access_flag
 
-  def get_src(self, cm):
-    method = cm.get_method_ref(self.src_idx)
-    return method.get_class_name(), method.get_name(), method.get_descriptor()
+    def get_dst(self, cm):
+        method = cm.get_method_ref(self.dst_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-  def get_idx(self):
-    return self.idx
+    def get_src(self, cm):
+        method = cm.get_method_ref(self.src_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
 
-  def get_src_idx(self):
-    return self.src_idx
+    def get_idx(self):
+        return self.idx
 
-  def get_dst_idx(self):
-    return self.dst_idx
+    def get_src_idx(self):
+        return self.src_idx
+
+    def get_dst_idx(self):
+        return self.dst_idx
 
 
 class TaintedPackage(object):
+
     def __init__(self, vm, name):
         self.vm = vm
         self.name = name
-        self.paths = {TAINTED_PACKAGE_CREATE : [], TAINTED_PACKAGE_CALL : []}
+        self.paths = {TAINTED_PACKAGE_CREATE: [], TAINTED_PACKAGE_CALL: []}
 
     def get_name(self):
         return self.name
@@ -692,12 +733,12 @@ class TaintedPackage(object):
         return self.paths
 
     def push(self, access, idx, src_idx, dst_idx):
-        p = PathP( access, idx, src_idx, dst_idx )
-        self.paths[ access ].append( p )
+        p = PathP(access, idx, src_idx, dst_idx)
+        self.paths[access].append(p)
         return p
 
     def get_objects_paths(self):
-        return self.paths[ TAINTED_PACKAGE_CREATE ]
+        return self.paths[TAINTED_PACKAGE_CREATE]
 
     def search_method(self, name, descriptor):
         """
@@ -710,29 +751,30 @@ class TaintedPackage(object):
         m_name = re.compile(name)
         m_descriptor = re.compile(descriptor)
 
-        for path in self.paths[ TAINTED_PACKAGE_CALL ]:
-            _, dst_name, dst_descriptor = path.get_dst(self.vm.get_class_manager())
+        for path in self.paths[TAINTED_PACKAGE_CALL]:
+            _, dst_name, dst_descriptor = path.get_dst(
+                self.vm.get_class_manager())
 
-            if m_name.match( dst_name ) != None and m_descriptor.match( dst_descriptor ) != None:
-                l.append( path )
+            if m_name.match(dst_name) != None and m_descriptor.match(dst_descriptor) != None:
+                l.append(path)
         return l
 
     def get_method(self, name, descriptor):
         l = []
-        for path in self.paths[ TAINTED_PACKAGE_CALL ]:
+        for path in self.paths[TAINTED_PACKAGE_CALL]:
             if path.get_name() == name and path.get_descriptor() == descriptor:
-                l.append( path )
+                l.append(path)
         return l
 
     def get_paths(self):
         for i in self.paths:
-            for j in self.paths[ i ]:
+            for j in self.paths[i]:
                 yield j
 
     def get_paths_length(self):
         x = 0
         for i in self.paths:
-            x += len(self.paths[ i ])
+            x += len(self.paths[i])
         return x
 
     def get_methods(self):
@@ -748,10 +790,13 @@ class TaintedPackage(object):
             print("\t -->", _type)
             if _type == TAINTED_PACKAGE_CALL:
                 for path in self.paths[_type]:
-                    print("\t\t => %s <-- %x in %s" % (path.get_dst(cm), path.get_idx(), path.get_src(cm)))
+                    print("\t\t => %s <-- %x in %s" %
+                          (path.get_dst(cm), path.get_idx(), path.get_src(cm)))
             else:
                 for path in self.paths[_type]:
-                    print("\t\t => %x in %s" % (path.get_idx(), path.get_src(cm)))
+                    print("\t\t => %x in %s" %
+                          (path.get_idx(), path.get_src(cm)))
+
 
 def show_Permissions(dx):
     """
@@ -759,12 +804,13 @@ def show_Permissions(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    p = dx.get_permissions( [] )
+    p = dx.get_permissions([])
 
     for i in p:
         print(i, ":")
         for j in p[i]:
-            show_Path( dx.get_vm(), j )
+            show_Path(dx.get_vm(), j)
+
 
 def show_DynCode(dx):
     """
@@ -774,25 +820,25 @@ def show_DynCode(dx):
     """
     paths = []
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/BaseDexClassLoader;",
-                                                "<init>",
-                                                "."))
+                                                          "<init>",
+                                                          "."))
 
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/PathClassLoader;",
-                                                "<init>",
-                                                "."))
+                                                          "<init>",
+                                                          "."))
 
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexClassLoader;",
-                                                "<init>",
-                                                "."))
+                                                          "<init>",
+                                                          "."))
 
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
-                                                "<init>",
-                                                "."))
+                                                          "<init>",
+                                                          "."))
 
     paths.extend(dx.get_tainted_packages().search_methods("Ldalvik/system/DexFile;",
-                                                "loadDex",
-                                                "."))
-    show_Paths( dx.get_vm(), paths )
+                                                          "loadDex",
+                                                          "."))
+    show_Paths(dx.get_vm(), paths)
 
 
 def show_NativeMethods(dx):
@@ -810,7 +856,8 @@ def show_ReflectionCode(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
-    paths = dx.get_tainted_packages().search_methods("Ljava/lang/reflect/Method;", ".", ".")
+    paths = dx.get_tainted_packages().search_methods(
+        "Ljava/lang/reflect/Method;", ".", ".")
     show_Paths(dx.get_vm(), paths)
 
 
@@ -943,33 +990,37 @@ def is_native_code(dx):
 
 
 class TaintedPackages(object):
+
     def __init__(self, _vm):
         self.__vm = _vm
         self.__packages = {}
         self.__methods = {}
 
-        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module("aosp_permissions", self.__vm.get_api_version())
-        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module("api_permission_mappings", self.__vm.get_api_version())
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module(
+            "aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module(
+            "api_permission_mappings", self.__vm.get_api_version())
 
     def _add_pkg(self, name):
         if name not in self.__packages:
-            self.__packages[ name ] = TaintedPackage( self.__vm, name )
+            self.__packages[name] = TaintedPackage(self.__vm, name)
 
     #self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1] )
     def push_info(self, class_name, access, idx, method, idx_method):
-        self._add_pkg( class_name )
-        p = self.__packages[ class_name ].push( access, idx, method.get_method_idx(), idx_method )
+        self._add_pkg(class_name)
+        p = self.__packages[class_name].push(
+            access, idx, method.get_method_idx(), idx_method)
 
         try:
-            self.__methods[ method ][ class_name ].append( p )
+            self.__methods[method][class_name].append(p)
         except:
             try:
-                self.__methods[ method ][ class_name ] = []
+                self.__methods[method][class_name] = []
             except:
-                self.__methods[ method ] = {}
-                self.__methods[ method ][ class_name ] = []
+                self.__methods[method] = {}
+                self.__methods[method][class_name] = []
 
-            self.__methods[ method ][ class_name ].append( p )
+            self.__methods[method][class_name].append(p)
 
     def get_packages_by_method(self, method):
         try:
@@ -990,7 +1041,8 @@ class TaintedPackages(object):
             for j in paths:
                 for k in paths[j]:
                     if k.get_bb() == bb:
-                        l.append( (i, k.get_access_flag(), k.get_idx(), k.get_method()) )
+                        l.append((i, k.get_access_flag(),
+                                  k.get_idx(), k.get_method()))
 
         return l
 
@@ -1021,9 +1073,10 @@ class TaintedPackages(object):
             paths = m.get_methods()
             for j in paths:
                 if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                  dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
-                  if dst_class_name in classes and m.get_name() in classes:
-                    l.append(j)
+                    dst_class_name, _, _ = j.get_dst(
+                        self.__vm.get_class_manager())
+                    if dst_class_name in classes and m.get_name() in classes:
+                        l.append(j)
         return l
 
     def get_internal_new_packages(self):
@@ -1079,18 +1132,21 @@ class TaintedPackages(object):
         """
             :param package_name: a regexp for the name of the package
         """
-        ex = re.compile( package_name )
+        ex = re.compile(package_name)
 
         l = []
         d = {}
         for m, _ in self.get_packages():
-            if ex.match( m.get_info() ) != None:
+            if ex.match(m.get_info()) != None:
                 for path in m.get_methods():
                     try:
-                        d[ path.get_class_name() + path.get_name() + path.get_descriptor() ] += 1
+                        d[path.get_class_name() + path.get_name() +
+                          path.get_descriptor()] += 1
                     except KeyError:
-                        d[ path.get_class_name() + path.get_name() + path.get_descriptor() ] = 0
-                        l.append( [ path.get_class_name(), path.get_name(), path.get_descriptor() ] )
+                        d[path.get_class_name() + path.get_name() +
+                          path.get_descriptor()] = 0
+                        l.append([path.get_class_name(),
+                                  path.get_name(), path.get_descriptor()])
         return l, d
 
     def search_methods(self, class_name, name, descriptor, re_expr=True):
@@ -1103,11 +1159,11 @@ class TaintedPackages(object):
         """
         l = []
         if re_expr == True:
-            ex = re.compile( class_name )
+            ex = re.compile(class_name)
 
             for m, _ in self.get_packages():
-                if ex.search( m.get_name() ) != None:
-                    l.extend( m.search_method( name, descriptor ) )
+                if ex.search(m.get_name()) != None:
+                    l.extend(m.search_method(name, descriptor))
 
         return l
 
@@ -1117,12 +1173,12 @@ class TaintedPackages(object):
 
             @rtype : a list of created objects' paths
         """
-        ex = re.compile( class_name )
+        ex = re.compile(class_name)
         l = []
 
         for m, _ in self.get_packages():
-            if ex.search( m.get_name() ) != None:
-                l.extend( m.get_objects_paths() )
+            if ex.search(m.get_name()) != None:
+                l.extend(m.get_objects_paths())
 
         return l
 
@@ -1130,23 +1186,23 @@ class TaintedPackages(object):
         """
             @rtype : a list of called crypto packages
         """
-        return self.search_packages( "Ljavax/crypto/" )
+        return self.search_packages("Ljavax/crypto/")
 
     def search_telephony_packages(self):
         """
             @rtype : a list of called telephony packages
         """
-        return self.search_packages( "Landroid/telephony/" )
+        return self.search_packages("Landroid/telephony/")
 
     def search_net_packages(self):
         """
             @rtype : a list of called net packages
         """
-        return self.search_packages( "Landroid/net/" )
+        return self.search_packages("Landroid/net/")
 
     def get_method(self, class_name, name, descriptor):
         try:
-            return self.__packages[ class_name ].get_method( name, descriptor )
+            return self.__packages[class_name].get_method(name, descriptor)
         except KeyError:
             return []
 
@@ -1157,10 +1213,13 @@ class TaintedPackages(object):
             for j in paths:
                 if j.get_method() == method:
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
-                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        dst_class_name, dst_method_name, dst_descriptor = j.get_dst(
+                            self.__vm.get_class_manager())
+                        data = "%s-%s-%s" % (dst_class_name,
+                                             dst_method_name, dst_descriptor)
                         if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys()):
-                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
+                            permissions.update(self.API_PERMISSION_MAPPINGS_MODULE[
+                                               "AOSP_PERMISSIONS_BY_METHODS"][data])
 
         return permissions
 
@@ -1180,13 +1239,17 @@ class TaintedPackages(object):
         for m, _ in self.get_packages():
             paths = m.get_methods()
             for j in paths:
-                src_class_name, src_method_name, src_descriptor = j.get_src( self.__vm.get_class_manager() )
-                dst_class_name, dst_method_name, dst_descriptor = j.get_dst( self.__vm.get_class_manager() )
+                src_class_name, src_method_name, src_descriptor = j.get_src(
+                    self.__vm.get_class_manager())
+                dst_class_name, dst_method_name, dst_descriptor = j.get_dst(
+                    self.__vm.get_class_manager())
                 if (src_class_name in classes) and (dst_class_name not in classes):
                     if j.get_access_flag() == TAINTED_PACKAGE_CALL:
-                        data = "%s-%s-%s" % (dst_class_name, dst_method_name, dst_descriptor)
+                        data = "%s-%s-%s" % (dst_class_name,
+                                             dst_method_name, dst_descriptor)
                         if data in list(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"].keys()):
-                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE["AOSP_PERMISSIONS_BY_METHODS"][data])
+                            perm_intersection = pn.intersection(self.API_PERMISSION_MAPPINGS_MODULE[
+                                                                "AOSP_PERMISSIONS_BY_METHODS"][data])
                             for p in perm_intersection:
                                 try:
                                     permissions[p].append(j)
@@ -1196,114 +1259,118 @@ class TaintedPackages(object):
 
         return permissions
 
+
 class Enum(object):
-  def __init__(self, names):
-    self.names = names
-    for value, name in enumerate(self.names):
-      setattr(self, name.upper(), value)
 
-  def tuples(self):
-    return tuple(enumerate(self.names))
+    def __init__(self, names):
+        self.names = names
+        for value, name in enumerate(self.names):
+            setattr(self, name.upper(), value)
 
-TAG_ANDROID = Enum([ 'ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
-    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DEBUG', 'DRM', 'GESTURE',
-    'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
-    'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
-    'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
-    'VIEW', 'WEBKIT', 'WIDGET', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
+    def tuples(self):
+        return tuple(enumerate(self.names))
+
+TAG_ANDROID = Enum(['ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
+                    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DEBUG', 'DRM', 'GESTURE',
+                    'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
+                    'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
+                    'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
+                    'VIEW', 'WEBKIT', 'WIDGET', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
 
 TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
 
-TAGS_ANDROID = { TAG_ANDROID.ANDROID :                  [ 0, "Landroid" ],
-                 TAG_ANDROID.TELEPHONY :                [ 0, "Landroid/telephony"],
-                 TAG_ANDROID.SMS :                      [ 0, "Landroid/telephony/SmsManager"],
-                 TAG_ANDROID.SMSMESSAGE :               [ 0, "Landroid/telephony/SmsMessage"],
-                 TAG_ANDROID.DEBUG :                    [ 0, "Landroid/os/Debug"],
-                 TAG_ANDROID.ACCESSIBILITYSERVICE :     [ 0, "Landroid/accessibilityservice" ],
-                 TAG_ANDROID.ACCOUNTS :                 [ 0, "Landroid/accounts" ],
-                 TAG_ANDROID.ANIMATION :                [ 0, "Landroid/animation" ],
-                 TAG_ANDROID.APP :                      [ 0, "Landroid/app" ],
-                 TAG_ANDROID.BLUETOOTH :                [ 0, "Landroid/bluetooth" ],
-                 TAG_ANDROID.CONTENT :                  [ 0, "Landroid/content" ],
-                 TAG_ANDROID.DATABASE :                 [ 0, "Landroid/database" ],
-                 TAG_ANDROID.DRM :                      [ 0, "Landroid/drm" ],
-                 TAG_ANDROID.GESTURE :                  [ 0, "Landroid/gesture" ],
-                 TAG_ANDROID.GRAPHICS :                 [ 0, "Landroid/graphics" ],
-                 TAG_ANDROID.HARDWARE :                 [ 0, "Landroid/hardware" ],
-                 TAG_ANDROID.INPUTMETHODSERVICE :       [ 0, "Landroid/inputmethodservice" ],
-                 TAG_ANDROID.LOCATION :                 [ 0, "Landroid/location" ],
-                 TAG_ANDROID.MEDIA :                    [ 0, "Landroid/media" ],
-                 TAG_ANDROID.MTP :                      [ 0, "Landroid/mtp" ],
-                 TAG_ANDROID.NET :                      [ 0, "Landroid/net" ],
-                 TAG_ANDROID.NFC :                      [ 0, "Landroid/nfc" ],
-                 TAG_ANDROID.OPENGL :                   [ 0, "Landroid/opengl" ],
-                 TAG_ANDROID.OS :                       [ 0, "Landroid/os" ],
-                 TAG_ANDROID.PREFERENCE :               [ 0, "Landroid/preference" ],
-                 TAG_ANDROID.PROVIDER :                 [ 0, "Landroid/provider" ],
-                 TAG_ANDROID.RENDERSCRIPT :             [ 0, "Landroid/renderscript" ],
-                 TAG_ANDROID.SAX :                      [ 0, "Landroid/sax" ],
-                 TAG_ANDROID.SECURITY :                 [ 0, "Landroid/security" ],
-                 TAG_ANDROID.SERVICE :                  [ 0, "Landroid/service" ],
-                 TAG_ANDROID.SPEECH :                   [ 0, "Landroid/speech" ],
-                 TAG_ANDROID.SUPPORT :                  [ 0, "Landroid/support" ],
-                 TAG_ANDROID.TEST :                     [ 0, "Landroid/test" ],
-                 TAG_ANDROID.TEXT :                     [ 0, "Landroid/text" ],
-                 TAG_ANDROID.UTIL :                     [ 0, "Landroid/util" ],
-                 TAG_ANDROID.VIEW :                     [ 0, "Landroid/view" ],
-                 TAG_ANDROID.WEBKIT :                   [ 0, "Landroid/webkit" ],
-                 TAG_ANDROID.WIDGET :                   [ 0, "Landroid/widget" ],
-                 TAG_ANDROID.DALVIK_BYTECODE :          [ 0, "Ldalvik/bytecode" ],
-                 TAG_ANDROID.DALVIK_SYSTEM :            [ 0, "Ldalvik/system" ],
+TAGS_ANDROID = {TAG_ANDROID.ANDROID:                  [0, "Landroid"],
+                TAG_ANDROID.TELEPHONY:                [0, "Landroid/telephony"],
+                TAG_ANDROID.SMS:                      [0, "Landroid/telephony/SmsManager"],
+                TAG_ANDROID.SMSMESSAGE:               [0, "Landroid/telephony/SmsMessage"],
+                TAG_ANDROID.DEBUG:                    [0, "Landroid/os/Debug"],
+                TAG_ANDROID.ACCESSIBILITYSERVICE:     [0, "Landroid/accessibilityservice"],
+                TAG_ANDROID.ACCOUNTS:                 [0, "Landroid/accounts"],
+                TAG_ANDROID.ANIMATION:                [0, "Landroid/animation"],
+                TAG_ANDROID.APP:                      [0, "Landroid/app"],
+                TAG_ANDROID.BLUETOOTH:                [0, "Landroid/bluetooth"],
+                TAG_ANDROID.CONTENT:                  [0, "Landroid/content"],
+                TAG_ANDROID.DATABASE:                 [0, "Landroid/database"],
+                TAG_ANDROID.DRM:                      [0, "Landroid/drm"],
+                TAG_ANDROID.GESTURE:                  [0, "Landroid/gesture"],
+                TAG_ANDROID.GRAPHICS:                 [0, "Landroid/graphics"],
+                TAG_ANDROID.HARDWARE:                 [0, "Landroid/hardware"],
+                TAG_ANDROID.INPUTMETHODSERVICE:       [0, "Landroid/inputmethodservice"],
+                TAG_ANDROID.LOCATION:                 [0, "Landroid/location"],
+                TAG_ANDROID.MEDIA:                    [0, "Landroid/media"],
+                TAG_ANDROID.MTP:                      [0, "Landroid/mtp"],
+                TAG_ANDROID.NET:                      [0, "Landroid/net"],
+                TAG_ANDROID.NFC:                      [0, "Landroid/nfc"],
+                TAG_ANDROID.OPENGL:                   [0, "Landroid/opengl"],
+                TAG_ANDROID.OS:                       [0, "Landroid/os"],
+                TAG_ANDROID.PREFERENCE:               [0, "Landroid/preference"],
+                TAG_ANDROID.PROVIDER:                 [0, "Landroid/provider"],
+                TAG_ANDROID.RENDERSCRIPT:             [0, "Landroid/renderscript"],
+                TAG_ANDROID.SAX:                      [0, "Landroid/sax"],
+                TAG_ANDROID.SECURITY:                 [0, "Landroid/security"],
+                TAG_ANDROID.SERVICE:                  [0, "Landroid/service"],
+                TAG_ANDROID.SPEECH:                   [0, "Landroid/speech"],
+                TAG_ANDROID.SUPPORT:                  [0, "Landroid/support"],
+                TAG_ANDROID.TEST:                     [0, "Landroid/test"],
+                TAG_ANDROID.TEXT:                     [0, "Landroid/text"],
+                TAG_ANDROID.UTIL:                     [0, "Landroid/util"],
+                TAG_ANDROID.VIEW:                     [0, "Landroid/view"],
+                TAG_ANDROID.WEBKIT:                   [0, "Landroid/webkit"],
+                TAG_ANDROID.WIDGET:                   [0, "Landroid/widget"],
+                TAG_ANDROID.DALVIK_BYTECODE:          [0, "Ldalvik/bytecode"],
+                TAG_ANDROID.DALVIK_SYSTEM:            [0, "Ldalvik/system"],
 
-                 TAG_ANDROID.JAVA_REFLECTION :          [ 0, "Ljava/lang/reflect"],
-}
+                TAG_ANDROID.JAVA_REFLECTION:          [0, "Ljava/lang/reflect"],
+                }
+
 
 class Tags(object):
-  """
-      Handle specific tags
+    """
+        Handle specific tags
 
-      :param patterns:
-      :params reverse:
-  """
-  def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID):
-    self.tags = set()
+        :param patterns:
+        :params reverse:
+    """
 
-    self.patterns = patterns
-    self.reverse = TAG_REVERSE_ANDROID
+    def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID):
+        self.tags = set()
 
-    for i in self.patterns:
-      self.patterns[i][1] = re.compile(self.patterns[i][1])
+        self.patterns = patterns
+        self.reverse = TAG_REVERSE_ANDROID
 
-  def emit(self, method):
-    for i in self.patterns:
-      if self.patterns[i][0] == 0:
-        if self.patterns[i][1].search( method.get_class() ) != None:
-          self.tags.add( i )
+        for i in self.patterns:
+            self.patterns[i][1] = re.compile(self.patterns[i][1])
 
-  def emit_by_classname(self, classname):
-    for i in self.patterns:
-      if self.patterns[i][0] == 0:
-        if self.patterns[i][1].search( classname ) != None:
-          self.tags.add( i )
+    def emit(self, method):
+        for i in self.patterns:
+            if self.patterns[i][0] == 0:
+                if self.patterns[i][1].search(method.get_class()) != None:
+                    self.tags.add(i)
 
-  def get_list(self):
-    return [ self.reverse[ i ] for i in self.tags ]
+    def emit_by_classname(self, classname):
+        for i in self.patterns:
+            if self.patterns[i][0] == 0:
+                if self.patterns[i][1].search(classname) != None:
+                    self.tags.add(i)
 
-  def __contains__(self, key):
-    return key in self.tags
+    def get_list(self):
+        return [self.reverse[i] for i in self.tags]
 
-  def __str__(self):
-    return str([ self.reverse[ i ] for i in self.tags ])
+    def __contains__(self, key):
+        return key in self.tags
 
+    def __str__(self):
+        return str([self.reverse[i] for i in self.tags])
 
-  def empty(self):
-    return self.tags == set()
+    def empty(self):
+        return self.tags == set()
 
 
 class BasicBlocks(object):
     """
         This class represents all basic blocks of a method
     """
+
     def __init__(self, _vm, tv):
         self.__vm = _vm
         self.tainted = tv
@@ -1324,21 +1391,21 @@ class BasicBlocks(object):
 
     def get_tainted_integers(self):
         try:
-          return self.tainted.get_tainted_integers()
+            return self.tainted.get_tainted_integers()
         except:
-          return None
+            return None
 
     def get_tainted_packages(self):
         try:
-          return self.tainted.get_tainted_packages()
+            return self.tainted.get_tainted_packages()
         except:
-          return None
+            return None
 
     def get_tainted_variables(self):
         try:
-          return self.tainted.get_tainted_variables()
+            return self.tainted.get_tainted_variables()
         except:
-          return None
+            return None
 
     def get(self):
         """
@@ -1358,6 +1425,7 @@ class BasicBlocks(object):
 
 
 class ExceptionAnalysis(object):
+
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -1382,23 +1450,27 @@ class ExceptionAnalysis(object):
         d = {"start": self.start, "end": self.end, "list": []}
 
         for i in self.exceptions:
-            d["list"].append({"name": i[0], "idx": i[1], "bb": i[2].get_name()})
+            d["list"].append(
+                {"name": i[0], "idx": i[1], "bb": i[2].get_name()})
 
         return d
 
 
 class Exceptions(object):
+
     def __init__(self, _vm):
         self.__vm = _vm
         self.exceptions = []
 
     def add(self, exceptions, basic_blocks):
         for i in exceptions:
-            self.exceptions.append( ExceptionAnalysis( i, basic_blocks ) )
+            self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
     def get_exception(self, addr_start, addr_end):
         for i in self.exceptions:
-#            print hex(i.start), hex(i.end), hex(addr_start), hex(addr_end), i.start >= addr_start and i.end <= addr_end, addr_end <= i.end and addr_start >= i.start
+            # print hex(i.start), hex(i.end), hex(addr_start), hex(addr_end),
+            # i.start >= addr_start and i.end <= addr_end, addr_end <= i.end
+            # and addr_start >= i.start
             if i.start >= addr_start and i.end <= addr_end:
                 return i
 
@@ -1414,11 +1486,12 @@ class Exceptions(object):
         for i in self.exceptions:
             yield i
 
-BO = { "BasicOPCODES" : dvm.BRANCH_DVM_OPCODES, "BasicClass" : DVMBasicBlock, "Dnext" : dvm.determineNext, "Dexception" : dvm.determineException }
+BO = {"BasicOPCODES": dvm.BRANCH_DVM_OPCODES, "BasicClass": DVMBasicBlock,
+      "Dnext": dvm.determineNext, "Dexception": dvm.determineException}
 
 BO["BasicOPCODES_H"] = []
 for i in BO["BasicOPCODES"]:
-  BO["BasicOPCODES_H"].append( re.compile( i ) )
+    BO["BasicOPCODES_H"].append(re.compile(i))
 
 
 class MethodAnalysis(object):
@@ -1431,6 +1504,7 @@ class MethodAnalysis(object):
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
     """
+
     def __init__(self, vm, method, tv):
         self.__vm = vm
         self.method = method
@@ -1444,7 +1518,8 @@ class MethodAnalysis(object):
         if code == None:
             return
 
-        current_basic = BO["BasicClass"](0, self.__vm, self.method, self.basic_blocks)
+        current_basic = BO["BasicClass"](
+            0, self.__vm, self.method, self.basic_blocks)
         self.basic_blocks.push(current_basic)
 
         ##########################################################
@@ -1460,18 +1535,18 @@ class MethodAnalysis(object):
             for j in BO["BasicOPCODES_H"]:
                 if j.match(i.get_name()) != None:
                     v = BO["Dnext"](i, idx, self.method)
-                    h[ idx ] = v
+                    h[idx] = v
                     l.extend(v)
                     break
 
             idx += i.get_length()
 
         debug("Parsing exceptions")
-        excepts = BO["Dexception"]( self.__vm, self.method )
+        excepts = BO["Dexception"](self.__vm, self.method)
         for i in excepts:
-            l.extend( [i[0]] )
+            l.extend([i[0]])
             for handler in i[2:]:
-                l.append( handler[1] )
+                l.append(handler[1])
 
         debug("Creating basic blocks in %s" % self.method)
         idx = 0
@@ -1479,15 +1554,17 @@ class MethodAnalysis(object):
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
-                    current_basic = BO["BasicClass"](current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                    current_basic = BO["BasicClass"](
+                        current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                     self.basic_blocks.push(current_basic)
 
             current_basic.push(i)
 
             # index is a branch instruction
             if idx in h:
-                current_basic = BO["BasicClass"]( current_basic.get_end(), self.__vm, self.method, self.basic_blocks )
-                self.basic_blocks.push( current_basic )
+                current_basic = BO["BasicClass"](
+                    current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                self.basic_blocks.push(current_basic)
 
             idx += i.get_length()
 
@@ -1498,9 +1575,9 @@ class MethodAnalysis(object):
 
         for i in self.basic_blocks.get():
             try:
-                i.set_childs( h[ i.end - i.get_last_length() ] )
+                i.set_childs(h[i.end - i.get_last_length()])
             except KeyError:
-                i.set_childs( [] )
+                i.set_childs([])
 
         debug("Creating exceptions")
 
@@ -1509,7 +1586,8 @@ class MethodAnalysis(object):
 
         for i in self.basic_blocks.get():
             # setup exception by basic block
-            i.set_exception_analysis(self.exceptions.get_exception( i.start, i.end - 1 ))
+            i.set_exception_analysis(
+                self.exceptions.get_exception(i.start, i.end - 1))
 
         del instructions
         del h, l
@@ -1533,10 +1611,11 @@ class MethodAnalysis(object):
         return self.method
 
     def get_local_variables(self):
-        return self.tainted.get_tainted_variables().get_local_variables( self.method )
+        return self.tainted.get_tainted_variables().get_local_variables(self.method)
 
     def show(self):
-        print("METHOD", self.method.get_class_name(), self.method.get_name(), self.method.get_descriptor())
+        print("METHOD", self.method.get_class_name(),
+              self.method.get_name(), self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
             print("\t", i)
@@ -1548,25 +1627,26 @@ class MethodAnalysis(object):
         for i in self.__bb:
             methods = i.get_methods()
             for method in methods:
-                print("\t\t-->", method.get_class_name(), method.get_name(), method.get_descriptor())
+                print("\t\t-->", method.get_class_name(),
+                      method.get_name(), method.get_descriptor())
                 for context in methods[method]:
                     print("\t\t\t |---|", context.details)
 
     def create_tags(self):
-      """
-          Create the tags for the method
-      """
-      self.tags = Tags()
-      for i in self.tainted.get_tainted_packages().get_packages_by_method( self.method ):
-        self.tags.emit_by_classname( i )
+        """
+            Create the tags for the method
+        """
+        self.tags = Tags()
+        for i in self.tainted.get_tainted_packages().get_packages_by_method(self.method):
+            self.tags.emit_by_classname(i)
 
     def get_tags(self):
-      """
-          Return the tags of the method
+        """
+            Return the tags of the method
 
-          :rtype: a :class:`Tags` object
-      """
-      return self.tags
+            :rtype: a :class:`Tags` object
+        """
+        return self.tags
 
 SIGNATURE_L0_0 = "L0_0"
 SIGNATURE_L0_1 = "L0_1"
@@ -1587,20 +1667,22 @@ SIGNATURE_HEX = "hex"
 SIGNATURE_SEQUENCE_BB = "sequencebb"
 
 SIGNATURES = {
-                SIGNATURE_L0_0 : { "type" : 0 },
-                SIGNATURE_L0_1 : { "type" : 1 },
-                SIGNATURE_L0_2 : { "type" : 2, "arguments" : ["Landroid"] },
-                SIGNATURE_L0_3 : { "type" : 2, "arguments" : ["Ljava"] },
-                SIGNATURE_L0_4 : { "type" : 2, "arguments" : ["Landroid", "Ljava"] },
-                SIGNATURE_L0_5 : { "type" : 3, "arguments" : ["Landroid"] },
-                SIGNATURE_L0_6 : { "type" : 3, "arguments" : ["Ljava"] },
-                SIGNATURE_SEQUENCE_BB : {},
-                SIGNATURE_HEX : {},
-            }
+    SIGNATURE_L0_0: {"type": 0},
+    SIGNATURE_L0_1: {"type": 1},
+    SIGNATURE_L0_2: {"type": 2, "arguments": ["Landroid"]},
+    SIGNATURE_L0_3: {"type": 2, "arguments": ["Ljava"]},
+    SIGNATURE_L0_4: {"type": 2, "arguments": ["Landroid", "Ljava"]},
+    SIGNATURE_L0_5: {"type": 3, "arguments": ["Landroid"]},
+    SIGNATURE_L0_6: {"type": 3, "arguments": ["Ljava"]},
+    SIGNATURE_SEQUENCE_BB: {},
+    SIGNATURE_HEX: {},
+}
 
 from .sign import Signature
 
+
 class StringAnalysis(object):
+
     def __init__(self, value):
         self.value = value
         self.xreffrom = set()
@@ -1615,11 +1697,13 @@ class StringAnalysis(object):
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.value)
         for ref_class, ref_method in self.xreffrom:
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(),
+                                 ref_method)
         return data
 
 
 class MethodClassAnalysis(object):
+
     def __init__(self, method):
         self.method = method
         self.xrefto = set()
@@ -1643,16 +1727,20 @@ class MethodClassAnalysis(object):
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method in self.xrefto:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(),
+                                 ref_method)
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method in self.xreffrom:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(),
+                                 ref_method)
 
         return data
 
+
 class FieldClassAnalysis(object):
+
     def __init__(self, field):
         self.field = field
         self.xrefread = set()
@@ -1676,19 +1764,23 @@ class FieldClassAnalysis(object):
         data = "XREFRead for %s\n" % self.field
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(),
+                                 ref_method)
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(),
+                                 ref_method)
 
         return data
 
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
+
 class ClassAnalysis(object):
+
     def __init__(self, classobj):
         self._class = classobj
         self._methods = {}
@@ -1761,14 +1853,17 @@ class ClassAnalysis(object):
 
         return data
 
+
 class newVMAnalysis(object):
+
     def __init__(self, vm):
         self.vm = vm
         self.classes = {}
         self.strings = {}
 
         for current_class in self.vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+            self.classes[current_class.get_name()] = ClassAnalysis(
+                current_class)
 
     def create_xref(self):
         debug("Creating XREF/DREF")
@@ -1796,52 +1891,67 @@ class newVMAnalysis(object):
                         if type_info in instances_class_name and type_info != current_class.get_name():
                             # new instance
                             if op_value == 0x22:
-                                self.classes[current_class.get_name()].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method)
-                                self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[current_class.get_name()], current_method)
+                                self.classes[current_class.get_name()].AddXrefTo(
+                                    REF_NEW_INSTANCE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[
+                                                                    current_class.get_name()], current_method)
                             # class reference
                             else:
-                                self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method)
-                                self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
+                                self.classes[current_class.get_name()].AddXrefTo(
+                                    REF_CLASS_USAGE, self.classes[type_info], current_method)
+                                self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[
+                                                                    current_class.get_name()], current_method)
 
                     elif ((op_value >= 0x6e and op_value <= 0x72) or
-                        (op_value >= 0x74 and op_value <= 0x78)):
-                            idx_meth = instruction.get_ref_kind()
-                            method_info = self.vm.get_cm_method(idx_meth)
-                            if method_info:
-                                class_info = method_info[0]
+                          (op_value >= 0x74 and op_value <= 0x78)):
+                        idx_meth = instruction.get_ref_kind()
+                        method_info = self.vm.get_cm_method(idx_meth)
+                        if method_info:
+                            class_info = method_info[0]
 
-                                method_item = self.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
-                                if method_item:
-                                    self.classes[current_class.get_name()].AddMXrefTo(current_method, self.classes[class_info], method_item)
-                                    self.classes[class_info].AddMXrefFrom(method_item, self.classes[current_class.get_name()], current_method)
+                            method_item = self.vm.get_method_descriptor(
+                                method_info[0], method_info[1], ''.join(method_info[2]))
+                            if method_item:
+                                self.classes[current_class.get_name()].AddMXrefTo(
+                                    current_method, self.classes[class_info], method_item)
+                                self.classes[class_info].AddMXrefFrom(
+                                    method_item, self.classes[current_class.get_name()], current_method)
 
-                                    # Internal xref related to class manipulation
-                                    if class_info in instances_class_name and class_info != current_class.get_name():
-                                        self.classes[current_class.get_name()].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item)
-                                        self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[current_class.get_name()], current_method)
+                                # Internal xref related to class manipulation
+                                if class_info in instances_class_name and class_info != current_class.get_name():
+                                    self.classes[current_class.get_name()].AddXrefTo(
+                                        REF_CLASS_USAGE, self.classes[class_info], method_item)
+                                    self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[
+                                                                         current_class.get_name()], current_method)
 
                     elif op_value >= 0x1a and op_value <= 0x1b:
-                        string_value = self.vm.get_cm_string(instruction.get_ref_kind())
+                        string_value = self.vm.get_cm_string(
+                            instruction.get_ref_kind())
                         if string_value not in self.strings:
-                            self.strings[string_value] = StringAnalysis(string_value)
-                        self.strings[string_value].AddXrefFrom(self.classes[current_class.get_name()], current_method)
+                            self.strings[string_value] = StringAnalysis(
+                                string_value)
+                        self.strings[string_value].AddXrefFrom(
+                            self.classes[current_class.get_name()], current_method)
 
                     elif op_value >= 0x52 and op_value <= 0x6d:
                         idx_field = instruction.get_ref_kind()
                         field_info = self.vm.get_cm_field(idx_field)
-                        field_item = self.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                        field_item = self.vm.get_field_descriptor(
+                            field_info[0], field_info[2], field_info[1])
                         if field_item:
                             # read access to a field
                             if (op_value >= 0x52 and op_value <= 0x58) or (op_value >= 0x60 and op_value <= 0x66):
-                                self.classes[current_class.get_name()].AddFXrefRead(current_method, self.classes[current_class.get_name()], field_item)
+                                self.classes[current_class.get_name()].AddFXrefRead(
+                                    current_method, self.classes[current_class.get_name()], field_item)
                             # write access to a field
                             else:
-                                self.classes[current_class.get_name()].AddFXrefWrite(current_method, self.classes[current_class.get_name()], field_item)
+                                self.classes[current_class.get_name()].AddFXrefWrite(
+                                    current_method, self.classes[current_class.get_name()], field_item)
 
                     off += instruction.get_length()
 
     def get_method(self, method):
-        return MethodAnalysis( self.vm, method, None )
+        return MethodAnalysis(self.vm, method, None)
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
         print(class_name, method_name, method_descriptor)
@@ -1861,6 +1971,7 @@ class newVMAnalysis(object):
     def get_strings_analysis(self):
         return self.strings
 
+
 class VMAnalysis(object):
     """
        This class analyses a dex file
@@ -1871,29 +1982,31 @@ class VMAnalysis(object):
        :Example:
             VMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
     """
+
     def __init__(self, vm):
         self.vm = vm
 
-        self.tainted_variables = TaintedVariables( self.vm )
-        self.tainted_packages = TaintedPackages( self.vm )
+        self.tainted_variables = TaintedVariables(self.vm)
+        self.tainted_packages = TaintedPackages(self.vm)
 
-        self.tainted = { "variables" : self.tainted_variables,
-                         "packages" : self.tainted_packages,
-                       }
+        self.tainted = {"variables": self.tainted_variables,
+                        "packages": self.tainted_packages,
+                        }
 
         self.signature = None
 
         for i in self.vm.get_all_fields():
-            self.tainted_variables.add( [ i.get_class_name(), i.get_descriptor(), i.get_name() ], TAINTED_FIELD )
+            self.tainted_variables.add(
+                [i.get_class_name(), i.get_descriptor(), i.get_name()], TAINTED_FIELD)
 
         self.methods = []
         self.hmethods = {}
         self.__nmethods = {}
         for i in self.vm.get_methods():
-            x = MethodAnalysis( self.vm, i, self )
-            self.methods.append( x )
-            self.hmethods[ i ] = x
-            self.__nmethods[ i.get_name() ] = x
+            x = MethodAnalysis(self.vm, i, self)
+            self.methods.append(x)
+            self.hmethods[i] = x
+            self.__nmethods[i.get_name()] = x
 
     def get_vm(self):
         return self.vm
@@ -1907,7 +2020,7 @@ class VMAnalysis(object):
 
             :rtype: a :class:`MethodAnalysis` object
         """
-        return self.hmethods[ method ]
+        return self.hmethods[method]
 
     def get_methods(self):
         """
@@ -1937,7 +2050,7 @@ class VMAnalysis(object):
             :rtype: a :class:`Sign` object
         """
         if self.signature == None:
-          self.signature = Signature( self )
+            self.signature = Signature(self)
 
         if predef_sign != "":
             g = ""
@@ -1946,14 +2059,14 @@ class VMAnalysis(object):
             for i in predef_sign.split(":"):
                 if "_" in i:
                     g += "L0:"
-                    o[ "L0" ] = SIGNATURES[ i ]
+                    o["L0"] = SIGNATURES[i]
                 else:
                     g += i
                     g += ":"
 
-            return self.signature.get_method( self.get_method( method ), g[:-1], o )
+            return self.signature.get_method(self.get_method(method), g[:-1], o)
         else:
-            return self.signature.get_method( self.get_method( method ), grammar_type, options )
+            return self.signature.get_method(self.get_method(method), grammar_type, options)
 
     def get_permissions(self, permissions_needed):
         """
@@ -1966,14 +2079,16 @@ class VMAnalysis(object):
         """
         permissions = {}
 
-        permissions.update( self.get_tainted_packages().get_permissions( permissions_needed ) )
-        permissions.update( self.get_tainted_variables().get_permissions( permissions_needed ) )
+        permissions.update(self.get_tainted_packages(
+        ).get_permissions(permissions_needed))
+        permissions.update(self.get_tainted_variables(
+        ).get_permissions(permissions_needed))
 
         return permissions
 
     def get_permissions_method(self, method):
-        permissions_f = self.get_tainted_packages().get_permissions_method( method )
-        permissions_v = self.get_tainted_variables().get_permissions_method( method )
+        permissions_f = self.get_tainted_packages().get_permissions_method(method)
+        permissions_v = self.get_tainted_variables().get_permissions_method(method)
 
         all_permissions_of_method = permissions_f.union(permissions_v)
 
@@ -2011,53 +2126,56 @@ class VMAnalysis(object):
 
            :rtype: a :class:`TaintedVariable` object
         """
-        return self.get_tainted_variables().get_field( class_name, name, descriptor )
+        return self.get_tainted_variables().get_field(class_name, name, descriptor)
+
 
 class uVMAnalysis(VMAnalysis):
-  """
-     This class analyses a dex file but on the fly (quicker !)
+    """
+       This class analyses a dex file but on the fly (quicker !)
 
-     :param _vm: the object which represent the dex file
-     :type _vm: a :class:`DalvikVMFormat` object
+       :param _vm: the object which represent the dex file
+       :type _vm: a :class:`DalvikVMFormat` object
 
-     :Example:
-          uVMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
-  """
-  def __init__(self, vm):
-    self.vm = vm
-    self.tainted_variables = TaintedVariables( self.vm )
-    self.tainted_packages = TaintedPackages( self.vm )
+       :Example:
+            uVMAnalysis( DalvikVMFormat( read("toto.dex", binary=False) ) )
+    """
 
-    self.tainted = { "variables" : self.tainted_variables,
-                     "packages" : self.tainted_packages,
-    }
+    def __init__(self, vm):
+        self.vm = vm
+        self.tainted_variables = TaintedVariables(self.vm)
+        self.tainted_packages = TaintedPackages(self.vm)
 
-    self.signature = None
-    self.resolve = False
+        self.tainted = {"variables": self.tainted_variables,
+                        "packages": self.tainted_packages,
+                        }
 
-  def get_methods(self):
-    self.resolve = True
-    for i in self.vm.get_methods():
-      yield MethodAnalysis(self.vm, i, self)
+        self.signature = None
+        self.resolve = False
 
-  def get_method(self, method):
-    return MethodAnalysis( self.vm, method, None )
+    def get_methods(self):
+        self.resolve = True
+        for i in self.vm.get_methods():
+            yield MethodAnalysis(self.vm, i, self)
 
-  def get_vm(self):
-    return self.vm
+    def get_method(self, method):
+        return MethodAnalysis(self.vm, method, None)
 
-  def _resolve(self):
-    if self.resolve == False:
-      for i in self.get_methods():
-        pass
+    def get_vm(self):
+        return self.vm
 
-  def get_tainted_packages(self):
-    self._resolve()
-    return self.tainted_packages
+    def _resolve(self):
+        if self.resolve == False:
+            for i in self.get_methods():
+                pass
 
-  def get_tainted_variables(self):
+    def get_tainted_packages(self):
+        self._resolve()
+        return self.tainted_packages
+
+    def get_tainted_variables(self):
         self._resolve()
         return self.tainted_variables
+
 
 def is_ascii_obfuscation(vm):
     for classe in vm.get_classes():

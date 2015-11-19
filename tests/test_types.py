@@ -29,126 +29,127 @@ from androguard.core.analysis import analysis
 #TEST_CASE  = 'examples/android/TC/bin/classes.dex'
 TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-VALUES_ = { "Lorg/t0t0/androguard/TC/TestType1; <init> ()V" : [
-                  42,
-                  -42,
-                  0,
+VALUES_ = {"Lorg/t0t0/androguard/TC/TestType1; <init> ()V": [
+    42,
+    -42,
+    0,
 
-                  42,
-                  -42,
-                  0,
+    42,
+    -42,
+    0,
 
-                  42.0,
-                  -42.0,
-                  0.0,
+    42.0,
+    -42.0,
+    0.0,
 
-                  42.0,
-                  -42.0,
-                  0.0,
-            ],
+    42.0,
+    -42.0,
+    0.0,
+],
 }
 
-VALUES = { 'Ltests/androguard/TestActivity; testDouble ()V' : [
-        -5.0,
-        -4,
-        -3,
-        -2,
-        -1,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
+VALUES = {'Ltests/androguard/TestActivity; testDouble ()V': [
+    -5.0,
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
 
-        -5,
-        -4,
-        -3,
-        -2,
-        -1,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
+    -5,
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
 
-        -5,
-        -4,
-        -3,
-        -2,
-        -1,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
+    -5,
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
 
-        65534,
-        65535,
-        65536,
-        65537,
+    65534,
+    65535,
+    65536,
+    65537,
 
-        32769,
-        32768,
-        32767,
-        32766,
+    32769,
+    32768,
+    32767,
+    32766,
 
-        65534,
-        65535,
-        65536,
-        65537,
+    65534,
+    65535,
+    65536,
+    65537,
 
-        32769,
-        32768,
-        32767,
-        32766,
+    32769,
+    32768,
+    32767,
+    32766,
 
-        65534,
-        65535,
-        65536,
-        65537,
+    65534,
+    65535,
+    65536,
+    65537,
 
-        32769,
-        32768,
-        32767,
-        32766,
+    32769,
+    32768,
+    32767,
+    32766,
 
-        5346952,
-        5346952,
-        5346952,
+    5346952,
+    5346952,
+    5346952,
 
-        65534.5,
-        65535.5,
-        65536.5,
-        65537.5,
+    65534.5,
+    65535.5,
+    65536.5,
+    65537.5,
 
-        32769.5,
-        32768.5,
-        32767.5,
-        32766.5,
+    32769.5,
+    32768.5,
+    32767.5,
+    32766.5,
 
-        65534.5,
-        65535.5,
-        65536.5,
-        65537.5,
+    65534.5,
+    65535.5,
+    65536.5,
+    65537.5,
 
-        32769.5,
-        32768.5,
-        32767.5,
-        32766.5,
+    32769.5,
+    32768.5,
+    32767.5,
+    32766.5,
 
-        -5,
-        -65535,
-        -65536,
-        -123456789123456789.555555555,
-        -123456789123456789.555555555,
-        -606384730,
-        -123456790519087104,
-        3.5
-        ],
+    -5,
+    -65535,
+    -65536,
+    -123456789123456789.555555555,
+    -123456789123456789.555555555,
+    -606384730,
+    -123456790519087104,
+    3.5
+],
 }
+
 
 def test(got, expected):
     if got == expected:
@@ -158,10 +159,11 @@ def test(got, expected):
     print('%s got: %s expected: %s' % (prefix, repr(got), repr(expected)))
 
 
-a = AndroguardS( TEST_CASE )
+a = AndroguardS(TEST_CASE)
 
 for method in a.get_methods():
-    key = method.get_class_name() + " " + method.get_name() + " " + method.get_descriptor()
+    key = method.get_class_name() + " " + method.get_name() + \
+        " " + method.get_descriptor()
 
     if key not in VALUES:
         continue
@@ -172,11 +174,12 @@ for method in a.get_methods():
 
     idx = 0
     for i in bc.get():
-        #print "\t", "%x" % idx, i.get_name(), i.get_operands()
+        # print "\t", "%x" % idx, i.get_name(), i.get_operands()
         if "const" in i.get_name():
             formatted_operands = i.get_formatted_operands()
             for f in formatted_operands:
-#                print i.get_name(), i.get_operands(), i.get_formatted_operands()
-                test( f[1], VALUES[ key ].pop(0) )
+                # print i.get_name(), i.get_operands(),
+                # i.get_formatted_operands()
+                test(f[1], VALUES[key].pop(0))
 
         idx += i.get_length()

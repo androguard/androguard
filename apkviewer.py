@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os
+import sys
+import os
 from optparse import OptionParser
 
 from androguard.core.bytecodes import apk, dvm
@@ -27,71 +28,75 @@ from androguard.core.analysis import analysis, ganalysis
 from androguard.core import androconf
 from androguard.util import read
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (dex, apk)', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'directory output', 'nargs' : 1 }
+option_0 = {'name': ('-i', '--input'),
+            'help': 'filename input (dex, apk)', 'nargs': 1}
+option_1 = {'name': ('-o', '--output'), 'help': 'directory output', 'nargs': 1}
 
 options = [option_0, option_1]
 
-def create_directory( class_name, output ):
+
+def create_directory(class_name, output):
     output_name = output
     if output_name[-1] != "/":
         output_name = output_name + "/"
 
     try:
-        os.makedirs( output_name + class_name )
+        os.makedirs(output_name + class_name)
     except OSError:
         pass
 
-def create_directories( vm, output ):
+
+def create_directories(vm, output):
     for class_name in vm.get_classes_names():
-        z = os.path.split( class_name )[0]
-        create_directory( z[1:], output )
+        z = os.path.split(class_name)[0]
+        create_directory(z[1:], output)
+
 
 def main(options, arguments):
     if options.input != None and options.output != None:
-        ret_type = androconf.is_android( options.input )
+        ret_type = androconf.is_android(options.input)
         vm = None
         a = None
         if ret_type == "APK":
-            a = apk.APK( options.input )
+            a = apk.APK(options.input)
             if a.is_valid_APK():
-                vm = dvm.DalvikVMFormat( a.get_dex() )
+                vm = dvm.DalvikVMFormat(a.get_dex())
             else:
                 print("INVALID APK")
         elif ret_type == "DEX":
             try:
-                vm = dvm.DalvikVMFormat( read(options.input) )
+                vm = dvm.DalvikVMFormat(read(options.input))
             except Exception as e:
                 print("INVALID DEX", e)
 
+        vmx = analysis.VMAnalysis(vm)
+        gvmx = ganalysis.GVMAnalysis(vmx, a)
 
-        vmx = analysis.VMAnalysis( vm )
-        gvmx = ganalysis.GVMAnalysis( vmx, a )
-
-        create_directories( vm, options.output )
+        create_directories(vm, options.output)
 
 #        dv.export_to_gml( options.output )
 
         dd = data.Data(vm, vmx, gvmx, a)
 
         buff = dd.export_apk_to_gml()
-        androconf.save_to_disk( buff, options.output + "/" + "apk.graphml" )
+        androconf.save_to_disk(buff, options.output + "/" + "apk.graphml")
 
         buff = dd.export_methodcalls_to_gml()
-        androconf.save_to_disk( buff,  options.output + "/" + "methodcalls.graphml" )
+        androconf.save_to_disk(buff,  options.output +
+                               "/" + "methodcalls.graphml")
 
         buff = dd.export_dex_to_gml()
         for i in buff:
-            androconf.save_to_disk( buff[i], options.output + "/" + i + ".graphml" )
+            androconf.save_to_disk(
+                buff[i], options.output + "/" + i + ".graphml")
 
 if __name__ == "__main__":
-   parser = OptionParser()
-   for option in options:
-	  param = option['name']
-	  del option['name']
-	  parser.add_option(*param, **option)
+    parser = OptionParser()
+    for option in options:
+        param = option['name']
+        del option['name']
+        parser.add_option(*param, **option)
 
-
-   options, arguments = parser.parse_args()
-   sys.argv[:] = arguments
-   main(options, arguments)
+    options, arguments = parser.parse_args()
+    sys.argv[:] = arguments
+    main(options, arguments)

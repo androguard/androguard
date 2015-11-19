@@ -32,17 +32,25 @@ from androguard.core.bytecodes import dvm
 from androguard.core.bytecode import method2dot, method2format
 from androguard.decompiler import decompiler
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'base directory to output all files', 'nargs' : 1 }
-option_2 = { 'name' : ('-d', '--decompiler'), 'help' : 'choose a decompiler', 'nargs' : 1 }
-option_3 = { 'name' : ('-j', '--jar'), 'help' : 'output jar file', 'action' : 'count' }
+option_0 = {'name': ('-i', '--input'),
+            'help': 'file : use this filename', 'nargs': 1}
+option_1 = {'name': ('-o', '--output'),
+            'help': 'base directory to output all files', 'nargs': 1}
+option_2 = {'name': ('-d', '--decompiler'),
+            'help': 'choose a decompiler', 'nargs': 1}
+option_3 = {'name': ('-j', '--jar'),
+            'help': 'output jar file', 'action': 'count'}
 
-option_4 = { 'name' : ('-f', '--format'), 'help' : 'write the method in specific format (png, ...)', 'nargs' : 1 }
+option_4 = {'name': ('-f', '--format'),
+            'help': 'write the method in specific format (png, ...)', 'nargs': 1}
 
-option_5 = { 'name' : ('-l', '--limit'), 'help' : 'limit analysis to specific methods/classes by using a regexp', 'nargs' : 1}
-option_6 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_5 = {'name': ('-l', '--limit'),
+            'help': 'limit analysis to specific methods/classes by using a regexp', 'nargs': 1}
+option_6 = {'name': ('-v', '--version'),
+            'help': 'version of the API', 'action': 'count'}
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6]
+options = [option_0, option_1, option_2,
+           option_3, option_4, option_5, option_6]
 
 
 def valid_class_name(class_name):
@@ -98,30 +106,45 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
             vm.set_decompiler(decompiler.DecompilerDAD(vm, vmx))
         elif decompiler_type == "dex2jad":
             vm.set_decompiler(decompiler.DecompilerDex2Jad(vm,
-                                                           androconf.CONF["PATH_DEX2JAR"],
-                                                           androconf.CONF["BIN_DEX2JAR"],
-                                                           androconf.CONF["PATH_JAD"],
-                                                           androconf.CONF["BIN_JAD"],
+                                                           androconf.CONF[
+                                                               "PATH_DEX2JAR"],
+                                                           androconf.CONF[
+                                                               "BIN_DEX2JAR"],
+                                                           androconf.CONF[
+                                                               "PATH_JAD"],
+                                                           androconf.CONF[
+                                                               "BIN_JAD"],
                                                            androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2winejad":
             vm.set_decompiler(decompiler.DecompilerDex2WineJad(vm,
-                                                               androconf.CONF["PATH_DEX2JAR"],
-                                                               androconf.CONF["BIN_DEX2JAR"],
-                                                               androconf.CONF["PATH_JAD"],
-                                                               androconf.CONF["BIN_WINEJAD"],
+                                                               androconf.CONF[
+                                                                   "PATH_DEX2JAR"],
+                                                               androconf.CONF[
+                                                                   "BIN_DEX2JAR"],
+                                                               androconf.CONF[
+                                                                   "PATH_JAD"],
+                                                               androconf.CONF[
+                                                                   "BIN_WINEJAD"],
                                                                androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "ded":
             vm.set_decompiler(decompiler.DecompilerDed(vm,
-                                                       androconf.CONF["PATH_DED"],
-                                                       androconf.CONF["BIN_DED"],
+                                                       androconf.CONF[
+                                                           "PATH_DED"],
+                                                       androconf.CONF[
+                                                           "BIN_DED"],
                                                        androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2fernflower":
             vm.set_decompiler(decompiler.DecompilerDex2Fernflower(vm,
-                                                                  androconf.CONF["PATH_DEX2JAR"],
-                                                                  androconf.CONF["BIN_DEX2JAR"],
-                                                                  androconf.CONF["PATH_FERNFLOWER"],
-                                                                  androconf.CONF["BIN_FERNFLOWER"],
-                                                                  androconf.CONF["OPTIONS_FERNFLOWER"],
+                                                                  androconf.CONF[
+                                                                      "PATH_DEX2JAR"],
+                                                                  androconf.CONF[
+                                                                      "BIN_DEX2JAR"],
+                                                                  androconf.CONF[
+                                                                      "PATH_FERNFLOWER"],
+                                                                  androconf.CONF[
+                                                                      "BIN_FERNFLOWER"],
+                                                                  androconf.CONF[
+                                                                      "OPTIONS_FERNFLOWER"],
                                                                   androconf.CONF["TMP_DIRECTORY"]))
         else:
             raise("invalid decompiler !")
@@ -164,7 +187,8 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
 
             filename = filename_class + method.get_name() + descriptor
             if len(method.get_name() + descriptor) > 250:
-                all_identical_name_methods = vm.get_methods_descriptor(method.get_class_name(), method.get_name())
+                all_identical_name_methods = vm.get_methods_descriptor(
+                    method.get_class_name(), method.get_name())
                 pos = 0
                 for i in all_identical_name_methods:
                     if i.get_descriptor() == method.get_descriptor():
@@ -182,7 +206,8 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
             if method.get_class_name() not in dump_classes:
                 print("source codes ...", end=' ')
                 current_class = vm.get_class(method.get_class_name())
-                current_filename_class = valid_class_name(current_class.get_name())
+                current_filename_class = valid_class_name(
+                    current_class.get_name())
                 create_directory(filename_class, output)
 
                 current_filename_class = output_name + current_filename_class + ".java"
@@ -200,11 +225,12 @@ def export_apps_to_format(filename, a, output, methods_filter=None, jar=None, de
 def main(options, arguments):
     if options.input != None and options.output != None:
         a = Androguard([options.input])
-        export_apps_to_format(options.input, a, options.output, options.limit, options.jar, options.decompiler, options.format)
+        export_apps_to_format(options.input, a, options.output, options.limit,
+                              options.jar, options.decompiler, options.format)
     elif options.version != None:
         print("Androdd version %s" % androconf.ANDROGUARD_VERSION)
     else:
-      print("Please, specify an input file and an output directory")
+        print("Please, specify an input file and an output directory")
 
 if __name__ == "__main__":
     parser = OptionParser()

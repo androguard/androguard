@@ -32,6 +32,7 @@ logger = logging.getLogger('dad.writer')
 
 
 class Writer(object):
+
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -103,7 +104,7 @@ class Writer(object):
             rhs.visit(self)
         self.end_ins()
 
-    #TODO: prefer this class as write_ind_visit_end that should be deprecated
+    # TODO: prefer this class as write_ind_visit_end that should be deprecated
     # at the end
     def write_ind_visit_end_ext(self, lhs, before, s, after, rhs=None,
                                 data=None, subsection='UNKNOWN_SUBSECTION'):
@@ -121,7 +122,7 @@ class Writer(object):
         if isinstance(rhs, BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
             exp_rhs = rhs.var_map[rhs.arg2]
             if rhs.op in '+-' and isinstance(exp_rhs, Constant) and\
-                                  exp_rhs.get_int_value() == 1:
+                    exp_rhs.get_int_value() == 1:
                 return self.write_ind_visit_end(lhs, rhs.op * 2, data=rhs)
             return self.write_ind_visit_end(
                 lhs, ' %s= ' % rhs.op, exp_rhs, data=rhs)
@@ -156,7 +157,7 @@ class Writer(object):
             self.write_ext(('SPACE', ' '))
             self.write_ext(
                 ('NAME_METHOD_PROTOTYPE',
-                '%s' % self.method.name, self.method))
+                 '%s' % self.method.name, self.method))
         params = self.method.lparams
         if 'static' not in access:
             params = params[1:]
@@ -164,7 +165,7 @@ class Writer(object):
         self.write_ext(('PARENTHESIS_START', '('))
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for
-                        p_type, param in zip(self.method.params_type, params)])
+                               p_type, param in zip(self.method.params_type, params)])
             first = True
             for p_type, param in zip(self.method.params_type, params):
                 if not first:
@@ -282,7 +283,7 @@ class Writer(object):
             self.visit_node(cond.false)
         elif follow is not None:
             if cond.true in (follow, self.next_case) or\
-                                                cond.num > cond.true.num:
+                    cond.num > cond.true.num:
                              # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
@@ -421,7 +422,8 @@ class Writer(object):
     def visit_constant(self, cst):
         if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
-        self.write('%r' % cst, data="CONSTANT_INTEGER")  # INTEGER or also others?
+        # INTEGER or also others?
+        self.write('%r' % cst, data="CONSTANT_INTEGER")
 
     def visit_base_class(self, cls, data=None):
         self.write(cls)

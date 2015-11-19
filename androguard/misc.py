@@ -10,34 +10,37 @@ from androguard.decompiler.decompiler import *
 from pickle import dumps, loads
 from androguard.core import androconf
 
+
 def save_session(l, filename):
-  """
-      save your session !
+    """
+        save your session !
 
-      :param l: a list of objects
-      :type: a list of object
-      :param filename: output filename to save the session
-      :type filename: string
+        :param l: a list of objects
+        :type: a list of object
+        :param filename: output filename to save the session
+        :type filename: string
 
-      :Example:
-          save_session([a, vm, vmx], "msession.json")
-  """
-  with open(filename, "w") as fd:
-     fd.write(dumps(l, -1))
+        :Example:
+            save_session([a, vm, vmx], "msession.json")
+    """
+    with open(filename, "w") as fd:
+        fd.write(dumps(l, -1))
+
 
 def load_session(filename):
-  """
-      load your session !
+    """
+        load your session !
 
-      :param filename: the filename where the session has been saved
-      :type filename: string
+        :param filename: the filename where the session has been saved
+        :type filename: string
 
-      :rtype: the elements of your session :)
+        :rtype: the elements of your session :)
 
-      :Example:
-          a, vm, vmx = load_session("mysession.json")
-  """
-  return loads(read(filename, binary=False))
+        :Example:
+            a, vm, vmx = load_session("mysession.json")
+    """
+    return loads(read(filename, binary=False))
+
 
 def AnalyzeAPK(filename, raw=False, decompiler="dad"):
     """
@@ -56,6 +59,7 @@ def AnalyzeAPK(filename, raw=False, decompiler="dad"):
     a = APK(filename, raw)
     d, dx = AnalyzeDex(a.get_dex(), raw=True, decompiler=decompiler)
     return a, d, dx
+
 
 def AnalyzeDex(filename, raw=False, decompiler="dad"):
     """
@@ -150,30 +154,35 @@ def RunDecompiler(d, dx, decompiler):
         :type decompiler: string
     """
     if decompiler != None:
-      androconf.debug("Decompiler ...")
-      decompiler = decompiler.lower()
-      if decompiler == "dex2jad":
-        d.set_decompiler(DecompilerDex2Jad(d,
-                                           androconf.CONF["PATH_DEX2JAR"],
-                                           androconf.CONF["BIN_DEX2JAR"],
-                                           androconf.CONF["PATH_JAD"],
-                                           androconf.CONF["BIN_JAD"],
+        androconf.debug("Decompiler ...")
+        decompiler = decompiler.lower()
+        if decompiler == "dex2jad":
+            d.set_decompiler(DecompilerDex2Jad(d,
+                                               androconf.CONF["PATH_DEX2JAR"],
+                                               androconf.CONF["BIN_DEX2JAR"],
+                                               androconf.CONF["PATH_JAD"],
+                                               androconf.CONF["BIN_JAD"],
+                                               androconf.CONF["TMP_DIRECTORY"]))
+        elif decompiler == "dex2fernflower":
+            d.set_decompiler(DecompilerDex2Fernflower(d,
+                                                      androconf.CONF[
+                                                          "PATH_DEX2JAR"],
+                                                      androconf.CONF[
+                                                          "BIN_DEX2JAR"],
+                                                      androconf.CONF[
+                                                          "PATH_FERNFLOWER"],
+                                                      androconf.CONF[
+                                                          "BIN_FERNFLOWER"],
+                                                      androconf.CONF[
+                                                          "OPTIONS_FERNFLOWER"],
+                                                      androconf.CONF["TMP_DIRECTORY"]))
+        elif decompiler == "ded":
+            d.set_decompiler(DecompilerDed(d,
+                                           androconf.CONF["PATH_DED"],
+                                           androconf.CONF["BIN_DED"],
                                            androconf.CONF["TMP_DIRECTORY"]))
-      elif decompiler == "dex2fernflower":
-        d.set_decompiler(DecompilerDex2Fernflower(d,
-                                                  androconf.CONF["PATH_DEX2JAR"],
-                                                  androconf.CONF["BIN_DEX2JAR"],
-                                                  androconf.CONF["PATH_FERNFLOWER"],
-                                                  androconf.CONF["BIN_FERNFLOWER"],
-                                                  androconf.CONF["OPTIONS_FERNFLOWER"],
-                                                  androconf.CONF["TMP_DIRECTORY"]))
-      elif decompiler == "ded":
-        d.set_decompiler(DecompilerDed(d,
-                                       androconf.CONF["PATH_DED"],
-                                       androconf.CONF["BIN_DED"],
-                                       androconf.CONF["TMP_DIRECTORY"]))
-      else:
-        d.set_decompiler(DecompilerDAD(d, dx))
+        else:
+            d.set_decompiler(DecompilerDAD(d, dx))
 
 
 def AnalyzeElf(filename, raw=False):

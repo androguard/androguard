@@ -8,11 +8,11 @@ from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 from androguard.misc import save_session, load_session
 
+
 class Session(object):
 
     def __init__(self):
         self.setupObjects()
-
 
     def save(self, filename):
         save_session([self.analyzed_files,
@@ -21,7 +21,8 @@ class Session(object):
                       self.analyzed_dex], filename)
 
     def load(self, filename):
-        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(filename)
+        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(
+            filename)
 
     def setupObjects(self):
         self.analyzed_files = collections.OrderedDict()

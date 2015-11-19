@@ -26,8 +26,8 @@ import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (JSONWriter, parse_descriptor,
-    literal_string, literal_null, literal_int, literal_long, literal_float,
-    literal_double, literal_bool, literal_hex_int, dummy)
+                                           literal_string, literal_null, literal_int, literal_long, literal_float,
+                                           literal_double, literal_bool, literal_hex_int, dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (build_def_use,
                                                 place_declarations,
@@ -51,8 +51,11 @@ def auto_vm(filename):
     return None
 
 # No seperate DvField class currently
+
+
 def get_field_ast(field):
-    triple = field.get_class_name()[1:-1], field.get_name(), field.get_descriptor()
+    triple = field.get_class_name(
+    )[1:-1], field.get_name(), field.get_descriptor()
 
     expr = None
     if field.init_value:
@@ -72,7 +75,9 @@ def get_field_ast(field):
         'expr': expr,
     }
 
+
 class DvMethod(object):
+
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
         self.method = method
@@ -111,8 +116,8 @@ class DvMethod(object):
                 num_param += util.get_type_size(ptype)
         if not __debug__:
             from androguard.core import bytecode
-            bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
-                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
+            bytecode.method2png('/tmp/dad/graphs/%s#%s.png' %
+                                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
     def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
@@ -153,13 +158,13 @@ class DvMethod(object):
 
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph,
-                                                    '/tmp/dad/pre-structured')
+                            '/tmp/dad/pre-structured')
 
         identify_structures(graph, graph.immediate_dominators())
 
         if not __debug__:
             util.create_png(self.cls_name, self.name, graph,
-                                                    '/tmp/dad/structured')
+                            '/tmp/dad/structured')
 
         if doAST:
             self.ast = JSONWriter(graph, self).get_ast()
@@ -184,11 +189,12 @@ class DvMethod(object):
         return []
 
     def __repr__(self):
-        #return 'Method %s' % self.name
+        # return 'Method %s' % self.name
         return 'class DvMethod(object): %s' % self.name
 
 
 class DvClass(object):
+
     def __init__(self, dvclass, vma):
         name = dvclass.get_name()
         if name.find('/') > 0:
@@ -224,7 +230,8 @@ class DvClass(object):
         logger.info('Class : %s', self.name)
         logger.info('Methods added :')
         for meth in self.methods:
-            logger.info('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
+            logger.info('%s (%s, %s)', meth.get_method_idx(),
+                        self.name, meth.name)
         logger.info('')
 
     def add_subclass(self, innername, dvclass):
@@ -281,7 +288,7 @@ class DvClass(object):
 
         if len(self.interfaces) > 0:
             prototype += ' implements %s' % ', '.join(
-                        [n[1:-1].replace('/', '.') for n in self.interfaces])
+                [n[1:-1].replace('/', '.') for n in self.interfaces])
 
         source.append('%s {\n' % prototype)
         for field in self.fields:
@@ -315,9 +322,9 @@ class DvClass(object):
         source = []
         if not self.inner and self.package:
             source.append(
-            ('PACKAGE', [('PACKAGE_START', 'package '),
-                         ('NAME_PACKAGE', '%s' % self.package),
-                         ('PACKAGE_END', ';\n')]))
+                ('PACKAGE', [('PACKAGE_START', 'package '),
+                             ('NAME_PACKAGE', '%s' % self.package),
+                             ('PACKAGE_END', ';\n')]))
         list_proto = []
         list_proto.append(
             ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
@@ -341,7 +348,7 @@ class DvClass(object):
         for field in self.fields:
             field_access_flags = field.get_access_flags()
             access = [util.ACCESS_FLAGS_FIELDS[flag] for flag in
-                        util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
+                      util.ACCESS_FLAGS_FIELDS if flag & field_access_flags]
             f_type = util.get_type(field.get_descriptor())
             name = field.get_name()
             if access:
@@ -355,7 +362,7 @@ class DvClass(object):
                            ('NAME_FIELD', '%s' % name, f_type, field),
                            ('FIELD_END', ';\n')]))
 
-        #TODO: call get_source_ext for each subclass?
+        # TODO: call get_source_ext for each subclass?
         for klass in list(self.subclasses.values()):
             source.append((klass, klass.get_source()))
 
@@ -375,6 +382,7 @@ class DvClass(object):
 
 
 class DvMachine(object):
+
     def __init__(self, name):
         vm = auto_vm(name)
         if vm is None:
@@ -382,7 +390,7 @@ class DvMachine(object):
         self.vma = analysis.uVMAnalysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
-        #util.merge_inner(self.classes)
+        # util.merge_inner(self.classes)
 
     def get_classes(self):
         return list(self.classes.keys())

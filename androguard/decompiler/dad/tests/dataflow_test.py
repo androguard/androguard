@@ -71,9 +71,10 @@ class DataflowTest(unittest.TestCase):
             9.     return ret;
             }
     """
+
     def testReachDefGCD(self):
         n1 = self._CreateMockNode('n1', 0, [(['a'], 'c'),
-                                          (['b'], 'd')])
+                                            (['b'], 'd')])
         n2 = self._CreateMockNode('n2', 2, [(['c'], None)])
         n3 = self._CreateMockNode('n3', 3, [(['d'], 'ret')])
         n4 = self._CreateMockNode('n4', 4, [(['d'], None)])
@@ -132,10 +133,10 @@ class DataflowTest(unittest.TestCase):
                       n9: set([-2, -1, 0, 1, 3, 6, 7, 8]),
                       dummy_exit_mock: set([-2, -1, 0, 1, 3, 6, 7, 8])}
         expected_def_to_loc = {'a': set([-1]),
-                              'b': set([-2]),
-                              'c': set([0, 6]),
-                              'd': set([1, 7]),
-                              'ret': set([3, 8])}
+                               'b': set([-2]),
+                               'c': set([0, 6]),
+                               'd': set([1, 7]),
+                               'ret': set([3, 8])}
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
         self.assertDictEqual(analysis.def_to_loc, expected_def_to_loc)
