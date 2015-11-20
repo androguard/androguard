@@ -158,7 +158,6 @@ class BreakBlock(object):
 
     def show(self):
         for i in self._ins:
-            print("\t\t", end=' ')
             i.show(0)
 
 
@@ -590,33 +589,12 @@ def show_Path(vm, path):
 
     if isinstance(path, PathVar):
         dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
-        info_var = path.get_var_info()
-        print("%s %s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
-                                              info_var,
-                                              path.get_idx(),
-                                              dst_class_name,
-                                              dst_method_name,
-                                              dst_descriptor))
     else:
         if path.get_access_flag() == TAINTED_PACKAGE_CALL:
             src_class_name, src_method_name, src_descriptor = path.get_src(cm)
             dst_class_name, dst_method_name, dst_descriptor = path.get_dst(cm)
-
-            print("%d %s->%s%s (0x%x) ---> %s->%s%s" % (path.get_access_flag(),
-                                                        src_class_name,
-                                                        src_method_name,
-                                                        src_descriptor,
-                                                        path.get_idx(),
-                                                        dst_class_name,
-                                                        dst_method_name,
-                                                        dst_descriptor))
         else:
             src_class_name, src_method_name, src_descriptor = path.get_src(cm)
-            print("%d %s->%s%s (0x%x)" % (path.get_access_flag(),
-                                          src_class_name,
-                                          src_method_name,
-                                          src_descriptor,
-                                          path.get_idx()))
 
 
 def get_Path(vm, path):
@@ -745,7 +723,6 @@ class TaintedPackage(object):
         for path in self.paths[TAINTED_PACKAGE_CALL]:
             _, dst_name, dst_descriptor = path.get_dst(
                 self.vm.get_class_manager())
-            print(_, dst_name, dst_descriptor)
             if m_name.match(dst_name) is not None and m_descriptor.match(dst_descriptor) is not None:
                 l.append(path)
         return l
@@ -798,7 +775,6 @@ def show_Permissions(dx):
     p = dx.get_permissions([])
 
     for i in p:
-        print(i, ":")
         for j in p[i]:
             show_Path(dx.get_vm(), j)
 
@@ -1947,10 +1923,8 @@ class newVMAnalysis(object):
         return MethodAnalysis(self.vm, method, None)
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
-        print(class_name, method_name, method_descriptor)
         if class_name in self.classes:
             for method in self.classes[class_name].get_vm_class().get_methods():
-                print(method.get_name(), method.get_descriptor())
                 if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
                     return method
         return None

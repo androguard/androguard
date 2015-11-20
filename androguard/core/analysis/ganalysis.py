@@ -22,6 +22,9 @@ from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.core.analysis.risk import PERMISSIONS_RISK, INTERNET_RISK, PRIVACY_RISK, PHONE_RISK, SMS_RISK, MONEY_RISK
 from androguard.core.analysis.analysis import PathVar, TAINTED_PACKAGE_CREATE
 
+from networkx.exception import NetworkXError
+from networkx import convert
+from copy import deepcopy
 
 """Base class for undirected graphs.
 
@@ -38,7 +41,6 @@ For directed graphs see DiGraph and MultiDiGraph.
 #    Pieter Swart <swart@lanl.gov>
 #    All rights reserved.
 #    BSD license.
-from copy import deepcopy
 
 __author__ = """\n""".join(['Aric Hagberg (hagberg@lanl.gov)',
                             'Pieter Swart (swart@lanl.gov)',
@@ -1835,7 +1837,6 @@ class Graph(object):
 #    Pieter Swart <swart@lanl.gov>
 #    All rights reserved.
 #    BSD license.
-from copy import deepcopy
 
 
 class DiGraph(Graph):
@@ -3112,12 +3113,12 @@ class GVMAnalysis(object):
                 self.GI.add_edge(n2.id, n1.id)
                 n1.add_edge(n2, path)
 
-        if apk != None:
+        if apk is not None:
             for i in apk.get_activities():
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node(
                     j, "onCreate", "(Landroid/os/Bundle;)V")
-                if n1 != None:
+                if n1 is not None:
                     n1.set_attributes({"type": "activity"})
                     n1.set_attributes({"color": ACTIVITY_COLOR})
                     n2 = self._get_new_node_from(n1, "ACTIVITY")
@@ -3127,7 +3128,7 @@ class GVMAnalysis(object):
             for i in apk.get_services():
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node(j, "onCreate", "()V")
-                if n1 != None:
+                if n1 is not None:
                     n1.set_attributes({"type": "service"})
                     n1.set_attributes({"color": SERVICE_COLOR})
                     n2 = self._get_new_node_from(n1, "SERVICE")
@@ -3138,7 +3139,7 @@ class GVMAnalysis(object):
                 j = bytecode.FormatClassToJava(i)
                 n1 = self._get_exist_node(
                     j, "onReceive", "(Landroid/content/Context; Landroid/content/Intent;)V")
-                if n1 != None:
+                if n1 is not None:
                     n1.set_attributes({"type": "receiver"})
                     n1.set_attributes({"color": RECEIVER_COLOR})
                     n2 = self._get_new_node_from(n1, "RECEIVER")
@@ -3204,7 +3205,7 @@ class GVMAnalysis(object):
                 n1 = self._get_exist_node(
                     dst_class_name, dst_method_name, dst_descriptor)
 
-                if n1 == None:
+                if n1 is None:
                     continue
 
                 n1.set_attributes({"permissions": 1})
@@ -3392,7 +3393,7 @@ class NodeF(object):
         self.api = {}
         self.edges = {}
 
-        if label == None:
+        if label is None:
             self.label = "%s %s %s" % (class_name, method_name, descriptor)
         else:
             self.label = label
@@ -3415,7 +3416,7 @@ class NodeF(object):
     def get_attributes_gexf(self):
         buff = ""
 
-        if self.attributes["color"] != None:
+        if self.attributes["color"] is not None:
             buff += "<viz:color r=\"%d\" g=\"%d\" b=\"%d\"/>\n" % (self.attributes["color"][
                                                                    0], self.attributes["color"][1], self.attributes["color"][2])
 
@@ -3455,7 +3456,7 @@ class NodeF(object):
 
         buff += "<y:Geometry height=\"%f\" width=\"%f\"/>\n" % (
             16 * height, 8 * width)
-        if self.attributes["color"] != None:
+        if self.attributes["color"] is not None:
             buff += "<y:Fill color=\"#%02x%02x%02x\" transparent=\"false\"/>\n" % (
                 self.attributes["color"][0], self.attributes["color"][1], self.attributes["color"][2])
 
