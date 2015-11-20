@@ -16,14 +16,12 @@
 # limitations under the License.
 
 import re
-import random
-import pickle
 import collections
+from .sign import Signature
 
-from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
+from androguard.core.androconf import debug, is_ascii_problem,\
     load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
-from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
 
 class ContextField(object):
@@ -50,6 +48,12 @@ class ContextMethod(object):
 class ExternalFM(object):
 
     def __init__(self, class_name, name, descriptor):
+        if type('name') == bytes:
+            name = name.decode()
+        if type('class_name') == bytes:
+            class_name = class_name.decode()
+        if type('descriptor') == bytes:
+            descriptor = descriptor.decode()
         self.class_name = class_name
         self.name = name
         self.descriptor = descriptor
@@ -80,7 +84,7 @@ class ToString(object):
     def push(self, name):
         for i in self.__tab:
             for j in self.__re_tab[i]:
-                if j.match(name) != None:
+                if j.match(name) is not None:
                     if len(self.__string) > 0:
                         if i == 'O' and self.__string[-1] == 'O':
                             continue
@@ -263,19 +267,19 @@ class DVMBasicBlock(object):
         # print self, self.start, self.end, values
         if values == []:
             next_block = self.context.get_basic_block(self.end + 1)
-            if next_block != None:
+            if next_block is not None:
                 self.childs.append(
                     (self.end - self.get_last_length(), self.end, next_block))
         else:
             for i in values:
                 if i != -1:
                     next_block = self.context.get_basic_block(i)
-                    if next_block != None:
+                    if next_block is not None:
                         self.childs.append(
                             (self.end - self.get_last_length(), i, next_block))
 
         for c in self.childs:
-            if c[2] != None:
+            if c[2] is not None:
                 c[2].set_fathers((c[1], c[0], self))
 
     def push(self, i):
@@ -290,7 +294,7 @@ class DVMBasicBlock(object):
             # field access
             if (op_value >= 0x52 and op_value <= 0x6d):
                 desc = self.__vm.get_cm_field(i.get_ref_kind())
-                if self.tainted_variables != None:
+                if self.tainted_variables is not None:
                     self.tainted_variables.push_info(TAINTED_FIELD, desc, DVM_FIELDS_ACCESS[
                                                      i.get_name()][0], idx, self.method)
 
@@ -298,7 +302,7 @@ class DVMBasicBlock(object):
             elif (op_value >= 0x6e and op_value <= 0x72) or (op_value >= 0x74 and op_value <= 0x78):
                 idx_meth = i.get_ref_kind()
                 method_info = self.__vm.get_cm_method(idx_meth)
-                if self.tainted_packages != None:
+                if self.tainted_packages is not None:
                     self.tainted_packages.push_info(
                         method_info[0], TAINTED_PACKAGE_CALL, idx, self.method, idx_meth)
 
@@ -306,14 +310,14 @@ class DVMBasicBlock(object):
             elif op_value == 0x22:
                 idx_type = i.get_ref_kind()
                 type_info = self.__vm.get_cm_type(idx_type)
-                if self.tainted_packages != None:
+                if self.tainted_packages is not None:
                     self.tainted_packages.push_info(
                         type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None)
 
             # const-string
             elif (op_value >= 0x1a and op_value <= 0x1b):
                 string_name = self.__vm.get_cm_string(i.get_ref_kind())
-                if self.tainted_variables != None:
+                if self.tainted_variables is not None:
                     self.tainted_variables.push_info(
                         TAINTED_STRING, string_name, "R", idx, self.method)
 
@@ -723,6 +727,8 @@ class TaintedPackage(object):
 
     def __init__(self, vm, name):
         self.vm = vm
+        if type('name') == bytes:
+            name = name.decode()
         self.name = name
         self.paths = {TAINTED_PACKAGE_CREATE: [], TAINTED_PACKAGE_CALL: []}
 
@@ -754,8 +760,8 @@ class TaintedPackage(object):
         for path in self.paths[TAINTED_PACKAGE_CALL]:
             _, dst_name, dst_descriptor = path.get_dst(
                 self.vm.get_class_manager())
-
-            if m_name.match(dst_name) != None and m_descriptor.match(dst_descriptor) != None:
+            print(_, dst_name, dst_descriptor)
+            if m_name.match(dst_name) is not None and m_descriptor.match(dst_descriptor) is not None:
                 l.append(path)
         return l
 
@@ -1124,7 +1130,7 @@ class TaintedPackages(object):
 
         l = []
         for m, _ in self.get_packages():
-            if ex.search(m.get_name()) != None:
+            if ex.search(m.get_name()) is not None:
                 l.extend(m.get_methods())
         return l
 
@@ -1137,7 +1143,7 @@ class TaintedPackages(object):
         l = []
         d = {}
         for m, _ in self.get_packages():
-            if ex.match(m.get_info()) != None:
+            if ex.match(m.get_info()) is not None:
                 for path in m.get_methods():
                     try:
                         d[path.get_class_name() + path.get_name() +
@@ -1158,11 +1164,11 @@ class TaintedPackages(object):
             @rtype : a list of called methods' paths
         """
         l = []
-        if re_expr == True:
+        if re_expr:
             ex = re.compile(class_name)
 
             for m, _ in self.get_packages():
-                if ex.search(m.get_name()) != None:
+                if ex.search(m.get_name().decode()) is not None:
                     l.extend(m.search_method(name, descriptor))
 
         return l
@@ -1177,7 +1183,7 @@ class TaintedPackages(object):
         l = []
 
         for m, _ in self.get_packages():
-            if ex.search(m.get_name()) != None:
+            if ex.search(m.get_name()) is not None:
                 l.extend(m.get_objects_paths())
 
         return l
@@ -1270,58 +1276,59 @@ class Enum(object):
     def tuples(self):
         return tuple(enumerate(self.names))
 
-TAG_ANDROID = Enum(['ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
-                    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DEBUG', 'DRM', 'GESTURE',
-                    'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
-                    'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
-                    'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
-                    'VIEW', 'WEBKIT', 'WIDGET', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
+TAG_ANDROID = Enum([
+    'ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE', 'ACCOUNTS',
+    'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE', 'DEBUG', 'DRM', 'GESTURE',
+    'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE', 'LOCATION', 'MEDIA', 'MTP',
+    'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE', 'PROVIDER', 'RENDERSCRIPT',
+    'SAX', 'SECURITY', 'SERVICE', 'SPEECH', 'SUPPORT', 'TEST', 'TEXT', 'UTIL',
+    'VIEW', 'WEBKIT', 'WIDGET', 'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
 
 TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
 
-TAGS_ANDROID = {TAG_ANDROID.ANDROID:                  [0, "Landroid"],
-                TAG_ANDROID.TELEPHONY:                [0, "Landroid/telephony"],
-                TAG_ANDROID.SMS:                      [0, "Landroid/telephony/SmsManager"],
-                TAG_ANDROID.SMSMESSAGE:               [0, "Landroid/telephony/SmsMessage"],
-                TAG_ANDROID.DEBUG:                    [0, "Landroid/os/Debug"],
-                TAG_ANDROID.ACCESSIBILITYSERVICE:     [0, "Landroid/accessibilityservice"],
-                TAG_ANDROID.ACCOUNTS:                 [0, "Landroid/accounts"],
-                TAG_ANDROID.ANIMATION:                [0, "Landroid/animation"],
-                TAG_ANDROID.APP:                      [0, "Landroid/app"],
-                TAG_ANDROID.BLUETOOTH:                [0, "Landroid/bluetooth"],
-                TAG_ANDROID.CONTENT:                  [0, "Landroid/content"],
-                TAG_ANDROID.DATABASE:                 [0, "Landroid/database"],
-                TAG_ANDROID.DRM:                      [0, "Landroid/drm"],
-                TAG_ANDROID.GESTURE:                  [0, "Landroid/gesture"],
-                TAG_ANDROID.GRAPHICS:                 [0, "Landroid/graphics"],
-                TAG_ANDROID.HARDWARE:                 [0, "Landroid/hardware"],
-                TAG_ANDROID.INPUTMETHODSERVICE:       [0, "Landroid/inputmethodservice"],
-                TAG_ANDROID.LOCATION:                 [0, "Landroid/location"],
-                TAG_ANDROID.MEDIA:                    [0, "Landroid/media"],
-                TAG_ANDROID.MTP:                      [0, "Landroid/mtp"],
-                TAG_ANDROID.NET:                      [0, "Landroid/net"],
-                TAG_ANDROID.NFC:                      [0, "Landroid/nfc"],
-                TAG_ANDROID.OPENGL:                   [0, "Landroid/opengl"],
-                TAG_ANDROID.OS:                       [0, "Landroid/os"],
-                TAG_ANDROID.PREFERENCE:               [0, "Landroid/preference"],
-                TAG_ANDROID.PROVIDER:                 [0, "Landroid/provider"],
-                TAG_ANDROID.RENDERSCRIPT:             [0, "Landroid/renderscript"],
-                TAG_ANDROID.SAX:                      [0, "Landroid/sax"],
-                TAG_ANDROID.SECURITY:                 [0, "Landroid/security"],
-                TAG_ANDROID.SERVICE:                  [0, "Landroid/service"],
-                TAG_ANDROID.SPEECH:                   [0, "Landroid/speech"],
-                TAG_ANDROID.SUPPORT:                  [0, "Landroid/support"],
-                TAG_ANDROID.TEST:                     [0, "Landroid/test"],
-                TAG_ANDROID.TEXT:                     [0, "Landroid/text"],
-                TAG_ANDROID.UTIL:                     [0, "Landroid/util"],
-                TAG_ANDROID.VIEW:                     [0, "Landroid/view"],
-                TAG_ANDROID.WEBKIT:                   [0, "Landroid/webkit"],
-                TAG_ANDROID.WIDGET:                   [0, "Landroid/widget"],
-                TAG_ANDROID.DALVIK_BYTECODE:          [0, "Ldalvik/bytecode"],
-                TAG_ANDROID.DALVIK_SYSTEM:            [0, "Ldalvik/system"],
-
-                TAG_ANDROID.JAVA_REFLECTION:          [0, "Ljava/lang/reflect"],
-                }
+TAGS_ANDROID = {
+    TAG_ANDROID.ANDROID: [0, "Landroid"],
+    TAG_ANDROID.TELEPHONY: [0, "Landroid/telephony"],
+    TAG_ANDROID.SMS: [0, "Landroid/telephony/SmsManager"],
+    TAG_ANDROID.SMSMESSAGE: [0, "Landroid/telephony/SmsMessage"],
+    TAG_ANDROID.DEBUG: [0, "Landroid/os/Debug"],
+    TAG_ANDROID.ACCESSIBILITYSERVICE: [0, "Landroid/accessibilityservice"],
+    TAG_ANDROID.ACCOUNTS: [0, "Landroid/accounts"],
+    TAG_ANDROID.ANIMATION: [0, "Landroid/animation"],
+    TAG_ANDROID.APP: [0, "Landroid/app"],
+    TAG_ANDROID.BLUETOOTH: [0, "Landroid/bluetooth"],
+    TAG_ANDROID.CONTENT: [0, "Landroid/content"],
+    TAG_ANDROID.DATABASE: [0, "Landroid/database"],
+    TAG_ANDROID.DRM: [0, "Landroid/drm"],
+    TAG_ANDROID.GESTURE: [0, "Landroid/gesture"],
+    TAG_ANDROID.GRAPHICS: [0, "Landroid/graphics"],
+    TAG_ANDROID.HARDWARE: [0, "Landroid/hardware"],
+    TAG_ANDROID.INPUTMETHODSERVICE: [0, "Landroid/inputmethodservice"],
+    TAG_ANDROID.LOCATION: [0, "Landroid/location"],
+    TAG_ANDROID.MEDIA: [0, "Landroid/media"],
+    TAG_ANDROID.MTP: [0, "Landroid/mtp"],
+    TAG_ANDROID.NET: [0, "Landroid/net"],
+    TAG_ANDROID.NFC: [0, "Landroid/nfc"],
+    TAG_ANDROID.OPENGL: [0, "Landroid/opengl"],
+    TAG_ANDROID.OS: [0, "Landroid/os"],
+    TAG_ANDROID.PREFERENCE: [0, "Landroid/preference"],
+    TAG_ANDROID.PROVIDER: [0, "Landroid/provider"],
+    TAG_ANDROID.RENDERSCRIPT: [0, "Landroid/renderscript"],
+    TAG_ANDROID.SAX: [0, "Landroid/sax"],
+    TAG_ANDROID.SECURITY: [0, "Landroid/security"],
+    TAG_ANDROID.SERVICE: [0, "Landroid/service"],
+    TAG_ANDROID.SPEECH: [0, "Landroid/speech"],
+    TAG_ANDROID.SUPPORT: [0, "Landroid/support"],
+    TAG_ANDROID.TEST: [0, "Landroid/test"],
+    TAG_ANDROID.TEXT: [0, "Landroid/text"],
+    TAG_ANDROID.UTIL: [0, "Landroid/util"],
+    TAG_ANDROID.VIEW: [0, "Landroid/view"],
+    TAG_ANDROID.WEBKIT: [0, "Landroid/webkit"],
+    TAG_ANDROID.WIDGET: [0, "Landroid/widget"],
+    TAG_ANDROID.DALVIK_BYTECODE: [0, "Ldalvik/bytecode"],
+    TAG_ANDROID.DALVIK_SYSTEM: [0, "Ldalvik/system"],
+    TAG_ANDROID.JAVA_REFLECTION: [0, "Ljava/lang/reflect"],
+}
 
 
 class Tags(object):
@@ -1344,13 +1351,13 @@ class Tags(object):
     def emit(self, method):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(method.get_class()) != None:
+                if self.patterns[i][1].search(method.get_class()) is not None:
                     self.tags.add(i)
 
     def emit_by_classname(self, classname):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(classname) != None:
+                if self.patterns[i][1].search(classname) is not None:
                     self.tags.add(i)
 
     def get_list(self):
@@ -1439,7 +1446,7 @@ class ExceptionAnalysis(object):
         buff = "%x:%x\n" % (self.start, self.end)
 
         for i in self.exceptions:
-            if i[2] == None:
+            if i[2] is None:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
             else:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
@@ -1515,7 +1522,7 @@ class MethodAnalysis(object):
         self.exceptions = Exceptions(self.__vm)
 
         code = self.method.get_code()
-        if code == None:
+        if code is None:
             return
 
         current_basic = BO["BasicClass"](
@@ -1533,10 +1540,14 @@ class MethodAnalysis(object):
         instructions = [i for i in bc.get_instructions()]
         for i in instructions:
             for j in BO["BasicOPCODES_H"]:
-                if j.match(i.get_name()) != None:
-                    v = BO["Dnext"](i, idx, self.method)
-                    h[idx] = v
-                    l.extend(v)
+                try:
+                    if j.match(i.get_name()) is not None:
+                        v = BO["Dnext"](i, idx, self.method)
+                        h[idx] = v
+                        l.extend(v)
+                        break
+                except Exception:
+                    print("BasicOPCODES_H Error")
                     break
 
             idx += i.get_length()
@@ -1677,8 +1688,6 @@ SIGNATURES = {
     SIGNATURE_SEQUENCE_BB: {},
     SIGNATURE_HEX: {},
 }
-
-from .sign import Signature
 
 
 class StringAnalysis(object):
@@ -1869,14 +1878,13 @@ class newVMAnalysis(object):
         debug("Creating XREF/DREF")
 
         instances_class_name = list(self.classes.keys())
-        external_instances = {}
 
         for current_class in self.vm.get_classes():
             for current_method in current_class.get_methods():
                 debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
-                if code == None:
+                if code is None:
                     continue
 
                 off = 0
@@ -2049,7 +2057,7 @@ class VMAnalysis(object):
 
             :rtype: a :class:`Sign` object
         """
-        if self.signature == None:
+        if self.signature is None:
             self.signature = Signature(self)
 
         if predef_sign != "":
@@ -2164,7 +2172,7 @@ class uVMAnalysis(VMAnalysis):
         return self.vm
 
     def _resolve(self):
-        if self.resolve == False:
+        if not self.resolve:
             for i in self.get_methods():
                 pass
 

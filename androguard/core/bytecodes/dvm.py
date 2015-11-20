@@ -2168,7 +2168,7 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
-        return self.return_type_idx_value
+        return self.return_type_idx_value.decode()
 
     def get_parameters_off_value(self):
         """
@@ -4011,11 +4011,14 @@ class Instruction(object):
 
             :rtype: string
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
-        return DALVIK_OPCODES_FORMAT[self.OP][1][0]
+        try:
+            if self.OP > 0xff:
+                if self.OP >= 0xf2ff:
+                    return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
+                return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
+            return DALVIK_OPCODES_FORMAT[self.OP][1][0]
+        except AttributeError:
+            return None
 
     def get_op_value(self):
         """
