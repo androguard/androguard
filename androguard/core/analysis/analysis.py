@@ -258,7 +258,6 @@ class DVMBasicBlock(object):
         return self.last_length
 
     def set_childs(self, values):
-        # print self, self.start, self.end, values
         if values == []:
             next_block = self.context.get_basic_block(self.end + 1)
             if next_block is not None:

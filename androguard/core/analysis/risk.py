@@ -958,8 +958,6 @@ class FuzzyRisk(object):
         input_val['input_Internet_Risk'] = risks[INTERNET_RISK]
         input_val['input_Dynamic_Risk'] = risks[DYNAMIC_RISK]
 
-        # print input_val,
-
         self.system.calculate(input=input_val, output=output_values)
 
         val = output_values["output_malware_risk"]
@@ -975,8 +973,6 @@ class FuzzyRisk(object):
                     val_permissions += RISK_VALUES[j]
             except KeyError:
                 pass
-
-        print(length, android_entropy, java_entropy, val_permissions)
 
         output_values = {"output_method_one_score": 0.0}
         input_val = {}
@@ -1184,9 +1180,6 @@ class MethodScore(object):
                     val_permissions += RISK_VALUES[j]
             except KeyError:
                 pass
-
-        print(length, matches, android_entropy, java_entropy,
-              similarity_matches, val_permissions)
 
         output_values = {"output_method_score": 0.0}
         input_val = {}

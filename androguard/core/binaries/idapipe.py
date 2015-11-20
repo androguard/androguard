@@ -100,7 +100,6 @@ def run_ida(idapath, wrapper_init_path, binpath):
     if pid == 0:
         wrapper_path = "-S" + wrapper_init_path
         l = [idapath, "-A", wrapper_path, binpath]
-        print(l)
         compile = Popen(l, stdout=open('/dev/null', 'w'), stderr=STDOUT)
         stdout, stderr = compile.communicate()
 #        print stdout, stderr
