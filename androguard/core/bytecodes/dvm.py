@@ -3988,11 +3988,14 @@ class Instruction(object):
 
             :rtype: int
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
-        return DALVIK_OPCODES_FORMAT[self.OP][1][1]
+        try:
+            if self.OP > 0xff:
+                if self.OP >= 0xf2ff:
+                    return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
+                return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
+            return DALVIK_OPCODES_FORMAT[self.OP][1][1]
+        except (AttributeError, KeyError):
+            return None
 
     def get_name(self):
         """
@@ -4006,7 +4009,7 @@ class Instruction(object):
                     return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
                 return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
             return DALVIK_OPCODES_FORMAT[self.OP][1][0]
-        except AttributeError:
+        except (AttributeError, KeyError):
             return None
 
     def get_op_value(self):

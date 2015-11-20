@@ -24,6 +24,7 @@ from androguard.core.analysis.analysis import PathVar, TAINTED_PACKAGE_CREATE
 
 from networkx.exception import NetworkXError
 from networkx import convert
+# from networkx.classes.digraph import DiGraph
 from copy import deepcopy
 
 """Base class for undirected graphs.
@@ -2484,14 +2485,16 @@ class DiGraph(Graph):
         try:
             return iter(self.succ[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the digraph." % (n,))
+            return iter({})
+            # raise NetworkXError("The node %s is not in the digraph." % (n,))
 
     def predecessors_iter(self, n):
         """Return an iterator over predecessor nodes of n."""
         try:
             return iter(self.pred[n])
         except KeyError:
-            raise NetworkXError("The node %s is not in the digraph." % (n,))
+            return iter({})
+            # raise NetworkXError("The node %s is not in the digraph." % (n,))
 
     def successors(self, n):
         """Return a list of successor nodes of n.

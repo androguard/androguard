@@ -199,41 +199,40 @@ class APK(object):
             self.axml[i] = AXMLPrinter(self.zip.read(i))
             self.xml[i] = minidom.parseString(self.axml[i].get_buff())
 
-            if self.xml[i] is not None:
-                self.package = self.xml[
-                    i].documentElement.getAttribute("package")
-                self.androidversion["Code"] = self.xml[
-                    i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
-                self.androidversion["Name"] = self.xml[
-                    i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
+            if self.xml[i] is None:
+                break
+            self.package = self.xml[
+                i].documentElement.getAttribute("package")
+            self.androidversion["Code"] = self.xml[
+                i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionCode")
+            self.androidversion["Name"] = self.xml[
+                i].documentElement.getAttributeNS(NS_ANDROID_URI, "versionName")
+            for item in self.xml[i].getElementsByTagName('uses-permission'):
+                self.permissions.append(
+                    str(item.getAttributeNS(NS_ANDROID_URI, "name")))
 
-                for item in self.xml[i].getElementsByTagName('uses-permission'):
-                    self.permissions.append(
-                        str(item.getAttributeNS(NS_ANDROID_URI, "name")))
+            # getting details of the declared permissions
+            for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                d_perm_name = self._get_res_string_value(
+                    str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                d_perm_label = self._get_res_string_value(
+                    str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
+                d_perm_description = self._get_res_string_value(
+                    str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
+                d_perm_permissionGroup = self._get_res_string_value(
+                    str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
+                d_perm_protectionLevel = self._get_res_string_value(
+                    str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
 
-                # getting details of the declared permissions
-                for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                    d_perm_name = self._get_res_string_value(
-                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                    d_perm_label = self._get_res_string_value(
-                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "label")))
-                    d_perm_description = self._get_res_string_value(
-                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "description")))
-                    d_perm_permissionGroup = self._get_res_string_value(
-                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "permissionGroup")))
-                    d_perm_protectionLevel = self._get_res_string_value(
-                        str(d_perm_item.getAttributeNS(NS_ANDROID_URI, "protectionLevel")))
+                d_perm_details = {
+                    "label": d_perm_label,
+                    "description": d_perm_description,
+                    "permissionGroup": d_perm_permissionGroup,
+                    "protectionLevel": d_perm_protectionLevel,
+                }
+                self.declared_permissions[d_perm_name] = d_perm_details
 
-                    d_perm_details = {
-                        "label": d_perm_label,
-                        "description": d_perm_description,
-                        "permissionGroup": d_perm_permissionGroup,
-                        "protectionLevel": d_perm_protectionLevel,
-                    }
-                    self.declared_permissions[d_perm_name] = d_perm_details
-
-                self.valid_apk = True
-            break
+            self.valid_apk = True
 
         self.get_files_types()
         self.permission_module = androconf.load_api_specific_resource_module(
