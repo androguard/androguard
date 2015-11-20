@@ -21,12 +21,11 @@ import logging
 import types
 import random
 import string
-import imp
-
-ANDROGUARD_VERSION = "3.0"
 
 from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
 from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+
+ANDROGUARD_VERSION = "3.0"
 
 
 def is_ascii_problem(s):

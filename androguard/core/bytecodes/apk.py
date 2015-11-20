@@ -24,6 +24,7 @@ from androguard.util import read
 from androguard.core.resources import public
 
 import io
+import sys
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
@@ -38,7 +39,6 @@ NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 # 2: patch zipfile module
 ZIPMODULE = 1
 
-import sys
 if sys.hexversion < 0x2070000:
     try:
         import chilkat
@@ -61,7 +61,7 @@ def _range(a, b, step=None):
     return range(int(a), int(b), step)
 
 
-################################################### CHILKAT ZIP FORMAT ###
+# ################################################## CHILKAT ZIP FORMAT ###
 class ChilkatZip(object):
 
     def __init__(self, raw):
@@ -74,7 +74,7 @@ class ChilkatZip(object):
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None:
+        while e is not None:
             e.get_FileName(filename)
             self.files.append(filename.getString())
             e = e.NextEntry()
@@ -84,10 +84,10 @@ class ChilkatZip(object):
 
         filename = chilkat.CkString()
         e = self.zip.FirstEntry()
-        while e != None:
+        while e is not None:
             e.get_FileName(filename)
 
-            if re.match(patterns, filename.getString()) != None:
+            if re.match(patterns, filename.getString()) is not None:
                 el.append(e)
             e = e.NextEntry()
 
@@ -96,7 +96,7 @@ class ChilkatZip(object):
 
     def remplace_file(self, filename, buff):
         entry = self.zip.GetEntryByName(filename)
-        if entry != None:
+        if entry is not None:
             obj = chilkat.CkByteData()
             obj.append2(buff, len(buff))
             return entry.ReplaceData(obj)
@@ -138,7 +138,7 @@ def sign_apk(filename, keystore, storepass):
     stdout, stderr = compile.communicate()
 
 
-######################################################## APK FORMAT ######
+# ####################################################### APK FORMAT ######
 class APK(object):
     """
         This class can access to all elements in an APK file
@@ -178,7 +178,7 @@ class APK(object):
 
         self.magic_file = magic_file
 
-        if raw == True:
+        if raw:
             self.__raw = filename
         else:
             self.__raw = read(filename)
@@ -199,7 +199,7 @@ class APK(object):
             self.axml[i] = AXMLPrinter(self.zip.read(i))
             self.xml[i] = minidom.parseString(self.axml[i].get_buff())
 
-            if self.xml[i] != None:
+            if self.xml[i] is not None:
                 self.package = self.xml[
                     i].documentElement.getAttribute("package")
                 self.androidversion["Code"] = self.xml[
@@ -729,8 +729,8 @@ class APK(object):
             zout = zipfile.ZipFile(filename, 'w')
 
         for item in self.zip.infolist():
-            if deleted_files != None:
-                if re.match(deleted_files, item.filename) == None:
+            if deleted_files is not None:
+                if re.match(deleted_files, item.filename) is None:
                     if item.filename in new_files:
                         zout.writestr(item, new_files[item.filename])
                     else:
@@ -837,7 +837,7 @@ def show_Certificate(cert):
     ), cert.subjectDN(), cert.subjectE(), cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS()))
 
 
-######################################################## AXML FORMAT #####
+# ####################################################### AXML FORMAT #####
 # Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
@@ -1361,7 +1361,7 @@ class AXMLPrinter(object):
         return minidom.parseString(self.get_buff())
 
     def getPrefix(self, prefix):
-        if prefix == None or len(prefix) == 0:
+        if prefix is None or len(prefix) == 0:
             return ''
 
         return prefix + ':'
@@ -1645,7 +1645,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_string_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1661,7 +1661,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_strings_resources(self):
         self._analyse()
@@ -1690,7 +1690,7 @@ class ARSCParser(object):
 
         buff += "</packages>\n"
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_id_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1710,7 +1710,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_bool_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1726,7 +1726,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_integer_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1742,7 +1742,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_color_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1758,7 +1758,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_dimen_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1774,7 +1774,7 @@ class ARSCParser(object):
 
         buff += '</resources>\n'
 
-        return buff.encode('utf-8')
+        return buff
 
     def get_id(self, package_name, rid, locale='\x00\x00'):
         self._analyse()

@@ -9,7 +9,6 @@ import shutil
 import binascii
 import io
 import stat
-import io
 import re
 
 try:
@@ -361,9 +360,9 @@ class ZipInfo (object):
     def _encodeFilenameFlags(self):
         if isinstance(self.filename, str):
             try:
-                return self.filename.encode('ascii'), self.flag_bits
+                return self.filename, self.flag_bits
             except UnicodeEncodeError:
-                return self.filename.encode('utf-8'), self.flag_bits | 0x800
+                return self.filename, self.flag_bits | 0x800
         else:
             return self.filename, self.flag_bits
 
@@ -403,7 +402,6 @@ class ZipInfo (object):
                     idx += 1
 
                 if self.header_offset == 0xffffffff:
-                    old = self.header_offset
                     self.header_offset = counts[idx]
                     idx += 1
 
@@ -819,9 +817,9 @@ class ZipFile(object):
             self.NameToInfo[x.filename] = x
 
             # update total bytes read from central directory
-            total = (total + sizeCentralDir + centdir[_CD_FILENAME_LENGTH]
-                     + centdir[_CD_EXTRA_FIELD_LENGTH]
-                     + centdir[_CD_COMMENT_LENGTH])
+            total = (
+                total + sizeCentralDir + centdir[_CD_FILENAME_LENGTH] +
+                centdir[_CD_EXTRA_FIELD_LENGTH] + centdir[_CD_COMMENT_LENGTH])
 
             if self.debug > 2:
                 print("total", total)
@@ -976,8 +974,8 @@ class ZipFile(object):
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
         # Strip trailing path separator, unless it represents the root.
-        if (targetpath[-1:] in (os.path.sep, os.path.altsep)
-                and len(os.path.splitdrive(targetpath)[1]) > 1):
+        if (targetpath[-1:] in (os.path.sep, os.path.altsep) and
+                len(os.path.splitdrive(targetpath)[1]) > 1):
             targetpath = targetpath[:-1]
 
         # don't include leading "/" from file name if present
@@ -999,7 +997,7 @@ class ZipFile(object):
             return targetpath
 
         source = self.open(member, pwd=pwd)
-        target = file(targetpath, "wb")
+        target = open(targetpath, "wb")
         shutil.copyfileobj(source, target)
         source.close()
         target.close()
@@ -1253,9 +1251,6 @@ class ZipFile(object):
 
             # check for valid comment length
             if len(self.comment) >= ZIP_MAX_COMMENT:
-                if self.debug > 0:
-                    msg = 'Archive comment is too long; truncating to %d bytes' \
-                          % ZIP_MAX_COMMENT
                 self.comment = self.comment[:ZIP_MAX_COMMENT]
 
             endrec = struct.pack(structEndArchive, stringEndArchive,

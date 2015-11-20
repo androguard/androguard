@@ -17,11 +17,46 @@
 
 import re
 import collections
-from .sign import Signature
+from androguard.core.analysis.sign import Signature, TAINTED_PACKAGE_CREATE, \
+    TAINTED_PACKAGE_CALL
 
 from androguard.core.androconf import debug, is_ascii_problem,\
     load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
+
+DVM_FIELDS_ACCESS = {
+    "iget": "R",
+    "iget-wide": "R",
+    "iget-object": "R",
+    "iget-boolean": "R",
+    "iget-byte": "R",
+    "iget-char": "R",
+    "iget-short": "R",
+
+    "iput": "W",
+    "iput-wide": "W",
+    "iput-object": "W",
+    "iput-boolean": "W",
+    "iput-byte": "W",
+    "iput-char": "W",
+    "iput-short": "W",
+
+    "sget": "R",
+    "sget-wide": "R",
+    "sget-object": "R",
+    "sget-boolean": "R",
+    "sget-byte": "R",
+    "sget-char": "R",
+    "sget-short": "R",
+
+    "sput": "W",
+    "sput-wide": "W",
+    "sput-object": "W",
+    "sput-boolean": "W",
+    "sput-byte": "W",
+    "sput-char": "W",
+    "sput-short": "W",
+}
 
 
 class ContextField(object):
@@ -48,12 +83,6 @@ class ContextMethod(object):
 class ExternalFM(object):
 
     def __init__(self, class_name, name, descriptor):
-        if type('name') == bytes:
-            name = name.decode()
-        if type('class_name') == bytes:
-            class_name = class_name.decode()
-        if type('descriptor') == bytes:
-            descriptor = descriptor.decode()
         self.class_name = class_name
         self.name = name
         self.descriptor = descriptor
@@ -131,40 +160,6 @@ class BreakBlock(object):
         for i in self._ins:
             print("\t\t", end=' ')
             i.show(0)
-
-DVM_FIELDS_ACCESS = {
-    "iget": "R",
-    "iget-wide": "R",
-    "iget-object": "R",
-    "iget-boolean": "R",
-    "iget-byte": "R",
-    "iget-char": "R",
-    "iget-short": "R",
-
-    "iput": "W",
-    "iput-wide": "W",
-    "iput-object": "W",
-    "iput-boolean": "W",
-    "iput-byte": "W",
-    "iput-char": "W",
-    "iput-short": "W",
-
-    "sget": "R",
-    "sget-wide": "R",
-    "sget-object": "R",
-    "sget-boolean": "R",
-    "sget-byte": "R",
-    "sget-char": "R",
-    "sget-short": "R",
-
-    "sput": "W",
-    "sput-wide": "W",
-    "sput-object": "W",
-    "sput-boolean": "W",
-    "sput-byte": "W",
-    "sput-char": "W",
-    "sput-short": "W",
-}
 
 
 class DVMBasicBlock(object):
@@ -589,14 +584,6 @@ class TaintedVariables(object):
             self.__cache_string_by_method[method_idx].add(
                 self.__vars[TAINTED_STRING][var])
 
-TAINTED_PACKAGE_CREATE = 0
-TAINTED_PACKAGE_CALL = 1
-
-TAINTED_PACKAGE = {
-    TAINTED_PACKAGE_CREATE: "C",
-    TAINTED_PACKAGE_CALL: "M"
-}
-
 
 def show_Path(vm, path):
     cm = vm.get_class_manager()
@@ -727,8 +714,6 @@ class TaintedPackage(object):
 
     def __init__(self, vm, name):
         self.vm = vm
-        if type('name') == bytes:
-            name = name.decode()
         self.name = name
         self.paths = {TAINTED_PACKAGE_CREATE: [], TAINTED_PACKAGE_CALL: []}
 
@@ -1168,7 +1153,7 @@ class TaintedPackages(object):
             ex = re.compile(class_name)
 
             for m, _ in self.get_packages():
-                if ex.search(m.get_name().decode()) is not None:
+                if ex.search(m.get_name()) is not None:
                     l.extend(m.search_method(name, descriptor))
 
         return l

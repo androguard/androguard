@@ -16,8 +16,15 @@
 # limitations under the License.
 
 
-from androguard.core.analysis.analysis import TAINTED_PACKAGE_CREATE, TAINTED_PACKAGE_CALL
 from androguard.core.bytecodes import dvm
+
+TAINTED_PACKAGE_CREATE = 0
+TAINTED_PACKAGE_CALL = 1
+
+TAINTED_PACKAGE = {
+    TAINTED_PACKAGE_CREATE: "C",
+    TAINTED_PACKAGE_CALL: "M"
+}
 
 TAINTED_PACKAGE_INTERNAL_CALL = 2
 FIELD_ACCESS = {"R": 0, "W": 1}

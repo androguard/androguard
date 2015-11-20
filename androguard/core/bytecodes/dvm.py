@@ -1869,7 +1869,7 @@ def utf8_to_string(buff, length):
             chars.append(chr(value))
         else:
             warning('at offset %x: illegal utf8' % buff.get_idx())
-    return ''.join(chars).encode('utf-8')
+    return ''.join(chars)
 
 
 class StringDataItem(object):
@@ -1893,7 +1893,7 @@ class StringDataItem(object):
         expected = buff.read(1)
         if expected != b'\x00':
             warning('\x00 expected at offset: %x, found: %s' %
-                    (buff.get_idx(), expected.decode()))
+                    (buff.get_idx(), expected))
 
     def get_utf16_size(self):
         """
@@ -2127,7 +2127,6 @@ class ProtoIdItem(object):
         self.shorty_idx_value = self.__CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.__CM.get_type(self.return_type_idx)
         params = self.__CM.get_type_list(self.parameters_off)
-        params = [p.decode() for p in params]
         self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
@@ -2168,7 +2167,7 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
-        return self.return_type_idx_value.decode()
+        return self.return_type_idx_value
 
     def get_parameters_off_value(self):
         """
@@ -2674,12 +2673,7 @@ class EncodedField(object):
         name = self.CM.get_field(self.field_idx)
         self.class_name = name[0]
         self.name = name[2]
-        ts = []
-        for _t in name[1]:
-            if type(_t) == bytes:
-                _t = _t.decode()
-            ts.append(str(_t))
-        self.proto = ''.join(i for i in ts)
+        self.proto = ''.join(i for i in name[1])
 
     def set_init_value(self, value):
         """
@@ -2903,12 +2897,7 @@ class EncodedMethod(object):
 
         self.class_name = v[0]
         self.name = v[1]
-        new_v2 = []
-        for _v in v[2]:
-            if type(_v) == bytes:
-                _v = _v.decode()
-            new_v2.append(str(_v))
-        self.proto = ''.join(i for i in new_v2)
+        self.proto = ''.join(i for i in v[2])
 
         self.code = self.CM.get_code(self.code_off)
 
