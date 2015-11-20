@@ -67,7 +67,6 @@ def classdot2class(path):
         so we can change name of a class by d.CLASS_Landroid_support_v4_app_ActivityCompat.set_name(new_name)
     '''
     if path[0] == 'L' and path[-1] == ';':
-        print("WARNING: %s already a Lclass; name" % path)
         return path
 
     new_name = 'L' + path.replace('.', '/') + ';'

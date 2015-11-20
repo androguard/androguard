@@ -234,7 +234,6 @@ class DexViewer(object):
 
             buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
-            print(name)
 
             buff_nodes = ""
             buff_edges = ""
@@ -250,7 +249,6 @@ class DexViewer(object):
 
                 for i in mx.basic_blocks.get():
                     id_i = self.new_id(i, l_id)
-                    print(i, id_i, i.exception_analysis)
 
                     buff_nodes += self.add_node(i, id_i)
 
@@ -262,7 +260,6 @@ class DexViewer(object):
                         val = 2
 
                     for j in i.childs:
-                        print("\t", j)
 
                         id_j = self.new_id(j[-1], l_id)
                         buff_edges += self.add_edge(i,
@@ -344,7 +341,6 @@ class ApkViewer(object):
         self.G.add_node(root)
 
         for x, y, z in self.a.get_files_information():
-            print(x, y, z, os.path.basename(x))
 
             l = []
             splitall(x, l)
@@ -379,7 +375,6 @@ class ApkViewer(object):
         buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
         for node in self.G.nodes():
-            print(node)
 
             buff += "<node id=\"%d\">\n" % self.ids[node]
             buff += "<data key=\"d6\">\n"
