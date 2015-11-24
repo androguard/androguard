@@ -1,0 +1,9 @@
+languages:
+   Ruby: true
+   JavaScript: true
+   Python: true
+   PHP: true
+exclude_paths:
+- "test/*"
+- "tools/*"
+- "androguard/core/api_specific_resources/*"
