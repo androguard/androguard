@@ -222,8 +222,7 @@ def is_android(filename):
 def is_android_raw(raw):
     val = None
 
-    if raw[0:2] == "PK" or ('AndroidManifest.xml' in raw and
-                                'META-INF/MANIFEST.MF' in raw):
+    if raw[0:2] == "PK":
         val = "APK"
     elif raw[0:3] == "dex":
         val = "DEX"
@@ -235,6 +234,9 @@ def is_android_raw(raw):
         val = "AXML"
     elif raw[0:4] == "\x02\x00\x0C\x00":
         val = "ARSC"
+    elif ('AndroidManifest.xml' in raw and
+          'META-INF/MANIFEST.MF' in raw):
+        val = "APK"
 
     return val
 

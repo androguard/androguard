@@ -54,7 +54,7 @@ class StringsValueWindow(QtGui.QTreeView):
         for digest, filename, strings_analysis in self.session.get_strings():
             for string_value in strings_analysis:
                 self.model.setData(self.model.index(
-                    row, 0, QtCore.QModelIndex()), repr(string_value))
+                    row, 0, QtCore.QModelIndex()), repr(strings_analysis[string_value].get_value()))
                 self.model.setData(
                     self.model.index(row, 1, QtCore.QModelIndex()),
                     len(strings_analysis[string_value].get_xref_from()))
@@ -62,7 +62,7 @@ class StringsValueWindow(QtGui.QTreeView):
                     row, 2, QtCore.QModelIndex()), filename)
                 self.model.setData(self.model.index(
                     row, 3, QtCore.QModelIndex()), digest)
-                self.reverse_strings[repr(string_value) + digest
+                self.reverse_strings[repr(strings_analysis[string_value].get_value()) + digest
                                     ] = strings_analysis[string_value]
                 row += 1
 
