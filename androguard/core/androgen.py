@@ -157,7 +157,7 @@ class Androguard(object):
         """
         for file_name, bc in self.__bc:
             x = bc.get_method_descriptor(class_name, method_name, descriptor)
-            if x != None:
+            if x is not None:
                 return x, bc
         return None, None
 
@@ -171,7 +171,7 @@ class Androguard(object):
         """
         for file_name, bc in self.__bc:
             x = bc.get_field_descriptor(class_name, field_name, descriptor)
-            if x != None:
+            if x is not None:
                 return x, bc
         return None, None
 

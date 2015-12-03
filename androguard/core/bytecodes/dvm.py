@@ -124,24 +124,26 @@ def get_type(atype, size=None):
     return res
 
 
-MATH_DVM_OPCODES = {"add.": '+',
-                    "div.": '/',
-                            "mul.": '*',
-                            "or.": '|',
-                            "sub.": '-',
-                            "and.": '&',
-                            "xor.": '^',
-                            "shl.": "<<",
-                            "shr.": ">>",
-                    }
+MATH_DVM_OPCODES = {
+    "add.": '+',
+    "div.": '/',
+    "mul.": '*',
+    "or.": '|',
+    "sub.": '-',
+    "and.": '&',
+    "xor.": '^',
+    "shl.": "<<",
+    "shr.": ">>",
+}
 
 FIELD_READ_DVM_OPCODES = [".get"]
 FIELD_WRITE_DVM_OPCODES = [".put"]
 
 BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 
-BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.",
-                      "return", "return.", "packed-switch$", "sparse-switch$"]
+BRANCH_DVM_OPCODES = [
+    "throw", "throw.", "if.", "goto", "goto.", "return", "return.",
+    "packed-switch$", "sparse-switch$"]
 
 
 def clean_name_instruction(instruction):
@@ -3988,14 +3990,11 @@ class Instruction(object):
 
             :rtype: int
         """
-        try:
-            if self.OP > 0xff:
-                if self.OP >= 0xf2ff:
-                    return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-                return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
-            return DALVIK_OPCODES_FORMAT[self.OP][1][1]
-        except (AttributeError, KeyError):
-            return None
+        if self.OP > 0xfe:
+            if self.OP >= 0xf2ff:
+                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
+            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
+        return DALVIK_OPCODES_FORMAT[self.OP][1][1]
 
     def get_name(self):
         """
@@ -4003,14 +4002,11 @@ class Instruction(object):
 
             :rtype: string
         """
-        try:
-            if self.OP > 0xff:
-                if self.OP >= 0xf2ff:
-                    return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
-                return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
-            return DALVIK_OPCODES_FORMAT[self.OP][1][0]
-        except (AttributeError, KeyError):
-            return None
+        if self.OP > 0xfe:
+            if self.OP >= 0xf2ff:
+                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
+            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
+        return DALVIK_OPCODES_FORMAT[self.OP][1][0]
 
     def get_op_value(self):
         """
