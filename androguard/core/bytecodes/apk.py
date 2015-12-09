@@ -965,18 +965,13 @@ def show_Certificate(cert):
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
-CHUNK_STRINGPOOL_TYPE = 0x001C0001
-CHUNK_NULL_TYPE = 0x00000000
 
 
 class StringBlock(object):
 
-    def __init__(self, buff):
-        self.start = buff.get_idx()
+    def __init__(self, buff, header):
         self._cache = {}
-        self.header_size, self.header = self.skipNullPadding(buff)
-
-        self.chunkSize = unpack('<i', buff.read(4))[0]
+        self.header = header
         self.stringCount = unpack('<i', buff.read(4))[0]
         self.styleOffsetCount = unpack('<i', buff.read(4))[0]
 
@@ -997,7 +992,7 @@ class StringBlock(object):
         for i in range(0, self.styleOffsetCount):
             self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
 
-        size = self.chunkSize - self.stringsOffset
+        size = self.header.size - self.stringsOffset
         if self.stylesOffset != 0:
             size = self.stylesOffset - self.stringsOffset
 
@@ -1008,7 +1003,7 @@ class StringBlock(object):
         self.m_charbuff = buff.read(size)
 
         if self.stylesOffset != 0:
-            size = self.chunkSize - self.stylesOffset
+            size = self.header.size - self.stylesOffset
 
             # FIXME
             if (size % 4) != 0:
@@ -1016,22 +1011,6 @@ class StringBlock(object):
 
             for i in range(0, size / 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
-
-    def skipNullPadding(self, buff):
-
-        def readNext(buff, first_run=True):
-            header = unpack('<i', buff.read(4))[0]
-
-            if header == CHUNK_NULL_TYPE and first_run:
-                androconf.info("Skipping null padding in StringBlock header")
-                header = readNext(buff, first_run=False)
-            elif header != CHUNK_STRINGPOOL_TYPE:
-                androconf.warning("Invalid StringBlock header")
-
-            return header
-
-        header = readNext(buff)
-        return header >> 8, header & 0xFF
 
     def getString(self, idx):
         if idx in self._cache:
@@ -1098,11 +1077,8 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print "StringBlock(%x, %x, %x, %x, %x, %x" % (
-            self.start,
+        print "StringBlock(%s, %x, %x" % (
             self.header,
-            self.header_size,
-            self.chunkSize,
             self.stringsOffset,
             self.flags)
         for i in range(0, len(self.m_stringOffsets)):
@@ -1146,7 +1122,10 @@ class AXMLParser(object):
         if axml_file == CHUNK_AXML_FILE:
             self.buff.read(4)
 
-            self.sb = StringBlock(self.buff)
+            header = ARSCHeader(self.buff)
+            assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
+
+            self.sb = StringBlock(self.buff, header)
 
             self.m_resourceIDs = []
             self.m_prefixuri = {}
@@ -1573,6 +1552,7 @@ RES_XML_RESOURCE_MAP_TYPE = 0x0180
 RES_TABLE_PACKAGE_TYPE = 0x0200
 RES_TABLE_TYPE_TYPE = 0x0201
 RES_TABLE_TYPE_SPEC_TYPE = 0x0202
+RES_TABLE_LIBRARY_TYPE = 0x0203
 
 ACONFIGURATION_MCC = 0x0001
 ACONFIGURATION_MNC = 0x0002
@@ -1598,71 +1578,105 @@ class ARSCParser(object):
         self.header = ARSCHeader(self.buff)
         self.packageCount = unpack('<i', self.buff.read(4))[0]
 
-        self.stringpool_main = StringBlock(self.buff)
-
-        self.next_header = ARSCHeader(self.buff)
         self.packages = {}
         self.values = {}
         self.resource_values = collections.defaultdict(collections.defaultdict)
         self.resource_configs = collections.defaultdict(lambda: collections.defaultdict(set))
         self.resource_keys = collections.defaultdict(
             lambda: collections.defaultdict(collections.defaultdict))
+        self.stringpool_main = None
 
-        for i in range(0, self.packageCount):
-            current_package = ARSCResTablePackage(self.buff)
-            package_name = current_package.get_name()
+        # skip to the start of the first chunk
+        self.buff.set_idx(self.header.start + self.header.header_size)
 
-            self.packages[package_name] = []
+        data_end = self.header.start + self.header.size
 
-            mTableStrings = StringBlock(self.buff)
-            mKeyStrings = StringBlock(self.buff)
+        while self.buff.get_idx() <= data_end - ARSCHeader.SIZE:
+            res_header = ARSCHeader(self.buff)
 
-            self.packages[package_name].append(current_package)
-            self.packages[package_name].append(mTableStrings)
-            self.packages[package_name].append(mKeyStrings)
+            if res_header.start + res_header.size > data_end:
+                # this inner chunk crosses the boundary of the table chunk
+                break
 
-            pc = PackageContext(current_package, self.stringpool_main,
-                                mTableStrings, mKeyStrings)
+            if res_header.type == RES_STRING_POOL_TYPE and not self.stringpool_main:
+                self.stringpool_main = StringBlock(self.buff, res_header)
 
-            current = self.buff.get_idx()
-            while not self.buff.end():
-                header = ARSCHeader(self.buff)
-                self.packages[package_name].append(header)
+            elif res_header.type == RES_TABLE_PACKAGE_TYPE:
+                assert len(self.packages) < self.packageCount, "Got more packages than expected"
 
-                if header.type == RES_TABLE_TYPE_SPEC_TYPE:
-                    self.packages[package_name].append(ARSCResTypeSpec(
-                        self.buff, pc))
+                current_package = ARSCResTablePackage(self.buff, res_header)
+                package_name = current_package.get_name()
+                package_data_end = res_header.start + res_header.size
 
-                elif header.type == RES_TABLE_TYPE_TYPE:
-                    a_res_type = ARSCResType(self.buff, pc)
-                    self.packages[package_name].append(a_res_type)
-                    self.resource_configs[package_name][a_res_type].add(
-                       a_res_type.config)
+                self.packages[package_name] = []
 
-                    entries = []
-                    for i in range(0, a_res_type.entryCount):
-                        current_package.mResId = current_package.mResId & 0xffff0000 | i
-                        entries.append((unpack('<i', self.buff.read(4))[0],
-                                        current_package.mResId))
+                self.buff.set_idx(current_package.header.start + current_package.typeStrings)
+                type_sp_header = ARSCHeader(self.buff)
+                assert type_sp_header.type == RES_STRING_POOL_TYPE, \
+                    "Expected String Pool header, got %x" % type_sp_header.type
+                mTableStrings = StringBlock(self.buff, type_sp_header)
 
-                    self.packages[package_name].append(entries)
+                self.buff.set_idx(current_package.header.start + current_package.keyStrings)
+                key_sp_header = ARSCHeader(self.buff)
+                assert key_sp_header.type == RES_STRING_POOL_TYPE, \
+                    "Expected String Pool header, got %x" % key_sp_header.type
+                mKeyStrings = StringBlock(self.buff, key_sp_header)
 
-                    for entry, res_id in entries:
-                        if self.buff.end():
-                            break
+                self.packages[package_name].append(current_package)
+                self.packages[package_name].append(mTableStrings)
+                self.packages[package_name].append(mKeyStrings)
 
-                        if entry != -1:
-                            ate = ARSCResTableEntry(self.buff, res_id, pc)
-                            self.packages[package_name].append(ate)
+                pc = PackageContext(current_package, self.stringpool_main,
+                                    mTableStrings, mKeyStrings)
 
-                elif header.type == RES_TABLE_PACKAGE_TYPE:
-                    break
-                else:
-                    androconf.warning("unknown type")
-                    break
+                # skip to the first header in this table package chunk
+                self.buff.set_idx(res_header.start + res_header.header_size)
 
-                current += header.size
-                self.buff.set_idx(current)
+                while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
+
+                    pkg_chunk_header = ARSCHeader(self.buff)
+                    if pkg_chunk_header.start + pkg_chunk_header.size > package_data_end:
+                        # we are way off the package chunk; bail out
+                        break
+
+                    self.packages[package_name].append(pkg_chunk_header)
+
+                    if pkg_chunk_header.type == RES_TABLE_TYPE_SPEC_TYPE:
+                        self.packages[package_name].append(ARSCResTypeSpec(
+                            self.buff, pc))
+
+                    elif pkg_chunk_header.type == RES_TABLE_TYPE_TYPE:
+                        a_res_type = ARSCResType(self.buff, pc)
+                        self.packages[package_name].append(a_res_type)
+                        self.resource_configs[package_name][a_res_type].add(
+                           a_res_type.config)
+
+                        entries = []
+                        for i in range(0, a_res_type.entryCount):
+                            current_package.mResId = current_package.mResId & 0xffff0000 | i
+                            entries.append((unpack('<i', self.buff.read(4))[0],
+                                            current_package.mResId))
+
+                        self.packages[package_name].append(entries)
+
+                        for entry, res_id in entries:
+                            if self.buff.end():
+                                break
+
+                            if entry != -1:
+                                ate = ARSCResTableEntry(self.buff, res_id, pc)
+                                self.packages[package_name].append(ate)
+                    elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
+                        androconf.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
+                    else:
+                        # silently skip other chunk types
+                        pass
+
+                    # skip to the next chunk
+                    self.buff.set_idx(pkg_chunk_header.start + pkg_chunk_header.size)
+
+            # move to the next resource chunk
+            self.buff.set_idx(res_header.start + res_header.size)
 
     def _analyse(self):
         if self.analyzed:
@@ -2069,6 +2083,7 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
+    SIZE = 2 + 2 + 4
 
     def __init__(self, buff):
         self.start = buff.get_idx()
@@ -2079,7 +2094,8 @@ class ARSCHeader(object):
 
 class ARSCResTablePackage(object):
 
-    def __init__(self, buff):
+    def __init__(self, buff, header):
+        self.header = header
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
         self.name = buff.readNullString(256)
