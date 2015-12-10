@@ -1839,7 +1839,11 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                if any(map(i[1].__contains__, '<&>')):
+                    value = '<![CDATA[%s]]>' % i[1]
+                else:
+                    value = i[1]
+                buff += '<string name="%s">%s</string>\n' % (i[0], value)
         except KeyError:
             pass
 
