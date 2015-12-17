@@ -18,8 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, time, random, subprocess, imp, re
-import httplib
+import sys, os, time, imp, re
+import httplib, hashlib
 try:
     import requests
 except:
@@ -329,7 +329,7 @@ def upload_apk_to_vt(result, file, url, v) :
 def viruscan( apk , verbosity) :
     apk_path = apk
     apk_name = os.path.basename(apk)
-    sig = subprocess.check_output( "sha256sum " + apk +  " | grep -e '^.\{64\}' -o", shell=True ).rstrip()
+    sig = hashlib.sha256(apk).hexdigest()
 
     vt = "www.virustotal.com"
     uri = "/en/file/upload/?sha256=" + sig + "&_=1"
