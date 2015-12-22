@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
@@ -42,6 +43,7 @@ ZIPMODULE = 1
 if sys.hexversion < 0x2070000:
     try:
         import chilkat
+
         ZIPMODULE = 0
         # UNLOCK : change it with your valid key !
         try:
@@ -57,7 +59,6 @@ else:
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip(object):
-
     def __init__(self, raw):
         self.files = []
         self.zip = chilkat.CkZip()
@@ -182,6 +183,7 @@ class APK(object):
             self.__raw = read(filename)
 
         self.zipmodule = zipmodule
+        print zipmodule
 
         if zipmodule == 0:
             self.zip = ChilkatZip(self.__raw)
@@ -196,10 +198,14 @@ class APK(object):
             if i == "AndroidManifest.xml":
                 self.axml[i] = AXMLPrinter(self.zip.read(i))
                 try:
-                    self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                except:
-                    self.xml[i] = None
-
+                    self.xml[i] = minidom.parseString((self.axml[i].get_buff()))
+                except Exception as e:
+                    #work-around for invalid Manifest files
+                    buffer_arr = self.axml[i].get_buff().split('\n')
+                    element_index_delete = e.message.split('line')[1].split(',')[0].strip()
+                    del buffer_arr[int(element_index_delete) - 1]
+                    '\n'.join(buffer_arr)
+                    self.xml[i] = minidom.parseString('\n'.join(buffer_arr))
                 if self.xml[i] != None:
                     self.package = self.xml[i].documentElement.getAttribute(
                         "package")
@@ -639,7 +645,7 @@ class APK(object):
             for item in self.xml[i].getElementsByTagName(category):
                 if self.format_value(
                         item.getAttributeNS(NS_ANDROID_URI, "name")
-                        ) == name:
+                ) == name:
                     for sitem in item.getElementsByTagName("intent-filter"):
                         for ssitem in sitem.getElementsByTagName("action"):
                             if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
@@ -960,6 +966,7 @@ def show_Certificate(cert):
         cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(),
         cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
 
+
 ################################## AXML FORMAT ########################################
 # Translated from 
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
@@ -970,7 +977,6 @@ CHUNK_NULL_TYPE = 0x00000000
 
 
 class StringBlock(object):
-
     def __init__(self, buff):
         self.start = buff.get_idx()
         self._cache = {}
@@ -1134,7 +1140,6 @@ TEXT = 4
 
 
 class AXMLParser(object):
-
     def __init__(self, raw_buff):
         self.reset()
 
@@ -1297,7 +1302,7 @@ class AXMLParser(object):
 
     def getName(self):
         if self.m_name == -1 or (self.m_event != START_TAG and
-                                     self.m_event != END_TAG):
+                                         self.m_event != END_TAG):
             return u''
 
         return self.sb.getString(self.m_name)
@@ -1483,7 +1488,6 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 
 
 class AXMLPrinter(object):
-
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
         self.xmlns = False
@@ -1590,7 +1594,6 @@ ACONFIGURATION_UI_MODE = 0x1000
 
 
 class ARSCParser(object):
-
     def __init__(self, raw_buff):
         self.analyzed = False
         self.buff = bytecode.BuffHandle(raw_buff)
@@ -1637,7 +1640,7 @@ class ARSCParser(object):
                     a_res_type = ARSCResType(self.buff, pc)
                     self.packages[package_name].append(a_res_type)
                     self.resource_configs[package_name][a_res_type].add(
-                       a_res_type.config)
+                        a_res_type.config)
 
                     entries = []
                     for i in range(0, a_res_type.entryCount):
@@ -1778,7 +1781,7 @@ class ARSCParser(object):
                 ate.get_value(), "%s%s" % (
                     complexToFloat(ate.key.get_data()),
                     DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])
-                ]
+            ]
         except IndexError:
             androconf.debug("Out of range dimension unit index for %s: %s" % (
                 complexToFloat(ate.key.get_data()),
@@ -2043,14 +2046,13 @@ class ARSCParser(object):
 
         for res_type, configs in self.resource_configs[package_name].items():
             if res_type.get_package_name() == package_name and (
-                    type_name is None or res_type.get_type() == type_name):
+                            type_name is None or res_type.get_type() == type_name):
                 result[res_type.get_type()].extend(configs)
 
         return result
 
 
 class PackageContext(object):
-
     def __init__(self, current_package, stringpool_main, mTableStrings,
                  mKeyStrings):
         self.stringpool_main = stringpool_main
@@ -2069,7 +2071,6 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
-
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.type = unpack('<h', buff.read(2))[0]
@@ -2078,7 +2079,6 @@ class ARSCHeader(object):
 
 
 class ARSCResTablePackage(object):
-
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
@@ -2096,7 +2096,6 @@ class ARSCResTablePackage(object):
 
 
 class ARSCResTypeSpec(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2111,7 +2110,6 @@ class ARSCResTypeSpec(object):
 
 
 class ARSCResType(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2251,7 +2249,6 @@ class ARSCResTableConfig(object):
 
 
 class ARSCResTableEntry(object):
-
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
@@ -2291,7 +2288,6 @@ class ARSCResTableEntry(object):
 
 
 class ARSCComplex(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2309,7 +2305,6 @@ class ARSCComplex(object):
 
 
 class ARSCResStringPoolRef(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
