@@ -183,7 +183,6 @@ class APK(object):
             self.__raw = read(filename)
 
         self.zipmodule = zipmodule
-        print zipmodule
 
         if zipmodule == 0:
             self.zip = ChilkatZip(self.__raw)
