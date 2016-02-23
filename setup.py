@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='androguard',
+    name='ak-androguard',
     version='3.0',
     packages=find_packages(),
     scripts=['androaxml.py', 'androcsign.py', 'androdiff.py', 'androgexf.py',
