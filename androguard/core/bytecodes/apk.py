@@ -1320,7 +1320,7 @@ class AXMLParser(object):
         buff = ""
         for i in self.m_uriprefix:
             if i not in self.visited_ns:
-                buff += "xmlns:%s=\"%s\"\n" % (
+                buff += "xmlns:%s=\"%s\" " % (
                     self.sb.getString(self.m_uriprefix[i]),
                     self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
                 self.visited_ns.append(i)
@@ -1494,27 +1494,27 @@ class AXMLPrinter(object):
             _type = self.axml.next()
 
             if _type == START_DOCUMENT:
-                self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
+                self.buff += u'<?xml version="1.0" encoding="utf-8"?>'
             elif _type == START_TAG:
                 self.buff += u'<' + self.getPrefix(self.axml.getPrefix(
-                )) + self.axml.getName() + u'\n'
+                )) + self.axml.getName() + u' '
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
-                    self.buff += "%s%s=\"%s\"\n" % (
+                    self.buff += "%s%s=\"%s\" " % (
                         self.getPrefix(
                             self.axml.getAttributePrefix(i)),
                         self.axml.getAttributeName(i),
                         self._escape(self.getAttributeValue(i)))
 
-                self.buff += u'>\n'
+                self.buff += u'>'
 
             elif _type == END_TAG:
-                self.buff += "</%s%s>\n" % (
+                self.buff += "</%s%s> " % (
                     self.getPrefix(self.axml.getPrefix()), self.axml.getName())
 
             elif _type == TEXT:
-                self.buff += "%s\n" % self.axml.getText()
+                self.buff += "%s " % self.axml.getText()
 
             elif _type == END_DOCUMENT:
                 break
@@ -1803,145 +1803,157 @@ class ARSCParser(object):
     def get_public_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        # buff = '<?xml version="1.0" encoding="utf-8"?>\n'
+        # buff += '<resources>\n'
+        #
+        # try:
+        #     for i in self.values[package_name][locale]["public"]:
+        #         buff += '<public type="%s" name="%s" id="0x%08x" />\n' % (
+        #             i[0], i[1], i[2])
+        # except KeyError:
+        #     pass
+        #
+        # buff += '</resources>\n'
+
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["public"]:
-                buff += '<public type="%s" name="%s" id="0x%08x" />\n' % (
+                buff += '<public type="%s" name="%s" id="0x%08x" />' % (
                     i[0], i[1], i[2])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_string_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                buff += '<string name="%s">%s</string>' % (i[0], i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_strings_resources(self):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
 
         buff += "<packages>\n"
         for package_name in self.get_packages_names():
-            buff += "<package name=\"%s\">\n" % package_name
+            buff += "<package name=\"%s\">" % package_name
 
             for locale in self.get_locales(package_name):
-                buff += "<locale value=%s>\n" % repr(locale)
+                buff += "<locale value=%s>" % repr(locale)
 
-                buff += '<resources>\n'
+                buff += '<resources>'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>' % (i[0], i[1])
                 except KeyError:
                     pass
 
-                buff += '</resources>\n'
-                buff += '</locale>\n'
+                buff += '</resources>'
+                buff += '</locale>'
 
-            buff += "</package>\n"
+            buff += "</package>"
 
-        buff += "</packages>\n"
+        buff += "</packages>"
 
         return buff.encode('utf-8')
 
     def get_id_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["id"]:
                 if len(i) == 1:
-                    buff += '<item type="id" name="%s"/>\n' % (i[0])
+                    buff += '<item type="id" name="%s"/>' % (i[0])
                 else:
-                    buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
+                    buff += '<item type="id" name="%s">%s</item>' % (i[0],
                                                                        i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_bool_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["bool"]:
-                buff += '<bool name="%s">%s</bool>\n' % (i[0], i[1])
+                buff += '<bool name="%s">%s</bool>' % (i[0], i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_integer_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
         buff += '<resources>\n'
 
         try:
             for i in self.values[package_name][locale]["integer"]:
-                buff += '<integer name="%s">%s</integer>\n' % (i[0], i[1])
+                buff += '<integer name="%s">%s</integer>' % (i[0], i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_color_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["color"]:
-                buff += '<color name="%s">%s</color>\n' % (i[0], i[1])
+                buff += '<color name="%s">%s</color>' % (i[0], i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
     def get_dimen_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
 
-        buff = '<?xml version="1.0" encoding="utf-8"?>\n'
-        buff += '<resources>\n'
+        buff = '<?xml version="1.0" encoding="utf-8"?>'
+        buff += '<resources>'
 
         try:
             for i in self.values[package_name][locale]["dimen"]:
-                buff += '<dimen name="%s">%s</dimen>\n' % (i[0], i[1])
+                buff += '<dimen name="%s">%s</dimen>' % (i[0], i[1])
         except KeyError:
             pass
 
-        buff += '</resources>\n'
+        buff += '</resources>'
 
         return buff.encode('utf-8')
 
