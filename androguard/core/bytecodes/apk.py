@@ -202,9 +202,10 @@ class APK(object):
                     #work-around for invalid Manifest files
                     buffer_arr = self.axml[i].get_buff().split('\n')
                     element_index_delete = e.message.split('line')[1].split(',')[0].strip()
-                    del buffer_arr[int(element_index_delete) - 1]
-                    '\n'.join(buffer_arr)
-                    self.xml[i] = minidom.parseString('\n'.join(buffer_arr))
+                    element_to_delete = buffer_arr[int(element_index_delete)-1]
+                    ## remove all invalid elements
+                    final_buffer_arr = [element for element in buffer_arr if element != element_to_delete]
+                    self.xml[i] = minidom.parseString('\n'.join(final_buffer_arr))
                 if self.xml[i] != None:
                     self.package = self.xml[i].documentElement.getAttribute(
                         "package")
