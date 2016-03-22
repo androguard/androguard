@@ -582,6 +582,9 @@ class APK(object):
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName("activity"):
+                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                if activityEnabled is not None and activityEnabled != "" and activityEnabled is not True:
+                    continue
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
