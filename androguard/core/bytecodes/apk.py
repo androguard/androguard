@@ -964,7 +964,7 @@ class StringBlock(object):
             t_data = pack("=b", self.m_strings[offset + i])
             data += str(t_data, errors='ignore')
 
-        return data.decode("utf-8", 'replace')
+        return data
 
     def getVarint(self, array, offset):
         val = array[offset]
