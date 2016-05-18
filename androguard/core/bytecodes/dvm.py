@@ -7990,7 +7990,7 @@ class DalvikVMFormat(bytecode._Bytecode):
             for i in self.classes.class_def:
                 for j in i.get_methods():
                     self.__cache_methods[j.get_class_name() + j.get_name() +
-                                         j.get_descriptor()] = j
+                                         ''.join(j.get_descriptor())] = j
 
         return self.__cache_methods.get(key)
 
@@ -8069,7 +8069,7 @@ class DalvikVMFormat(bytecode._Bytecode):
             for i in self.classes.class_def:
                 for j in i.get_fields():
                     self.__cache_fields[j.get_class_name() + j.get_name() +
-                                        j.get_descriptor()] = j
+                                        ''.join(j.get_descriptor())] = j
 
         return self.__cache_fields.get(key)
 
