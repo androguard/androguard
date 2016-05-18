@@ -2094,7 +2094,8 @@ class ProtoIdItem(object):
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
         params = self.CM.get_type_list(self.parameters_off)
-        self.parameters_off_value = '({})'.format(' '.join(params))
+        self.parameters_off_value = tuple(params)
+
 
     def get_shorty_idx(self):
         """
@@ -2458,8 +2459,7 @@ class MethodIdItem(object):
 
           :rtype: string
       """
-        proto = self.get_proto()
-        return proto[0] + proto[1]
+        return self.get_proto()
 
     def get_real_descriptor(self):
         """
@@ -2467,8 +2467,7 @@ class MethodIdItem(object):
 
           :rtype: string
       """
-        proto = self.get_proto()
-        return proto[0].replace(' ', '') + proto[1]
+        return self.get_proto()
 
     def get_name(self):
         """
@@ -2733,6 +2732,13 @@ class EncodedField(object):
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
+    def yield_access_flags(self):
+        access_flags = self.get_access_flags()
+        for i in ACCESS_FLAGS:
+            if (i[0] & access_flags) == i[0]:
+                yield i[1]
+
+
     def set_name(self, value):
         self.CM.set_hook_field_name(self, value)
         self.reload()
@@ -2869,12 +2875,20 @@ class EncodedMethod(object):
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
+    def yield_access_flags(self):
+        access_flags = self.get_access_flags()
+        for i in ACCESS_FLAGS:
+            if (i[0] & access_flags) == i[0]:
+                yield i[1]
+
+
+
     def reload(self):
         v = self.CM.get_method(self.method_idx)
 
         self.class_name = v[0]
         self.name = v[1]
-        self.proto = ''.join(i for i in v[2])
+        self.proto = v[2]
 
         self.code = self.CM.get_code(self.code_off)
 
@@ -2883,6 +2897,24 @@ class EncodedMethod(object):
         params = ret[0][1:].split()
 
         return self.code.get_registers_size() - len(params) - 1
+
+    @property
+    def params_count(self):
+        count = 0;
+        for param in self.proto[:-1]:
+            if param[0] in 'JD':
+                count += 2
+            else:
+                count += 1
+
+        if 'static' not in self.yield_access_flags():
+            count += 1
+
+        return count
+
+    @property
+    def locals_count(self):
+        return self.code.get_registers_size() - self.params_count
 
     def get_information(self):
         info = {}
@@ -3937,7 +3969,7 @@ def get_kind(cm, kind, value):
         name = method.get_name()
         descriptor = method.get_descriptor()
 
-        return "%s->%s%s" % (class_name, name, descriptor)
+        return "%s->%s(%s)%s" % (class_name, name, ''.join(descriptor[:-1]), descriptor[-1])
 
     elif kind == KIND_STRING:
         return repr(cm.get_string(value))
@@ -3947,7 +3979,7 @@ def get_kind(cm, kind, value):
 
     elif kind == KIND_FIELD:
         class_name, proto, field_name = cm.get_field(value)
-        return "%s->%s %s" % (class_name, field_name, proto)
+        return "%s->%s:%s" % (class_name, field_name, proto)
 
     elif kind == KIND_TYPE:
         return cm.get_type(value)
@@ -4020,7 +4052,7 @@ class Instruction(object):
         """
             Print the instruction
         """
-        print self.get_name() + " " + self.get_output(idx),
+        print self.get_name() + ":" + self.get_output(idx),
 
     def show_buff(self, idx):
         """
@@ -4316,7 +4348,8 @@ class SparseSwitch(object):
 
           :rtype: string
       """
-        return []
+        assert len(self.keys) == len(self.targets)
+        return [(OPERAND_LITERAL, k) for k in self.keys] + [(OPERAND_OFFSET, t) for t in self.targets]
 
     def get_formatted_operands(self):
         return None
@@ -4443,7 +4476,7 @@ class PackedSwitch(object):
 
           :rtype: string
       """
-        return []
+        return [(OPERAND_LITERAL, self.first_key)] + [(OPERAND_OFFSET, t) for t in self.targets]
 
     def get_formatted_operands(self):
         return None
@@ -4510,21 +4543,30 @@ class Instruction35c(Instruction):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.A == 0:
-            buff += "%s" % (kind)
+            buff += "{}, %s" % (kind)
         elif self.A == 1:
-            buff += "v%d, %s" % (self.C, kind)
+            buff += "{v%d}, %s" % (self.C, kind)
         elif self.A == 2:
-            buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+            buff += "{v%d, v%d}, %s" % (self.C, self.D, kind)
         elif self.A == 3:
-            buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+            buff += "{v%d, v%d, v%d}, %s" % (self.C, self.D, self.E, kind)
         elif self.A == 4:
-            buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
+            buff += "{v%d, v%d, v%d, v%d}, %s" % (self.C, self.D, self.E, self.F,
                                                 kind)
         elif self.A == 5:
-            buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
+            buff += "{v%d, v%d, v%d, v%d, v%d}, %s" % (self.C, self.D, self.E,
                                                      self.F, self.G, kind)
+        else:
+            raise ValueError("Too many arguments to invoke")
 
         return buff
+
+    def get_operands_abstract(self):
+        assert 0 <= self.A <=5
+        var_indexes = [getattr(self, operand) for operand in 'CDEFG'[:self.A]]
+        kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+        return [('var', i) for i in var_indexes] + [('methodref', kind)]
+
 
     def get_operands(self, idx=-1):
         l = []
@@ -4866,7 +4908,7 @@ class Instruction31t(Instruction):
         return buff
 
     def get_operands(self, idx=-1):
-        return [(OPERAND_REGISTER, self.AA), (OPERAND_LITERAL, self.BBBBBBBB)]
+        return [(OPERAND_REGISTER, self.AA), (OPERAND_OFFSET, self.BBBBBBBB)]
 
     def get_ref_off(self):
         return self.BBBBBBBB
@@ -5413,24 +5455,17 @@ class Instruction3rc(Instruction):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.CCCC == self.NNNN:
-            buff += "v%d, %s" % (self.CCCC, kind)
+            buff += "{v%d}, %s" % (self.CCCC, kind)
         else:
-            buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
+            buff += "{v%d .. v%d}, %s" % (self.CCCC, self.NNNN, kind)
         return buff
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
-        if self.CCCC == self.NNNN:
-            return [(OPERAND_REGISTER, self.CCCC),
-                    (self.get_kind() + OPERAND_KIND, self.BBBB, kind)]
-        else:
-            l = []
-            for i in range(self.CCCC, self.NNNN):
-                l.append((OPERAND_REGISTER, i))
+        l = [(OPERAND_REGISTER, i) for i in range(self.CCCC, self.NNNN+1)]
 
-            l.append((self.get_kind() + OPERAND_KIND, self.BBBB, kind))
-            return l
+        return l + [(self.get_kind() + OPERAND_KIND, self.BBBB, kind)]
 
     def get_ref_kind(self):
         return self.BBBB
@@ -7297,8 +7332,7 @@ class ClassManager(object):
             proto = self.__manage_item["TYPE_PROTO_ID_ITEM"].get(idx)
             self.__cached_proto[idx] = proto
 
-        return [proto.get_parameters_off_value(),
-                proto.get_return_type_idx_value()]
+        return proto.get_parameters_off_value() + (proto.get_return_type_idx_value(),)
 
     def get_field(self, idx):
         field = self.__manage_item["TYPE_FIELD_ID_ITEM"].get(idx)
