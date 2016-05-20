@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from androguard.session import Session
 from androguard.core import androconf
@@ -6,13 +6,15 @@ from androguard.gui.fileloading import FileLoadingThread
 from androguard.gui.treewindow import TreeWindow
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.stringswindow import StringsWindow
+from androguard.gui.binwindow import binWidget
+from androguard.gui.DataModel import *
 
 from androguard.gui.helpers import class2func
 
 import os
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     '''Main window:
        self.central: QTabWidget in center area
        self.dock: QDockWidget in left area
@@ -22,6 +24,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None, session=Session(), input_file=None):
         super(MainWindow, self).__init__(parent)
         self.session = session
+        self.bin_windows = []
 
         self.setupSession()
 
@@ -36,8 +39,15 @@ class MainWindow(QtGui.QMainWindow):
 
         self.showStatus("Androguard GUI")
 
+        self.installEventFilter(self)
+
         if input_file != None:
             self.openFile(input_file)
+
+    def eventFilter(self, watched, event):
+        for bin_window in self.bin_windows:
+            bin_window.eventFilter(watched, event)
+        return False
 
     def showStatus(self, msg):
         '''Helper function called by any window to display a message
@@ -54,8 +64,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def setupSession(self):
         self.fileLoadingThread = FileLoadingThread(self.session)
-        self.connect(self.fileLoadingThread, QtCore.SIGNAL("loadedFile(bool)"),
-                     self.loadedFile)
+        self.fileLoadingThread.file_loaded.connect(self.loadedFile)
 
     def loadedFile(self, success):
         if not success:
@@ -133,14 +142,14 @@ class MainWindow(QtGui.QMainWindow):
         '''Setup empty Tree at startup. '''
         if hasattr(self, "tree"):
             del self.tree
-        self.tree = QtGui.QTreeWidget(self)
+        self.tree = QtWidgets.QTreeWidget(self)
         self.tree.header().close()
 
     def setupDock(self):
         '''Setup empty Dock at startup. '''
-        self.dock = QtGui.QDockWidget("Classes", self)
+        self.dock = QtWidgets.QDockWidget("Classes", self)
         self.dock.setWidget(self.tree)
-        self.dock.setFeatures(QtGui.QDockWidget.NoDockWidgetFeatures)
+        self.dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
 
     def setupTree(self):
@@ -151,7 +160,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def setupCentral(self):
         '''Setup empty window supporting tabs at startup. '''
-        self.central = QtGui.QTabWidget()
+        self.central = QtWidgets.QTabWidget()
         self.central.setTabsClosable(True)
         self.central.tabCloseRequested.connect(self.tabCloseRequestedHandler)
         self.central.currentChanged.connect(self.currentTabChanged)
@@ -170,7 +179,7 @@ class MainWindow(QtGui.QMainWindow):
         self.central.clear()
 
     def setupFileMenu(self):
-        fileMenu = QtGui.QMenu("&File", self)
+        fileMenu = QtWidgets.QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
         fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
@@ -179,17 +188,18 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
 
     def setupViewMenu(self):
-        viewMenu = QtGui.QMenu("&View", self)
+        viewMenu = QtWidgets.QMenu("&View", self)
         self.menuBar().addMenu(viewMenu)
 
         viewMenu.addAction("&Strings...", self.openStringsWindow)
+        viewMenu.addAction("&APK...", self.openApkWindow)
 
     def setupHelpMenu(self):
-        helpMenu = QtGui.QMenu("&Help", self)
+        helpMenu = QtWidgets.QMenu("&Help", self)
         self.menuBar().addMenu(helpMenu)
 
         helpMenu.addAction("&About", self.about)
-        helpMenu.addAction("About &Qt", QtGui.qApp.aboutQt)
+        helpMenu.addAction("About &Qt", QtWidgets.qApp.aboutQt)
 
     def updateDockWithTree(self, empty=False):
         '''Update the classes tree. Called when
@@ -206,8 +216,23 @@ class MainWindow(QtGui.QMainWindow):
                                    stringswin.title)
         self.central.setCurrentWidget(stringswin)
 
-    def openBytecodeWindow(self, current_class, method=None):
-        pass  #self.central.setCurrentWidget(sourcewin)
+    def openApkWindow(self):
+        androconf.debug("openApkWindow for %s" % self.session.analyzed_apk)
+        bin_window = binWidget(self, ApkModel(self.session.get_objects_apk(self.fileLoadingThread.file_path)[0]), "APK")
+        bin_window.activateWindow()
+        self.central.addTab(bin_window, bin_window.title)
+        self.central.setCurrentWidget(bin_window)
+
+        self.bin_windows.append(bin_window)
+
+    def openBinWindow(self, current_class):
+        androconf.debug("openBinWindow for %s" % current_class)
+        bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
+        bin_window.activateWindow()
+        self.central.addTab(bin_window, current_class.current_title)
+        self.central.setCurrentWidget(bin_window)
+
+        self.bin_windows.append(bin_window)
 
     def openSourceWindow(self, current_class, method=None):
         '''Main function to open a .java source window

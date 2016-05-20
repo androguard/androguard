@@ -9,7 +9,7 @@ from androguard.session import Session
 from androguard.gui.mainwindow import MainWindow
 from androguard.misc import init_print_colors
 
-from PySide import QtCore, QtGui
+from PyQt5 import QtWidgets
 from threading import Thread
 
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         console = IpythonConsole()
         console.start()
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window = MainWindow(session=session, input_file=args.input_file)
     window.resize(1024, 768)
     window.show()

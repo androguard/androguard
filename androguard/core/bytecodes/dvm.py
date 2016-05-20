@@ -26,8 +26,10 @@ from struct import pack, unpack, calcsize
 
 DEX_FILE_MAGIC_35 = 'dex\n035\x00'
 DEX_FILE_MAGIC_36 = 'dex\n036\x00'
+DEX_FILE_MAGIC_37 = 'dex\n037\x00'
 ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
+ODEX_FILE_MAGIC_37 = 'dey\n037\x00'
 
 TYPE_MAP_ITEM = {
     0x0: "TYPE_HEADER_ITEM",
@@ -2855,6 +2857,15 @@ class EncodedMethod(object):
       """
         return self.code_off
 
+    def get_address(self):
+        """
+          Return the offset from the start of the file to the code structure for this method,
+          or 0 if this method is either abstract or native
+
+          :rtype: int
+      """
+        return self.code_off + 0x10
+
     def get_access_flags_string(self):
         """
             Return the access flags string of the method
@@ -2927,9 +2938,9 @@ class EncodedMethod(object):
         bytecode._PrintSubBanner()
 
     def __str__(self):
-        return "%s->%s%s [access_flags=%s]" % (
+        return "%s->%s%s [access_flags=%s] @ 0x%x" % (
             self.get_class_name(), self.get_name(), self.get_descriptor(),
-            self.get_access_flags_string())
+            self.get_access_flags_string(), self.get_code_off())
 
     def show_info(self):
         """
@@ -8498,7 +8509,7 @@ class DalvikOdexVMFormat(DalvikVMFormat):
     def _preload(self, buff):
         self.orig_buff = buff
         self.magic = buff[:8]
-        if self.magic == ODEX_FILE_MAGIC_35 or self.magic == ODEX_FILE_MAGIC_36:
+        if self.magic in (ODEX_FILE_MAGIC_35, ODEX_FILE_MAGIC_36, ODEX_FILE_MAGIC_37):
             self.odex_header = OdexHeaderItem(self)
 
             self.set_idx(self.odex_header.deps_offset)

@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
 from androguard.gui.renamewindow import RenameDialog
@@ -10,8 +10,6 @@ try:
     from pygments.lexers import JavaLexer
 except:
     PYGMENTS = False
-
-import os
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
@@ -34,7 +32,6 @@ class SourceDocument(QtGui.QTextDocument):
         self.setDefaultFont(font)
 
         cursor = QtGui.QTextCursor(self)  # position=0x0
-        state = 0
         self.binding = {}
 
         # save the cursor position before each interesting element
@@ -45,7 +42,7 @@ class SourceDocument(QtGui.QTextDocument):
                 cursor.insertText(t[1])
 
 
-class SourceWindow(QtGui.QTextEdit):
+class SourceWindow(QtWidgets.QTextEdit):
     '''Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
@@ -116,6 +113,14 @@ class SourceWindow(QtGui.QTextEdit):
         lines.append(("COMMENTS", [(
             "COMMENT", "/*\n * filename:%s\n * digest:%s\n */\n" % (
                 self.current_filename, self.current_digest))]))
+
+        method_info_buff = ""
+        for method in self.current_class.get_methods():
+            method_info_buff += "* " + str(method) + "\n"
+
+        lines.append(("COMMENTS", [(
+            "COMMENT", "/*\n" + method_info_buff + "\n */\n")]))
+
         lines.extend(self.current_class.get_source_ext())
 
         #TODO: delete doc when tab is closed? not deleted by "self" :(
@@ -131,10 +136,6 @@ class SourceWindow(QtGui.QTextEdit):
         else:
             androconf.debug("Pygments is not present !")
 
-    def display_bytecodes(self):
-        androconf.debug("Display bytecodes for %s" % self.current_class)
-        self.mainwin.openBytecodeWindow(self.current_class)
-
     @QtCore.Slot()
     def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word
@@ -145,7 +146,7 @@ class SourceWindow(QtGui.QTextEdit):
         androconf.debug(cur.position())
         androconf.debug(cur.selectedText())
         if len(cur.selectedText()) == 0:
-            cur.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
+            cur.select(QtGui.QTextCursor.WordUnderCursor)
             self.setTextCursor(cur)
             androconf.debug("cursor: %s" % cur.selectedText())
         else:
@@ -168,34 +169,34 @@ class SourceWindow(QtGui.QTextEdit):
             self.display_bytecodes()
 
     def CustomContextMenuHandler(self, pos):
-        menu = QtGui.QMenu(self)
-        menu.addAction(QtGui.QAction(
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(QtWidgets.QAction(
             "Xref ...",
             self,
             statusTip="List the references where this element is used",
             triggered=self.actionXref))
-        menu.addAction(QtGui.QAction("Go to...",
+        menu.addAction(QtWidgets.QAction("Go to...",
                                      self,
                                      statusTip="Go to element definition",
                                      triggered=self.actionGoto))
         menu.addAction(
-            QtGui.QAction("Rename...",
+            QtWidgets.QAction("Rename...",
                           self,
                           statusTip="Rename an element (class, method, ...)",
                           triggered=self.actionRename))
-        menu.addAction(QtGui.QAction(
+        menu.addAction(QtWidgets.QAction(
             "Info...",
             self,
             statusTip=
             "Display info of an element (anything useful in the document)",
             triggered=self.actionInfo))
-        menu.addAction(QtGui.QAction(
+        menu.addAction(QtWidgets.QAction(
             "Reload sources...",
             self,
             statusTip=
             "Reload sources (needed when renaming changed other tabs)",
             triggered=self.reload_java_sources))
-        menu.addAction(QtGui.QAction("Open bytecodes...",
+        menu.addAction(QtWidgets.QAction("Open bytecodes...",
                                      self,
                                      statusTip="",
                                      triggered=self.display_bytecodes))

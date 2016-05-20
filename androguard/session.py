@@ -49,7 +49,10 @@ class Session(object):
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add DEX:%s" % digest)
 
+        androconf.debug("Parsing format ...")
         d = DalvikVMFormat(data)
+
+        androconf.debug("Running analysis ...")
         dx = self.runAnalysis(d, dx)
 
         androconf.debug("added DEX:%s" % digest)
@@ -62,6 +65,7 @@ class Session(object):
         self.analyzed_digest[digest] = filename
 
         if self.export_ipython:
+            androconf.debug("Exporting in ipython")
             d.create_python_export()
 
         return (digest, d, dx)
@@ -88,7 +92,6 @@ class Session(object):
         return (digest, d, dx)
 
     def runAnalysis(self, d, dx=None):
-        androconf.debug("VMAnalysis ...")
         if dx == None:
             dx = newVMAnalysis(d)
         else:

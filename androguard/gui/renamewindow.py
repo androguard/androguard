@@ -1,8 +1,8 @@
-from PySide import QtCore, QtGui
+from PyQt5 import QtWidgets, QtGui
 from androguard.core import androconf
 
 
-class RenameDialog(QtGui.QDialog):
+class RenameDialog(QtWidgets.QDialog):
     '''
         parent: SourceWindow that started the new XrefDialog
     '''

@@ -158,7 +158,8 @@ class APK(object):
                  raw=False,
                  mode="r",
                  magic_file=None,
-                 zipmodule=ZIPMODULE):
+                 zipmodule=ZIPMODULE,
+                 skip_analysis=False):
         self.filename = filename
 
         self.xml = {}
@@ -192,60 +193,61 @@ class APK(object):
             import zipfile
             self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
 
-        for i in self.zip.namelist():
-            if i == "AndroidManifest.xml":
-                self.axml[i] = AXMLPrinter(self.zip.read(i))
-                try:
-                    self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                except:
-                    self.xml[i] = None
+        if not skip_analysis:
+            for i in self.zip.namelist():
+                if i == "AndroidManifest.xml":
+                    self.axml[i] = AXMLPrinter(self.zip.read(i))
+                    try:
+                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+                    except:
+                        self.xml[i] = None
 
-                if self.xml[i] != None:
-                    self.package = self.xml[i].documentElement.getAttribute(
-                        "package")
-                    self.androidversion[
-                        "Code"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionCode")
-                    self.androidversion[
-                        "Name"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionName")
+                    if self.xml[i] != None:
+                        self.package = self.xml[i].documentElement.getAttribute(
+                            "package")
+                        self.androidversion[
+                            "Code"
+                        ] = self.xml[i].documentElement.getAttributeNS(
+                            NS_ANDROID_URI, "versionCode")
+                        self.androidversion[
+                            "Name"
+                        ] = self.xml[i].documentElement.getAttributeNS(
+                            NS_ANDROID_URI, "versionName")
 
-                    for item in self.xml[i].getElementsByTagName('uses-permission'):
-                        self.permissions.append(str(item.getAttributeNS(
-                            NS_ANDROID_URI, "name")))
+                        for item in self.xml[i].getElementsByTagName('uses-permission'):
+                            self.permissions.append(str(item.getAttributeNS(
+                                NS_ANDROID_URI, "name")))
 
-                    # getting details of the declared permissions
-                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                        d_perm_name = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                        d_perm_label = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "label")))
-                        d_perm_description = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "description")))
-                        d_perm_permissionGroup = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "permissionGroup")))
-                        d_perm_protectionLevel = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "protectionLevel")))
+                        # getting details of the declared permissions
+                        for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                            d_perm_name = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                            d_perm_label = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "label")))
+                            d_perm_description = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "description")))
+                            d_perm_permissionGroup = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "permissionGroup")))
+                            d_perm_protectionLevel = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "protectionLevel")))
 
-                        d_perm_details = {
-                            "label": d_perm_label,
-                            "description": d_perm_description,
-                            "permissionGroup": d_perm_permissionGroup,
-                            "protectionLevel": d_perm_protectionLevel,
-                        }
-                        self.declared_permissions[d_perm_name] = d_perm_details
+                            d_perm_details = {
+                                "label": d_perm_label,
+                                "description": d_perm_description,
+                                "permissionGroup": d_perm_permissionGroup,
+                                "protectionLevel": d_perm_protectionLevel,
+                            }
+                            self.declared_permissions[d_perm_name] = d_perm_details
 
-                    self.valid_apk = True
+                        self.valid_apk = True
 
-        self.get_files_types()
-        self.permission_module = androconf.load_api_specific_resource_module(
-            "aosp_permissions", self.get_target_sdk_version())
+            self.get_files_types()
+            self.permission_module = androconf.load_api_specific_resource_module(
+                "aosp_permissions", self.get_target_sdk_version())
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
