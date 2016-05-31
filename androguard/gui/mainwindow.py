@@ -6,6 +6,8 @@ from androguard.gui.fileloading import FileLoadingThread
 from androguard.gui.treewindow import TreeWindow
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.stringswindow import StringsWindow
+from androguard.gui.methodswindow import MethodsWindow
+from androguard.gui.apiwindow import APIWindow
 from androguard.gui.binwindow import binWidget
 from androguard.gui.DataModel import *
 
@@ -13,6 +15,64 @@ from androguard.gui.helpers import class2func
 
 import os
 
+
+class TabsWindow(QtWidgets.QTabWidget):
+    def __init__(self, parent=None):
+        super(TabsWindow, self).__init__(parent)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.tabCloseRequestedHandler)
+        self.currentChanged.connect(self.currentTabChanged)
+
+        self.closeAllTabs = QtWidgets.QAction(
+            "Close all tabs",
+            self,
+            triggered=self.actioncloseAllTabs)
+        self.closeOtherTabs = QtWidgets.QAction(
+            "Close other tabs",
+            self,
+            triggered=self.actioncloseOtherTabs)
+        self.closeLeftTabs = QtWidgets.QAction(
+            "Close left tabs",
+            self,
+            triggered=self.actioncloseLeftTabs)
+        self.closeRightTabs = QtWidgets.QAction(
+            "Close right tabs",
+            self,
+            triggered=self.actioncloseRightTabs)
+
+    def actioncloseAllTabs(self):
+        self.clear()
+
+    def actioncloseOtherTabs(self):
+        for i in range(self.currentIndex()-1, -1, -1):
+            self.removeTab(i)
+
+        for i in range(self.count(), self.currentIndex(), -1):
+            self.removeTab(i)
+
+    def actioncloseLeftTabs(self):
+        for i in range(self.currentIndex()-1, -1, -1):
+            self.removeTab(i)
+
+    def actioncloseRightTabs(self):
+        for i in range(self.count(), self.currentIndex(), -1):
+            self.removeTab(i)
+
+    def tabCloseRequestedHandler(self, index):
+        self.removeTab(index)
+
+    def currentTabChanged(self, index):
+        androconf.debug("curentTabChanged -> %d" % index)
+        if index == -1:
+            return
+
+    def contextMenuEvent(self, event):
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(self.closeAllTabs)
+        menu.addAction(self.closeOtherTabs)
+        menu.addAction(self.closeLeftTabs)
+        menu.addAction(self.closeRightTabs)
+        menu.exec_(event.globalPos())
 
 class MainWindow(QtWidgets.QMainWindow):
     '''Main window:
@@ -160,19 +220,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setupCentral(self):
         '''Setup empty window supporting tabs at startup. '''
-        self.central = QtWidgets.QTabWidget()
-        self.central.setTabsClosable(True)
-        self.central.tabCloseRequested.connect(self.tabCloseRequestedHandler)
-        self.central.currentChanged.connect(self.currentTabChanged)
+        self.central = TabsWindow(self) #QtWidgets.QTabWidget()
         self.setCentralWidget(self.central)
-
-    def tabCloseRequestedHandler(self, index):
-        self.central.removeTab(index)
-
-    def currentTabChanged(self, index):
-        androconf.debug("curentTabChanged -> %d" % index)
-        if index == -1:
-            return  # all tab closed
 
     def cleanCentral(self):
         #TOFIX: Removes all the pages, but does not delete them.
@@ -192,6 +241,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar().addMenu(viewMenu)
 
         viewMenu.addAction("&Strings...", self.openStringsWindow)
+        viewMenu.addAction("&Methods...", self.openMethodsWindow)
+        viewMenu.addAction("&API...", self.openAPIWindow)
         viewMenu.addAction("&APK...", self.openApkWindow)
 
     def setupHelpMenu(self):
@@ -216,6 +267,20 @@ class MainWindow(QtWidgets.QMainWindow):
                                    stringswin.title)
         self.central.setCurrentWidget(stringswin)
 
+    def openMethodsWindow(self):
+        methodswin = MethodsWindow(win=self, session=self.session)
+        self.central.addTab(methodswin, methodswin.title)
+        self.central.setTabToolTip(self.central.indexOf(methodswin),
+                                   methodswin.title)
+        self.central.setCurrentWidget(methodswin)
+
+    def openAPIWindow(self):
+        apiwin = APIWindow(win=self, session=self.session)
+        self.central.addTab(apiwin, apiwin.title)
+        self.central.setTabToolTip(self.central.indexOf(apiwin),
+                                   apiwin.title)
+        self.central.setCurrentWidget(apiwin)
+
     def openApkWindow(self):
         androconf.debug("openApkWindow for %s" % self.session.analyzed_apk)
         bin_window = binWidget(self, ApkModel(self.session.get_objects_apk(self.fileLoadingThread.file_path)[0]), "APK")
@@ -235,7 +300,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bin_windows.append(bin_window)
 
     def openSourceWindow(self, current_class, method=None):
-        '''Main function to open a .java source window
+        '''Main function to open a decompile source window
            It checks if it already opened and open that tab,
            otherwise, initialize a new window.
         '''
@@ -248,7 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             sourcewin = SourceWindow(win=self,
                                      current_class=current_class,
-                                     current_title=current_class.current_title,
+                                     current_title=current_class.current_title + "(S)",
                                      current_filename=current_filename,
                                      current_digest=current_digest,
                                      session=self.session)

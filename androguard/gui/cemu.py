@@ -1,4 +1,6 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtGui
+
+from androguard.core import androconf
 
 class Cursor(object):
     def __init__(self, x, y):
@@ -55,19 +57,15 @@ class ConsoleEmulator():
 
     def _validatePosition(self, x, y):
         if x >= self._cols:
-            raise Exception("x > cols")
+            androconf.warning("x > cols")
+            return False
 
         if y >= self._rows:
-            raise Exception("y > rows")
-
+            androconf.warning("y > rows")
+            return False
         return True
 
     def write(self, s, noBackgroudOnSpaces=False):
-#        self.qp.drawText(self._x * self.fontWidth, self.fontHeight + self._y * self.fontHeight, s )
- #       x, y = self.getXY()
-  #      self.gotoXY(x, y)
-   #     return
-
         background = self.qp.backgroundMode()
         for c in s:
             if self._validatePosition(self._x, self._y):

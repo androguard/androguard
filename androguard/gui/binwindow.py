@@ -41,7 +41,6 @@ class SearchWindow(QtWidgets.QDialog):
 
         shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("/"), self, self.close, self.close)
 
-        #QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL('clicked()'), self.onClicked)
         self.ui.pushButton.clicked.connect(self.onClicked)
 
         width = self.ui.size().width()+15
@@ -82,7 +81,7 @@ class SearchWindow(QtWidgets.QDialog):
 
         idx = self.searchable.search(text)
         if idx == -1:
-            reply = QtGui.QMessageBox.warning(self, 'Qiew', "Nothing found.", QtGui.QMessageBox.Ok)
+            reply = QtWidgets.QMessageBox.warning(self, 'Qiew', "Nothing found.", QtWidgets.QMessageBox.Ok)
 
         self.parent.viewMode.draw(refresh=True)
         self.close()
@@ -204,22 +203,32 @@ class binWidget(QtWidgets.QWidget, Observable):
         self.dataModel = source
         self.cursor = Cursor(0, 0)
 
-        self.multipleViewModes = [BinViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self)]
-        #,
-         #                         HexViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self, plugin=po),
-         #                         DisasmViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self, plugin=po)]
+        self.themes = {
+            'font': QtGui.QFont('Monaco', 9, QtGui.QFont.Light),
+            'background': QtGui.QColor(0x00, 0x2b, 0x36),
+            'background_cursor': QtGui.QColor(255, 255, 0),
+            'selection': QtGui.QColor(125, 255, 0),
+            'pen': QtGui.QColor(0xb5, 0x89, 0x00)
+            }
+
+        self.multipleViewModes = []
+        for view_mode in self.dataModel.GetViews():
+            v = view_mode(self.themes, self.size().width(), self.size().height(), self.dataModel, self.cursor, self)
+            textDecorator = HighlightASCII(TextDecorator(v))
+
+            v.setTransformationEngine(textDecorator)
+
+            self.multipleViewModes.append(v)
 
         self.viewMode = self.multipleViewModes[0]
 
-        self.textDecorator = TextDecorator(self.viewMode)
 
-        self.viewMode.setTransformationEngine(self.textDecorator)
 
         self.Banners = Banners()
 
-        self.Banners.add(FileAddrBanner(self.dataModel, self.viewMode)) 
-        self.Banners.add(TopBanner(self.dataModel, self.viewMode))
-        self.Banners.add(BottomBanner(self.dataModel, self.viewMode))
+        self.Banners.add(FileAddrBanner(self.themes, self.dataModel, self.viewMode)) 
+        self.Banners.add(TopBanner(self.themes, self.dataModel, self.viewMode))
+        self.Banners.add(BottomBanner(self.themes, self.dataModel, self.viewMode))
 
         self.offsetWindow_h = 0
         self.offsetWindow_v = 0
@@ -312,16 +321,18 @@ class binWidget(QtWidgets.QWidget, Observable):
 
                     self.viewMode.draw(refresh=False)
             # switch view mode
-            if key == QtCore.Qt.Key_Tab:
-                    offs = self.viewMode.getCursorOffsetInPage()
-                    base = self.viewMode.getDataModel().getOffset()
-                    self.switchViewMode()
+            if key == QtCore.Qt.Key_V:
+                print 'SWITCH VIEW'
+                offs = self.viewMode.getCursorOffsetInPage()
+                base = self.viewMode.getDataModel().getOffset()
+                self.switchViewMode()
+                self._resize()
+                self.viewMode.goTo(base + offs)
+                self.update()
 
-                    self._resize()
-
-                    self.viewMode.goTo(base + offs)
-
-                    self.update()
+            if key == QtCore.Qt.Key_S:
+                print 'OPEN SOURCE'
+                self.parent.openSourceWindow(self.dataModel.current_class)
 
             import pyperclip
             if event.modifiers() & QtCore.Qt.ControlModifier:
@@ -365,7 +376,6 @@ class binWidget(QtWidgets.QWidget, Observable):
 
             if key == QtCore.Qt.Key_F10:
                 self.dataModel.flush()
-                import os
                 self.w = WHeaders(self, None)
                 self.w.show()
 

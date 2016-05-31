@@ -69,12 +69,8 @@ class XrefDialogMethod(QtWidgets.QDialog):
     def __init__(self,
                  parent=None,
                  win=None,
-                 current_class=None,
-                 class_analysis=None,
                  method_analysis=None):
         super(XrefDialogMethod, self).__init__(parent)
-        self.current_class = current_class
-        self.class_analysis = class_analysis
         self.method_analysis = method_analysis
 
         title = "Xrefs for the method %s" % self.method_analysis.method

@@ -11,11 +11,12 @@ import threading
 import string
 
 class BinViewMode(ViewMode):
-    def __init__(self, width, height, data, cursor, widget=None):
+    def __init__(self, themes, width, height, data, cursor, widget=None):
         super(BinViewMode, self).__init__()
 
         self.dataModel = data
         self.addHandler(self.dataModel)
+        self.themes = themes
 
         self.width = width
         self.height = height
@@ -25,15 +26,12 @@ class BinViewMode(ViewMode):
 
         self.refresh = True
 
-        self.selector = TextSelection.DefaultSelection(self)
+        self.selector = TextSelection.DefaultSelection(themes, self)
 
         # background brush
-        self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))
+        self.backgroundBrush = QtGui.QBrush(self.themes['background'])
 
-        # text font
-        #self.font = QtGui.QFont('Terminus (TTF)', 12, QtGui.QFont.Light)
-        #self.font.setStyleHint(QtGui.QFont.AnyStyle, QtGui.QFont.PreferBitmap)
-        self.font = QtGui.QFont('Terminus', 11, QtGui.QFont.Light)
+        self.font = self.themes['font']
 
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
@@ -44,7 +42,7 @@ class BinViewMode(ViewMode):
 
 
         
-        self.textPen = QtGui.QPen(QtGui.QColor(192, 192, 192), 0, QtCore.Qt.SolidLine)
+        self.textPen = QtGui.QPen(self.themes['pen'], 0, QtCore.Qt.SolidLine)
         self.resize(width, height)
 
         self.Paints = {}
@@ -165,7 +163,7 @@ class BinViewMode(ViewMode):
 
     def drawCursor(self, qp):
         cursorX, cursorY = self.cursor.getPosition()
-        qp.setBrush(QtGui.QColor(255, 255, 0))
+        qp.setBrush(self.themes['background_cursor'])
 
         if self.isInEditMode():
             qp.setBrush(QtGui.QColor(255, 102, 179))
@@ -377,11 +375,11 @@ class BinViewMode(ViewMode):
         
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
-        page = self.transformationEngine.decorate()
+        self.page = self.transformationEngine.decorate()
 
         cemu.gotoXY(0, row)
 
-        for i, c in enumerate(page[row*self.COLUMNS:(row + howMany)*self.COLUMNS]):
+        for i, c in enumerate(self.getDisplayablePage()[row*self.COLUMNS:(row + howMany)*self.COLUMNS]):
             x = i + row*self.COLUMNS
 
             c = self.transformationEngine.getChar(x)

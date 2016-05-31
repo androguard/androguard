@@ -1,5 +1,10 @@
-import sys, os
+import os
 import mmap
+
+from BinViewMode import *
+from HexViewMode import *
+from DisasmViewMode import *
+from SourceViewMode import *
 
 class Observer:
     def update_geometry(self):
@@ -224,9 +229,6 @@ class FileDataModel(DataModel):
     def size(self):
         return os.path.getsize(self._filename)
 
-def f():
-    return 5
-
 import StringIO
 class MyStringIO(StringIO.StringIO, object):
     def __init__(self, data):
@@ -269,16 +271,7 @@ class BufferDataModel(DataModel):
     def __init__(self, data, name):
         self._filename = name
         self.raw = data
-        #import StringIO
-#        self.data = bytearray(data)
-#        self.data = bytearray(data)
-        self.data = MyByte(data)
-        #self.data.__len__ = f
-        #self.data.__len__ = self.data.len
-        #print self.data.len
-        #self.data.__len__ = f
-
-        super(BufferDataModel, self).__init__(self.data)
+        super(BufferDataModel, self).__init__(data)
 
     @property
     def source(self):
@@ -313,6 +306,9 @@ class ApkModel(DataModel):
 
         super(ApkModel, self).__init__(self.data)
 
+    def GetViews(self):
+        return [BinViewMode, HexViewMode]
+
     @property
     def source(self):
         return self._filename
@@ -323,26 +319,27 @@ class ApkModel(DataModel):
     def close(self):
         return
 
-#    def write(self, offset, stream):
-#        self._mapped.seek(offset)
-#        self._mapped.write(stream)
     def size(self):
         return len(self.data)
 
 class DexClassModel(DataModel):
     def __init__(self, current_class):
+        self.current_class = current_class
         self._filename = current_class.get_name()
-        self.raw = "DTATA"
-        #import StringIO
-#        self.data = bytearray(data)
-#        self.data = bytearray(data)
-        self.data = MyByte(self.raw)
-        #self.data.__len__ = f
-        #self.data.__len__ = self.data.len
-        #print self.data.len
-        #self.data.__len__ = f
 
-        super(DexClassModel, self).__init__(self.data)
+        raw = self.GetRawData(current_class)
+        super(DexClassModel, self).__init__(raw)
+
+    def GetRawData(self, current_class):
+        buff = ""
+        for method in current_class.get_methods():
+            for ins in method.get_instructions():
+                buff += ins.get_raw()
+
+        return buff
+
+    def GetViews(self):
+        return [DisasmViewMode, SourceViewMode, HexViewMode]
 
     @property
     def source(self):
@@ -353,10 +350,6 @@ class DexClassModel(DataModel):
 
     def close(self):
         return
-
-#    def write(self, offset, stream):
-#        self._mapped.seek(offset)
-#        self._mapped.write(stream)
 
     def size(self):
         return len(self.data)

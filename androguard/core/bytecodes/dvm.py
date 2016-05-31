@@ -15,13 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from androguard.core import bytecode
+from androguard.core import bytecode, androconf
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF, debug, warning
 
 import sys
 import re
 import struct
+import binascii
+import time
 from struct import pack, unpack, calcsize
 
 DEX_FILE_MAGIC_35 = 'dex\n035\x00'
@@ -1522,7 +1524,7 @@ class EncodedValue(object):
             else:
                 self.value = False
         else:
-            bytecode.Exit("Unknown value 0x%x" % self.value_type)
+            androconf.warning("Unknown value 0x%x" % self.value_type)
 
     def get_value(self):
         """
@@ -2095,8 +2097,6 @@ class ProtoIdItem(object):
     def reload(self):
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
-        params = self.CM.get_type_list(self.parameters_off)
-        self.parameters_off_value = '({})'.format(' '.join(params))
 
     def get_shorty_idx(self):
         """
@@ -2128,6 +2128,8 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
+        if self.shorty_idx_value == None:
+            self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         return self.shorty_idx_value
 
     def get_return_type_idx_value(self):
@@ -2136,6 +2138,9 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
+        if self.return_type_idx_value == None:
+            self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
+
         return self.return_type_idx_value
 
     def get_parameters_off_value(self):
@@ -2144,6 +2149,9 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
+        if self.parameters_off_value == None:
+            params = self.CM.get_type_list(self.parameters_off)
+            self.parameters_off_value = '({})'.format(' '.join(params))
         return self.parameters_off_value
 
     def show(self):
@@ -2248,6 +2256,9 @@ class FieldIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
+        pass
+
+    def _reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.type_idx_value = self.CM.get_type(self.type_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2282,6 +2293,9 @@ class FieldIdItem(object):
 
             :rtype: string
         """
+        if self.class_idx_value == None:
+            self.class_idx_value = self.CM.get_type(self.class_idx)
+
         return self.class_idx_value
 
     def get_type(self):
@@ -2290,6 +2304,9 @@ class FieldIdItem(object):
 
             :rtype: string
         """
+        if self.type_idx_value == None:
+            self.type_idx_value = self.CM.get_type(self.type_idx)
+
         return self.type_idx_value
 
     def get_descriptor(self):
@@ -2298,6 +2315,9 @@ class FieldIdItem(object):
 
             :rtype: string
         """
+        if self.type_idx_value == None:
+            self.type_idx_value = self.CM.get_type(self.type_idx)
+
         return self.type_idx_value
 
     def get_name(self):
@@ -2306,6 +2326,9 @@ class FieldIdItem(object):
 
             :rtype: string
         """
+        if self.name_idx_value == None:
+            self.name_idx_value = self.CM.get_string(self.name_idx)
+
         return self.name_idx_value
 
     def get_list(self):
@@ -2410,9 +2433,12 @@ class MethodIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        self.class_idx_value = self.CM.get_type(self.class_idx)
-        self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-        self.name_idx_value = self.CM.get_string(self.name_idx)
+        pass
+
+    def _reload(self):
+       self.class_idx_value = self.CM.get_type(self.class_idx)
+       self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+       self.name_idx_value = self.CM.get_string(self.name_idx)        
 
     def get_class_idx(self):
         """
@@ -2443,7 +2469,10 @@ class MethodIdItem(object):
           Return the class name of the method
 
           :rtype: string
-      """
+        """
+        if self.class_idx_value == None:
+            self.class_idx_value = self.CM.get_type(self.class_idx)
+
         return self.class_idx_value
 
     def get_proto(self):
@@ -2452,6 +2481,9 @@ class MethodIdItem(object):
 
             :rtype: string
         """
+        if self.proto_idx_value == None:
+            self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+        
         return self.proto_idx_value
 
     def get_descriptor(self):
@@ -2478,6 +2510,9 @@ class MethodIdItem(object):
 
             :rtype: string
         """
+        if self.name_idx_value == None:
+            self.name_idx_value = self.CM.get_string(self.name_idx)
+
         return self.name_idx_value
 
     def get_list(self):
@@ -2536,6 +2571,10 @@ class MethodHIdItem(object):
             return self.methods[idx]
         except IndexError:
             return MethodIdItemInvalid()
+
+    def _reload(self):
+        for i in self.methods:
+            i._reload()
 
     def reload(self):
         for i in self.methods:
@@ -2645,6 +2684,13 @@ class EncodedField(object):
 
         self.init_value = None
         self.access_flags_string = None
+        self.loaded = False
+
+    def load(self):
+        if self.loaded:
+            return
+        self.reload()
+        self.loaded = True
 
     def reload(self):
         name = self.CM.get_field(self.field_idx)
@@ -2703,6 +2749,8 @@ class EncodedField(object):
 
             :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.class_name
 
     def get_descriptor(self):
@@ -2711,6 +2759,8 @@ class EncodedField(object):
 
             :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.proto
 
     def get_name(self):
@@ -2719,6 +2769,8 @@ class EncodedField(object):
 
             :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.name
 
     def get_access_flags_string(self):
@@ -2737,7 +2789,7 @@ class EncodedField(object):
 
     def set_name(self, value):
         self.CM.set_hook_field_name(self, value)
-        self.reload()
+        self._reload()
 
     def get_obj(self):
         return []
@@ -2819,6 +2871,7 @@ class EncodedMethod(object):
         self.access_flags_string = None
 
         self.notes = []
+        self.loaded = False
 
     def adjust_idx(self, val):
         self.method_idx = self.method_idx_diff + val
@@ -2880,12 +2933,22 @@ class EncodedMethod(object):
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
+    def load(self):
+        if self.loaded:
+            return
+        self.reload()
+        self.loaded = True
+
     def reload(self):
         v = self.CM.get_method(self.method_idx)
-
-        self.class_name = v[0]
-        self.name = v[1]
-        self.proto = ''.join(i for i in v[2])
+        if v and len(v) >= 3:
+            self.class_name = v[0]
+            self.name = v[1]
+            self.proto = ''.join(i for i in v[2])
+        else:
+            self.class_name = 'CLASS_NAME_ERROR'
+            self.name = 'NAME_ERROR'
+            self.proto = 'PROTO_ERROR'
 
         self.code = self.CM.get_code(self.code_off)
 
@@ -3016,6 +3079,8 @@ class EncodedMethod(object):
 
           :rtype: :class:`DalvikCode` object
         """
+        if not self.loaded:
+            self.load()
         return self.code
 
     def is_cached_instructions(self):
@@ -3076,6 +3141,8 @@ class EncodedMethod(object):
 
           :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.proto
 
     def get_class_name(self):
@@ -3084,6 +3151,8 @@ class EncodedMethod(object):
 
           :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.class_name
 
     def get_name(self):
@@ -3092,6 +3161,8 @@ class EncodedMethod(object):
 
           :rtype: string
         """
+        if not self.loaded:
+            self.load()
         return self.name
 
     def get_triple(self):
@@ -3132,7 +3203,7 @@ class EncodedMethod(object):
 
     def set_name(self, value):
         self.CM.set_hook_method_name(self, value)
-        self.reload()
+        self._reload()
 
     def get_raw(self):
         if self.code != None:
@@ -3178,6 +3249,9 @@ class ClassDataItem(object):
                             EncodedMethod, buff, cm)
         self._load_elements(self.virtual_methods_size, self.virtual_methods,
                             EncodedMethod, buff, cm)
+
+    def reload(self):
+        pass
 
     def get_static_fields_size(self):
         """
@@ -3284,19 +3358,6 @@ class ClassDataItem(object):
                 prev = el.get_method_idx()
 
             l.append(el)
-
-    def reload(self):
-        for i in self.static_fields:
-            i.reload()
-
-        for i in self.instance_fields:
-            i.reload()
-
-        for i in self.direct_methods:
-            i.reload()
-
-        for i in self.virtual_methods:
-            i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Class Data Item")
@@ -3409,6 +3470,7 @@ class ClassDefItem(object):
             if self.class_data_item != None:
                 self.class_data_item.set_static_fields(
                     self.static_values.get_value())
+
 
     def __str__(self):
         return "%s->%s" % (self.get_superclassname(), self.get_name())
@@ -4092,6 +4154,10 @@ class Instruction(object):
     def get_formatted_operands(self):
         return None
 
+    def get_hex(self):
+        s = binascii.hexlify(self.get_raw())
+        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
+
 
 class InstructionInvalid(Instruction):
     """
@@ -4242,6 +4308,9 @@ class FillArrayData(object):
         return pack("=H", self.ident) + pack("=H", self.element_width) + pack(
             "=I", self.size) + self.data
 
+    def get_hex(self):
+        s = binascii.hexlify(self.get_raw())
+        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
 
 class SparseSwitch(object):
     """
@@ -4366,6 +4435,9 @@ class SparseSwitch(object):
             "=l", i) for i in self.keys) + ''.join(pack("=l", i)
                                                    for i in self.targets)
 
+    def get_hex(self):
+        s = binascii.hexlify(self.get_raw())
+        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
 
 class PackedSwitch(object):
     """
@@ -4494,6 +4566,9 @@ class PackedSwitch(object):
         return pack("=H", self.ident) + pack("=H", self.size) + pack(
             "=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
 
+    def get_hex(self):
+        s = binascii.hexlify(self.get_raw())
+        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
 
 class Instruction35c(Instruction):
     """
@@ -6955,12 +7030,7 @@ class MapItem(object):
 
         buff.set_idx(self.offset)
 
-        lazy_analysis = self.CM.get_lazy_analysis()
-
-        if lazy_analysis:
-            self.next_lazy(buff, cm)
-        else:
-            self.next(buff, cm)
+        self.next(buff, cm)
 
     def get_off(self):
         return self.off
@@ -6975,6 +7045,9 @@ class MapItem(object):
         return self.size
 
     def next(self, buff, cm):
+        androconf.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
+        started_at = time.time()
+
         if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
             self.item = [StringIdItem(buff, cm) for i in xrange(0, self.size)]
 
@@ -7034,52 +7107,12 @@ class MapItem(object):
             pass  # It's me I think !!!
 
         else:
-            bytecode.Exit("Map item %d @ 0x%x(%d) is unknown" %
+            androconf.warning("Map item %d @ 0x%x(%d) is unknown" %
                           (self.type, buff.get_idx(), buff.get_idx()))
 
-    def next_lazy(self, buff, cm):
-        if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
-            self.item = [StringIdItem(buff, cm) for i in xrange(0, self.size)]
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CODE_ITEM":
-            self.item = CodeItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_TYPE_ID_ITEM":
-            self.item = TypeIdItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_PROTO_ID_ITEM":
-            self.item = ProtoIdItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_FIELD_ID_ITEM":
-            self.item = FieldIdItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_METHOD_ID_ITEM":
-            self.item = MethodIdItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CLASS_DEF_ITEM":
-            self.item = ClassDefItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_HEADER_ITEM":
-            self.item = HeaderItem(self.size, buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_TYPE_LIST":
-            self.item = [TypeList(buff, cm) for i in xrange(0, self.size)]
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_STRING_DATA_ITEM":
-            self.item = [StringDataItem(buff, cm) for i in xrange(0, self.size)]
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_DEBUG_INFO_ITEM":
-            self.item = DebugInfoItemEmpty(buff, cm)
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ENCODED_ARRAY_ITEM":
-            self.item = [EncodedArrayItem(buff, cm)
-                         for i in xrange(0, self.size)]
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CLASS_DATA_ITEM":
-            self.item = [ClassDataItem(buff, cm) for i in xrange(0, self.size)]
-
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_MAP_LIST":
-            pass  # It's me I think !!!
+        diff = time.time() - started_at
+        minutes, seconds = float(diff // 60), float(diff % 60)
+        androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds,2))))
 
     def reload(self):
         if self.item != None:
@@ -7241,7 +7274,7 @@ class ClassManager(object):
             if i.get_off() == off:
                 return i
 
-        bytecode.Exit("unknown class data item @ 0x%x" % off)
+        androconf.warning("unknown class data item @ 0x%x" % off)
 
     def get_encoded_array_item(self, off):
         for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM"]:
@@ -7253,8 +7286,7 @@ class ClassManager(object):
             return self.hook_strings[idx]
 
         try:
-            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off(
-            )
+            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
         except IndexError:
             bytecode.Warning("unknown string item @ %d" % (idx))
             return "AG:IS: invalid string"
@@ -7302,9 +7334,8 @@ class ClassManager(object):
         return self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
 
     def get_proto(self, idx):
-        try:
-            proto = self.__cached_proto[idx]
-        except KeyError:
+        proto = self.__cached_proto.get(idx)
+        if not proto:
             proto = self.__manage_item["TYPE_PROTO_ID_ITEM"].get(idx)
             self.__cached_proto[idx] = proto
 
@@ -7339,7 +7370,7 @@ class ClassManager(object):
         class_def.reload()
 
         # FIXME
-        self.__manage_item["TYPE_METHOD_ID_ITEM"].reload()
+        self.__manage_item["TYPE_METHOD_ID_ITEM"]._reload()
 
         for i in class_def.get_methods():
             i.reload()
@@ -7472,7 +7503,12 @@ class MapList(object):
             self.CM.add_type_item(TYPE_MAP_ITEM[mi.get_type()], mi, c_item)
 
         for i in self.map_item:
+            androconf.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
+            started_at = time.time()
             i.reload()
+            diff = time.time() - started_at
+            minutes, seconds = float(diff // 60), float(diff % 60)
+            androconf.debug("End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds,2))))
 
     def reload(self):
         pass
@@ -7584,7 +7620,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__header = HeaderItem(0, self, ClassManager(None, self.config))
 
         if self.__header.map_off == 0:
-            bytecode.Warning("no map list ...")
+            androconf.warning("no map list ...")
         else:
             self.map_list = MapList(self.CM, self.__header.map_off, self)
 

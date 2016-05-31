@@ -627,21 +627,70 @@ REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
 
+class ExternalClass(object):
+    def __init__(self, name):
+        self.name = name
+        self.methods = {}
+
+    def GetMethod(self, name, descriptor):
+        key = name + str(descriptor)
+        if key not in self.methods:
+            self.methods[key] = ExternalMethod(self.name, name, descriptor)
+
+        return self.methods[key]
+
+class ExternalMethod(object):
+    def __init__(self, class_name, name, descriptor):
+        self.class_name = class_name
+        self.name = name
+        self.descriptor = descriptor
+
+    def get_name(self):
+        return self.name
+
+    def get_class_name(self):
+        return self.class_name
+
+    def get_descriptor(self):
+        return ''.join(self.descriptor)
+
+    def __str__(self):
+        return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
+
 class ClassAnalysis(object):
 
-    def __init__(self, classobj):
+    def __init__(self, classobj, internal=False):
         self.orig_class = classobj
+        self._inherits_methods = {}
         self._methods = {}
         self._fields = {}
+        self.internal = internal
 
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
+
+    def get_methods(self):
+        return self._methods.values()
+
+    def get_nb_methods(self):
+        return len(self._methods)
 
     def get_method_analysis(self, method):
         return self._methods.get(method)
 
     def get_field_analysis(self, field):
         return self._fields.get(field)
+
+    def GetFakeMethod(self, name, descriptor):
+        if not self.internal:
+            return self.orig_class.GetMethod(name, descriptor)
+
+        # We are searching an unknown method in this class
+        # It could be something that the class herits
+        key = name + str(descriptor)
+        if key not in self._inherits_methods:
+            self._inherits_methods[key] = ExternalMethod(self.orig_class.get_name(), name, descriptor)
+        return self._inherits_methods[key]
 
     def AddFXrefRead(self, method, classobj, field):
         if field not in self._fields:
@@ -709,7 +758,7 @@ class newVMAnalysis(object):
 
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(
-                current_class)
+                current_class, True)
 
     def create_xref(self):
         debug("Creating XREF/DREF")
@@ -719,7 +768,7 @@ class newVMAnalysis(object):
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
             for current_method in current_class.get_methods():
-                debug("Creating XREF for %s" % current_method)
+                #debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
                 if code == None:
@@ -762,12 +811,21 @@ class newVMAnalysis(object):
                               (op_value >= 0x74 and op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
                             method_info = last_vm.get_cm_method(idx_meth)
+                            print method_info
                             if method_info:
                                 class_info = method_info[0]
 
                                 method_item = last_vm.get_method_descriptor(
                                     method_info[0], method_info[1],
                                     ''.join(method_info[2]))
+
+                                # Seems to be an external classes
+                                if not method_item:
+                                    if method_info[0] not in self.classes:
+                                        self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]), False)
+                                    method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1], method_info[2])
+
+
                                 if method_item:
                                     self.classes[current_class.get_name(
                                     )].AddMXrefTo(current_method,
@@ -866,6 +924,11 @@ class newVMAnalysis(object):
     def get_class_analysis(self, class_name):
         return self.classes.get(class_name)
 
+    def get_external_classes(self):
+        for i in self.classes:
+            if not self.classes[i].internal:
+                yield self.classes[i]
+
     def get_strings_analysis(self):
         return self.strings
 
@@ -875,7 +938,7 @@ class newVMAnalysis(object):
         for current_class in vm.get_classes():
             if current_class.get_name() not in self.classes:
                 self.classes[current_class.get_name()] = ClassAnalysis(
-                    current_class)
+                    current_class, True)
 
 def is_ascii_obfuscation(vm):
     for classe in vm.get_classes():

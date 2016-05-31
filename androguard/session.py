@@ -200,4 +200,4 @@ class Session(object):
 
     def get_objects_dex(self):
         for digest in self.analyzed_dex:
-            yield self.analyzed_dex[digest]
+            yield digest, self.analyzed_dex[digest][0], self.analyzed_dex[digest][1]

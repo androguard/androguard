@@ -4,10 +4,18 @@ from androguard.gui.helpers import class2func, method2func, classdot2func, class
 from androguard.gui.renamewindow import RenameDialog
 from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
+
+import pyperclip
+
 PYGMENTS = True
 try:
-    from qtconsole.pygments_highlighter import PygmentsHighlighter
+    from pygments.formatters.html import HtmlFormatter
     from pygments.lexers import JavaLexer
+    from pygments.styles import get_style_by_name
+
+    from pygments.style import Style
+    from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+
 except:
     PYGMENTS = False
 
@@ -26,10 +34,7 @@ class SourceDocument(QtGui.QTextDocument):
         super(SourceDocument, self).__init__(parent)
         self.parent = parent
 
-        # Set font to be fixed-width
-        font = self.defaultFont()
-        font.setFamily("Courier New")
-        self.setDefaultFont(font)
+        self.setDefaultFont(QtGui.QFont('Monaco', 9, QtGui.QFont.Light))
 
         cursor = QtGui.QTextCursor(self)  # position=0x0
         self.binding = {}
@@ -41,6 +46,242 @@ class SourceDocument(QtGui.QTextDocument):
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
 
+class PygmentsBlockUserData(QtGui.QTextBlockUserData):
+    """ Storage for the user data associated with each line.
+    """
+
+    syntax_stack = ('root',)
+
+    def __init__(self, **kwds):
+        for key, value in kwds.items():
+            setattr(self, key, value)
+        QtGui.QTextBlockUserData.__init__(self)
+
+    def __repr__(self):
+        attrs = ['syntax_stack']
+        kwds = ', '.join([ '%s=%r' % (attr, getattr(self, attr))
+                           for attr in attrs ])
+        return 'PygmentsBlockUserData(%s)' % kwds
+
+BASE03 = '#002B36'
+BASE02 = '#073642'
+BASE01 = '#586E75'
+BASE00 = '#657B83'
+BASE0 = '#839496'
+BASE1 = '#93A1A1'
+BASE2 = '#EEE8D5'
+BASE3 = '#FDF6E3'
+YELLOW = '#B58900'
+ORANGE = '#CB4B16'
+RED = '#DC322F'
+MAGENTA = '#D33682'
+VIOLET = '#6C71C4'
+BLUE = '#268BD2'
+CYAN = '#2AA198'
+GREEN = '#859900'
+
+class SolarizedStyle(Style):
+    background_color = BASE03
+    styles = {
+        Keyword: GREEN,
+        Keyword.Constant: ORANGE,
+        Keyword.Declaration: BLUE,
+        #Keyword.Namespace
+        #Keyword.Pseudo
+        Keyword.Reserved: BLUE,
+        Keyword.Type: RED,
+
+        #Name
+        Name.Attribute: BASE1,
+        Name.Builtin: YELLOW,
+        Name.Builtin.Pseudo: BLUE,
+        Name.Class: BLUE,
+        Name.Constant: ORANGE,
+        Name.Decorator: BLUE,
+        Name.Entity: ORANGE,
+        Name.Exception: ORANGE,
+        Name.Function: BLUE,
+        #Name.Label
+        #Name.Namespace
+        #Name.Other
+        Name.Tag: BLUE,
+        Name.Variable: BLUE,
+        #Name.Variable.Class
+        #Name.Variable.Global
+        #Name.Variable.Instance
+
+        #Literal
+        #Literal.Date
+        String: CYAN,
+        String.Backtick: BASE01,
+        String.Char: CYAN,
+        String.Doc: BASE1,
+        #String.Double
+        String.Escape: ORANGE,
+        String.Heredoc: BASE1,
+        #String.Interpol
+        #String.Other
+        String.Regex: RED,
+        #String.Single
+        #String.Symbol
+        Number: CYAN,
+        #Number.Float
+        #Number.Hex
+        #Number.Integer
+        #Number.Integer.Long
+        #Number.Oct
+
+        Operator: GREEN,
+        #Operator.Word
+
+        #Punctuation: ORANGE,
+
+        Comment: BASE01,
+        #Comment.Multiline
+        Comment.Preproc: GREEN,
+        #Comment.Single
+        Comment.Special: GREEN,
+
+        #Generic
+        Generic.Deleted: CYAN,
+        Generic.Emph: 'italic',
+        Generic.Error: RED,
+        Generic.Heading: ORANGE,
+        Generic.Inserted: GREEN,
+        #Generic.Output
+        #Generic.Prompt
+        Generic.Strong: 'bold',
+        Generic.Subheading: ORANGE,
+        #Generic.Traceback
+
+        Token: BASE1,
+        Token.Other: ORANGE,
+    }
+
+class MyHighlighter(QtGui.QSyntaxHighlighter):
+    """ Syntax highlighter that uses Pygments for parsing. """
+
+    #---------------------------------------------------------------------------
+    # 'QSyntaxHighlighter' interface
+    #---------------------------------------------------------------------------
+
+    def __init__(self, parent, lexer=None):
+        super(MyHighlighter, self).__init__(parent)
+
+        self._document = self.document()
+        self._formatter = HtmlFormatter(nowrap=True)
+        self._lexer = lexer
+        self.set_style('paraiso-dark')
+
+    def highlightBlock(self, string):
+        """ Highlight a block of text.
+        """
+        prev_data = self.currentBlock().previous().userData()
+        if prev_data is not None:
+            self._lexer._saved_state_stack = prev_data.syntax_stack
+        elif hasattr(self._lexer, '_saved_state_stack'):
+            del self._lexer._saved_state_stack
+
+        # Lex the text using Pygments
+        index = 0
+        for token, text in self._lexer.get_tokens(string):
+            length = len(text)
+            self.setFormat(index, length, self._get_format(token))
+            index += length
+
+        if hasattr(self._lexer, '_saved_state_stack'):
+            data = PygmentsBlockUserData(
+                syntax_stack=self._lexer._saved_state_stack)
+            self.currentBlock().setUserData(data)
+            # Clean up for the next go-round.
+            del self._lexer._saved_state_stack
+
+    #---------------------------------------------------------------------------
+    # 'PygmentsHighlighter' interface
+    #---------------------------------------------------------------------------
+
+    def set_style(self, style):
+        """ Sets the style to the specified Pygments style.
+        """
+        style = SolarizedStyle#get_style_by_name(style)
+        self._style = style
+        self._clear_caches()
+
+    def set_style_sheet(self, stylesheet):
+        """ Sets a CSS stylesheet. The classes in the stylesheet should
+        correspond to those generated by:
+            pygmentize -S <style> -f html
+        Note that 'set_style' and 'set_style_sheet' completely override each
+        other, i.e. they cannot be used in conjunction.
+        """
+        self._document.setDefaultStyleSheet(stylesheet)
+        self._style = None
+        self._clear_caches()
+
+    #---------------------------------------------------------------------------
+    # Protected interface
+    #---------------------------------------------------------------------------
+
+    def _clear_caches(self):
+        """ Clear caches for brushes and formats.
+        """
+        self._brushes = {}
+        self._formats = {}
+
+    def _get_format(self, token):
+        """ Returns a QTextCharFormat for token or None.
+        """
+        if token in self._formats:
+            return self._formats[token]
+
+        result = self._get_format_from_style(token, self._style)
+
+        self._formats[token] = result
+        return result
+
+    def _get_format_from_style(self, token, style):
+        """ Returns a QTextCharFormat for token by reading a Pygments style.
+        """
+        result = QtGui.QTextCharFormat()
+        for key, value in style.style_for_token(token).items():
+            if value:
+                if key == 'color':
+                    result.setForeground(self._get_brush(value))
+                elif key == 'bgcolor':
+                    result.setBackground(self._get_brush(value))
+                elif key == 'bold':
+                    result.setFontWeight(QtGui.QFont.Bold)
+                elif key == 'italic':
+                    result.setFontItalic(True)
+                elif key == 'underline':
+                    result.setUnderlineStyle(
+                        QtGui.QTextCharFormat.SingleUnderline)
+                elif key == 'sans':
+                    result.setFontStyleHint(QtGui.QFont.SansSerif)
+                elif key == 'roman':
+                    result.setFontStyleHint(QtGui.QFont.Times)
+                elif key == 'mono':
+                    result.setFontStyleHint(QtGui.QFont.TypeWriter)
+        return result
+
+    def _get_brush(self, color):
+        """ Returns a brush for the color.
+        """
+        result = self._brushes.get(color)
+        if result is None:
+            qcolor = self._get_color(color)
+            result = QtGui.QBrush(qcolor)
+            self._brushes[color] = result
+        return result
+
+    def _get_color(self, color):
+        """ Returns a QColor built from a Pygments color string.
+        """
+        qcolor = QtGui.QColor()
+        qcolor.setRgb(int(color[:2], base=16),
+                      int(color[2:4], base=16),
+                      int(color[4:6], base=16))
+        return qcolor
 
 class SourceWindow(QtWidgets.QTextEdit):
     '''Each tab is implemented as a Source Window class.
@@ -60,6 +301,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                  current_digest=None,
                  session=None):
         super(SourceWindow, self).__init__(parent)
+
         androconf.debug("New source tab for: %s" % current_class)
 
         self.mainwin = win
@@ -72,6 +314,8 @@ class SourceWindow(QtWidgets.QTextEdit):
         self.title = current_title
 
         self.setReadOnly(True)
+        self.setStyleSheet("background: rgba(0,43,54,100%)")
+
 
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
@@ -111,15 +355,15 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         lines = []
         lines.append(("COMMENTS", [(
-            "COMMENT", "/*\n * filename:%s\n * digest:%s\n */\n" % (
+            "COMMENT", "// filename:%s\n// digest:%s\n\n" % (
                 self.current_filename, self.current_digest))]))
 
         method_info_buff = ""
         for method in self.current_class.get_methods():
-            method_info_buff += "* " + str(method) + "\n"
+            method_info_buff += "// " + str(method) + "\n"
 
         lines.append(("COMMENTS", [(
-            "COMMENT", "/*\n" + method_info_buff + "\n */\n")]))
+            "COMMENT", method_info_buff + "\n\n")]))
 
         lines.extend(self.current_class.get_source_ext())
 
@@ -132,11 +376,10 @@ class SourceWindow(QtWidgets.QTextEdit):
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
         if PYGMENTS:
-            PygmentsHighlighter(self.doc, lexer=JavaLexer())
+            MyHighlighter(self.doc, lexer=JavaLexer())
         else:
             androconf.debug("Pygments is not present !")
 
-    @QtCore.Slot()
     def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word
            underneath it'''
@@ -148,9 +391,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         if len(cur.selectedText()) == 0:
             cur.select(QtGui.QTextCursor.WordUnderCursor)
             self.setTextCursor(cur)
-            androconf.debug("cursor: %s" % cur.selectedText())
-        else:
-            androconf.debug("cursor: no selection %s" % cur.selectedText())
+            #androconf.debug("cursor: %s" % cur.selectedText())
 
     def keyPressEvent(self, event):
         '''Keyboard shortcuts'''
@@ -165,8 +406,6 @@ class SourceWindow(QtWidgets.QTextEdit):
             self.actionInfo()
         elif key == QtCore.Qt.Key_R:
             self.reload_java_sources()
-        elif key == QtCore.Qt.Key_B:
-            self.display_bytecodes()
 
     def CustomContextMenuHandler(self, pos):
         menu = QtWidgets.QMenu(self)
@@ -175,7 +414,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             self,
             statusTip="List the references where this element is used",
             triggered=self.actionXref))
-        menu.addAction(QtWidgets.QAction("Go to...",
+        menu.addAction(QtWidgets.QAction("&Goto",
                                      self,
                                      statusTip="Go to element definition",
                                      triggered=self.actionGoto))
@@ -185,21 +424,22 @@ class SourceWindow(QtWidgets.QTextEdit):
                           statusTip="Rename an element (class, method, ...)",
                           triggered=self.actionRename))
         menu.addAction(QtWidgets.QAction(
-            "Info...",
+            "&Info",
             self,
             statusTip=
             "Display info of an element (anything useful in the document)",
             triggered=self.actionInfo))
         menu.addAction(QtWidgets.QAction(
-            "Reload sources...",
+            "&Reload sources",
             self,
             statusTip=
             "Reload sources (needed when renaming changed other tabs)",
             triggered=self.reload_java_sources))
-        menu.addAction(QtWidgets.QAction("Open bytecodes...",
-                                     self,
-                                     statusTip="",
-                                     triggered=self.display_bytecodes))
+        menu.addAction(QtWidgets.QAction("&Copy",
+                self,
+                shortcut=QtGui.QKeySequence.Copy,
+                statusTip="Copy the current selection's contents to the clipboard",
+                triggered=self.actionCopy))
         menu.exec_(QtGui.QCursor.pos())
 
     def actionXref(self):
@@ -253,8 +493,6 @@ class SourceWindow(QtWidgets.QTextEdit):
 
             xwin = XrefDialogMethod(parent=self.mainwin,
                                     win=self.mainwin,
-                                    current_class=self.current_class,
-                                    class_analysis=class_analysis,
                                     method_analysis=method_analysis)
             xwin.show()
         elif t[0] == 'NAME_FIELD':
@@ -295,6 +533,11 @@ class SourceWindow(QtWidgets.QTextEdit):
         #else:
         #    self.mainwin.showStatus("Xref not available. Info ok: '%s' but object not supported." % selection)
         #    return
+
+    def actionCopy(self):
+        print 'COPY'
+        cur = self.textCursor()
+        pyperclip.copy(cur.selectedText())
 
     def actionRename(self):
         cursor = self.textCursor()

@@ -126,17 +126,16 @@ class Banners(Observer):
 
 
 class FileAddrBanner(Banner):
-    def __init__(self, dataModel, viewMode):
+    def __init__(self, themes, dataModel, viewMode):
         self.width = 0
         self.height = 0
         self.dataModel = dataModel
         self.viewMode = viewMode
         self.qpix = self._getNewPixmap(self.width, self.height)
-        self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))        
-        
+        self.backgroundBrush = QtGui.QBrush(themes['background'])
 
         # text font
-        self.font = QtGui.QFont('Terminus', 11, QtGui.QFont.Light)
+        self.font = themes['font']
 
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
@@ -191,19 +190,19 @@ class FileAddrBanner(Banner):
 
 
 class BottomBanner(Banner):
-    def __init__(self, dataModel, viewMode):
+    def __init__(self, themes, dataModel, viewMode):
         self.width = 0
         self.height = 0
         self.dataModel = dataModel
         self.viewMode = viewMode
+        self.backgroundBrush = QtGui.QBrush(themes['background'])
 
         self.qpix = self._getNewPixmap(self.width, self.height)
-        self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))        
         
 
         # text font
-        self.font = QtGui.QFont('Consolas', 11, QtGui.QFont.Light)
-
+        self.font = themes['font']
+        
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
@@ -211,7 +210,7 @@ class BottomBanner(Banner):
         self.fontWidth  = fm.width('a')
         self.fontHeight = fm.height()
 
-        self.textPen = QtGui.QPen(QtGui.QColor(255, 255, 0), 0, QtCore.Qt.SolidLine)
+        self.textPen = QtGui.QPen(themes['pen'], 0, QtCore.Qt.SolidLine)
 
     def getOrientation(self):
         return Orientation.Bottom
@@ -324,18 +323,18 @@ class BottomBanner(Banner):
 
 
 class TopBanner(Banner):
-    def __init__(self, dataModel, viewMode):
+    def __init__(self, themes, dataModel, viewMode):
         self.width = 0
         self.height = 0
         self.dataModel = dataModel
         self.viewMode = viewMode
 
         self.qpix = self._getNewPixmap(self.width, self.height)
-        self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))        
-        
+        self.backgroundBrush = QtGui.QBrush(themes['background'])
+
 
         # text font
-        self.font = QtGui.QFont('Terminus', 11, QtGui.QFont.Bold)
+        self.font = themes['font']
 
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
@@ -344,7 +343,7 @@ class TopBanner(Banner):
         self.fontWidth  = fm.width('a')
         self.fontHeight = fm.height()
 
-        self.textPen = QtGui.QPen(QtGui.QColor(255, 255, 0), 0, QtCore.Qt.SolidLine)
+        self.textPen = QtGui.QPen(themes['pen'], 0, QtCore.Qt.SolidLine)
 
     def getOrientation(self):
         return Orientation.Top

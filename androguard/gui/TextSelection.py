@@ -3,7 +3,7 @@
 #
 #
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui
 
 class SelectionType:
     NORMAL = 0
@@ -11,18 +11,19 @@ class SelectionType:
     TEXTHIGHLIGHT = 2
 
 class Selection(object):
-    def __init__(self, viewMode):
+    def __init__(self, themes, viewMode):
+        self.themes = themes
         self.viewMode = viewMode
         self.selecting = False
         self.Selections = []
         self.PermanentSelections = []
         self.MAX_SELECTIONS = 1
-        self.defaultBrush = QtGui.QBrush(QtGui.QColor(125, 255, 0))
+        self.defaultBrush = QtGui.QBrush(self.themes['selection'])
 
         self.last = 0
         self.HighlightSelections = []
 
-    def drawSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)), opacity=0.4):
+    def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
         raise "Not Implemented"
 
     def addSelection(self, t, type=None):
@@ -135,7 +136,7 @@ class Selection(object):
         if self.selecting == True:
             u, v = self.getCurrentSelection()
 
-            self.addSelection((u, v, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.4) , type=SelectionType.NORMAL)
+            self.addSelection((u, v, QtGui.QBrush(self.themes['selection']), 0.4) , type=SelectionType.NORMAL)
             self.last = u, v
 
             self.selecting = False
@@ -186,15 +187,17 @@ class Selection(object):
             if off+start not in Exclude:
                 #self._makeSelection(off + start, off + start + end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)))
                 #self.viewMode.selector.addSelection((off+start, off + start + end, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.4))
-                self.addSelection((off+start, off + start + end, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.4), type=SelectionType.TEXTHIGHLIGHT)
+                self.addSelection((off+start, off + start + end, QtGui.QBrush(self.themes['selection']), 0.4), type=SelectionType.TEXTHIGHLIGHT)
 
 
 class DefaultSelection(Selection):
-    def __init__(self, viewMode):
-        super(DefaultSelection, self).__init__(viewMode)
+    def __init__(self, themes, viewMode):
+        super(DefaultSelection, self).__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
-    def _makeSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0))):
+    def _makeSelection(self, qp, start, end, brush):
+        if not brush:
+            brush = QtGui.QBrush(self.themes['selection'])
         dataModel = self.viewMode.getDataModel()
         off = dataModel.getOffset()
         length = len(self.viewMode.getDisplayablePage())
@@ -233,7 +236,10 @@ class DefaultSelection(Selection):
                 mark = False
         qp.setOpacity(1)
 
-    def drawSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)), opacity=0.4):
+    def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
+        if not brush:
+            brush = QtGui.QBrush(self.themes['selection'])
+
         dataModel = self.viewMode.getDataModel()
         off = dataModel.getOffset()
         length = len(self.viewMode.getDisplayablePage())
@@ -279,11 +285,14 @@ class DefaultSelection(Selection):
 
 
 class HexSelection(Selection):
-    def __init__(self, viewMode):
-        super(HexSelection, self).__init__(viewMode)
+    def __init__(self, themes, viewMode):
+        super(HexSelection, self).__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
-    def drawSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)), opacity=0.4):        
+    def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
+        if not brush:
+            brush = QtGui.QBrush(self.themes['selection'])
+
         dataModel = self.viewMode.getDataModel()
         off = dataModel.getOffset()
         length = len(self.viewMode.getDisplayablePage())
@@ -330,12 +339,14 @@ class HexSelection(Selection):
 
 
 class DisasmSelection(Selection):
-    def __init__(self, viewMode):
-        super(DisasmSelection, self).__init__(viewMode)
+    def __init__(self, themes, viewMode):
+        super(DisasmSelection, self).__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
+    def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
+        if not brush:
+            brush = QtGui.QBrush(self.themes['selection'])
 
-    def drawSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)), opacity=0.4):
         dataModel = self.viewMode.getDataModel()
         off = dataModel.getOffset()
         length = sum([o.size for o in self.viewMode.OPCODES])        # TODO: not nice!

@@ -77,16 +77,15 @@ class TreeWindow(QtWidgets.QTreeWidget):
 
     def createActions(self):
         self.xrefAct = QtWidgets.QAction(
-            "Xref from/to...",
+            "Xref from/to",
             self,
-            #                shortcut=QtGui.QKeySequence("CTRL+B"),
             statusTip="List the references where this element is used",
             triggered=self.actionXref)
-        self.expandAct = QtWidgets.QAction("Expand...",
+        self.expandAct = QtWidgets.QAction("Expand",
                                        self,
                                        statusTip="Expand all the subtrees",
                                        triggered=self.actionExpand)
-        self.collapseAct = QtWidgets.QAction("Collapse...",
+        self.collapseAct = QtWidgets.QAction("Collapse",
                                          self,
                                          statusTip="Collapse all the subtrees",
                                          triggered=self.actionCollapse)
@@ -116,6 +115,7 @@ class TreeWindow(QtWidgets.QTreeWidget):
                                current_class=current_class,
                                class_analysis=class_analysis)
         xwin.show()
+
 
     def expand_children(self, item):
         self.expandItem(item)
