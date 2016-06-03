@@ -15,7 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re, random, cPickle, collections
+import re, collections
+import threading, Queue, time
+
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
     load_api_specific_resource_module
@@ -762,13 +764,36 @@ class newVMAnalysis(object):
 
     def create_xref(self):
         debug("Creating XREF/DREF")
+        started_at = time.time()
 
         instances_class_name = self.classes.keys()
 
+        queue_classes = Queue.Queue()
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
+            queue_classes.put(current_class)
+
+        threads = []
+        for n in range(2):
+            thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+
+        debug("Waiting all threads")
+        queue_classes.join()
+
+        debug("")
+        diff = time.time() - started_at
+        minutes, seconds = float(diff // 60), float(diff % 60)
+        debug("End of creating XREF/DREF %s:%s" % (str(minutes), str(round(seconds,2))))
+
+    def _create_xref(self, instances_class_name, last_vm, queue_classes):
+        while not queue_classes.empty():
+            current_class = queue_classes.get()
+            debug("Creating XREF/DREF for %s" % current_class.get_name())
             for current_method in current_class.get_methods():
-                #debug("Creating XREF for %s" % current_method)
+                debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
                 if code == None:
@@ -811,7 +836,6 @@ class newVMAnalysis(object):
                               (op_value >= 0x74 and op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
                             method_info = last_vm.get_cm_method(idx_meth)
-                            print method_info
                             if method_info:
                                 class_info = method_info[0]
 
@@ -885,7 +909,8 @@ class newVMAnalysis(object):
                         off += instruction.get_length()
                 except dvm.InvalidInstruction as e:
                     warning("Invalid instruction %s" % str(e))
-
+            queue_classes.task_done()
+                                
     def get_method(self, method):
         for vm in self.vms:
             if method in vm.get_methods():

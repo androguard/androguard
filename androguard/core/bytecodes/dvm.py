@@ -8686,7 +8686,7 @@ class ConstString(Instruction21c):
   def get_raw_string(self):
     return self.value
 
-  def get_operands(self):
+  def get_operands(self, idx=-1):
     return [(0, 1), (257, 2113, "'%s'" % self.value)]
 
 

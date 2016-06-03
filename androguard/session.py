@@ -9,19 +9,17 @@ from androguard.decompiler.decompiler import *
 from androguard.misc import save_session, load_session
 
 
-class Session(object):
 
+def Save(session, filename):
+    save_session(session, filename)
+
+def Load(filename):
+    return load_session(filename)
+
+class Session(object):
     def __init__(self, export_ipython=False):
         self.setupObjects()
         self.export_ipython = export_ipython
-
-    def save(self, filename):
-        save_session([self.analyzed_files, self.analyzed_digest,
-                      self.analyzed_apk, self.analyzed_dex], filename)
-
-    def load(self, filename):
-        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(
-            filename)
 
     def setupObjects(self):
         self.analyzed_files = collections.OrderedDict()

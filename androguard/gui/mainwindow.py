@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from androguard.session import Session
+import androguard.session as session_module
 from androguard.core import androconf
 from androguard.gui.fileloading import FileLoadingThread
 from androguard.gui.treewindow import TreeWindow
@@ -13,12 +13,13 @@ from androguard.gui.DataModel import *
 
 from androguard.gui.helpers import class2func
 
-import os
+import os, imp
 
 
 class TabsWindow(QtWidgets.QTabWidget):
-    def __init__(self, parent=None):
+    def __init__(self, bin_windows, parent=None):
         super(TabsWindow, self).__init__(parent)
+        self.bin_windows = bin_windows
         self.setTabsClosable(True)
         self.tabCloseRequested.connect(self.tabCloseRequestedHandler)
         self.currentChanged.connect(self.currentTabChanged)
@@ -66,6 +67,15 @@ class TabsWindow(QtWidgets.QTabWidget):
         if index == -1:
             return
 
+        current_title = self.tabToolTip(index)
+        for title in self.bin_windows:
+            if title != current_title:
+                self.bin_windows[title].disable()
+
+        if current_title in self.bin_windows:
+            self.bin_windows[current_title].enable()
+
+
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.closeAllTabs)
@@ -81,15 +91,16 @@ class MainWindow(QtWidgets.QMainWindow):
        self.tree: TreeWindow(QTreeWidget) in self.dock
     '''
 
-    def __init__(self, parent=None, session=Session(), input_file=None):
+    def __init__(self, parent=None, session=session_module.Session(), input_file=None):
         super(MainWindow, self).__init__(parent)
         self.session = session
-        self.bin_windows = []
+        self.bin_windows = {}
 
         self.setupSession()
 
         self.setupFileMenu()
         self.setupViewMenu()
+        self.setupPluginsMenu()
         self.setupHelpMenu()
 
         self.setupCentral()
@@ -105,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openFile(input_file)
 
     def eventFilter(self, watched, event):
-        for bin_window in self.bin_windows:
+        for bin_window in self.bin_windows.values():
             bin_window.eventFilter(watched, event)
         return False
 
@@ -123,7 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 "<br>Have fun !</p>")
 
     def setupSession(self):
-        self.fileLoadingThread = FileLoadingThread(self.session)
+        self.fileLoadingThread = FileLoadingThread(self)
         self.fileLoadingThread.file_loaded.connect(self.loadedFile)
 
     def loadedFile(self, success):
@@ -143,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.session.reset()
 
         if not path:
-            path = QtGui.QFileDialog.getOpenFileName(
+            path = QtWidgets.QFileDialog.getOpenFileName(
                 self, "Open File", '',
                 "Android Files (*.apk *.jar *.dex *.odex *.dey);;Androguard Session (*.ag)")
             path = str(path[0])
@@ -159,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         if not path:
-            path = QtGui.QFileDialog.getOpenFileName(
+            path = QtWidgets.QFileDialog.getOpenFileName(
                 self, "Add File", '',
                 "Android Files (*.apk *.jar *.dex *.odex *.dey)")
             path = str(path[0])
@@ -171,7 +182,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def saveFile(self, path=None):
         '''User clicked Save menu. Display a Dialog to ask whwre to save.'''
         if not path:
-            path = QtGui.QFileDialog.getSaveFileName(
+            path = QtWidgets.QFileDialog.getSaveFileName(
                 self, "Save File", '', "Androguard Session (*.ag)")
             path = str(path[0])
 
@@ -182,13 +193,27 @@ class MainWindow(QtWidgets.QMainWindow):
     def saveSession(self, path):
         '''Save androguard session.'''
         try:
-            self.session.save(path)
-        except RuntimeError, e:
+            session_module.Save(self.session, path)
+        except RuntimeError as e:
             androconf.error(str(e))
-            # http://stackoverflow.com/questions/2134706/hitting-maximum-recursion-depth-using-pythons-pickle-cpickle
-            androconf.error("Try increasing sys.recursionlimit")
             os.remove(path)
             androconf.warning("Session not saved")
+
+    def openRunPluginWindow(self):
+        '''User clicked Open menu. Display a Dialog to ask which plugin to run.'''
+        path = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open File", '',
+            "Python Files (*.py);;")
+        path = str(path[0])
+
+        if path:
+            module_name = os.path.splitext(os.path.basename(path))[0]
+            f, filename, description = imp.find_module(
+                module_name,
+                [os.path.dirname(path)])
+            print f, filename, description
+            mod = imp.load_module(module_name, f, filename, description)
+            mod.PluginEntry(self.session)
 
     def quit(self):
         '''Clicked in File menu to exit or CTRL+Q to close main window'''
@@ -220,12 +245,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setupCentral(self):
         '''Setup empty window supporting tabs at startup. '''
-        self.central = TabsWindow(self) #QtWidgets.QTabWidget()
+        self.central = TabsWindow(self.bin_windows, self)
         self.setCentralWidget(self.central)
 
     def cleanCentral(self):
-        #TOFIX: Removes all the pages, but does not delete them.
-        self.central.clear()
+        self.central.actioncloseAllTabs()
 
     def setupFileMenu(self):
         fileMenu = QtWidgets.QMenu("&File", self)
@@ -244,6 +268,12 @@ class MainWindow(QtWidgets.QMainWindow):
         viewMenu.addAction("&Methods...", self.openMethodsWindow)
         viewMenu.addAction("&API...", self.openAPIWindow)
         viewMenu.addAction("&APK...", self.openApkWindow)
+
+    def setupPluginsMenu(self):
+        pluginsMenu = QtWidgets.QMenu("&Plugins", self)
+        self.menuBar().addMenu(pluginsMenu)
+
+        pluginsMenu.addAction("&Run...", self.openRunPluginWindow)
 
     def setupHelpMenu(self):
         helpMenu = QtWidgets.QMenu("&Help", self)
@@ -288,25 +318,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.addTab(bin_window, bin_window.title)
         self.central.setCurrentWidget(bin_window)
 
-        self.bin_windows.append(bin_window)
+        self.bin_windows[bin_window.title] = bin_window
 
     def openBinWindow(self, current_class):
+        print self.central.count()
         androconf.debug("openBinWindow for %s" % current_class)
         bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
         bin_window.activateWindow()
         self.central.addTab(bin_window, current_class.current_title)
+        self.central.setTabToolTip(self.central.indexOf(bin_window),
+                                   bin_window.title)
         self.central.setCurrentWidget(bin_window)
 
-        self.bin_windows.append(bin_window)
+        self.bin_windows[bin_window.title] = bin_window
+        bin_window.enable()
 
     def openSourceWindow(self, current_class, method=None):
         '''Main function to open a decompile source window
            It checks if it already opened and open that tab,
            otherwise, initialize a new window.
         '''
+        print self.central.count()
+
         androconf.debug("openSourceWindow for %s" % current_class)
 
-        sourcewin = self.getMeSourceWindowIfExists(current_class)
+        sourcewin = None#self.getMeSourceWindowIfExists(current_class)
         if not sourcewin:
             current_filename = self.session.get_filename_by_class(current_class)
             current_digest = self.session.get_digest_by_class(current_class)

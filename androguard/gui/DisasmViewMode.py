@@ -5,6 +5,7 @@ import TextSelection
 from PyQt5 import QtGui, QtCore
 
 from androguard.core.bytecodes import dvm
+from androguard.core import androconf
 
 MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 30
@@ -318,7 +319,7 @@ class DisasmViewMode(ViewMode):
             asm = self.OPCODES[cursorY]
             width = asm.getSelectionWidth(xstart)
         except IndexError as e:
-            androguard.warning(e)
+            androconf.warning(e)
             width = 2
 
 

@@ -196,6 +196,7 @@ class binWidget(QtWidgets.QWidget, Observable):
         self.parent = parent
         
         self.title = title
+        self.active = False
         # offset for text window
         #self.data = mapped
         self.dataOffset = 0
@@ -244,6 +245,12 @@ class binWidget(QtWidgets.QWidget, Observable):
 
         self.notify(self.viewMode)  
 
+    def enable(self):
+        self.active = True
+
+    def disable(self):
+        self.active = False
+        
     def scroll_from_outside(self, i):
         #print 'slot-signal ' + str(i)
         #self.scroll_pdown = True
@@ -301,6 +308,9 @@ class binWidget(QtWidgets.QWidget, Observable):
 
 
     def eventFilter(self, watched, event):
+        if not self.active:
+            return False
+
         if event.type() == QtCore.QEvent.KeyRelease:
             key = event.key()
             modifiers = event.modifiers()
