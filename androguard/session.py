@@ -177,6 +177,10 @@ class Session(object):
             nb += len(dx.get_strings_analysis())
         return nb
 
+    def get_all_apks(self):
+        for digest in self.analyzed_apk:
+            yield digest, self.analyzed_apk[digest]
+
     def get_objects_apk(self, filename):
         digest = self.analyzed_files.get(filename)
         if digest:

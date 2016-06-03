@@ -2000,6 +2000,38 @@ class ARSCParser(object):
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
 
+    def get_resolved_strings(self):
+        self._analyse()
+
+        r = {}
+        for package_name in self.get_packages_names():
+            r[package_name] = {}
+            k = {}
+
+            for locale in self.values[package_name]:
+                v_locale = locale
+                if v_locale == '\x00\x00':
+                    v_locale = 'DEFAULT'
+                    
+                r[package_name][v_locale] = {}
+
+                try:
+                    for i in self.values[package_name][locale]["public"]:
+                        if i[0] == 'string':
+                            r[package_name][v_locale][i[2]] = None
+                            k[i[1]] = i[2]
+                except KeyError:
+                    pass
+
+                try:
+                    for i in self.values[package_name][locale]["string"]:
+                        if i[0] in k:
+                            r[package_name][v_locale][k[i[0]]] = i[1]
+                except KeyError:
+                    pass
+
+        return r
+
     def get_res_configs(self, rid, config=None):
         self._analyse()
 

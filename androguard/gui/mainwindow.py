@@ -7,6 +7,7 @@ from androguard.gui.treewindow import TreeWindow
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.stringswindow import StringsWindow
 from androguard.gui.methodswindow import MethodsWindow
+from androguard.gui.resourceswindow import ResourcesWindow
 from androguard.gui.apiwindow import APIWindow
 from androguard.gui.binwindow import binWidget
 from androguard.gui.DataModel import *
@@ -268,6 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
         viewMenu.addAction("&Methods...", self.openMethodsWindow)
         viewMenu.addAction("&API...", self.openAPIWindow)
         viewMenu.addAction("&APK...", self.openApkWindow)
+        viewMenu.addAction("&Resources...", self.openResourcesWindow)
 
     def setupPluginsMenu(self):
         pluginsMenu = QtWidgets.QMenu("&Plugins", self)
@@ -303,6 +305,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.setTabToolTip(self.central.indexOf(methodswin),
                                    methodswin.title)
         self.central.setCurrentWidget(methodswin)
+
+    def openResourcesWindow(self):
+        resourceswin = ResourcesWindow(win=self, session=self.session)
+        self.central.addTab(resourceswin, resourceswin.title)
+        self.central.setTabToolTip(self.central.indexOf(resourceswin),
+                                   resourceswin.title)
+        self.central.setCurrentWidget(resourceswin)
 
     def openAPIWindow(self):
         apiwin = APIWindow(win=self, session=self.session)
