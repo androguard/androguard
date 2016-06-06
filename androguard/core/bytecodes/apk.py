@@ -1595,6 +1595,7 @@ class ARSCParser(object):
 
     def __init__(self, raw_buff):
         self.analyzed = False
+        self._resolved_strings = None
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
@@ -2002,6 +2003,8 @@ class ARSCParser(object):
 
     def get_resolved_strings(self):
         self._analyse()
+        if self._resolved_strings:
+            return self._resolved_strings
 
         r = {}
         for package_name in self.get_packages_names():
@@ -2012,7 +2015,7 @@ class ARSCParser(object):
                 v_locale = locale
                 if v_locale == '\x00\x00':
                     v_locale = 'DEFAULT'
-                    
+
                 r[package_name][v_locale] = {}
 
                 try:
@@ -2030,6 +2033,7 @@ class ARSCParser(object):
                 except KeyError:
                     pass
 
+        self._resolved_strings = r
         return r
 
     def get_res_configs(self, rid, config=None):

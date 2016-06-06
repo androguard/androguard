@@ -332,15 +332,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def openBinWindow(self, current_class):
         print self.central.count()
         androconf.debug("openBinWindow for %s" % current_class)
-        bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
-        bin_window.activateWindow()
-        self.central.addTab(bin_window, current_class.current_title)
-        self.central.setTabToolTip(self.central.indexOf(bin_window),
-                                   bin_window.title)
+
+        bin_window = self.getMeOpenedWindowIfExists(current_class.current_title)
+        if not bin_window:
+            bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
+            bin_window.activateWindow()
+            self.central.addTab(bin_window, current_class.current_title)
+            self.central.setTabToolTip(self.central.indexOf(bin_window),
+                                       current_class.current_title)
+
+            self.bin_windows[bin_window.title] = bin_window
+            bin_window.enable()
+
         self.central.setCurrentWidget(bin_window)
 
-        self.bin_windows[bin_window.title] = bin_window
-        bin_window.enable()
 
     def openSourceWindow(self, current_class, method=None):
         '''Main function to open a decompile source window
@@ -351,7 +356,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         androconf.debug("openSourceWindow for %s" % current_class)
 
-        sourcewin = None#self.getMeSourceWindowIfExists(current_class)
+        sourcewin = self.getMeOpenedWindowIfExists(current_class.current_title + "(S)")
         if not sourcewin:
             current_filename = self.session.get_filename_by_class(current_class)
             current_digest = self.session.get_digest_by_class(current_class)
@@ -365,19 +370,18 @@ class MainWindow(QtWidgets.QMainWindow):
             sourcewin.reload_java_sources()
             self.central.addTab(sourcewin, sourcewin.title)
             self.central.setTabToolTip(self.central.indexOf(sourcewin),
-                                       current_class.get_name())
+                                       sourcewin.title)
 
         if method:
             sourcewin.browse_to_method(method)
 
         self.central.setCurrentWidget(sourcewin)
 
-    def getMeSourceWindowIfExists(self, current_class):
-        '''Helper for openSourceWindow'''
+    def getMeOpenedWindowIfExists(self, name):
         for idx in range(self.central.count()):
-            if current_class.get_name() == self.central.tabToolTip(idx):
+            if name == self.central.tabToolTip(idx):
                 androconf.debug("Tab %s already opened at: %d" %
-                                (current_class.get_name(), idx))
+                                (name, idx))
                 return self.central.widget(idx)
         return None
 
