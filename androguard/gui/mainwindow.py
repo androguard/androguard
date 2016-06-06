@@ -64,16 +64,18 @@ class TabsWindow(QtWidgets.QTabWidget):
         self.removeTab(index)
 
     def currentTabChanged(self, index):
-        androconf.debug("curentTabChanged -> %d" % index)
+        androconf.debug("curentTabChanged -> %d (%s)" % (index, self.tabToolTip(index)))
         if index == -1:
             return
 
         current_title = self.tabToolTip(index)
         for title in self.bin_windows:
             if title != current_title:
+                androconf.debug("Disable %s" % title)
                 self.bin_windows[title].disable()
 
         if current_title in self.bin_windows:
+            androconf.debug("Enable %s" % title)
             self.bin_windows[current_title].enable()
 
 
@@ -341,7 +343,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.central.setTabToolTip(self.central.indexOf(bin_window),
                                        current_class.current_title)
 
-            self.bin_windows[bin_window.title] = bin_window
+            self.bin_windows[current_class.current_title] = bin_window
             bin_window.enable()
 
         self.central.setCurrentWidget(bin_window)
@@ -352,8 +354,6 @@ class MainWindow(QtWidgets.QMainWindow):
            It checks if it already opened and open that tab,
            otherwise, initialize a new window.
         '''
-        print self.central.count()
-
         androconf.debug("openSourceWindow for %s" % current_class)
 
         sourcewin = self.getMeOpenedWindowIfExists(current_class.current_title + "(S)")
