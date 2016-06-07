@@ -36,7 +36,7 @@ class SessionTest(unittest.TestCase):
                   "r") as fd:
             s.add("examples/android/TestsAndroguard/bin/TestActivity.apk",
                   fd.read())
-            s.save("test_session")
+            session.Save(s, "test_session")
 
 
 if __name__ == '__main__':

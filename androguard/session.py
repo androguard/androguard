@@ -9,19 +9,17 @@ from androguard.decompiler.decompiler import *
 from androguard.misc import save_session, load_session
 
 
-class Session(object):
 
+def Save(session, filename):
+    save_session(session, filename)
+
+def Load(filename):
+    return load_session(filename)
+
+class Session(object):
     def __init__(self, export_ipython=False):
         self.setupObjects()
         self.export_ipython = export_ipython
-
-    def save(self, filename):
-        save_session([self.analyzed_files, self.analyzed_digest,
-                      self.analyzed_apk, self.analyzed_dex], filename)
-
-    def load(self, filename):
-        self.analyzed_files, self.analyzed_digest, self.analyzed_apk, self.analyzed_dex = load_session(
-            filename)
 
     def setupObjects(self):
         self.analyzed_files = collections.OrderedDict()
@@ -49,7 +47,10 @@ class Session(object):
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add DEX:%s" % digest)
 
+        androconf.debug("Parsing format ...")
         d = DalvikVMFormat(data)
+
+        androconf.debug("Running analysis ...")
         dx = self.runAnalysis(d, dx)
 
         androconf.debug("added DEX:%s" % digest)
@@ -62,6 +63,7 @@ class Session(object):
         self.analyzed_digest[digest] = filename
 
         if self.export_ipython:
+            androconf.debug("Exporting in ipython")
             d.create_python_export()
 
         return (digest, d, dx)
@@ -88,7 +90,6 @@ class Session(object):
         return (digest, d, dx)
 
     def runAnalysis(self, d, dx=None):
-        androconf.debug("VMAnalysis ...")
         if dx == None:
             dx = newVMAnalysis(d)
         else:
@@ -176,6 +177,10 @@ class Session(object):
             nb += len(dx.get_strings_analysis())
         return nb
 
+    def get_all_apks(self):
+        for digest in self.analyzed_apk:
+            yield digest, self.analyzed_apk[digest]
+
     def get_objects_apk(self, filename):
         digest = self.analyzed_files.get(filename)
         if digest:
@@ -197,4 +202,4 @@ class Session(object):
 
     def get_objects_dex(self):
         for digest in self.analyzed_dex:
-            yield self.analyzed_dex[digest]
+            yield digest, self.analyzed_dex[digest][0], self.analyzed_dex[digest][1]

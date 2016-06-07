@@ -28,7 +28,7 @@ https://github.com/androguard/androguard/releases
 
 * Androguard
 
-Copyright (C) 2012 - 2015, Anthony Desnos (desnos at t0t0.fr)
+Copyright (C) 2012 - 2016, Anthony Desnos (desnos at t0t0.fr)
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +45,7 @@ limitations under the License.
 
 * DAD
 
-Copyright (C) 2012 - 2015, Geoffroy Gueguen (geoffroy dot gueguen at gmail dot com)
+Copyright (C) 2012 - 2016, Geoffroy Gueguen (geoffroy dot gueguen at gmail dot com)
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
