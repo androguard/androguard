@@ -99,8 +99,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.session = session
         self.bin_windows = {}
 
-        self.setupSession()
-
+ 
         self.setupFileMenu()
         self.setupViewMenu()
         self.setupPluginsMenu()
@@ -109,6 +108,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupCentral()
         self.setupEmptyTree()
         self.setupDock()
+
+        self.setupSession()
+
         self.setWindowTitle("Androguard GUI")
 
         self.showStatus("Androguard GUI")
@@ -116,7 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.installEventFilter(self)
 
         if input_file != None:
-            self.openFile(input_file)
+            self._openFile(input_file)
 
     def eventFilter(self, watched, event):
         for bin_window in self.bin_windows.values():
@@ -132,11 +134,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def about(self):
         '''User clicked About menu. Display a Message box.'''
-        QtGui.QMessageBox.about(self, "About Androguard GUI",
+        QtWidgets.QMessageBox.about(self, "About Androguard GUI",
                 "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
                 "<br>Have fun !</p>")
 
     def setupSession(self):
+        androconf.debug("Setup Session")
         self.fileLoadingThread = FileLoadingThread(self)
         self.fileLoadingThread.file_loaded.connect(self.loadedFile)
 
@@ -152,75 +155,65 @@ class MainWindow(QtWidgets.QMainWindow):
         self.showStatus("Analysis of %s done!" %
                         str(self.fileLoadingThread.file_path))
 
-    def openFile(self, path=None):
-        '''User clicked Open menu. Display a Dialog to ask which file to open.'''
+    def openFile(self):
         self.session.reset()
 
-        if not path:
-            path = QtWidgets.QFileDialog.getOpenFileName(
-                self, "Open File", '',
-                "Android Files (*.apk *.jar *.dex *.odex *.dey);;Androguard Session (*.ag)")
-            path = str(path[0])
+        filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open File", '.',
+            "Android Files (*.apk *.jar *.dex *.odex *.dey);;Androguard Session (*.ag)")
 
-        if path:
+        self._openFile(filepath)
+
+    def _openFile(self, filepath=None):
+        if filepath:
             self.setupTree()
-            self.showStatus("Analyzing %s..." % str(path))
-            self.fileLoadingThread.load(path)
+            self.showStatus("Analyzing %s..." % str(filepath))
+            self.fileLoadingThread.load(filepath)
 
-    def addFile(self, path=None):
-        '''User clicked Open menu. Display a Dialog to ask which APK to open.'''
+    def addFile(self):
         if not self.session.isOpen():
             return
 
-        if not path:
-            path = QtWidgets.QFileDialog.getOpenFileName(
-                self, "Add File", '',
-                "Android Files (*.apk *.jar *.dex *.odex *.dey)")
-            path = str(path[0])
+        filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Add File", '',
+            "Android Files (*.apk *.jar *.dex *.odex *.dey)")
 
-        if path:
-            self.showStatus("Analyzing %s..." % str(path))
-            self.fileLoadingThread.load(path)
+        if filepath:
+            self.showStatus("Analyzing %s..." % str(filepath))
+            self.fileLoadingThread.load(filepath)
 
-    def saveFile(self, path=None):
+    def saveFile(self):
         '''User clicked Save menu. Display a Dialog to ask whwre to save.'''
-        if not path:
-            path = QtWidgets.QFileDialog.getSaveFileName(
-                self, "Save File", '', "Androguard Session (*.ag)")
-            path = str(path[0])
+        filepath, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", '', "Androguard Session (*.ag)")
 
-        if path:
-            self.showStatus("Saving %s..." % str(path))
-            self.saveSession(path)
+        if filepath:
+            self.showStatus("Saving %s..." % str(filepath))
+            self.saveSession(filepath)
 
-    def saveSession(self, path):
+    def saveSession(self, filepath):
         '''Save androguard session.'''
         try:
-            session_module.Save(self.session, path)
+            session_module.Save(self.session, filepath)
         except RuntimeError as e:
             androconf.error(str(e))
-            os.remove(path)
+            os.remove(filepath)
             androconf.warning("Session not saved")
 
     def openRunPluginWindow(self):
         '''User clicked Open menu. Display a Dialog to ask which plugin to run.'''
-        path = QtWidgets.QFileDialog.getOpenFileName(
+        filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Open File", '',
             "Python Files (*.py);;")
-        path = str(path[0])
 
-        if path:
-            module_name = os.path.splitext(os.path.basename(path))[0]
+        if filepath:
+            module_name = os.path.splitext(os.path.basename(filepath))[0]
             f, filename, description = imp.find_module(
                 module_name,
-                [os.path.dirname(path)])
+                [os.path.dirname(filepath)])
             print f, filename, description
             mod = imp.load_module(module_name, f, filename, description)
             mod.PluginEntry(self.session)
-
-    def quit(self):
-        '''Clicked in File menu to exit or CTRL+Q to close main window'''
-        QtGui.qApp.quit()
 
     def closeEvent(self, event):
         '''Clicked [x] to close main window'''
@@ -255,36 +248,38 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.actioncloseAllTabs()
 
     def setupFileMenu(self):
-        fileMenu = QtWidgets.QMenu("&File", self)
-        self.menuBar().addMenu(fileMenu)
+        androconf.debug("Setup File Menu")
+        self.fileMenu = self.menuBar().addMenu("&File")
 
-        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
-        fileMenu.addAction("&Add...", self.addFile, "Ctrl+A")
-        fileMenu.addAction("&Save...", self.saveFile, "Ctrl+S")
-        fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
+        self.fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
+        self.fileMenu.addAction("&Add...", self.addFile, "Ctrl+A")
+        self.fileMenu.addAction("&Save...", self.saveFile, "Ctrl+S")
+        self.fileMenu.addAction("E&xit", self.close, "Ctrl+Q")
 
     def setupViewMenu(self):
-        viewMenu = QtWidgets.QMenu("&View", self)
-        self.menuBar().addMenu(viewMenu)
+        androconf.debug("Setup View Menu")
 
-        viewMenu.addAction("&Strings...", self.openStringsWindow)
-        viewMenu.addAction("&Methods...", self.openMethodsWindow)
-        viewMenu.addAction("&API...", self.openAPIWindow)
-        viewMenu.addAction("&APK...", self.openApkWindow)
-        viewMenu.addAction("&Resources...", self.openResourcesWindow)
+        self.viewMenu = self.menuBar().addMenu("&View")
+
+        self.viewMenu.addAction("&Strings...", self.openStringsWindow)
+        self.viewMenu.addAction("&Methods...", self.openMethodsWindow)
+        self.viewMenu.addAction("&API...", self.openAPIWindow)
+        self.viewMenu.addAction("&APK...", self.openApkWindow)
+        self.viewMenu.addAction("&Resources...", self.openResourcesWindow)
 
     def setupPluginsMenu(self):
-        pluginsMenu = QtWidgets.QMenu("&Plugins", self)
-        self.menuBar().addMenu(pluginsMenu)
+        androconf.debug("Setup Plugins Menu")
 
-        pluginsMenu.addAction("&Run...", self.openRunPluginWindow)
+        self.pluginsMenu = self.menuBar().addMenu("&Plugins")
+        self.pluginsMenu.addAction("&Run...", self.openRunPluginWindow)
 
     def setupHelpMenu(self):
-        helpMenu = QtWidgets.QMenu("&Help", self)
-        self.menuBar().addMenu(helpMenu)
+        androconf.debug("Setup Help Menu")
 
-        helpMenu.addAction("&About", self.about)
-        helpMenu.addAction("About &Qt", QtWidgets.qApp.aboutQt)
+        self.helpMenu = self.menuBar().addMenu("&Help")
+
+        self.helpMenu.addAction("&About", self.about)
+        self.helpMenu.addAction("About &Qt", QtWidgets.qApp.aboutQt)
 
     def updateDockWithTree(self, empty=False):
         '''Update the classes tree. Called when
@@ -332,7 +327,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bin_windows[bin_window.title] = bin_window
 
     def openBinWindow(self, current_class):
-        print self.central.count()
         androconf.debug("openBinWindow for %s" % current_class)
 
         bin_window = self.getMeOpenedWindowIfExists(current_class.current_title)
