@@ -94,12 +94,11 @@ class MainWindow(QtWidgets.QMainWindow):
        self.tree: TreeWindow(QTreeWidget) in self.dock
     '''
 
-    def __init__(self, parent=None, session=session_module.Session(), input_file=None):
+    def __init__(self, parent=None, session=session_module.Session(), input_file=None, input_plugin=None):
         super(MainWindow, self).__init__(parent)
         self.session = session
         self.bin_windows = {}
 
- 
         self.setupFileMenu()
         self.setupViewMenu()
         self.setupPluginsMenu()
@@ -117,7 +116,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.installEventFilter(self)
 
-        if input_file != None:
+        self.input_plugin = input_plugin
+
+        if input_file:
             self._openFile(input_file)
 
     def eventFilter(self, watched, event):
@@ -154,6 +155,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.showStatus("Analysis of %s done!" %
                         str(self.fileLoadingThread.file_path))
+        if self.input_plugin:
+            self._runPlugin(self.input_plugin)
 
     def openFile(self):
         self.session.reset()
@@ -200,20 +203,23 @@ class MainWindow(QtWidgets.QMainWindow):
             os.remove(filepath)
             androconf.warning("Session not saved")
 
+    def _runPlugin(self, filepath):
+        androconf.debug("RUN plugin from %s" % filepath)
+        module_name = os.path.splitext(os.path.basename(filepath))[0]
+        f, filename, description = imp.find_module(
+            module_name,
+            [os.path.dirname(filepath)])
+        print f, filename, description
+        mod = imp.load_module(module_name, f, filename, description)
+        mod.PluginEntry(self.session)
+
     def openRunPluginWindow(self):
-        '''User clicked Open menu. Display a Dialog to ask which plugin to run.'''
         filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Open File", '',
             "Python Files (*.py);;")
 
         if filepath:
-            module_name = os.path.splitext(os.path.basename(filepath))[0]
-            f, filename, description = imp.find_module(
-                module_name,
-                [os.path.dirname(filepath)])
-            print f, filename, description
-            mod = imp.load_module(module_name, f, filename, description)
-            mod.PluginEntry(self.session)
+            self._runPlugin(filepath)
 
     def closeEvent(self, event):
         '''Clicked [x] to close main window'''

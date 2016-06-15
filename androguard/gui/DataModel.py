@@ -24,6 +24,7 @@ class DataModel(object, Observer):
     
     @dataOffset.setter
     def dataOffset(self, value):
+        print "DATA OFFSET", value
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -332,10 +333,11 @@ class DexClassModel(DataModel):
 
     def GetRawData(self, current_class):
         buff = ""
+        self.ins_size = 0
         for method in current_class.get_methods():
             for ins in method.get_instructions():
                 buff += ins.get_raw()
-
+                self.ins_size += ins.get_length() * 2
         return buff
 
     def GetViews(self):
@@ -351,5 +353,5 @@ class DexClassModel(DataModel):
     def close(self):
         return
 
-    def size(self):
-        return len(self.data)
+    def getDataSize(self):
+        return self.ins_size

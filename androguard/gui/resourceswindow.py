@@ -1,5 +1,4 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from androguard.gui.xrefwindow import XrefDialogMethod
 
 
 class ResourcesWindow(QtWidgets.QWidget):
@@ -11,7 +10,7 @@ class ResourcesWindow(QtWidgets.QWidget):
         self.title = "Resources"
 
         self.filterPatternLineEdit = QtWidgets.QLineEdit()
-        self.filterPatternLabel = QtWidgets.QLabel("&Filter resources name pattern:")
+        self.filterPatternLabel = QtWidgets.QLabel("&Filter resource integer pattern:")
         self.filterPatternLabel.setBuddy(self.filterPatternLineEdit)
         self.filterPatternLineEdit.textChanged.connect(self.filterRegExpChanged)
 
@@ -36,7 +35,6 @@ class ResourcesValueWindow(QtWidgets.QTreeView):
         self.mainwin = win
         self.session = session
         self.title = "Resources"
-
 
         self.proxyModel = QtCore.QSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
@@ -71,11 +69,9 @@ class ResourcesValueWindow(QtWidgets.QTreeView):
                     self.model.setData(self.model.index(
                         row, 2, QtCore.QModelIndex()), str(id_value))
                     self.model.setData(self.model.index(
-                        row, 3, QtCore.QModelIndex()), string_resources[p_name][locale][id_value])
+                        row, 3, QtCore.QModelIndex()),
+                        string_resources[p_name][locale][id_value])
                     row += 1
-
-
-
 
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterKeyColumn(2)

@@ -132,18 +132,18 @@ class XrefDialogField(QtWidgets.QDialog):
         for ref_class, ref_method in xrefs_write:
             xrefs_list.append(('Write', ref_method, ref_class.get_vm_class()))
 
-        closeButton = QtGui.QPushButton("Close")
+        closeButton = QtWidgets.QPushButton("Close")
         closeButton.clicked.connect(self.close)
 
-        xreflayout = QtGui.QGridLayout()
+        xreflayout = QtWidgets.QGridLayout()
         xrefwin = XrefListView(self, win=win, xrefs=xrefs_list)
         xreflayout.addWidget(xrefwin, 0, 0)
 
-        buttonsLayout = QtGui.QHBoxLayout()
+        buttonsLayout = QtWidgets.QHBoxLayout()
         buttonsLayout.addStretch(1)
         buttonsLayout.addWidget(closeButton)
 
-        mainLayout = QtGui.QVBoxLayout()
+        mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(xreflayout)
         mainLayout.addLayout(buttonsLayout)
 

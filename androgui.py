@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Androguard GUI")
     parser.add_argument("-d", "--debug", action="store_true", default=False)
     parser.add_argument("-i", "--input_file", default=None)
+    parser.add_argument("-p", "--input_plugin", default=None)
 
     args = parser.parse_args()
 
@@ -30,7 +31,8 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon("./androguard/gui/androguard.ico"))
 
-    window = MainWindow(input_file=args.input_file)
+    window = MainWindow(input_file=args.input_file,
+                        input_plugin=args.input_plugin)
     window.resize(1024, 768)
     window.show()
 
