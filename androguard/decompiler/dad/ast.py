@@ -13,58 +13,126 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 '''This file is a simplified version of writer.py that outputs an AST instead of source code.'''
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
 
-def array_access(arr, ind): return ['ArrayAccess', [arr, ind]]
-def array_creation(tn, params, dim): return ['ArrayCreation', [tn] + params, dim]
-def array_initializer(params, tn=None): return ['ArrayInitializer', params, tn]
-def assignment(lhs, rhs, op=''): return ['Assignment', [lhs, rhs], op]
-def binary_infix(op, left, right): return ['BinaryInfix', [left, right], op]
-def cast(tn, arg): return ['Cast', [tn, arg]]
-def field_access(triple, left): return ['FieldAccess', [left], triple]
-def literal(result, tt): return ['Literal', result, tt]
-def local(name): return ['Local', name]
+
+def array_access(arr, ind):
+    return ['ArrayAccess', [arr, ind]]
+
+
+def array_creation(tn, params, dim):
+    return ['ArrayCreation', [tn] + params, dim]
+
+
+def array_initializer(params, tn=None):
+    return ['ArrayInitializer', params, tn]
+
+
+def assignment(lhs, rhs, op=''):
+    return ['Assignment', [lhs, rhs], op]
+
+
+def binary_infix(op, left, right):
+    return ['BinaryInfix', [left, right], op]
+
+
+def cast(tn, arg):
+    return ['Cast', [tn, arg]]
+
+
+def field_access(triple, left):
+    return ['FieldAccess', [left], triple]
+
+
+def literal(result, tt):
+    return ['Literal', result, tt]
+
+
+def local(name):
+    return ['Local', name]
+
 
 def method_invocation(triple, name, base, params):
     if base is None:
         return ['MethodInvocation', params, triple, name, False]
-    return ['MethodInvocation', [base]+params, triple, name, True]
+    return ['MethodInvocation', [base] + params, triple, name, True]
 
-def parenthesis(expr): return ['Parenthesis', [expr]]
-def typen(baset, dim): return ['TypeName', (baset, dim)]
-def unary_prefix(op, left): return ['Unary', [left], op, False]
-def unary_postfix(left, op): return ['Unary', [left], op, True]
-def var_decl(typen, var): return [typen, var]
 
-def dummy(*args): return ['Dummy', args]
+def parenthesis(expr):
+    return ['Parenthesis', [expr]]
+
+
+def typen(baset, dim):
+    return ['TypeName', (baset, dim)]
+
+
+def unary_prefix(op, left):
+    return ['Unary', [left], op, False]
+
+
+def unary_postfix(left, op):
+    return ['Unary', [left], op, True]
+
+
+def var_decl(typen, var):
+    return [typen, var]
+
+
+def dummy(*args):
+    return ['Dummy', args]
+
 ################################################################################
 
-def expression_stmt(expr): return ['ExpressionStatement', expr]
-def local_decl_stmt(expr, decl): return ['LocalDeclarationStatement', expr, decl]
-def return_stmt(expr): return ['ReturnStatement', expr]
-def throw_stmt(expr): return ['ThrowStatement', expr]
-def jump_stmt(keyword): return ['JumpStatement', keyword, None]
+
+def expression_stmt(expr):
+    return ['ExpressionStatement', expr]
+
+
+def local_decl_stmt(expr, decl):
+    return ['LocalDeclarationStatement', expr, decl]
+
+
+def return_stmt(expr):
+    return ['ReturnStatement', expr]
+
+
+def throw_stmt(expr):
+    return ['ThrowStatement', expr]
+
+
+def jump_stmt(keyword):
+    return ['JumpStatement', keyword, None]
+
 
 def loop_stmt(isdo, cond_expr, body):
     type_ = 'DoStatement' if isdo else 'WhileStatement'
     return [type_, None, cond_expr, body]
 
-def try_stmt(tryb, pairs): return ['TryStatement', None, tryb, pairs]
-def if_stmt(cond_expr, scopes): return ['IfStatement', None, cond_expr, scopes]
+
+def try_stmt(tryb, pairs):
+    return ['TryStatement', None, tryb, pairs]
+
+
+def if_stmt(cond_expr, scopes):
+    return ['IfStatement', None, cond_expr, scopes]
+
+
 def switch_stmt(cond_expr, ksv_pairs):
     return ['SwitchStatement', None, cond_expr, ksv_pairs]
 
+
 # Create empty statement block (statements to be appended later)
 # Note, the code below assumes this can be modified in place
-def statement_block(): return ['BlockStatement', None, []]
+def statement_block():
+    return ['BlockStatement', None, []]
+
 
 # Add a statement to the end of a statement block
 def _append(sb, stmt):
-    assert(sb[0] == 'BlockStatement')
+    assert (sb[0] == 'BlockStatement')
     if stmt is not None:
         sb[2].append(stmt)
 
@@ -81,6 +149,7 @@ TYPE_DESCRIPTOR = {
     'D': 'double',
 }
 
+
 def parse_descriptor(desc):
     dim = 0
     while desc and desc[0] == '[':
@@ -88,21 +157,22 @@ def parse_descriptor(desc):
         dim += 1
 
     if desc in TYPE_DESCRIPTOR:
-        return typen('.'+TYPE_DESCRIPTOR[desc], dim)
+        return typen('.' + TYPE_DESCRIPTOR[desc], dim)
     if desc and desc[0] == 'L' and desc[-1] == ';':
         return typen(desc[1:-1], dim)
     # invalid descriptor (probably None)
     return dummy(str(desc))
 
+
 # Note: the literal_foo functions (and dummy) are also imported by decompile.py
 def literal_string(s):
     escapes = {
-        '\0':'\\0',
-        '\t':'\\t',
-        '\r':'\\r',
-        '\n':'\\n',
-        '"':'\\"',
-        '\\':'\\\\'
+        '\0': '\\0',
+        '\t': '\\t',
+        '\r': '\\r',
+        '\n': '\\n',
+        '"': '\\"',
+        '\\': '\\\\'
     }
 
     buf = ['"']
@@ -116,21 +186,44 @@ def literal_string(s):
     buf.append('"')
     return literal(''.join(buf), ('java/lang/String', 0))
 
+
 def literal_class(desc):
     return literal(parse_descriptor(desc), ('java/lang/Class', 0))
 
-def literal_bool(b): return literal(str(b).lower(), ('.boolean', 0))
-def literal_int(b): return literal(str(b), ('.int', 0))
-def literal_hex_int(b): return literal(hex(b), ('.int', 0))
-def literal_long(b): return literal(str(b)+'L', ('.long', 0))
-def literal_float(f): return literal(str(f)+'f', ('.float', 0))
-def literal_double(f): return literal(str(f), ('.double', 0))
-def literal_null(): return literal('null', ('.null', 0))
+
+def literal_bool(b):
+    return literal(str(b).lower(), ('.boolean', 0))
+
+
+def literal_int(b):
+    return literal(str(b), ('.int', 0))
+
+
+def literal_hex_int(b):
+    return literal(hex(b), ('.int', 0))
+
+
+def literal_long(b):
+    return literal(str(b) + 'L', ('.long', 0))
+
+
+def literal_float(f):
+    return literal(str(f) + 'f', ('.float', 0))
+
+
+def literal_double(f):
+    return literal(str(f), ('.double', 0))
+
+
+def literal_null():
+    return literal('null', ('.null', 0))
+
 
 def visit_decl(var, init_expr=None):
     t = parse_descriptor(var.get_type())
     v = local('v{}'.format(var.name))
     return local_decl_stmt(init_expr, var_decl(t, v))
+
 
 def visit_arr_data(value):
     data = value.get_data()
@@ -144,15 +237,19 @@ def visit_arr_data(value):
             tab.append(struct.unpack('<b', data[i])[0])
     return array_initializer(map(literal_int, tab))
 
+
 def write_inplace_if_possible(lhs, rhs):
-    if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+    if isinstance(
+            rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
         exp_rhs = rhs.var_map[rhs.arg2]
         # post increment/decrement
-        if rhs.op in '+-' and isinstance(exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
+        if rhs.op in '+-' and isinstance(
+                exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
             return unary_postfix(visit_expr(lhs), rhs.op * 2)
         # compound assignment
         return assignment(visit_expr(lhs), visit_expr(exp_rhs), op=rhs.op)
     return assignment(visit_expr(lhs), visit_expr(rhs))
+
 
 def visit_expr(op):
     if isinstance(op, instruction.ArrayLengthExpression):
@@ -177,7 +274,7 @@ def visit_expr(op):
 
     if isinstance(op, instruction.BaseClass):
         if op.clsdesc is None:
-            assert(op.cls == "super")
+            assert (op.cls == "super")
             return local(op.cls)
         return parse_descriptor(op.clsdesc)
     if isinstance(op, instruction.BinaryExpression):
@@ -255,9 +352,10 @@ def visit_expr(op):
             if isinstance(base, instruction.ThisParam):
                 return method_invocation(op.triple, 'this', None, params)
             elif isinstance(base, instruction.NewInstance):
-                return ['ClassInstanceCreation', params, parse_descriptor(base.type)]
+                return ['ClassInstanceCreation', params,
+                        parse_descriptor(base.type)]
             else:
-                assert(isinstance(base, instruction.Variable))
+                assert (isinstance(base, instruction.Variable))
                 # fallthrough to create dummy <init> call
         return method_invocation(op.triple, op.name, visit_expr(base), params)
     # for unmatched monitor instructions, just create dummy expressions
@@ -306,6 +404,7 @@ def visit_expr(op):
         return local('v{}'.format(op.name))
     return dummy('???')
 
+
 def visit_ins(op, isCtor=False):
     if isinstance(op, instruction.ReturnInstruction):
         expr = None if op.arg is None else visit_expr(op.var_map[op.arg])
@@ -316,9 +415,11 @@ def visit_ins(op, isCtor=False):
         return None
 
     # Local var decl statements
-    if isinstance(op, (instruction.AssignExpression, instruction.MoveExpression, instruction.MoveResultExpression)):
+    if isinstance(op, (instruction.AssignExpression, instruction.MoveExpression,
+                       instruction.MoveResultExpression)):
         lhs = op.var_map.get(op.lhs)
-        rhs = op.rhs if isinstance(op, instruction.AssignExpression) else op.var_map.get(op.rhs)
+        rhs = op.rhs if isinstance(
+            op, instruction.AssignExpression) else op.var_map.get(op.rhs)
         if isinstance(lhs, instruction.Variable) and not lhs.declared:
             lhs.declared = True
             expr = visit_expr(rhs)
@@ -339,7 +440,9 @@ def visit_ins(op, isCtor=False):
 
     return expression_stmt(visit_expr(op))
 
+
 class JSONWriter(object):
+
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -370,7 +473,8 @@ class JSONWriter(object):
         return False
 
     # Add a statement to the current context
-    def add(self, val): _append(self.context[-1], val)
+    def add(self, val):
+        _append(self.context[-1], val)
 
     def visit_ins(self, op):
         self.add(visit_ins(op, isCtor=self.constructor))
@@ -389,8 +493,8 @@ class JSONWriter(object):
 
         # DAD doesn't create any params for abstract methods
         if len(params) != len(m.params_type):
-            assert('abstract' in flags or 'native' in flags)
-            assert(not params)
+            assert ('abstract' in flags or 'native' in flags)
+            assert (not params)
             params = range(len(m.params_type))
 
         paramdecls = []
@@ -429,8 +533,8 @@ class JSONWriter(object):
         elif isinstance(node, basic_blocks.LoopBlock):
             return self.get_cond(node.cond)
         else:
-            assert(type(node) == basic_blocks.CondBlock)
-            assert(len(node.ins) == 1)
+            assert (type(node) == basic_blocks.CondBlock)
+            assert (len(node.ins) == 1)
             return visit_expr(node.ins[-1])
 
     def visit_node(self, node):
@@ -482,7 +586,7 @@ class JSONWriter(object):
             else:
                 self.visit_node(loop.latch)
 
-        assert(cond_expr is not None and isDo is not None)
+        assert (cond_expr is not None and isDo is not None)
         self.add(loop_stmt(isDo, cond_expr, body))
         if follow is not None:
             self.visit_node(follow)
@@ -515,7 +619,7 @@ class JSONWriter(object):
         elif follow is not None:
             if cond.true in (follow, self.next_case) or\
                                                 cond.num > cond.true.num:
-                             # or cond.true.num > cond.false.num:
+                # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
@@ -610,7 +714,7 @@ class JSONWriter(object):
         for catch_node in try_node.catch:
             if catch_node.exception_ins:
                 ins = catch_node.exception_ins
-                assert(isinstance(ins, instruction.MoveExceptionExpression))
+                assert (isinstance(ins, instruction.MoveExceptionExpression))
                 var = ins.var_map[ins.ref]
                 var.declared = True
 

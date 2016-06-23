@@ -27,10 +27,21 @@ from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.util import read
 
-
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'filename input (APK or android\'s binary xml)', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--output'), 'help' : 'filename output of the xml', 'nargs' : 1 }
-option_2 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
+option_0 = {
+    'name': ('-i', '--input'),
+    'help': 'filename input (APK or android\'s binary xml)',
+    'nargs': 1
+}
+option_1 = {
+    'name': ('-o', '--output'),
+    'help': 'filename output of the xml',
+    'nargs': 1
+}
+option_2 = {
+    'name': ('-v', '--version'),
+    'help': 'version of the API',
+    'action': 'count'
+}
 options = [option_0, option_1, option_2]
 
 
@@ -44,20 +55,22 @@ def main(options, arguments):
             buff = a.get_android_manifest_xml().toprettyxml(encoding="utf-8")
         elif ".xml" in options.input:
             ap = apk.AXMLPrinter(read(options.input))
-            buff = minidom.parseString(ap.get_buff()).toprettyxml(encoding="utf-8")
+            buff = minidom.parseString(ap.get_buff()).toprettyxml(
+                encoding="utf-8")
         else:
             print "Unknown file type"
             return
 
         if options.output != None:
             fd = codecs.open(options.output, "w", "utf-8")
-            fd.write( buff )
+            fd.write(buff)
             fd.close()
         else:
             print buff
 
     elif options.version != None:
         print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
+
 
 if __name__ == "__main__":
     parser = OptionParser()

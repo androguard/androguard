@@ -1,0 +1,6 @@
+doc-warnings: yes
+test-warnings: no
+strictness: veryhigh
+max-line-length: 120
+ignore-paths:
+  - elsim

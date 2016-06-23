@@ -1,0 +1,31 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install:
+  - "pip install ."
+  - "pip install -r requirements.txt"
+# command to run tests
+script:
+  # DEX tests
+  - python tests/test_dex.py
+  # Analysis tests
+  - python tests/test_analysis.py
+  # APK tests
+  - python tests/test_apk.py
+  - python tests/test_axml.py
+  - python tests/test_arsc.py
+  # Session tests
+  - python tests/test_session.py
+
+  # DAD tests
+  - python androguard/decompiler/dad/tests/dataflow_test.py
+  - python androguard/decompiler/dad/tests/dominator_test.py
+  - python androguard/decompiler/dad/tests/rpo_test.py
+
+notifications:
+  email:
+    recipients:
+      - desnos@t0t0.fr
+    on_success: always
+    on_failure: always

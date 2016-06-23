@@ -27,6 +27,7 @@ from androguard.decompiler.dad.instruction import Constant, BinaryCompExpression
 
 
 class PrintVisitor(object):
+
     def __init__(self, graph):
         self.graph = graph
         self.visited_nodes = set()
@@ -93,8 +94,8 @@ class PrintVisitor(object):
             self.visit_node(cond.false)
         elif follow is not None:
             is_else = not (follow in (cond.true, cond.false))
-            if (cond.true in (follow, self.next_case)
-                                                or cond.num > cond.true.num):
+            if (cond.true in (follow, self.next_case) or
+                cond.num > cond.true.num):
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
             self.if_follow.append(follow)
@@ -302,6 +303,7 @@ class PrintVisitor(object):
     def visit_get_static(self, cls, name):
         return '%s.%s' % (cls, name)
 
+
 TEST = '../DroidDream/magicspiral.apk'
 
 vm = dvm.DalvikVMFormat(apk.APK(TEST).get_dex())
@@ -313,13 +315,13 @@ method.show()
 amethod = vma.get_method(method)
 dvmethod = DvMethod(amethod)
 
-dvmethod.process() # build IR Form / control flow...
+dvmethod.process()  # build IR Form / control flow...
 
 graph = dvmethod.graph
 
 print 'Entry block : %s\n' % graph.get_entry()
 
-for block in graph: # graph.get_rpo() to iterate in reverse post order
+for block in graph:  # graph.get_rpo() to iterate in reverse post order
     print 'Block : %s' % block
     for ins in block.get_ins():
         print '  - %s' % ins

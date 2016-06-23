@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import sys, os
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
@@ -28,15 +27,16 @@ from androguard.core.binaries import idapipe
 PATH_IDA = os.path.expanduser("~") + "/ida-6.2/idal"
 PATH_WRAPPER = "./androguard/core/binaries/idawrapper.py"
 
-ip = idapipe.IDAPipe( PATH_IDA, PATH_WRAPPER, "./elsim/examples/x86/elf/polarssl/libpolarssl.so" )
+ip = idapipe.IDAPipe(PATH_IDA, PATH_WRAPPER,
+                     "./elsim/examples/x86/elf/polarssl/libpolarssl.so")
 #ip = idapipe.IDAPipe( "/media/truecrypt1/ida/6.2/ida-6.2/idal", "examples/x86/pe/win32k-5.1.2600.6119.sys" )
 
 try:
     f = ip.get_quick_functions()
 
-   # print len(f)
+    # print len(f)
 
-    idapipe.display_function( f[ 15344 ] )
+    idapipe.display_function(f[15344])
     #ip.get_raw()
     #ip.get_functions()
     #ip.get_function_name( "aes_gen_tables" )

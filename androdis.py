@@ -26,9 +26,17 @@ from androguard.core import androconf
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.apk import *
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use this filename (DEX/ODEX)', 'nargs' : 1 }
-option_1 = { 'name' : ('-o', '--offset'), 'help' : 'offset to disassemble', 'nargs' : 1 }
-option_2 = { 'name' : ('-s', '--size'), 'help' : 'size', 'nargs' : 1 }
+option_0 = {
+    'name': ('-i', '--input'),
+    'help': 'file : use this filename (DEX/ODEX)',
+    'nargs': 1
+}
+option_1 = {
+    'name': ('-o', '--offset'),
+    'help': 'offset to disassemble',
+    'nargs': 1
+}
+option_2 = {'name': ('-s', '--size'), 'help': 'size', 'nargs': 1}
 
 options = [option_0, option_1, option_2]
 

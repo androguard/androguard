@@ -5,19 +5,19 @@ import sys, hashlib
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.androgen import AndroguardS
-from androguard.core.analysis import analysis
+from androguard.session import Session
 
 TEST = 'examples/android/TestsAndroguard/bin/classes.dex'
 
-a = AndroguardS( TEST )
-x = analysis.VMAnalysis( a.get_vm() )
+s = Session()
+with open(TEST, "r") as fd:
+    digest, d, dx = s.addDEX(TEST, fd.read())
 
-for method in a.get_methods():
-    g = x.get_method( method )
+for method in d.get_methods():
+    g = dx.get_method(method)
 
     if method.get_code() == None:
-      continue
+        continue
 
     idx = 0
     for i in g.basic_blocks.get():
@@ -28,11 +28,13 @@ for method in a.get_methods():
             if op_value == 0x2b or op_value == 0x2c:
                 special_ins = i.get_special_ins(idx)
                 if special_ins != None:
-                    print "\t %x" % idx, ins, special_ins, ins.get_name(), ins.get_output(), special_ins.get_values()
+                    print "\t %x" % idx, ins, special_ins, ins.get_name(
+                    ), ins.get_output(), special_ins.get_values()
             # fill
             if op_value == 0x26:
                 special_ins = i.get_special_ins(idx)
                 if special_ins != None:
-                    print "\t %x" % idx, ins, special_ins, ins.get_name(), ins.get_output(), repr( special_ins.get_data() )
+                    print "\t %x" % idx, ins, special_ins, ins.get_name(
+                    ), ins.get_output(), repr(special_ins.get_data())
 
             idx += ins.get_length()

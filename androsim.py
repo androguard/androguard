@@ -32,104 +32,172 @@ from elsim import elsim
 from elsim.elsim_dalvik import ProxyDalvik, FILTERS_DALVIK_SIM
 from elsim.elsim_dalvik import ProxyDalvikStringMultiple, ProxyDalvikStringOne, FILTERS_DALVIK_SIM_STRING
 
-option_0 = { 'name' : ('-i', '--input'), 'help' : 'file : use these filenames', 'nargs' : 2 }
-option_1 = { 'name' : ('-t', '--threshold'), 'help' : 'specify the threshold (0.0 to 1.0) to know if a method is similar. This option will impact on the filtering method. Because if you specify a higher value of the threshold, you will have more associations', 'nargs' : 1 }
-option_2 = { 'name' : ('-c', '--compressor'), 'help' : 'specify the compressor (BZ2, ZLIB, SNAPPY, LZMA, XZ). The final result depends directly of the type of compressor. But if you use LZMA for example, the final result will be better, but it take more time', 'nargs' : 1 }
-option_4 = { 'name' : ('-d', '--display'), 'help' : 'display all information about methods', 'action' : 'count' }
-option_5 = { 'name' : ('-n', '--new'), 'help' : 'calculate the final score only by using the ratio of included methods', 'action' : 'count' }
-option_6 = { 'name' : ('-e', '--exclude'), 'help' : 'exclude specific class name (python regexp)', 'nargs' : 1 }
-option_7 = { 'name' : ('-s', '--size'), 'help' : 'exclude specific method below the specific size (specify the minimum size of a method to be used (it is the length (bytes) of the dalvik method)', 'nargs' : 1 }
-option_8 = { 'name' : ('-x', '--xstrings'), 'help' : 'display similarities of strings', 'action' : 'count'  }
-option_9 = { 'name' : ('-v', '--version'), 'help' : 'version of the API', 'action' : 'count' }
-option_10 = { 'name' : ('-l', '--library'), 'help' : 'use python library (python) or specify the path of the shared library)', 'nargs' : 1 }
+option_0 = {
+    'name': ('-i', '--input'),
+    'help': 'file : use these filenames',
+    'nargs': 2
+}
+option_1 = {
+    'name': ('-t', '--threshold'),
+    'help':
+    'specify the threshold (0.0 to 1.0) to know if a method is similar. This option will impact on the filtering method. Because if you specify a higher value of the threshold, you will have more associations',
+    'nargs': 1
+}
+option_2 = {
+    'name': ('-c', '--compressor'),
+    'help':
+    'specify the compressor (BZ2, ZLIB, SNAPPY, LZMA, XZ). The final result depends directly of the type of compressor. But if you use LZMA for example, the final result will be better, but it take more time',
+    'nargs': 1
+}
+option_4 = {
+    'name': ('-d', '--display'),
+    'help': 'display all information about methods',
+    'action': 'count'
+}
+option_5 = {
+    'name': ('-n', '--new'),
+    'help':
+    'calculate the final score only by using the ratio of included methods',
+    'action': 'count'
+}
+option_6 = {
+    'name': ('-e', '--exclude'),
+    'help': 'exclude specific class name (python regexp)',
+    'nargs': 1
+}
+option_7 = {
+    'name': ('-s', '--size'),
+    'help':
+    'exclude specific method below the specific size (specify the minimum size of a method to be used (it is the length (bytes) of the dalvik method)',
+    'nargs': 1
+}
+option_8 = {
+    'name': ('-x', '--xstrings'),
+    'help': 'display similarities of strings',
+    'action': 'count'
+}
+option_9 = {
+    'name': ('-v', '--version'),
+    'help': 'version of the API',
+    'action': 'count'
+}
+option_10 = {
+    'name': ('-l', '--library'),
+    'help':
+    'use python library (python) or specify the path of the shared library)',
+    'nargs': 1
+}
 
-options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
+options = [option_0, option_1, option_2, option_4, option_5, option_6, option_7,
+           option_8, option_9, option_10]
 
-def check_one_file(a, d1, dx1, FS, threshold, file_input, view_strings=False, new=True, library=True):
+
+def check_one_file(a,
+                   d1,
+                   dx1,
+                   FS,
+                   threshold,
+                   file_input,
+                   view_strings=False,
+                   new=True,
+                   library=True):
     d2 = None
-    ret_type = androconf.is_android( file_input )
+    ret_type = androconf.is_android(file_input)
     if ret_type == "APK":
-        a = apk.APK( file_input )
-        d2 = dvm.DalvikVMFormat( a.get_dex() )
+        a = apk.APK(file_input)
+        d2 = dvm.DalvikVMFormat(a.get_dex())
     elif ret_type == "DEX":
-        d2 = dvm.DalvikVMFormat( read(file_input) )
+        d2 = dvm.DalvikVMFormat(read(file_input))
 
     if d2 == None:
-      return
-    dx2 = analysis.VMAnalysis( d2 )
+        return
+    dx2 = analysis.VMAnalysis(d2)
 
-    el = elsim.Elsim( ProxyDalvik(d1, dx1), ProxyDalvik(d2, dx2), FS, threshold, options.compressor, libnative=library )
+    el = elsim.Elsim(ProxyDalvik(d1, dx1),
+                     ProxyDalvik(d2, dx2),
+                     FS,
+                     threshold,
+                     options.compressor,
+                     libnative=library)
     el.show()
     print "\t--> methods: %f%% of similarities" % el.get_similarity_value(new)
-
 
     if options.display:
         print "SIMILAR methods:"
         diff_methods = el.get_similar_elements()
         for i in diff_methods:
-            el.show_element( i )
+            el.show_element(i)
 
         print "IDENTICAL methods:"
         new_methods = el.get_identical_elements()
         for i in new_methods:
-            el.show_element( i )
+            el.show_element(i)
 
         print "NEW methods:"
         new_methods = el.get_new_elements()
         for i in new_methods:
-            el.show_element( i, False )
+            el.show_element(i, False)
 
         print "DELETED methods:"
         del_methods = el.get_deleted_elements()
         for i in del_methods:
-            el.show_element( i )
+            el.show_element(i)
 
         print "SKIPPED methods:"
         skipped_methods = el.get_skipped_elements()
         for i in skipped_methods:
-            el.show_element( i )
+            el.show_element(i)
 
     if view_strings:
-        els = elsim.Elsim( ProxyDalvikStringMultiple(d1, dx1),
-                           ProxyDalvikStringMultiple(d2, dx2),
-                           FILTERS_DALVIK_SIM_STRING,
-                           threshold,
-                           options.compressor,
-                           libnative=library )
+        els = elsim.Elsim(ProxyDalvikStringMultiple(d1, dx1),
+                          ProxyDalvikStringMultiple(d2, dx2),
+                          FILTERS_DALVIK_SIM_STRING,
+                          threshold,
+                          options.compressor,
+                          libnative=library)
         #els = elsim.Elsim( ProxyDalvikStringOne(d1, dx1),
         #    ProxyDalvikStringOne(d2, dx2), FILTERS_DALVIK_SIM_STRING, threshold, options.compressor, libnative=library )
         els.show()
-        print "\t--> strings: %f%% of similarities" % els.get_similarity_value(new)
+        print "\t--> strings: %f%% of similarities" % els.get_similarity_value(
+            new)
 
         if options.display:
-          print "SIMILAR strings:"
-          diff_strings = els.get_similar_elements()
-          for i in diff_strings:
-            els.show_element( i )
+            print "SIMILAR strings:"
+            diff_strings = els.get_similar_elements()
+            for i in diff_strings:
+                els.show_element(i)
 
-          print "IDENTICAL strings:"
-          new_strings = els.get_identical_elements()
-          for i in new_strings:
-            els.show_element( i )
+            print "IDENTICAL strings:"
+            new_strings = els.get_identical_elements()
+            for i in new_strings:
+                els.show_element(i)
 
-          print "NEW strings:"
-          new_strings = els.get_new_elements()
-          for i in new_strings:
-            els.show_element( i, False )
+            print "NEW strings:"
+            new_strings = els.get_new_elements()
+            for i in new_strings:
+                els.show_element(i, False)
 
-          print "DELETED strings:"
-          del_strings = els.get_deleted_elements()
-          for i in del_strings:
-            els.show_element( i )
+            print "DELETED strings:"
+            del_strings = els.get_deleted_elements()
+            for i in del_strings:
+                els.show_element(i)
 
-          print "SKIPPED strings:"
-          skipped_strings = els.get_skipped_elements()
-          for i in skipped_strings:
-            els.show_element( i )
+            print "SKIPPED strings:"
+            skipped_strings = els.get_skipped_elements()
+            for i in skipped_strings:
+                els.show_element(i)
 
 
-def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False, new=True, library=True):
-    for root, dirs, files in os.walk( directory, followlinks=True ):
+def check_one_directory(a,
+                        d1,
+                        dx1,
+                        FS,
+                        threshold,
+                        directory,
+                        view_strings=False,
+                        new=True,
+                        library=True):
+    for root, dirs, files in os.walk(directory, followlinks=True):
         if files != []:
             for f in files:
                 real_filename = root
@@ -138,32 +206,34 @@ def check_one_directory(a, d1, dx1, FS, threshold, directory, view_strings=False
                 real_filename += f
 
                 print "filename: %s ..." % real_filename
-                check_one_file(a, d1, dx1, FS, threshold, real_filename, view_strings, new, library)
+                check_one_file(a, d1, dx1, FS, threshold, real_filename,
+                               view_strings, new, library)
+
 
 ############################################################
 def main(options, arguments):
     if options.input != None:
         a = None
-        ret_type = androconf.is_android( options.input[0] )
+        ret_type = androconf.is_android(options.input[0])
         if ret_type == "APK":
-            a = apk.APK( options.input[0] )
-            d1 = dvm.DalvikVMFormat( a.get_dex() )
+            a = apk.APK(options.input[0])
+            d1 = dvm.DalvikVMFormat(a.get_dex())
         elif ret_type == "DEX":
-            d1 = dvm.DalvikVMFormat( read(options.input[0]) )
+            d1 = dvm.DalvikVMFormat(read(options.input[0]))
 
-        dx1 = analysis.VMAnalysis( d1 )
+        dx1 = analysis.VMAnalysis(d1)
 
         threshold = None
         if options.threshold != None:
             threshold = float(options.threshold)
 
         FS = FILTERS_DALVIK_SIM
-        FS[elsim.FILTER_SKIPPED_METH].set_regexp( options.exclude )
-        FS[elsim.FILTER_SKIPPED_METH].set_size( options.size )
+        FS[elsim.FILTER_SKIPPED_METH].set_regexp(options.exclude)
+        FS[elsim.FILTER_SKIPPED_METH].set_size(options.size)
 
         new = True
         if options.new != None:
-          new = False
+            new = False
 
         library = True
         if options.library != None:
@@ -171,13 +241,16 @@ def main(options, arguments):
             if options.library == "python":
                 library = False
 
-        if os.path.isdir( options.input[1] ) == False:
-            check_one_file( a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
+        if os.path.isdir(options.input[1]) == False:
+            check_one_file(a, d1, dx1, FS, threshold, options.input[1],
+                           options.xstrings, new, library)
         else:
-            check_one_directory(a, d1, dx1, FS, threshold, options.input[1], options.xstrings, new, library )
+            check_one_directory(a, d1, dx1, FS, threshold, options.input[1],
+                                options.xstrings, new, library)
 
     elif options.version != None:
         print "Androsim version %s" % androconf.ANDROGUARD_VERSION
+
 
 if __name__ == "__main__":
     parser = OptionParser()
