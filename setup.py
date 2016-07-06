@@ -17,7 +17,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ak-androguard',
-    version='3.2.1',
+    version='3.2.2',
     description="A fork of official Androguard project",
     url='https://github.com/appknox/ak-androguard',
     author='dhilipsiva',
@@ -41,7 +41,10 @@ setup(
         'androlyze.py', 'androsign.py', 'androsim.py', 'apkviewer.py',
         'androdd.py', 'androgui.py',
     ],
-    install_requires=['distribute'],
+    install_requires=[
+        'distribute',
+        'networkx',
+    ],
     extras_require={
         'dev': [''],
         'test': [''],
