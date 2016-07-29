@@ -324,7 +324,7 @@ def visit_expr(op):
             return literal_double(op.cst)
         elif op.type == 'Ljava/lang/Class;':
             return literal_class(op.clsdesc)
-        return dummy('???')
+        return dummy('??? Unexpected constant: ' + str(op.type))
 
     if isinstance(op, instruction.FillArrayExpression):
         array_expr = visit_expr(op.var_map[op.reg])
@@ -350,7 +350,8 @@ def visit_expr(op):
         params = map(visit_expr, params)
         if op.name == '<init>':
             if isinstance(base, instruction.ThisParam):
-                return method_invocation(op.triple, 'this', None, params)
+                keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
+                return method_invocation(op.triple, keyword, None, params)
             elif isinstance(base, instruction.NewInstance):
                 return ['ClassInstanceCreation', params,
                         parse_descriptor(base.type)]
@@ -402,7 +403,7 @@ def visit_expr(op):
     if isinstance(op, instruction.Variable):
         # assert(op.declared)
         return local('v{}'.format(op.name))
-    return dummy('???')
+    return dummy('??? Unexpected op: ' + type(op).__name__)
 
 
 def visit_ins(op, isCtor=False):
