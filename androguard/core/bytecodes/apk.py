@@ -1374,6 +1374,8 @@ class AXMLParser(object):
                 res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][
                     attr
                 ]
+            else:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE'
 
         return res
 
