@@ -96,6 +96,7 @@ class Data(object):
         return self.gvmx.export_to_gml()
 
     def export_methods_to_gml(self):
+        return
         print(self.gvmx.G)
 
         for node in self.gvmx.G.nodes():

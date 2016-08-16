@@ -1591,7 +1591,7 @@ class EncodedValue(object):
             self.val, self.value_arg, self.value_type))
 
     def get_obj(self):
-        if isinstance(self.value, str) == False:
+        if isinstance(self.value, str) is False:
             return [self.value]
         return []
 
@@ -2396,6 +2396,7 @@ class FieldHIdItem(object):
             i.reload()
 
     def show(self):
+        return
         nb = 0
         for i in self.elem:
             print(nb, end=' ')
@@ -2567,6 +2568,7 @@ class MethodHIdItem(object):
             i.reload()
 
     def show(self):
+        return
         print("METHOD_ID_ITEM")
         nb = 0
         for i in self.methods:
@@ -2599,6 +2601,7 @@ class ProtoIdItemInvalid(object):
         return "(AG:IPI:invalid_return_type)"
 
     def show(self):
+        return
         print("AG:IPI:invalid_proto_item", self.get_shorty(),
               self.get_return_type(), self.get_params())
 
@@ -2621,6 +2624,7 @@ class FieldIdItemInvalid(object):
         return [self.get_class_name(), self.get_type(), self.get_name()]
 
     def show(self):
+        return
         print("AG:IFI:invalid_field_item")
 
 
@@ -2642,6 +2646,7 @@ class MethodIdItemInvalid(object):
         return [self.get_class_name(), self.get_name(), self.get_proto()]
 
     def show(self):
+        return
         print("AG:IMI:invalid_method_item")
 
 
@@ -4028,6 +4033,7 @@ class Instruction(object):
         """
             Print the instruction
         """
+        return
         print(self.get_name() + " " + self.get_output(idx), end=' ')
 
     def show_buff(self, idx):
@@ -4225,6 +4231,7 @@ class FillArrayData(object):
         """
             Print the instruction
         """
+        return
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
@@ -4352,6 +4359,7 @@ class SparseSwitch(object):
         """
             Print the instruction
         """
+        return
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
@@ -4478,6 +4486,7 @@ class PackedSwitch(object):
         """
             Print the instruction
         """
+        return
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
@@ -6395,16 +6404,15 @@ class LinearSweepAlgorithm(object):
                         obj = get_instruction_payload(op_value, insn[idx:])
                         classic_instruction = False
                     except struct.error:
-                        warning("error while decoding instruction ...")
+                        pass
 
                 elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH:
                     try:
                         obj = get_extented_instruction(
                             cm, op_value, insn[idx:])
                         classic_instruction = False
-                    except struct.error as why:
-                        warning(
-                            "error while decoding instruction ..." + why.__str__())
+                    except struct.error:
+                        pass
 
                 # optimized instructions ?
                 elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
@@ -6586,6 +6594,7 @@ class DCode(object):
         """
             Display this object
         """
+        return
         nb = 0
         idx = 0
         for i in self.get_instructions():
@@ -6940,6 +6949,7 @@ class CodeItem(object):
             i.reload()
 
     def show(self):
+        return
         print("CODE_ITEM")
         for i in self.code:
             i.show()
@@ -7108,6 +7118,7 @@ class MapItem(object):
                 self.item.reload()
 
     def show(self):
+        return
         bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
 
         if self.item is not None:
@@ -7118,6 +7129,7 @@ class MapItem(object):
                 self.item.show()
 
     def pretty_show(self):
+        return
         bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
 
         if self.item is not None:
@@ -7537,6 +7549,7 @@ class MapList(object):
         """
             Print the MapList object
         """
+        return
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item:
             if i.item != self:
@@ -7546,6 +7559,7 @@ class MapList(object):
         """
             Print with a pretty display the MapList object
         """
+        return
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item:
             if i.item != self:
@@ -8549,6 +8563,7 @@ class OdexHeaderItem(object):
         self.padding = unpack("=I", buff.read(4))[0]
 
     def show(self):
+        return
         print("dex_offset:%x dex_length:%x deps_offset:%x deps_length:%x aux_offset:%x aux_length:%x flags:%x" % (self.dex_offset,
                                                                                                                   self.dex_length,
                                                                                                                   self.deps_offset,

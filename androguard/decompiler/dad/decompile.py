@@ -176,6 +176,7 @@ class DvMethod(object):
         return self.ast
 
     def show_source(self):
+        return
         print(self.get_source())
 
     def get_source(self):
@@ -373,6 +374,7 @@ class DvClass(object):
         return source
 
     def show_source(self):
+        return
         print(self.get_source())
 
     def __repr__(self):

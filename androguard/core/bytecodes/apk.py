@@ -787,6 +787,7 @@ class APK(object):
         return None
 
     def show(self):
+        return
         self.get_files_types()
 
         print("FILES: ")
@@ -830,6 +831,7 @@ class APK(object):
 
 
 def show_Certificate(cert):
+    return
     print("Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.issuerC(), cert.issuerCN(
     ), cert.issuerDN(), cert.issuerE(), cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS()))
     print("Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (cert.subjectC(), cert.subjectCN(
@@ -899,7 +901,6 @@ class StringBlock(object):
             header = unpack('<i', buff.read(4))[0]
 
             if header == CHUNK_NULL_TYPE and first_run:
-                androconf.info("Skipping null padding in StringBlock header")
                 header = readNext(buff, first_run=False)
             elif header != CHUNK_STRINGPOOL_TYPE:
                 androconf.warning("Invalid StringBlock header")
@@ -934,6 +935,7 @@ class StringBlock(object):
         return self._cache[idx].replace("\x00", "")
 
     def getStyle(self, idx):
+        return
         print(idx)
         print(idx in self.m_styleOffsets, self.m_styleOffsets[idx])
 
@@ -986,6 +988,7 @@ class StringBlock(object):
         return (array[offset + 1] & 0xff) << 8 | array[offset] & 0xff
 
     def show(self):
+        return
         print("StringBlock", hex(self.start), hex(self.header), hex(self.header_size), hex(
             self.chunkSize), hex(self.stringsOffset), self.m_stringOffsets)
         for i in _range(0, len(self.m_stringOffsets)):
@@ -1610,8 +1613,7 @@ class ARSCParser(object):
     def get_resource_dimen(self, ate):
         try:
             return [ate.get_value(), "%s%s" % (complexToFloat(ate.key.get_data()), DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])]
-        except Exception as why:
-            androconf.warning(why.__str__())
+        except Exception:
             return [ate.get_value(), ate.key.get_data()]
 
     # FIXME
@@ -1916,7 +1918,6 @@ class ARSCResTableConfig(object):
 
         self.exceedingSize = self.size - 36
         if self.exceedingSize > 0:
-            androconf.info("Skipping padding bytes!")
             self.padding = buff.read(self.exceedingSize)
 
         # print "ARSCResTableConfig", hex(self.start), hex(self.size),

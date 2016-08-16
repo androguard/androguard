@@ -903,9 +903,9 @@ class FuzzyRisk(object):
                                                                perm]) for perm in vmx.get_permissions_method(method)],
                                                              )
 
-        for v in sorted(score_order_sign, key=lambda x: score_order_sign[x], reverse=True):
-            print(v.get_name(), v.get_class_name(), v.get_descriptor(),
-                  v.get_length(), score_order_sign[v])
+        # for v in sorted(score_order_sign, key=lambda x: score_order_sign[x], reverse=True):
+        #     print(v.get_name(), v.get_class_name(), v.get_descriptor(),
+        #           v.get_length(), score_order_sign[v])
 
         ##########################
 

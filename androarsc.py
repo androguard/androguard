@@ -54,7 +54,7 @@ def main(options, arguments):
         elif ret_type == "ARSC":
             arscobj = apk.ARSCParser(read(options.input))
         else:
-            print("Unknown file type")
+            # print("Unknown file type")
             return
 
         if not options.package and not options.type and not options.locale:
@@ -79,10 +79,12 @@ def main(options, arguments):
             fd.write(buff)
             fd.close()
         else:
-            print(buff)
+            # print(buff)
+            psdd
 
     elif options.version != None:
-        print("Androarsc version %s" % androconf.ANDROGUARD_VERSION)
+        # print("Androarsc version %s" % androconf.ANDROGUARD_VERSION)
+        pass
 
 if __name__ == "__main__":
     parser = OptionParser()

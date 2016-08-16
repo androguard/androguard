@@ -650,6 +650,7 @@ def get_Paths(vm, paths):
 
 
 def show_PathVariable(vm, paths):
+    return
     for path in paths:
         access, idx = path[0]
         m_idx = path[1]
@@ -751,6 +752,7 @@ class TaintedPackage(object):
         return [path for path in self.paths[TAINTED_PACKAGE_CREATE]]
 
     def show(self):
+        return
         cm = self.vm.get_class_manager()
         print(self.get_name())
         for _type in self.paths:
@@ -813,6 +815,7 @@ def show_NativeMethods(dx):
         :param dx : the analysis virtual machine
         :type dx: a :class:`VMAnalysis` object
     """
+    return
     print(get_NativeMethods(dx))
 
 
@@ -1507,7 +1510,7 @@ class MethodAnalysis(object):
                         l.extend(v)
                         break
                 except Exception:
-                    print("BasicOPCODES_H Error")
+                    # print("BasicOPCODES_H Error")
                     break
 
             idx += i.get_length()
@@ -1585,6 +1588,7 @@ class MethodAnalysis(object):
         return self.tainted.get_tainted_variables().get_local_variables(self.method)
 
     def show(self):
+        return
         print("METHOD", self.method.get_class_name(),
               self.method.get_name(), self.method.get_descriptor())
 
@@ -1594,6 +1598,7 @@ class MethodAnalysis(object):
             print("")
 
     def show_methods(self):
+        return
         print("\t #METHODS :")
         for i in self.__bb:
             methods = i.get_methods()

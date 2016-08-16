@@ -767,8 +767,8 @@ class ZipFile(object):
             raise BadZipfile("File is not a zip file")
         if not endrec:
             raise BadZipfile("File is not a zip file")
-        if self.debug > 1:
-            print(endrec)
+        # if self.debug > 1:
+        #     print(endrec)
         size_cd = endrec[_ECD_SIZE]             # bytes in central directory
         offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
         self.comment = endrec[_ECD_COMMENT]     # archive comment
@@ -781,7 +781,7 @@ class ZipFile(object):
 
         if self.debug > 2:
             inferred = concat + offset_cd
-            print("given, inferred, offset", offset_cd, inferred, concat)
+            # print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
@@ -793,8 +793,8 @@ class ZipFile(object):
             if centdir[0:4] != stringCentralDir:
                 raise BadZipfile("Bad magic number for central directory")
             centdir = struct.unpack(structCentralDir, centdir)
-            if self.debug > 2:
-                print(centdir)
+            # if self.debug > 2:
+            #     print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
             # Create ZipInfo instance to store file information
             x = ZipInfo(filename)
@@ -821,8 +821,8 @@ class ZipFile(object):
                 total + sizeCentralDir + centdir[_CD_FILENAME_LENGTH] +
                 centdir[_CD_EXTRA_FIELD_LENGTH] + centdir[_CD_COMMENT_LENGTH])
 
-            if self.debug > 2:
-                print("total", total)
+            # if self.debug > 2:
+            #     print("total", total)
 
     def namelist(self):
         """Return a list of file names in the archive."""
@@ -838,6 +838,7 @@ class ZipFile(object):
 
     def printdir(self):
         """Print a table of contents for the zip file."""
+        return
         print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"))
         for zinfo in self.filelist:
             date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
@@ -1006,9 +1007,9 @@ class ZipFile(object):
 
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
-        if zinfo.filename in self.NameToInfo:
-            if self.debug:      # Warning for duplicate names
-                print("Duplicate name:", zinfo.filename)
+        # if zinfo.filename in self.NameToInfo:
+        #     if self.debug:      # Warning for duplicate names
+        #         print("Duplicate name:", zinfo.filename)
         if self.mode not in ("w", "a"):
             raise RuntimeError('write() requires mode "w" or "a"')
         if not self.fp:
@@ -1289,11 +1290,11 @@ class PyZipFile(ZipFile):
                     basename = "%s/%s" % (basename, name)
                 else:
                     basename = name
-                if self.debug:
-                    print("Adding package in", pathname, "as", basename)
+                # if self.debug:
+                #     print("Adding package in", pathname, "as", basename)
                 fname, arcname = self._get_codename(initname[0:-3], basename)
-                if self.debug:
-                    print("Adding", arcname)
+                # if self.debug:
+                #     print("Adding", arcname)
                 self.write(fname, arcname)
                 dirlist = os.listdir(pathname)
                 dirlist.remove("__init__.py")
@@ -1308,29 +1309,29 @@ class PyZipFile(ZipFile):
                     elif ext == ".py":
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)
-                        if self.debug:
-                            print("Adding", arcname)
+                        # if self.debug:
+                        #     print("Adding", arcname)
                         self.write(fname, arcname)
             else:
                 # This is NOT a package directory, add its files at top level
-                if self.debug:
-                    print("Adding files from directory", pathname)
+                # if self.debug:
+                #     print("Adding files from directory", pathname)
                 for filename in os.listdir(pathname):
                     path = os.path.join(pathname, filename)
                     root, ext = os.path.splitext(filename)
                     if ext == ".py":
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)
-                        if self.debug:
-                            print("Adding", arcname)
+                        # if self.debug:
+                        #     print("Adding", arcname)
                         self.write(fname, arcname)
         else:
             if pathname[-3:] != ".py":
                 raise RuntimeError(
                     'Files added with writepy() must end with ".py"')
             fname, arcname = self._get_codename(pathname[0:-3], basename)
-            if self.debug:
-                print("Adding file", arcname)
+            # if self.debug:
+            #     print("Adding file", arcname)
             self.write(fname, arcname)
 
     def _get_codename(self, pathname, basename):
@@ -1349,12 +1350,12 @@ class PyZipFile(ZipFile):
         elif not os.path.isfile(file_pyc) or \
                 os.stat(file_pyc).st_mtime < os.stat(file_py).st_mtime:
             import py_compile
-            if self.debug:
-                print("Compiling", file_py)
+            # if self.debug:
+            #     print("Compiling", file_py)
             try:
                 py_compile.compile(file_py, file_pyc, None, True)
-            except py_compile.PyCompileError as err:
-                print(err.msg)
+            except py_compile.PyCompileError:
+                pass
             fname = file_pyc
         else:
             fname = file_pyc

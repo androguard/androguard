@@ -125,6 +125,7 @@ class DecompilerDex2Jad(object):
         return self.classes[class_name]
 
     def display_source(self, method):
+        return
         print(self.get_source_method(method))
 
     def get_source_class(self, _class):
@@ -142,6 +143,7 @@ class DecompilerDex2Jad(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
+        return
         print(self.get_all(_class.get_name()))
 
 
@@ -209,6 +211,7 @@ class DecompilerDex2WineJad(object):
         return self.classes[class_name]
 
     def display_source(self, method):
+        return
         print(self.get_source_method(method))
 
     def get_source_class(self, _class):
@@ -226,6 +229,7 @@ class DecompilerDex2WineJad(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
+        return
         print(self.get_all(_class.get_name()))
 
 
@@ -287,6 +291,7 @@ class DecompilerDed(object):
         return result
 
     def display_source(self, method):
+        return
         print(self.get_source_method(method))
 
     def get_all(self, class_name):
@@ -302,6 +307,7 @@ class DecompilerDed(object):
         return self.classes[_class.get_name()]
 
     def display_all(self, _class):
+        return
         print(self.get_all(_class.get_name()))
 
 
@@ -383,6 +389,7 @@ class DecompilerDex2Fernflower(object):
         return self.classes[class_name]
 
     def display_source(self, method):
+        return
         print(self.get_source_method(method))
 
     def get_source_class(self, _class):
@@ -400,6 +407,7 @@ class DecompilerDex2Fernflower(object):
         return self.classes[class_name]
 
     def display_all(self, _class):
+        return
         print(self.get_all(_class.get_name()))
 
 
@@ -485,6 +493,7 @@ class DecompilerDAD(object):
         return z.get_ast()
 
     def display_source(self, m):
+        return
         result = self.get_source_method(m)
 
         if PYGMENTS:
@@ -512,6 +521,7 @@ class DecompilerDAD(object):
         return result
 
     def display_all(self, _class):
+        return
         result = self.get_source_class(_class)
 
         if PYGMENTS:

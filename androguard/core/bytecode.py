@@ -68,6 +68,7 @@ def _PrintNote(note, tab=0):
 
 
 def _Print(name, arg):
+    return
     buff = name + " "
 
     if type(arg).__name__ == 'int':

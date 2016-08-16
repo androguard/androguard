@@ -61,6 +61,7 @@ class BasicBlock(object):
         self.ins = ins
 
     def show(self):
+        return
         for i in self.ins:
             print(i)
 
@@ -218,6 +219,7 @@ class IDAPipe(object):
 
 
 def display_function(f):
+    return
     print(f, f.name, f.information)
 
     for i in f.basic_blocks:
