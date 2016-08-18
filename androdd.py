@@ -97,7 +97,7 @@ def export_apps_to_format(filename,
         output_name = output_name + "/"
 
     dump_classes = []
-    for vm, vmx in s.get_objects_dex():
+    for _, vm, vmx in s.get_objects_dex():
         print "Decompilation ...",
         sys.stdout.flush()
 

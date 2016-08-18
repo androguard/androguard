@@ -183,8 +183,11 @@ class ThisParam(Param):
     def __init__(self, value, atype):
         super(ThisParam, self).__init__(value, atype)
         self.this = True
+        self.super = False
 
     def visit(self, visitor):
+        if self.super:
+          return visitor.visit_super()
         return visitor.visit_this()
 
     def __str__(self):

@@ -300,8 +300,9 @@ class DvClass(object):
             if access:
                 source.append(' '.join(access))
                 source.append(' ')
-            if field.init_value:
-                value = field.init_value.value
+            init_value = field.get_init_value()
+            if init_value:
+                value = init_value.value
                 if f_type == 'String':
                     value = '"%s"' % value
                 elif field.proto == 'B':
@@ -355,11 +356,29 @@ class DvClass(object):
                 access_str = '    %s ' % ' '.join(access)
             else:
                 access_str = '    '
-            source.append(
-                ('FIELD', [('FIELD_ACCESS', access_str), (
-                    'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                        'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
-                                                                    ';\n')]))
+
+            value = None
+            init_value = field.get_init_value()
+            if init_value:
+                value = init_value.value
+                if f_type == 'String':
+                    value = ' = "%s"' % value
+                elif field.proto == 'B':
+                    value = ' = 0x%x' % struct.unpack('b', value)[0]
+                else:
+                    value = ' = %s' % str(value)
+            if value:
+                source.append(
+                    ('FIELD', [('FIELD_ACCESS', access_str), (
+                        'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
+                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
+                                                                        ';\n')]))
+            else:
+                source.append(
+                    ('FIELD', [('FIELD_ACCESS', access_str), (
+                        'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
+                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
+                                                                        ';\n')]))
 
         for method in self.methods:
             if isinstance(method, DvMethod):

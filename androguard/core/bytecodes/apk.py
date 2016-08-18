@@ -159,7 +159,8 @@ class APK(object):
                  raw=False,
                  mode="r",
                  magic_file=None,
-                 zipmodule=ZIPMODULE):
+                 zipmodule=ZIPMODULE,
+                 skip_analysis=False):
         self.filename = filename
 
         self.xml = {}
@@ -193,65 +194,69 @@ class APK(object):
             import zipfile
             self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
 
-        for i in self.zip.namelist():
-            if i == "AndroidManifest.xml":
-                self.axml[i] = AXMLPrinter(self.zip.read(i))
-                try:
-                    self.xml[i] = minidom.parseString((self.axml[i].get_buff()))
-                except Exception as e:
-                    #work-around for invalid Manifest files
-                    buffer_arr = self.axml[i].get_buff().split('\n')
-                    element_index_delete = e.message.split('line')[1].split(',')[0].strip()
-                    element_to_delete = buffer_arr[int(element_index_delete)-1]
-                    ## remove all invalid elements
-                    final_buffer_arr = [element for element in buffer_arr if element != element_to_delete]
-                    self.xml[i] = minidom.parseString('\n'.join(final_buffer_arr))
-                if self.xml[i] != None:
-                    self.package = self.xml[i].documentElement.getAttribute(
-                        "package")
-                    self.androidversion[
-                        "Code"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionCode")
-                    self.androidversion[
-                        "Name"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionName")
 
-                    for item in self.xml[i].getElementsByTagName('uses-permission'):
-                        self.permissions.append(str(item.getAttributeNS(
-                            NS_ANDROID_URI, "name")))
+        if not skip_analysis:
+            for i in self.zip.namelist():
+                if i == "AndroidManifest.xml":
+                    self.axml[i] = AXMLPrinter(self.zip.read(i))
+                    try:
+                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+                    except:
+                        # work-around for invalid Manifest files
+                        buffer_arr = self.axml[i].get_buff().split('\n')
+                        element_index_delete = e.message.split('line')[1].split(',')[0].strip()
+                        element_to_delete = buffer_arr[int(element_index_delete) - 1]
+                        ## remove all invalid elements
+                        final_buffer_arr = [element for element in buffer_arr if element != element_to_delete]
+                        self.xml[i] = minidom.parseString('\n'.join(final_buffer_arr))
 
-                    # getting details of the declared permissions
-                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                        d_perm_name = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                        d_perm_label = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "label")))
-                        d_perm_description = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "description")))
-                        d_perm_permissionGroup = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "permissionGroup")))
-                        d_perm_protectionLevel = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "protectionLevel")))
+                    if self.xml[i] != None:
+                        self.package = self.xml[i].documentElement.getAttribute(
+                            "package")
+                        self.androidversion[
+                            "Code"
+                        ] = self.xml[i].documentElement.getAttributeNS(
+                            NS_ANDROID_URI, "versionCode")
+                        self.androidversion[
+                            "Name"
+                        ] = self.xml[i].documentElement.getAttributeNS(
+                            NS_ANDROID_URI, "versionName")
 
-                        d_perm_details = {
-                            "label": d_perm_label,
-                            "description": d_perm_description,
-                            "permissionGroup": d_perm_permissionGroup,
-                            "protectionLevel": d_perm_protectionLevel,
-                        }
-                        self.declared_permissions[d_perm_name] = d_perm_details
+                        for item in self.xml[i].getElementsByTagName('uses-permission'):
+                            self.permissions.append(str(item.getAttributeNS(
+                                NS_ANDROID_URI, "name")))
 
-                    self.valid_apk = True
+                        # getting details of the declared permissions
+                        for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                            d_perm_name = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                            d_perm_label = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "label")))
+                            d_perm_description = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "description")))
+                            d_perm_permissionGroup = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "permissionGroup")))
+                            d_perm_protectionLevel = self._get_res_string_value(str(
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "protectionLevel")))
 
-        self.get_files_types()
-        self.permission_module = androconf.load_api_specific_resource_module(
-            "aosp_permissions", self.get_target_sdk_version())
+                            d_perm_details = {
+                                "label": d_perm_label,
+                                "description": d_perm_description,
+                                "permissionGroup": d_perm_permissionGroup,
+                                "protectionLevel": d_perm_protectionLevel,
+                            }
+                            self.declared_permissions[d_perm_name] = d_perm_details
+
+                        self.valid_apk = True
+
+
+            self.get_files_types()
+            self.permission_module = androconf.load_api_specific_resource_module(
+                "aosp_permissions", self.get_target_sdk_version())
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -1596,6 +1601,7 @@ ACONFIGURATION_UI_MODE = 0x1000
 class ARSCParser(object):
     def __init__(self, raw_buff):
         self.analyzed = False
+        self._resolved_strings = None
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
@@ -2000,6 +2006,41 @@ class ARSCParser(object):
     def get_resolved_res_configs(self, rid, config=None):
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
+
+    def get_resolved_strings(self):
+        self._analyse()
+        if self._resolved_strings:
+            return self._resolved_strings
+
+        r = {}
+        for package_name in self.get_packages_names():
+            r[package_name] = {}
+            k = {}
+
+            for locale in self.values[package_name]:
+                v_locale = locale
+                if v_locale == '\x00\x00':
+                    v_locale = 'DEFAULT'
+
+                r[package_name][v_locale] = {}
+
+                try:
+                    for i in self.values[package_name][locale]["public"]:
+                        if i[0] == 'string':
+                            r[package_name][v_locale][i[2]] = None
+                            k[i[1]] = i[2]
+                except KeyError:
+                    pass
+
+                try:
+                    for i in self.values[package_name][locale]["string"]:
+                        if i[0] in k:
+                            r[package_name][v_locale][k[i[0]]] = i[1]
+                except KeyError:
+                    pass
+
+        self._resolved_strings = r
+        return r
 
     def get_res_configs(self, rid, config=None):
         self._analyse()

@@ -449,6 +449,9 @@ class Writer(object):
     def visit_this(self):
         self.write('this', data="THIS")
 
+    def visit_super(self):
+        self.write('super')
+
     def visit_assign(self, lhs, rhs):
         if lhs is not None:
             return self.write_inplace_if_possible(lhs, rhs)
@@ -495,11 +498,14 @@ class Writer(object):
         self.write_ext(
             ('NAME_CLASS_NEW', '%s' % get_type(atype), data.type, data))
 
-    def visit_invoke(self, name, base, ptype, rtype, args, invokeInstr=None):
+    def visit_invoke(self, name, base, ptype, rtype, args, invokeInstr):
         if isinstance(base, ThisParam):
-            if name == '<init>' and self.constructor and len(args) == 0:
-                self.skip = True
-                return
+            if name == '<init>':
+                if self.constructor and len(args) == 0:
+                    self.skip = True
+                    return
+                if invokeInstr and base.type[1:-1].replace('/', '.') != invokeInstr.cls:
+                    base.super = True
         base.visit(self)
         if name != '<init>':
             if isinstance(base, BaseClass):
