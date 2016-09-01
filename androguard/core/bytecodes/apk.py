@@ -194,14 +194,13 @@ class APK(object):
             import zipfile
             self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
 
-
         if not skip_analysis:
             for i in self.zip.namelist():
                 if i == "AndroidManifest.xml":
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
                     try:
                         self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                    except:
+                    except Exception as e:
                         # work-around for invalid Manifest files
                         buffer_arr = self.axml[i].get_buff().split('\n')
                         element_index_delete = e.message.split('line')[1].split(',')[0].strip()
@@ -252,7 +251,6 @@ class APK(object):
                             self.declared_permissions[d_perm_name] = d_perm_details
 
                         self.valid_apk = True
-
 
             self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
