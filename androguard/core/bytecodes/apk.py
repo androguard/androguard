@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from pyexpat import ExpatError
 
 from androguard.core import bytecode
 from androguard.core import androconf
@@ -198,16 +199,21 @@ class APK(object):
             for i in self.zip.namelist():
                 if i == "AndroidManifest.xml":
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
-                    try:
-                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                    except Exception as e:
-                        # work-around for invalid Manifest files
-                        buffer_arr = self.axml[i].get_buff().split('\n')
-                        element_index_delete = e.message.split('line')[1].split(',')[0].strip()
-                        element_to_delete = buffer_arr[int(element_index_delete) - 1]
-                        ## remove all invalid elements
-                        final_buffer_arr = [element for element in buffer_arr if element != element_to_delete]
-                        self.xml[i] = minidom.parseString('\n'.join(final_buffer_arr))
+                    self.xml[i] = {}
+                    buffer_array = self.axml[i].get_buff()
+                    while not bool(self.xml[i]):
+                        try:
+                            if len(buffer_array) > 0:
+                                self.xml[i] = minidom.parseString(buffer_array)
+                            else:
+                                break
+                        except ExpatError as e:
+                            # work-around for invalid Manifest files
+                            buffer_arr = buffer_array.split('\n')
+                            element_index_delete = e.message.split('line')[1].split(',')[0].strip()
+                            element_to_delete = buffer_arr[int(element_index_delete) - 1]
+                            ## remove all invalid elements
+                            buffer_array = '\n'.join([elem for elem in buffer_arr if elem != element_to_delete])
 
                     if self.xml[i] != None:
                         self.package = self.xml[i].documentElement.getAttribute(
