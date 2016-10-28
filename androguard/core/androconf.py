@@ -22,8 +22,10 @@ import types
 import random
 import string
 
-from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions \
+    import AOSP_PERMISSIONS
+from androguard.core.api_specific_resources.api_permission_mappings.\
+    api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
 
 ANDROGUARD_VERSION = "3.0"
 
@@ -64,7 +66,7 @@ CONF = {
     "TMP_DIRECTORY": "/tmp/",
 
     # Full python or mix python/c++ (native)
-    #"ENGINE" : "automatic",
+    # "ENGINE" : "automatic",
     "ENGINE": "python",
 
     "RECODE_ASCII_STRING": False,
@@ -203,7 +205,8 @@ def str2long(s):
 
 
 def random_string():
-    return random.choice(string.letters) + ''.join([random.choice(string.letters + string.digits) for i in range(10 - 1)])
+    return random.choice(string.letters) + ''.join(
+        [random.choice(string.letters + string.digits) for i in range(10 - 1)])
 
 
 def is_android(filename):
@@ -226,24 +229,25 @@ def is_android(filename):
 def is_android_raw(raw):
     val = None
 
-    if raw[0:2] == "PK" or ('AndroidManifest.xml' in raw and 'META-INF/MANIFEST.MF' in raw):
+    if raw[0:2] == b"PK" or (
+            b'AndroidManifest.xml' in raw and b'META-INF/MANIFEST.MF' in raw):
         val = "APK"
-    elif raw[0:3] == "dex":
+    elif raw[0:3] == b"dex":
         val = "DEX"
-    elif raw[0:3] == "dey":
+    elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:7] == "\x7fELF\x01\x01\x01":
+    elif raw[0:7] == b"\x7fELF\x01\x01\x01":
         val = "ELF"
-    elif raw[0:4] == "\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00":
         val = "AXML"
-    elif raw[0:4] == "\x02\x00\x0C\x00":
+    elif raw[0:4] == b"\x02\x00\x0C\x00":
         val = "ARSC"
 
     return val
 
 
 def is_valid_android_raw(raw):
-    return raw.find("classes.dex") != -1
+    return raw.find(b"classes.dex") != -1
 
 # from scapy
 log_andro = logging.getLogger("andro")
@@ -328,7 +332,8 @@ def make_color_tuple(color):
 
 def interpolate_tuple(startcolor, goalcolor, steps):
     """
-    Take two RGB color sets and mix them over a specified number of steps.  Return the list
+    Take two RGB color sets and mix them over a specified number of steps.
+    Return the list
     """
     # white
 
@@ -371,7 +376,8 @@ def interpolate_tuple(startcolor, goalcolor, steps):
 
 def color_range(startcolor, goalcolor, steps):
     """
-    wrapper for interpolate_tuple that accepts colors as html ("#CCCCC" and such)
+    wrapper for interpolate_tuple that accepts colors as html
+    ("#CCCCC" and such)
     """
     start_tuple = make_color_tuple(startcolor)
     goal_tuple = make_color_tuple(goalcolor)
