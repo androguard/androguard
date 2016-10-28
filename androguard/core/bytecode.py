@@ -21,7 +21,8 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from androguard.core.androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from androguard.core.androconf import warning, error, CONF, enable_colors, \
+    remove_colors, save_colors, color_range
 
 
 def disable_print_colors():
@@ -90,21 +91,27 @@ def PrettyShowEx(exceptions):
         CONF["PRINT_FCT"]("Exceptions:\n")
         for i in exceptions:
             CONF["PRINT_FCT"]("\t%s%s%s\n" % (
-                CONF["COLORS"]["EXCEPTION"], i.show_buff(), CONF["COLORS"]["NORMAL"]))
+                CONF["COLORS"]["EXCEPTION"], i.show_buff(),
+                CONF["COLORS"]["NORMAL"]))
 
 
 def _PrintXRef(tag, items):
     print_fct = CONF["PRINT_FCT"]
     for i in items:
-        print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[0].get_name(), i[
-                  0].get_descriptor(), ' '.join("%x" % j.get_idx() for j in i[1])))
+        print_fct(
+            "%s: %s %s %s %s\n" % (
+                tag, i[0].get_class_name(), i[0].get_name(),
+                i[0].get_descriptor(),
+                ' '.join("%x" % j.get_idx() for j in i[1])))
 
 
 def _PrintDRef(tag, items):
     print_fct = CONF["PRINT_FCT"]
     for i in items:
-        print_fct("%s: %s %s %s %s\n" % (tag, i[0].get_class_name(), i[
-                  0].get_name(), i[0].get_descriptor(), ' '.join("%x" % j for j in i[1])))
+        print_fct(
+            "%s: %s %s %s %s\n" % (
+                tag, i[0].get_class_name(), i[0].get_name(),
+                i[0].get_descriptor(), ' '.join("%x" % j for j in i[1])))
 
 
 def _PrintDefault(msg):
@@ -137,8 +144,9 @@ def PrettyShow(m_a, basic_blocks, notes={}):
                 for note in notes[nb]:
                     _PrintNote(note, 1)
 
-            print_fct("\t%s%-3d%s(%s%08x%s) " % (offset_color, nb,
-                                                 normal_color, offset_addr_color, idx, normal_color))
+            print_fct("\t%s%-3d%s(%s%08x%s) " % (
+                offset_color, nb,
+                normal_color, offset_addr_color, idx, normal_color))
             print_fct("%s%-20s%s" %
                       (instruction_name_color, ins.get_name(), normal_color))
 
@@ -153,19 +161,29 @@ def PrettyShow(m_a, basic_blocks, notes={}):
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
                     values = i.get_special_ins(idx).get_values()
-                    print_fct("%s[ D:%s%s " % (branch_false_color,
-                                               i.childs[0][2].get_name(), branch_color))
-                    print_fct(' '.join("%d:%s" % (values[j], i.childs[
-                              j + 1][2].get_name()) for j in range(0, len(i.childs) - 1)) + " ]%s" % normal_color)
+                    print_fct(
+                        "%s[ D:%s%s " % (
+                            branch_false_color,
+                            i.childs[0][2].get_name(), branch_color))
+                    print_fct(
+                        ' '.join("%d:%s" % (
+                            values[j],
+                            i.childs[j + 1][2].get_name())
+                            for j in range(
+                                0, len(i.childs) - 1)) + " ]%s" % normal_color)
                 else:
                     if len(i.childs) == 2:
                         print_fct("%s[ %s%s " % (branch_false_color, i.childs[
                                   0][2].get_name(), branch_true_color))
-                        print_fct(' '.join("%s" % c[2].get_name() for c in i.childs[
-                                  1:]) + " ]%s" % normal_color)
+                        print_fct(
+                            ' '.join(
+                                "%s" % c[2].get_name()
+                                for c in i.childs[1:]) + " ]%s" % normal_color)
                     else:
-                        print_fct("%s[ " % branch_color + ' '.join("%s" % c[2].get_name()
-                                                                   for c in i.childs) + " ]%s" % normal_color)
+                        print_fct(
+                            "%s[ " % branch_color + ' '.join(
+                                "%s" % c[2].get_name()
+                                for c in i.childs) + " ]%s" % normal_color)
 
             idx += ins.get_length()
             nb += 1
@@ -173,8 +191,10 @@ def PrettyShow(m_a, basic_blocks, notes={}):
             print_fct("\n")
 
         if i.get_exception_analysis():
-            print_fct("\t%s%s%s\n" % (exception_color,
-                                      i.exception_analysis.show_buff(), normal_color))
+            print_fct(
+                "\t%s%s%s\n" % (
+                    exception_color,
+                    i.exception_analysis.show_buff(), normal_color))
 
         print_fct("\n")
 
@@ -211,21 +231,29 @@ def method2dot(mx, colors={}):
                         "registers_range": ("#999933", "#6666FF")
                         }
 
-    node_tpl = "\nstruct_%s [label=<\n<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"3\">\n%s</TABLE>>];\n"
-    label_tpl = "<TR><TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> <FONT FACE=\"Times-Bold\" color=\"%s\">%x</FONT> </TD><TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> <FONT FACE=\"Times-Bold\" color=\"%s\">%s </FONT> %s </TD></TR>\n"
+    node_tpl = "\nstruct_%s [label=<\n<TABLE BORDER=\"0\" CELLBORDER=\"0\" "\
+        "CELLSPACING=\"3\">\n%s</TABLE>>];\n"
+    label_tpl = "<TR><TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> "\
+        "<FONT FACE=\"Times-Bold\" color=\"%s\">%x</FONT> </TD>"\
+        "<TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> <FONT FACE=\"Times-Bold\" "\
+        "color=\"%s\">%s </FONT> %s </TD></TR>\n"
     link_tpl = "<TR><TD PORT=\"%s\"></TD></TR>\n"
 
     edges_html = ""
     blocks_html = ""
 
     method = mx.get_method()
-    sha256 = hashlib.sha256("%s%s%s" % (mx.get_method().get_class_name(
-    ), mx.get_method().get_name(), mx.get_method().get_descriptor())).hexdigest()
+    sha256 = hashlib.sha256(
+        "%s%s%s" % (
+            mx.get_method().get_class_name(),
+            mx.get_method().get_name(),
+            mx.get_method().get_descriptor())).hexdigest()
 
     registers = {}
     if method.get_code():
         for DVMBasicMethodBlock in mx.basic_blocks.gets():
-            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
+            for DVMBasicMethodBlockInstruction in \
+                    DVMBasicMethodBlock.get_instructions():
                 operands = DVMBasicMethodBlockInstruction.get_operands(0)
                 for register in operands:
                     if register[0] == 0:
@@ -236,9 +264,10 @@ def method2dot(mx, colors={}):
 #            registers[i] = 0
 
     if registers:
-        registers_colors = color_range(colors["registers_range"][0],
-                                       colors["registers_range"][1],
-                                       len(registers))
+        registers_colors = color_range(
+            colors["registers_range"][0],
+            colors["registers_range"][1],
+            len(registers))
         for i in registers:
             registers[i] = registers_colors.pop(0)
 
