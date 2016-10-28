@@ -87,8 +87,10 @@ class BC(object):
 class Androguard(object):
     """Androguard is the main object to abstract and manage differents formats
 
-       @param files : a list of filenames (filename must be terminated by .class or .dex)
-       @param raw : specify if the filename is in fact a raw buffer (default : False) #FIXME
+       @param files : a list of filenames (filename must be terminated by
+                      .class or .dex)
+       @param raw : specify if the filename is in fact a raw buffer
+                    (default : False) #FIXME
     """
 
     def __init__(self, files, raw=False):
@@ -133,7 +135,7 @@ class Androguard(object):
 
     def get_class(self, class_name):
         for _, bc in self.__bc:
-            if bc.get_class(class_name) == True:
+            if bc.get_class(class_name) is True:
                 return bc
         return None
 
@@ -229,9 +231,12 @@ class Androguard(object):
 
 
 class AndroguardS(object):
-    """AndroguardS is the main object to abstract and manage differents formats but only per filename. In fact this class is just a wrapper to the main class Androguard
+    """AndroguardS is the main object to abstract and manage differents
+       formats but only per filename. In fact this class is just a
+       wrapper to the main class Androguard
 
-       @param filename : the filename to use (filename must be terminated by .class or .dex)
+       @param filename : the filename to use
+                         (filename must be terminated by .class or .dex)
        @param raw : specify if the filename is a raw buffer (default : False)
     """
 
