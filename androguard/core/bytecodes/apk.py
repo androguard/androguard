@@ -20,7 +20,16 @@ import sys
 import binascii
 import zipfile
 
-from xml.dom import minidom
+import lxml.sax
+from xml.dom.pulldom import SAX2DOM
+from lxml import etree
+
+
+def parse_lxml_dom(tree):
+    handler = SAX2DOM()
+    lxml.sax.saxify(tree, handler)
+    return handler.document
+
 
 # Used for reading Certificates
 from pyasn1.codec.der.decoder import decode
@@ -145,7 +154,9 @@ class APK(object):
                     try:
                         if self.axml[i].is_packed():
                             androconf.warning("XML Seems to be packed, parsing is very likely to fail.")
-                        self.xml[i] = minidom.parseString(raw_xml)
+                        parser = etree.XMLParser(recover=True)
+                        tree = etree.fromstring(raw_xml, parser=parser)
+                        self.xml[i] = parse_lxml_dom(tree)
                     except Exception as e:
                         androconf.warning("reading AXML as XML failed: " + str(e))
 
@@ -268,7 +279,6 @@ class APK(object):
             # No App name set
             # TODO return packagename instead?
             return ""
-
         if app_name.startswith("@"):
             res_id = int(app_name[1:], 16)
             res_parser = self.get_android_resources()
