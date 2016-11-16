@@ -25,12 +25,21 @@ from androguard.core.resources import public
 
 import io
 import sys
+import re
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
-import re
-
 from xml.dom import minidom
+import lxml.sax
+from xml.dom.pulldom import SAX2DOM
+from lxml import etree
+
+
+def parse_lxml_dom(tree):
+    handler = SAX2DOM()
+    lxml.sax.saxify(tree, handler)
+    return handler.document
+
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
@@ -197,7 +206,11 @@ class APK(object):
             if i != "AndroidManifest.xml":
                 continue
             self.axml[i] = AXMLPrinter(self.zip.read(i))
-            self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+            # self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+            parser = etree.XMLParser(recover=True)
+            tree = etree.fromstring(
+                self.axml[i].get_buff().encode(), parser=parser)
+            self.xml[i] = parse_lxml_dom(tree)
 
             if self.xml[i] is None:
                 break
@@ -233,6 +246,7 @@ class APK(object):
                 self.declared_permissions[d_perm_name] = d_perm_details
 
             self.valid_apk = True
+            break
 
         self.get_files_types()
         self.permission_module = androconf.load_api_specific_resource_module(
@@ -284,7 +298,7 @@ class APK(object):
         """
         app_elem = self.get_AndroidManifest(
         ).getElementsByTagName("application")[0]
-        app_name = app_elem.getAttribute("android:label")
+        app_name = app_elem.getAttribute("ns00:label")
         if app_name.startswith("@"):
             res_parser = self.get_android_resources()
             app_name = ''
@@ -1254,7 +1268,7 @@ class AXMLParser(object):
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:' + \
+                res = 'ns00' + \
                     public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
 
         return res
@@ -1357,10 +1371,17 @@ class AXMLPrinter(object):
         return self.buff
 
     def get_xml(self):
-        return minidom.parseString(self.get_buff()).toprettyxml(encoding="utf-8")
+        parser = etree.XMLParser(recover=True)
+        tree = etree.fromstring(self.get_buff().encode(), parser=parser)
+        return parse_lxml_dom(tree).toprettyxml(encoding="utf-8")
+        # return minidom.parseString(self.get_buff()).toprettyxml(
+        #   encoding="utf-8")
 
     def get_xml_obj(self):
-        return minidom.parseString(self.get_buff())
+        parser = etree.XMLParser(recover=True)
+        tree = etree.fromstring(self.get_buff().encode(), parser=parser)
+        return parse_lxml_dom(tree)
+        # return minidom.parseString(self.get_buff())
 
     def getPrefix(self, prefix):
         if prefix is None or len(prefix) == 0:
