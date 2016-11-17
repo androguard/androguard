@@ -298,7 +298,7 @@ class APK(object):
         """
         app_elem = self.get_AndroidManifest(
         ).getElementsByTagName("application")[0]
-        app_name = app_elem.getAttribute("ns00:label")
+        app_name = app_elem.getAttribute("android:label")
         if app_name.startswith("@"):
             res_parser = self.get_android_resources()
             app_name = ''
@@ -1220,7 +1220,7 @@ class AXMLParser(object):
         buff = ""
         for i in self.m_uriprefix:
             if i not in self.visited_ns:
-                buff += "xmlns:%s=\"%s\"\n" % (self.sb.getString(
+                buff += "xmlnamespace:%s=\"%s\"\n" % (self.sb.getString(
                     self.m_uriprefix[i]), self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
                 self.visited_ns.append(i)
         return buff
@@ -1268,7 +1268,7 @@ class AXMLParser(object):
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'ns00' + \
+                res = 'android' + \
                     public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
 
         return res
