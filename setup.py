@@ -17,7 +17,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ak-androguard',
-    version='3.2.5',
+    version='3.2.6',
     description="A fork of official Androguard project",
     url='https://github.com/appknox/ak-androguard',
     author='dhilipsiva',
