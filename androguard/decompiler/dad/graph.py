@@ -26,6 +26,7 @@ logger = logging.getLogger('dad.graph')
 
 
 class Graph(object):
+
     def __init__(self):
         self.entry = None
         self.exit = None
@@ -45,12 +46,11 @@ class Graph(object):
         return self.edges.get(node, []) + self.catch_edges.get(node, [])
 
     def preds(self, node):
-        return [n for n in self.reverse_edges.get(node, [])
-                if not n.in_catch]
+        return [n for n in self.reverse_edges.get(node, []) if not n.in_catch]
 
     def all_preds(self, node):
-        return (self.reverse_edges.get(node, []) +
-                self.reverse_catch_edges.get(node, []))
+        return (self.reverse_edges.get(node, []) + self.reverse_catch_edges.get(
+            node, []))
 
     def add_node(self, node):
         self.nodes.append(node)
@@ -133,6 +133,7 @@ class Graph(object):
         Return the nodes of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         '''
+
         def _visit(n, cnt):
             visited.add(n)
             for suc in self.all_sucs(n):
@@ -141,6 +142,7 @@ class Graph(object):
                         yield cnt, s
             n.po = cnt
             yield cnt + 1, n
+
         visited = set()
         for _, node in _visit(self.entry, 1):
             yield node
@@ -148,8 +150,11 @@ class Graph(object):
     def draw(self, name, dname, draw_branches=True):
         from pydot import Dot, Edge
         g = Dot()
-        g.set_node_defaults(color='lightgray', style='filled', shape='box',
-                            fontname='Courier', fontsize='10')
+        g.set_node_defaults(color='lightgray',
+                            style='filled',
+                            shape='box',
+                            fontname='Courier',
+                            fontsize='10')
         for node in sorted(self.nodes, key=lambda x: x.num):
             if draw_branches and node.type.is_cond:
                 g.add_edge(Edge(str(node), str(node.true), color='green'))
@@ -158,8 +163,10 @@ class Graph(object):
                 for suc in self.sucs(node):
                     g.add_edge(Edge(str(node), str(suc), color='blue'))
             for except_node in self.catch_edges.get(node, []):
-                g.add_edge(Edge(str(node), str(except_node),
-                                color='black', style='dashed'))
+                g.add_edge(Edge(str(node),
+                                str(except_node),
+                                color='black',
+                                style='dashed'))
 
         g.write_png('%s/%s.png' % (dname, name))
 
@@ -261,7 +268,7 @@ def simplify(graph):
                 suc = sucs[0]
                 if len(node.get_ins()) == 0:
                     if any(pred.type.is_switch
-                            for pred in graph.all_preds(node)):
+                           for pred in graph.all_preds(node)):
                         continue
                     if node is suc:
                         continue
@@ -277,10 +284,9 @@ def simplify(graph):
                     if node is graph.entry:
                         graph.entry = suc
                     graph.remove_node(node)
-                elif (suc.type.is_stmt and
-                      len(graph.all_preds(suc)) == 1 and
-                      not (suc in graph.catch_edges) and
-                      not ((node is suc) or (suc is graph.entry))):
+                elif (suc.type.is_stmt and len(graph.all_preds(suc)) == 1 and
+                      not (suc in graph.catch_edges) and not (
+                          (node is suc) or (suc is graph.entry))):
                     ins_to_merge = suc.get_ins()
                     node.add_ins(ins_to_merge)
                     for var in suc.var_to_declare:
@@ -300,6 +306,7 @@ def simplify(graph):
 
 def dom_lt(graph):
     '''Dominator algorithm from Lengaeur-Tarjan'''
+
     def _dfs(v, n):
         semi[v] = n = n + 1
         vertex[n] = label[v] = v
@@ -337,14 +344,14 @@ def dom_lt(graph):
     n = _dfs(graph.entry, 0)
     for i in xrange(n, 1, -1):
         w = vertex[i]
-    # Step 2:
+        # Step 2:
         for v in pred[w]:
             u = _eval(v)
             y = semi[w] = min(semi[w], semi[u])
         bucket[vertex[y]].add(w)
         pw = parent[w]
         _link(pw, w)
-    # Step 3:
+        # Step 3:
         bpw = bucket[pw]
         while bpw:
             v = bpw.pop()
@@ -378,6 +385,7 @@ def bfs(start):
 
 
 class GenInvokeRetName(object):
+
     def __init__(self):
         self.num = 0
         self.ret = None
@@ -403,8 +411,8 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
         for _type, _, exception_target in block.exception_analysis.exceptions:
             exception_node = block_to_node.get(exception_target)
             if exception_node is None:
-                exception_node = build_node_from_block(exception_target,
-                                                        vmap, gen_ret, _type)
+                exception_node = build_node_from_block(exception_target, vmap,
+                                                       gen_ret, _type)
                 exception_node.set_catch_type(_type)
                 exception_node.in_catch = True
                 block_to_node[exception_target] = exception_node
@@ -418,8 +426,8 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
         if node.type.is_switch:
             node.add_case(child_node)
         if node.type.is_cond:
-            if_target = ((block.end / 2) - (block.last_length / 2) +
-                          node.off_last_ins)
+            if_target = ((block.end / 2) -
+                         (block.last_length / 2) + node.off_last_ins)
             child_addr = child_block.start / 2
             if if_target == child_addr:
                 node.true = child_node
@@ -462,8 +470,7 @@ def construct(start_block, vmap, exceptions):
     graph.number_ins()
 
     for node in graph.rpo:
-        preds = [pred for pred in graph.all_preds(node)
-                 if pred.num < node.num]
+        preds = [pred for pred in graph.all_preds(node) if pred.num < node.num]
         if preds and all(pred.in_catch for pred in preds):
             node.in_catch = True
 

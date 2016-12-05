@@ -9,7 +9,6 @@ from androguard.core.bytecodes import dvm
 from androguard.core import androconf
 from androguard.util import read
 
-
 FILENAME_INPUT = "examples/android/TestsAndroguard/bin/classes.dex"
 FILENAME_OUTPUT = "./toto.dex"
 
@@ -24,4 +23,4 @@ print hex(vm.header.link_off), hex(vm.header.link_size)
 new_dex = vm.save()
 
 with open(FILENAME_OUTPUT, "wb") as fd:
-	fd.write(new_dex)
+    fd.write(new_dex)

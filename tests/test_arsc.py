@@ -1,98 +1,72 @@
-#!/usr/bin/env python
-
-import logging
-import datetime
+import unittest
 
 import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from optparse import OptionParser
-from androguard.core.analysis import auto
-from androguard.core.androconf import set_debug
-
-option_0 = {'name': ('-d', '--directory'), 'help': 'directory input', 'nargs': 1}
-option_1 = {'name': ('-v', '--verbose'), 'help': 'add debug', 'action': 'count'}
-options = [option_0, option_1]
-
-logger = logging.getLogger("main")
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(message)s"))
-logger.addHandler(console_handler)
-
-logger.setLevel(logging.INFO)
-
-def test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
-    return (got == expected)
+from androguard.core.bytecodes import apk
+import collections
 
 
-class AndroLog(object):
-  def __init__(self, id_file, filename):
-    self.id_file = id_file
-    self.filename = filename
-
-  def dump(self, msg):
-    now = datetime.datetime.now()
-    str_date = now.strftime("%Y-%m-%d %H:%M:%S ")
-    logger.info(str_date + "%s[%d]: %s" % (self.filename, self.id_file, msg))
-
-  def error(self, msg):
-    now = datetime.datetime.now()
-    str_date = now.strftime("%Y-%m-%d %H:%M:%S ")
-    logger.info(str_date + "ERROR %s[%d]: %s" % (self.filename, self.id_file, msg))
-    import traceback
-    traceback.print_exc()
-
-
-class MyARSCAnalysis(auto.DirectoryAndroAnalysis):
-  def __init__(self, directory):
-    super(MyARSCAnalysis, self).__init__(directory)
-
-  def filter_file(self, log, fileraw):
-    ret, file_type = super(MyARSCAnalysis, self).filter_file(log, fileraw)
-    if file_type != "APK" and file_type != "ARSC":
-      return (False, None)
-    return (ret, file_type)
-
-  def analysis_arsc(self, log, arsc):
-    log.dump("%s" % str(arsc))
-    return False
-
-  def analysis_apk(self, log, apk):
-    if apk.is_valid_APK():
-      log.dump("%s" % str(apk.get_android_resources()))
-    return False
-
-  def crash(self, log, why):
-    log.error(why)
+TEST_APP_NAME = "TestsAndroguardApplication"
+TEST_ICONS = {
+    120: "res/drawable-ldpi/icon.png",
+    160: "res/drawable-mdpi/icon.png",
+    240: "res/drawable-hdpi/icon.png",
+    65536: "res/drawable-hdpi/icon.png"
+}
+TEST_CONFIGS = {
+    "layout": [apk.ARSCResTableConfig.default_config()],
+    "string": [apk.ARSCResTableConfig.default_config()],
+    "drawable": [
+        apk.ARSCResTableConfig(sdkVersion=4, density=120),
+        apk.ARSCResTableConfig(sdkVersion=4, density=160),
+        apk.ARSCResTableConfig(sdkVersion=4, density=240)
+    ]
+}
 
 
-def main(options, arguments):
-  if options.verbose:
-    set_debug()
+class ARSCTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  "r") as fd:
+            cls.apk = apk.APK(fd.read(), True)
 
-  if options.directory:
-    settings = {
-      "my": MyARSCAnalysis(options.directory),
-      "log": AndroLog,
-      "max_fetcher": 3,
-    }
+    def testARSC(self):
+        arsc = self.apk.get_android_resources()
+        self.assertTrue(arsc)
 
-    aa = auto.AndroAuto(settings)
-    aa.go()
+    def testAppName(self):
+        app_name = self.apk.get_app_name()
+        self.assertEqual(app_name, TEST_APP_NAME, "Couldn't deduce application/activity label")
 
-if __name__ == "__main__":
-    parser = OptionParser()
-    for option in options:
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
+    def testAppIcon(self):
+        for wanted_density, correct_path in TEST_ICONS.iteritems():
+            app_icon_path = self.apk.get_app_icon(wanted_density)
+            self.assertEqual(app_icon_path, correct_path,
+                             "Incorrect icon path for requested density")
 
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)
+    def testTypeConfigs(self):
+        arsc = self.apk.get_android_resources()
+        configs = arsc.get_type_configs(None)
+
+        for res_type, test_configs in TEST_CONFIGS.items():
+            config_set = set(test_configs)
+            self.assertIn(res_type, configs,
+                          "resource type %s was not found" % res_type)
+            for config in configs[res_type]:
+                self.assertIn(config, config_set,
+                              "config %r was not expected" % config)
+                config_set.remove(config)
+
+            self.assertEqual(len(config_set), 0,
+                             "configs were not found: %s" % config_set)
+
+        unexpected_types = set(TEST_CONFIGS.keys()) - set(configs.keys())
+        self.assertEqual(len(unexpected_types), 0,
+                         "received unexpected resource types: %s" % unexpected_types)
+
+
+if __name__ == '__main__':
+    unittest.main()

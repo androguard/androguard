@@ -1,108 +1,42 @@
-#!/usr/bin/env python
-
-import logging
-import datetime
+import unittest
 
 import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from optparse import OptionParser
-from androguard.core.analysis import auto
-from androguard.core.androconf import set_debug
-
-option_0 = {'name': ('-d', '--directory'), 'help': 'directory input', 'nargs': 1}
-option_1 = {'name': ('-v', '--verbose'), 'help': 'add debug', 'action': 'count'}
-options = [option_0, option_1]
-
-logger = logging.getLogger("main")
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(message)s"))
-logger.addHandler(console_handler)
-
-logger.setLevel(logging.INFO)
-
-def test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected)),
-    return (got == expected)
+from androguard.core.bytecodes import dvm
 
 
-class AndroLog(object):
-  def __init__(self, id_file, filename):
-    self.id_file = id_file
-    self.filename = filename
+class DexTest(unittest.TestCase):
 
-  def dump(self, msg):
-    now = datetime.datetime.now()
-    str_date = now.strftime("%Y-%m-%d %H:%M:%S ")
-    logger.info(str_date + "%s[%d]: %s" % (self.filename, self.id_file, msg))
+    def testDex(self):
+        with open("examples/android/TestsAndroguard/bin/classes.dex",
+                  "r") as fd:
+            d = dvm.DalvikVMFormat(fd.read())
+            self.assertTrue(d)
 
-  def error(self, msg):
-    now = datetime.datetime.now()
-    str_date = now.strftime("%Y-%m-%d %H:%M:%S ")
-    logger.info(str_date + "ERROR %s[%d]: %s" % (self.filename, self.id_file, msg))
-    import traceback
-    traceback.print_exc()
+            classes = d.get_classes()
+            self.assertTrue(classes)
+            self.assertEqual(len(classes), 340)
 
+            methods = d.get_methods()
+            self.assertTrue(methods)
+            self.assertEqual(len(methods), 2600)
 
-class MyDEXAnalysis(auto.DirectoryAndroAnalysis):
-  def __init__(self, directory):
-    super(MyDEXAnalysis, self).__init__(directory)
+            fields = d.get_fields()
+            self.assertTrue(fields)
+            self.assertEqual(len(fields), 803)
 
-  def filter_file(self, log, fileraw):
-    ret, file_type = super(MyDEXAnalysis, self).filter_file(log, fileraw)
-    if file_type != "APK" and file_type != "DEX" and file_type != "DEY":
-      return (False, None)
-    return (ret, file_type)
-
-  def analysis_dex(self, log, dex):
-    log.dump("%s" % str(dex))
-    for method in dex.get_methods():
-      idx = 0
-      for i in method.get_instructions():
-        i.get_name(), i.show_buff(idx)
-        idx += i.get_length()
-
-    return False
-
-  def analysis_dey(self, log, dey):
-    log.dump("%s" % str(dey))
-    for method in dey.get_methods():
-      idx = 0
-      for i in method.get_instructions():
-        i.get_name(), i.show_buff(idx)
-        idx += i.get_length()
-    return False
-
-  def crash(self, log, why):
-    log.error(why)
+    def testMultiDex(self):
+        pass
 
 
-def main(options, arguments):
-  if options.verbose:
-    set_debug()
+class InstructionTest(unittest.TestCase):
 
-  if options.directory:
-    settings = {
-      "my": MyDEXAnalysis(options.directory),
-      "log": AndroLog,
-      "max_fetcher": 3,
-    }
+    def testNOP(self):
+        instruction = dvm.Instruction10x(None, "\x00\x00")
+        self.assertEqual(instruction.get_name(), "nop")
 
-    aa = auto.AndroAuto(settings)
-    aa.go()
 
-if __name__ == "__main__":
-    parser = OptionParser()
-    for option in options:
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
-
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)
+if __name__ == '__main__':
+    unittest.main()
