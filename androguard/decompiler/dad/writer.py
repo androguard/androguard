@@ -151,6 +151,8 @@ class Writer(object):
             self.write_ext(('PROTOTYPE_ACCESS', '%s ' % ' '.join(acc)))
         if self.constructor:
             name = get_type(self.method.cls_name).split('.')[-1]
+            if(name.find('$')>=0): #by nkbai@163.com delete outer classname from constructor name
+                name=name[name.find('$')+1:];
             self.write(name)
             self.write_ext(('NAME_METHOD_PROTOTYPE', '%s' % name, self.method))
         else:
