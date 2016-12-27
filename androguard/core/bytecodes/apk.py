@@ -413,7 +413,7 @@ class APK(object):
             getattr(magic, "MagicException")
         except AttributeError:
             try:
-                getattr(magic, "id_buffer")
+                getattr(magic.Magic, "id_buffer")
                 filemagic = 1
             except AttributeError:
                 builtin_magic = 1
