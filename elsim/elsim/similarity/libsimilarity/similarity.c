@@ -329,26 +329,13 @@ unsigned int kolmogorov(int level, void *orig, size_t size_orig)
 
 /* Haypo */
 
+/* returns the number of seconds since some point; always increasing.
+ * Used only for timing operations.
+ */
 double RDTSC(void) {
-#if defined linux || defined __APPLE__
-    unsigned long long x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A"(x));
-    return (double)x;
-#else
-    unsigned long a, b;
-    double x;
-    asm
-    {
-        db 0x0F, 0x31
-            mov [a], eax
-            mov [b], eax
-    }
-
-    x = b;
-    x *= 4294967296;
-    x += a;
-    return x;
-#endif
+    struct timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return time.tv_sec + time.tv_nsec / 1e9;
 }
 
 double bennett(int level, void *orig, size_t size_orig)
