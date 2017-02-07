@@ -1,5 +1,5 @@
 androdis
-===============
+========
 
 .. program-output:: python ../../androdis.py -h
 

@@ -1,5 +1,5 @@
 androarsc
-================
+=========
 
 .. program-output:: python ../../androarsc.py -h
 

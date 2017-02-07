@@ -1,5 +1,5 @@
 androdd
-==============
+=======
 
 .. program-output:: python ../../androdd.py -h
 

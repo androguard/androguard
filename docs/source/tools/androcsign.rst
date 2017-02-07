@@ -1,5 +1,5 @@
 androcsign
-=================
+==========
 
 .. program-output:: python ../../androcsign.py -h
 

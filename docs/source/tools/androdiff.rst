@@ -1,5 +1,5 @@
 androdiff
-================
+=========
 
 .. program-output:: python ../../androdiff.py -h
 

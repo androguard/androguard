@@ -1,5 +1,5 @@
 androgui
-===============
+========
 
 .. program-output:: python ../../androgui.py -h
 

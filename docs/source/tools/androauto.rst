@@ -1,5 +1,5 @@
 androauto
-================
+=========
 
 .. program-output:: python ../../androauto.py -h
 
