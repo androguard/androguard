@@ -43,7 +43,7 @@ For androguard and elsim:
 There are some additional dependencies, which are optional. They are unfortunately not in the
 Debian repos, thus must be installed from the sources:
 
-* `elfesteem` can be found here" [elfesteem](https://github.com/serpilliere/elfesteem)
+* `elfesteem` can be found here: [elfesteem](https://github.com/serpilliere/elfesteem)
 * Radare2 Bindings can be found here: [radare2-bindings](https://github.com/radare/radare2-bindings)
 * `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
 * `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
