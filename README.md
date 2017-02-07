@@ -24,7 +24,42 @@ DAD (DAD is A Decompiler): Geoffroy Gueguen (geoffroy dot gueguen at gmail dot c
 See the stable release here:
 https://github.com/androguard/androguard/releases
 
-##3. Licenses
+You can also install androguard from the Debian repositories: [androguard](http://packages.debian.org/androguard).
+
+##3. Documentation
+
+For building the documentation install `sphinx` and `sphinxcontrib-programoutput`.
+Use the Makefile in the `doc` folder to create the documentation.
+
+##4. Building and Requirements
+
+Assuming you are using Debian, most of the packages are available from standard repos.
+
+For androguard:
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython`
+
+For building the documentation:
+`apt install python-sphinx python-sphinxcontrib.programoutput`
+
+Dependencies not met by debian, might be installed by `pip`:
+`elfesteem miasm idaapi r_2`
+
+Those dependencies are not required for the most usecases.
+`elfesteem` is available as `pip` package.
+
+* Radare2 Bindings can be found here: [radare2-bindings](https://github.com/radare/radare2-bindings)
+* `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
+* `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
+
+
+For `elsim`:
+`apt install libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+
+For building of `elsim`:
+`apt install build-essential liblzma-dev libmuparser-dev libsnappy-dev libbz2-dev zlib1g-dev libsparsehash-dev`
+
+
+##5. Licenses
 
 * Androguard
 
