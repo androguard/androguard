@@ -28,35 +28,33 @@ You can also install androguard from the Debian repositories: [androguard](http:
 
 ##3. Documentation
 
-For building the documentation install `sphinx` and `sphinxcontrib-programoutput`.
-Use the Makefile in the `doc` folder to create the documentation.
+Link here to the documentation... sometime...
+
+Meanwhile you can build the documentation with `sphinx`!
 
 ##4. Building and Requirements
 
 Assuming you are using Debian, most of the packages are available from standard repos.
 
-For androguard:
-`apt install python python-pyqt5 python-pyperclip python-networkx ipython`
+For androguard and elsim:
 
-For building the documentation:
-`apt install python-sphinx python-sphinxcontrib.programoutput`
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
 
-Dependencies not met by debian, might be installed by `pip`:
-`elfesteem miasm idaapi r_2`
+There are some additional dependencies, which are optional. They are unfortunately not in the
+Debian repos, thus must be installed from the sources:
 
-Those dependencies are not required for the most usecases.
-`elfesteem` is available as `pip` package.
-
+* `elfesteem` can be found here" [elfesteem](https://github.com/serpilliere/elfesteem)
 * Radare2 Bindings can be found here: [radare2-bindings](https://github.com/radare/radare2-bindings)
 * `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
 * `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
 
+To build androguard and elsim from scratch, you need some additional packages.
 
-For `elsim`:
-`apt install libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
-
-For building of `elsim`:
 `apt install build-essential liblzma-dev libmuparser-dev libsnappy-dev libbz2-dev zlib1g-dev libsparsehash-dev`
+
+and for building the documentation:
+
+`apt install python-sphinx python-sphinxcontrib.programoutput`
 
 
 ##5. Licenses
