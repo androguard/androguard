@@ -1,4 +1,4 @@
-androsign module
+androsign
 ================
 
 .. automodule:: androsign

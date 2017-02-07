@@ -1,4 +1,4 @@
-androdiff module
+androdiff
 ================
 
 .. automodule:: androdiff

@@ -1,4 +1,4 @@
-androdis module
+androdis
 ===============
 
 .. automodule:: androdis

@@ -1,4 +1,4 @@
-androsim module
+androsim
 ===============
 
 .. automodule:: androsim

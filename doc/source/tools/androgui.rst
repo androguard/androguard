@@ -1,4 +1,4 @@
-androgui module
+androgui
 ===============
 
 .. automodule:: androgui

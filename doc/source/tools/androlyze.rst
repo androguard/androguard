@@ -1,4 +1,4 @@
-androlyze module
+androlyze
 ================
 
 .. automodule:: androlyze

@@ -1,4 +1,4 @@
-androdd module
+androdd
 ==============
 
 .. automodule:: androdd

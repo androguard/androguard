@@ -1,4 +1,4 @@
-androarsc module
+androarsc
 ================
 
 .. automodule:: androarsc

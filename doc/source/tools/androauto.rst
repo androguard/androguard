@@ -1,4 +1,4 @@
-androauto module
+androauto
 ================
 
 .. automodule:: androauto

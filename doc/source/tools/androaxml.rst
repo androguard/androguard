@@ -1,4 +1,4 @@
-androaxml module
+androaxml
 ================
 
 .. automodule:: androaxml
