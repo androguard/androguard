@@ -14,24 +14,7 @@ API
 
    api/androguard
    api/elsim
-
-Tools
-=====
-
-.. toctree::
-   :maxdepth: 2
-
-   tools/androarsc
-   tools/androauto
-   tools/androaxml
-   tools/androcsign
-   tools/androdd
-   tools/androdiff
-   tools/androdis
-   tools/androgui
-   tools/androlyze
-   tools/androsign
-   tools/androsim
+   tools/tools
 
 Indices and tables
 ==================
