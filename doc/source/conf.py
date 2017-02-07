@@ -52,8 +52,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Androguard'
-copyright = u'2017, Anthony Desnos'
-author = u'Anthony Desnos'
+copyright = u'2012-2017, Anthony Desnos, Geoffroy Gueguen'
+author = u'Sebastian Bachmann'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

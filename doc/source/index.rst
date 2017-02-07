@@ -12,7 +12,8 @@ API
 .. toctree::
    :maxdepth: 2
 
-   api/modules
+   api/androguard
+   api/elsim
 
 Tools
 =====
