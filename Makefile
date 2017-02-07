@@ -2,12 +2,14 @@ CD      =       cd
 RM      =       rm -f
 
 
-all :   LIBS
+all :   LIBS DOCS
 
 LIBS :
-#	cd androguard/core/bytecodes/libdvm && make
-	cd elsim && make
+	${CD} elsim && make
+
+DOCS:
+	${CD} docs && make html
 
 clean :
-#	cd androguard/core/bytecodes/libdvm && make clean
-	cd elsim && make clean
+	${CD} elsim && make clean
+	${CD} docs && make clean
