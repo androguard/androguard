@@ -12,8 +12,25 @@ API
 .. toctree::
    :maxdepth: 2
 
-   modules
+   api/modules
 
+Tools
+=====
+
+.. toctree::
+   :maxdepth: 2
+
+   tools/androarsc
+   tools/androauto
+   tools/androaxml
+   tools/androcsign
+   tools/androdd
+   tools/androdiff
+   tools/androdis
+   tools/androgui
+   tools/androlyze
+   tools/androsign
+   tools/androsim
 
 Indices and tables
 ==================
