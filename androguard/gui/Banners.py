@@ -1,9 +1,13 @@
-from cemu import *
+from __future__ import division
+from __future__ import absolute_import
+from builtins import range
+from builtins import object
+from .cemu import *
 from PyQt5 import QtGui, QtCore
 
 import os, sys, inspect
 
-from TextDecorators import *
+from .TextDecorators import *
 
 class Banner(object):
     def getOrientation(self):
@@ -221,7 +225,7 @@ class BottomBanner(Banner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height // self.fontHeight, self.width // self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if dword is None:
@@ -358,7 +362,7 @@ class TopBanner(Banner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height // self.fontHeight, self.width // self.fontWidth)
 
         cemu.writeAt(1, 0, 'FileAddr')
 

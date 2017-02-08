@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 from PyQt5 import QtCore, QtGui, QtWidgets
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
@@ -53,7 +55,7 @@ class PygmentsBlockUserData(QtGui.QTextBlockUserData):
     syntax_stack = ('root',)
 
     def __init__(self, **kwds):
-        for key, value in kwds.items():
+        for key, value in list(kwds.items()):
             setattr(self, key, value)
         QtGui.QTextBlockUserData.__init__(self)
 
@@ -243,7 +245,7 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
         """ Returns a QTextCharFormat for token by reading a Pygments style.
         """
         result = QtGui.QTextCharFormat()
-        for key, value in style.style_for_token(token).items():
+        for key, value in list(style.style_for_token(token).items()):
             if value:
                 if key == 'color':
                     result.setForeground(self._get_brush(value))
@@ -450,7 +452,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Xref asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Xref not available. No info for: '%s'." %
                                     selection)
             return
@@ -535,7 +537,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         #    return
 
     def actionCopy(self):
-        print 'COPY'
+        print('COPY')
         cur = self.textCursor()
         pyperclip.copy(cur.selectedText())
 
@@ -547,7 +549,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Rename asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Rename not available. No info for: '%s'." %
                                     selection)
             return
@@ -598,7 +600,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Goto asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Goto not available. No info for: '%s'." %
                                     selection)
             return
@@ -633,7 +635,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         end = cursor.selectionEnd()
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
-        if start in self.doc.binding.keys():
+        if start in list(self.doc.binding.keys()):
             self.mainwin.showStatus('%s at position: (%d, %d)' %
                                     (str(self.doc.binding[start]), start, end))
         else:

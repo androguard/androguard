@@ -1,12 +1,19 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import os
 import mmap
 
-from BinViewMode import *
-from HexViewMode import *
-from DisasmViewMode import *
-from SourceViewMode import *
+from .BinViewMode import *
+from .HexViewMode import *
+from .DisasmViewMode import *
+from .SourceViewMode import *
 
-class Observer:
+class Observer(object):
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
@@ -24,7 +31,7 @@ class DataModel(object, Observer):
     
     @dataOffset.setter
     def dataOffset(self, value):
-        print "DATA OFFSET", value
+        print("DATA OFFSET", value)
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -72,7 +79,7 @@ class DataModel(object, Observer):
 
     def getXYInPage(self, off):
         off -= self.dataOffset
-        x, y = off/self.cols, off%self.cols
+        x, y = off // self.cols, off%self.cols
         return x, y
 
     def getPageOffset(self, page):
@@ -212,7 +219,7 @@ class FileDataModel(DataModel):
         # open for writing
         try:
             self._f = open(self._filename, "r+b")
-        except Exception, e:
+        except Exception as e:
             # could not open for writing
             return False
         self._f.write(self._mapped)
@@ -230,8 +237,8 @@ class FileDataModel(DataModel):
     def size(self):
         return os.path.getsize(self._filename)
 
-import StringIO
-class MyStringIO(StringIO.StringIO, object):
+import io
+class MyStringIO(io.StringIO, object):
     def __init__(self, data):
         self.raw = data
         super(MyStringIO, self).__init__(data)
@@ -293,7 +300,7 @@ class BufferDataModel(DataModel):
 
 class ApkModel(DataModel):
     def __init__(self, apkobj):
-        print apkobj
+        print(apkobj)
         self._filename = str(apkobj)
         self.raw = apkobj.get_raw()
         #import StringIO

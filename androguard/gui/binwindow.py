@@ -1,11 +1,17 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import chr
+from builtins import object
 import string
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUi
 
-from cemu import *
-from BinViewMode import *
-from DataModel import *
-from Banners import *
+from .cemu import *
+from .BinViewMode import *
+from .DataModel import *
+from .Banners import *
 
 class SearchWindow(QtWidgets.QDialog):
     
@@ -30,7 +36,7 @@ class SearchWindow(QtWidgets.QDialog):
         width = self.ui.size().width()+15
         height = self.ui.size().height()+15
 
-        self.move((self.parent.width() -  width)/ 2, (self.parent.height() -  height)/ 2)
+        self.move((self.parent.width() - width) // 2, (self.parent.height() - height) // 2)
         self.ui.lineEdit.setText(self._lastText)
         self.ui.lineEdit.selectAll()
         self.oshow()
@@ -49,7 +55,7 @@ class SearchWindow(QtWidgets.QDialog):
 
     def onClicked(self):
         text = self.ui.lineEdit.text()  
-        text = unicode(text)
+        text = str(text)
 
         hexstr = '0123456789abcdefABCDEF'
         if self.ui.checkHex.isChecked():
@@ -332,7 +338,7 @@ class binWidget(QtWidgets.QWidget, Observable):
                     self.viewMode.draw(refresh=False)
             # switch view mode
             if key == QtCore.Qt.Key_V:
-                print 'SWITCH VIEW'
+                print('SWITCH VIEW')
                 offs = self.viewMode.getCursorOffsetInPage()
                 base = self.viewMode.getDataModel().getOffset()
                 self.switchViewMode()
@@ -341,7 +347,7 @@ class binWidget(QtWidgets.QWidget, Observable):
                 self.update()
 
             if key == QtCore.Qt.Key_S:
-                print 'OPEN SOURCE'
+                print('OPEN SOURCE')
                 self.parent.openSourceWindow(self.dataModel.current_class)
 
             import pyperclip

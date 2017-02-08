@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 from PyQt5 import QtWidgets, QtGui
 
 from androguard.core import androconf
