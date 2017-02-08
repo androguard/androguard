@@ -1,3 +1,5 @@
+from future import standard_library
+standard_library.install_aliases()
 from androguard.core import *
 from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
@@ -5,7 +7,7 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 
-from cPickle import dumps, loads
+from pickle import dumps, loads
 from androguard.core import androconf
 
 
