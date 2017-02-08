@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
@@ -15,12 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 from subprocess import Popen, PIPE, STDOUT
 
 import os, sys
-import xmlrpclib
+import xmlrpc.client
 
-import cPickle
+import pickle
 
 class _Method(object):
     def __init__(self, proxy, name):
@@ -34,12 +38,12 @@ class _Method(object):
 
         try:
             if len(args) == 1:
-                ret = z( cPickle.dumps( args[0] ) )
+                ret = z( pickle.dumps( args[0] ) )
             else:
-                ret = z( cPickle.dumps( args ) )
+                ret = z( pickle.dumps( args ) )
             #print "RECEIVE", repr(ret)
-            return cPickle.loads( ret )
-        except xmlrpclib.ProtocolError:
+            return pickle.loads( ret )
+        except xmlrpc.client.ProtocolError:
             return []
 
 class MyXMLRPC(object):
@@ -55,7 +59,7 @@ class BasicBlock(object):
 
     def show(self):
         for i in self.ins:
-            print i
+            print(i)
 
 class Function(object):
     def __init__(self, name, start_ea, instructions, information):
@@ -90,7 +94,7 @@ def run_ida(idapath, wrapper_init_path, binpath):
     if pid == 0:
         wrapper_path = "-S" + wrapper_init_path
         l = [ idapath, "-A", wrapper_path, binpath ]
-        print l
+        print(l)
         compile = Popen(l, stdout=open('/dev/null', 'w'), stderr=STDOUT)
         stdout, stderr = compile.communicate()
 #        print stdout, stderr
@@ -107,7 +111,7 @@ class IDAPipe(object):
 
         while 1:
             try:
-                self.proxy = xmlrpclib.ServerProxy("http://localhost:9000/")
+                self.proxy = xmlrpc.client.ServerProxy("http://localhost:9000/")
                 self.proxy.is_connected()
                 break
             except:
@@ -161,7 +165,7 @@ class IDAPipe(object):
         for head in self.proxy.Heads(f_start, f_end):
             if self.proxy.isCode( self.proxy.GetFlags( head ) ):
                 refs = self.proxy.CodeRefsFrom(head, 0)
-                refs = set(filter(lambda x: x>=f_start and x<=f_end, refs))
+                refs = set([x for x in refs if x>=f_start and x<=f_end])
 
                 #print head, f_end, refs, self.proxy.GetMnem(head), self.proxy.GetOpnd(head, 0), self.proxy.GetOpnd(head, 1)
 
@@ -204,8 +208,8 @@ class IDAPipe(object):
         #print bb_addr, sorted(edges)
 
 def display_function(f):
-    print f, f.name, f.information
+    print(f, f.name, f.information)
 
     for i in f.basic_blocks:
-        print i
+        print(i)
         i.show()

@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
@@ -15,6 +17,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import str
+from builtins import range
+from builtins import object
 from androguard.core import bytecode
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
@@ -22,7 +30,7 @@ from androguard.util import read
 
 from androguard.core.resources import public
 
-import StringIO
+import io
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
@@ -188,10 +196,10 @@ class APK(object):
             self.zip = ChilkatZip(self.__raw)
         elif zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
         else:
             import zipfile
-            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
 
         if not skip_analysis:
             for i in self.zip.namelist():
@@ -307,7 +315,7 @@ class APK(object):
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
                     ARSCResTableConfig.default_config())[0][1]
-            except Exception, e:
+            except Exception as e:
                 androconf.warning("Exception selecting app icon: %s", e)
                 app_name = ""
         return app_name
@@ -351,7 +359,7 @@ class APK(object):
                     if dpi <= max_dpi and dpi > current_dpi:
                         app_icon = file_name
                         current_dpi = dpi
-            except Exception, e:
+            except Exception as e:
                 androconf.warning("Exception selecting app icon: %s", e)
 
         return app_icon
@@ -511,7 +519,7 @@ class APK(object):
 
             # Multidex support
             basename = "classes%d.dex"
-            for i in xrange(2, sys.maxint):
+            for i in range(2, sys.maxsize):
                 yield self.get_file(basename % i)
         except FileNotPresent:
             pass
@@ -558,7 +566,7 @@ class APK(object):
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(tag_name):
                 skip_this_item = False
-                for attr, val in attribute_filter.items():
+                for attr, val in list(attribute_filter.items()):
                     attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
                     if attr_val != val:
                         skip_this_item = True
@@ -710,7 +718,7 @@ class APK(object):
         aosp_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm in self.permission_module["AOSP_PERMISSIONS"].keys():
+            if perm in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 aosp_permissions.append(perm)
         return aosp_permissions
 
@@ -738,7 +746,7 @@ class APK(object):
         third_party_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm not in self.permission_module["AOSP_PERMISSIONS"].keys():
+            if perm not in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 third_party_permissions.append(perm)
         return third_party_permissions
 
@@ -748,7 +756,7 @@ class APK(object):
 
             :rtype: list of strings
         '''
-        return self.declared_permissions.keys()
+        return list(self.declared_permissions.keys())
 
     def get_declared_permissions_details(self):
         '''
@@ -914,53 +922,53 @@ class APK(object):
     def show(self):
         self.get_files_types()
 
-        print "FILES: "
+        print("FILES: ")
         for i in self.get_files():
             try:
-                print "\t", i, self.files[i], "%x" % self.files_crc32[i]
+                print("\t", i, self.files[i], "%x" % self.files_crc32[i])
             except KeyError:
-                print "\t", i, "%x" % self.files_crc32[i]
+                print("\t", i, "%x" % self.files_crc32[i])
 
-        print "DECLARED PERMISSIONS:"
+        print("DECLARED PERMISSIONS:")
         declared_permissions = self.get_declared_permissions()
         for i in declared_permissions:
-            print "\t", i
+            print("\t", i)
 
-        print "REQUESTED PERMISSIONS:"
+        print("REQUESTED PERMISSIONS:")
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
-            print "\t", i
+            print("\t", i)
 
-        print "MAIN ACTIVITY: ", self.get_main_activity()
+        print("MAIN ACTIVITY: ", self.get_main_activity())
 
-        print "ACTIVITIES: "
+        print("ACTIVITIES: ")
         activities = self.get_activities()
         for i in activities:
             filters = self.get_intent_filters("activity", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "SERVICES: "
+        print("SERVICES: ")
         services = self.get_services()
         for i in services:
             filters = self.get_intent_filters("service", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "RECEIVERS: "
+        print("RECEIVERS: ")
         receivers = self.get_receivers()
         for i in receivers:
             filters = self.get_intent_filters("receiver", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "PROVIDERS: ", self.get_providers()
+        print("PROVIDERS: ", self.get_providers())
 
 
 def show_Certificate(cert):
-    print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
+    print("Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
         cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(),
-        cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
-    print "Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
+        cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS()))
+    print("Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
         cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(),
-        cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
+        cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS()))
 
 ################################## AXML FORMAT ########################################
 # Translated from 
@@ -1016,7 +1024,7 @@ class StringBlock(object):
             if (size % 4) != 0:
                 androconf.warning("ooo")
 
-            for i in range(0, size / 4):
+            for i in range(0, size // 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
 
     def skipNullPadding(self, buff):
@@ -1100,15 +1108,15 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print "StringBlock(%x, %x, %x, %x, %x, %x" % (
+        print("StringBlock(%x, %x, %x, %x, %x, %x" % (
             self.start,
             self.header,
             self.header_size,
             self.chunkSize,
             self.stringsOffset,
-            self.flags)
+            self.flags))
         for i in range(0, len(self.m_stringOffsets)):
-            print i, repr(self.getString(i))
+            print(i, repr(self.getString(i)))
 
 
 ATTRIBUTE_IX_NAMESPACE_URI = 0
@@ -1173,7 +1181,7 @@ class AXMLParser(object):
         self.m_classAttribute = -1
         self.m_styleAttribute = -1
 
-    def next(self):
+    def __next__(self):
         self.doNext()
         return self.m_event
 
@@ -1206,7 +1214,7 @@ class AXMLParser(object):
                 if chunkSize < 8 or chunkSize % 4 != 0:
                     androconf.warning("Invalid chunk size")
 
-                for i in range(0, chunkSize / 4 - 2):
+                for i in range(0, (chunkSize // 4) - 2):
                     self.m_resourceIDs.append(
                         unpack('<L', self.buff.read(4))[0])
 
@@ -1347,7 +1355,7 @@ class AXMLParser(object):
         if self.m_event != START_TAG:
             return -1
 
-        return len(self.m_attributes) / ATTRIBUTE_LENGHT
+        return len(self.m_attributes) // ATTRIBUTE_LENGHT
 
     def getAttributePrefix(self, index):
         offset = self.getAttributeOffset(index)
@@ -1493,7 +1501,7 @@ class AXMLPrinter(object):
         self.buff = u''
 
         while True and self.axml.is_valid():
-            _type = self.axml.next()
+            _type = next(self.axml)
 
             if _type == START_DOCUMENT:
                 self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1793,15 +1801,15 @@ class ARSCParser(object):
         return ["", ""]
 
     def get_packages_names(self):
-        return self.packages.keys()
+        return list(self.packages.keys())
 
     def get_locales(self, package_name):
         self._analyse()
-        return self.values[package_name].keys()
+        return list(self.values[package_name].keys())
 
     def get_types(self, package_name, locale):
         self._analyse()
-        return self.values[package_name][locale].keys()
+        return list(self.values[package_name][locale].keys())
 
     def get_public_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -2049,7 +2057,7 @@ class ARSCParser(object):
                     config,
                     res_options[config])]
             else:
-                return res_options.items()
+                return list(res_options.items())
 
         except KeyError:
             return []
@@ -2079,7 +2087,7 @@ class ARSCParser(object):
             package_name = self.get_packages_names()[0]
         result = collections.defaultdict(list)
 
-        for res_type, configs in self.resource_configs[package_name].items():
+        for res_type, configs in list(self.resource_configs[package_name].items()):
             if res_type.get_package_name() == package_name and (
                     type_name is None or res_type.get_type() == type_name):
                 result[res_type.get_type()].extend(configs)

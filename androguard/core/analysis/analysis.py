@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
@@ -15,8 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import re, collections
-import threading, Queue, time
+import threading, queue, time
 
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
@@ -493,23 +499,23 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
-        print "METHOD", self.method.get_class_name(), self.method.get_name(
-        ), self.method.get_descriptor()
+        print("METHOD", self.method.get_class_name(), self.method.get_name(
+        ), self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
-            print "\t", i
+            print("\t", i)
             i.show()
-            print ""
+            print("")
 
     def show_methods(self):
-        print "\t #METHODS :"
+        print("\t #METHODS :")
         for i in self.__bb:
             methods = i.get_methods()
             for method in methods:
-                print "\t\t-->", method.get_class_name(), method.get_name(
-                ), method.get_descriptor()
+                print("\t\t-->", method.get_class_name(), method.get_name(
+                ), method.get_descriptor())
                 for context in methods[method]:
-                    print "\t\t\t |---|", context.details
+                    print("\t\t\t |---|", context.details)
 
     def get_tags(self):
         """
@@ -672,7 +678,7 @@ class ClassAnalysis(object):
         self.xreffrom = collections.defaultdict(set)
 
     def get_methods(self):
-        return self._methods.values()
+        return list(self._methods.values())
 
     def get_nb_methods(self):
         return len(self._methods)
@@ -766,9 +772,9 @@ class newVMAnalysis(object):
         debug("Creating XREF/DREF")
         started_at = time.time()
 
-        instances_class_name = self.classes.keys()
+        instances_class_name = list(self.classes.keys())
 
-        queue_classes = Queue.Queue()
+        queue_classes = queue.Queue()
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
             queue_classes.put(current_class)
