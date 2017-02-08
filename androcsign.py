@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 
 from androguard.core import androconf
@@ -75,7 +76,7 @@ def main(options, arguments):
         s.check_db(options.check)
 
     elif options.version != None:
-        print "Androcsign version %s" % androconf.ANDROGUARD_VERSION
+        print("Androcsign version %s" % androconf.ANDROGUARD_VERSION)
 
 
 if __name__ == "__main__":

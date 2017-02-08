@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 
 from optparse import OptionParser
@@ -97,7 +98,7 @@ def main(options, arguments):
 
         dx2 = analysis.VMAnalysis(d2)
 
-        print d1, dx1, d2, dx2
+        print(d1, dx1, d2, dx2)
         sys.stdout.flush()
 
         threshold = None
@@ -125,18 +126,18 @@ def main(options, arguments):
             ddm = DiffDalvikMethod(i, j, elb, eld)
             ddm.show()
 
-        print "NEW METHODS"
+        print("NEW METHODS")
         enew = el.get_new_elements()
         for i in enew:
             el.show_element(i, False)
 
-        print "DELETED METHODS"
+        print("DELETED METHODS")
         edel = el.get_deleted_elements()
         for i in edel:
             el.show_element(i)
 
     elif options.version != None:
-        print "Androdiff version %s" % androconf.ANDROGUARD_VERSION
+        print("Androdiff version %s" % androconf.ANDROGUARD_VERSION)
 
 
 if __name__ == "__main__":
