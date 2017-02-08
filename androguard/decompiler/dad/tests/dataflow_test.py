@@ -161,10 +161,12 @@ class DataflowTest(unittest.TestCase):
             'd': set([1, 7]),
             'ret': set([3, 8])
         }
-        # FIXME here is the same problem as with the other failing test.
+        # FIXME here is almost the same problem as with the other failing test.
         # Only that this test seems to run sometimes...
         # As the list is not able to be ordered in the same way,
         # This test will fail.
+        # We are using sets here as well and not lists, so maybe something
+        # else is wrong.
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
         self.assertDictEqual(analysis.def_to_loc, expected_def_to_loc)
