@@ -15,6 +15,17 @@ from androguard.decompiler.dad import basic_blocks
 
 class DataflowTest(unittest.TestCase):
 
+    def assertItemsEqual(self, a, b):
+        """
+        This method was renamed in python3.
+        To provide compability with python2,
+        we added this wrapper.
+        """
+        try:
+            return super(DataflowTest, self).assertItemsEqual(a, b)
+        except AttributeError as e:
+            return self.assertCountEqual(a, b)
+
     def _CreateMockIns(self, uses, lhs=None):
         mock_ins = mock.create_autospec(instruction.IRForm)
         mock_ins.get_used_vars.return_value = uses
@@ -95,7 +106,7 @@ class DataflowTest(unittest.TestCase):
             n8: [n9]
         }
         preds = collections.defaultdict(list)
-        for pred, lsucs in sucs.iteritems():
+        for pred, lsucs in sucs.items():
             for suc in lsucs:
                 preds[suc].append(pred)
 
@@ -150,6 +161,10 @@ class DataflowTest(unittest.TestCase):
             'd': set([1, 7]),
             'ret': set([3, 8])
         }
+        # FIXME here is the same problem as with the other failing test.
+        # Only that this test seems to run sometimes...
+        # As the list is not able to be ordered in the same way,
+        # This test will fail.
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
         self.assertDictEqual(analysis.def_to_loc, expected_def_to_loc)
@@ -225,6 +240,7 @@ class DataflowTest(unittest.TestCase):
             ('d', 7): [1],
             ('ret', 9): [3, 8]
         }
+
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
         self.assertItemsEqual(du, expected_du)
         for entry in du:
@@ -295,8 +311,18 @@ class DataflowTest(unittest.TestCase):
         }
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
-        self.assertEqual(du, expected_du)
         self.assertEqual(ud, expected_ud)
+
+        # FIXME the test will fail for python3 here, because DU
+        # is build up from the dict UD. 
+        # But as sets are unordered, the resulting lists in DU
+        # are unordered as well.
+        # For some reason the python2 variant is very consistent
+        # while py3 iterates over the set differently.
+        # I'm not sure if the order is important...
+        # Maybe need to change the test here or fix the code
+        #(e.g. use defaultdict(set) instead of defaultdict(list)
+        self.assertEqual(du, expected_du)
 
     def testGroupVariablesGCD(self):
         du = {

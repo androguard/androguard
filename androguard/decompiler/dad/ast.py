@@ -14,6 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''This file is a simplified version of writer.py that outputs an AST instead of source code.'''
+from builtins import zip
+from builtins import hex
+from builtins import str
+from builtins import map
+from builtins import range
+from builtins import object
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
@@ -235,7 +241,7 @@ def visit_arr_data(value):
     else:  # FIXME: other cases
         for i in range(value.size):
             tab.append(struct.unpack('<b', data[i])[0])
-    return array_initializer(map(literal_int, tab))
+    return array_initializer(list(map(literal_int, tab)))
 
 
 def write_inplace_if_possible(lhs, rhs):
@@ -347,7 +353,7 @@ def visit_expr(op):
     if isinstance(op, instruction.InvokeInstruction):
         base = op.var_map[op.base]
         params = [op.var_map[arg] for arg in op.args]
-        params = map(visit_expr, params)
+        params = list(map(visit_expr, params))
         if op.name == '<init>':
             if isinstance(base, instruction.ThisParam):
                 return method_invocation(op.triple, 'this', None, params)
@@ -495,7 +501,7 @@ class JSONWriter(object):
         if len(params) != len(m.params_type):
             assert ('abstract' in flags or 'native' in flags)
             assert (not params)
-            params = range(len(m.params_type))
+            params = list(range(len(m.params_type)))
 
         paramdecls = []
         for ptype, name in zip(m.params_type, params):
