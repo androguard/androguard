@@ -34,7 +34,7 @@ class DexTest(unittest.TestCase):
 class InstructionTest(unittest.TestCase):
 
     def testNOP(self):
-        instruction = dvm.Instruction10x(None, "\x00\x00")
+        instruction = dvm.Instruction10x(None, bytearray(b"\x00\x00"))
         self.assertEqual(instruction.get_name(), "nop")
 
 

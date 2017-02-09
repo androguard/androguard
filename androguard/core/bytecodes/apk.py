@@ -186,9 +186,9 @@ class APK(object):
         self.magic_file = magic_file
 
         if raw is True:
-            self.__raw = filename
+            self.__raw = bytearray(filename)
         else:
-            self.__raw = read(filename)
+            self.__raw = bytearray(read(filename))
 
         self.zipmodule = zipmodule
 
@@ -1092,7 +1092,7 @@ class StringBlock(object):
         return string
 
     def decodeLength(self, offset, sizeof_char):
-        length = ord(self.m_charbuff[offset])
+        length = self.m_charbuff[offset]
 
         sizeof_2chars = sizeof_char << 1
         fmt_chr = 'B' if sizeof_char == 1 else 'H'

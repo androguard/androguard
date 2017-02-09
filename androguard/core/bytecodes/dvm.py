@@ -195,19 +195,28 @@ html_escape_table = {
 }
 
 
+def get_sbyte(buff):
+    return unpack('=b', bytearray(buff.read(1)))[0]
+
+
+def get_byte(buff):
+    return unpack('=B', bytearray(buff.read(1)))[0]
+
+
+
 def readuleb128(buff):
-    result = ord(buff.read(1))
+    result = get_byte(buff)
     if result > 0x7f:
-        cur = ord(buff.read(1))
+        cur = get_byte(buff)
         result = (result & 0x7f) | ((cur & 0x7f) << 7)
         if cur > 0x7f:
-            cur = ord(buff.read(1))
+            cur = get_byte(buff)
             result |= (cur & 0x7f) << 14
             if cur > 0x7f:
-                cur = ord(buff.read(1))
+                cur = get_byte(buff)
                 result |= (cur & 0x7f) << 21
                 if cur > 0x7f:
-                    cur = ord(buff.read(1))
+                    cur = get_byte(buff)
                     if cur > 0x0f:
                         warning("possible error while decoding number")
                     result |= cur << 28
@@ -216,18 +225,18 @@ def readuleb128(buff):
 
 
 def readusleb128(buff):
-    result = ord(buff.read(1))
+    result = get_byte(buff)
     if result > 0x7f:
-        cur = ord(buff.read(1))
+        cur = get_byte(buff)
         result = (result & 0x7f) | ((cur & 0x7f) << 7)
         if cur > 0x7f:
-            cur = ord(buff.read(1))
+            cur = get_byte(buff)
             result |= (cur & 0x7f) << 14
             if cur > 0x7f:
-                cur = ord(buff.read(1))
+                cur = get_byte(buff)
                 result |= (cur & 0x7f) << 21
                 if cur > 0x7f:
-                    cur = ord(buff.read(1))
+                    cur = get_byte(buff)
                     result |= cur << 28
 
     return result
@@ -242,7 +251,7 @@ def readsleb128(buff):
     shift = 0
 
     for x in range(0, 5):
-        cur = ord(buff.read(1))
+        cur = get_byte(buff)
         result |= (cur & 0x7f) << shift
         shift += 7
 
@@ -255,10 +264,6 @@ def readsleb128(buff):
             break
 
     return result
-
-
-def get_sbyte(buff):
-    return unpack('=b', buff.read(1))[0]
 
 
 def writeuleb128(value):
@@ -1276,7 +1281,7 @@ class DebugInfoItem(object):
             self.parameter_names.append(readuleb128p1(buff))
 
         self.bytecodes = []
-        bcode = DBGBytecode(self.CM, unpack("=B", buff.read(1))[0])
+        bcode = DBGBytecode(self.CM, get_byte(buff))
         self.bytecodes.append(bcode)
 
         while bcode.get_op_value() != DBG_END_SEQUENCE:
@@ -1308,7 +1313,7 @@ class DebugInfoItem(object):
             else:  #bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END:
                 pass
 
-            bcode = DBGBytecode(self.CM, unpack("=B", buff.read(1))[0])
+            bcode = DBGBytecode(self.CM, get_byte(buff))
             self.bytecodes.append(bcode)
 
     def reload(self):
@@ -1485,7 +1490,7 @@ class EncodedValue(object):
     def __init__(self, buff, cm):
         self.CM = cm
 
-        self.val = unpack("=B", buff.read(1))[0]
+        self.val = get_byte(buff)
         self.value_arg = self.val >> 5
         self.value_type = self.val & 0x1f
 
@@ -1521,7 +1526,7 @@ class EncodedValue(object):
         elif self.value_type == VALUE_ANNOTATION:
             self.value = EncodedAnnotation(buff, cm)
         elif self.value_type == VALUE_BYTE:
-            self.value = buff.read(1)
+            self.value = get_byte(buff)
         elif self.value_type == VALUE_NULL:
             self.value = None
         elif self.value_type == VALUE_BOOLEAN:
@@ -1551,7 +1556,7 @@ class EncodedValue(object):
         ret = 0
         shift = 0
         for b in buf:
-            ret |= ord(b) << shift
+            ret |= b << shift
             shift += 8
 
         return ret, buf
@@ -1713,7 +1718,7 @@ class AnnotationItem(object):
 
         self.offset = buff.get_idx()
 
-        self.visibility = unpack("=B", buff.read(1))[0]
+        self.visibility = get_byte(buff)
         self.annotation = EncodedAnnotation(buff, cm)
 
     def get_visibility(self):
@@ -1811,7 +1816,7 @@ def utf8_to_string(buff, length):
     chars = []
 
     for _ in range(length):
-        first_char = ord(buff.read(1))
+        first_char = get_byte(buff)
         value = first_char >> 4
         if value in (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07):
             if first_char == 0:
@@ -1819,7 +1824,7 @@ def utf8_to_string(buff, length):
                         buff.get_idx())
             chars.append(chr(first_char))
         elif value in (0x0c, 0x0d):
-            second_char = ord(buff.read(1))
+            second_char = get_byte(buff)
             if (second_char & 0xc0) != 0x80:
                 warning('bad utf8 at offset: %x' % buff.get_idx())
             value = ((first_char & 0x1f) << 6) | (second_char & 0x3f)
@@ -1829,11 +1834,11 @@ def utf8_to_string(buff, length):
                     % buff.get_idx())
             chars.append(chr(value))
         elif value == 0x0e:
-            second_char = ord(buff.read(1))
+            second_char = get_byte(buff)
             if second_char & 0xc0 != 0x80:
                 warning('bad utf8 byte %x at offset %x' %
                         (second_char, buff.get_idx()))
-            third_char = ord(buff.read(1))
+            third_char = get_byte(buff)
             if third_char & 0xc0 != 0x80:
                 warning('bad utf8 byte %x at offset %x' %
                         (third_char, buff.get_idx()))
@@ -1846,7 +1851,8 @@ def utf8_to_string(buff, length):
             chars.append(chr(value))
         else:
             warning('at offset %x: illegal utf8' % buff.get_idx())
-    return ''.join(chars).encode('utf-8')
+    # FIXME correct handling of utf8?
+    return ''.join(chars)
 
 
 class StringDataItem(object):
@@ -1867,8 +1873,8 @@ class StringDataItem(object):
         self.utf16_size = readuleb128(buff)
 
         self.data = utf8_to_string(buff, self.utf16_size)
-        expected = buff.read(1)
-        if expected != '\x00':
+        expected = get_byte(buff)
+        if expected != 0:
             warning('\x00 expected at offset: %x, found: %x' %
                     (buff.get_idx(), expected))
 
@@ -4266,7 +4272,7 @@ class FillArrayData(object):
 
         buff += repr(data) + " | "
         for i in range(0, len(data)):
-            buff += "\\x%02x" % ord(data[i])
+            buff += "\\x%02x" % data[i]
 
         return buff
 
@@ -4293,7 +4299,7 @@ class FillArrayData(object):
         buff = self.get_name() + " "
 
         for i in range(0, len(self.data)):
-            buff += "\\x%02x" % ord(self.data[i])
+            buff += "\\x%02x" % self.data[i]
         return buff
 
     def show(self, pos):
@@ -6470,7 +6476,7 @@ class LinearSweepAlgorithm(object):
             obj = None
             classic_instruction = True
 
-            op_value = unpack('=B', insn[idx])[0]
+            op_value = insn[idx]
 
             #print "%x %x" % (op_value, idx)
 
@@ -6501,7 +6507,7 @@ class LinearSweepAlgorithm(object):
 
             # classical instructions
             if classic_instruction:
-                op_value = unpack('=B', insn[idx])[0]
+                op_value = insn[idx]
                 obj = get_instruction(cm, op_value, insn[idx:], self.odex)
 
             # emit instruction
@@ -7210,10 +7216,10 @@ class ClassManager(object):
         except UnicodeDecodeError:
             d = ""
             for i in s:
-                if ord(i) < 128:
+                if i < 128:
                     d += i
                 else:
-                    d += "%x" % ord(i)
+                    d += "%x" % i
             return d
 
     def get_odex_format(self):

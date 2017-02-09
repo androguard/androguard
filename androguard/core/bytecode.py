@@ -702,7 +702,7 @@ class MethodBC(object):
 class BuffHandle(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def size(self):
@@ -749,7 +749,7 @@ class Buff(object):
 class _Bytecode(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def read(self, size):
@@ -793,7 +793,7 @@ class _Bytecode(object):
 
     def save(self, filename):
         buff = self._save()
-        with open(filename, "w") as fd:
+        with open(filename, "wb") as fd:
             fd.write(buff)
 
 
