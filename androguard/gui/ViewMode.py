@@ -96,7 +96,6 @@ class ViewMode(Observable, object):
         data = self.dataModel.getData()
         dataOffset = self.dataModel.getOffset()
         cols, rows = self.getGeometry()
-        print(type(self.dataModel))
         if pageOffset:
             return bytearray(data[dataOffset:dataOffset + rows*cols*pageOffset])
 
