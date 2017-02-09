@@ -4167,7 +4167,7 @@ class Instruction(object):
         return None
 
     def get_hex(self):
-        s = binascii.hexlify(self.get_raw())
+        s = binascii.hexlify(self.get_raw()).decode("ascii")
         return " ".join(s[i:i+2] for i in range(0, len(s), 2))
 
 

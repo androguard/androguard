@@ -32,7 +32,7 @@ class FileLoadingThread(QtCore.QThread):
                 file_path, file_type = self.incoming_file
                 if file_type in ["APK", "DEX", "DEY"]:
                     ret = self.parent.session.add(file_path,
-                                                  open(file_path, 'r').read())
+                                                  open(file_path, 'rb').read())
                     self.file_loaded.emit(ret)
                 elif file_type == "SESSION":
                     self.parent.session = session.Load(file_path)

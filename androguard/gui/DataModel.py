@@ -17,7 +17,7 @@ class Observer(object):
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
-class DataModel(object, Observer):
+class DataModel(Observer):
     def __init__(self, data):
         self._dataOffset = 0
         self.rows = self.cols = 0
@@ -303,14 +303,7 @@ class ApkModel(DataModel):
         print(apkobj)
         self._filename = str(apkobj)
         self.raw = apkobj.get_raw()
-        #import StringIO
-#        self.data = bytearray(data)
-#        self.data = bytearray(data)
         self.data = MyByte(self.raw)
-        #self.data.__len__ = f
-        #self.data.__len__ = self.data.len
-        #print self.data.len
-        #self.data.__len__ = f
 
         super(ApkModel, self).__init__(self.data)
 
@@ -339,7 +332,7 @@ class DexClassModel(DataModel):
         super(DexClassModel, self).__init__(raw)
 
     def GetRawData(self, current_class):
-        buff = ""
+        buff = bytearray()
         self.ins_size = 0
         for method in current_class.get_methods():
             for ins in method.get_instructions():

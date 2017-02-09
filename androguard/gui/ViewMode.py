@@ -91,11 +91,12 @@ class ViewMode(Observable, object):
     # get what's on the screen
     # pageOffset - which page. None - current page
     #
-    # return bytearray containing what it is dysplayed currently on the screen
+    # return bytearray containing what it is displayed currently on the screen
     def getDisplayablePage(self, pageOffset=None):
         data = self.dataModel.getData()
         dataOffset = self.dataModel.getOffset()
         cols, rows = self.getGeometry()
+        print(type(self.dataModel))
         if pageOffset:
             return bytearray(data[dataOffset:dataOffset + rows*cols*pageOffset])
 
