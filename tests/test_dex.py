@@ -11,7 +11,7 @@ class DexTest(unittest.TestCase):
 
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex",
-                  "r") as fd:
+                  "rb") as fd:
             d = dvm.DalvikVMFormat(fd.read())
             self.assertTrue(d)
 

@@ -30,7 +30,7 @@ class ARSCTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
-                  "r") as fd:
+                  "rb") as fd:
             cls.apk = apk.APK(fd.read(), True)
 
     def testARSC(self):

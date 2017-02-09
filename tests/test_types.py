@@ -52,7 +52,7 @@ def test(got, expected):
 
 
 s = Session()
-with open(TEST_CASE, "r") as fd:
+with open(TEST_CASE, "rb") as fd:
     digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
 for method in d.get_methods():
