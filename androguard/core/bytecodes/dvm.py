@@ -7010,6 +7010,7 @@ class CodeItem(object):
     def show(self):
         print("CODE_ITEM")
         for i in self.code:
+            # FIXME show needs a methodanalysis object as argument
             i.show()
 
     def get_obj(self):
