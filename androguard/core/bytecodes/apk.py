@@ -196,10 +196,10 @@ class APK(object):
             self.zip = ChilkatZip(self.__raw)
         elif zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
         else:
             import zipfile
-            self.zip = zipfile.ZipFile(io.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
 
         if not skip_analysis:
             for i in self.zip.namelist():
