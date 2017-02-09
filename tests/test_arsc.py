@@ -42,7 +42,7 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(app_name, TEST_APP_NAME, "Couldn't deduce application/activity label")
 
     def testAppIcon(self):
-        for wanted_density, correct_path in TEST_ICONS.iteritems():
+        for wanted_density, correct_path in TEST_ICONS.items():
             app_icon_path = self.apk.get_app_icon(wanted_density)
             self.assertEqual(app_icon_path, correct_path,
                              "Incorrect icon path for requested density")
@@ -51,7 +51,7 @@ class ARSCTest(unittest.TestCase):
         arsc = self.apk.get_android_resources()
         configs = arsc.get_type_configs(None)
 
-        for res_type, test_configs in TEST_CONFIGS.items():
+        for res_type, test_configs in list(TEST_CONFIGS.items()):
             config_set = set(test_configs)
             self.assertIn(res_type, configs,
                           "resource type %s was not found" % res_type)
