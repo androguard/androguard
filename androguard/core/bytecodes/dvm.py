@@ -6904,7 +6904,7 @@ class DalvikCode(object):
 
     def get_raw(self):
         code_raw = self.code.get_raw()
-        self.insns_size = (len(code_raw) // 2)) + (len(code_raw) % 2)
+        self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = self.int_padding
         buff += pack("=H", self.registers_size) + \
