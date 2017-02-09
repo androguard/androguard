@@ -4706,11 +4706,11 @@ class Instruction21h(Instruction):
         self.formatted_operands = []
 
         if self.OP == 0x15:
-            self.formatted_operands.append(unpack('=f', '\x00\x00' + pack(
+            self.formatted_operands.append(unpack('=f', bytearray([0, 0]) + pack(
                 '=h', self.BBBB))[0])
         elif self.OP == 0x19:
             self.formatted_operands.append(unpack(
-                '=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', self.BBBB))[0])
+                '=d', bytearray([0, 0, 0, 0, 0, 0]) + pack('=h', self.BBBB))[0])
 
     def get_length(self):
         return 4
@@ -6418,12 +6418,11 @@ def get_instruction(cm, op_value, buff, odex=False):
     try:
         if not odex and (op_value >= 0xe3 and op_value <= 0xfe):
             return InstructionInvalid(cm, buff)
-
         try:
             return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
         except KeyError:
             return InstructionInvalid(cm, buff)
-    except:
+    except Exception as e:
         return Unresolved(cm, buff)
 
 

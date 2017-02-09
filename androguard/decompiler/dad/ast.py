@@ -188,7 +188,7 @@ def literal_string(s):
         elif ' ' <= c < '\x7f':
             buf.append(c)
         else:
-            buf.append('\u{:04x}'.format(ord(c)))
+            buf.append(r'\u{:04x}'.format(ord(c)))
     buf.append('"')
     return literal(''.join(buf), ('java/lang/String', 0))
 
