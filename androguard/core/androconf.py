@@ -222,20 +222,20 @@ def is_android(filename):
 def is_android_raw(raw):
     val = None
 
-    if raw[0:2] == "PK":
+    if raw[0:2] == b"PK":
         val = "APK"
-    elif raw[0:3] == "dex":
+    elif raw[0:3] == b"dex":
         val = "DEX"
-    elif raw[0:3] == "dey":
+    elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:7] == "\x7fELF\x01\x01\x01":
+    elif raw[0:7] == b"\x7fELF\x01\x01\x01":
         val = "ELF"
-    elif raw[0:4] == "\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00":
         val = "AXML"
-    elif raw[0:4] == "\x02\x00\x0C\x00":
-        val = "ARSC"
-    elif ('AndroidManifest.xml' in raw and
-          'META-INF/MANIFEST.MF' in raw):
+    elif raw[0:4] == b"\x02\x00\x0C\x00":
+        val = b"ARSC"
+    elif (b'AndroidManifest.xml' in raw and
+          b'META-INF/MANIFEST.MF' in raw):
         val = "APK"
 
     return val
