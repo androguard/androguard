@@ -54,9 +54,15 @@ Debian repos, thus must be installed from the sources:
 * `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
 * `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
 
-To build androguard and elsim from scratch, you need some additional packages.
+To build elsim, you need some additional packages:
 
 `apt install build-essential liblzma-dev libmuparser-dev libsnappy-dev libbz2-dev zlib1g-dev libsparsehash-dev`
+
+then use the makefile to build elsim:
+
+`make LIBS`
+
+Be aware that the current `setup.py` does not install elsim!
 
 and for building the documentation:
 
