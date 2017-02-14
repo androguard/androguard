@@ -34,15 +34,16 @@ Meanwhile you can build the documentation with `sphinx`!
 
 ##4. Building and Requirements
 
+### Using Debian based Distributions
 Assuming you are using Debian, most of the packages are available from standard repos.
 
 For androguard:
 
-`apt install python python-pyqt5 python-pyperclip python-networkx ipython`
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython python-future`
 
 You should be able to use python3 as well:
 
-`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3`
+`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3 python3-future`
 
 
 For elsim:
@@ -69,7 +70,7 @@ then use the makefile to build elsim:
 
 Be aware that the current `setup.py` does not install elsim!
 
-and for building the documentation:
+and for building the documentation (optional):
 
 `apt install python-sphinx python-sphinxcontrib.programoutput`
 
@@ -79,7 +80,23 @@ To install androguard, just use:
 
 The documentation can be build using:
 
-`make DOCS`
+`python setup.py build_sphinx`
+
+### Using Windows
+
+Using Anaconda with python3, most of the used packages are pre-installed.
+
+You can simply run
+
+`python setup.py install`
+
+to install androguard.
+
+and
+
+`python setup.py build_sphinx`
+
+to create the documentation.
 
 
 ##5. Licenses

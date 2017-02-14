@@ -23,4 +23,4 @@ setup(
              'androsim.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['distribute', 'pyperclip', 'future'],)
+    install_requires=['distribute', 'pyperclip', 'future', 'sphinx', 'sphinxcontrib-programoutput'],)
