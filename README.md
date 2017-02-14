@@ -40,6 +40,11 @@ For androguard:
 
 `apt install python python-pyqt5 python-pyperclip python-networkx ipython`
 
+You should be able to use python3 as well:
+
+`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3`
+
+
 For elsim:
 
 `apt install python libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
