@@ -175,7 +175,7 @@ class HighlightASCII(PageDecorator):
 
         off = self.dataModel.getOffset()
 
-        Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? _<>]){4,}', page)]
+        Match = [(m.start(), m.end()) for m in re.finditer(b'([a-zA-Z0-9\\-\\\\.%*:/? _<>]){4,}', page)]
         for s, e in Match:
             for i in range(e-s):
                 idx = off + s + i
