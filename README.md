@@ -36,11 +36,17 @@ Meanwhile you can build the documentation with `sphinx`!
 
 Assuming you are using Debian, most of the packages are available from standard repos.
 
-For androguard and elsim:
+For androguard:
 
-`apt install python python-pyqt5 python-pyperclip python-networkx ipython libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython`
 
-There are some additional dependencies, which are optional. They are unfortunately not in the
+For elsim:
+
+`apt install python libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+
+Elsim requires androguard, but androguard can be installed without elsim.
+
+There are some optional dependencies for androguard. They are unfortunately not in the
 Debian repos, thus must be installed from the sources:
 
 * `elfesteem` can be found here: [elfesteem](https://github.com/serpilliere/elfesteem)
@@ -55,6 +61,14 @@ To build androguard and elsim from scratch, you need some additional packages.
 and for building the documentation:
 
 `apt install python-sphinx python-sphinxcontrib.programoutput`
+
+To install androguard, just use:
+
+`python setup.py install`
+
+The documentation can be build using:
+
+`make DOCS`
 
 
 ##5. Licenses
