@@ -679,15 +679,21 @@ class SVs(object):
         return self.__value.__str__()
 
 
-def object_to_str(obj):
+def object_to_bytes(obj):
+    """
+    Convert a object to a bytearray or call get_raw() of the object
+    if no useful type was found.
+    """
     if isinstance(obj, str):
-        return obj
+        return bytearray(obj, "UTF-8")
     elif isinstance(obj, bool):
-        return ""
+        return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
     elif obj == None:
-        return ""
+        return bytearray()
+    elif isinstance(obj, bytearray):
+        return obj
     else:
         #print type(obj), obj
         return obj.get_raw()

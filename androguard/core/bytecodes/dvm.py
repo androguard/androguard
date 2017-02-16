@@ -1573,16 +1573,16 @@ class EncodedValue(object):
 
     def get_raw(self):
         if self.raw_value == None:
-            return pack("=B", self.val) + bytecode.object_to_str(self.value)
+            return pack("=B", self.val) + bytecode.object_to_bytes(self.value)
         else:
-            return pack("=B", self.val) + bytecode.object_to_str(self.raw_value)
+            return pack("=B", self.val) + bytecode.object_to_bytes(self.raw_value)
 
     def get_length(self):
         if self.raw_value == None:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_str(
+            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
                 self.value))
         else:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_str(
+            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
                 self.raw_value))
 
 
