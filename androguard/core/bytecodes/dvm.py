@@ -269,7 +269,7 @@ def readsleb128(buff):
 def writeuleb128(value):
     remaining = value >> 7
 
-    buff = ""
+    buff = bytearray()
     while remaining > 0:
         buff += pack("=B", ((value & 0x7f) | 0x80))
 
@@ -284,7 +284,7 @@ def writesleb128(value):
     remaining = value >> 7
     hasMore = True
     end = 0
-    buff = ""
+    buff = bytearray()
 
     if (value & (-sys.maxsize - 1)) == 0:
         end = 0
