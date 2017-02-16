@@ -15,3 +15,7 @@ elsim/elsim/similarity/libsimilarity/snappy/test_snappy
 elsim/elsim/similarity/libsimilarity/vcblocksort/test_vcblocksort
 elsim/elsim/similarity/libsimilarity/xz/test_xz
 elsim/elsim/similarity/libsimilarity/z/test_z
+
+androguard.egg-info/
+build/
+dist/

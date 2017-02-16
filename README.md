@@ -34,13 +34,25 @@ Meanwhile you can build the documentation with `sphinx`!
 
 ##4. Building and Requirements
 
+### Using Debian based Distributions
 Assuming you are using Debian, most of the packages are available from standard repos.
 
-For androguard and elsim:
+For androguard:
 
-`apt install python python-pyqt5 python-pyperclip python-networkx ipython libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython python-future`
 
-There are some additional dependencies, which are optional. They are unfortunately not in the
+You should be able to use python3 as well:
+
+`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3 python3-future`
+
+
+For elsim:
+
+`apt install python libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+
+Elsim requires androguard, but androguard can be installed without elsim.
+
+There are some optional dependencies for androguard. They are unfortunately not in the
 Debian repos, thus must be installed from the sources:
 
 * `elfesteem` can be found here: [elfesteem](https://github.com/serpilliere/elfesteem)
@@ -48,13 +60,43 @@ Debian repos, thus must be installed from the sources:
 * `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
 * `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
 
-To build androguard and elsim from scratch, you need some additional packages.
+To build elsim, you need some additional packages:
 
 `apt install build-essential liblzma-dev libmuparser-dev libsnappy-dev libbz2-dev zlib1g-dev libsparsehash-dev`
 
-and for building the documentation:
+then use the makefile to build elsim:
+
+`make LIBS`
+
+Be aware that the current `setup.py` does not install elsim!
+
+and for building the documentation (optional):
 
 `apt install python-sphinx python-sphinxcontrib.programoutput`
+
+To install androguard, just use:
+
+`python setup.py install`
+
+The documentation can be build using:
+
+`python setup.py build_sphinx`
+
+### Using Windows
+
+Using Anaconda with python3, most of the used packages are pre-installed.
+
+You can simply run
+
+`python setup.py install`
+
+to install androguard.
+
+and
+
+`python setup.py build_sphinx`
+
+to create the documentation.
 
 
 ##5. Licenses
