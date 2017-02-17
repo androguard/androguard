@@ -7007,11 +7007,16 @@ class CodeItem(object):
         for i in self.code:
             i.reload()
 
-    def show(self):
+    def show(self, m_a=None):
+        # FIXME workaround for showing the MAP_ITEMS
+        # if m_a is none, we use get_raw.
+        # Otherwise the real code is printed...
         print("CODE_ITEM")
-        for i in self.code:
-            # FIXME show needs a methodanalysis object as argument
-            i.show()
+        if m_a is None:
+            print(self.get_raw())
+        else:
+            for i in self.code:
+                i.show(m_a)
 
     def get_obj(self):
         return [i for i in self.code]
@@ -7551,6 +7556,8 @@ class MapList(object):
         bytecode._Print("MAP_LIST SIZE", self.size)
         for i in self.map_item:
             if i.item != self:
+                # FIXME this does not work for CodeItems!
+                # as we do not have the method analysis here...
                 i.show()
 
     def get_obj(self):
