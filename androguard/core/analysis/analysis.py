@@ -916,7 +916,7 @@ class newVMAnalysis(object):
                 except dvm.InvalidInstruction as e:
                     warning("Invalid instruction %s" % str(e))
             queue_classes.task_done()
-                                
+
     def get_method(self, method):
         for vm in self.vms:
             if method in vm.get_methods():
