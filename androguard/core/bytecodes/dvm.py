@@ -665,7 +665,7 @@ class AnnotationSetRefItem(object):
 
     def show(self):
         bytecode._PrintSubBanner("Annotation Set Ref Item")
-        bytecode._PrintDefault("annotation_off=0x%x\n" % self.annotation_off)
+        bytecode._PrintDefault("annotation_off=0x%x\n" % self.annotations_off)
 
     def get_obj(self):
         if self.annotations_off != 0:
