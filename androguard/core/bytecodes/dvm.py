@@ -2450,7 +2450,7 @@ class MethodIdItem(object):
     def _reload(self):
        self.class_idx_value = self.CM.get_type(self.class_idx)
        self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-       self.name_idx_value = self.CM.get_string(self.name_idx)        
+       self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2495,7 +2495,7 @@ class MethodIdItem(object):
         """
         if self.proto_idx_value == None:
             self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-        
+
         return self.proto_idx_value
 
     def get_descriptor(self):
@@ -6765,7 +6765,7 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.int_padding = bytearray() 
+        self.int_padding = bytearray()
         off = buff.get_idx()
         while off % 4 != 0:
             self.int_padding.append(0)
