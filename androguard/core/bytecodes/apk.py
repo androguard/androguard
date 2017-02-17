@@ -879,7 +879,7 @@ class APK(object):
         """
             Return the name of the first signature file found.
         """
-        return self.get_signature_names_list()[0]
+        return self.get_signature_names()[0]
 
     def get_signature_names(self):
         """
@@ -901,7 +901,7 @@ class APK(object):
         """
             Return the data of the first signature file found.
         """
-        return self.get_signature_list()[0]
+        return self.get_signatures()[0]
 
     def get_signatures(self):
         """
