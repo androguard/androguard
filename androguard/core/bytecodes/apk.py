@@ -40,6 +40,12 @@ import sys
 
 from xml.dom import minidom
 
+# Used for reading Certificates
+from pyasn1.codec.der.decoder import decode
+from pyasn1.codec.der.encoder import encode
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
 # 0: chilkat
@@ -802,14 +808,20 @@ class APK(object):
         """
             Return a certificate object by giving the name in the apk file
         """
-        import chilkat
+        pkcs7message = self.get_file(filename)
 
-        cert = chilkat.CkCert()
-        f = self.get_file(filename)
-        data = chilkat.CkByteData()
-        data.append2(f, len(f))
-        success = cert.LoadFromBinary(data)
-        return success, cert
+        message, _ = decode(pkcs7message)
+        cert = encode(message[1][3])
+        # Remove the first identifier
+        # byte 0 == identifier, skip
+        # byte 1 == length. If byte1 & 0x80 > 1, we have long format
+        #                   The length of to read bytes is then coded
+        #                   in byte1 & 0x7F
+        cert = cert[2 + (cert[1] & 0x7F) if cert[1] & 0x80 > 1 else 2:]
+    
+        certificate = x509.load_der_x509_certificate(cert, default_backend())
+    
+        return certificate
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
@@ -963,12 +975,11 @@ class APK(object):
 
 
 def show_Certificate(cert):
-    print("Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
-        cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(),
-        cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS()))
-    print("Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
-        cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(),
-        cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS()))
+    """
+        Print Issuer and Subject of an X509 Certificate.
+    """
+    print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.issuer]))
+    print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.subject]))
 
 ################################## AXML FORMAT ########################################
 # Translated from 
