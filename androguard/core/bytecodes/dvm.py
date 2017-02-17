@@ -628,7 +628,7 @@ class AnnotationSetItem(object):
         return pack("=I", self.size)
 
     def get_raw(self):
-        return self.get_obj() + ''.join(i.get_raw()
+        return self.get_obj() + b''.join(i.get_raw()
                                         for i in self.annotation_off_item)
 
     def get_length(self):
@@ -724,7 +724,7 @@ class AnnotationSetRefList(object):
         return [i for i in self.list]
 
     def get_raw(self):
-        return pack("=I", self.size) + ''.join(i.get_raw() for i in self.list)
+        return pack("=I", self.size) + b''.join(i.get_raw() for i in self.list)
 
     def get_length(self):
         return len(self.get_raw())
@@ -1030,9 +1030,9 @@ class AnnotationsDirectoryItem(object):
 
     def get_raw(self):
         return self.get_obj() + \
-               ''.join(i.get_raw() for i in self.field_annotations)  +      \
-               ''.join(i.get_raw() for i in self.method_annotations) +     \
-               ''.join(i.get_raw() for i in self.parameter_annotations)
+               b''.join(i.get_raw() for i in self.field_annotations)  +      \
+               b''.join(i.get_raw() for i in self.method_annotations) +     \
+               b''.join(i.get_raw() for i in self.parameter_annotations)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -1179,7 +1179,7 @@ class TypeList(object):
         return self.pad + pack("=I", self.size)
 
     def get_raw(self):
-        return self.get_obj() + ''.join(i.get_raw() for i in self.list)
+        return self.get_obj() + b''.join(i.get_raw() for i in self.list)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -1356,8 +1356,8 @@ class DebugInfoItem(object):
     def get_raw(self):
         return [ bytecode.Buff( self.__offset, writeuleb128( self.line_start ) + \
                                                             writeuleb128( self.parameters_size ) + \
-                                                            ''.join(writeuleb128(i) for i in self.parameter_names) + \
-                                                            ''.join(i.get_raw() for i in self.bytecodes) ) ]
+                                                            b''.join(writeuleb128(i) for i in self.parameter_names) + \
+                                                            b''.join(i.get_raw() for i in self.bytecodes) ) ]
 
     def get_off(self):
         return self.offset
@@ -1467,7 +1467,7 @@ class EncodedArray(object):
         return writeuleb128(self.size)
 
     def get_raw(self):
-        return self.get_obj() + ''.join(i.get_raw() for i in self.values)
+        return self.get_obj() + b''.join(i.get_raw() for i in self.values)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -1691,7 +1691,7 @@ class EncodedAnnotation(object):
         return [i for i in self.elements]
 
     def get_raw(self):
-        return writeuleb128(self.type_idx) + writeuleb128(self.size) + ''.join(
+        return writeuleb128(self.type_idx) + writeuleb128(self.size) + b''.join(
             i.get_raw() for i in self.elements)
 
     def get_length(self):
@@ -2075,7 +2075,7 @@ class TypeHIdItem(object):
         return [i for i in self.type]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.type)
+        return b''.join(i.get_raw() for i in self.type)
 
     def get_length(self):
         length = 0
@@ -2236,7 +2236,7 @@ class ProtoHIdItem(object):
         return [i for i in self.proto]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.proto)
+        return b''.join(i.get_raw() for i in self.proto)
 
     def get_length(self):
         length = 0
@@ -2413,7 +2413,7 @@ class FieldHIdItem(object):
         return [i for i in self.elem]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.elem)
+        return b''.join(i.get_raw() for i in self.elem)
 
     def get_length(self):
         length = 0
@@ -2604,7 +2604,7 @@ class MethodHIdItem(object):
         return [i for i in self.methods]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.methods)
+        return b''.join(i.get_raw() for i in self.methods)
 
     def get_length(self):
         length = 0
@@ -3403,10 +3403,10 @@ class ClassDataItem(object):
                  writeuleb128( self.instance_fields_size ) + \
                  writeuleb128( self.direct_methods_size ) + \
                  writeuleb128( self.virtual_methods_size ) + \
-                 ''.join(i.get_raw() for i in self.static_fields) + \
-                 ''.join(i.get_raw() for i in self.instance_fields) + \
-                 ''.join(i.get_raw() for i in self.direct_methods) + \
-                 ''.join(i.get_raw() for i in self.virtual_methods)
+                 b''.join(i.get_raw() for i in self.static_fields) + \
+                 b''.join(i.get_raw() for i in self.instance_fields) + \
+                 b''.join(i.get_raw() for i in self.direct_methods) + \
+                 b''.join(i.get_raw() for i in self.virtual_methods)
 
         return buff
 
@@ -3786,7 +3786,7 @@ class ClassHDefItem(object):
         return [i for i in self.class_def]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.class_def)
+        return b''.join(i.get_raw() for i in self.class_def)
 
     def get_length(self):
         length = 0
@@ -3904,7 +3904,7 @@ class EncodedCatchHandler(object):
             bytecode._PrintDefault("catch_all_addr=%x\n" % self.catch_all_addr)
 
     def get_raw(self):
-        buff = writesleb128(self.size) + ''.join(i.get_raw()
+        buff = writesleb128(self.size) + b''.join(i.get_raw()
                                                  for i in self.handlers)
 
         if self.size <= 0:
@@ -3976,7 +3976,7 @@ class EncodedCatchHandlerList(object):
         return writeuleb128(self.size)
 
     def get_raw(self):
-        return self.get_obj() + ''.join(i.get_raw() for i in self.list)
+        return self.get_obj() + b''.join(i.get_raw() for i in self.list)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -4443,8 +4443,8 @@ class SparseSwitch(object):
         return self.format_general_size + (self.size * calcsize('<L')) * 2
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.size) + ''.join(pack(
-            "=l", i) for i in self.keys) + ''.join(pack("=l", i)
+        return pack("=H", self.ident) + pack("=H", self.size) + b''.join(pack(
+            "=l", i) for i in self.keys) + b''.join(pack("=l", i)
                                                    for i in self.targets)
 
     def get_hex(self):
@@ -4576,7 +4576,7 @@ class PackedSwitch(object):
 
     def get_raw(self):
         return pack("=H", self.ident) + pack("=H", self.size) + pack(
-            "=i", self.first_key) + ''.join(pack("=l", i) for i in self.targets)
+            "=i", self.first_key) + b''.join(pack("=l", i) for i in self.targets)
 
     def get_hex(self):
         s = binascii.hexlify(self.get_raw())
@@ -6683,7 +6683,7 @@ class DCode(object):
 
             :rtype: string
         """
-        return ''.join(i.get_raw() for i in self.get_instructions())
+        return b''.join(i.get_raw() for i in self.get_instructions())
 
     def get_length(self):
         """
@@ -6765,10 +6765,10 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.int_padding = ""
+        self.int_padding = bytearray() 
         off = buff.get_idx()
         while off % 4 != 0:
-            self.int_padding += '\00'
+            self.int_padding.append(0)
             off += 1
         buff.set_idx(off)
 
@@ -6924,7 +6924,7 @@ class DalvikCode(object):
         #     buff += pack("=H", self.padding)
 
         if self.tries_size > 0:
-            buff += ''.join(i.get_raw() for i in self.tries)
+            buff += b''.join(i.get_raw() for i in self.tries)
             buff += self.handlers.get_raw()
 
         return buff
@@ -7022,7 +7022,7 @@ class CodeItem(object):
         return [i for i in self.code]
 
     def get_raw(self):
-        return ''.join(i.get_raw() for i in self.code)
+        return b''.join(i.get_raw() for i in self.code)
 
     def get_length(self):
         length = 0
@@ -7564,7 +7564,7 @@ class MapList(object):
         return [x.get_obj() for x in self.map_item]
 
     def get_raw(self):
-        return pack("=I", self.size) + ''.join(x.get_raw()
+        return pack("=I", self.size) + b''.join(x.get_raw()
                                                for x in self.map_item)
 
     def get_class_manager(self):
