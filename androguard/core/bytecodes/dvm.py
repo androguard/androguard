@@ -2837,7 +2837,7 @@ class EncodedField(object):
             bytecode._PrintSubBanner("XREF Read")
             xrefs_from = f_a.get_xref_read()
             for ref_class, ref_method in xrefs_from:
-                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault(ref_method.get_name())
                 bytecode._PrintDefault('\n')
 
             bytecode._PrintDefault('\n')
@@ -2845,7 +2845,7 @@ class EncodedField(object):
             bytecode._PrintSubBanner("XREF Write")
             xrefs_to = f_a.get_xref_write()
             for ref_class, ref_method in xrefs_to:
-                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault(ref_method.get_name())
                 bytecode._PrintDefault('\n')
 
     def __str__(self):
@@ -3043,7 +3043,7 @@ class EncodedMethod(object):
             bytecode._PrintSubBanner("XREF From")
             xrefs_from = m_a.get_xref_from()
             for ref_class, ref_method, _ in xrefs_from:
-                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault(ref_method.get_name())
                 bytecode._PrintDefault('\n')
 
             bytecode._PrintDefault('\n')
@@ -3051,7 +3051,7 @@ class EncodedMethod(object):
             bytecode._PrintSubBanner("XREF To")
             xrefs_to = m_a.get_xref_to()
             for ref_class, ref_method, _ in xrefs_to:
-                bytecode._PrintDefault(ref_method)
+                bytecode._PrintDefault(ref_method.get_name())
                 bytecode._PrintDefault('\n')
 
     def show_notes(self):
@@ -3650,7 +3650,7 @@ class ClassDefItem(object):
                 for ref_kind, ref_method, ref_offset in xrefs_from[ref_class]:
                     bytecode._PrintDefault(ref_kind_map[ref_kind])
                     bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method)
+                    bytecode._PrintDefault(ref_method.get_name())
                     bytecode._PrintDefault(' @ 0x%x' % ref_offset)
                     bytecode._PrintDefault('\n')
 
@@ -3666,7 +3666,7 @@ class ClassDefItem(object):
                 for ref_kind, ref_method, ref_offset in xrefs_to[ref_class]:
                     bytecode._PrintDefault(ref_kind_map[ref_kind])
                     bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method)
+                    bytecode._PrintDefault(ref_method.get_name())
                     bytecode._PrintDefault(' @ 0x%x' % ref_offset)
                     bytecode._PrintDefault('\n')
 
