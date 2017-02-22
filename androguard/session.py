@@ -197,8 +197,10 @@ class Session(object):
                 dx = dex_file[1]
             elif len(self.analyzed_apk[digest[0]][1:]) > 1:
                 d = []
+                dx = []
                 for dex_file in self.analyzed_apk[digest[0]][1:]:
                     d.append(self.analyzed_dex[dex_file][0])
+                    dx.append(self.analyzed_dex[dex_file][1])
             return a, d, dx
         return None
 
