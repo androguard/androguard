@@ -39,14 +39,15 @@ Assuming you are using Debian, most of the packages are available from standard 
 
 For androguard:
 
-`apt install python python-pyqt5 python-pyperclip python-networkx ipython python-future`
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython python-future python-pyasn1 python-cryptography python-magic python-pydot`
 
 You should be able to use python3 as well:
 
-`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3 python3-future`
+`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3 python3-future python3-pyasn1 python3-cryptography python3-magic python3-pydot`
 
+If you are installing the libraries using `pip`, make sure you download the correct packages. For example, there are a lot of implemenations of the `magic` library. Get the one, that is shipped with the file command (See [Fine Free File Command](http://www.darwinsys.com/file/)).
 
-For elsim:
+For elsim (currently not working with python3):
 
 `apt install python libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
 
@@ -66,13 +67,19 @@ To build elsim, you need some additional packages:
 
 then use the makefile to build elsim:
 
-`make LIBS`
+`make`
 
 Be aware that the current `setup.py` does not install elsim!
 
 and for building the documentation (optional):
 
 `apt install python-sphinx python-sphinxcontrib.programoutput`
+
+or
+
+`apt install python3-sphinx python3-sphinxcontrib.programoutput`
+
+when using python3.
 
 To install androguard, just use:
 
@@ -82,9 +89,18 @@ The documentation can be build using:
 
 `python setup.py build_sphinx`
 
+For running the unit tests, the `mock` library is required:
+
+`apt install python-mock` or `apt install python3-mock`
+
+
 ### Using Windows
 
 Using Anaconda with python3, most of the used packages are pre-installed.
+
+Additional packages, that might be required are:
+
+`pyperclip sphinxcontrib-programoutput future pydot`
 
 You can simply run
 
