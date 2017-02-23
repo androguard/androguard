@@ -37,6 +37,7 @@ from zlib import crc32
 import re
 import collections
 import sys
+import binascii
 
 from xml.dom import minidom
 
@@ -980,9 +981,9 @@ def show_Certificate(cert):
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
     """
     for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
-        print("{}: {}".format(h.name, cert.fingerprint(h())))
-    print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.issuer]))
-    print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.subject]))
+        print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
+    print("Issuer:", "".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.issuer]))
+    print("Subject:", "".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.subject]))
 
 ################################## AXML FORMAT ########################################
 # Translated from 
