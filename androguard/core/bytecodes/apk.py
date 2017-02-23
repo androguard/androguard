@@ -45,6 +45,7 @@ from pyasn1.codec.der.decoder import decode
 from pyasn1.codec.der.encoder import encode
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
@@ -976,8 +977,10 @@ class APK(object):
 
 def show_Certificate(cert):
     """
-        Print Issuer and Subject of an X509 Certificate.
+        Print Fingerprints, Issuer and Subject of an X509 Certificate.
     """
+    for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
+        print("{}: {}".format(h.name, cert.fingerprint(h())))
     print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.issuer]))
     print("".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.subject]))
 
