@@ -220,9 +220,14 @@ def is_android(filename):
 
 
 def is_android_raw(raw):
+    """
+        Returns a string that describes the type of file, for common Android
+        specific formats
+    """
     val = None
 
-    if raw[0:2] == b"PK":
+    if raw[0:2] == b"PK" and (b'AndroidManifest.xml' in raw and
+          b'META-INF/MANIFEST.MF' in raw):
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"
@@ -234,15 +239,9 @@ def is_android_raw(raw):
         val = "AXML"
     elif raw[0:4] == b"\x02\x00\x0C\x00":
         val = b"ARSC"
-    elif (b'AndroidManifest.xml' in raw and
-          b'META-INF/MANIFEST.MF' in raw):
-        val = "APK"
 
     return val
 
-
-def is_valid_android_raw(raw):
-    return raw.find("classes.dex") != -1
 
 # from scapy
 log_andro = logging.getLogger("andro")

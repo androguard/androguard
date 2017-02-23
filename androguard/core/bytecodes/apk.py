@@ -458,8 +458,7 @@ class APK(object):
         if ("Zip" in orig) or ("DBase" in orig):
             val = androconf.is_android_raw(buffer)
             if val == "APK":
-                if androconf.is_valid_android_raw(buffer):
-                    return "Android application package file"
+                return "Android application package file"
             elif val == "AXML":
                 return "Android's binary XML"
 
