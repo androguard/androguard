@@ -974,15 +974,38 @@ class APK(object):
 
         print("PROVIDERS: ", self.get_providers())
 
+        print("CERTIFICATES:")
+        for c in self.get_signature_names():
+            show_Certificate(self.get_certificate(c))
 
-def show_Certificate(cert):
+
+def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
+
+        :param cert: X509 Certificate to print
+        :param short: Print in shortform for DN (Default: False)
+
+        :type cert: :class:`cryptography.x509.Certificate`
+        :type short: Boolean
     """
+    
+    # For the shortform, we save have a lookup table
+    # See RFC4514 for more details
+    sf = {
+          "countryName": "C",
+          "stateOrProvinceName": "ST",
+          "localityName": "L",
+          "organizationalUnitName": "OU",
+          "organizationName": "O",
+          "commonName": "CN",
+          "emailAddress": "E",
+         }
+    
     for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
-    print("Issuer:", "".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.issuer]))
-    print("Subject:", "".join(["{}={}, ".format(attr.oid._name, attr.value) for attr in cert.subject]))
+    print("Issuer:", ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in cert.issuer]))
+    print("Subject:", ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in cert.subject]))
 
 ################################## AXML FORMAT ########################################
 # Translated from 
