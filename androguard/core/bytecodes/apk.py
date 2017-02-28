@@ -979,6 +979,33 @@ class APK(object):
             show_Certificate(self.get_certificate(c))
 
 
+def get_Name(name, short=False):
+    """
+        Return the distinguished name of an X509 Certificate
+        
+        :param name: Name object to return the DN from
+        :param short: Use short form (Default: False)
+
+        :type name: :class:`cryptography.x509.Name`
+        :type short: Boolean
+
+        :rtype: str
+    """
+    
+    # For the shortform, we have a lookup table
+    # See RFC4514 for more details
+    sf = {
+          "countryName": "C",
+          "stateOrProvinceName": "ST",
+          "localityName": "L",
+          "organizationalUnitName": "OU",
+          "organizationName": "O",
+          "commonName": "CN",
+          "emailAddress": "E",
+         }
+    return ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in name])
+    
+    
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -990,22 +1017,10 @@ def show_Certificate(cert, short=False):
         :type short: Boolean
     """
     
-    # For the shortform, we save have a lookup table
-    # See RFC4514 for more details
-    sf = {
-          "countryName": "C",
-          "stateOrProvinceName": "ST",
-          "localityName": "L",
-          "organizationalUnitName": "OU",
-          "organizationName": "O",
-          "commonName": "CN",
-          "emailAddress": "E",
-         }
-    
     for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
-    print("Issuer:", ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in cert.issuer]))
-    print("Subject:", ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in cert.subject]))
+    print("Issuer: {}".format(get_Name(cert.issuer, short=short)))
+    print("Subject: {}".format(get_Name(cert.subject, short=short)))
 
 ################################## AXML FORMAT ########################################
 # Translated from 
