@@ -688,8 +688,9 @@ class Writer(object):
 
 
 def string(s):
+    # FIXME this string conversion seems to be problematic
     ret = ['"']
-    for c in s.decode('utf8'):
+    for c in s:
         if c >= ' ' and c < '\x7f':
             if c == "'" or c == '"' or c == '\\':
                 ret.append('\\')
@@ -706,4 +707,4 @@ def string(s):
         ret.append('%x' % ((i >> 4) & 0x0f))
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
-    return ''.join(ret).encode('utf8')
+    return ''.join(ret)

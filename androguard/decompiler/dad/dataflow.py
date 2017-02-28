@@ -52,7 +52,7 @@ class BasicReachDef(object):
                 self.DB[node].add(max(values))
 
     def run(self):
-        nodes = self.g.rpo[:]
+        nodes = self.g.rpo
         while nodes:
             node = nodes.pop(0)
             newR = set()
@@ -124,7 +124,7 @@ def dead_code_elimination(graph, du, ud):
     instructions.
     '''
     for node in graph.rpo:
-        for i, ins in node.get_loc_with_ins()[:]:
+        for i, ins in node.get_loc_with_ins():
             reg = ins.get_lhs()
             if reg is not None:
                 # If the definition is not used, we check that the instruction
@@ -204,7 +204,7 @@ def register_propagation(graph, du, ud):
     while change:
         change = False
         for node in graph.rpo:
-            for i, ins in node.get_loc_with_ins()[:]:
+            for i, ins in node.get_loc_with_ins():
                 logger.debug('Treating instruction %d: %s', i, ins)
                 logger.debug('  Used vars: %s', ins.get_used_vars())
                 for var in ins.get_used_vars():

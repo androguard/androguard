@@ -185,7 +185,7 @@ class DvMethod(object):
 
     def get_source(self):
         if self.writer:
-            return '%s' % self.writer
+            return str(self.writer)
         return ''
 
     def get_source_ext(self):
