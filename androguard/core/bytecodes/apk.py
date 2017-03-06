@@ -235,13 +235,13 @@ class APK(object):
                         for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                             d_perm_name = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                            d_perm_label = self._get_res_string_value(str(
+                            d_perm_label = self._get_res_string_value(unicode(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "label")))
-                            d_perm_description = self._get_res_string_value(str(
+                            d_perm_description = self._get_res_string_value((
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "description")))
-                            d_perm_permissionGroup = self._get_res_string_value(str(
+                            d_perm_permissionGroup = self._get_res_string_value((
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "permissionGroup")))
                             d_perm_protectionLevel = self._get_res_string_value(str(
