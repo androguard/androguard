@@ -71,7 +71,7 @@ def get_field_ast(field):
             if field.get_descriptor() == 'Ljava/lang/String;':
                 expr = literal_string(val)
             elif field.proto == 'B':
-                expr = literal_hex_int(struct.unpack('<b', val)[0])
+                expr = literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
 
     return {
         'triple': triple,
@@ -313,7 +313,9 @@ class DvClass(object):
                 if f_type == 'String':
                     value = '"%s"' % value
                 elif field.proto == 'B':
-                    value = '0x%x' % struct.unpack('b', value)[0]
+                    # byte value: convert from unsiged int to signed and print as hex
+                    # as bytes are signed in Java
+                    value = hex(struct.unpack("b", struct.pack("B", value))[0])
                 source.append('%s %s = %s;\n' % (f_type, name, value))
             else:
                 source.append('%s %s;\n' % (f_type, name))
@@ -371,7 +373,8 @@ class DvClass(object):
                 if f_type == 'String':
                     value = ' = "%s"' % value
                 elif field.proto == 'B':
-                    value = ' = 0x%x' % struct.unpack('b', value)[0]
+                    # a byte
+                    value = ' = %s' % hex(struct.unpack("b", struct.pack("B", value))[0])
                 else:
                     value = ' = %s' % str(value)
             if value:
