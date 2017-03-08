@@ -359,12 +359,12 @@ class APK(object):
             candidates = res_parser.get_resolved_res_configs(res_id)
 
             app_icon = None
-            current_dpi = 0
+            current_dpi = -1
 
             try:
                 for config, file_name in candidates:
                     dpi = config.get_density()
-                    if dpi <= max_dpi and dpi > current_dpi:
+                    if current_dpi < dpi <= max_dpi:
                         app_icon = file_name
                         current_dpi = dpi
             except Exception as e:
