@@ -311,7 +311,10 @@ class DvClass(object):
             if init_value:
                 value = init_value.value
                 if f_type == 'String':
-                    value = '"%s"' % value
+                    if value:
+                        value = '"%s"' % value.encode("unicode-escape").decode("ascii")
+                    else:
+                        value = '""'
                 elif field.proto == 'B':
                     # byte value: convert from unsiged int to signed and print as hex
                     # as bytes are signed in Java
@@ -371,7 +374,10 @@ class DvClass(object):
             if init_value:
                 value = init_value.value
                 if f_type == 'String':
-                    value = ' = "%s"' % value
+                    if value:
+                        value = ' = "%s"' % value.encode("unicode-escape").decode("ascii")
+                    else:
+                        value = ' = ""'
                 elif field.proto == 'B':
                     # a byte
                     value = ' = %s' % hex(struct.unpack("b", struct.pack("B", value))[0])
