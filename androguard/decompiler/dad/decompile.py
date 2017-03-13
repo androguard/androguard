@@ -314,6 +314,8 @@ class DvClass(object):
                     if value:
                         value = '"%s"' % value.encode("unicode-escape").decode("ascii")
                     else:
+                        # FIXME we can not check if this value here is null or ""
+                        # In both cases we end up here...
                         value = '""'
                 elif field.proto == 'B':
                     # byte value: convert from unsiged int to signed and print as hex
@@ -377,6 +379,8 @@ class DvClass(object):
                     if value:
                         value = ' = "%s"' % value.encode("unicode-escape").decode("ascii")
                     else:
+                        # FIXME we can not check if this value here is null or ""
+                        # In both cases we end up here...
                         value = ' = ""'
                 elif field.proto == 'B':
                     # a byte
