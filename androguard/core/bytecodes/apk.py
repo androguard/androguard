@@ -344,14 +344,18 @@ class APK(object):
             app_icon = self.get_element('application', 'icon')
 
         if not app_icon:
-            res_id = self.get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
+            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
 
         if not app_icon:
-            res_id = self.get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
+            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
+
+        if not app_icon:
+            # If the icon can not be found, return now
+            return None
 
         if app_icon.startswith("@"):
             res_id = int(app_icon[1:], 16)
