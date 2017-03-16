@@ -25,7 +25,6 @@ from builtins import range
 from builtins import object
 from androguard.core import bytecode
 from androguard.core import androconf
-from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.util import read
 
 from androguard.core.resources import public
@@ -680,37 +679,6 @@ class APK(object):
             del d["category"]
 
         return d
-
-    def get_permissions(self):
-        """
-            Return permissions
-
-            :rtype: list of string
-        """
-        return self.permissions
-
-    def get_details_permissions(self):
-        """
-            Return permissions with details
-
-            :rtype: list of string
-        """
-        l = {}
-
-        for i in self.permissions:
-            perm = i
-            pos = i.rfind(".")
-
-            if pos != -1:
-                perm = i[pos + 1:]
-
-            try:
-                l[i] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm]
-            except KeyError:
-                l[i] = ["normal", "Unknown permission from android reference",
-                        "Unknown permission from android reference"]
-
-        return l
 
     def get_requested_permissions(self):
         """

@@ -7610,10 +7610,11 @@ class DalvikVMFormat(bytecode._Bytecode):
         if isinstance(buff, APK):
             self.api_version = buff.get_target_sdk_version()
             buff = buff.get_dex()  #getting dex from APK file
-        elif using_api:
-            self.api_version = using_api
         else:
-            self.api_version = CONF["DEFAULT_API"]
+            if using_api:
+                self.api_version = using_api
+            else:
+                self.api_version = CONF["DEFAULT_API"]
 
         #TODO: can using_api be added to config parameter?
         super(DalvikVMFormat, self).__init__(buff)
