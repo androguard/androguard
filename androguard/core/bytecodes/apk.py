@@ -428,10 +428,15 @@ class APK(object):
             return self.files
 
         builtin_magic = 0
+        filemagic = 0
         try:
             getattr(magic, "MagicException")
         except AttributeError:
-            builtin_magic = 1
+            try:
+                getattr(magic, "id_buffer")
+                filemagic = 1
+            except AttributeError:
+                builtin_magic = 1
 
         if builtin_magic:
             ms = magic.open(magic.MAGIC_NONE)
@@ -440,6 +445,19 @@ class APK(object):
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = ms.buffer(buffer)
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
+                self.files_crc32[i] = crc32(buffer)
+        elif filemagic:
+            if self.magic_file is not None:
+                m = magic.Magic(paths=[self.magic_file])
+            else:
+                m = magic.Magic()
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files[i] = m.id_buffer(buffer)
                 if self.files[i] is None:
                     self.files[i] = "Unknown"
                 else:
@@ -1027,7 +1045,7 @@ def show_Certificate(cert, short=False):
     print("Subject: {}".format(get_Name(cert.subject, short=short)))
 
 ################################## AXML FORMAT ########################################
-# Translated from 
+# Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
