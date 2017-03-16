@@ -19,7 +19,14 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['pyasn1', 'cryptography', 'pyperclip', 'future', 'sphinx', 'sphinxcontrib-programoutput'],
+    install_requires=['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments'],
+    extras_require={
+        'GUI': ["pyperclip", "PyQt5"],
+        'docs': ['sphinx', 'sphinxcontrib-programoutput'],
+        # If you are installing on debian, you can use python3-magic instead
+        'magic': ['filemagic'],
+        'graphing': ['pydot'],
+    },
     setup_requires=['setuptools'],
     
 )
