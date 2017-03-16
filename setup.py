@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
-    version='3.0',
+    version='2.0',
     packages=find_packages(),
     #data_files = [(guidir, ["androguard/gui/annotation.ui", "androguard/gui/search.ui", "androguard/gui/androguard.ico"])],
     scripts=['androaxml.py',
