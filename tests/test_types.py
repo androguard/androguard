@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 
 PATH_INSTALL = "./"
@@ -47,11 +48,11 @@ def test(got, expected):
         prefix = ' OK '
     else:
         prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
+    print('%s got: %s expected: %s' % (prefix, repr(got), repr(expected)))
 
 
 s = Session()
-with open(TEST_CASE, "r") as fd:
+with open(TEST_CASE, "rb") as fd:
     digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
 for method in d.get_methods():
@@ -61,8 +62,8 @@ for method in d.get_methods():
     if key not in VALUES:
         continue
 
-    print "METHOD", method.get_class_name(), method.get_name(
-    ), method.get_descriptor()
+    print("METHOD", method.get_class_name(), method.get_name(
+    ), method.get_descriptor())
 
     code = method.get_code()
     bc = code.get_bc()
@@ -72,7 +73,7 @@ for method in d.get_methods():
         if "const" in i.get_name():
             i.show(0)
             formatted_operands = i.get_formatted_operands()
-            print formatted_operands
+            print(formatted_operands)
             if not formatted_operands:
                 VALUES[key].pop(0)
             else:

@@ -172,13 +172,13 @@ def long2int(l):
 def long2str(l):
     """Convert an integer to a string."""
     if type(l) not in (types.IntType, types.LongType):
-        raise ValueError, 'the input must be an integer'
+        raise ValueError('the input must be an integer')
 
     if l < 0:
-        raise ValueError, 'the input must be greater than 0'
+        raise ValueError('the input must be greater than 0')
     s = ''
     while l:
-        s = s + chr(l & 255L)
+        s = s + chr(l & 255)
         l >>= 8
 
     return s
@@ -187,9 +187,9 @@ def long2str(l):
 def str2long(s):
     """Convert a string to a long integer."""
     if type(s) not in (types.StringType, types.UnicodeType):
-        raise ValueError, 'the input must be a string'
+        raise ValueError('the input must be a string')
 
-    l = 0L
+    l = 0
     for i in s:
         l <<= 8
         l |= ord(i)
@@ -212,7 +212,7 @@ def is_android(filename):
         return None
 
     val = None
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         f_bytes = fd.read()
         val = is_android_raw(f_bytes)
 
@@ -220,29 +220,30 @@ def is_android(filename):
 
 
 def is_android_raw(raw):
+    """
+        Returns a string that describes the type of file, for common Android
+        specific formats
+    """
     val = None
 
-    if raw[0:2] == "PK":
+    if raw[0:2] == b"PK" and (b'AndroidManifest.xml' in raw and
+          b'META-INF/MANIFEST.MF' in raw):
         val = "APK"
-    elif raw[0:3] == "dex":
+    elif raw[0:3] == b"dex":
         val = "DEX"
-    elif raw[0:3] == "dey":
+    elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:4] == "\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00":
         val = "AXML"
-    elif raw[0:4] == "\x02\x00\x0C\x00":
-        val = "ARSC"
-    elif ('AndroidManifest.xml' in raw and
-          'META-INF/MANIFEST.MF' in raw):
-        val = "APK"
+    elif raw[0:4] == b"\x02\x00\x0C\x00":
+        val = b"ARSC"
 
     return val
 
 
-def is_valid_android_raw(raw):
-    return raw.find("classes.dex") != -1
-
+# Init Logger
 log_andro = logging.getLogger("androguard")
+
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
 log_andro.addHandler(console_handler)
@@ -341,9 +342,9 @@ def interpolate_tuple(startcolor, goalcolor, steps):
     buffer = []
 
     for i in range(0, steps + 1):
-        iR = R + (DiffR * i / steps)
-        iG = G + (DiffG * i / steps)
-        iB = B + (DiffB * i / steps)
+        iR = R + (DiffR * i // steps)
+        iG = G + (DiffG * i // steps)
+        iB = B + (DiffB * i // steps)
 
         hR = string.replace(hex(iR), "0x", "")
         hG = string.replace(hex(iG), "0x", "")

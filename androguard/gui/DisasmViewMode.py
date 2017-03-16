@@ -1,6 +1,12 @@
-from ViewMode import *
-from cemu import *
-import TextSelection
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import hex
+from builtins import range
+from builtins import object
+from .ViewMode import *
+from .cemu import *
+from . import TextSelection
 
 from PyQt5 import QtGui, QtCore
 
@@ -195,7 +201,7 @@ class DisasmViewMode(ViewMode):
         vm_analysis = self.dataModel.current_class.CM.get_vmanalysis()
 
         methods = [i for i in self.dataModel.current_class.get_methods()]
-        print methods
+        print(methods)
         methods = sorted(methods, key=lambda x: x.get_address(), reverse=True)
 
         offset = 0
@@ -214,7 +220,7 @@ class DisasmViewMode(ViewMode):
 
         self.max_offset = offset
 
-        print sorted(self.CACHE_IDX_OPCODES_OFF.keys())
+        print(sorted(self.CACHE_IDX_OPCODES_OFF.keys()))
 
         self.textPen = QtGui.QPen(self.themes['pen'], 0, QtCore.Qt.SolidLine)
         self.resize(width, height)
@@ -233,7 +239,7 @@ class DisasmViewMode(ViewMode):
         return length
 
     def FeedOpcodes(self, cnt):
-        print 'FEED ', cnt
+        print('FEED ', cnt)
         self.OPCODES = []
         for i in range(0, min(cnt, len(self.CACHE_OPCODES))):
             ins = self.CACHE_OPCODES[i]
@@ -262,8 +268,8 @@ class DisasmViewMode(ViewMode):
         self.FeedOpcodes(self.ROWS)
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.COLUMNS = self.width // self.fontWidth
+        self.ROWS = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def getPixmap(self):
@@ -307,7 +313,7 @@ class DisasmViewMode(ViewMode):
         asm = self.OPCODES[y]
 
         if x < len(asm.get_hex()):
-            postY = x/3
+            postY = x // 3
         else:
             postY = asm.get_length()
 
@@ -320,7 +326,7 @@ class DisasmViewMode(ViewMode):
     def drawCursor(self, qp):
         cursorX, cursorY = self.cursor.getPosition()
 
-        print cursorX, cursorY
+        print(cursorX, cursorY)
 
         xstart = cursorX
 
@@ -386,7 +392,7 @@ class DisasmViewMode(ViewMode):
             tsize = sum([o.size for o in self.OPCODES])
             msize = sum([o.size for o in self.OPCODES[:cursorY]])
 
-            half = self.fontHeight/2
+            half = self.fontHeight // 2
 
             # branch address
             target = asm.branchAddress()
@@ -407,9 +413,9 @@ class DisasmViewMode(ViewMode):
 
                 # draw the three lines
 
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight // 2, -30, cursorY*self.fontHeight + half)
 
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight // 2, -30, (i + 1)*self.fontHeight + half)
 
                 qp.drawLine(-30, (i + 1)*self.fontHeight + half, -15, (i + 1)*self.fontHeight + half)
 
@@ -429,8 +435,8 @@ class DisasmViewMode(ViewMode):
                 qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
                 # draw the two lines
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (self.ROWS - 2)*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight // 2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight // 2, -30, (self.ROWS - 2)*self.fontHeight + half)
 
                 # draw arrow
                 points = [QtCore.QPoint(-25, (self.ROWS - 2)*self.fontHeight + half), 
@@ -447,8 +453,8 @@ class DisasmViewMode(ViewMode):
                 qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
                 # draw the two lines
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (1)*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight // 2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight // 2, -30, (1)*self.fontHeight + half)
 
                 # draw arrow
                 points = [QtCore.QPoint(-25, (1)*self.fontHeight + half), 
@@ -525,7 +531,7 @@ class DisasmViewMode(ViewMode):
 
 
     def _drawRow(self, qp, cemu, row, asm, offset=-1):
-        print 'DRAW AN INSTRUCTION', asm, row, asm.get_name(), len(asm.get_operands(offset)), hex(self.getPageOffset())
+        print('DRAW AN INSTRUCTION', asm, row, asm.get_name(), len(asm.get_operands(offset)), hex(self.getPageOffset()))
 
         qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
 
@@ -639,7 +645,7 @@ class DisasmViewMode(ViewMode):
             cemu.write(s[idx:])
 
     def drawTextMode(self, qp):
-        print 'OFFSET', self.dataModel.getOffset()
+        print('OFFSET', self.dataModel.getOffset())
         # draw background
         qp.fillRect(0, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight, self.backgroundBrush)
 
@@ -680,7 +686,7 @@ class DisasmViewMode(ViewMode):
         return None
 
     def goTo(self, offset):
-        print "GOTO ", offset
+        print("GOTO ", offset)
         
         tsize = sum([opcode.get_length() for opcode in self.OPCODES])
 
@@ -712,7 +718,7 @@ class DisasmViewMode(ViewMode):
         self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
-        print 'scroll_v', dy, cachePix, pageOffset, hex(self.getCursorAbsolutePosition())
+        print('scroll_v', dy, cachePix, pageOffset, hex(self.getCursorAbsolutePosition()))
 
         RowsToDraw = []
         factor = abs(dy)
@@ -723,14 +729,14 @@ class DisasmViewMode(ViewMode):
                 tsize = sum([asm.get_length() for asm in self.OPCODES])
                 current_offset = self.dataModel.getOffset() + tsize
                 if current_offset not in self.CACHE_IDX_OPCODES_OFF:
-                    print 'INVALID OFFSET', hex(current_offset)
+                    print('INVALID OFFSET', hex(current_offset))
                     return
 
                 current_idx = self.CACHE_IDX_OPCODES_OFF[current_offset] - 1
-                print "IDX", current_idx, hex(current_offset)
+                print("IDX", current_idx, hex(current_offset))
 
                 if current_idx + 1 >= len(self.CACHE_OPCODES):
-                    print 'END OF DATA'
+                    print('END OF DATA')
                     return
 
                 current_idx += 1
@@ -738,7 +744,7 @@ class DisasmViewMode(ViewMode):
             if dy >= 0:
                 current_offset = self.dataModel.getOffset()
                 current_idx = self.CACHE_IDX_OPCODES_OFF[current_offset]
-                print "IDX", current_idx, hex(current_offset)
+                print("IDX", current_idx, hex(current_offset))
                 #start = self.CACHE_OPCODES[self.CACHE_IDX_OPCODES_OFF[self.getCursorAbsolutePosition()]-1]
                 current_idx -= 1
 
@@ -765,7 +771,7 @@ class DisasmViewMode(ViewMode):
             if dy > 0:
                 RowsToDraw.append((-row - 1, newins))
 
-        print 'ROW TO DRAW', RowsToDraw
+        print('ROW TO DRAW', RowsToDraw)
         if len(RowsToDraw) < abs(dy):
             # maybe we couldn't draw dy rows (possible we reached the beginning of the data to early), recalculate dy
             dy = len(RowsToDraw)*dy/abs(dy)
@@ -797,10 +803,10 @@ class DisasmViewMode(ViewMode):
             self._drawRow(qp, cemu, dy + row, asm)
 
         qp.end()
-        print ''
+        print('')
 
     def scroll(self, dx, dy, cachePix=None, pageOffset=None):
-        print 'scroll ', dx, dy, self.dataModel.inLimits((self.dataModel.getOffset() - dx)), 'offset', self.dataModel.getOffset()
+        print('scroll ', dx, dy, self.dataModel.inLimits((self.dataModel.getOffset() - dx)), 'offset', self.dataModel.getOffset())
         if dx != 0:
             if self.dataModel.inLimits((self.dataModel.getOffset() - dx)):
                 self.dataModel.slide(dx)
@@ -810,14 +816,14 @@ class DisasmViewMode(ViewMode):
         if dy != 0:
             if dy > 0:
                 if self.dataModel.getOffset() == 0:
-                    print 'OFFSET == 0'
+                    print('OFFSET == 0')
                     return
 
             if dy < 0:
                 tsize = sum([asm.get_length() for asm in self.OPCODES])
 
                 if self.dataModel.getOffset() + tsize ==  self.dataModel.getDataSize():
-                    print 'END'
+                    print('END')
                     return
 
             self.scroll_v(dy, cachePix, pageOffset)

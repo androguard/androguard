@@ -24,7 +24,98 @@ DAD (DAD is A Decompiler): Geoffroy Gueguen (geoffroy dot gueguen at gmail dot c
 See the stable release here:
 https://github.com/androguard/androguard/releases
 
-##3. Licenses
+You can also install androguard from the Debian repositories: [androguard](http://packages.debian.org/androguard).
+
+##3. Documentation
+
+Link here to the documentation... sometime...
+
+Meanwhile you can build the documentation with `sphinx`!
+
+##4. Building and Requirements
+
+### Using Debian based Distributions
+Assuming you are using Debian, most of the packages are available from standard repos.
+
+For androguard:
+
+`apt install python python-pyqt5 python-pyperclip python-networkx ipython python-future python-pyasn1 python-cryptography python-magic python-pydot`
+
+You should be able to use python3 as well:
+
+`apt install python3 python3-pyqt5 python3-pyperclip python3-networkx ipython3 python3-future python3-pyasn1 python3-cryptography python3-magic python3-pydot`
+
+If you are installing the libraries using `pip`, make sure you download the correct packages. For example, there are a lot of implemenations of the `magic` library. Get the one, that is shipped with the file command (See [Fine Free File Command](http://www.darwinsys.com/file/)).
+
+For elsim (currently not working with python3):
+
+`apt install python libstdc++6 libgcc1 lib6 liblzma5 libmuparser2v5 libsnappy1v5 libbz2-1.0 zlib1g`
+
+Elsim requires androguard, but androguard can be installed without elsim.
+
+There are some optional dependencies for androguard. They are unfortunately not in the
+Debian repos, thus must be installed from the sources:
+
+* `elfesteem` can be found here: [elfesteem](https://github.com/serpilliere/elfesteem)
+* Radare2 Bindings can be found here: [radare2-bindings](https://github.com/radare/radare2-bindings)
+* `miasm` can be found here: [miasm](https://github.com/cea-sec/miasm)
+* `idaapi` can be found here: [idapython](https://github.com/idapython/src) (Needs Hex-Rays IDA Pro as well)
+
+To build elsim, you need some additional packages:
+
+`apt install build-essential liblzma-dev libmuparser-dev libsnappy-dev libbz2-dev zlib1g-dev libsparsehash-dev`
+
+then use the makefile to build elsim:
+
+`make`
+
+Be aware that the current `setup.py` does not install elsim!
+
+and for building the documentation (optional):
+
+`apt install python-sphinx python-sphinxcontrib.programoutput`
+
+or
+
+`apt install python3-sphinx python3-sphinxcontrib.programoutput`
+
+when using python3.
+
+To install androguard, just use:
+
+`python setup.py install`
+
+The documentation can be build using:
+
+`python setup.py build_sphinx`
+
+For running the unit tests, the `mock` library is required:
+
+`apt install python-mock` or `apt install python3-mock`
+
+
+### Using Windows
+
+Using Anaconda with python3, most of the used packages are pre-installed.
+
+Additional packages, that might be required are:
+
+`pyperclip sphinxcontrib-programoutput future pydot`
+
+You can simply run
+
+`python setup.py install`
+
+to install androguard.
+
+and
+
+`python setup.py build_sphinx`
+
+to create the documentation.
+
+
+##5. Licenses
 
 * Androguard
 

@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 import os
 from optparse import OptionParser
@@ -47,9 +48,9 @@ def disassemble(dex, offset, size):
         nb = 0
         idx = offset
         for i in d.disassemble(offset, size):
-            print "%-8d(%08x)" % (nb, idx),
+            print("%-8d(%08x)" % (nb, idx), end=' ')
             i.show(idx)
-            print
+            print()
 
             idx += i.get_length()
             nb += 1

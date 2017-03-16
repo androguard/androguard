@@ -137,7 +137,7 @@ def merge_inner(clsdict):
     done = {}
     while not samelist:
         samelist = True
-        classlist = clsdict.keys()
+        classlist = list(clsdict.keys())
         for classname in classlist:
             parts_name = classname.rsplit('$', 1)
             if len(parts_name) > 1:

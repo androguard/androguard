@@ -1,3 +1,5 @@
+from future import standard_library
+standard_library.install_aliases()
 from androguard.core import *
 from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
@@ -5,7 +7,7 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 
-from cPickle import dumps, loads
+from pickle import dumps, loads
 from androguard.core import androconf
 
 
@@ -27,7 +29,7 @@ def save_session(l, filename):
       :Example:
           save_session([a, vm, vmx], "msession.json")
   """
-    with open(filename, "w") as fd:
+    with open(filename, "wb") as fd:
         fd.write(dumps(l, -1))
 
 
@@ -62,7 +64,7 @@ def AnalyzeAPK(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     session.add(filename, data)
@@ -83,7 +85,7 @@ def AnalyzeDex(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     return session.addDEX(filename, data)
@@ -103,7 +105,7 @@ def AnalyzeODex(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     return session.addDEY(filename, data)

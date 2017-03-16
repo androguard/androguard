@@ -15,8 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
 import os
-import Queue
+import queue
 import threading
 import time
 import zlib
@@ -107,14 +111,14 @@ class AndroAuto(object):
                         myandro.analysis_app(log, a, d, dx)
 
                     myandro.finish(log)
-                except Exception, why:
+                except Exception as why:
                     myandro.crash(log, why)
                     myandro.finish(log)
 
                 del a, d, dx, axmlobj, arscobj
                 q.task_done()
 
-        q = Queue.Queue(self.settings["max_fetcher"])
+        q = queue.Queue(self.settings["max_fetcher"])
         for i in range(self.settings["max_fetcher"]):
             t = threading.Thread(target=worker, args=[i, q])
             t.daemon = True
@@ -159,11 +163,7 @@ class DefaultAndroAnalysis(object):
     """
         file_type = androconf.is_android_raw(fileraw)
         if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
-            if file_type == "APK":
-                if androconf.is_valid_android_raw(fileraw):
-                    return (True, "APK")
-            else:
-                return (True, file_type)
+            return (True, file_type)
         return (False, None)
 
     def create_axml(self, log, fileraw):

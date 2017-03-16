@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from builtins import range
+from builtins import object
 import sys
 
 PATH_INSTALL = "./"
@@ -15,8 +18,8 @@ import hashlib
 
 def hexdump(src, length=8, off=0):
     result = []
-    digits = 4 if isinstance(src, unicode) else 2
-    for i in xrange(0, len(src), length):
+    digits = 4 if isinstance(src, str) else 2
+    for i in range(0, len(src), length):
         s = src[i:i + length]
         hexa = b' '.join(["%0*X" % (digits, ord(x)) for x in s])
         text = b''.join([x if 0x20 <= ord(x) < 0x7F else b'.' for x in s])
@@ -69,23 +72,23 @@ class MDalvikVMFormat(object):
                     continue
 
                 if j >= len(b1):
-                    print "OUT OF B1 @ OFFSET 0x%x(%d)" % (j, j)
+                    print("OUT OF B1 @ OFFSET 0x%x(%d)" % (j, j))
                     raise ("ooo")
 
                 if j >= len(b2):
-                    print "OUT OF B2 @ OFFSET 0x%x(%d)" % (j, j)
+                    print("OUT OF B2 @ OFFSET 0x%x(%d)" % (j, j))
                     raise ("ooo")
 
                 if b1[j] != b2[j]:
-                    print "BEGIN @ OFFSET 0x%x" % j
-                    print "ORIG : "
-                    print hexdump(b1[j - 8:j + 8], off=j - 8) + "\n"
-                    print "NEW : "
-                    print hexdump(b2[j - 8:j + 8], off=j - 8) + "\n"
+                    print("BEGIN @ OFFSET 0x%x" % j)
+                    print("ORIG : ")
+                    print(hexdump(b1[j - 8:j + 8], off=j - 8) + "\n")
+                    print("NEW : ")
+                    print(hexdump(b2[j - 8:j + 8], off=j - 8) + "\n")
 
                 j += 1
 
-        print "OK"
+        print("OK")
 
 #TEST = "examples/android/TestsAndroguard/bin/TestsAndroguard.apk"
 TEST = "apks/malwares/smszombie/40F3F16742CD8AC8598BF859A23AC290.apk"
@@ -98,7 +101,7 @@ j = dvm.DalvikVMFormat(a.get_dex())
 x = analysis.VMAnalysis(j)
 
 m = MDalvikVMFormat(j, x)
-print j, x, m
+print(j, x, m)
 
 new_dex = m.test_save()
 

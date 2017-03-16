@@ -15,6 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import zip
+from builtins import range
+from builtins import object
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
@@ -127,7 +130,7 @@ class SwitchBlock(BasicBlock):
     def update_attribute_with(self, n_map):
         super(SwitchBlock, self).update_attribute_with(n_map)
         self.cases = [n_map.get(n, n) for n in self.cases]
-        for node1, node2 in n_map.iteritems():
+        for node1, node2 in n_map.items():
             if node1 in self.node_to_case:
                 self.node_to_case[node2] = self.node_to_case.pop(node1)
 

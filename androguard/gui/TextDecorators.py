@@ -1,9 +1,12 @@
+from __future__ import absolute_import
+from builtins import range
+from builtins import object
 from PyQt5 import QtGui, QtCore
 import re
 import string
 from time import time
 import sys
-import TextSelection
+from . import TextSelection
 
 
 class CTextDecorator(object):
@@ -172,7 +175,7 @@ class HighlightASCII(PageDecorator):
 
         off = self.dataModel.getOffset()
 
-        Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? _<>]){4,}', page)]
+        Match = [(m.start(), m.end()) for m in re.finditer(b'([a-zA-Z0-9\\-\\\\.%*:/? _<>]){4,}', page)]
         for s, e in Match:
             for i in range(e-s):
                 idx = off + s + i

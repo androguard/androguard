@@ -15,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import str
+from builtins import zip
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import logging
 from struct import unpack
 from androguard.decompiler.dad.util import get_type
@@ -683,8 +688,9 @@ class Writer(object):
 
 
 def string(s):
+    # FIXME this string conversion seems to be problematic
     ret = ['"']
-    for c in s.decode('utf8'):
+    for c in s:
         if c >= ' ' and c < '\x7f':
             if c == "'" or c == '"' or c == '\\':
                 ret.append('\\')
@@ -701,4 +707,4 @@ def string(s):
         ret.append('%x' % ((i >> 4) & 0x0f))
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
-    return ''.join(ret).encode('utf8')
+    return ''.join(ret)
