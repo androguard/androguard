@@ -19,4 +19,7 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['pyasn1', 'cryptography', 'distribute', 'pyperclip', 'future', 'sphinx', 'sphinxcontrib-programoutput'],)
+    install_requires=['pyasn1', 'cryptography', 'pyperclip', 'future', 'sphinx', 'sphinxcontrib-programoutput'],
+    setup_requires=['setuptools'],
+    
+)
