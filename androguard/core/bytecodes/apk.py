@@ -308,7 +308,7 @@ class APK(object):
                     res_id,
                     ARSCResTableConfig.default_config())[0][1]
             except Exception, e:
-                androconf.warning("Exception selecting app icon: %s", e)
+                androconf.warning("Exception selecting app icon: %s"%e)
                 app_name = ""
         return app_name
 
