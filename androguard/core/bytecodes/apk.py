@@ -604,7 +604,10 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity"):
+            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
+                                     self.xml[i].getElementsByTagName("activity-alias")
+
+            for item in activities_and_aliases:
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
