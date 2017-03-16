@@ -9,8 +9,10 @@ from .cemu import *
 from . import TextSelection
 from .TextDecorators import *
 import string
-from PyQt5 import QtGui, QtCore, QtWidgets
 
+from androguard.core.androconf import CONF
+
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.uic import loadUi
 
 
@@ -1000,7 +1002,7 @@ class Annotation(QtWidgets.QDialog):
 
         import os
         root = os.path.dirname(sys.argv[0])
-        self.ui = loadUi(os.path.join(root, 'androguard/gui/annotation.ui'), baseinstance=self)
+        self.ui = loadUi(os.path.join(CONF['data_prefix'], 'annotation.ui'), baseinstance=self)
 
 #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
 

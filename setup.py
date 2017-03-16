@@ -4,17 +4,23 @@ import os
 
 from setuptools import setup, find_packages
 
-# TODO this is actually a hack... How to copy the files to the right folder?
-#guidir = os.path.join(sys.prefix, 'Scripts', 'androguard', 'gui')
-#if not os.path.isdir(guidir):
-#    os.makedirs(guidir)
+# workaround issue on OSX, where sys.prefix is not an installable location
+if sys.platform == 'darwin' and sys.prefix.startswith('/System'):
+    data_prefix = os.path.join('.', 'share', 'androguard')
+elif sys.platform == 'win32':
+    data_prefix = os.path.join(sys.prefix, 'Scripts', 'androguard')
+else:
+    data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
     version='2.0',
     packages=find_packages(),
-    #data_files = [(guidir, ["androguard/gui/annotation.ui", "androguard/gui/search.ui", "androguard/gui/androguard.ico"])],
+    data_files = [(data_prefix,
+                   ['androguard/gui/annotation.ui',
+                    'androguard/gui/search.ui',
+                    'androguard/gui/androguard.ico'])],
     scripts=['androaxml.py',
              'androlyze.py',
              'androdd.py',
