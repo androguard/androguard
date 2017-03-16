@@ -1,3 +1,5 @@
+from builtins import range
+from builtins import object
 import hashlib
 import collections
 
@@ -189,14 +191,16 @@ class Session(object):
             d = None
             dx = None
 
-            if len(self.analyzed_apk[digest[0]][1:]) > 1:
-                d = []
-                for dex_file in self.analyzed_apk[digest[0]][1:]:
-                    d.append(self.analyzed_dex[dex_file][0])
-            else:
+            if len(self.analyzed_apk[digest[0]][1:]) == 1:
                 dex_file = self.analyzed_dex[self.analyzed_apk[digest[0]][1]]
                 d = dex_file[0]
                 dx = dex_file[1]
+            elif len(self.analyzed_apk[digest[0]][1:]) > 1:
+                d = []
+                dx = []
+                for dex_file in self.analyzed_apk[digest[0]][1:]:
+                    d.append(self.analyzed_dex[dex_file][0])
+                    dx.append(self.analyzed_dex[dex_file][1])
             return a, d, dx
         return None
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
@@ -15,8 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import re, collections
-import threading, Queue, time
+import threading, queue, time
 
 
 from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
@@ -493,23 +499,23 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
-        print "METHOD", self.method.get_class_name(), self.method.get_name(
-        ), self.method.get_descriptor()
+        print("METHOD", self.method.get_class_name(), self.method.get_name(
+        ), self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
-            print "\t", i
+            print("\t", i)
             i.show()
-            print ""
+            print("")
 
     def show_methods(self):
-        print "\t #METHODS :"
+        print("\t #METHODS :")
         for i in self.__bb:
             methods = i.get_methods()
             for method in methods:
-                print "\t\t-->", method.get_class_name(), method.get_name(
-                ), method.get_descriptor()
+                print("\t\t-->", method.get_class_name(), method.get_name(
+                ), method.get_descriptor())
                 for context in methods[method]:
-                    print "\t\t\t |---|", context.details
+                    print("\t\t\t |---|", context.details)
 
     def get_tags(self):
         """
@@ -672,7 +678,7 @@ class ClassAnalysis(object):
         self.xreffrom = collections.defaultdict(set)
 
     def get_methods(self):
-        return self._methods.values()
+        return list(self._methods.values())
 
     def get_nb_methods(self):
         return len(self._methods)
@@ -730,6 +736,8 @@ class ClassAnalysis(object):
         return self.orig_class
 
     def __str__(self):
+        # Print only instanceiations from other classes here
+        # TODO also method xref and field xref should be printed?
         data = "XREFto for %s\n" % self.orig_class
         for ref_class in self.xrefto:
             data += str(ref_class.get_vm_class().get_name()) + " "
@@ -766,14 +774,16 @@ class newVMAnalysis(object):
         debug("Creating XREF/DREF")
         started_at = time.time()
 
-        instances_class_name = self.classes.keys()
+        instances_class_name = list(self.classes.keys())
 
-        queue_classes = Queue.Queue()
+        queue_classes = queue.Queue()
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
             queue_classes.put(current_class)
 
         threads = []
+        # TODO maybe adjust this number by the 
+        # number of cores or make it configureable?
         for n in range(2):
             thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
             thread.daemon = True
@@ -785,8 +795,7 @@ class newVMAnalysis(object):
 
         debug("")
         diff = time.time() - started_at
-        minutes, seconds = float(diff // 60), float(diff % 60)
-        debug("End of creating XREF/DREF %s:%s" % (str(minutes), str(round(seconds,2))))
+        debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
 
     def _create_xref(self, instances_class_name, last_vm, queue_classes):
         while not queue_classes.empty():
@@ -910,7 +919,7 @@ class newVMAnalysis(object):
                 except dvm.InvalidInstruction as e:
                     warning("Invalid instruction %s" % str(e))
             queue_classes.task_done()
-                                
+
     def get_method(self, method):
         for vm in self.vms:
             if method in vm.get_methods():

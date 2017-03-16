@@ -1,2 +1,21 @@
+__pycache__/
 *.pyc
 *.pyo
+
+docs/build
+
+*.o
+*.so
+# Binary Files
+elsim/elsim/elsign/formula/test
+elsim/elsim/similarity/libsimilarity/bz2/test_bz2
+elsim/elsim/similarity/libsimilarity/lzma/test_lzma
+elsim/elsim/similarity/libsimilarity/smaz/test_smaz
+elsim/elsim/similarity/libsimilarity/snappy/test_snappy
+elsim/elsim/similarity/libsimilarity/vcblocksort/test_vcblocksort
+elsim/elsim/similarity/libsimilarity/xz/test_xz
+elsim/elsim/similarity/libsimilarity/z/test_z
+
+androguard.egg-info/
+build/
+dist/

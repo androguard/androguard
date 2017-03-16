@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+from builtins import object
 import sys
 
 from optparse import OptionParser
@@ -43,7 +45,7 @@ class AndroLog(object):
 class AndroTest(auto.DirectoryAndroAnalysis):
 
     def analysis_app(self, log, apkobj, dexobj, adexobj):
-        print log.id_file, log.filename, apkobj, dexobj, adexobj
+        print(log.id_file, log.filename, apkobj, dexobj, adexobj)
 
 
 def main(options, arguments):

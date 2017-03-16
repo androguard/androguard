@@ -1,3 +1,4 @@
+from builtins import str
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 

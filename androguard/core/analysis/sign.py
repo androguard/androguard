@@ -15,16 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from androguard.core.analysis.analysis import TAINTED_PACKAGE_CREATE, TAINTED_PACKAGE_CALL
+from builtins import range
+from builtins import object
 from androguard.core.bytecodes import dvm
-
-TAINTED_PACKAGE_INTERNAL_CALL = 2
-FIELD_ACCESS = {"R": 0, "W": 1}
-PACKAGE_ACCESS = {
-    TAINTED_PACKAGE_CREATE: 0,
-    TAINTED_PACKAGE_CALL: 1,
-    TAINTED_PACKAGE_INTERNAL_CALL: 2
-}
 
 
 class Sign(object):

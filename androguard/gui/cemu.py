@@ -1,3 +1,4 @@
+from builtins import object
 from PyQt5 import QtGui
 
 from androguard.core import androconf
@@ -24,7 +25,7 @@ def enum(**enums):
 Directions = enum(Left=1, Right=2, Up=3, Down=4, End=5, Home=6, CtrlEnd=7, CtrlHome=8)
 
 
-class ConsoleEmulator():
+class ConsoleEmulator(object):
     def __init__(self, qp, rows, cols):
         self.qp = qp
         self._x = 0

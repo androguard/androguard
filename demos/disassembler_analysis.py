@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 PATH_INSTALL = "./"
@@ -21,17 +22,17 @@ for method in d.get_methods():
     if method.get_code() == None:
         continue
 
-    print method.get_class_name(), method.get_name(), method.get_descriptor()
+    print(method.get_class_name(), method.get_name(), method.get_descriptor())
 
     idx = 0
     for i in g.get_basic_blocks().get():
-        print "\t %s %x %x" % (i.name, i.start, i.end), '[ NEXT = ', ', '.join(
+        print("\t %s %x %x" % (i.name, i.start, i.end), '[ NEXT = ', ', '.join(
             "%x-%x-%s" % (j[0], j[1], j[2].get_name())
             for j in i.get_next()), ']', '[ PREV = ', ', '.join(
-                j[2].get_name() for j in i.get_prev()), ']'
+                j[2].get_name() for j in i.get_prev()), ']')
 
         for ins in i.get_instructions():
-            print "\t\t %x" % idx, ins.get_name(), ins.get_output()
+            print("\t\t %x" % idx, ins.get_name(), ins.get_output())
             idx += ins.get_length()
 
-        print ""
+        print("")
