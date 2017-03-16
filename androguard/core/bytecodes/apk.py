@@ -449,12 +449,16 @@ class APK(object):
             m = magic.Magic(magic_file=self.magic_file)
             for i in self.get_files():
                 buffer = self.zip.read(i)
-                self.files[i] = m.from_buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
                 self.files_crc32[i] = crc32(buffer)
+
+                try:
+                    self.files[i] = m.from_buffer(buffer)
+                    if self.files[i] is None:
+                        self.files[i] = "Unknown"
+                    else:
+                        self.files[i] = self._patch_magic(buffer, self.files[i])
+                except:
+                    self.files[i] = "Unknown"
 
         return self.files
 
@@ -602,7 +606,10 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity"):
+            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
+                                     self.xml[i].getElementsByTagName("activity-alias")
+
+            for item in activities_and_aliases:
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
@@ -1567,6 +1574,10 @@ class AXMLPrinter(object):
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
+                    name = self.axml.getAttributeName(i)
+                    if name == '' or name is None:
+                        androconf.warning("Unknown attribute {} type {} at index {}".format(name, _type, i))
+                        continue
                     self.buff += "%s%s=\"%s\"\n" % (
                         self.getPrefix(
                             self.axml.getAttributePrefix(i)),
