@@ -736,6 +736,8 @@ class ClassAnalysis(object):
         return self.orig_class
 
     def __str__(self):
+        # Print only instanceiations from other classes here
+        # TODO also method xref and field xref should be printed?
         data = "XREFto for %s\n" % self.orig_class
         for ref_class in self.xrefto:
             data += str(ref_class.get_vm_class().get_name()) + " "
@@ -780,6 +782,8 @@ class newVMAnalysis(object):
             queue_classes.put(current_class)
 
         threads = []
+        # TODO maybe adjust this number by the 
+        # number of cores or make it configureable?
         for n in range(2):
             thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
             thread.daemon = True
@@ -791,8 +795,7 @@ class newVMAnalysis(object):
 
         debug("")
         diff = time.time() - started_at
-        minutes, seconds = float(diff // 60), float(diff % 60)
-        debug("End of creating XREF/DREF %s:%s" % (str(minutes), str(round(seconds,2))))
+        debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
 
     def _create_xref(self, instances_class_name, last_vm, queue_classes):
         while not queue_classes.empty():
