@@ -206,7 +206,7 @@ def is_android(filename):
     """Return the type of the file
 
         @param filename : the filename
-        @rtype : "APK", "DEX", "ELF", None
+        @rtype : "APK", "DEX", None
     """
     if not filename:
         return None
@@ -233,8 +233,6 @@ def is_android_raw(raw):
         val = "DEX"
     elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:7] == b"\x7fELF\x01\x01\x01":
-        val = "ELF"
     elif raw[0:4] == b"\x03\x00\x08\x00":
         val = "AXML"
     elif raw[0:4] == b"\x02\x00\x0C\x00":
@@ -243,14 +241,15 @@ def is_android_raw(raw):
     return val
 
 
-# from scapy
-log_andro = logging.getLogger("andro")
+# Init Logger
+log_andro = logging.getLogger("androguard")
+
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
 log_andro.addHandler(console_handler)
-log_runtime = logging.getLogger("andro.runtime")  # logs at runtime
-log_interactive = logging.getLogger("andro.interactive")  # logs in interactive functions
-log_loading = logging.getLogger("andro.loading")  # logs when loading andro
+log_runtime = logging.getLogger("androguard.runtime")  # logs at runtime
+log_interactive = logging.getLogger("androguard.interactive")  # logs in interactive functions
+log_loading = logging.getLogger("androguard.loading")  # logs when loading andro
 
 
 def set_lazy():

@@ -144,24 +144,3 @@ def RunDecompiler(d, dx, decompiler, session=None):
                                            androconf.CONF["TMP_DIRECTORY"]))
         else:
             d.set_decompiler(DecompilerDAD(d, dx))
-
-
-def AnalyzeElf(filename, raw=False, session=None):
-    # avoid to install smiasm for everybody
-    from androguard.core.binaries.elf import ELF
-
-    e = None
-    if raw == False:
-        e = ELF(read(filename))
-    else:
-        e = ELF(filename)
-
-    ExportElfToPython(e)
-
-    return e
-
-
-def ExportElfToPython(e, session=None):
-    for function in e.get_functions():
-        name = "FUNCTION_" + function.name
-        setattr(e, name, function)
