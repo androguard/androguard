@@ -93,7 +93,7 @@ class Session(object):
 
     def runAnalysis(self, d, dx=None):
         if dx == None:
-            dx = newVMAnalysis(d)
+            dx = Analysis(d)
         else:
             dx.add(d)
 

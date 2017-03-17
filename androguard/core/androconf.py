@@ -194,12 +194,11 @@ def is_android(filename):
     if not filename:
         return None
 
-    val = None
     with open(filename, "rb") as fd:
         f_bytes = fd.read()
-        val = is_android_raw(f_bytes)
+        return is_android_raw(f_bytes)
 
-    return val
+    return None
 
 
 def is_android_raw(raw):
@@ -209,8 +208,7 @@ def is_android_raw(raw):
     """
     val = None
 
-    if raw[0:2] == b"PK" and (b'AndroidManifest.xml' in raw and
-          b'META-INF/MANIFEST.MF' in raw):
+    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"
