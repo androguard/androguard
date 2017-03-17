@@ -157,6 +157,9 @@ class DVMBasicBlock(object):
     def set_exception_analysis(self, exception_analysis):
         self.exception_analysis = exception_analysis
 
+    def show(self):
+        print(self.get_name(), self.get_start(), self.get_end())
+
 
 class Enum(object):
 
