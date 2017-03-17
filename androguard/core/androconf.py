@@ -9,7 +9,7 @@ import imp
 ANDROGUARD_VERSION = "3.0-dev"
 
 from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSION_MAPPINGS
 
 
 def is_ascii_problem(s):
@@ -359,7 +359,7 @@ def load_api_specific_resource_module(resource_name, api):
     if resource_name == "aosp_permissions":
         module = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":
-        module = AOSP_PERMISSIONS_MAPPINGS
+        module = AOSP_PERMISSION_MAPPINGS
     else:
         error("Invalid resource: %s" % resource_name)
 
