@@ -2051,7 +2051,7 @@ class ARSCParser(object):
         def put_ate_value(self, result, ate, config):
             if ate.is_complex():
                 complex_array = []
-                result.append(config, complex_array)
+                result.append((config, complex_array))
                 for _, item in ate.item.items:
                     self.put_item_value(complex_array, item, config, complex_=True)
             else:
