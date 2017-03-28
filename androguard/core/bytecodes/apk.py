@@ -613,6 +613,12 @@ class APK(object):
                                      self.xml[i].getElementsByTagName("activity-alias")
 
             for item in activities_and_aliases:
+                # Some applications have more than one MAIN activity.
+                # For example: paid and free content
+                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
+                    continue
+
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
