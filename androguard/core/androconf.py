@@ -89,7 +89,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), '..', '..', 'androgui.
     CONF['data_prefix'] = os.path.join(os.path.dirname(__file__), '..', 'gui')
 # workaround issue on OSX, where sys.prefix is not an installable location
 elif sys.platform == 'darwin' and sys.prefix.startswith('/System'):
-    CONF['data_prefix'] = os.path.join('.', 'share', 'androguard', 'gui')
+    CONF['data_prefix'] = os.path.join('.', 'share', 'androguard')
 elif sys.platform == 'win32':
     CONF['data_prefix'] = os.path.join(sys.prefix, 'Scripts', 'androguard')
 else:
