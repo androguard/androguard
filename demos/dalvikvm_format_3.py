@@ -12,7 +12,7 @@ from androguard.util import read
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
 j = dvm.DalvikVMFormat(read(TEST, binary=False))
-x = analysis.newVMAnalysis(j)
+x = analysis.Analysis(j)
 j.set_vmanalysis(x)
 
 # SHOW CLASSES (verbose and pretty)

@@ -12,11 +12,21 @@ from setuptools import setup, find_packages
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
-    version='3.0',
+    version='2.0',
     packages=find_packages(),
     #data_files = [(guidir, ["androguard/gui/annotation.ui", "androguard/gui/search.ui", "androguard/gui/androguard.ico"])],
     scripts=['androaxml.py',
              'androlyze.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['pyasn1', 'cryptography', 'distribute', 'pyperclip', 'future', 'sphinx', 'sphinxcontrib-programoutput'],)
+    install_requires=['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments'],
+    extras_require={
+        'GUI': ["pyperclip", "PyQt5"],
+        'docs': ['sphinx', 'sphinxcontrib-programoutput'],
+        # If you are installing on debian, you can use python3-magic instead
+        'magic': ['filemagic'],
+        'graphing': ['pydot'],
+    },
+    setup_requires=['setuptools'],
+    
+)

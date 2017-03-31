@@ -9,17 +9,14 @@ from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
 import pyperclip
 
-PYGMENTS = True
-try:
-    from pygments.formatters.html import HtmlFormatter
-    from pygments.lexers import JavaLexer
-    from pygments.styles import get_style_by_name
 
-    from pygments.style import Style
-    from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers import JavaLexer
+from pygments.styles import get_style_by_name
 
-except:
-    PYGMENTS = False
+from pygments.style import Style
+from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
@@ -377,10 +374,7 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
-        if PYGMENTS:
-            MyHighlighter(self.doc, lexer=JavaLexer())
-        else:
-            androconf.debug("Pygments is not present !")
+        MyHighlighter(self.doc, lexer=JavaLexer())
 
     def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word

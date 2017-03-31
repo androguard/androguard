@@ -1,20 +1,3 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import sys
 import os
 import logging
@@ -211,12 +194,11 @@ def is_android(filename):
     if not filename:
         return None
 
-    val = None
     with open(filename, "rb") as fd:
         f_bytes = fd.read()
-        val = is_android_raw(f_bytes)
+        return is_android_raw(f_bytes)
 
-    return val
+    return None
 
 
 def is_android_raw(raw):
@@ -226,8 +208,7 @@ def is_android_raw(raw):
     """
     val = None
 
-    if raw[0:2] == b"PK" and (b'AndroidManifest.xml' in raw and
-          b'META-INF/MANIFEST.MF' in raw):
+    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"

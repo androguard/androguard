@@ -1,21 +1,5 @@
 from __future__ import division
 from __future__ import print_function
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 from future import standard_library
 standard_library.install_aliases()
@@ -428,10 +412,15 @@ class APK(object):
             return self.files
 
         builtin_magic = 0
+        filemagic = 0
         try:
             getattr(magic, "MagicException")
         except AttributeError:
-            builtin_magic = 1
+            try:
+                getattr(magic.Magic, "id_buffer")
+                filemagic = 1
+            except AttributeError:
+                builtin_magic = 1
 
         if builtin_magic:
             ms = magic.open(magic.MAGIC_NONE)
@@ -440,6 +429,19 @@ class APK(object):
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files[i] = ms.buffer(buffer)
+                if self.files[i] is None:
+                    self.files[i] = "Unknown"
+                else:
+                    self.files[i] = self._patch_magic(buffer, self.files[i])
+                self.files_crc32[i] = crc32(buffer)
+        elif filemagic:
+            if self.magic_file is not None:
+                m = magic.Magic(paths=[self.magic_file])
+            else:
+                m = magic.Magic()
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files[i] = m.id_buffer(buffer)
                 if self.files[i] is None:
                     self.files[i] = "Unknown"
                 else:
@@ -575,7 +577,12 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(tag_name):
+            if self.xml[i] is None :
+                continue
+            tag = self.xml[i].getElementsByTagName(tag_name)
+            if tag is None:
+                return None
+            for item in tag:
                 skip_this_item = False
                 for attr, val in list(attribute_filter.items()):
                     attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
@@ -602,7 +609,16 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity"):
+            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
+                                     self.xml[i].getElementsByTagName("activity-alias")
+
+            for item in activities_and_aliases:
+                # Some applications have more than one MAIN activity.
+                # For example: paid and free content
+                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
+                    continue
+
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
@@ -1027,7 +1043,7 @@ def show_Certificate(cert, short=False):
     print("Subject: {}".format(get_Name(cert.subject, short=short)))
 
 ################################## AXML FORMAT ########################################
-# Translated from 
+# Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
@@ -1892,7 +1908,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
         except KeyError:
             pass
 
@@ -1915,7 +1931,7 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
                 except KeyError:
                     pass
 
@@ -1940,7 +1956,7 @@ class ARSCParser(object):
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
                     buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
-                                                                       i[1])
+                                                                       escape(i[1]))
         except KeyError:
             pass
 
@@ -2041,7 +2057,7 @@ class ARSCParser(object):
         def put_ate_value(self, result, ate, config):
             if ate.is_complex():
                 complex_array = []
-                result.append(config, complex_array)
+                result.append((config, complex_array))
                 for _, item in ate.item.items:
                     self.put_item_value(complex_array, item, config, complex_=True)
             else:
