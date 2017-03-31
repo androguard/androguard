@@ -1892,7 +1892,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
         except KeyError:
             pass
 
@@ -1915,7 +1915,7 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
                 except KeyError:
                     pass
 
@@ -1940,7 +1940,7 @@ class ARSCParser(object):
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
                     buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
-                                                                       i[1])
+                                                                       escape(i[1]))
         except KeyError:
             pass
 
