@@ -410,7 +410,7 @@ def reach_def_analysis(graph, lparams):
         graph.add_edge(old_exit, new_exit)
         graph.rpo.append(new_exit)
 
-    analysis = BasicReachDef(graph, set(lparams))
+    analysis = BasicReachDef(graph, lparams)
     analysis.run()
 
     # The analysis is done, We can now remove the two special nodes.
