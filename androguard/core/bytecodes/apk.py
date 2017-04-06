@@ -199,7 +199,8 @@ class APK(object):
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
                     try:
                         self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                    except:
+                    except Exception as e:
+                        androconf.warning("AXML parsing failed", e)
                         self.xml[i] = None
 
                     if self.xml[i] != None:
@@ -392,71 +393,58 @@ class APK(object):
         """
         return self.zip.namelist()
 
+    def _get_file_magic_name(self, buffer):
+        """
+        Return the filetype guessed for a buffer
+        :param buffer: bytes
+        :return: str of filetype
+        """
+        # TODO this functions should be better in another package
+        default = "Unknown"
+        ftype = None
+
+        # There are several implementations of magic,
+        # unfortunately all called magic
+        try:
+            import magic
+            getattr(magic, "MagicException")
+        except ImportError:
+            # no lib magic at all, return unknown
+            return default
+        except AttributeError:
+            try:
+                getattr(magic.Magic, "id_buffer")
+            except AttributeError:
+                ms = magic.open(magic.MAGIC_NONE)
+                ms.load()
+                ftype = ms.buffer(buffer)
+            else:
+                if self.magic_file is not None:
+                    m = magic.Magic(paths=[self.magic_file])
+                else:
+                    m = magic.Magic()
+                ftype = m.id_buffer(buffer)
+        else:
+            m = magic.Magic(magic_file=self.magic_file)
+            ftype = m.from_buffer(buffer)
+
+        if ftype is None:
+            return default
+        else:
+            return self._patch_magic(buffer, ftype)
+
     def get_files_types(self):
         """
             Return the files inside the APK with their associated types (by using python-magic)
 
             :rtype: a dictionnary
         """
-        try:
-            import magic
-        except ImportError:
-            # no lib magic !
+        if self.files == {}:
+            # Generate File Types / CRC List
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
-                self.files[i] = "Unknown"
-            return self.files
-
-        if self.files != {}:
-            return self.files
-
-        builtin_magic = 0
-        filemagic = 0
-        try:
-            getattr(magic, "MagicException")
-        except AttributeError:
-            try:
-                getattr(magic.Magic, "id_buffer")
-                filemagic = 1
-            except AttributeError:
-                builtin_magic = 1
-
-        if builtin_magic:
-            ms = magic.open(magic.MAGIC_NONE)
-            ms.load()
-
-            for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files[i] = ms.buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
-                self.files_crc32[i] = crc32(buffer)
-        elif filemagic:
-            if self.magic_file is not None:
-                m = magic.Magic(paths=[self.magic_file])
-            else:
-                m = magic.Magic()
-            for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files[i] = m.id_buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
-                self.files_crc32[i] = crc32(buffer)
-        else:
-            m = magic.Magic(magic_file=self.magic_file)
-            for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files[i] = m.from_buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
-                self.files_crc32[i] = crc32(buffer)
+                self.files[i] = self._get_file_magic_name(buffer)
 
         return self.files
 
@@ -471,8 +459,15 @@ class APK(object):
         return orig
 
     def get_files_crc32(self):
+        """
+        Calculates and returns a dictionary of filenames and CRC32
+        
+        :return: dict of filename: CRC32
+        """
         if self.files_crc32 == {}:
-            self.get_files_types()
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files_crc32[i] = crc32(buffer)
 
         return self.files_crc32
 
@@ -482,14 +477,8 @@ class APK(object):
 
             :rtype: string, string, int
         """
-        if self.files == {}:
-            self.get_files_types()
-
-        for i in self.get_files():
-            try:
-                yield i, self.files[i], self.files_crc32[i]
-            except KeyError:
-                yield i, "", ""
+        for k in self.get_files():
+            yield k, self.get_files_types()[k], self.get_files_crc32()[k]
 
     def get_raw(self):
         """
@@ -869,7 +858,7 @@ class APK(object):
 
         for item in self.zip.infolist():
             if deleted_files is not None:
-                if re.match(deleted_files, item.filename) == None:
+                if re.match(deleted_files, item.filename) is None:
                     if item.filename in new_files:
                         zout.writestr(item, new_files[item.filename])
                     else:
