@@ -897,6 +897,10 @@ class APK(object):
         try:
             return self.arsc["resources.arsc"]
         except KeyError:
+            if "resources.arsc" not in self.zip.namelist():
+                # There is a rare case, that no resource file is supplied.
+                # Maybe it was added manually, thus we check here
+                return None
             self.arsc["resources.arsc"] = ARSCParser(self.zip.read(
                 "resources.arsc"))
             return self.arsc["resources.arsc"]
