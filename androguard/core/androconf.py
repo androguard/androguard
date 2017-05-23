@@ -324,9 +324,9 @@ def interpolate_tuple(startcolor, goalcolor, steps):
         iG = G + (DiffG * i // steps)
         iB = B + (DiffB * i // steps)
 
-        hR = string.replace(hex(iR), "0x", "")
-        hG = string.replace(hex(iG), "0x", "")
-        hB = string.replace(hex(iB), "0x", "")
+        hR = str.replace(hex(iR), "0x", "")
+        hG = str.replace(hex(iG), "0x", "")
+        hB = str.replace(hex(iB), "0x", "")
 
         if len(hR) == 1:
             hR = "0" + hR
@@ -336,7 +336,7 @@ def interpolate_tuple(startcolor, goalcolor, steps):
         if len(hG) == 1:
             hG = "0" + hG
 
-        color = string.upper("#" + hR + hG + hB)
+        color = str.upper("#" + hR + hG + hB)
         buffer.append(color)
 
     return buffer
