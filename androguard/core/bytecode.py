@@ -393,7 +393,7 @@ def method2format(output, _format="png", mx=None, raw=None):
     buff += data['edges']
     buff += "}\n"
 
-    d = pydot.graph_from_dot_data(buff)
+    d = pydot.graph_from_dot_data(buff.encode("UTF-8"))
     if d:
         getattr(d, "write_" + _format.lower())(output)
 
