@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import range
+from builtins import object
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.instruction import (Variable, ThisParam, Param)
@@ -46,11 +48,11 @@ class BasicReachDef(object):
                 if kill is not None:
                     self.defs[node][kill].add(i)
                     self.def_to_loc[kill].add(i)
-            for defs, values in self.defs[node].iteritems():
+            for defs, values in self.defs[node].items():
                 self.DB[node].add(max(values))
 
     def run(self):
-        nodes = self.g.rpo[:]
+        nodes = self.g.rpo
         while nodes:
             node = nodes.pop(0)
             newR = set()
@@ -122,7 +124,7 @@ def dead_code_elimination(graph, du, ud):
     instructions.
     '''
     for node in graph.rpo:
-        for i, ins in node.get_loc_with_ins()[:]:
+        for i, ins in node.get_loc_with_ins():
             reg = ins.get_lhs()
             if reg is not None:
                 # If the definition is not used, we check that the instruction
@@ -147,7 +149,7 @@ def dead_code_elimination(graph, du, ud):
 
 
 def clear_path_node(graph, reg, loc1, loc2):
-    for loc in xrange(loc1, loc2):
+    for loc in range(loc1, loc2):
         ins = graph.get_ins_from_loc(loc)
         logger.debug('  treat loc: %d, ins: %s', loc, ins)
         if ins is None:
@@ -202,7 +204,7 @@ def register_propagation(graph, du, ud):
     while change:
         change = False
         for node in graph.rpo:
-            for i, ins in node.get_loc_with_ins()[:]:
+            for i, ins in node.get_loc_with_ins():
                 logger.debug('Treating instruction %d: %s', i, ins)
                 logger.debug('  Used vars: %s', ins.get_used_vars())
                 for var in ins.get_used_vars():
@@ -362,7 +364,7 @@ def split_variables(graph, lvars, DU, UD):
         nb_vars = max(lvars) + 1
     else:
         nb_vars = 0
-    for var, versions in variables.iteritems():
+    for var, versions in variables.items():
         nversions = len(versions)
         if nversions == 1:
             continue
@@ -408,7 +410,7 @@ def reach_def_analysis(graph, lparams):
         graph.add_edge(old_exit, new_exit)
         graph.rpo.append(new_exit)
 
-    analysis = BasicReachDef(graph, set(lparams))
+    analysis = BasicReachDef(graph, lparams)
     analysis.run()
 
     # The analysis is done, We can now remove the two special nodes.

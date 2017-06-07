@@ -11,7 +11,7 @@ class APKTest(unittest.TestCase):
 
     def testAPK(self):
         with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
-                  "r") as fd:
+                  "rb") as fd:
             a = apk.APK(fd.read(), True)
             self.assertTrue(a)
 

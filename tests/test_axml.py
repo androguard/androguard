@@ -19,7 +19,7 @@ class AXMLTest(unittest.TestCase):
         ]
 
         for filename in filenames:
-            with open(filename, "r") as fd:
+            with open(filename, "rb") as fd:
                 ap = apk.AXMLPrinter(fd.read())
                 self.assertTrue(ap)
 

@@ -1,3 +1,4 @@
+from __future__ import division
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -15,6 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import str
+from builtins import range
+from builtins import object
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
@@ -108,7 +112,7 @@ class Graph(object):
         return self.loc_to_ins.get(loc)
 
     def get_node_from_loc(self, loc):
-        for (start, end), node in self.loc_to_node.iteritems():
+        for (start, end), node in self.loc_to_node.items():
             if start <= loc <= end:
                 return node
 
@@ -342,7 +346,7 @@ def dom_lt(graph):
     # Step 1:
     semi = {v: 0 for v in graph.nodes}
     n = _dfs(graph.entry, 0)
-    for i in xrange(n, 1, -1):
+    for i in range(n, 1, -1):
         w = vertex[i]
         # Step 2:
         for v in pred[w]:
@@ -426,9 +430,9 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
         if node.type.is_switch:
             node.add_case(child_node)
         if node.type.is_cond:
-            if_target = ((block.end / 2) -
-                         (block.last_length / 2) + node.off_last_ins)
-            child_addr = child_block.start / 2
+            if_target = ((block.end // 2) -
+                         (block.last_length // 2) + node.off_last_ins)
+            child_addr = child_block.start // 2
             if if_target == child_addr:
                 node.true = child_node
             else:

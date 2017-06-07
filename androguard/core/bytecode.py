@@ -1,27 +1,16 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012/2013, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from __future__ import print_function
+from __future__ import absolute_import
 
+from builtins import str
+from builtins import range
+from builtins import object
 import hashlib
 from xml.sax.saxutils import escape
 from struct import unpack, pack
 import textwrap
 
 import json
-from androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from .androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
 
 
 def disable_print_colors():
@@ -79,7 +68,7 @@ def _Print(name, arg):
     elif isinstance(arg, SVs):
         buff += arg.get_value().__str__()
 
-    print buff
+    print(buff)
 
 
 def PrettyShowEx(exceptions):
@@ -234,8 +223,7 @@ def method2dot(mx, colors={}):
     registers = {}
     if method.get_code():
         for DVMBasicMethodBlock in mx.basic_blocks.gets():
-            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-            ):
+            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
                 operands = DVMBasicMethodBlockInstruction.get_operands(0)
                 for register in operands:
                     if register[0] == 0:
@@ -261,8 +249,7 @@ def method2dot(mx, colors={}):
 
         content = link_tpl % 'header'
 
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             if DVMBasicMethodBlockInstruction.get_op_value(
             ) == 0x2b or DVMBasicMethodBlockInstruction.get_op_value() == 0x2c:
                 new_links.append((DVMBasicMethodBlock, ins_idx,
@@ -495,8 +482,7 @@ def method2json_undirect(mx):
         cblock["instructions"] = []
 
         ins_idx = DVMBasicMethodBlock.start
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
@@ -565,8 +551,7 @@ def method2json_direct(mx):
 
         ins_idx = DVMBasicMethodBlock.start
         last_instru = None
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
@@ -674,15 +659,21 @@ class SVs(object):
         return self.__value.__str__()
 
 
-def object_to_str(obj):
+def object_to_bytes(obj):
+    """
+    Convert a object to a bytearray or call get_raw() of the object
+    if no useful type was found.
+    """
     if isinstance(obj, str):
-        return obj
+        return bytearray(obj, "UTF-8")
     elif isinstance(obj, bool):
-        return ""
+        return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
     elif obj == None:
-        return ""
+        return bytearray()
+    elif isinstance(obj, bytearray):
+        return obj
     else:
         #print type(obj), obj
         return obj.get_raw()
@@ -697,7 +688,7 @@ class MethodBC(object):
 class BuffHandle(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def size(self):
@@ -744,7 +735,7 @@ class Buff(object):
 class _Bytecode(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def read(self, size):
@@ -788,7 +779,7 @@ class _Bytecode(object):
 
     def save(self, filename):
         buff = self._save()
-        with open(filename, "w") as fd:
+        with open(filename, "wb") as fd:
             fd.write(buff)
 
 

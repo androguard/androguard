@@ -12,9 +12,9 @@ class AnalysisTest(unittest.TestCase):
 
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex",
-                  "r") as fd:
+                  "rb") as fd:
             d = dvm.DalvikVMFormat(fd.read())
-            dx = analysis.newVMAnalysis(d)
+            dx = analysis.Analysis(d)
             self.assertTrue(dx)
 
 

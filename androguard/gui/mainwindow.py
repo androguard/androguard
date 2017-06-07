@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import androguard.session as session_module
@@ -122,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._openFile(input_file)
 
     def eventFilter(self, watched, event):
-        for bin_window in self.bin_windows.values():
+        for bin_window in list(self.bin_windows.values()):
             bin_window.eventFilter(watched, event)
         return False
 
@@ -209,7 +212,7 @@ class MainWindow(QtWidgets.QMainWindow):
         f, filename, description = imp.find_module(
             module_name,
             [os.path.dirname(filepath)])
-        print f, filename, description
+        print(f, filename, description)
         mod = imp.load_module(module_name, f, filename, description)
         mod.PluginEntry(self.session)
 

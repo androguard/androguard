@@ -1,20 +1,10 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from __future__ import division
+from __future__ import print_function
 
+from builtins import hex
+from builtins import chr
+from builtins import range
+from builtins import object
 from networkx import DiGraph
 import os
 from xml.sax.saxutils import escape
@@ -33,7 +23,7 @@ except ImportError:
             return entropy
 
         for x in range(256):
-            p_x = float(data.count(chr(x)))/len(data)
+            p_x = data.count(chr(x)) / len(data)
             if p_x > 0:
                 entropy += - p_x*math.log(p_x, 2)
         return entropy
@@ -87,10 +77,10 @@ class Data(object):
         return self.gvmx.export_to_gml()
 
     def export_methods_to_gml(self):
-        print self.gvmx.G
+        print(self.gvmx.G)
 
         for node in self.gvmx.G.nodes():
-            print self.gvmx.nodes_id[ node ].method_name, self.gvmx.nodes_id[ node ].get_attributes()
+            print(self.gvmx.nodes_id[ node ].method_name, self.gvmx.nodes_id[ node ].get_attributes())
 
     def export_apk_to_gml(self):
         if self.apk_data != None:
@@ -221,7 +211,7 @@ class DexViewer(object):
 
             buff += "<graph edgedefault=\"directed\" id=\"G\">\n"
 
-            print name
+            print(name)
 
             buff_nodes = ""
             buff_edges = ""
@@ -237,7 +227,7 @@ class DexViewer(object):
 
                 for i in mx.basic_blocks.get():
                     id_i = self.new_id(i, l_id)
-                    print i, id_i, i.exception_analysis
+                    print(i, id_i, i.exception_analysis)
 
                     buff_nodes += self.add_node( i, id_i )
 
@@ -249,7 +239,7 @@ class DexViewer(object):
                         val = 2
 
                     for j in i.childs:
-                        print "\t", j
+                        print("\t", j)
 
                         id_j = self.new_id(j[-1], l_id)
                         buff_edges += self.add_edge(i, id_i, j[-1], id_j, l_eid, val)
@@ -321,7 +311,7 @@ class ApkViewer(object):
         self.G.add_node( root )
 
         for x, y, z in self.a.get_files_information():
-            print x, y, z, os.path.basename(x)
+            print(x, y, z, os.path.basename(x))
 
             l = []
             splitall( x, l )
@@ -359,7 +349,7 @@ class ApkViewer(object):
 
 
         for node in self.G.nodes():
-            print node
+            print(node)
 
             buff += "<node id=\"%d\">\n" % self.ids[node]
             buff += "<data key=\"d6\">\n"
