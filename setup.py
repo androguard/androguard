@@ -4,7 +4,7 @@ import os
 
 from setuptools import setup, find_packages
 
-if sys.version_info >= (3,):
+if sys.version_info >= (3,3):
     install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
 else:
     install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
