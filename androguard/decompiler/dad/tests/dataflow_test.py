@@ -128,7 +128,7 @@ class DataflowTest(unittest.TestCase):
             for dummy_mock in dummy_entry_mock, dummy_exit_mock:
                 dummy_mock.get_loc_with_ins.return_value = []
             dummynode_mock.side_effect = [dummy_entry_mock, dummy_exit_mock]
-            analysis = dataflow.reach_def_analysis(graph_mock, set(['a', 'b']))
+            analysis = dataflow.reach_def_analysis(graph_mock, ['a', 'b'])
         expected_A = {
             dummy_entry_mock: set([-2, -1]),
             n1: set([-2, -1, 0, 1]),
@@ -161,15 +161,9 @@ class DataflowTest(unittest.TestCase):
             'd': set([1, 7]),
             'ret': set([3, 8])
         }
-        # FIXME here is almost the same problem as with the other failing test.
-        # Only that this test seems to run sometimes...
-        # As the list is not able to be ordered in the same way,
-        # This test will fail.
-        # We are using sets here as well and not lists, so maybe something
-        # else is wrong.
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
-        self.assertDictEqual(analysis.def_to_loc, expected_def_to_loc)
+        self.assertItemsEqual(analysis.def_to_loc, expected_def_to_loc)
 
     @mock.patch.object(dataflow, 'reach_def_analysis')
     def testDefUseGCD(self, mock_reach_def):
@@ -314,17 +308,7 @@ class DataflowTest(unittest.TestCase):
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
         self.assertEqual(ud, expected_ud)
-
-        # FIXME the test will fail for python3 here, because DU
-        # is build up from the dict UD. 
-        # But as sets are unordered, the resulting lists in DU
-        # are unordered as well.
-        # For some reason the python2 variant is very consistent
-        # while py3 iterates over the set differently.
-        # I'm not sure if the order is important...
-        # Maybe need to change the test here or fix the code
-        #(e.g. use defaultdict(set) instead of defaultdict(list)
-        self.assertEqual(du, expected_du)
+        self.assertItemsEqual(du, expected_du)
 
     def testGroupVariablesGCD(self):
         du = {
@@ -359,7 +343,7 @@ class DataflowTest(unittest.TestCase):
             'ret': [([3, 8], [9])]
         }
         groups = dataflow.group_variables(['a', 'b', 'c', 'd', 'ret'], du, ud)
-        self.assertEqual(groups, expected_groups)
+        self.assertItemsEqual(groups, expected_groups)
 
     def testGroupVariablesIfBool(self):
         du = {

@@ -223,8 +223,7 @@ def method2dot(mx, colors={}):
     registers = {}
     if method.get_code():
         for DVMBasicMethodBlock in mx.basic_blocks.gets():
-            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-            ):
+            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
                 operands = DVMBasicMethodBlockInstruction.get_operands(0)
                 for register in operands:
                     if register[0] == 0:
@@ -250,8 +249,7 @@ def method2dot(mx, colors={}):
 
         content = link_tpl % 'header'
 
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             if DVMBasicMethodBlockInstruction.get_op_value(
             ) == 0x2b or DVMBasicMethodBlockInstruction.get_op_value() == 0x2c:
                 new_links.append((DVMBasicMethodBlock, ins_idx,
@@ -484,8 +482,7 @@ def method2json_undirect(mx):
         cblock["instructions"] = []
 
         ins_idx = DVMBasicMethodBlock.start
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
@@ -554,8 +551,7 @@ def method2json_direct(mx):
 
         ins_idx = DVMBasicMethodBlock.start
         last_instru = None
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()

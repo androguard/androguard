@@ -577,7 +577,12 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(tag_name):
+            if self.xml[i] is None :
+                continue
+            tag = self.xml[i].getElementsByTagName(tag_name)
+            if tag is None:
+                return None
+            for item in tag:
                 skip_this_item = False
                 for attr, val in list(attribute_filter.items()):
                     attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
@@ -604,7 +609,16 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity"):
+            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
+                                     self.xml[i].getElementsByTagName("activity-alias")
+
+            for item in activities_and_aliases:
+                # Some applications have more than one MAIN activity.
+                # For example: paid and free content
+                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
+                    continue
+
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
@@ -824,7 +838,11 @@ class APK(object):
         # byte 1 == length. If byte1 & 0x80 > 1, we have long format
         #                   The length of to read bytes is then coded
         #                   in byte1 & 0x7F
-        cert = cert[2 + (cert[1] & 0x7F) if cert[1] & 0x80 > 1 else 2:]
+        l = cert[1]
+        # Python2 compliance
+        if not isinstance(l, int):
+            l = ord(l)
+        cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
     
         certificate = x509.load_der_x509_certificate(cert, default_backend())
     
@@ -1894,7 +1912,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
         except KeyError:
             pass
 
@@ -1917,7 +1935,7 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
                 except KeyError:
                     pass
 
@@ -1942,7 +1960,7 @@ class ARSCParser(object):
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
                     buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
-                                                                       i[1])
+                                                                       escape(i[1]))
         except KeyError:
             pass
 
@@ -2043,7 +2061,7 @@ class ARSCParser(object):
         def put_ate_value(self, result, ate, config):
             if ate.is_complex():
                 complex_array = []
-                result.append(config, complex_array)
+                result.append((config, complex_array))
                 for _, item in ate.item.items:
                     self.put_item_value(complex_array, item, config, complex_=True)
             else:

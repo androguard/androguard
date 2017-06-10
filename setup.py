@@ -12,6 +12,12 @@ elif sys.platform == 'win32':
 else:
     data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
+# IPython Issue: For python2.x, a version <6 is required
+if sys.version_info >= (3,):
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
+else:
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
+
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
@@ -25,7 +31,7 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments'],
+    install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
         'docs': ['sphinx', 'sphinxcontrib-programoutput'],
@@ -34,5 +40,5 @@ setup(
         'graphing': ['pydot'],
     },
     setup_requires=['setuptools'],
-    
+
 )

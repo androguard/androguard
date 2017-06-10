@@ -8,9 +8,6 @@ import imp
 
 ANDROGUARD_VERSION = "3.0-dev"
 
-from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
-
 
 def is_ascii_problem(s):
     try:
@@ -203,12 +200,11 @@ def is_android(filename):
     if not filename:
         return None
 
-    val = None
     with open(filename, "rb") as fd:
         f_bytes = fd.read()
-        val = is_android_raw(f_bytes)
+        return is_android_raw(f_bytes)
 
-    return val
+    return None
 
 
 def is_android_raw(raw):
@@ -218,8 +214,7 @@ def is_android_raw(raw):
     """
     val = None
 
-    if raw[0:2] == b"PK" and (b'AndroidManifest.xml' in raw and
-          b'META-INF/MANIFEST.MF' in raw):
+    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"
@@ -367,6 +362,10 @@ def color_range(startcolor, goalcolor, steps):
 
 
 def load_api_specific_resource_module(resource_name, api):
+    # Those two imports are quite slow.
+    from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
+    from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+
     if resource_name == "aosp_permissions":
         module = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":
