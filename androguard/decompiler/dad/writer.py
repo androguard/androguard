@@ -607,7 +607,7 @@ class Writer(object):
                 tab.append('%s' % unpack('i', data[i:i + 4])[0])
         else:  # FIXME: other cases
             for i in range(value.size):
-                tab.append('%s' % unpack('b', data[i])[0])
+                tab.append('%s' % data[i])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
         self.end_ins()
@@ -688,17 +688,22 @@ class Writer(object):
 
 
 def string(s):
-    # FIXME this string conversion seems to be problematic
+    """
+    Convert a string to a escaped ASCII representation including quotation marks
+    :param s: a string
+    :return: ASCII escaped string
+    """
     ret = ['"']
     for c in s:
-        if c >= ' ' and c < '\x7f':
+        if ' ' <= c < '\x7f':
             if c == "'" or c == '"' or c == '\\':
                 ret.append('\\')
             ret.append(c)
             continue
         elif c <= '\x7f':
             if c in ('\r', '\n', '\t'):
-                ret.append(c.encode('unicode-escape'))
+                # unicode-escape produces bytes
+                ret.append(c.encode('unicode-escape').decode("ascii"))
                 continue
         i = ord(c)
         ret.append('\\u')

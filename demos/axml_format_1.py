@@ -13,4 +13,4 @@ from xml.dom import minidom
 
 ap = apk.AXMLPrinter(read("examples/axml/AndroidManifest2.xml", binary=False))
 
-print(minidom.parseString(ap.getBuff()).toxml())
+print(minidom.parseString(ap.get_buff()).toxml())
