@@ -166,6 +166,9 @@ class APK(object):
         self.axml = {}
         self.arsc = {}
 
+        self.mode = mode
+        self.zipmodule = zipmodule
+
         self.package = ""
         self.androidversion = {}
         self.permissions = []
@@ -182,16 +185,14 @@ class APK(object):
         else:
             self.__raw = bytearray(read(filename))
 
-        self.zipmodule = zipmodule
-
-        if zipmodule == 0:
+        if self.zipmodule == 0:
             self.zip = ChilkatZip(self.__raw)
-        elif zipmodule == 2:
+        elif self.zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
         else:
             import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
         if not skip_analysis:
             for i in self.zip.namelist():
@@ -248,6 +249,26 @@ class APK(object):
             self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
                 "aosp_permissions", self.get_target_sdk_version())
+
+
+    def __getstate__(self):
+        # Upon pickling, we need to remove the ZipFile
+        x = self.__dict__
+        del x['zip']
+
+        return x
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+        if self.zipmodule == 0:
+            self.zip = ChilkatZip(self.__raw)
+        elif self.zipmodule == 2:
+            from androguard.patch import zipfile
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        else:
+            import zipfile
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -838,7 +859,11 @@ class APK(object):
         # byte 1 == length. If byte1 & 0x80 > 1, we have long format
         #                   The length of to read bytes is then coded
         #                   in byte1 & 0x7F
-        cert = cert[2 + (cert[1] & 0x7F) if cert[1] & 0x80 > 1 else 2:]
+        l = cert[1]
+        # Python2 compliance
+        if not isinstance(l, int):
+            l = ord(l)
+        cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
     
         certificate = x509.load_der_x509_certificate(cert, default_backend())
     

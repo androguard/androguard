@@ -4,6 +4,11 @@ import os
 
 from setuptools import setup, find_packages
 
+if sys.version_info >= (3,3):
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
+else:
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
+
 # TODO this is actually a hack... How to copy the files to the right folder?
 #guidir = os.path.join(sys.prefix, 'Scripts', 'androguard', 'gui')
 #if not os.path.isdir(guidir):
@@ -19,7 +24,7 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',],
-    install_requires=['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments'],
+    install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
         'docs': ['sphinx', 'sphinxcontrib-programoutput'],
@@ -28,5 +33,5 @@ setup(
         'graphing': ['pydot'],
     },
     setup_requires=['setuptools'],
-    
+
 )
