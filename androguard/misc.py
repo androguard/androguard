@@ -7,7 +7,7 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 
-from pickle import dumps, loads
+from pickle import dump, load
 from androguard.core import androconf
 
 
@@ -30,7 +30,7 @@ def save_session(l, filename):
           save_session([a, vm, vmx], "msession.json")
   """
     with open(filename, "wb") as fd:
-        fd.write(dumps(l, -1))
+        dump(l, fd)
 
 
 def load_session(filename):
@@ -45,7 +45,8 @@ def load_session(filename):
       :Example:
           a, vm, vmx = load_session("mysession.json")
   """
-    return loads(read(filename, binary=False))
+    with open(filename, "rb") as fd:
+        return load(fd)
 
 
 def AnalyzeAPK(filename, decompiler="dad", session=None):
