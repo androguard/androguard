@@ -26,6 +26,8 @@ https://github.com/androguard/androguard/releases
 
 You can also install androguard from the Debian repositories: [androguard](http://packages.debian.org/androguard).
 
+Note that androguard only works with python >= 2.7 or >= 3.3!
+
 ## 3. Documentation
 
 Link here to the documentation... sometime...
