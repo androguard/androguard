@@ -14,9 +14,9 @@ else:
 
 # IPython Issue: For python2.x, a version <6 is required
 if sys.version_info >= (3,3):
-    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments', 'sphinx', 'sphinxcontrib-programoutput']
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
 else:
-    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments', 'sphinx', 'sphinxcontrib-programoutput'],
+    install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
 
 setup(
     name='androguard',
@@ -34,6 +34,7 @@ setup(
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
+        'docs': ['sphinx', 'sphinxcontrib-programoutput'],
         # If you are installing on debian, you can use python3-magic instead
         'magic': ['filemagic'],
         'graphing': ['pydot'],
