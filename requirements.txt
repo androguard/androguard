@@ -5,3 +5,5 @@ cryptography>=1.0
 pyasn1
 networkx
 sphinx_rtd_theme
+PyQt5
+ipython>=5.0.0
