@@ -13,7 +13,7 @@ else:
     data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
 # IPython Issue: For python2.x, a version <6 is required
-if sys.version_info >= (3,):
+if sys.version_info >= (3,3):
     install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
 else:
     install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
