@@ -1,7 +1,11 @@
-from ViewMode import *
-from cemu import *
-import TextSelection
-from TextDecorators import *    
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from .ViewMode import *
+from .cemu import *
+from . import TextSelection
+from .TextDecorators import *    
 
 from PyQt5 import QtGui, QtCore
 import PyQt5
@@ -85,8 +89,8 @@ class BinViewMode(ViewMode):
         self.original_textdecorator = engine
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width // self.fontWidth
+        self.ROWS    = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):

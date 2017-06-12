@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 from PyQt5 import QtCore, QtGui, QtWidgets
 from androguard.core import androconf
 from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
@@ -7,17 +9,14 @@ from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
 import pyperclip
 
-PYGMENTS = True
-try:
-    from pygments.formatters.html import HtmlFormatter
-    from pygments.lexers import JavaLexer
-    from pygments.styles import get_style_by_name
 
-    from pygments.style import Style
-    from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers import JavaLexer
+from pygments.styles import get_style_by_name
 
-except:
-    PYGMENTS = False
+from pygments.style import Style
+from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
@@ -53,7 +52,7 @@ class PygmentsBlockUserData(QtGui.QTextBlockUserData):
     syntax_stack = ('root',)
 
     def __init__(self, **kwds):
-        for key, value in kwds.items():
+        for key, value in list(kwds.items()):
             setattr(self, key, value)
         QtGui.QTextBlockUserData.__init__(self)
 
@@ -243,7 +242,7 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
         """ Returns a QTextCharFormat for token by reading a Pygments style.
         """
         result = QtGui.QTextCharFormat()
-        for key, value in style.style_for_token(token).items():
+        for key, value in list(style.style_for_token(token).items()):
             if value:
                 if key == 'color':
                     result.setForeground(self._get_brush(value))
@@ -375,10 +374,7 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         #No need to save hightlighter. highlighBlock will automatically be called
         #because we passed the QTextDocument to QSyntaxHighlighter constructor
-        if PYGMENTS:
-            MyHighlighter(self.doc, lexer=JavaLexer())
-        else:
-            androconf.debug("Pygments is not present !")
+        MyHighlighter(self.doc, lexer=JavaLexer())
 
     def cursor_position_changed(self):
         '''Used to detect when cursor change position and to auto select word
@@ -450,7 +446,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Xref asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Xref not available. No info for: '%s'." %
                                     selection)
             return
@@ -535,7 +531,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         #    return
 
     def actionCopy(self):
-        print 'COPY'
+        print('COPY')
         cur = self.textCursor()
         pyperclip.copy(cur.selectedText())
 
@@ -547,7 +543,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Rename asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Rename not available. No info for: '%s'." %
                                     selection)
             return
@@ -598,7 +594,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         androconf.debug("Goto asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
-        if start not in self.doc.binding.keys():
+        if start not in list(self.doc.binding.keys()):
             self.mainwin.showStatus("Goto not available. No info for: '%s'." %
                                     selection)
             return
@@ -633,7 +629,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         end = cursor.selectionEnd()
         androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
 
-        if start in self.doc.binding.keys():
+        if start in list(self.doc.binding.keys()):
             self.mainwin.showStatus('%s at position: (%d, %d)' %
                                     (str(self.doc.binding[start]), start, end))
         else:

@@ -15,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import str
+from builtins import zip
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import logging
 from struct import unpack
 from androguard.decompiler.dad.util import get_type
@@ -602,7 +607,7 @@ class Writer(object):
                 tab.append('%s' % unpack('i', data[i:i + 4])[0])
         else:  # FIXME: other cases
             for i in range(value.size):
-                tab.append('%s' % unpack('b', data[i])[0])
+                tab.append('%s' % data[i])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
         self.end_ins()
@@ -683,16 +688,22 @@ class Writer(object):
 
 
 def string(s):
+    """
+    Convert a string to a escaped ASCII representation including quotation marks
+    :param s: a string
+    :return: ASCII escaped string
+    """
     ret = ['"']
-    for c in s.decode('utf8'):
-        if c >= ' ' and c < '\x7f':
+    for c in s:
+        if ' ' <= c < '\x7f':
             if c == "'" or c == '"' or c == '\\':
                 ret.append('\\')
             ret.append(c)
             continue
         elif c <= '\x7f':
             if c in ('\r', '\n', '\t'):
-                ret.append(c.encode('unicode-escape'))
+                # unicode-escape produces bytes
+                ret.append(c.encode('unicode-escape').decode("ascii"))
                 continue
         i = ord(c)
         ret.append('\\u')
@@ -701,4 +712,4 @@ def string(s):
         ret.append('%x' % ((i >> 4) & 0x0f))
         ret.append('%x' % (i & 0x0f))
     ret.append('"')
-    return ''.join(ret).encode('utf8')
+    return ''.join(ret)

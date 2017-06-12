@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 
 from optparse import OptionParser
@@ -75,7 +76,7 @@ def main(options, arguments):
         interact()
 
     elif options.version != None:
-        print "Androguard version %s" % androconf.ANDROGUARD_VERSION
+        print("Androguard version %s" % androconf.ANDROGUARD_VERSION)
 
 
 if __name__ == "__main__":

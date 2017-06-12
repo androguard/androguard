@@ -1,27 +1,16 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012/2013, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from __future__ import print_function
+from __future__ import absolute_import
 
+from builtins import str
+from builtins import range
+from builtins import object
 import hashlib
 from xml.sax.saxutils import escape
 from struct import unpack, pack
 import textwrap
 
 import json
-from androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from .androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
 
 
 def disable_print_colors():
@@ -79,7 +68,7 @@ def _Print(name, arg):
     elif isinstance(arg, SVs):
         buff += arg.get_value().__str__()
 
-    print buff
+    print(buff)
 
 
 def PrettyShowEx(exceptions):
@@ -227,15 +216,14 @@ def method2dot(mx, colors={}):
     blocks_html = ""
 
     method = mx.get_method()
-    sha256 = hashlib.sha256("%s%s%s" % (
+    sha256 = hashlib.sha256(bytearray("%s%s%s" % (
         mx.get_method().get_class_name(), mx.get_method().get_name(),
-        mx.get_method().get_descriptor())).hexdigest()
+        mx.get_method().get_descriptor()), "UTF-8")).hexdigest()
 
     registers = {}
     if method.get_code():
         for DVMBasicMethodBlock in mx.basic_blocks.gets():
-            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-            ):
+            for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
                 operands = DVMBasicMethodBlockInstruction.get_operands(0)
                 for register in operands:
                     if register[0] == 0:
@@ -256,13 +244,12 @@ def method2dot(mx, colors={}):
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         ins_idx = DVMBasicMethodBlock.start
-        block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name(
-        )).hexdigest()
+        block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name(
+        ), "UTF-8")).hexdigest()
 
         content = link_tpl % 'header'
 
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             if DVMBasicMethodBlockInstruction.get_op_value(
             ) == 0x2b or DVMBasicMethodBlockInstruction.get_op_value() == 0x2c:
                 new_links.append((DVMBasicMethodBlock, ins_idx,
@@ -323,7 +310,7 @@ def method2dot(mx, colors={}):
                 label_edge = values.pop(0)
 
             child_id = hashlib.md5(
-                sha256 + DVMBasicMethodBlockChild[-1].get_name()).hexdigest()
+                bytearray(sha256 + DVMBasicMethodBlockChild[-1].get_name(), "UTF-8")).hexdigest()
             edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
                 block_id, child_id, val, label_edge)
             # color switch
@@ -338,7 +325,7 @@ def method2dot(mx, colors={}):
                 exception_block = exception_elem[-1]
                 if exception_block:
                     exception_id = hashlib.md5(
-                        sha256 + exception_block.get_name()).hexdigest()
+                        bytearray(sha256 + exception_block.get_name(), "UTF-8")).hexdigest()
                     edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
                         block_id, exception_id, "black", exception_elem[0])
 
@@ -347,10 +334,10 @@ def method2dot(mx, colors={}):
         DVMBasicMethodBlockChild = mx.basic_blocks.get_basic_block(link[2])
 
         if DVMBasicMethodBlockChild:
-            block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name(
-            )).hexdigest()
-            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild.get_name(
-            )).hexdigest()
+            block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name(
+            ), "UTF-8")).hexdigest()
+            child_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlockChild.get_name(
+            ), "UTF-8")).hexdigest()
 
             edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"data(0x%x) to @0x%x\", style=\"dashed\"];\n" % (
                 block_id, child_id, "yellow", link[1], link[2])
@@ -395,7 +382,7 @@ def method2format(output, _format="png", mx=None, raw=None):
         data = method2dot(mx)
 
     # subgraphs cluster
-    buff += "subgraph cluster_" + hashlib.md5(output).hexdigest(
+    buff += "subgraph cluster_" + hashlib.md5(bytearray(output, "UTF-8")).hexdigest(
     ) + " {\nlabel=\"%s\"\n" % data['name']
     buff += data['nodes']
     buff += "}\n"
@@ -404,7 +391,7 @@ def method2format(output, _format="png", mx=None, raw=None):
     buff += data['edges']
     buff += "}\n"
 
-    d = pydot.graph_from_dot_data(buff)
+    d = pydot.graph_from_dot_data(buff.encode("UTF-8"))
     if d:
         getattr(d, "write_" + _format.lower())(output)
 
@@ -495,8 +482,7 @@ def method2json_undirect(mx):
         cblock["instructions"] = []
 
         ins_idx = DVMBasicMethodBlock.start
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
@@ -565,8 +551,7 @@ def method2json_direct(mx):
 
         ins_idx = DVMBasicMethodBlock.start
         last_instru = None
-        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions(
-        ):
+        for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
             c_ins = {}
             c_ins["idx"] = ins_idx
             c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
@@ -674,15 +659,21 @@ class SVs(object):
         return self.__value.__str__()
 
 
-def object_to_str(obj):
+def object_to_bytes(obj):
+    """
+    Convert a object to a bytearray or call get_raw() of the object
+    if no useful type was found.
+    """
     if isinstance(obj, str):
-        return obj
+        return bytearray(obj, "UTF-8")
     elif isinstance(obj, bool):
-        return ""
+        return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
     elif obj == None:
-        return ""
+        return bytearray()
+    elif isinstance(obj, bytearray):
+        return obj
     else:
         #print type(obj), obj
         return obj.get_raw()
@@ -697,7 +688,7 @@ class MethodBC(object):
 class BuffHandle(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def size(self):
@@ -744,7 +735,7 @@ class Buff(object):
 class _Bytecode(object):
 
     def __init__(self, buff):
-        self.__buff = buff
+        self.__buff = bytearray(buff)
         self.__idx = 0
 
     def read(self, size):
@@ -788,7 +779,7 @@ class _Bytecode(object):
 
     def save(self, filename):
         buff = self._save()
-        with open(filename, "w") as fd:
+        with open(filename, "wb") as fd:
             fd.write(buff)
 
 

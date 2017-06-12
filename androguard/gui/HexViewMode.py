@@ -1,10 +1,18 @@
-from ViewMode import *
-from cemu import *
-import TextSelection
-from TextDecorators import *
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from builtins import hex
+from builtins import chr
+from builtins import range
+from .ViewMode import *
+from .cemu import *
+from . import TextSelection
+from .TextDecorators import *
 import string
-from PyQt5 import QtGui, QtCore, QtWidgets
 
+from androguard.core.androconf import CONF
+
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.uic import loadUi
 
 
@@ -110,8 +118,8 @@ class HexViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = self.HexColumns[self.idxHexColumns]
-        self.CON_COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.CON_COLUMNS = self.width // self.fontWidth
+        self.ROWS = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def resize(self, width, height):
@@ -176,8 +184,8 @@ class HexViewMode(ViewMode):
         self.drawCursor(qp)
 
         # draw dword lines
-        for i in range(self.COLUMNS/4)[1:]:
-            xw = i*4*3*self.fontWidth - 4
+        for i in range(self.COLUMNS // 4)[1:]:
+            xw = i * 4 * 3 * self.fontWidth - 4
             qp.setPen(QtGui.QColor(0, 255, 0))
             qp.drawLine(xw, 0, xw, self.ROWS*self.fontHeight)
 
@@ -746,7 +754,7 @@ class HexViewMode(ViewMode):
         ID_DESCRIPTION = 4
 
 
-        s = unicode(item.text(column))
+        s = str(item.text(column))
 
         if column == ID_NAME:
             item.setName(s)
@@ -994,7 +1002,7 @@ class Annotation(QtWidgets.QDialog):
 
         import os
         root = os.path.dirname(sys.argv[0])
-        self.ui = loadUi(os.path.join(root, 'androguard/gui/annotation.ui'), baseinstance=self)
+        self.ui = loadUi(os.path.join(CONF['data_prefix'], 'annotation.ui'), baseinstance=self)
 
 #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
 

@@ -1,22 +1,9 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
 import os
-import Queue
+import queue
 import threading
 import time
 import zlib
@@ -107,14 +94,14 @@ class AndroAuto(object):
                         myandro.analysis_app(log, a, d, dx)
 
                     myandro.finish(log)
-                except Exception, why:
+                except Exception as why:
                     myandro.crash(log, why)
                     myandro.finish(log)
 
                 del a, d, dx, axmlobj, arscobj
                 q.task_done()
 
-        q = Queue.Queue(self.settings["max_fetcher"])
+        q = queue.Queue(self.settings["max_fetcher"])
         for i in range(self.settings["max_fetcher"]):
             t = threading.Thread(target=worker, args=[i, q])
             t.daemon = True
@@ -159,11 +146,7 @@ class DefaultAndroAnalysis(object):
     """
         file_type = androconf.is_android_raw(fileraw)
         if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
-            if file_type == "APK":
-                if androconf.is_valid_android_raw(fileraw):
-                    return (True, "APK")
-            else:
-                return (True, file_type)
+            return (True, file_type)
         return (False, None)
 
     def create_axml(self, log, fileraw):
@@ -228,9 +211,9 @@ class DefaultAndroAnalysis(object):
       :param log: an object which corresponds to a unique app
       :param dexobj: a :class:`DalvikVMFormat` object
 
-      :rytpe: a :class:`newVMAnalysis` object
+      :rytpe: a :class:`Analysis` object
     """
-        vm_analysis = analysis.newVMAnalysis(dexobj)
+        vm_analysis = analysis.Analysis(dexobj)
         vm_analysis.create_xref()
         return vm_analysis
 

@@ -1,1 +1,2 @@
-mock
+mock>=2.0
+future

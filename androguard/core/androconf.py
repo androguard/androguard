@@ -1,20 +1,3 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import sys
 import os
 import logging
@@ -24,9 +7,6 @@ import string
 import imp
 
 ANDROGUARD_VERSION = "3.0-dev"
-
-from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
 
 
 def is_ascii_problem(s):
@@ -102,6 +82,15 @@ CONF = {
     "SESSION": None,
 }
 
+if os.path.exists(os.path.join(os.path.dirname(__file__), '..', '..', 'androgui.py')):
+    CONF['data_prefix'] = os.path.join(os.path.dirname(__file__), '..', 'gui')
+# workaround issue on OSX, where sys.prefix is not an installable location
+elif sys.platform == 'darwin' and sys.prefix.startswith('/System'):
+    CONF['data_prefix'] = os.path.join('.', 'share', 'androguard')
+elif sys.platform == 'win32':
+    CONF['data_prefix'] = os.path.join(sys.prefix, 'Scripts', 'androguard')
+else:
+    CONF['data_prefix'] = os.path.join(sys.prefix, 'share', 'androguard')
 
 def default_colors(obj):
     CONF["COLORS"]["OFFSET"] = obj.Yellow
@@ -172,13 +161,13 @@ def long2int(l):
 def long2str(l):
     """Convert an integer to a string."""
     if type(l) not in (types.IntType, types.LongType):
-        raise ValueError, 'the input must be an integer'
+        raise ValueError('the input must be an integer')
 
     if l < 0:
-        raise ValueError, 'the input must be greater than 0'
+        raise ValueError('the input must be greater than 0')
     s = ''
     while l:
-        s = s + chr(l & 255L)
+        s = s + chr(l & 255)
         l >>= 8
 
     return s
@@ -187,9 +176,9 @@ def long2str(l):
 def str2long(s):
     """Convert a string to a long integer."""
     if type(s) not in (types.StringType, types.UnicodeType):
-        raise ValueError, 'the input must be a string'
+        raise ValueError('the input must be a string')
 
-    l = 0L
+    l = 0
     for i in s:
         l <<= 8
         l |= ord(i)
@@ -206,52 +195,48 @@ def is_android(filename):
     """Return the type of the file
 
         @param filename : the filename
-        @rtype : "APK", "DEX", "ELF", None
+        @rtype : "APK", "DEX", None
     """
     if not filename:
         return None
 
-    val = None
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         f_bytes = fd.read()
-        val = is_android_raw(f_bytes)
+        return is_android_raw(f_bytes)
 
-    return val
+    return None
 
 
 def is_android_raw(raw):
+    """
+        Returns a string that describes the type of file, for common Android
+        specific formats
+    """
     val = None
 
-    if raw[0:2] == "PK":
+    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
         val = "APK"
-    elif raw[0:3] == "dex":
+    elif raw[0:3] == b"dex":
         val = "DEX"
-    elif raw[0:3] == "dey":
+    elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:7] == "\x7fELF\x01\x01\x01":
-        val = "ELF"
-    elif raw[0:4] == "\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00":
         val = "AXML"
-    elif raw[0:4] == "\x02\x00\x0C\x00":
-        val = "ARSC"
-    elif ('AndroidManifest.xml' in raw and
-          'META-INF/MANIFEST.MF' in raw):
-        val = "APK"
+    elif raw[0:4] == b"\x02\x00\x0C\x00":
+        val = b"ARSC"
 
     return val
 
 
-def is_valid_android_raw(raw):
-    return raw.find("classes.dex") != -1
+# Init Logger
+log_andro = logging.getLogger("androguard")
 
-# from scapy
-log_andro = logging.getLogger("andro")
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
 log_andro.addHandler(console_handler)
-log_runtime = logging.getLogger("andro.runtime")  # logs at runtime
-log_interactive = logging.getLogger("andro.interactive")  # logs in interactive functions
-log_loading = logging.getLogger("andro.loading")  # logs when loading andro
+log_runtime = logging.getLogger("androguard.runtime")  # logs at runtime
+log_interactive = logging.getLogger("androguard.interactive")  # logs in interactive functions
+log_loading = logging.getLogger("androguard.loading")  # logs when loading andro
 
 
 def set_lazy():
@@ -344,13 +329,13 @@ def interpolate_tuple(startcolor, goalcolor, steps):
     buffer = []
 
     for i in range(0, steps + 1):
-        iR = R + (DiffR * i / steps)
-        iG = G + (DiffG * i / steps)
-        iB = B + (DiffB * i / steps)
+        iR = R + (DiffR * i // steps)
+        iG = G + (DiffG * i // steps)
+        iB = B + (DiffB * i // steps)
 
-        hR = string.replace(hex(iR), "0x", "")
-        hG = string.replace(hex(iG), "0x", "")
-        hB = string.replace(hex(iB), "0x", "")
+        hR = str.replace(hex(iR), "0x", "")
+        hG = str.replace(hex(iG), "0x", "")
+        hB = str.replace(hex(iB), "0x", "")
 
         if len(hR) == 1:
             hR = "0" + hR
@@ -360,7 +345,7 @@ def interpolate_tuple(startcolor, goalcolor, steps):
         if len(hG) == 1:
             hG = "0" + hG
 
-        color = string.upper("#" + hR + hG + hB)
+        color = str.upper("#" + hR + hG + hB)
         buffer.append(color)
 
     return buffer
@@ -377,6 +362,10 @@ def color_range(startcolor, goalcolor, steps):
 
 
 def load_api_specific_resource_module(resource_name, api):
+    # Those two imports are quite slow.
+    from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
+    from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+
     if resource_name == "aosp_permissions":
         module = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import shutil
 import sys
 import os
@@ -78,13 +79,13 @@ def export_apps_to_format(filename,
                           jar=None,
                           decompiler_type=None,
                           format=None):
-    print "Dump information %s in %s" % (filename, output)
+    print("Dump information %s in %s" % (filename, output))
 
     if not os.path.exists(output):
-        print "Create directory %s" % output
+        print("Create directory %s" % output)
         os.makedirs(output)
     else:
-        print "Clean directory %s" % output
+        print("Clean directory %s" % output)
         androconf.rrmdir(output)
         os.makedirs(output)
 
@@ -98,7 +99,7 @@ def export_apps_to_format(filename,
 
     dump_classes = []
     for _, vm, vmx in s.get_objects_dex():
-        print "Decompilation ...",
+        print("Decompilation ...", end=' ')
         sys.stdout.flush()
 
         if decompiler_type == "dex2jad":
@@ -124,16 +125,16 @@ def export_apps_to_format(filename,
                 ], androconf.CONF["OPTIONS_FERNFLOWER"
                                  ], androconf.CONF["TMP_DIRECTORY"]))
 
-        print "End"
+        print("End")
 
         if options.jar:
-            print "jar ...",
+            print("jar ...", end=' ')
             filenamejar = decompiler.Dex2Jar(
                 vm, androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
                 androconf.CONF["TMP_DIRECTORY"]).get_jar()
             shutil.move(filenamejar, output + "classes.jar")
-            print "End"
+            print("End")
 
         for method in vm.get_methods():
             if methods_filter_expr:
@@ -145,9 +146,9 @@ def export_apps_to_format(filename,
             filename_class = valid_class_name(method.get_class_name())
             create_directory(filename_class, output)
 
-            print "Dump %s %s %s ..." % (method.get_class_name(),
+            print("Dump %s %s %s ..." % (method.get_class_name(),
                                          method.get_name(),
-                                         method.get_descriptor()),
+                                         method.get_descriptor()), end=' ')
 
             filename_class = output_name + filename_class
             if filename_class[-1] != "/":
@@ -175,11 +176,11 @@ def export_apps_to_format(filename,
             buff = method2dot(vmx.get_method(method))
 
             if format:
-                print "%s ..." % format,
+                print("%s ..." % format, end=' ')
                 method2format(filename + "." + format, format, None, buff)
 
             if method.get_class_name() not in dump_classes:
-                print "source codes ...",
+                print("source codes ...", end=' ')
                 current_class = vm.get_class(method.get_class_name())
                 current_filename_class = valid_class_name(
                     current_class.get_name())
@@ -189,22 +190,22 @@ def export_apps_to_format(filename,
                     fd.write(current_class.get_source())
                 dump_classes.append(method.get_class_name())
 
-            print "bytecodes ...",
+            print("bytecodes ...", end=' ')
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
             with open(filename + ".ag", "w") as fd:
                 fd.write(bytecode_buff)
-            print
+            print()
 
 
 def main(options, arguments):
     if options.input != None and options.output != None:
         s = session.Session()
-        with open(options.input, "r") as fd:
+        with open(options.input, "rb") as fd:
             s.add(options.input, fd.read())
             export_apps_to_format(options.input, s, options.output, options.limit,
                                   options.jar, options.decompiler, options.format)
     else:
-        print "Please, specify an input file and an output directory"
+        print("Please, specify an input file and an output directory")
 
 
 if __name__ == "__main__":

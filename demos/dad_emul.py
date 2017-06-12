@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+from builtins import chr
+from builtins import object
 import sys
 sys.path.append('./')
 
@@ -170,12 +173,12 @@ method.show()
 
 
 def show_mem(visitor):
-    print 'Memory[4]: %s' % visitor.mem[4]
-    print '==> %r' % ''.join(chr(i) for i in visitor.mem[4])
+    print('Memory[4]: %s' % visitor.mem[4])
+    print('==> %r' % ''.join(chr(i) for i in visitor.mem[4]))
 
 
 show_mem(visitor)
-print '\nStarting visit...',
+print('\nStarting visit...', end=' ')
 graph.get_entry().visit(visitor)
-print ' done !\n'
+print(' done !\n')
 show_mem(visitor)

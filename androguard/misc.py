@@ -1,3 +1,5 @@
+from future import standard_library
+standard_library.install_aliases()
 from androguard.core import *
 from androguard.core.bytecode import *
 from androguard.core.bytecodes.dvm import *
@@ -5,7 +7,7 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 
-from cPickle import dumps, loads
+from pickle import dump, load
 from androguard.core import androconf
 
 
@@ -27,8 +29,8 @@ def save_session(l, filename):
       :Example:
           save_session([a, vm, vmx], "msession.json")
   """
-    with open(filename, "w") as fd:
-        fd.write(dumps(l, -1))
+    with open(filename, "wb") as fd:
+        dump(l, fd)
 
 
 def load_session(filename):
@@ -43,7 +45,8 @@ def load_session(filename):
       :Example:
           a, vm, vmx = load_session("mysession.json")
   """
-    return loads(read(filename, binary=False))
+    with open(filename, "rb") as fd:
+        return load(fd)
 
 
 def AnalyzeAPK(filename, decompiler="dad", session=None):
@@ -62,7 +65,7 @@ def AnalyzeAPK(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     session.add(filename, data)
@@ -83,7 +86,7 @@ def AnalyzeDex(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     return session.addDEX(filename, data)
@@ -103,7 +106,7 @@ def AnalyzeODex(filename, decompiler="dad", session=None):
     if not session:
         session = CONF["SESSION"]
 
-    with open(filename, "r") as fd:
+    with open(filename, "rb") as fd:
         data = fd.read()
 
     return session.addDEY(filename, data)
@@ -142,24 +145,3 @@ def RunDecompiler(d, dx, decompiler, session=None):
                                            androconf.CONF["TMP_DIRECTORY"]))
         else:
             d.set_decompiler(DecompilerDAD(d, dx))
-
-
-def AnalyzeElf(filename, raw=False, session=None):
-    # avoid to install smiasm for everybody
-    from androguard.core.binaries.elf import ELF
-
-    e = None
-    if raw == False:
-        e = ELF(read(filename))
-    else:
-        e = ELF(filename)
-
-    ExportElfToPython(e)
-
-    return e
-
-
-def ExportElfToPython(e, session=None):
-    for function in e.get_functions():
-        name = "FUNCTION_" + function.name
-        setattr(e, name, function)

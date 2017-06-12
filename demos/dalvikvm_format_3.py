@@ -12,11 +12,11 @@ from androguard.util import read
 TEST = "examples/android/TestsAndroguard/bin/classes.dex"
 
 j = dvm.DalvikVMFormat(read(TEST, binary=False))
-x = analysis.VMAnalysis(j)
+x = analysis.Analysis(j)
 j.set_vmanalysis(x)
 
 # SHOW CLASSES (verbose and pretty)
-j.pretty_show()
+j.show()
 
 # SHOW METHODS
 for i in j.get_methods():

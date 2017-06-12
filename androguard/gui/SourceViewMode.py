@@ -1,6 +1,9 @@
-from ViewMode import *
-from cemu import *
-import TextSelection
+from __future__ import division
+from __future__ import absolute_import
+from builtins import range
+from .ViewMode import *
+from .cemu import *
+from . import TextSelection
 
 from PyQt5 import QtGui, QtCore
 
@@ -67,8 +70,8 @@ class SourceViewMode(ViewMode):
         self.refresh = True
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width // self.fontWidth
+        self.ROWS    = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def getPixmap(self):

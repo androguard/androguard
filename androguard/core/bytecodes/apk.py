@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # -*- coding: utf-8 -*-
 # This file is part of Androguard.
 #
@@ -17,6 +18,17 @@
 # limitations under the License.
 from pyexpat import ExpatError
 
+=======
+from __future__ import division
+from __future__ import print_function
+
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import str
+from builtins import range
+from builtins import object
+>>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
 from androguard.core import bytecode
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
@@ -24,15 +36,23 @@ from androguard.util import read
 
 from androguard.core.resources import public
 
-import StringIO
+import io
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 from zlib import crc32
 import re
 import collections
 import sys
+import binascii
 
 from xml.dom import minidom
+
+# Used for reading Certificates
+from pyasn1.codec.der.decoder import decode
+from pyasn1.codec.der.encoder import encode
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
@@ -168,6 +188,9 @@ class APK(object):
         self.axml = {}
         self.arsc = {}
 
+        self.mode = mode
+        self.zipmodule = zipmodule
+
         self.package = ""
         self.androidversion = {}
         self.permissions = []
@@ -180,25 +203,24 @@ class APK(object):
         self.magic_file = magic_file
 
         if raw is True:
-            self.__raw = filename
+            self.__raw = bytearray(filename)
         else:
-            self.__raw = read(filename)
+            self.__raw = bytearray(read(filename))
 
-        self.zipmodule = zipmodule
-
-        if zipmodule == 0:
+        if self.zipmodule == 0:
             self.zip = ChilkatZip(self.__raw)
-        elif zipmodule == 2:
+        elif self.zipmodule == 2:
             from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
         else:
             import zipfile
-            self.zip = zipfile.ZipFile(StringIO.StringIO(self.__raw), mode=mode)
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
         if not skip_analysis:
             for i in self.zip.namelist():
                 if i == "AndroidManifest.xml":
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
+
                     self.xml[i] = {}
                     buffer_array = self.axml[i].get_buff()
                     while not bool(self.xml[i]):
@@ -215,7 +237,7 @@ class APK(object):
                             ## remove all invalid elements
                             buffer_array = '\n'.join([elem for elem in buffer_arr if elem != element_to_delete])
 
-                    if self.xml[i] != None:
+                    if self.xml[i]:
                         self.package = self.xml[i].documentElement.getAttribute(
                             "package")
                         self.androidversion[
@@ -261,6 +283,26 @@ class APK(object):
             self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
                 "aosp_permissions", self.get_target_sdk_version())
+
+
+    def __getstate__(self):
+        # Upon pickling, we need to remove the ZipFile
+        x = self.__dict__
+        del x['zip']
+
+        return x
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+        if self.zipmodule == 0:
+            self.zip = ChilkatZip(self.__raw)
+        elif self.zipmodule == 2:
+            from androguard.patch import zipfile
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        else:
+            import zipfile
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -320,8 +362,8 @@ class APK(object):
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
                     ARSCResTableConfig.default_config())[0][1]
-            except Exception, e:
-                androconf.warning("Exception selecting app icon: %s", e)
+            except Exception as e:
+                androconf.warning("Exception selecting app name: %s" % e)
                 app_name = ""
         return app_name
 
@@ -341,14 +383,18 @@ class APK(object):
             app_icon = self.get_element('application', 'icon')
 
         if not app_icon:
-            res_id = self.get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
+            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
 
         if not app_icon:
-            res_id = self.get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
+            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
+
+        if not app_icon:
+            # If the icon can not be found, return now
+            return None
 
         if app_icon.startswith("@"):
             res_id = int(app_icon[1:], 16)
@@ -356,16 +402,16 @@ class APK(object):
             candidates = res_parser.get_resolved_res_configs(res_id)
 
             app_icon = None
-            current_dpi = 0
+            current_dpi = -1
 
             try:
                 for config, file_name in candidates:
                     dpi = config.get_density()
-                    if dpi <= max_dpi and dpi > current_dpi:
+                    if current_dpi < dpi <= max_dpi:
                         app_icon = file_name
                         current_dpi = dpi
-            except Exception, e:
-                androconf.warning("Exception selecting app icon: %s", e)
+            except Exception as e:
+                androconf.warning("Exception selecting app icon: %s" % e)
 
         return app_icon
 
@@ -401,53 +447,58 @@ class APK(object):
         """
         return self.zip.namelist()
 
+    def _get_file_magic_name(self, buffer):
+        """
+        Return the filetype guessed for a buffer
+        :param buffer: bytes
+        :return: str of filetype
+        """
+        # TODO this functions should be better in another package
+        default = "Unknown"
+        ftype = None
+
+        # There are several implementations of magic,
+        # unfortunately all called magic
+        try:
+            import magic
+            getattr(magic, "MagicException")
+        except ImportError:
+            # no lib magic at all, return unknown
+            return default
+        except AttributeError:
+            try:
+                getattr(magic.Magic, "id_buffer")
+            except AttributeError:
+                ms = magic.open(magic.MAGIC_NONE)
+                ms.load()
+                ftype = ms.buffer(buffer)
+            else:
+                if self.magic_file is not None:
+                    m = magic.Magic(paths=[self.magic_file])
+                else:
+                    m = magic.Magic()
+                ftype = m.id_buffer(buffer)
+        else:
+            m = magic.Magic(magic_file=self.magic_file)
+            ftype = m.from_buffer(buffer)
+
+        if ftype is None:
+            return default
+        else:
+            return self._patch_magic(buffer, ftype)
+
     def get_files_types(self):
         """
             Return the files inside the APK with their associated types (by using python-magic)
 
             :rtype: a dictionnary
         """
-        try:
-            import magic
-        except ImportError:
-            # no lib magic !
+        if self.files == {}:
+            # Generate File Types / CRC List
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
-                self.files[i] = "Unknown"
-            return self.files
-
-        if self.files != {}:
-            return self.files
-
-        builtin_magic = 0
-        try:
-            getattr(magic, "MagicException")
-        except AttributeError:
-            builtin_magic = 1
-
-        if builtin_magic:
-            ms = magic.open(magic.MAGIC_NONE)
-            ms.load()
-
-            for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files[i] = ms.buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
-                self.files_crc32[i] = crc32(buffer)
-        else:
-            m = magic.Magic(magic_file=self.magic_file)
-            for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files[i] = m.from_buffer(buffer)
-                if self.files[i] is None:
-                    self.files[i] = "Unknown"
-                else:
-                    self.files[i] = self._patch_magic(buffer, self.files[i])
-                self.files_crc32[i] = crc32(buffer)
+                self.files[i] = self._get_file_magic_name(buffer)
 
         return self.files
 
@@ -455,16 +506,22 @@ class APK(object):
         if ("Zip" in orig) or ("DBase" in orig):
             val = androconf.is_android_raw(buffer)
             if val == "APK":
-                if androconf.is_valid_android_raw(buffer):
-                    return "Android application package file"
+                return "Android application package file"
             elif val == "AXML":
                 return "Android's binary XML"
 
         return orig
 
     def get_files_crc32(self):
+        """
+        Calculates and returns a dictionary of filenames and CRC32
+        
+        :return: dict of filename: CRC32
+        """
         if self.files_crc32 == {}:
-            self.get_files_types()
+            for i in self.get_files():
+                buffer = self.zip.read(i)
+                self.files_crc32[i] = crc32(buffer)
 
         return self.files_crc32
 
@@ -474,14 +531,8 @@ class APK(object):
 
             :rtype: string, string, int
         """
-        if self.files == {}:
-            self.get_files_types()
-
-        for i in self.get_files():
-            try:
-                yield i, self.files[i], self.files_crc32[i]
-            except KeyError:
-                yield i, "", ""
+        for k in self.get_files():
+            yield k, self.get_files_types()[k], self.get_files_crc32()[k]
 
     def get_raw(self):
         """
@@ -524,7 +575,7 @@ class APK(object):
 
             # Multidex support
             basename = "classes%d.dex"
-            for i in xrange(2, sys.maxint):
+            for i in range(2, sys.maxsize):
                 yield self.get_file(basename % i)
         except FileNotPresent:
             pass
@@ -569,9 +620,14 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(tag_name):
+            if self.xml[i] is None :
+                continue
+            tag = self.xml[i].getElementsByTagName(tag_name)
+            if tag is None:
+                return None
+            for item in tag:
                 skip_this_item = False
-                for attr, val in attribute_filter.items():
+                for attr, val in list(attribute_filter.items()):
                     attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
                     if attr_val != val:
                         skip_this_item = True
@@ -596,7 +652,16 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName("activity"):
+            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
+                                     self.xml[i].getElementsByTagName("activity-alias")
+
+            for item in activities_and_aliases:
+                # Some applications have more than one MAIN activity.
+                # For example: paid and free content
+                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
+                    continue
+
                 for sitem in item.getElementsByTagName("action"):
                     val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
                     if val == "android.intent.action.MAIN":
@@ -723,7 +788,7 @@ class APK(object):
         aosp_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm in self.permission_module["AOSP_PERMISSIONS"].keys():
+            if perm in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 aosp_permissions.append(perm)
         return aosp_permissions
 
@@ -751,7 +816,7 @@ class APK(object):
         third_party_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
-            if perm not in self.permission_module["AOSP_PERMISSIONS"].keys():
+            if perm not in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 third_party_permissions.append(perm)
         return third_party_permissions
 
@@ -761,7 +826,7 @@ class APK(object):
 
             :rtype: list of strings
         '''
-        return self.declared_permissions.keys()
+        return list(self.declared_permissions.keys())
 
     def get_declared_permissions_details(self):
         '''
@@ -807,14 +872,24 @@ class APK(object):
         """
             Return a certificate object by giving the name in the apk file
         """
-        import chilkat
+        pkcs7message = self.get_file(filename)
 
-        cert = chilkat.CkCert()
-        f = self.get_file(filename)
-        data = chilkat.CkByteData()
-        data.append2(f, len(f))
-        success = cert.LoadFromBinary(data)
-        return success, cert
+        message, _ = decode(pkcs7message)
+        cert = encode(message[1][3])
+        # Remove the first identifier
+        # byte 0 == identifier, skip
+        # byte 1 == length. If byte1 & 0x80 > 1, we have long format
+        #                   The length of to read bytes is then coded
+        #                   in byte1 & 0x7F
+        l = cert[1]
+        # Python2 compliance
+        if not isinstance(l, int):
+            l = ord(l)
+        cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
+    
+        certificate = x509.load_der_x509_certificate(cert, default_backend())
+    
+        return certificate
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
         """
@@ -837,7 +912,7 @@ class APK(object):
 
         for item in self.zip.infolist():
             if deleted_files is not None:
-                if re.match(deleted_files, item.filename) == None:
+                if re.match(deleted_files, item.filename) is None:
                     if item.filename in new_files:
                         zout.writestr(item, new_files[item.filename])
                     else:
@@ -876,6 +951,10 @@ class APK(object):
         try:
             return self.arsc["resources.arsc"]
         except KeyError:
+            if "resources.arsc" not in self.zip.namelist():
+                # There is a rare case, that no resource file is supplied.
+                # Maybe it was added manually, thus we check here
+                return None
             self.arsc["resources.arsc"] = ARSCParser(self.zip.read(
                 "resources.arsc"))
             return self.arsc["resources.arsc"]
@@ -884,7 +963,7 @@ class APK(object):
         """
             Return the name of the first signature file found.
         """
-        return self.get_signature_names_list()[0]
+        return self.get_signature_names()[0]
 
     def get_signature_names(self):
         """
@@ -906,7 +985,7 @@ class APK(object):
         """
             Return the data of the first signature file found.
         """
-        return self.get_signature_list()[0]
+        return self.get_signatures()[0]
 
     def get_signatures(self):
         """
@@ -927,71 +1006,111 @@ class APK(object):
     def show(self):
         self.get_files_types()
 
-        print "FILES: "
+        print("FILES: ")
         for i in self.get_files():
             try:
-                print "\t", i, self.files[i], "%x" % self.files_crc32[i]
+                print("\t", i, self.files[i], "%x" % self.files_crc32[i])
             except KeyError:
-                print "\t", i, "%x" % self.files_crc32[i]
+                print("\t", i, "%x" % self.files_crc32[i])
 
-        print "DECLARED PERMISSIONS:"
+        print("DECLARED PERMISSIONS:")
         declared_permissions = self.get_declared_permissions()
         for i in declared_permissions:
-            print "\t", i
+            print("\t", i)
 
-        print "REQUESTED PERMISSIONS:"
+        print("REQUESTED PERMISSIONS:")
         requested_permissions = self.get_requested_permissions()
         for i in requested_permissions:
-            print "\t", i
+            print("\t", i)
 
-        print "MAIN ACTIVITY: ", self.get_main_activity()
+        print("MAIN ACTIVITY: ", self.get_main_activity())
 
-        print "ACTIVITIES: "
+        print("ACTIVITIES: ")
         activities = self.get_activities()
         for i in activities:
             filters = self.get_intent_filters("activity", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "SERVICES: "
+        print("SERVICES: ")
         services = self.get_services()
         for i in services:
             filters = self.get_intent_filters("service", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "RECEIVERS: "
+        print("RECEIVERS: ")
         receivers = self.get_receivers()
         for i in receivers:
             filters = self.get_intent_filters("receiver", i)
-            print "\t", i, filters or ""
+            print("\t", i, filters or "")
 
-        print "PROVIDERS: ", self.get_providers()
+        print("PROVIDERS: ", self.get_providers())
+
+        print("CERTIFICATES:")
+        for c in self.get_signature_names():
+            show_Certificate(self.get_certificate(c))
 
 
-def show_Certificate(cert):
-    print "Issuer: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
-        cert.issuerC(), cert.issuerCN(), cert.issuerDN(), cert.issuerE(),
-        cert.issuerL(), cert.issuerO(), cert.issuerOU(), cert.issuerS())
-    print "Subject: C=%s, CN=%s, DN=%s, E=%s, L=%s, O=%s, OU=%s, S=%s" % (
-        cert.subjectC(), cert.subjectCN(), cert.subjectDN(), cert.subjectE(),
-        cert.subjectL(), cert.subjectO(), cert.subjectOU(), cert.subjectS())
+def get_Name(name, short=False):
+    """
+        Return the distinguished name of an X509 Certificate
+        
+        :param name: Name object to return the DN from
+        :param short: Use short form (Default: False)
+
+        :type name: :class:`cryptography.x509.Name`
+        :type short: Boolean
+
+        :rtype: str
+    """
+    
+    # For the shortform, we have a lookup table
+    # See RFC4514 for more details
+    sf = {
+          "countryName": "C",
+          "stateOrProvinceName": "ST",
+          "localityName": "L",
+          "organizationalUnitName": "OU",
+          "organizationName": "O",
+          "commonName": "CN",
+          "emailAddress": "E",
+         }
+    return ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in name])
+    
+    
+def show_Certificate(cert, short=False):
+    """
+        Print Fingerprints, Issuer and Subject of an X509 Certificate.
+
+        :param cert: X509 Certificate to print
+        :param short: Print in shortform for DN (Default: False)
+
+        :type cert: :class:`cryptography.x509.Certificate`
+        :type short: Boolean
+    """
+    
+    for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
+        print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
+    print("Issuer: {}".format(get_Name(cert.issuer, short=short)))
+    print("Subject: {}".format(get_Name(cert.subject, short=short)))
 
 
 ################################## AXML FORMAT ########################################
-# Translated from 
+# Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
 UTF8_FLAG = 0x00000100
-CHUNK_STRINGPOOL_TYPE = 0x001C0001
-CHUNK_NULL_TYPE = 0x00000000
 
 
 class StringBlock(object):
+<<<<<<< HEAD
     def __init__(self, buff):
         self.start = buff.get_idx()
-        self._cache = {}
-        self.header_size, self.header = self.skipNullPadding(buff)
+=======
 
-        self.chunkSize = unpack('<i', buff.read(4))[0]
+    def __init__(self, buff, header):
+>>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
+        self._cache = {}
+        self.header = header
         self.stringCount = unpack('<i', buff.read(4))[0]
         self.styleOffsetCount = unpack('<i', buff.read(4))[0]
 
@@ -1012,7 +1131,7 @@ class StringBlock(object):
         for i in range(0, self.styleOffsetCount):
             self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
 
-        size = self.chunkSize - self.stringsOffset
+        size = self.header.size - self.stringsOffset
         if self.stylesOffset != 0:
             size = self.stylesOffset - self.stringsOffset
 
@@ -1023,30 +1142,14 @@ class StringBlock(object):
         self.m_charbuff = buff.read(size)
 
         if self.stylesOffset != 0:
-            size = self.chunkSize - self.stylesOffset
+            size = self.header.size - self.stylesOffset
 
             # FIXME
             if (size % 4) != 0:
                 androconf.warning("ooo")
 
-            for i in range(0, size / 4):
+            for i in range(0, size // 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
-
-    def skipNullPadding(self, buff):
-
-        def readNext(buff, first_run=True):
-            header = unpack('<i', buff.read(4))[0]
-
-            if header == CHUNK_NULL_TYPE and first_run:
-                androconf.info("Skipping null padding in StringBlock header")
-                header = readNext(buff, first_run=False)
-            elif header != CHUNK_STRINGPOOL_TYPE:
-                androconf.warning("Invalid StringBlock header")
-
-            return header
-
-        header = readNext(buff)
-        return header >> 8, header & 0xFF
 
     def getString(self, idx):
         if idx in self._cache:
@@ -1097,7 +1200,7 @@ class StringBlock(object):
         return string
 
     def decodeLength(self, offset, sizeof_char):
-        length = ord(self.m_charbuff[offset])
+        length = self.m_charbuff[offset]
 
         sizeof_2chars = sizeof_char << 1
         fmt_chr = 'B' if sizeof_char == 1 else 'H'
@@ -1113,15 +1216,15 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print "StringBlock(%x, %x, %x, %x, %x, %x" % (
+        print("StringBlock(%x, %x, %x, %x, %x, %x" % (
             self.start,
             self.header,
             self.header_size,
             self.chunkSize,
             self.stringsOffset,
-            self.flags)
+            self.flags))
         for i in range(0, len(self.m_stringOffsets)):
-            print i, repr(self.getString(i))
+            print(i, repr(self.getString(i)))
 
 
 ATTRIBUTE_IX_NAMESPACE_URI = 0
@@ -1160,7 +1263,10 @@ class AXMLParser(object):
         if axml_file == CHUNK_AXML_FILE:
             self.buff.read(4)
 
-            self.sb = StringBlock(self.buff)
+            header = ARSCHeader(self.buff)
+            assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
+
+            self.sb = StringBlock(self.buff, header)
 
             self.m_resourceIDs = []
             self.m_prefixuri = {}
@@ -1185,7 +1291,7 @@ class AXMLParser(object):
         self.m_classAttribute = -1
         self.m_styleAttribute = -1
 
-    def next(self):
+    def __next__(self):
         self.doNext()
         return self.m_event
 
@@ -1218,7 +1324,7 @@ class AXMLParser(object):
                 if chunkSize < 8 or chunkSize % 4 != 0:
                     androconf.warning("Invalid chunk size")
 
-                for i in range(0, chunkSize / 4 - 2):
+                for i in range(0, (chunkSize // 4) - 2):
                     self.m_resourceIDs.append(
                         unpack('<L', self.buff.read(4))[0])
 
@@ -1359,7 +1465,7 @@ class AXMLParser(object):
         if self.m_event != START_TAG:
             return -1
 
-        return len(self.m_attributes) / ATTRIBUTE_LENGHT
+        return len(self.m_attributes) // ATTRIBUTE_LENGHT
 
     def getAttributePrefix(self, index):
         offset = self.getAttributeOffset(index)
@@ -1386,6 +1492,8 @@ class AXMLParser(object):
                 res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][
                     attr
                 ]
+            else:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE'
 
         return res
 
@@ -1504,7 +1612,7 @@ class AXMLPrinter(object):
         self.buff = u''
 
         while True and self.axml.is_valid():
-            _type = self.axml.next()
+            _type = next(self.axml)
 
             if _type == START_DOCUMENT:
                 self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1586,6 +1694,7 @@ RES_XML_RESOURCE_MAP_TYPE = 0x0180
 RES_TABLE_PACKAGE_TYPE = 0x0200
 RES_TABLE_TYPE_TYPE = 0x0201
 RES_TABLE_TYPE_SPEC_TYPE = 0x0202
+RES_TABLE_LIBRARY_TYPE = 0x0203
 
 ACONFIGURATION_MCC = 0x0001
 ACONFIGURATION_MNC = 0x0002
@@ -1611,71 +1720,113 @@ class ARSCParser(object):
         self.header = ARSCHeader(self.buff)
         self.packageCount = unpack('<i', self.buff.read(4))[0]
 
-        self.stringpool_main = StringBlock(self.buff)
-
-        self.next_header = ARSCHeader(self.buff)
         self.packages = {}
         self.values = {}
         self.resource_values = collections.defaultdict(collections.defaultdict)
         self.resource_configs = collections.defaultdict(lambda: collections.defaultdict(set))
         self.resource_keys = collections.defaultdict(
             lambda: collections.defaultdict(collections.defaultdict))
+        self.stringpool_main = None
 
-        for i in range(0, self.packageCount):
-            current_package = ARSCResTablePackage(self.buff)
-            package_name = current_package.get_name()
+        # skip to the start of the first chunk
+        self.buff.set_idx(self.header.start + self.header.header_size)
 
-            self.packages[package_name] = []
+        data_end = self.header.start + self.header.size
 
-            mTableStrings = StringBlock(self.buff)
-            mKeyStrings = StringBlock(self.buff)
+        while self.buff.get_idx() <= data_end - ARSCHeader.SIZE:
+            res_header = ARSCHeader(self.buff)
 
-            self.packages[package_name].append(current_package)
-            self.packages[package_name].append(mTableStrings)
-            self.packages[package_name].append(mKeyStrings)
+            if res_header.start + res_header.size > data_end:
+                # this inner chunk crosses the boundary of the table chunk
+                break
 
-            pc = PackageContext(current_package, self.stringpool_main,
-                                mTableStrings, mKeyStrings)
+            if res_header.type == RES_STRING_POOL_TYPE and not self.stringpool_main:
+                self.stringpool_main = StringBlock(self.buff, res_header)
 
-            current = self.buff.get_idx()
-            while not self.buff.end():
-                header = ARSCHeader(self.buff)
-                self.packages[package_name].append(header)
+            elif res_header.type == RES_TABLE_PACKAGE_TYPE:
+                assert len(self.packages) < self.packageCount, "Got more packages than expected"
 
-                if header.type == RES_TABLE_TYPE_SPEC_TYPE:
-                    self.packages[package_name].append(ARSCResTypeSpec(
-                        self.buff, pc))
+                current_package = ARSCResTablePackage(self.buff, res_header)
+                package_name = current_package.get_name()
+                package_data_end = res_header.start + res_header.size
 
+<<<<<<< HEAD
                 elif header.type == RES_TABLE_TYPE_TYPE:
                     a_res_type = ARSCResType(self.buff, pc)
                     self.packages[package_name].append(a_res_type)
                     self.resource_configs[package_name][a_res_type].add(
                         a_res_type.config)
+=======
+                self.packages[package_name] = []
+>>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
 
-                    entries = []
-                    for i in range(0, a_res_type.entryCount):
-                        current_package.mResId = current_package.mResId & 0xffff0000 | i
-                        entries.append((unpack('<i', self.buff.read(4))[0],
-                                        current_package.mResId))
+                self.buff.set_idx(current_package.header.start + current_package.typeStrings)
+                type_sp_header = ARSCHeader(self.buff)
+                assert type_sp_header.type == RES_STRING_POOL_TYPE, \
+                    "Expected String Pool header, got %x" % type_sp_header.type
+                mTableStrings = StringBlock(self.buff, type_sp_header)
 
-                    self.packages[package_name].append(entries)
+                self.buff.set_idx(current_package.header.start + current_package.keyStrings)
+                key_sp_header = ARSCHeader(self.buff)
+                assert key_sp_header.type == RES_STRING_POOL_TYPE, \
+                    "Expected String Pool header, got %x" % key_sp_header.type
+                mKeyStrings = StringBlock(self.buff, key_sp_header)
 
-                    for entry, res_id in entries:
-                        if self.buff.end():
-                            break
+                self.packages[package_name].append(current_package)
+                self.packages[package_name].append(mTableStrings)
+                self.packages[package_name].append(mKeyStrings)
 
-                        if entry != -1:
-                            ate = ARSCResTableEntry(self.buff, res_id, pc)
-                            self.packages[package_name].append(ate)
+                pc = PackageContext(current_package, self.stringpool_main,
+                                    mTableStrings, mKeyStrings)
 
-                elif header.type == RES_TABLE_PACKAGE_TYPE:
-                    break
-                else:
-                    androconf.warning("unknown type")
-                    break
+                # skip to the first header in this table package chunk
+                self.buff.set_idx(res_header.start + res_header.header_size)
 
-                current += header.size
-                self.buff.set_idx(current)
+                while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
+
+                    pkg_chunk_header = ARSCHeader(self.buff)
+                    if pkg_chunk_header.start + pkg_chunk_header.size > package_data_end:
+                        # we are way off the package chunk; bail out
+                        break
+
+                    self.packages[package_name].append(pkg_chunk_header)
+
+                    if pkg_chunk_header.type == RES_TABLE_TYPE_SPEC_TYPE:
+                        self.packages[package_name].append(ARSCResTypeSpec(
+                            self.buff, pc))
+
+                    elif pkg_chunk_header.type == RES_TABLE_TYPE_TYPE:
+                        a_res_type = ARSCResType(self.buff, pc)
+                        self.packages[package_name].append(a_res_type)
+                        self.resource_configs[package_name][a_res_type].add(
+                           a_res_type.config)
+
+                        entries = []
+                        for i in range(0, a_res_type.entryCount):
+                            current_package.mResId = current_package.mResId & 0xffff0000 | i
+                            entries.append((unpack('<i', self.buff.read(4))[0],
+                                            current_package.mResId))
+
+                        self.packages[package_name].append(entries)
+
+                        for entry, res_id in entries:
+                            if self.buff.end():
+                                break
+
+                            if entry != -1:
+                                ate = ARSCResTableEntry(self.buff, res_id, pc)
+                                self.packages[package_name].append(ate)
+                    elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
+                        androconf.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
+                    else:
+                        # silently skip other chunk types
+                        pass
+
+                    # skip to the next chunk
+                    self.buff.set_idx(pkg_chunk_header.start + pkg_chunk_header.size)
+
+            # move to the next resource chunk
+            self.buff.set_idx(res_header.start + res_header.size)
 
     def _analyse(self):
         if self.analyzed:
@@ -1803,15 +1954,15 @@ class ARSCParser(object):
         return ["", ""]
 
     def get_packages_names(self):
-        return self.packages.keys()
+        return list(self.packages.keys())
 
     def get_locales(self, package_name):
         self._analyse()
-        return self.values[package_name].keys()
+        return list(self.values[package_name].keys())
 
     def get_types(self, package_name, locale):
         self._analyse()
-        return self.values[package_name][locale].keys()
+        return list(self.values[package_name][locale].keys())
 
     def get_public_resources(self, package_name, locale='\x00\x00'):
         self._analyse()
@@ -1838,7 +1989,11 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["string"]:
-                buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                if any(map(i[1].__contains__, '<&>')):
+                    value = '<![CDATA[%s]]>' % i[1]
+                else:
+                    value = i[1]
+                buff += '<string name="%s">%s</string>\n' % (i[0], value)
         except KeyError:
             pass
 
@@ -1861,7 +2016,7 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], i[1])
+                        buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
                 except KeyError:
                     pass
 
@@ -1886,7 +2041,7 @@ class ARSCParser(object):
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
                     buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
-                                                                       i[1])
+                                                                       escape(i[1]))
         except KeyError:
             pass
 
@@ -1987,7 +2142,7 @@ class ARSCParser(object):
         def put_ate_value(self, result, ate, config):
             if ate.is_complex():
                 complex_array = []
-                result.append(config, complex_array)
+                result.append((config, complex_array))
                 for _, item in ate.item.items:
                     self.put_item_value(complex_array, item, config, complex_=True)
             else:
@@ -2059,7 +2214,7 @@ class ARSCParser(object):
                     config,
                     res_options[config])]
             else:
-                return res_options.items()
+                return list(res_options.items())
 
         except KeyError:
             return []
@@ -2089,7 +2244,7 @@ class ARSCParser(object):
             package_name = self.get_packages_names()[0]
         result = collections.defaultdict(list)
 
-        for res_type, configs in self.resource_configs[package_name].items():
+        for res_type, configs in list(self.resource_configs[package_name].items()):
             if res_type.get_package_name() == package_name and (
                             type_name is None or res_type.get_type() == type_name):
                 result[res_type.get_type()].extend(configs)
@@ -2116,6 +2271,11 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
+<<<<<<< HEAD
+=======
+    SIZE = 2 + 2 + 4
+
+>>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.type = unpack('<h', buff.read(2))[0]
@@ -2124,7 +2284,13 @@ class ARSCHeader(object):
 
 
 class ARSCResTablePackage(object):
+<<<<<<< HEAD
     def __init__(self, buff):
+=======
+
+    def __init__(self, buff, header):
+        self.header = header
+>>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
         self.name = buff.readNullString(256)

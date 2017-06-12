@@ -58,7 +58,7 @@ class APIValueWindow(QtWidgets.QTreeView):
         row = 0
         for digest, d, dx in self.session.get_objects_dex():
             for external_class in dx.get_external_classes():
-                for method in external_class.orig_class.methods.values():
+                for method in list(external_class.orig_class.methods.values()):
                     self.model.setData(self.model.index(
                         row, 0, QtCore.QModelIndex()), method.get_name())
                     self.model.setData(self.model.index(
