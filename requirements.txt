@@ -4,3 +4,4 @@ sphinxcontrib-programoutput
 cryptography>=1.0
 pyasn1
 networkx
+sphinx_rtd_theme

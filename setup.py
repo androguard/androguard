@@ -34,7 +34,7 @@ setup(
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
-        'docs': ['sphinx', 'sphinxcontrib-programoutput'],
+        'docs': ['sphinx', 'sphinxcontrib-programoutput', 'sphinx_rtd_theme'],
         # If you are installing on debian, you can use python3-magic instead
         'magic': ['filemagic'],
         'graphing': ['pydot'],
