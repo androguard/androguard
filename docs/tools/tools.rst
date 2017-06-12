@@ -10,8 +10,3 @@ Tools
    androdis
    androgui
    androlyze
-
-   androsim
-   androdiff
-   androsign
-   androcsign
