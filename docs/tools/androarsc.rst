@@ -1,7 +1,7 @@
 androarsc
 =========
 
-.. program-output:: python ../../androarsc.py -h
+.. program-output:: python ../androarsc.py -h
 
 .. automodule:: androarsc
     :members:

@@ -1,7 +1,7 @@
 androauto
 =========
 
-.. program-output:: python ../../androauto.py -h
+.. program-output:: python ../androauto.py -h
 
 .. automodule:: androauto
     :members:

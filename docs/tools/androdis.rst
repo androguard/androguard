@@ -1,7 +1,7 @@
 androdis
 ========
 
-.. program-output:: python ../../androdis.py -h
+.. program-output:: python ../androdis.py -h
 
 .. automodule:: androdis
     :members:
