@@ -31,9 +31,9 @@ Note that androguard only works with python >= 2.7 or >= 3.3!
 
 ## 3. Documentation
 
-Link here to the documentation... sometime...
+Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
 
-Meanwhile you can build the documentation with `sphinx`!
+There are some (probably broken/outdated) examples and demos in the folders [demos](https://github.com/androguard/androguard/tree/master/demos) and [examples](https://github.com/androguard/androguard/tree/master/examples).
 
 ## 4. Building and Requirements
 
