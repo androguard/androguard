@@ -1,34 +1,13 @@
-<<<<<<< HEAD
-# -*- coding: utf-8 -*-
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-from pyexpat import ExpatError
-
-=======
 from __future__ import division
 from __future__ import print_function
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import chr
 from builtins import str
 from builtins import range
 from builtins import object
->>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
 from androguard.core import bytecode
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
@@ -220,24 +199,13 @@ class APK(object):
             for i in self.zip.namelist():
                 if i == "AndroidManifest.xml":
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
+                    try:
+                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+                    except Exception as e:
+                        androconf.warning("AXML parsing failed", e)
+                        self.xml[i] = None
 
-                    self.xml[i] = {}
-                    buffer_array = self.axml[i].get_buff()
-                    while not bool(self.xml[i]):
-                        try:
-                            if len(buffer_array) > 0:
-                                self.xml[i] = minidom.parseString(buffer_array)
-                            else:
-                                break
-                        except ExpatError as e:
-                            # work-around for invalid Manifest files
-                            buffer_arr = buffer_array.split('\n')
-                            element_index_delete = e.message.split('line')[1].split(',')[0].strip()
-                            element_to_delete = buffer_arr[int(element_index_delete) - 1]
-                            ## remove all invalid elements
-                            buffer_array = '\n'.join([elem for elem in buffer_arr if elem != element_to_delete])
-
-                    if self.xml[i]:
+                    if self.xml[i] != None:
                         self.package = self.xml[i].documentElement.getAttribute(
                             "package")
                         self.androidversion[
@@ -257,13 +225,13 @@ class APK(object):
                         for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                             d_perm_name = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                            d_perm_label = self._get_res_string_value(unicode(
+                            d_perm_label = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "label")))
-                            d_perm_description = self._get_res_string_value((
+                            d_perm_description = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "description")))
-                            d_perm_permissionGroup = self._get_res_string_value((
+                            d_perm_permissionGroup = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
                                                            "permissionGroup")))
                             d_perm_protectionLevel = self._get_res_string_value(str(
@@ -283,7 +251,6 @@ class APK(object):
             self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
                 "aosp_permissions", self.get_target_sdk_version())
-
 
     def __getstate__(self):
         # Upon pickling, we need to remove the ZipFile
@@ -515,7 +482,7 @@ class APK(object):
     def get_files_crc32(self):
         """
         Calculates and returns a dictionary of filenames and CRC32
-        
+
         :return: dict of filename: CRC32
         """
         if self.files_crc32 == {}:
@@ -593,7 +560,7 @@ class APK(object):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
                 value = self.format_value(value)
 
-                l.append(unicode(value))
+                l.append(str(value))
         return l
 
     def format_value(self, value):
@@ -620,7 +587,7 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            if self.xml[i] is None :
+            if self.xml[i] is None:
                 continue
             tag = self.xml[i].getElementsByTagName(tag_name)
             if tag is None:
@@ -886,9 +853,9 @@ class APK(object):
         if not isinstance(l, int):
             l = ord(l)
         cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
-    
+
         certificate = x509.load_der_x509_certificate(cert, default_backend())
-    
+
         return certificate
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
@@ -1053,7 +1020,7 @@ class APK(object):
 def get_Name(name, short=False):
     """
         Return the distinguished name of an X509 Certificate
-        
+
         :param name: Name object to return the DN from
         :param short: Use short form (Default: False)
 
@@ -1062,21 +1029,23 @@ def get_Name(name, short=False):
 
         :rtype: str
     """
-    
+
     # For the shortform, we have a lookup table
     # See RFC4514 for more details
     sf = {
-          "countryName": "C",
-          "stateOrProvinceName": "ST",
-          "localityName": "L",
-          "organizationalUnitName": "OU",
-          "organizationName": "O",
-          "commonName": "CN",
-          "emailAddress": "E",
-         }
-    return ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in name])
-    
-    
+        "countryName": "C",
+        "stateOrProvinceName": "ST",
+        "localityName": "L",
+        "organizationalUnitName": "OU",
+        "organizationName": "O",
+        "commonName": "CN",
+        "emailAddress": "E",
+    }
+    return ", ".join(
+        ["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for
+         attr in name])
+
+
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -1087,7 +1056,7 @@ def show_Certificate(cert, short=False):
         :type cert: :class:`cryptography.x509.Certificate`
         :type short: Boolean
     """
-    
+
     for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
     print("Issuer: {}".format(get_Name(cert.issuer, short=short)))
@@ -1102,13 +1071,7 @@ UTF8_FLAG = 0x00000100
 
 
 class StringBlock(object):
-<<<<<<< HEAD
-    def __init__(self, buff):
-        self.start = buff.get_idx()
-=======
-
     def __init__(self, buff, header):
->>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
         self._cache = {}
         self.header = header
         self.stringCount = unpack('<i', buff.read(4))[0]
@@ -1750,15 +1713,7 @@ class ARSCParser(object):
                 package_name = current_package.get_name()
                 package_data_end = res_header.start + res_header.size
 
-<<<<<<< HEAD
-                elif header.type == RES_TABLE_TYPE_TYPE:
-                    a_res_type = ARSCResType(self.buff, pc)
-                    self.packages[package_name].append(a_res_type)
-                    self.resource_configs[package_name][a_res_type].add(
-                        a_res_type.config)
-=======
                 self.packages[package_name] = []
->>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
 
                 self.buff.set_idx(current_package.header.start + current_package.typeStrings)
                 type_sp_header = ARSCHeader(self.buff)
@@ -1799,7 +1754,7 @@ class ARSCParser(object):
                         a_res_type = ARSCResType(self.buff, pc)
                         self.packages[package_name].append(a_res_type)
                         self.resource_configs[package_name][a_res_type].add(
-                           a_res_type.config)
+                            a_res_type.config)
 
                         entries = []
                         for i in range(0, a_res_type.entryCount):
@@ -2271,11 +2226,8 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
-<<<<<<< HEAD
-=======
     SIZE = 2 + 2 + 4
 
->>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
     def __init__(self, buff):
         self.start = buff.get_idx()
         self.type = unpack('<h', buff.read(2))[0]
@@ -2284,13 +2236,8 @@ class ARSCHeader(object):
 
 
 class ARSCResTablePackage(object):
-<<<<<<< HEAD
-    def __init__(self, buff):
-=======
-
     def __init__(self, buff, header):
         self.header = header
->>>>>>> 831ad2bc0d0d619edd2158e5bdecf30c5655f45b
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
         self.name = buff.readNullString(256)
