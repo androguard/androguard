@@ -2,100 +2,17 @@ from __future__ import division
 from __future__ import print_function
 
 from builtins import hex
-from builtins import chr
-from builtins import range
 from builtins import object
 from networkx import DiGraph
 import os
 from xml.sax.saxutils import escape
 
 
-from androguard.core.analysis import analysis
-
-try:
-    from androguard.core.analysis.libsign.libsign import entropy
-except ImportError:
-    import math
-    def entropy(data):
-        entropy = 0
-
-        if len(data) == 0:
-            return entropy
-
-        for x in range(256):
-            p_x = data.count(chr(x)) / len(data)
-            if p_x > 0:
-                entropy += - p_x*math.log(p_x, 2)
-        return entropy
-
-DEFAULT_SIGNATURE = analysis.SIGNATURE_L0_4
-def create_entropies(vmx, m):
-    try:
-        default_signature = vmx.get_method_signature(m, predef_sign = DEFAULT_SIGNATURE).get_string()
-        l = [ default_signature,
-              entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Landroid"] } } ).get_string() ),
-              entropy( vmx.get_method_signature(m, "L4", { "L4" : { "arguments" : ["Ljava"] } } ).get_string() ),
-              entropy( vmx.get_method_signature(m, "hex" ).get_string() ),
-              entropy( vmx.get_method_signature(m, "L2" ).get_string() ),
-            ]
-        return l
-    except KeyError:
-        return [ "", 0.0, 0.0, 0.0, 0.0 ]
-
-def create_info(vmx, m):
-    E = create_entropies(vmx, m)
-
-    H = {}
-    H["signature"] = E[0]
-    H["signature_entropy"] = entropy( E[0] )
-    H["android_api_entropy"] = E[1]
-    H["java_api_entropy"] = E[2]
-    H["hex_entropy"] = E[3]
-    H["exceptions_entropy"] = E[4]
-
-    return H
-
-class Data(object):
-    def __init__(self, vm, vmx, gvmx, a=None):
-        self.vm = vm
-        self.vmx = vmx
-        self.gvmx = gvmx
-        self.a = a
-
-        self.apk_data = None
-        self.dex_data = None
-
-        if self.a != None:
-            self.apk_data = ApkViewer( self.a )
-
-        self.dex_data = DexViewer( vm, vmx, gvmx )
-
-        self.gvmx.set_new_attributes( create_info )
-        self.export_methods_to_gml()
-
-    def export_methodcalls_to_gml(self):
-        return self.gvmx.export_to_gml()
-
-    def export_methods_to_gml(self):
-        print(self.gvmx.G)
-
-        for node in self.gvmx.G.nodes():
-            print(self.gvmx.nodes_id[ node ].method_name, self.gvmx.nodes_id[ node ].get_attributes())
-
-    def export_apk_to_gml(self):
-        if self.apk_data != None:
-            return self.apk_data.export_to_gml()
-
-    def export_dex_to_gml(self):
-        if self.dex_data != None:
-            return self.dex_data.export_to_gml()
-
 class DexViewer(object):
     def __init__(self, vm, vmx, gvmx):
         self.vm = vm
         self.vmx = vmx
         self.gvmx = gvmx
-
 
     def _create_node(self, id, height, width, color, label):
         buff = "<node id=\"%d\">\n" % id
@@ -153,7 +70,7 @@ class DexViewer(object):
         idx = i.start
         label = ""
         for ins in i.get_instructions():
-            c_label = "%x %s\n" % (idx, ins)
+            c_label = "%x %s\n" % (idx, self.vm.dotbuff(ins, idx))
             idx += ins.get_length()
             label += c_label
             width = max(width, len(c_label))
