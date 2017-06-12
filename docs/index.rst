@@ -13,7 +13,6 @@ API
    :maxdepth: 2
 
    api/androguard
-   api/elsim
    tools/tools
 
 Indices and tables
