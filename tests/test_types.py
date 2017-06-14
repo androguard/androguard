@@ -43,7 +43,7 @@ VALUES = {
 }
 
 
-def test(got, expected):
+def _test(got, expected):
     if got == expected:
         prefix = ' OK '
     else:
@@ -78,6 +78,6 @@ for method in d.get_methods():
                 VALUES[key].pop(0)
             else:
                 for f in formatted_operands:
-                    test(f, VALUES[key].pop(0))
+                    _test(f, VALUES[key].pop(0))
 
         idx += i.get_length()

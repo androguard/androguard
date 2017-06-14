@@ -21,22 +21,34 @@ def Load(filename):
 
 class Session(object):
     def __init__(self, export_ipython=False):
-        self.setupObjects()
+        self._setupObjects()
         self.export_ipython = export_ipython
 
-    def setupObjects(self):
+    def _setupObjects(self):
         self.analyzed_files = collections.OrderedDict()
         self.analyzed_digest = {}
         self.analyzed_apk = {}
         self.analyzed_dex = {}
 
     def reset(self):
-        self.setupObjects()
+        self._setupObjects()
 
     def isOpen(self):
+        """
+        Test if any file was analyzed in this session
+        
+        :return: `True` if any file was analyzed, `False` otherwise
+        """
         return self.analyzed_digest != {}
 
     def addAPK(self, filename, data):
+        """
+        Add an APK file to the Session and run analysis on it.
+        
+        :param filename: (file)name of APK file
+        :param data: binary data of the APK file
+        :return: a tuple of SHA256 Checksum and APK Object
+        """
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add APK:%s" % digest)
         apk = APK(data, True)
@@ -47,6 +59,14 @@ class Session(object):
         return (digest, apk)
 
     def addDEX(self, filename, data, dx=None):
+        """
+        Add a DEX file to the Session and run analysis.
+        
+        :param filename: the (file)name of the DEX file
+        :param data: binary data of the dex file
+        :param dx: an existing Analysis Object (optional)
+        :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
+        """
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add DEX:%s" % digest)
 

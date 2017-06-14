@@ -1,16 +1,12 @@
 from future import standard_library
 
 standard_library.install_aliases()
-from androguard.core import *
-from androguard.core.bytecode import *
+from androguard.core import androconf
+from androguard import session
 from androguard.core.bytecodes.dvm import *
-from androguard.core.bytecodes.apk import *
-from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 
 from pickle import dump, load
-from androguard.core import androconf
-from androguard import session
 
 
 def init_print_colors():
@@ -61,14 +57,12 @@ def load_session(filename):
         return load(fd)
 
 
-def AnalyzeAPK(filename, decompiler="dad", session=None):
+def AnalyzeAPK(filename, session=None):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
         :param filename: the filename of the android application or a buffer which represents the application
         :type filename: string
-        :param decompiler: ded, dex2jad, dad (optional)
-        :type decompiler: string
 
         :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
@@ -84,7 +78,7 @@ def AnalyzeAPK(filename, decompiler="dad", session=None):
     return session.get_objects_apk(filename)
 
 
-def AnalyzeDex(filename, decompiler="dad", session=None):
+def AnalyzeDex(filename, session=None):
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -104,7 +98,7 @@ def AnalyzeDex(filename, decompiler="dad", session=None):
     return session.addDEX(filename, data)
 
 
-def AnalyzeODex(filename, decompiler="dad", session=None):
+def AnalyzeODex(filename, session=None):
     """
         Analyze an android odex file and setup all stuff for a more quickly analysis !
 
@@ -124,7 +118,7 @@ def AnalyzeODex(filename, decompiler="dad", session=None):
     return session.addDEY(filename, data)
 
 
-def RunDecompiler(d, dx, decompiler, session=None):
+def RunDecompiler(d, dx, decompiler):
     """
         Run the decompiler on a specific analysis
 
@@ -140,20 +134,26 @@ def RunDecompiler(d, dx, decompiler, session=None):
         decompiler = decompiler.lower()
         if decompiler == "dex2jad":
             d.set_decompiler(DecompilerDex2Jad(
-                d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                ], androconf.CONF["PATH_JAD"],
-                androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
+                d,
+                androconf.CONF["PATH_DEX2JAR"],
+                androconf.CONF["BIN_DEX2JAR"],
+                androconf.CONF["PATH_JAD"],
+                androconf.CONF["BIN_JAD"],
+                androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "dex2fernflower":
             d.set_decompiler(DecompilerDex2Fernflower(
-                d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF[
-                    "BIN_DEX2JAR"
-                ], androconf.CONF["PATH_FERNFLOWER"], androconf.CONF[
-                    "BIN_FERNFLOWER"
-                ], androconf.CONF["OPTIONS_FERNFLOWER"
-                ], androconf.CONF["TMP_DIRECTORY"]))
+                d,
+                androconf.CONF["PATH_DEX2JAR"],
+                androconf.CONF["BIN_DEX2JAR"],
+                androconf.CONF["PATH_FERNFLOWER"],
+                androconf.CONF["BIN_FERNFLOWER"],
+                androconf.CONF["OPTIONS_FERNFLOWER"],
+                androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "ded":
-            d.set_decompiler(DecompilerDed(d, androconf.CONF["PATH_DED"],
-                                           androconf.CONF["BIN_DED"],
-                                           androconf.CONF["TMP_DIRECTORY"]))
+            d.set_decompiler(DecompilerDed(
+                d,
+                androconf.CONF["PATH_DED"],
+                androconf.CONF["BIN_DED"],
+                androconf.CONF["TMP_DIRECTORY"]))
         else:
             d.set_decompiler(DecompilerDAD(d, dx))
