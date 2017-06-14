@@ -1,6 +1,7 @@
 import unittest
 
 import sys
+
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
@@ -8,7 +9,6 @@ from androguard import session
 
 
 class SessionTest(unittest.TestCase):
-
     def testSessionDex(self):
         s = session.Session()
         with open("examples/android/TestsAndroguard/bin/classes.dex",

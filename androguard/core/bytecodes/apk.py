@@ -2,6 +2,7 @@ from __future__ import division
 from __future__ import print_function
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import chr
 from builtins import str
@@ -42,6 +43,7 @@ ZIPMODULE = 1
 if sys.hexversion < 0x2070000:
     try:
         import chilkat
+
         ZIPMODULE = 0
         # UNLOCK : change it with your valid key !
         try:
@@ -57,7 +59,6 @@ else:
 
 ################################################### CHILKAT ZIP FORMAT #####################################################
 class ChilkatZip(object):
-
     def __init__(self, raw):
         self.files = []
         self.zip = chilkat.CkZip()
@@ -250,7 +251,6 @@ class APK(object):
             self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
                 "aosp_permissions", self.get_target_sdk_version())
-
 
     def __getstate__(self):
         # Upon pickling, we need to remove the ZipFile
@@ -587,7 +587,7 @@ class APK(object):
             :rtype: string
         """
         for i in self.xml:
-            if self.xml[i] is None :
+            if self.xml[i] is None:
                 continue
             tag = self.xml[i].getElementsByTagName(tag_name)
             if tag is None:
@@ -686,7 +686,7 @@ class APK(object):
             for item in self.xml[i].getElementsByTagName(category):
                 if self.format_value(
                         item.getAttributeNS(NS_ANDROID_URI, "name")
-                        ) == name:
+                ) == name:
                     for sitem in item.getElementsByTagName("intent-filter"):
                         for ssitem in sitem.getElementsByTagName("action"):
                             if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
@@ -853,9 +853,9 @@ class APK(object):
         if not isinstance(l, int):
             l = ord(l)
         cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
-    
+
         certificate = x509.load_der_x509_certificate(cert, default_backend())
-    
+
         return certificate
 
     def new_zip(self, filename, deleted_files=None, new_files={}):
@@ -1029,21 +1029,23 @@ def get_Name(name, short=False):
 
         :rtype: str
     """
-    
+
     # For the shortform, we have a lookup table
     # See RFC4514 for more details
     sf = {
-          "countryName": "C",
-          "stateOrProvinceName": "ST",
-          "localityName": "L",
-          "organizationalUnitName": "OU",
-          "organizationName": "O",
-          "commonName": "CN",
-          "emailAddress": "E",
-         }
-    return ", ".join(["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for attr in name])
-    
-    
+        "countryName": "C",
+        "stateOrProvinceName": "ST",
+        "localityName": "L",
+        "organizationalUnitName": "OU",
+        "organizationName": "O",
+        "commonName": "CN",
+        "emailAddress": "E",
+    }
+    return ", ".join(
+        ["{}={}".format(attr.oid._name if not short or attr.oid._name not in sf else sf[attr.oid._name], attr.value) for
+         attr in name])
+
+
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -1054,11 +1056,12 @@ def show_Certificate(cert, short=False):
         :type cert: :class:`cryptography.x509.Certificate`
         :type short: Boolean
     """
-    
+
     for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
     print("Issuer: {}".format(get_Name(cert.issuer, short=short)))
     print("Subject: {}".format(get_Name(cert.subject, short=short)))
+
 
 ################################## AXML FORMAT ########################################
 # Translated from
@@ -1068,7 +1071,6 @@ UTF8_FLAG = 0x00000100
 
 
 class StringBlock(object):
-
     def __init__(self, buff, header):
         self._cache = {}
         self.header = header
@@ -1213,7 +1215,6 @@ TEXT = 4
 
 
 class AXMLParser(object):
-
     def __init__(self, raw_buff):
         self.reset()
 
@@ -1379,7 +1380,7 @@ class AXMLParser(object):
 
     def getName(self):
         if self.m_name == -1 or (self.m_event != START_TAG and
-                                     self.m_event != END_TAG):
+                                         self.m_event != END_TAG):
             return u''
 
         return self.sb.getString(self.m_name)
@@ -1567,7 +1568,6 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 
 
 class AXMLPrinter(object):
-
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
         self.xmlns = False
@@ -1675,7 +1675,6 @@ ACONFIGURATION_UI_MODE = 0x1000
 
 
 class ARSCParser(object):
-
     def __init__(self, raw_buff):
         self.analyzed = False
         self._resolved_strings = None
@@ -1755,7 +1754,7 @@ class ARSCParser(object):
                         a_res_type = ARSCResType(self.buff, pc)
                         self.packages[package_name].append(a_res_type)
                         self.resource_configs[package_name][a_res_type].add(
-                           a_res_type.config)
+                            a_res_type.config)
 
                         entries = []
                         for i in range(0, a_res_type.entryCount):
@@ -1898,7 +1897,7 @@ class ARSCParser(object):
                 ate.get_value(), "%s%s" % (
                     complexToFloat(ate.key.get_data()),
                     DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])
-                ]
+            ]
         except IndexError:
             androconf.debug("Out of range dimension unit index for %s: %s" % (
                 complexToFloat(ate.key.get_data()),
@@ -2202,14 +2201,13 @@ class ARSCParser(object):
 
         for res_type, configs in list(self.resource_configs[package_name].items()):
             if res_type.get_package_name() == package_name and (
-                    type_name is None or res_type.get_type() == type_name):
+                            type_name is None or res_type.get_type() == type_name):
                 result[res_type.get_type()].extend(configs)
 
         return result
 
 
 class PackageContext(object):
-
     def __init__(self, current_package, stringpool_main, mTableStrings,
                  mKeyStrings):
         self.stringpool_main = stringpool_main
@@ -2238,7 +2236,6 @@ class ARSCHeader(object):
 
 
 class ARSCResTablePackage(object):
-
     def __init__(self, buff, header):
         self.header = header
         self.start = buff.get_idx()
@@ -2257,7 +2254,6 @@ class ARSCResTablePackage(object):
 
 
 class ARSCResTypeSpec(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2272,7 +2268,6 @@ class ARSCResTypeSpec(object):
 
 
 class ARSCResType(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2412,7 +2407,6 @@ class ARSCResTableConfig(object):
 
 
 class ARSCResTableEntry(object):
-
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
@@ -2452,7 +2446,6 @@ class ARSCResTableEntry(object):
 
 
 class ARSCComplex(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2470,7 +2463,6 @@ class ARSCComplex(object):
 
 
 class ARSCResStringPoolRef(object):
-
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent

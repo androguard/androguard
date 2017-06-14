@@ -18,8 +18,9 @@
 
 from builtins import object
 from future.utils import with_metaclass
-class MakeProperties(type):
 
+
+class MakeProperties(type):
     def __init__(cls, name, bases, dct):
 
         def _wrap_set(names, name):
@@ -82,7 +83,6 @@ class NodeType(with_metaclass(MakeProperties, object)):
 
 
 class Node(object):
-
     def __init__(self, name):
         self.name = name
         self.num = 0
@@ -123,7 +123,6 @@ class Node(object):
 
 
 class Interval(object):
-
     def __init__(self, head):
         self.name = 'Interval-%s' % head.name
         self.content = set([head])

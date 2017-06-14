@@ -5,14 +5,15 @@ from builtins import range
 from .ViewMode import *
 from .cemu import *
 from . import TextSelection
-from .TextDecorators import *    
+from .TextDecorators import *
 
 from PyQt5 import QtGui, QtCore
 import PyQt5
-from time import time 
+from time import time
 import sys
 import threading
 import string
+
 
 class BinViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
@@ -41,11 +42,9 @@ class BinViewMode(ViewMode):
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
         fm = QtGui.QFontMetrics(self.font)
-        self._fontWidth  = fm.width('a')
+        self._fontWidth = fm.width('a')
         self._fontHeight = fm.height()
 
-
-        
         self.textPen = QtGui.QPen(self.themes['pen'], 0, QtCore.Qt.SolidLine)
         self.resize(width, height)
 
@@ -64,8 +63,8 @@ class BinViewMode(ViewMode):
     def startCaching(self):
         # cache
         self.cache()
-        #t = threading.Thread(target=self.cache)
-        #t.start()
+        # t = threading.Thread(target=self.cache)
+        # t.start()
 
     def isInCache(self, page):
         if page in self.Paints:
@@ -73,13 +72,13 @@ class BinViewMode(ViewMode):
 
     def cache(self):
 
-        for i in [1,2]:
-            #pix = self._getNewPixmap(self.width, self.height)
+        for i in [1, 2]:
+            # pix = self._getNewPixmap(self.width, self.height)
             if not self.isInCache(self.dataModel.getPageOffset(i)):
                 pix = QtGui.QImage(self.width, self.height, QtGui.QImage.Format_ARGB32)
                 self.scrollPages(1, cachePix=pix, pageOffset=i)
                 self.Paints[self.dataModel.getPageOffset(i)] = pix
-                #print 'cache'
+                # print 'cache'
 
     def _getNewPixmap(self, width, height):
         return QtGui.QPixmap(width, height)
@@ -90,7 +89,7 @@ class BinViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = self.width // self.fontWidth
-        self.ROWS    = self.height // self.fontHeight
+        self.ROWS = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):
@@ -99,7 +98,7 @@ class BinViewMode(ViewMode):
         qp.begin(self.newPix)
         qp.drawPixmap(0, 0, self.qpix)
 
-        #self.transformationEngine.decorateText()
+        # self.transformationEngine.decorateText()
 
         # highlight selected text
         self.selector.highlightText()
@@ -133,33 +132,32 @@ class BinViewMode(ViewMode):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
-            #print 'hit'
+            # print 'hit'
             self.drawAdditionals()
             return
 
         if self.refresh or refresh:
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
-            #start = time()
+            # start = time()
             if not howMany:
                 howMany = self.ROWS
 
             self.drawTextMode(qp, row=row, howMany=howMany)
-            #end = time() - start
-            #print 'Time ' + str(end)
+            # end = time() - start
+            # print 'Time ' + str(end)
             self.refresh = False
             qp.end()
 
-#        self.Paints[self.dataModel.getOffset()] = QtGui.QPixmap(self.qpix)
+        #        self.Paints[self.dataModel.getOffset()] = QtGui.QPixmap(self.qpix)
         self.drawAdditionals()
-
 
     def draw2(self, qp, refresh=False):
         if self.refresh or refresh:
             start = time()
             self.drawTextMode(qp, howMany=self.ROWS)
             end = time() - start
-            #print 'Time ' + str(end)
+            # print 'Time ' + str(end)
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
 
@@ -173,24 +171,24 @@ class BinViewMode(ViewMode):
             qp.setBrush(QtGui.QColor(255, 102, 179))
 
         qp.setOpacity(0.8)
-        qp.drawRect(cursorX*self.fontWidth, cursorY*self.fontHeight, self.fontWidth, self.fontHeight + 2)
-        qp.setOpacity(1)        
-
+        qp.drawRect(cursorX * self.fontWidth, cursorY * self.fontHeight, self.fontWidth, self.fontHeight + 2)
+        qp.setOpacity(1)
 
     def scroll_h(self, dx):
-        self.qpix.scroll(dx*self.fontWidth, 0, self.qpix.rect())
+        self.qpix.scroll(dx * self.fontWidth, 0, self.qpix.rect())
 
         qp = QtGui.QPainter()
-        
+
         qp.begin(self.qpix)
         qp.setFont(self.font)
         qp.setPen(self.textPen)
 
         factor = abs(dx)
         if dx < 0:
-            qp.fillRect((self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
+            qp.fillRect((self.COLUMNS - 1 * factor) * self.fontWidth, 0, factor * self.fontWidth,
+                        self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
         if dx > 0:
-            qp.fillRect(0, 0, factor * self.fontWidth, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
+            qp.fillRect(0, 0, factor * self.fontWidth, self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
@@ -202,11 +200,11 @@ class BinViewMode(ViewMode):
 
                 if dx < 0:
                     # cu (column) selectam coloana
-                    idx = (i+1)*(self.COLUMNS) - (column + 1)
+                    idx = (i + 1) * (self.COLUMNS) - (column + 1)
                 if dx > 0:
-                    idx = (i)*(self.COLUMNS) + (column)
+                    idx = (i) * (self.COLUMNS) + (column)
 
-                #c = self.dataModel.getDisplayablePage()[idx]
+                # c = self.dataModel.getDisplayablePage()[idx]
                 c = self.transformationEngine.getChar(idx)
                 qp.setPen(self.transformationEngine.choosePen(idx))
 
@@ -215,7 +213,7 @@ class BinViewMode(ViewMode):
                     qp.setBackground(self.transformationEngine.chooseBrush(idx))
 
 
-#                self.decorate(qp, (idx, c), self.dataModel.getDisplayablePage())
+                #                self.decorate(qp, (idx, c), self.dataModel.getDisplayablePage())
                 if dx < 0:
                     cemu.writeAt(self.COLUMNS - (column + 1), i, self.cp437(c))
 
@@ -225,15 +223,14 @@ class BinViewMode(ViewMode):
                 qp.setBackgroundMode(0)
         qp.end()
 
-
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
-        start = time()        
+        start = time()
 
-#        if cachePix:
- #           print 'da'
+        #        if cachePix:
+        #           print 'da'
 
         if not cachePix:
-            self.qpix.scroll(0, dy*self.fontHeight, self.qpix.rect())
+            self.qpix.scroll(0, dy * self.fontHeight, self.qpix.rect())
 
         qp = QtGui.QPainter()
 
@@ -242,7 +239,7 @@ class BinViewMode(ViewMode):
         else:
             qp.begin(self.qpix)
 
-        #self.font.setStyleHint(QtGui.QFont.AnyStyle, QtGui.QFont.PreferAntialias)
+        # self.font.setStyleHint(QtGui.QFont.AnyStyle, QtGui.QFont.PreferAntialias)
         qp.setFont(self.font)
         qp.setPen(self.textPen)
 
@@ -250,16 +247,16 @@ class BinViewMode(ViewMode):
         #       same problem when scrolling up.             
         factor = abs(dy)
         if dy < 0:
-            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.COLUMNS, factor * self.fontHeight + self.SPACER, self.backgroundBrush)
+            qp.fillRect(0, (self.ROWS - factor) * self.fontHeight, self.fontWidth * self.COLUMNS,
+                        factor * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         if dy > 0:
-            qp.fillRect(0, 0, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
+            qp.fillRect(0, 0, self.fontWidth * self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
-        #page = self.dataModel.getDisplayablePage()
+        # page = self.dataModel.getDisplayablePage()
         page = self.transformationEngine.decorate(pageOffset=pageOffset)
-
 
         lastPen = None
         lastBrush = None
@@ -268,25 +265,23 @@ class BinViewMode(ViewMode):
         k = time()
         for row in range(factor):
             # desenam caracterele
-            #cemu.writeAt(0, row, str(page[row*self.COLUMNS:row*self.COLUMNS+self.COLUMNS]))
-            
+            # cemu.writeAt(0, row, str(page[row*self.COLUMNS:row*self.COLUMNS+self.COLUMNS]))
+
             for i in range(self.COLUMNS):
 
                 if dy < 0:
-                    idx = (self.ROWS - (row + 1))*self.COLUMNS + i
+                    idx = (self.ROWS - (row + 1)) * self.COLUMNS + i
 
                 if dy > 0:
-                    idx = i + (self.COLUMNS*row)
+                    idx = i + (self.COLUMNS * row)
 
                 c = self.transformationEngine.getChar(idx)
 
-                
                 nextPen = self.transformationEngine.choosePen(idx)
                 if nextPen != lastPen:
                     qp.setPen(nextPen)
                     lastPen = nextPen
 
-                
                 qp.setBackgroundMode(0)
                 nextBrush = self.transformationEngine.chooseBrush(idx)
                 if nextBrush != None:
@@ -296,20 +291,19 @@ class BinViewMode(ViewMode):
                         qp.setBackground(nextBrush)
                         lastBrush = nextBrush
 
-                
                 if dy < 0:
                     cemu.writeAt_c(i, self.ROWS - 1 - row, self.cp437(c))
 
                 if dy > 0:
                     cemu.writeAt_c(i, row, self.cp437(c))
-                
-           
+
         # TODO: text decorator is taking too much! print time() - k
         qp.end()
 
         end = time() - start
-#        print end
-#        sys.exit()
+
+    #        print end
+    #        sys.exit()
 
 
     def scroll(self, dx, dy, cachePix=None, pageOffset=None):
@@ -324,16 +318,16 @@ class BinViewMode(ViewMode):
                 self.scroll_h(dx)
 
         if dy != 0:
-            if self.dataModel.inLimits((self.dataModel.getOffset() - dy*self.COLUMNS)):
-                self.dataModel.slide(-dy*self.COLUMNS)
-                #import time
-                #k = time.time()
+            if self.dataModel.inLimits((self.dataModel.getOffset() - dy * self.COLUMNS)):
+                self.dataModel.slide(-dy * self.COLUMNS)
+                # import time
+                # k = time.time()
                 self.scroll_v(dy, cachePix, pageOffset)
-                #print time.time() - k
+                # print time.time() - k
             else:
                 if dy <= 0:
                     pass
-                    #self.dataModel.slideToLastPage()
+                    # self.dataModel.slideToLastPage()
                 else:
                     self.dataModel.slideToFirstPage()
 
@@ -343,9 +337,8 @@ class BinViewMode(ViewMode):
         if not cachePix:
             self.draw()
 
-
     def scrollPages(self, number, cachePix=None, pageOffset=None):
-        self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
+        self.scroll(0, -number * self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
     def getPixmap(self):
         for t in self.Ops:
@@ -356,38 +349,39 @@ class BinViewMode(ViewMode):
                 t[0](*t[1:])
 
         self.Ops = []
-        
+
         if not self.newPix:
             self.draw()
 
         return self.newPix
 
     def resize(self, width, height):
-        self.width = width - width%self.fontWidth
-        self.height = height - height%self.fontHeight
+        self.width = width - width % self.fontWidth
+        self.height = height - height % self.fontHeight
         self.computeTextArea()
         self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
     def drawTextMode(self, qp, row=0, howMany=1):
         # draw background
-        qp.fillRect(0, row * self.fontHeight, self.COLUMNS * self.fontWidth,  howMany * self.fontHeight + self.SPACER, self.backgroundBrush)
+        qp.fillRect(0, row * self.fontHeight, self.COLUMNS * self.fontWidth, howMany * self.fontHeight + self.SPACER,
+                    self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
         qp.setPen(self.textPen)
-        
+
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         self.page = self.transformationEngine.decorate()
 
         cemu.gotoXY(0, row)
 
-        for i, c in enumerate(self.getDisplayablePage()[row*self.COLUMNS:(row + howMany)*self.COLUMNS]):
-            x = i + row*self.COLUMNS
+        for i, c in enumerate(self.getDisplayablePage()[row * self.COLUMNS:(row + howMany) * self.COLUMNS]):
+            x = i + row * self.COLUMNS
 
             c = self.transformationEngine.getChar(x)
-            
+
             qp.setPen(self.transformationEngine.choosePen(x))
 
             if self.transformationEngine.chooseBrush(x) != None:
@@ -395,12 +389,11 @@ class BinViewMode(ViewMode):
                 qp.setBackground(self.transformationEngine.chooseBrush(x))
 
             cemu.write(self.cp437(c))
-            qp.setBackgroundMode(0)                        
+            qp.setBackgroundMode(0)
 
-    
     def getCursorAbsolutePosition(self):
         x, y = self.cursor.getPosition()
-        return self.dataModel.getOffset() + y*self.COLUMNS + x
+        return self.dataModel.getOffset() + y * self.COLUMNS + x
 
     def moveCursor(self, direction):
         cursorX, cursorY = self.cursor.getPosition()
@@ -410,31 +403,29 @@ class BinViewMode(ViewMode):
                 if cursorY == 0:
                     self.scroll(1, 0)
                 else:
-                    self.cursor.moveAbsolute(self.COLUMNS-1, cursorY - 1)
+                    self.cursor.moveAbsolute(self.COLUMNS - 1, cursorY - 1)
             else:
                 self.cursor.move(-1, 0)
-
 
         if direction == Directions.Right:
             if self.getCursorAbsolutePosition() + 1 >= self.dataModel.getDataSize():
                 return
 
-            if cursorX == self.COLUMNS-1:
-                if cursorY == self.ROWS-1:
+            if cursorX == self.COLUMNS - 1:
+                if cursorY == self.ROWS - 1:
                     self.scroll(-1, 0)
                 else:
                     self.cursor.moveAbsolute(0, cursorY + 1)
             else:
                 self.cursor.move(1, 0)
 
-
         if direction == Directions.Down:
             if self.getCursorAbsolutePosition() + self.COLUMNS >= self.dataModel.getDataSize():
-                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
                 self.cursor.moveAbsolute(x, y)
                 return
 
-            if cursorY == self.ROWS-1:
+            if cursorY == self.ROWS - 1:
                 self.scroll(0, -1)
             else:
                 self.cursor.move(0, 1)
@@ -447,11 +438,11 @@ class BinViewMode(ViewMode):
 
         if direction == Directions.End:
             if self.dataModel.getDataSize() < self.getCursorAbsolutePosition() + self.ROWS * self.COLUMNS:
-                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
                 self.cursor.moveAbsolute(x, y)
 
             else:
-                self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
+                self.cursor.moveAbsolute(self.COLUMNS - 1, self.ROWS - 1)
 
         if direction == Directions.Home:
             self.cursor.moveAbsolute(0, 0)
@@ -468,25 +459,23 @@ class BinViewMode(ViewMode):
 
     def keyFilter(self):
         return [
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Right),
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Left),
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Up),
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Down),
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_End),
-                (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Home),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Right),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Left),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Up),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Down),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_End),
+            (QtCore.Qt.ControlModifier, QtCore.Qt.Key_Home),
 
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_Right),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_Left),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_Up),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_Down),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_End),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_Home),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_PageDown),
+            (QtCore.Qt.NoModifier, QtCore.Qt.Key_PageUp)
 
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_Right),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_Left),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_Up),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_Down),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_End),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_Home),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_PageDown),
-                (QtCore.Qt.NoModifier, QtCore.Qt.Key_PageUp)
-
-
-                ]
+        ]
 
     def anon(self, dx, dy):
         self.scroll(dx, dy)
@@ -510,16 +499,17 @@ class BinViewMode(ViewMode):
 
             self.dataModel.setData_b(self.dataModel.getOffset() + offs, str(event.text()))
 
-            z = self.dataModel.getOffset() + offs                
-            #TODO: sa nu se repete, tre original_transformengine
-            self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+            z = self.dataModel.getOffset() + offs
+            # TODO: sa nu se repete, tre original_transformengine
+            self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0,
+                                                 QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine),
+                                                 ignoreHighlights=True)
 
             self.moveCursor(Directions.Right)
-        
+
             x, y = self.cursor.getPosition()
 
             self.draw(refresh=True, row=y, howMany=1)
-
 
     def handleKeyEvent(self, modifiers, key, event=None):
         if event.type() == QtCore.QEvent.KeyRelease:
@@ -529,10 +519,10 @@ class BinViewMode(ViewMode):
 
         if event.type() == QtCore.QEvent.KeyPress:
             if modifiers & QtCore.Qt.ShiftModifier:
-                keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
+                keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up,
+                        QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
                 if key in keys:
                     self.startSelection()
-
 
             if modifiers & QtCore.Qt.ControlModifier:
                 if key == QtCore.Qt.Key_Right:
@@ -555,10 +545,9 @@ class BinViewMode(ViewMode):
                     self.moveCursor(Directions.CtrlHome)
                     self.addop((self.draw,))
 
-
                 return True
 
-            else:#elif modifiers == QtCore.Qt.NoModifier or modifiers == QtCore.Qt.ShiftModifier::
+            else:  # elif modifiers == QtCore.Qt.NoModifier or modifiers == QtCore.Qt.ShiftModifier::
 
                 if key == QtCore.Qt.Key_Escape:
                     self.selector.resetSelections()
@@ -571,15 +560,15 @@ class BinViewMode(ViewMode):
                 if key == QtCore.Qt.Key_Right:
                     self.moveCursor(Directions.Right)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_Down:
                     self.moveCursor(Directions.Down)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_End:
                     self.moveCursor(Directions.End)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_Home:
                     self.moveCursor(Directions.Home)
                     self.addop((self.draw,))
@@ -587,10 +576,10 @@ class BinViewMode(ViewMode):
                 if key == QtCore.Qt.Key_Up:
                     self.moveCursor(Directions.Up)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_PageDown:
                     self.addop((self.scrollPages, 1))
-        
+
                 if key == QtCore.Qt.Key_PageUp:
                     self.addop((self.scrollPages, -1))
 
@@ -615,7 +604,6 @@ class BinViewMode(ViewMode):
             self.transformationEngine.reset()
             self.draw(refresh=True)
 
-
     """
     def handleKeyPressEvent(self, modifier, key):
         if modifier == QtCore.Qt.ShiftModifier:
@@ -627,6 +615,7 @@ class BinViewMode(ViewMode):
             self.stopSelection()
             return True
     """
+
     def addop(self, t):
         self.Ops.append(t)
 

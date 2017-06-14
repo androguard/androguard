@@ -67,7 +67,6 @@ class XrefDialogClass(QtWidgets.QDialog):
 
 
 class XrefDialogMethod(QtWidgets.QDialog):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -108,7 +107,6 @@ class XrefDialogMethod(QtWidgets.QDialog):
 
 
 class XrefDialogField(QtWidgets.QDialog):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -153,7 +151,6 @@ class XrefDialogField(QtWidgets.QDialog):
 
 
 class XrefDialogString(QtWidgets.QDialog):
-
     def __init__(self, parent=None, win=None, string_analysis=None):
         super(XrefDialogString, self).__init__(parent)
         self.string_analysis = string_analysis
@@ -248,12 +245,11 @@ class XrefDialog(QtWidgets.QDialog):
             method_ = xref_item[0].get_name()
             descriptor_ = xref_item[0].get_descriptor()
             xrefs.append(classmethod2display(class_, method_, descriptor_))
-#        print xrefs
+        #        print xrefs
         return xrefs
 
 
 class XrefListView(QtWidgets.QWidget):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -290,7 +286,6 @@ class XrefListView(QtWidgets.QWidget):
 
 
 class XrefValueWindow(QtWidgets.QTreeView):
-
     def __init__(self, parent=None, win=None, xrefs=None, headers=None):
         super(XrefValueWindow, self).__init__(parent)
         self.parent = parent

@@ -10,11 +10,14 @@ from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
 from androguard import misc
 
+
 def Save(session, filename):
     misc.save_session(session, filename)
 
+
 def Load(filename):
     return misc.load_session(filename)
+
 
 class Session(object):
     def __init__(self, export_ipython=False):

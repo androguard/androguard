@@ -1,6 +1,7 @@
 import unittest
 
 import sys
+
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
@@ -8,7 +9,6 @@ from androguard.core.bytecodes import dvm
 
 
 class DexTest(unittest.TestCase):
-
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex",
                   "rb") as fd:
@@ -32,7 +32,6 @@ class DexTest(unittest.TestCase):
 
 
 class InstructionTest(unittest.TestCase):
-
     def testNOP(self):
         instruction = dvm.Instruction10x(None, bytearray(b"\x00\x00"))
         self.assertEqual(instruction.get_name(), "nop")

@@ -30,7 +30,6 @@ logger = logging.getLogger('dad.graph')
 
 
 class Graph(object):
-
     def __init__(self):
         self.entry = None
         self.exit = None
@@ -289,8 +288,8 @@ def simplify(graph):
                         graph.entry = suc
                     graph.remove_node(node)
                 elif (suc.type.is_stmt and len(graph.all_preds(suc)) == 1 and
-                      not (suc in graph.catch_edges) and not (
-                          (node is suc) or (suc is graph.entry))):
+                          not (suc in graph.catch_edges) and not (
+                            (node is suc) or (suc is graph.entry))):
                     ins_to_merge = suc.get_ins()
                     node.add_ins(ins_to_merge)
                     for var in suc.var_to_declare:
@@ -389,7 +388,6 @@ def bfs(start):
 
 
 class GenInvokeRetName(object):
-
     def __init__(self):
         self.num = 0
         self.ret = None

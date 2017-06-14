@@ -7,8 +7,8 @@ from androguard.gui.xrefwindow import XrefDialogClass
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.helpers import classdot2class, Signature
 
+
 class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
-    
     # TODO this is a pure workaround to have a hash method!
     # It seems that for python2 is __hash__ available
     # But not on python3
@@ -17,7 +17,6 @@ class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
 
 class TreeWindow(QtWidgets.QTreeWidget):
-
     def __init__(self, parent=None, win=None, session=None):
         super(TreeWindow, self).__init__(parent)
         self.itemDoubleClicked.connect(self.itemDoubleClickedHandler)
@@ -92,13 +91,13 @@ class TreeWindow(QtWidgets.QTreeWidget):
             statusTip="List the references where this element is used",
             triggered=self.actionXref)
         self.expandAct = QtWidgets.QAction("Expand",
-                                       self,
-                                       statusTip="Expand all the subtrees",
-                                       triggered=self.actionExpand)
+                                           self,
+                                           statusTip="Expand all the subtrees",
+                                           triggered=self.actionExpand)
         self.collapseAct = QtWidgets.QAction("Collapse",
-                                         self,
-                                         statusTip="Collapse all the subtrees",
-                                         triggered=self.actionCollapse)
+                                             self,
+                                             statusTip="Collapse all the subtrees",
+                                             triggered=self.actionCollapse)
 
     def actionXref(self):
         item = self.currentItem()
@@ -125,7 +124,6 @@ class TreeWindow(QtWidgets.QTreeWidget):
                                current_class=current_class,
                                class_analysis=class_analysis)
         xwin.show()
-
 
     def expand_children(self, item):
         self.expandItem(item)

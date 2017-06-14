@@ -27,7 +27,6 @@ logger = logging.getLogger('dad.control_flow')
 
 
 class BasicReachDef(object):
-
     def __init__(self, graph, params):
         self.g = graph
         self.A = defaultdict(set)
@@ -313,7 +312,6 @@ def register_propagation(graph, du, ud):
 
 
 class DummyNode(Node):
-
     def __init__(self, name):
         super(DummyNode, self).__init__(name)
 
@@ -465,7 +463,7 @@ def place_declarations(graph, dvars, du, ud):
         for loc, ins in node.get_loc_with_ins():
             for var in ins.get_used_vars():
                 if (not isinstance(dvars[var], Variable) or
-                    isinstance(dvars[var], Param)):
+                        isinstance(dvars[var], Param)):
                     continue
                 var_defs_locs = ud[var, loc]
                 def_nodes = set()

@@ -1,12 +1,12 @@
 import unittest
 
 import sys
+
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
 from androguard.core.bytecodes import apk
 import collections
-
 
 TEST_APP_NAME = "TestsAndroguardApplication"
 TEST_ICONS = {

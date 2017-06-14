@@ -105,12 +105,12 @@ def export_apps_to_format(filename,
         if decompiler_type == "dex2jad":
             vm.set_decompiler(decompiler.DecompilerDex2Jad(
                 vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
+                ], androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2winejad":
             vm.set_decompiler(decompiler.DecompilerDex2WineJad(
                 vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
+                ], androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_WINEJAD"], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "ded":
             vm.set_decompiler(decompiler.DecompilerDed(
@@ -123,7 +123,7 @@ def export_apps_to_format(filename,
                 ], androconf.CONF["PATH_FERNFLOWER"], androconf.CONF[
                     "BIN_FERNFLOWER"
                 ], androconf.CONF["OPTIONS_FERNFLOWER"
-                                 ], androconf.CONF["TMP_DIRECTORY"]))
+                ], androconf.CONF["TMP_DIRECTORY"]))
 
         print("End")
 

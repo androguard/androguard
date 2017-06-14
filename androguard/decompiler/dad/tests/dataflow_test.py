@@ -1,6 +1,7 @@
 """Tests for def_use."""
 
 import sys
+
 sys.path.append('.')
 
 import collections
@@ -14,7 +15,6 @@ from androguard.decompiler.dad import basic_blocks
 
 
 class DataflowTest(unittest.TestCase):
-
     def assertItemsEqual(self, a, b):
         """
         This method was renamed in python3.

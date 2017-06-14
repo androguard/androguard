@@ -29,7 +29,6 @@ logger = logging.getLogger('dad.basic_blocks')
 
 
 class BasicBlock(Node):
-
     def __init__(self, name, block_ins):
         super(BasicBlock, self).__init__(name)
         self.ins = block_ins
@@ -68,7 +67,6 @@ class BasicBlock(Node):
 
 
 class StatementBlock(BasicBlock):
-
     def __init__(self, name, block_ins):
         super(StatementBlock, self).__init__(name, block_ins)
         self.type.is_stmt = True
@@ -81,7 +79,6 @@ class StatementBlock(BasicBlock):
 
 
 class ReturnBlock(BasicBlock):
-
     def __init__(self, name, block_ins):
         super(ReturnBlock, self).__init__(name, block_ins)
         self.type.is_return = True
@@ -94,7 +91,6 @@ class ReturnBlock(BasicBlock):
 
 
 class ThrowBlock(BasicBlock):
-
     def __init__(self, name, block_ins):
         super(ThrowBlock, self).__init__(name, block_ins)
         self.type.is_throw = True
@@ -107,7 +103,6 @@ class ThrowBlock(BasicBlock):
 
 
 class SwitchBlock(BasicBlock):
-
     def __init__(self, name, switch, block_ins):
         super(SwitchBlock, self).__init__(name, block_ins)
         self.switch = switch
@@ -146,7 +141,6 @@ class SwitchBlock(BasicBlock):
 
 
 class CondBlock(BasicBlock):
-
     def __init__(self, name, block_ins):
         super(CondBlock, self).__init__(name, block_ins)
         self.true = None
@@ -176,7 +170,6 @@ class CondBlock(BasicBlock):
 
 
 class Condition(object):
-
     def __init__(self, cond1, cond2, isand, isnot):
         self.cond1 = cond1
         self.cond2 = cond2
@@ -213,7 +206,6 @@ class Condition(object):
 
 
 class ShortCircuitBlock(CondBlock):
-
     def __init__(self, name, cond):
         super(ShortCircuitBlock, self).__init__(name, None)
         self.cond = cond
@@ -235,7 +227,6 @@ class ShortCircuitBlock(CondBlock):
 
 
 class LoopBlock(CondBlock):
-
     def __init__(self, name, cond):
         super(LoopBlock, self).__init__(name, None)
         self.cond = cond
@@ -272,7 +263,6 @@ class LoopBlock(CondBlock):
 
 
 class TryBlock(BasicBlock):
-
     def __init__(self, node):
         super(TryBlock, self).__init__('Try-%s' % node.name, None)
         self.try_start = node
@@ -298,7 +288,6 @@ class TryBlock(BasicBlock):
 
 
 class CatchBlock(BasicBlock):
-
     def __init__(self, node):
         first_ins = node.ins[0]
         self.exception_ins = None

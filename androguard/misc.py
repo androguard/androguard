@@ -1,4 +1,5 @@
 from future import standard_library
+
 standard_library.install_aliases()
 from androguard.core import *
 from androguard.core.bytecode import *
@@ -10,6 +11,7 @@ from androguard.decompiler.decompiler import *
 from pickle import dump, load
 from androguard.core import androconf
 from androguard import session
+
 
 def init_print_colors():
     from IPython.utils import coloransi, io
@@ -25,6 +27,7 @@ def get_default_session():
     if CONF["SESSION"] is None:
         CONF["SESSION"] = session.Session()
     return CONF["SESSION"]
+
 
 def save_session(l, filename):
     """
@@ -138,7 +141,7 @@ def RunDecompiler(d, dx, decompiler, session=None):
         if decompiler == "dex2jad":
             d.set_decompiler(DecompilerDex2Jad(
                 d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
+                ], androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "dex2fernflower":
             d.set_decompiler(DecompilerDex2Fernflower(
@@ -147,7 +150,7 @@ def RunDecompiler(d, dx, decompiler, session=None):
                 ], androconf.CONF["PATH_FERNFLOWER"], androconf.CONF[
                     "BIN_FERNFLOWER"
                 ], androconf.CONF["OPTIONS_FERNFLOWER"
-                                 ], androconf.CONF["TMP_DIRECTORY"]))
+                ], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "ded":
             d.set_decompiler(DecompilerDed(d, androconf.CONF["PATH_DED"],
                                            androconf.CONF["BIN_DED"],

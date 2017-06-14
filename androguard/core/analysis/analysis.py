@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import str
 from builtins import range
@@ -8,11 +9,11 @@ from builtins import object
 import re, collections
 import threading, queue, time
 
-
-from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
+from androguard.core.androconf import error, warning, debug, is_ascii_problem, \
     load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
+
 
 class DVMBasicBlock(object):
     """
@@ -108,7 +109,7 @@ class DVMBasicBlock(object):
         return self.last_length
 
     def set_childs(self, values):
-        #print self, self.start, self.end, values
+        # print self, self.start, self.end, values
         if values == []:
             next_block = self.context.get_basic_block(self.end + 1)
             if next_block != None:
@@ -162,7 +163,6 @@ class DVMBasicBlock(object):
 
 
 class Enum(object):
-
     def __init__(self, names):
         self.names = names
         for value, name in enumerate(self.names):
@@ -309,7 +309,6 @@ class BasicBlocks(object):
 
 
 class ExceptionAnalysis(object):
-
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -340,7 +339,6 @@ class ExceptionAnalysis(object):
 
 
 class Exceptions(object):
-
     def __init__(self, _vm):
         self.__vm = _vm
         self.exceptions = []
@@ -514,14 +512,13 @@ class MethodAnalysis(object):
 
 
 class StringAnalysis(object):
-
     def __init__(self, value):
         self.value = value
         self.orig_value = value
         self.xreffrom = set()
 
     def AddXrefFrom(self, classobj, methodobj):
-        #debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
+        # debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
         self.xreffrom.add((classobj, methodobj))
 
     def get_xref_from(self):
@@ -540,23 +537,22 @@ class StringAnalysis(object):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
         return data
 
 
 class MethodClassAnalysis(object):
-
     def __init__(self, method):
         self.method = method
         self.xrefto = set()
         self.xreffrom = set()
 
     def AddXrefTo(self, classobj, methodobj, offset):
-        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefto.add((classobj, methodobj, offset))
 
     def AddXrefFrom(self, classobj, methodobj, offset):
-        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -570,30 +566,29 @@ class MethodClassAnalysis(object):
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
             data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                )
+                                       )
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
             data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                )
+                                       )
 
         return data
 
 
 class FieldClassAnalysis(object):
-
     def __init__(self, field):
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
 
     def AddXrefRead(self, classobj, methodobj):
-        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefread.add((classobj, methodobj))
 
     def AddXrefWrite(self, classobj, methodobj):
-        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefwrite.add((classobj, methodobj))
 
     def get_xref_read(self):
@@ -607,18 +602,20 @@ class FieldClassAnalysis(object):
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
 
         return data
 
+
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
+
 
 class ExternalClass(object):
     def __init__(self, name):
@@ -631,6 +628,7 @@ class ExternalClass(object):
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
 
         return self.methods[key]
+
 
 class ExternalMethod(object):
     def __init__(self, class_name, name, descriptor):
@@ -650,8 +648,8 @@ class ExternalMethod(object):
     def __str__(self):
         return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
 
-class ClassAnalysis(object):
 
+class ClassAnalysis(object):
     def __init__(self, classobj, internal=False):
         self.orig_class = classobj
         self._inherits_methods = {}
@@ -745,7 +743,6 @@ class ClassAnalysis(object):
 
 
 class Analysis(object):
-
     def __init__(self, vm):
         self.vms = [vm]
         self.classes = {}
@@ -827,7 +824,7 @@ class Analysis(object):
                                         current_method, off)
 
                         elif ((op_value >= 0x6e and op_value <= 0x72) or
-                              (op_value >= 0x74 and op_value <= 0x78)):
+                                  (op_value >= 0x74 and op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
                             method_info = last_vm.get_cm_method(idx_meth)
                             if method_info:
@@ -840,9 +837,10 @@ class Analysis(object):
                                 # Seems to be an external classes
                                 if not method_item:
                                     if method_info[0] not in self.classes:
-                                        self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]), False)
-                                    method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1], method_info[2])
-
+                                        self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]),
+                                                                                     False)
+                                    method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1],
+                                                                                             method_info[2])
 
                                 if method_item:
                                     self.classes[current_class.get_name(
@@ -886,7 +884,7 @@ class Analysis(object):
                             if field_item:
                                 # read access to a field
                                 if (op_value >= 0x52 and op_value <= 0x58) or (
-                                        op_value >= 0x60 and op_value <= 0x66):
+                                                op_value >= 0x60 and op_value <= 0x66):
                                     self.classes[current_class.get_name(
                                     )].AddFXrefRead(
                                         current_method,
@@ -958,6 +956,7 @@ class Analysis(object):
             if current_class.get_name() not in self.classes:
                 self.classes[current_class.get_name()] = ClassAnalysis(
                     current_class, True)
+
 
 def is_ascii_obfuscation(vm):
     for classe in vm.get_classes():

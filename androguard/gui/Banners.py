@@ -9,6 +9,7 @@ import os, sys, inspect
 
 from .TextDecorators import *
 
+
 class Banner(object):
     def getOrientation(self):
         NotImplementedError('method not implemented.')
@@ -32,10 +33,10 @@ class Banner(object):
 Orientation = enum(Left=0, Bottom=1, Top=2)
 
 
-
 class Observer(object):
     def changeViewMode(self, viewMode):
         self.setViewMode(viewMode)
+
 
 class Banners(Observer):
     BOTTOM_SEPARATOR = 5
@@ -51,7 +52,7 @@ class Banners(Observer):
 
     def banners(self):
         return self._Banners
-        
+
     def getLeftOffset(self):
         offset = 0
         for banner in self._Banners:
@@ -84,7 +85,7 @@ class Banners(Observer):
         for banner in self._Banners:
             # banners are not resizeable actually
             if banner.getOrientation() == Orientation.Left:
-                banner.resize(banner.getDesiredGeometry(), height - limit + 4) # +4 , make to look nice
+                banner.resize(banner.getDesiredGeometry(), height - limit + 4)  # +4 , make to look nice
 
             if banner.getOrientation() == Orientation.Bottom:
                 banner.resize(width, banner.getDesiredGeometry())
@@ -101,7 +102,7 @@ class Banners(Observer):
         for banner in self._Banners:
             if banner.getOrientation() == Orientation.Top:
                 banner.draw()
-                qp.drawPixmap(offsetLeft-4, offsetBottom, banner.getPixmap())
+                qp.drawPixmap(offsetLeft - 4, offsetBottom, banner.getPixmap())
                 offsetBottom += banner.getDesiredGeometry() + self.separatorLeft
 
         for banner in self._Banners:
@@ -120,7 +121,6 @@ class Banners(Observer):
                 offsetBottom += banner.getDesiredGeometry() + self.separatorBottom
 
 
-
 class FileAddrBanner(Banner):
     def __init__(self, themes, dataModel, viewMode):
         self.width = 0
@@ -137,7 +137,7 @@ class FileAddrBanner(Banner):
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
         fm = QtGui.QFontMetrics(self.font)
-        self.fontWidth  = fm.width('a')
+        self.fontWidth = fm.width('a')
         self.fontHeight = fm.height()
 
         self.textPen = QtGui.QPen(QtGui.QColor(192, 192, 192), 0, QtCore.Qt.SolidLine)
@@ -164,16 +164,15 @@ class FileAddrBanner(Banner):
         columns, rows = self.viewMode.getGeometry()
 
         qp.begin(self.qpix)
-        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.fillRect(0, 0, self.width, self.height, self.backgroundBrush)
         qp.setPen(self.textPen)
         qp.setFont(self.font)
-        
+
         for i in range(rows):
             s = '{0:08x}'.format(offset)
-            qp.drawText(0+5, (i+1) * self.fontHeight, s)
+            qp.drawText(0 + 5, (i + 1) * self.fontHeight, s)
             columns = self.viewMode.getColumnsbyRow(i)
             offset += columns
-        
 
         qp.end()
 
@@ -182,7 +181,6 @@ class FileAddrBanner(Banner):
         self.height = height
 
         self.qpix = self._getNewPixmap(self.width, self.height)
-        
 
 
 class BottomBanner(Banner):
@@ -194,16 +192,15 @@ class BottomBanner(Banner):
         self.backgroundBrush = QtGui.QBrush(themes['background'])
 
         self.qpix = self._getNewPixmap(self.width, self.height)
-        
 
         # text font
         self.font = themes['font']
-        
+
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
         fm = QtGui.QFontMetrics(self.font)
-        self.fontWidth  = fm.width('a')
+        self.fontWidth = fm.width('a')
         self.fontHeight = fm.height()
 
         self.textPen = QtGui.QPen(themes['pen'], 0, QtCore.Qt.SolidLine)
@@ -221,7 +218,7 @@ class BottomBanner(Banner):
         qp = QtGui.QPainter()
         qp.begin(self.qpix)
 
-        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.fillRect(0, 0, self.width, self.height, self.backgroundBrush)
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
@@ -235,8 +232,6 @@ class BottomBanner(Banner):
 
         pos = 'POS: {0:08x}'.format(self.viewMode.getCursorAbsolutePosition())
 
-
-
         qword = self.dataModel.getQWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if qword is None:
             qword = '----'
@@ -248,7 +243,7 @@ class BottomBanner(Banner):
 
         sb = 'BYTE: {0}'.format(byte)
 
-        cemu.writeAt(1,  0, pos)
+        cemu.writeAt(1, 0, pos)
         cemu.writeAt(17, 0, sd)
         cemu.writeAt(35, 0, sq)
         cemu.writeAt(62, 0, sb)
@@ -265,7 +260,7 @@ class BottomBanner(Banner):
                 qp.setPen(pen)
 
                 cemu.writeAt(73, 0, 'Selection: ')
-                cemu.write('{0:x}:{1}'.format(u, v-u))
+                cemu.write('{0:x}:{1}'.format(u, v - u))
         else:
             pen = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
             qp.setPen(pen)
@@ -278,9 +273,9 @@ class BottomBanner(Banner):
         qp.drawLine(self.fontWidth*(len(pos + sd + sq) + 1) + 5*15, 0, self.fontWidth*(len(pos + sd + sq) + 1) + 5*15, 50)
         qp.drawLine(self.fontWidth*(len(pos + sd + sq + sb) + 1) + 8*15, 0, self.fontWidth*(len(pos + sd + sq + sb) + 1) + 8*15, 50)
         """
-        #qp.drawLine(270, 0, 270, 50)
-        #qp.drawLine(480, 0, 480, 50)
-        #qp.drawLine(570, 0, 570, 50)
+        # qp.drawLine(270, 0, 270, 50)
+        # qp.drawLine(480, 0, 480, 50)
+        # qp.drawLine(570, 0, 570, 50)
         """
         # position
         qp.drawText(0 + 5, self.fontHeight, pos)
@@ -302,10 +297,11 @@ class BottomBanner(Banner):
         # separator
         qp.drawLine(570, 0, 570, 50)
         """
-        
+
         qp.end()
 
         pass
+
     def getPixmap(self):
         return self.qpix
 
@@ -328,7 +324,6 @@ class TopBanner(Banner):
         self.qpix = self._getNewPixmap(self.width, self.height)
         self.backgroundBrush = QtGui.QBrush(themes['background'])
 
-
         # text font
         self.font = themes['font']
 
@@ -336,7 +331,7 @@ class TopBanner(Banner):
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
         fm = QtGui.QFontMetrics(self.font)
-        self.fontWidth  = fm.width('a')
+        self.fontWidth = fm.width('a')
         self.fontHeight = fm.height()
 
         self.textPen = QtGui.QPen(themes['pen'], 0, QtCore.Qt.SolidLine)
@@ -345,7 +340,7 @@ class TopBanner(Banner):
         return Orientation.Top
 
     def getDesiredGeometry(self):
-        return 26#22
+        return 26  # 22
 
     def setViewMode(self, viewMode):
         self.viewMode = viewMode
@@ -358,7 +353,7 @@ class TopBanner(Banner):
         qp = QtGui.QPainter()
         qp.begin(self.qpix)
 
-        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.fillRect(0, 0, self.width, self.height, self.backgroundBrush)
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
@@ -371,7 +366,7 @@ class TopBanner(Banner):
         text = self.viewMode.getHeaderInfo()
 
         cemu.writeAt(offset, 0, text)
-        
+
         qp.end()
 
     def getPixmap(self):
@@ -384,4 +379,3 @@ class TopBanner(Banner):
         self.width = width
         self.height = height
         self.qpix = self._getNewPixmap(self.width, self.height)
-                                                                                      

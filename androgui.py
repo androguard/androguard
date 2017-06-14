@@ -10,7 +10,6 @@ from androguard.gui.mainwindow import MainWindow
 
 from PyQt5 import QtWidgets, QtGui
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Androguard GUI")
     parser.add_argument("-d", "--debug", action="store_true", default=False)

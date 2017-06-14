@@ -543,7 +543,7 @@ def iflez(ins, vmap):
     return ConditionalZExpression(Op.LEQUAL, get_variables(vmap, ins.AA))
 
 
-#TODO: check type for all aget
+# TODO: check type for all aget
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
 def aget(ins, vmap):
     logger.debug('AGet : %s', ins.get_output())

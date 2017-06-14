@@ -1,7 +1,8 @@
 from __future__ import print_function
 from builtins import object
-class Signature(object):
 
+
+class Signature(object):
     def __init__(self, cls, method=None, descriptor=None):
         self.cls = cls
         self.class_components = self.cls.name.strip('L').strip(';').split('/')

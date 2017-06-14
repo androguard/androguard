@@ -49,14 +49,14 @@ class TabsWindow(QtWidgets.QTabWidget):
         self.clear()
 
     def actioncloseOtherTabs(self):
-        for i in range(self.currentIndex()-1, -1, -1):
+        for i in range(self.currentIndex() - 1, -1, -1):
             self.removeTab(i)
 
         for i in range(self.count(), self.currentIndex(), -1):
             self.removeTab(i)
 
     def actioncloseLeftTabs(self):
-        for i in range(self.currentIndex()-1, -1, -1):
+        for i in range(self.currentIndex() - 1, -1, -1):
             self.removeTab(i)
 
     def actioncloseRightTabs(self):
@@ -81,7 +81,6 @@ class TabsWindow(QtWidgets.QTabWidget):
             androconf.debug("Enable %s" % title)
             self.bin_windows[current_title].enable()
 
-
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.closeAllTabs)
@@ -89,6 +88,7 @@ class TabsWindow(QtWidgets.QTabWidget):
         menu.addAction(self.closeLeftTabs)
         menu.addAction(self.closeRightTabs)
         menu.exec_(event.globalPos())
+
 
 class MainWindow(QtWidgets.QMainWindow):
     '''Main window:
@@ -139,8 +139,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def about(self):
         '''User clicked About menu. Display a Message box.'''
         QtWidgets.QMessageBox.about(self, "About Androguard GUI",
-                "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
-                "<br>Have fun !</p>")
+                                    "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
+                                    "<br>Have fun !</p>")
 
     def setupSession(self):
         androconf.debug("Setup Session")
@@ -350,7 +350,6 @@ class MainWindow(QtWidgets.QMainWindow):
             bin_window.enable()
 
         self.central.setCurrentWidget(bin_window)
-
 
     def openSourceWindow(self, current_class, method=None):
         '''Main function to open a decompile source window

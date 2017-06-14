@@ -85,6 +85,7 @@ class Error(Exception):
 class InvalidInstruction(Error):
     pass
 
+
 def get_access_flags_string(value):
     """
       Transform an access flags to the corresponding string
@@ -185,7 +186,6 @@ def get_sbyte(buff):
 
 def get_byte(buff):
     return unpack('=B', bytearray(buff.read(1)))[0]
-
 
 
 def readuleb128(buff):
@@ -339,7 +339,7 @@ def determineException(vm, m):
             h_off[offset_handler] = []
             h_off[offset_handler].append([try_item])
 
-    #print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
+    # print m.get_name(), "\t HANDLER_CATCH_LIST SIZE", handler_catch_list.size, handler_catch_list.get_offset()
     for handler_catch in handler_catch_list.get_list():
         if handler_catch.get_off() not in h_off:
             continue
@@ -348,7 +348,7 @@ def determineException(vm, m):
             i.append(handler_catch)
 
     exceptions = []
-    #print m.get_name(), h_off
+    # print m.get_name(), h_off
     for i in h_off:
         for value in h_off[i]:
             try_value = value[0]
@@ -368,7 +368,7 @@ def determineException(vm, m):
 
             exceptions.append(z)
 
-    #print m.get_name(), exceptions
+    # print m.get_name(), exceptions
     return exceptions
 
 
@@ -473,28 +473,28 @@ class HeaderItem(object):
         self.data_size = len(self.data_off_obj.map_item)
         self.data_off = self.data_off_obj.get_off()
 
-        return pack("=Q", self.magic) +                                 \
-               pack("=i", self.checksum) +                              \
-               pack("=20s", self.signature) +                           \
-               pack("=I", self.file_size) +                             \
-               pack("=I", self.header_size) +                           \
-               pack("=I", self.endian_tag) +                            \
-               pack("=I", self.link_size) +                             \
-               pack("=I", self.link_off) +                              \
-               pack("=I", self.map_off) +              \
-               pack("=I", self.string_ids_size) +      \
-               pack("=I", self.string_ids_off) +       \
-               pack("=I", self.type_ids_size) +        \
-               pack("=I", self.type_ids_off) +         \
-               pack("=I", self.proto_ids_size) +       \
-               pack("=I", self.proto_ids_off) +        \
-               pack("=I", self.field_ids_size) +       \
-               pack("=I", self.field_ids_off) +        \
-               pack("=I", self.method_ids_size) +      \
-               pack("=I", self.method_ids_off) +       \
-               pack("=I", self.class_defs_size) +      \
-               pack("=I", self.class_defs_off) +       \
-               pack("=I", self.data_size) +            \
+        return pack("=Q", self.magic) + \
+               pack("=i", self.checksum) + \
+               pack("=20s", self.signature) + \
+               pack("=I", self.file_size) + \
+               pack("=I", self.header_size) + \
+               pack("=I", self.endian_tag) + \
+               pack("=I", self.link_size) + \
+               pack("=I", self.link_off) + \
+               pack("=I", self.map_off) + \
+               pack("=I", self.string_ids_size) + \
+               pack("=I", self.string_ids_off) + \
+               pack("=I", self.type_ids_size) + \
+               pack("=I", self.type_ids_off) + \
+               pack("=I", self.proto_ids_size) + \
+               pack("=I", self.proto_ids_off) + \
+               pack("=I", self.field_ids_size) + \
+               pack("=I", self.field_ids_off) + \
+               pack("=I", self.method_ids_size) + \
+               pack("=I", self.method_ids_off) + \
+               pack("=I", self.class_defs_size) + \
+               pack("=I", self.class_defs_off) + \
+               pack("=I", self.data_size) + \
                pack("=I", self.data_off)
 
     def get_raw(self):
@@ -613,7 +613,7 @@ class AnnotationSetItem(object):
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw()
-                                        for i in self.annotation_off_item)
+                                         for i in self.annotation_off_item)
 
     def get_length(self):
         length = len(self.get_obj())
@@ -1007,15 +1007,15 @@ class AnnotationsDirectoryItem(object):
             self.class_annotations_off = self.CM.get_obj_by_offset(
                 self.class_annotations_off).get_off()
 
-        return pack("=I", self.class_annotations_off) +     \
-               pack("=I", self.annotated_fields_size) +               \
-               pack("=I", self.annotated_methods_size) +    \
+        return pack("=I", self.class_annotations_off) + \
+               pack("=I", self.annotated_fields_size) + \
+               pack("=I", self.annotated_methods_size) + \
                pack("=I", self.annotated_parameters_size)
 
     def get_raw(self):
         return self.get_obj() + \
-               b''.join(i.get_raw() for i in self.field_annotations)  +      \
-               b''.join(i.get_raw() for i in self.method_annotations) +     \
+               b''.join(i.get_raw() for i in self.field_annotations) + \
+               b''.join(i.get_raw() for i in self.method_annotations) + \
                b''.join(i.get_raw() for i in self.parameter_annotations)
 
     def get_length(self):
@@ -1174,15 +1174,15 @@ class TypeList(object):
         return length
 
 
-DBG_END_SEQUENCE = 0x00  #    (none)  terminates a debug info sequence for a code_item
-DBG_ADVANCE_PC = 0x01  #     uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
-DBG_ADVANCE_LINE = 0x02  #    sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
-DBG_START_LOCAL = 0x03  #   uleb128 register_num
+DBG_END_SEQUENCE = 0x00  # (none)  terminates a debug info sequence for a code_item
+DBG_ADVANCE_PC = 0x01  # uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
+DBG_ADVANCE_LINE = 0x02  # sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
+DBG_START_LOCAL = 0x03  # uleb128 register_num
 #    uleb128p1 name_idx
 #    uleb128p1 type_idx
 #         register_num: register that will contain local name_idx: string index of the name
 #         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
-DBG_START_LOCAL_EXTENDED = 0x04  #   uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
+DBG_START_LOCAL_EXTENDED = 0x04  # uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
 #         register_num: register that will contain local
 #         name_idx: string index of the name
 #         type_idx: type index of the type
@@ -1190,27 +1190,26 @@ DBG_START_LOCAL_EXTENDED = 0x04  #   uleb128 register_num uleb128p1 name_idx ule
 # introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
 # If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
 # Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
-DBG_END_LOCAL = 0x05  #    uleb128 register_num
+DBG_END_LOCAL = 0x05  # uleb128 register_num
 #           register_num: register that contained local
 #           marks a currently-live local variable as out of scope at the current address
-DBG_RESTART_LOCAL = 0x06  #     uleb128 register_num
+DBG_RESTART_LOCAL = 0x06  # uleb128 register_num
 #           register_num: register to restart re-introduces a local variable at the current address.
 #           The name and type are the same as the last local that was live in the specified register.
-DBG_SET_PROLOGUE_END = 0x07  #     (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
+DBG_SET_PROLOGUE_END = 0x07  # (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
 #               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_EPILOGUE_BEGIN = 0x08  #    (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
+DBG_SET_EPILOGUE_BEGIN = 0x08  # (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
 #               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_FILE = 0x09  #   uleb128p1 name_idx
+DBG_SET_FILE = 0x09  # uleb128p1 name_idx
 #           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
 #           instead of the default name specified in code_item
-DBG_Special_Opcodes_BEGIN = 0x0a  #    (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
+DBG_Special_Opcodes_BEGIN = 0x0a  # (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
 DBG_Special_Opcodes_END = 0xff
 DBG_LINE_BASE = -4
 DBG_LINE_RANGE = 15
 
 
 class DBGBytecode(object):
-
     def __init__(self, cm, op_value):
         self.CM = cm
         self.op_value = op_value
@@ -1249,7 +1248,6 @@ class DBGBytecode(object):
 
 
 class DebugInfoItem(object):
-
     def __init__(self, buff, cm):
         self.CM = cm
 
@@ -1258,7 +1256,7 @@ class DebugInfoItem(object):
         self.line_start = readuleb128(buff)
         self.parameters_size = readuleb128(buff)
 
-        #print "line", self.line_start, "params", self.parameters_size
+        # print "line", self.line_start, "params", self.parameters_size
 
         self.parameter_names = []
         for i in range(0, self.parameters_size):
@@ -1294,7 +1292,7 @@ class DebugInfoItem(object):
                 pass
             elif bcode_value == DBG_SET_FILE:
                 bcode.add(readuleb128p1(buff), "u1")
-            else:  #bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END:
+            else:  # bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END:
                 pass
 
             bcode = DBGBytecode(self.CM, get_byte(buff))
@@ -1338,10 +1336,10 @@ class DebugInfoItem(object):
             i.show()
 
     def get_raw(self):
-        return [ bytecode.Buff( self.__offset, writeuleb128( self.line_start ) + \
-                                                            writeuleb128( self.parameters_size ) + \
-                                                            b''.join(writeuleb128(i) for i in self.parameter_names) + \
-                                                            b''.join(i.get_raw() for i in self.bytecodes) ) ]
+        return [bytecode.Buff(self.__offset, writeuleb128(self.line_start) + \
+                              writeuleb128(self.parameters_size) + \
+                              b''.join(writeuleb128(i) for i in self.parameter_names) + \
+                              b''.join(i.get_raw() for i in self.bytecodes))]
 
     def get_off(self):
         return self.offset
@@ -1366,7 +1364,6 @@ VALUE_BOOLEAN = 0x1f  # boolean (0..1) (none)  one-bit value; 0 for false and 1 
 
 
 class DebugInfoItemEmpty(object):
-
     def __init__(self, buff, cm):
         self.CM = cm
 
@@ -2339,9 +2336,9 @@ class FieldIdItem(object):
             (self.class_idx_value, self.type_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return  pack("=H", self.class_idx) + \
-                pack("=H", self.type_idx) + \
-                pack("=I", self.name_idx)
+        return pack("=H", self.class_idx) + \
+               pack("=H", self.type_idx) + \
+               pack("=I", self.name_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2432,9 +2429,9 @@ class MethodIdItem(object):
         pass
 
     def _reload(self):
-       self.class_idx_value = self.CM.get_type(self.class_idx)
-       self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-       self.name_idx_value = self.CM.get_string(self.name_idx)
+        self.class_idx_value = self.CM.get_type(self.class_idx)
+        self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+        self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2598,7 +2595,6 @@ class MethodHIdItem(object):
 
 
 class ProtoIdItemInvalid(object):
-
     def get_params(self):
         return "AG:IPI:invalid_params;"
 
@@ -2614,7 +2610,6 @@ class ProtoIdItemInvalid(object):
 
 
 class FieldIdItemInvalid(object):
-
     def get_class_name(self):
         return "AG:IFI:invalid_class_name;"
 
@@ -2635,7 +2630,6 @@ class FieldIdItemInvalid(object):
 
 
 class MethodIdItemInvalid(object):
-
     def get_class_name(self):
         return "AG:IMI:invalid_class_name;"
 
@@ -3357,8 +3351,9 @@ class ClassDataItem(object):
 
     def show(self):
         bytecode._PrintSubBanner("Class Data Item")
-        bytecode._PrintDefault("static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d\n" % \
-                (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size))
+        bytecode._PrintDefault(
+            "static_fields_size=%d instance_fields_size=%d direct_methods_size=%d virtual_methods_size=%d\n" % \
+            (self.static_fields_size, self.instance_fields_size, self.direct_methods_size, self.virtual_methods_size))
 
         bytecode._PrintSubBanner("Static Fields")
         for i in self.static_fields:
@@ -3377,28 +3372,28 @@ class ClassDataItem(object):
             i.show()
 
     def get_obj(self):
-        return [ i for i in self.static_fields ] + \
-                 [ i for i in self.instance_fields ] + \
-                 [ i for i in self.direct_methods ] + \
-                 [ i for i in self.virtual_methods ]
+        return [i for i in self.static_fields] + \
+               [i for i in self.instance_fields] + \
+               [i for i in self.direct_methods] + \
+               [i for i in self.virtual_methods]
 
     def get_raw(self):
-        buff = writeuleb128( self.static_fields_size ) + \
-                 writeuleb128( self.instance_fields_size ) + \
-                 writeuleb128( self.direct_methods_size ) + \
-                 writeuleb128( self.virtual_methods_size ) + \
-                 b''.join(i.get_raw() for i in self.static_fields) + \
-                 b''.join(i.get_raw() for i in self.instance_fields) + \
-                 b''.join(i.get_raw() for i in self.direct_methods) + \
-                 b''.join(i.get_raw() for i in self.virtual_methods)
+        buff = writeuleb128(self.static_fields_size) + \
+               writeuleb128(self.instance_fields_size) + \
+               writeuleb128(self.direct_methods_size) + \
+               writeuleb128(self.virtual_methods_size) + \
+               b''.join(i.get_raw() for i in self.static_fields) + \
+               b''.join(i.get_raw() for i in self.instance_fields) + \
+               b''.join(i.get_raw() for i in self.direct_methods) + \
+               b''.join(i.get_raw() for i in self.virtual_methods)
 
         return buff
 
     def get_length(self):
-        length = len(writeuleb128( self.static_fields_size )) +   \
-                len(writeuleb128( self.instance_fields_size )) +  \
-                len(writeuleb128( self.direct_methods_size )) +   \
-                len(writeuleb128( self.virtual_methods_size ))
+        length = len(writeuleb128(self.static_fields_size)) + \
+                 len(writeuleb128(self.instance_fields_size)) + \
+                 len(writeuleb128(self.direct_methods_size)) + \
+                 len(writeuleb128(self.virtual_methods_size))
 
         for i in self.static_fields:
             length += i.get_size()
@@ -3466,7 +3461,6 @@ class ClassDefItem(object):
             if self.class_data_item != None:
                 self.class_data_item.set_static_fields(
                     self.static_values.get_value())
-
 
     def __str__(self):
         return "%s->%s" % (self.get_superclassname(), self.get_name())
@@ -3691,14 +3685,14 @@ class ClassDefItem(object):
             self.static_values_off = self.CM.get_obj_by_offset(
                 self.static_values_off).get_off()
 
-        return  pack("=I", self.class_idx) +          \
-                pack("=I", self.access_flags) +       \
-                pack("=I", self.superclass_idx) +     \
-                pack("=I", self.interfaces_off) +     \
-                pack("=I", self.source_file_idx) +    \
-                pack("=I", self.annotations_off) +    \
-                pack("=I", self.class_data_off) +     \
-                pack("=I", self.static_values_off)
+        return pack("=I", self.class_idx) + \
+               pack("=I", self.access_flags) + \
+               pack("=I", self.superclass_idx) + \
+               pack("=I", self.interfaces_off) + \
+               pack("=I", self.source_file_idx) + \
+               pack("=I", self.annotations_off) + \
+               pack("=I", self.class_data_off) + \
+               pack("=I", self.static_values_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -3889,7 +3883,7 @@ class EncodedCatchHandler(object):
 
     def get_raw(self):
         buff = writesleb128(self.size) + b''.join(i.get_raw()
-                                                 for i in self.handlers)
+                                                  for i in self.handlers)
 
         if self.size <= 0:
             buff += writeuleb128(self.catch_all_addr)
@@ -4152,7 +4146,7 @@ class Instruction(object):
 
     def get_hex(self):
         s = binascii.hexlify(self.get_raw()).decode("ascii")
-        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
+        return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 
 class InstructionInvalid(Instruction):
@@ -4166,7 +4160,7 @@ class InstructionInvalid(Instruction):
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
 
-        #debug("OP:%x" % (self.OP))
+        # debug("OP:%x" % (self.OP))
 
     def get_name(self):
         """
@@ -4209,7 +4203,7 @@ class FillArrayData(object):
             buf_len += 1
 
         self.data = buff[self.format_general_size:self.format_general_size +
-                         buf_len]
+                                                  buf_len]
 
     def add_note(self, msg):
         """
@@ -4306,7 +4300,8 @@ class FillArrayData(object):
 
     def get_hex(self):
         s = binascii.hexlify(self.get_raw())
-        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
+        return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
 
 class SparseSwitch(object):
     """
@@ -4429,11 +4424,12 @@ class SparseSwitch(object):
     def get_raw(self):
         return pack("=H", self.ident) + pack("=H", self.size) + b''.join(pack(
             "=l", i) for i in self.keys) + b''.join(pack("=l", i)
-                                                   for i in self.targets)
+                                                    for i in self.targets)
 
     def get_hex(self):
         s = binascii.hexlify(self.get_raw())
-        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
+        return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
 
 class PackedSwitch(object):
     """
@@ -4564,7 +4560,8 @@ class PackedSwitch(object):
 
     def get_hex(self):
         s = binascii.hexlify(self.get_raw())
-        return " ".join(s[i:i+2] for i in range(0, len(s), 2))
+        return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
 
 class Instruction35c(Instruction):
     """
@@ -4627,12 +4624,12 @@ class Instruction35c(Instruction):
         elif self.A == 4:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
+                          self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
         elif self.A == 5:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
-                                                self.BBBB, kind)])
+                          OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
+                                                      self.BBBB, kind)])
 
         return l
 
@@ -4685,7 +4682,7 @@ class Instruction21h(Instruction):
 
         self.BBBB = unpack("=h", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
         self.formatted_operands = []
 
@@ -4734,7 +4731,7 @@ class Instruction11n(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12)
 
-        #log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
+        # log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4768,7 +4765,7 @@ class Instruction21c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -4816,9 +4813,9 @@ class Instruction21s(Instruction):
 
         if self.OP == 0x16:
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0
-                                                                          ])
+                                           ])
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+            # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -4860,7 +4857,7 @@ class Instruction22c(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
 
     def get_length(self):
         return 4
@@ -4899,7 +4896,7 @@ class Instruction22cs(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
 
     def get_length(self):
         return 4
@@ -4935,7 +4932,7 @@ class Instruction31t(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=i", buff[2:6])[0]
-        #log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self):
         return 6
@@ -4971,7 +4968,7 @@ class Instruction31c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-        #log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self):
         return 6
@@ -5019,7 +5016,7 @@ class Instruction12x(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
 
-        #log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
+        # log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
 
     def get_length(self):
         return 2
@@ -5048,7 +5045,7 @@ class Instruction11x(Instruction):
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
 
-        #log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
+        # log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
 
     def get_length(self):
         return 2
@@ -5085,7 +5082,7 @@ class Instruction51l(Instruction):
             self.formatted_operands.append(unpack('=d', pack(
                 '=q', self.BBBBBBBBBBBBBBBB))[0])
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBBBBBBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBBBBBBBBBB))
+            # log_andro.debug("OP:%x %s AA:%x BBBBBBBBBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBBBBBBBBBB))
 
     def get_length(self):
         return 10
@@ -5138,7 +5135,7 @@ class Instruction31i(Instruction):
             self.formatted_operands.append(unpack('=d', pack('=d',
                                                              self.BBBBBBBB))[0])
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
+            # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self):
         return 6
@@ -5179,7 +5176,7 @@ class Instruction22x(Instruction):
 
         self.BBBB = unpack("=H", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -5212,7 +5209,7 @@ class Instruction23x(Instruction):
         self.BB = i16 & 0xff
         self.CC = (i16 >> 8) & 0xff
 
-        #log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
+        # log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
 
     def get_length(self):
         return 4
@@ -5242,7 +5239,7 @@ class Instruction20t(Instruction):
         self.OP = i16 & 0xff
         self.AAAA = unpack("=h", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s AAAA:%x" % (self.OP, args[0], self.AAAA))
+        # log_andro.debug("OP:%x %s AAAA:%x" % (self.OP, args[0], self.AAAA))
 
     def get_length(self):
         return 4
@@ -5276,7 +5273,7 @@ class Instruction21t(Instruction):
 
         self.BBBB = unpack("=h", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -5307,7 +5304,7 @@ class Instruction10t(Instruction):
         self.OP = unpack("=B", buff[0:1])[0]
         self.AA = unpack("=b", buff[1:2])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
+        # log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
 
     def get_length(self):
         return 2
@@ -5341,7 +5338,7 @@ class Instruction22t(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
 
     def get_length(self):
         return 4
@@ -5376,7 +5373,7 @@ class Instruction22s(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
+        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
 
     def get_length(self):
         return 4
@@ -5412,7 +5409,7 @@ class Instruction22b(Instruction):
         self.BB = unpack("=B", buff[2:3])[0]
         self.CC = unpack("=b", buff[3:4])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
+        # log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
 
     def get_length(self):
         return 4
@@ -5446,7 +5443,7 @@ class Instruction30t(Instruction):
 
         self.AAAAAAAA = unpack("=i", buff[2:6])[0]
 
-        #log_andro.debug("OP:%x %s AAAAAAAA:%x" % (self.OP, args[0], self.AAAAAAAA))
+        # log_andro.debug("OP:%x %s AAAAAAAA:%x" % (self.OP, args[0], self.AAAAAAAA))
 
     def get_length(self):
         return 6
@@ -5484,7 +5481,7 @@ class Instruction3rc(Instruction):
 
         self.NNNN = self.CCCC + self.AA - 1
 
-        #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 6
@@ -5534,7 +5531,7 @@ class Instruction32x(Instruction):
         self.AAAA = unpack("=H", buff[2:4])[0]
         self.BBBB = unpack("=H", buff[4:6])[0]
 
-        #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
+        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
 
     def get_length(self):
         return 6
@@ -5565,7 +5562,7 @@ class Instruction20bc(Instruction):
 
         self.BBBB = unpack("=H", buff[2:4])[0]
 
-        #log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
+        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -5603,7 +5600,7 @@ class Instruction35mi(Instruction):
         self.E = (i16 >> 8) & 0xf
         self.F = (i16 >> 12) & 0xf
 
-        #log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
+        # log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5642,12 +5639,12 @@ class Instruction35mi(Instruction):
         elif self.A == 4:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
+                          self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
         elif self.A == 5:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
-                                                self.BBBB, kind)])
+                          OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
+                                                      self.BBBB, kind)])
 
         return l
 
@@ -5683,7 +5680,7 @@ class Instruction35ms(Instruction):
         self.E = (i16 >> 8) & 0xf
         self.F = (i16 >> 12) & 0xf
 
-        #log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
+        # log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5722,12 +5719,12 @@ class Instruction35ms(Instruction):
         elif self.A == 4:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
+                          self.get_kind() + OPERAND_KIND, self.BBBB, kind)])
         elif self.A == 5:
             l.extend([(OPERAND_REGISTER, self.C), (OPERAND_REGISTER, self.D), (
                 OPERAND_REGISTER, self.E), (OPERAND_REGISTER, self.F), (
-                    OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
-                                                self.BBBB, kind)])
+                          OPERAND_REGISTER, self.G), (self.get_kind() + OPERAND_KIND,
+                                                      self.BBBB, kind)])
 
         return l
 
@@ -5760,7 +5757,7 @@ class Instruction3rmi(Instruction):
 
         self.NNNN = self.CCCC + self.AA - 1
 
-        #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 6
@@ -5815,7 +5812,7 @@ class Instruction3rms(Instruction):
 
         self.NNNN = self.CCCC + self.AA - 1
 
-        #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
+        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 6
@@ -5866,7 +5863,7 @@ class Instruction41c(Instruction):
 
         self.AAAA = unpack("=H", buff[6:8])[0]
 
-        #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
+        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
 
     def get_length(self):
         return 8
@@ -5903,7 +5900,7 @@ class Instruction40sc(Instruction):
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
         self.AAAA = unpack("=H", buff[6:8])[0]
 
-        #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
+        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
 
     def get_length(self):
         return 8
@@ -5941,7 +5938,7 @@ class Instruction52c(Instruction):
         self.AAAA = unpack("=H", buff[6:8])[0]
         self.BBBB = unpack("=H", buff[8:10])[0]
 
-        #log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
+        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
 
     def get_length(self):
         return 10
@@ -5981,7 +5978,7 @@ class Instruction5rc(Instruction):
 
         self.NNNN = self.CCCC + self.AAAA - 1
 
-        #log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AAAA, self.BBBBBBBB, self.CCCC, self.NNNN))
+        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AAAA, self.BBBBBBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 10
@@ -6081,7 +6078,7 @@ DALVIK_OPCODES_FORMAT = {
     0x3b: [Instruction21t, ["if-gez"]],
     0x3c: [Instruction21t, ["if-gtz"]],
     0x3d: [Instruction21t, ["if-lez"]],
-    #unused
+    # unused
     0x3e: [Instruction10x, ["nop"]],
     0x3f: [Instruction10x, ["nop"]],
     0x40: [Instruction10x, ["nop"]],
@@ -6288,7 +6285,7 @@ DALVIK_OPCODES_PAYLOAD = {
 
 INLINE_METHODS = [
     ["Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V"
-    ],
+     ],
     ["Ljava/lang/String;", "charAt", "(I)C"],
     ["Ljava/lang/String;", "compareTo", "(Ljava/lang/String;)I"],
     ["Ljava/lang/String;", "equals", "(Ljava/lang/Object;)Z"],
@@ -6373,7 +6370,6 @@ DALVIK_OPCODES_OPTIMIZED = {
 
 
 class Unresolved(Instruction):
-
     def __init__(self, cm, data):
         self.cm = cm
         self.data = data
@@ -6415,6 +6411,7 @@ def get_extented_instruction(cm, op_value, buff):
         return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0](cm, buff)
     except struct.error:
         raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
+
 
 def get_optimized_instruction(cm, op_value, buff):
     try:
@@ -6461,9 +6458,9 @@ class LinearSweepAlgorithm(object):
 
             op_value = insn[idx]
 
-            #print "%x %x" % (op_value, idx)
+            # print "%x %x" % (op_value, idx)
 
-            #payload instructions or extented/optimized instructions
+            # payload instructions or extented/optimized instructions
             if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx):
                 op_value = unpack('=H', insn[idx:idx + 2])[0]
 
@@ -6934,12 +6931,12 @@ class DalvikCode(object):
     def get_size(self):
         length = len(self.int_padding)
 
-        length += len( pack("=H", self.registers_size) + \
-                       pack("=H", self.ins_size) + \
-                       pack("=H", self.outs_size) + \
-                       pack("=H", self.tries_size) + \
-                       pack("=I", self.debug_info_off) + \
-                       pack("=I", self.insns_size) )
+        length += len(pack("=H", self.registers_size) + \
+                      pack("=H", self.ins_size) + \
+                      pack("=H", self.outs_size) + \
+                      pack("=H", self.tries_size) + \
+                      pack("=I", self.debug_info_off) + \
+                      pack("=I", self.insns_size))
         length += self.code.get_length()
 
         if (self.insns_size % 2 == 1):
@@ -6961,7 +6958,6 @@ class DalvikCode(object):
 
 
 class CodeItem(object):
-
     def __init__(self, size, buff, cm):
         self.CM = cm
 
@@ -7016,7 +7012,6 @@ class CodeItem(object):
 
 
 class MapItem(object):
-
     def __init__(self, buff, cm):
         self.CM = cm
 
@@ -7109,11 +7104,11 @@ class MapItem(object):
 
         else:
             androconf.warning("Map item %d @ 0x%x(%d) is unknown" %
-                          (self.type, buff.get_idx(), buff.get_idx()))
+                              (self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
         minutes, seconds = float(diff // 60), float(diff % 60)
-        androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds,2))))
+        androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
         if self.item != None:
@@ -7156,7 +7151,6 @@ class MapItem(object):
 
 
 class OffObj(object):
-
     def __init__(self, o):
         self.off = o
 
@@ -7404,13 +7398,13 @@ class ClassManager(object):
                 debug("success with regular name")
             except AttributeError:
                 debug("WARNING: fail with regular name")
-                #python_export = False
+                # python_export = False
 
                 try:
                     name = bytecode.FormatNameToPython(encoded_method.get_name(
                     ) + '_' + encoded_method.proto.replace(' ', '').replace(
                         '(', '').replace('[', '').replace(')', '').replace(
-                            '/', '_').replace(';', ''))
+                        '/', '_').replace(';', ''))
                 except AttributeError:
                     name += "_" + bytecode.FormatDescriptorToPython(
                         encoded_method.get_descriptor())
@@ -7509,7 +7503,8 @@ class MapList(object):
             i.reload()
             diff = time.time() - started_at
             minutes, seconds = float(diff // 60), float(diff % 60)
-            androconf.debug("End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds,2))))
+            androconf.debug(
+                "End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
         pass
@@ -7549,7 +7544,7 @@ class MapList(object):
 
     def get_raw(self):
         return pack("=I", self.size) + b''.join(x.get_raw()
-                                               for x in self.map_item)
+                                                for x in self.map_item)
 
     def get_class_manager(self):
         return self.CM
@@ -7559,7 +7554,6 @@ class MapList(object):
 
 
 class XREF(object):
-
     def __init__(self):
         self.items = []
 
@@ -7568,7 +7562,6 @@ class XREF(object):
 
 
 class DREF(object):
-
     def __init__(self):
         self.items = []
 
@@ -7590,16 +7583,16 @@ class DalvikVMFormat(bytecode._Bytecode):
     """
 
     def __init__(self, buff, decompiler=None, config=None, using_api=None):
-        #to allow to pass apk object ==> we do not need to pass additionally target version
+        # to allow to pass apk object ==> we do not need to pass additionally target version
         if isinstance(buff, APK):
             self.api_version = buff.get_target_sdk_version()
-            buff = buff.get_dex()  #getting dex from APK file
+            buff = buff.get_dex()  # getting dex from APK file
         elif using_api:
             self.api_version = using_api
         else:
             self.api_version = CONF["DEFAULT_API"]
 
-        #TODO: can using_api be added to config parameter?
+        # TODO: can using_api be added to config parameter?
         super(DalvikVMFormat, self).__init__(buff)
 
         self.config = config
@@ -7752,7 +7745,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                     s[idx + length] = c_length
 
                     length += c_length
-                    #debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
+                    # debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
 
                 debug("SAVE " + str(i[0]) + " @0x%x (%x)" % (idx, length))
 
@@ -7782,7 +7775,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 last_idx = idx
                 for j in i.get_obj():
                     j.set_off(last_idx)
-                    #j.set_debug_info_off(0)
+                    # j.set_debug_info_off(0)
                     last_idx += j.get_size()
 
         last_idx = 0
@@ -8164,14 +8157,14 @@ class DalvikVMFormat(bytecode._Bytecode):
                 for ref_class, ref_method, _ in xrefs_from:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
-                                ref_method.get_descriptor()))
+                        ref_method.get_descriptor()))
                     setattr(method.XF, name, ref_method)
 
                 xrefs_to = m_a.get_xref_to()
                 for ref_class, ref_method, _ in xrefs_to:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
-                                ref_method.get_descriptor()))
+                        ref_method.get_descriptor()))
                     setattr(method.XT, name, ref_method)
 
         for i in m:
@@ -8201,14 +8194,14 @@ class DalvikVMFormat(bytecode._Bytecode):
                 for ref_class, ref_method in xrefs_from:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
-                                ref_method.get_descriptor()))
+                        ref_method.get_descriptor()))
                     setattr(field.XR, name, ref_method)
 
                 xrefs_to = f_a.get_xref_write()
                 for ref_class, ref_method in xrefs_to:
                     name = (bytecode.FormatNameToPython(ref_method.get_name()) +
                             "_" + bytecode.FormatDescriptorToPython(
-                                ref_method.get_descriptor()))
+                        ref_method.get_descriptor()))
                     setattr(field.XW, name, ref_method)
 
         for i in f:
@@ -8253,8 +8246,8 @@ class DalvikVMFormat(bytecode._Bytecode):
         :type size:
       """
         for i in DCode(
-            self.CM, offset, size,
-            self.get_buff()[offset:offset + size]).get_instructions():
+                self.CM, offset, size,
+                self.get_buff()[offset:offset + size]).get_instructions():
             yield i
 
     def _get_class_hierarchy(self):
@@ -8382,7 +8375,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
             elif operand[0] == OPERAND_OFFSET:
                 yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"]
-                           )
+                                  )
 
             elif operand[0] & OPERAND_KIND:
                 if operand[0] == (OPERAND_KIND + KIND_STRING):
@@ -8478,13 +8471,13 @@ class OdexHeaderItem(object):
             self.deps_length, self.aux_offset, self.aux_length, self.flags))
 
     def get_raw(self):
-        return pack("=I", self.dex_offset) +    \
-               pack("=I", self.dex_length) +    \
-               pack("=I", self.deps_offset) +   \
-               pack("=I", self.deps_length) +   \
-               pack("=I", self.aux_offset) +    \
-               pack("=I", self.aux_length) +    \
-               pack("=I", self.flags) +         \
+        return pack("=I", self.dex_offset) + \
+               pack("=I", self.dex_length) + \
+               pack("=I", self.deps_offset) + \
+               pack("=I", self.deps_length) + \
+               pack("=I", self.aux_offset) + \
+               pack("=I", self.aux_length) + \
+               pack("=I", self.flags) + \
                pack("=I", self.padding)
 
 
@@ -8526,9 +8519,9 @@ class OdexDependencies(object):
                             pack("=20s", self.dependency_checksums[idx])
 
         return pack("=I", self.modification_time) + \
-               pack("=I", self.crc) +               \
-               pack("=I", self.dalvik_build) +      \
-               pack("=I", self.dependency_count) +  \
+               pack("=I", self.crc) + \
+               pack("=I", self.dalvik_build) + \
+               pack("=I", self.dependency_count) + \
                dependencies
 
 
@@ -8645,17 +8638,17 @@ def get_bytecodes_methodx(method, mx):
                 if ins == instructions[-1] and i.childs != []:
                     # packed/sparse-switch
                     if (op_value == 0x2b or op_value == 0x2c
-                       ) and len(i.childs) > 1:
+                        ) and len(i.childs) > 1:
                         values = i.get_special_ins(idx).get_values()
                         bb_buffer += "[ D:%s " % (i.childs[0][2].name)
                         bb_buffer += ' '.join(
                             "%d:%s" % (values[j], i.childs[j + 1][2].name)
                             for j in range(0, len(i.childs) - 1)) + " ]"
                     else:
-                        #if len(i.childs) == 2:
+                        # if len(i.childs) == 2:
                         #    i_buffer += "%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
                         #    print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + " ]%s" % normal_color)
-                        #else:
+                        # else:
                         bb_buffer += "[ " + ' '.join("%s" % c[2].name
                                                      for c in i.childs) + " ]"
 
@@ -8677,28 +8670,28 @@ class ExportObject(object):
 
 
 class ConstString(Instruction21c):
-  """Simulate a const-string instruction."""
+    """Simulate a const-string instruction."""
 
-  def __init__(self, orig_ins, value):
-    self.OP = orig_ins.OP
-    self.AA = orig_ins.AA
-    self.BBBB = orig_ins.BBBB
-    self.cm = orig_ins.cm
-    self.value = value
+    def __init__(self, orig_ins, value):
+        self.OP = orig_ins.OP
+        self.AA = orig_ins.AA
+        self.BBBB = orig_ins.BBBB
+        self.cm = orig_ins.cm
+        self.value = value
 
-  def get_raw_string(self):
-    return self.value
+    def get_raw_string(self):
+        return self.value
 
-  def get_operands(self, idx=-1):
-    return [(0, 1), (257, 2113, "'%s'" % self.value)]
+    def get_operands(self, idx=-1):
+        return [(0, 1), (257, 2113, "'%s'" % self.value)]
 
 
 class FakeNop(Instruction10x):
-  """Simulate a nop instruction."""
+    """Simulate a nop instruction."""
 
-  def __init__(self, length):
-    self.OP = 0x00
-    self.length = length
+    def __init__(self, length):
+        self.OP = 0x00
+        self.length = length
 
-  def get_length(self):
-    return self.length
+    def get_length(self):
+        return self.length
