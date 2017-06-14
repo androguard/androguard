@@ -22,16 +22,16 @@ Documentation
    :maxdepth: 2
 
    intro/index
+   tools/tools
 
 
-API
-===
+Python API
+==========
 
 .. toctree::
    :maxdepth: 2
 
    api/androguard
-   tools/tools
 
 Indices and tables
 ==================
