@@ -8,13 +8,13 @@ from androguard.core.bytecodes.apk import *
 from androguard.core.bytecodes.dvm import *
 from androguard.core.analysis.analysis import *
 from androguard.decompiler.decompiler import *
-from androguard.misc import save_session, load_session
+from androguard import misc
 
 def Save(session, filename):
-    save_session(session, filename)
+    misc.save_session(session, filename)
 
 def Load(filename):
-    return load_session(filename)
+    return misc.load_session(filename)
 
 class Session(object):
     def __init__(self, export_ipython=False):

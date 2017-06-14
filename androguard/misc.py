@@ -9,7 +9,7 @@ from androguard.decompiler.decompiler import *
 
 from pickle import dump, load
 from androguard.core import androconf
-
+from androguard import session
 
 def init_print_colors():
     from IPython.utils import coloransi, io
@@ -23,8 +23,7 @@ def get_default_session():
         or create a new one, if the session is None.
     """
     if CONF["SESSION"] is None:
-        from androguard.session import Session
-        CONF["SESSION"] = Session()
+        CONF["SESSION"] = session.Session()
     return CONF["SESSION"]
 
 def save_session(l, filename):
