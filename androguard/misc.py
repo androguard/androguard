@@ -17,6 +17,16 @@ def init_print_colors():
     CONF["PRINT_FCT"] = io.stdout.write
 
 
+def get_default_session():
+    """
+        Return the default Session from the configuration
+        or create a new one, if the session is None.
+    """
+    if CONF["SESSION"] is None:
+        from androguard.session import Session
+        CONF["SESSION"] = Session()
+    return CONF["SESSION"]
+
 def save_session(l, filename):
     """
       save your session !
@@ -63,7 +73,7 @@ def AnalyzeAPK(filename, decompiler="dad", session=None):
     androconf.debug("AnalyzeAPK")
 
     if not session:
-        session = CONF["SESSION"]
+        session = get_default_session()
 
     with open(filename, "rb") as fd:
         data = fd.read()
@@ -84,7 +94,7 @@ def AnalyzeDex(filename, decompiler="dad", session=None):
     androconf.debug("AnalyzeDex")
 
     if not session:
-        session = CONF["SESSION"]
+        session = get_default_session()
 
     with open(filename, "rb") as fd:
         data = fd.read()
@@ -104,7 +114,7 @@ def AnalyzeODex(filename, decompiler="dad", session=None):
     androconf.debug("AnalyzeODex")
 
     if not session:
-        session = CONF["SESSION"]
+        session = get_default_session()
 
     with open(filename, "rb") as fd:
         data = fd.read()
