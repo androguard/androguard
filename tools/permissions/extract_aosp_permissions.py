@@ -25,15 +25,15 @@ import os, re, codecs
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
-PATH_TO_AOSP_ROOT = ""  #path to AOSP folder
+PATH_TO_AOSP_ROOT = ""  # path to AOSP folder
 
 AOSP_PERMISSION_MODULE_NAME = "aosp_permissions"
-AOSP_PERMISSION_MODULE_PATH = "../../androguard/core/api_specific_resources/aosp_permissions/"  #where to append the results
+AOSP_PERMISSION_MODULE_PATH = "../../androguard/core/api_specific_resources/aosp_permissions/"  # where to append the results
 
 SDK_VERSION_PATTERN = re.compile(
-    "\s*PLATFORM_SDK_VERSION\s*:=\s*(?P<sdk_version>\d{1,3})\s*")  #hope Android will get 3digit version number :)
+    "\s*PLATFORM_SDK_VERSION\s*:=\s*(?P<sdk_version>\d{1,3})\s*")  # hope Android will get 3digit version number :)
 PLATFORM_VERSION_PATTERN = re.compile(
-    "\s*PLATFORM_VERSION\s*:=\s*(?P<platform_version>.+)\s*")  #just to add as a comment from which version the parsing has happened
+    "\s*PLATFORM_VERSION\s*:=\s*(?P<platform_version>.+)\s*")  # just to add as a comment from which version the parsing has happened
 
 ANDROID_MANIFEST_NAME = "AndroidManifest.xml"
 STRINGS_REL_PATH = "res/values/strings.xml"
@@ -93,7 +93,7 @@ def get_permission_details(manifest_dir):
                     '<?xml version="1.0" encoding="utf-8"?>'):]
                 strings_document = minidom.parseString(xml_string)
 
-        #loading strings into memory
+        # loading strings into memory
         dstrings = {}
         for i in strings_document.getElementsByTagName("string"):
             try:
@@ -103,7 +103,7 @@ def get_permission_details(manifest_dir):
 
     manifest_path = os.path.join(manifest_dir, ANDROID_MANIFEST_NAME)
     print("Working with file: %s" % manifest_path)
-    #getting permissions
+    # getting permissions
     manifest_document = None
     try:
         manifest_document = minidom.parse(manifest_path)
@@ -130,7 +130,7 @@ def get_permission_details(manifest_dir):
         if description_string_id != "":
             description = dstrings.get(description_string_id, "")
 
-        #removing auxiliary symbols
+        # removing auxiliary symbols
         label = ' '.join(label.split())
         description = ' '.join(description.split())
 
@@ -141,7 +141,7 @@ def get_permission_details(manifest_dir):
             "permissionGroup": permission_group
         }
 
-    #getting permission groups
+    # getting permission groups
     for i in manifest_document.getElementsByTagName("permission-group"):
         name = i.getAttributeNS(NS_ANDROID_URI, "name")
 
@@ -156,7 +156,7 @@ def get_permission_details(manifest_dir):
         if description_string_id != "":
             description = dstrings.get(description_string_id, "")
 
-        #removing auxiliary symbols
+        # removing auxiliary symbols
         label = ' '.join(label.split())
         description = ' '.join(description.split())
         perm_groups[name] = {"label": label, "description": description}
@@ -194,8 +194,8 @@ for m_dir in dirs_with_manifest:
     if perm_groups:
         permission_groups.update(perm_groups)
 
-    #print "Permission:\n", permissions
-    #print "Permission Groups:\n", permission_groups
+        # print "Permission:\n", permissions
+        # print "Permission Groups:\n", permission_groups
 
 print("Checking if folder exists...")
 if not os.path.exists(AOSP_PERMISSION_MODULE_PATH):

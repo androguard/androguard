@@ -21,11 +21,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#CONSTANTS
+# CONSTANTS
 PATH_TO_PSCOUT_FOLDER = "/home/yury/TMP/PScout/results/API_09"
 API_VERSION = 9
 
-MAPPINGS_MODULE_PATH = "../../androguard/core/api_specific_resources/api_permission_mappings/"  #where to append the results
+MAPPINGS_MODULE_PATH = "../../androguard/core/api_specific_resources/api_permission_mappings/"  # where to append the results
 MAPPINGS_MODULE_NAME = "api_permission_mappings"
 
 PSCOUT_METHOD_MAPPING_FILENAME = "allmappings"
@@ -34,10 +34,10 @@ PSCOUT_CONTENTPROVIDERFIELDS_MAPPING_FILENAME = "contentproviderfieldpermission"
 METHODS_MAPPING_PARAM_NAME = "AOSP_PERMISSIONS_BY_METHODS"
 FIELDS_MAPPING_PARAM_NAME = "AOSP_PERMISSIONS_BY_FIELDS"
 
-#IMPORTS
+# IMPORTS
 import os, re, codecs
 
-#auxiliary
+# auxiliary
 TYPE_DESCRIPTOR = {
     'V': 'void',
     'Z': 'boolean',
@@ -108,7 +108,9 @@ def parseMethod(methodString):
     methodName = retValue_mName[mNameStartPos + 1:].strip()
 
     return (methodName, params, returnValue)
-#end of auxiliary
+
+
+# end of auxiliary
 
 print("Starting conversion of PScout data: [%s]" % PATH_TO_PSCOUT_FOLDER)
 
