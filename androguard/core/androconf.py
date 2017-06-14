@@ -4,7 +4,6 @@ import logging
 import types
 import random
 import string
-import imp
 
 ANDROGUARD_VERSION = "3.0-dev"
 
