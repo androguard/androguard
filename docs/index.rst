@@ -6,6 +6,24 @@
 Welcome to Androguard's documentation!
 ======================================
 
+Androguard is a full python tool to play with Android files.
+
+* DEX, ODEX
+* APK
+* Android's binary xml
+* Android resources
+* Disassemble DEX/ODEX bytecodes
+* Decompiler for DEX/ODEX files
+
+Documentation
+=============
+
+.. toctree::
+   :maxdepth: 2
+
+   intro
+
+
 API
 ===
 
