@@ -21,7 +21,7 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   intro
+   intro/index
 
 
 API
