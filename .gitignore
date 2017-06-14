@@ -4,6 +4,8 @@ __pycache__/
 
 docs/build
 
+.idea/
+
 *.o
 *.so
 # Binary Files
