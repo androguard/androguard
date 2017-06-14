@@ -21,3 +21,6 @@ elsim/elsim/similarity/libsimilarity/z/test_z
 androguard.egg-info/
 build/
 dist/
+
+# Files from tests
+test_session
