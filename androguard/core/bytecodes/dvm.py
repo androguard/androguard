@@ -281,7 +281,7 @@ def writesleb128(value):
         if hasMore:
             tmp = 0x80
 
-        buff += pack("=B", (value & 0x7f) | (tmp))
+        buff += pack("=B", (value & 0x7f) | tmp)
         value = remaining
         remaining >>= 7
 
@@ -301,7 +301,7 @@ def determineNext(i, end, m):
     # if
     elif 0x32 <= op_value <= 0x3d:
         off = i.get_ref_off() * 2
-        return [end + i.get_length(), off + (end)]
+        return [end + i.get_length(), off + end]
     # sparse/packed
     elif op_value in (0x2b, 0x2c):
         x = []
@@ -512,7 +512,7 @@ class HeaderItem(object):
                                 self.endian_tag))
         bytecode._PrintDefault("link_size=%x, link_off=%x\n" %
                                (self.link_size, self.link_off))
-        bytecode._PrintDefault("map_off=%x\n" % (self.map_off))
+        bytecode._PrintDefault("map_off=%x\n" % self.map_off)
         bytecode._PrintDefault("string_ids_size=%x, string_ids_off=%x\n" %
                                (self.string_ids_size, self.string_ids_off))
         bytecode._PrintDefault("type_ids_size=%x, type_ids_off=%x\n" %
@@ -4107,7 +4107,7 @@ class Instruction(object):
 
           :rtype: string
       """
-        raise ("not implemented")
+        raise "not implemented"
 
     def get_operands(self, idx=-1):
         """
@@ -4115,7 +4115,7 @@ class Instruction(object):
 
           :rtype: list
       """
-        raise ("not implemented")
+        raise "not implemented"
 
     def get_length(self):
         """
@@ -4123,7 +4123,7 @@ class Instruction(object):
 
           :rtype: int
       """
-        raise ("not implemented")
+        raise "not implemented"
 
     def get_raw(self):
         """
@@ -4131,7 +4131,7 @@ class Instruction(object):
 
           :rtype: string
       """
-        raise ("not implemented")
+        raise "not implemented"
 
     def get_ref_kind(self):
         """
@@ -4139,7 +4139,7 @@ class Instruction(object):
 
           :rtype: value
       """
-        raise ("not implemented")
+        raise "not implemented"
 
     def get_formatted_operands(self):
         return None
@@ -4589,7 +4589,7 @@ class Instruction35c(Instruction):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.A == 0:
-            buff += "%s" % (kind)
+            buff += "%s" % kind
         elif self.A == 1:
             buff += "v%d, %s" % (self.C, kind)
         elif self.A == 2:
@@ -4878,7 +4878,7 @@ class Instruction22c(Instruction):
 
     def get_raw(self):
         return pack("=HH",
-                    (self.B << 12) | (self.A << 8) | (self.OP), self.CCCC)
+                    (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction22cs(Instruction):
@@ -4917,7 +4917,7 @@ class Instruction22cs(Instruction):
 
     def get_raw(self):
         return pack("=HH",
-                    (self.B << 12) | (self.A << 8) | (self.OP), self.CCCC)
+                    (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction31t(Instruction):
@@ -5030,7 +5030,7 @@ class Instruction12x(Instruction):
         return [(OPERAND_REGISTER, self.A), (OPERAND_REGISTER, self.B)]
 
     def get_raw(self):
-        return pack("=H", (self.B << 12) | (self.A << 8) | (self.OP))
+        return pack("=H", (self.B << 12) | (self.A << 8) | self.OP)
 
 
 class Instruction11x(Instruction):
@@ -5052,7 +5052,7 @@ class Instruction11x(Instruction):
 
     def get_output(self, idx=-1):
         buff = ""
-        buff += "v%d" % (self.AA)
+        buff += "v%d" % self.AA
         return buff
 
     def get_operands(self, idx=-1):
@@ -5246,7 +5246,7 @@ class Instruction20t(Instruction):
 
     def get_output(self, idx=-1):
         buff = ""
-        buff += "%+x" % (self.AAAA)
+        buff += "%+x" % self.AAAA
         return buff
 
     def get_operands(self, idx=-1):
@@ -5311,7 +5311,7 @@ class Instruction10t(Instruction):
 
     def get_output(self, idx=-1):
         buff = ""
-        buff += "%+x" % (self.AA)
+        buff += "%+x" % self.AA
         return buff
 
     def get_operands(self, idx=-1):
@@ -5450,7 +5450,7 @@ class Instruction30t(Instruction):
 
     def get_output(self, idx=-1):
         buff = ""
-        buff += "%+x" % (self.AAAAAAAA)
+        buff += "%+x" % self.AAAAAAAA
         return buff
 
     def get_operands(self, idx=-1):
@@ -6767,7 +6767,7 @@ class DalvikCode(object):
         self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
             self.insns_size * ushort))
 
-        if (self.insns_size % 2 == 1):
+        if self.insns_size % 2 == 1:
             self.padding = unpack("=H", buff.read(2))[0]
 
         self.tries = []
@@ -6939,7 +6939,7 @@ class DalvikCode(object):
                       pack("=I", self.insns_size))
         length += self.code.get_length()
 
-        if (self.insns_size % 2 == 1):
+        if self.insns_size % 2 == 1:
             length += len(pack("=H", self.padding))
 
         if self.tries_size > 0:
@@ -7283,7 +7283,7 @@ class ClassManager(object):
         try:
             off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
         except IndexError:
-            bytecode.Warning("unknown string item @ %d" % (idx))
+            bytecode.Warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
 
         try:
@@ -7302,7 +7302,7 @@ class ClassManager(object):
             off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off(
             )
         except IndexError:
-            bytecode.Warning("unknown string item @ %d" % (idx))
+            bytecode.Warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
 
         try:
@@ -8298,7 +8298,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         def print_map(node, l, lvl=0):
             for n in node.children:
                 if lvl == 0:
-                    l.append("%s" % (n.title))
+                    l.append("%s" % n.title)
                 else:
                     l.append("%s %s" % ('\t' * lvl, n.title))
                 if len(n.children) > 0:
@@ -8625,7 +8625,7 @@ def get_bytecodes_methodx(method, mx):
             bb_buffer = ""
             ins_buffer = ""
 
-            bb_buffer += "%s : " % (i.name)
+            bb_buffer += "%s : " % i.name
 
             instructions = i.get_instructions()
             for ins in instructions:
@@ -8638,7 +8638,7 @@ def get_bytecodes_methodx(method, mx):
                     if (op_value == 0x2b or op_value == 0x2c
                         ) and len(i.childs) > 1:
                         values = i.get_special_ins(idx).get_values()
-                        bb_buffer += "[ D:%s " % (i.childs[0][2].name)
+                        bb_buffer += "[ D:%s " % i.childs[0][2].name
                         bb_buffer += ' '.join(
                             "%d:%s" % (values[j], i.childs[j + 1][2].name)
                             for j in range(0, len(i.childs) - 1)) + " ]"

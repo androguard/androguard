@@ -453,12 +453,12 @@ class DisasmViewMode(ViewMode):
 
                 # draw the two lines
                 qp.drawLine(-5, cursorY * self.fontHeight + self.fontHeight // 2, -30, cursorY * self.fontHeight + half)
-                qp.drawLine(-30, cursorY * self.fontHeight + self.fontHeight // 2, -30, (1) * self.fontHeight + half)
+                qp.drawLine(-30, cursorY * self.fontHeight + self.fontHeight // 2, -30, 1 * self.fontHeight + half)
 
                 # draw arrow
-                points = [QtCore.QPoint(-25, (1) * self.fontHeight + half),
-                          QtCore.QPoint(-35, (1) * self.fontHeight + half),
-                          QtCore.QPoint(-30, (1) * self.fontHeight), ]
+                points = [QtCore.QPoint(-25, 1 * self.fontHeight + half),
+                          QtCore.QPoint(-35, 1 * self.fontHeight + half),
+                          QtCore.QPoint(-30, 1 * self.fontHeight), ]
                 needle = QtGui.QPolygon(points)
                 qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
                 qp.drawPolygon(needle)
@@ -692,7 +692,7 @@ class DisasmViewMode(ViewMode):
             diff = offset - self.dataModel.getOffset() - off_row  # self.OPCODES[row].size
 
             if row is not None:
-                self.cursor.moveAbsolute((diff) * 3, row)
+                self.cursor.moveAbsolute(diff * 3, row)
 
             self.draw(refresh=False)
         else:

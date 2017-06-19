@@ -86,7 +86,7 @@ class DataModel(Observer):
         return x, y
 
     def getPageOffset(self, page):
-        return self.getOffset() + (page) * self.rows * self.cols
+        return self.getOffset() + page * self.rows * self.cols
 
     def getQWORD(self, offset, asString=False):
         if offset + 8 > len(self.data):

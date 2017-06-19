@@ -105,7 +105,7 @@ def save_file(filename):
         fd.write("PERMISSIONS = {\n")
         for i in PERMS_API:
             if len(PERMS_API[i]) > 0:
-                fd.write("\"%s\" : {\n" % (i))
+                fd.write("\"%s\" : {\n" % i)
 
             for package in PERMS_API[i]:
                 if len(PERMS_API[i][package]) > 0:

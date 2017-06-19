@@ -200,9 +200,9 @@ class BinViewMode(ViewMode):
 
                 if dx < 0:
                     # cu (column) selectam coloana
-                    idx = (i + 1) * (self.COLUMNS) - (column + 1)
+                    idx = (i + 1) * self.COLUMNS - (column + 1)
                 if dx > 0:
-                    idx = (i) * (self.COLUMNS) + (column)
+                    idx = i * self.COLUMNS + column
 
                 # c = self.dataModel.getDisplayablePage()[idx]
                 c = self.transformationEngine.getChar(idx)

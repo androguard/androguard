@@ -237,9 +237,9 @@ class HexViewMode(ViewMode):
 
                 if dx < 0:
                     # cu (column) selectam coloana
-                    idx = (i + 1) * (self.COLUMNS) - (column + 1)
+                    idx = (i + 1) * self.COLUMNS - (column + 1)
                 if dx > 0:
-                    idx = (i) * (self.COLUMNS) + (column)
+                    idx = i * self.COLUMNS + column
 
                 if len(self.getDisplayablePage()) > idx:
                     qp.setPen(self.transformationEngine.choosePen(idx))
@@ -259,7 +259,7 @@ class HexViewMode(ViewMode):
                     cemu.writeAt(textBegining + self.COLUMNS - (column + 1), i, self.cp437(c))
 
                 if dx > 0:
-                    cemu.writeAt((column) * 3, i, hex_s, noBackgroudOnSpaces=True)
+                    cemu.writeAt(column * 3, i, hex_s, noBackgroudOnSpaces=True)
                     cemu.writeAt(textBegining + column, i, self.cp437(c))
 
                 qp.setBackgroundMode(0)

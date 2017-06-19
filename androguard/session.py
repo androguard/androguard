@@ -56,7 +56,7 @@ class Session(object):
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
         androconf.debug("added APK:%s" % digest)
-        return (digest, apk)
+        return digest, apk
 
     def addDEX(self, filename, data, dx=None):
         """
@@ -89,7 +89,7 @@ class Session(object):
             androconf.debug("Exporting in ipython")
             d.create_python_export()
 
-        return (digest, d, dx)
+        return digest, d, dx
 
     def addDEY(self, filename, data, dx=None):
         digest = hashlib.sha256(data).hexdigest()
@@ -110,7 +110,7 @@ class Session(object):
         if self.export_ipython:
             d.create_python_export()
 
-        return (digest, d, dx)
+        return digest, d, dx
 
     def runAnalysis(self, d, dx=None):
         if dx is None:

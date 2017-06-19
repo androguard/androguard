@@ -329,7 +329,7 @@ def build_node_from_block(block, vmap, gen_ret, exception_type=None):
             fillarray = block.get_special_ins(idx)
             lins.append(_ins(ins, vmap, fillarray))
         # invoke-kind[/range]
-        elif (0x6e <= opcode <= 0x72 or 0x74 <= opcode <= 0x78):
+        elif 0x6e <= opcode <= 0x72 or 0x74 <= opcode <= 0x78:
             lins.append(_ins(ins, vmap, gen_ret))
         # filled-new-array[/range]
         elif 0x24 <= opcode <= 0x25:

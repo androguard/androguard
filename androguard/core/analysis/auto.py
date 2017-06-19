@@ -147,8 +147,8 @@ class DefaultAndroAnalysis(object):
     """
         file_type = androconf.is_android_raw(fileraw)
         if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
-            return (True, file_type)
-        return (False, None)
+            return True, file_type
+        return False, None
 
     def create_axml(self, log, fileraw):
         """

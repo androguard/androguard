@@ -90,7 +90,7 @@ class ConsoleEmulator(object):
         self.qp.setBackgroundMode(background)
 
     def getXY(self):
-        return (self._x, self._y)
+        return self._x, self._y
 
     def writeAt(self, x, y, s, noBackgroudOnSpaces=False):
         self.gotoXY(x, y)

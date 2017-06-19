@@ -1522,7 +1522,7 @@ COMPLEX_UNIT_MASK = 15
 
 
 def complexToFloat(xcomplex):
-    return (float)(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
+    return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
 def getPackage(id):

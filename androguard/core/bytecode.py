@@ -26,7 +26,7 @@ def enable_print_colors(colors):
 # Handle exit message
 def Exit(msg):
     warning("Error : " + msg)
-    raise ("oops")
+    raise "oops"
 
 
 def Warning(msg):

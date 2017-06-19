@@ -51,7 +51,7 @@ def display2classmethod(display):
     """
 
     L = display.split(" -> ")
-    return (L[0], L[1])
+    return L[0], L[1]
 
 
 def classdot2func(path):

@@ -107,7 +107,7 @@ def parseMethod(methodString):
     returnValue = retValue_mName[0:mNameStartPos].strip()
     methodName = retValue_mName[mNameStartPos + 1:].strip()
 
-    return (methodName, params, returnValue)
+    return methodName, params, returnValue
 
 
 # end of auxiliary

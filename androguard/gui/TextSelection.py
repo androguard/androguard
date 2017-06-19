@@ -234,7 +234,7 @@ class DefaultSelection(Selection):
                 qp.fillRect((d0 % cols) * 8, (d0 // cols) * height, (cols - d0 % cols) * 8, 1 * height, brush)
                 d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
 
@@ -281,7 +281,7 @@ class DefaultSelection(Selection):
                             brush)
                 d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
 
@@ -339,7 +339,7 @@ class HexSelection(Selection):
 
                 d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
 
