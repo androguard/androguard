@@ -170,7 +170,7 @@ platform_version, sdk_version = getPlatformVersions(
     aosp_root_dir=PATH_TO_AOSP_ROOT)
 print("Detected sdk_version [%s], platform_version [%s]..." % (platform_version,
                                                                sdk_version))
-if sdk_version == None:
+if sdk_version is None:
     print("Cannot detect SDK version. Exiting!")
     exit(1)
 
