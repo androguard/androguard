@@ -1,10 +1,9 @@
-from androguard.core import androconf
+import traceback
+
 from PyQt5 import QtCore
 
-from androguard.misc import *
 import androguard.session as session
-
-import traceback
+from androguard.misc import *
 
 
 class FileLoadingThread(QtCore.QThread):

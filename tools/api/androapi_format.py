@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, sys, re, string
+import string
 
 from dvm_permissions_unformatted import PERMISSIONS
 from permissions_by_hand import PERMISSIONS_BY_HAND

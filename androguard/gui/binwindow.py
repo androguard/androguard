@@ -1,19 +1,9 @@
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from __future__ import absolute_import
-from builtins import str
-from builtins import chr
-from builtins import object
-import string
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.uic import loadUi
 
-from androguard.core.androconf import CONF
-
-from .cemu import *
-from .BinViewMode import *
-from .DataModel import *
 from .Banners import *
+from .DataModel import *
 
 
 class SearchWindow(QtWidgets.QDialog):

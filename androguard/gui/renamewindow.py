@@ -1,5 +1,4 @@
-from PyQt5 import QtWidgets, QtGui
-from androguard.core import androconf
+from PyQt5 import QtWidgets
 
 
 class RenameDialog(QtWidgets.QDialog):

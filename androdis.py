@@ -20,10 +20,9 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import sys
-import os
+
 from optparse import OptionParser
-from androguard.core import androconf
+
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.apk import *
 

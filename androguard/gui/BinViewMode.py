@@ -1,18 +1,15 @@
-from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import range
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
-from .TextDecorators import *
+from __future__ import division
+
+import string
+from time import time
 
 from PyQt5 import QtGui, QtCore
-import PyQt5
-from time import time
-import sys
-import threading
-import string
+from builtins import str
+
+from .TextDecorators import *
+from .ViewMode import *
+from .cemu import *
 
 
 class BinViewMode(ViewMode):

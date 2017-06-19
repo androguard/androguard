@@ -9,7 +9,6 @@ import mock
 import unittest
 from androguard.decompiler.dad import dataflow
 from androguard.decompiler.dad import graph
-from androguard.decompiler.dad import node
 from androguard.decompiler.dad import instruction
 from androguard.decompiler.dad import basic_blocks
 

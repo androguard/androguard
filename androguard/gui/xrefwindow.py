@@ -1,8 +1,9 @@
-from builtins import str
-from builtins import range
 from PyQt5 import QtCore, QtWidgets, QtGui
+from builtins import range
+from builtins import str
+
 from androguard.core import androconf
-from androguard.gui.helpers import display2classmethod, class2func, classmethod2display, method2func
+from androguard.gui.helpers import classmethod2display
 
 
 class XrefDialogClass(QtWidgets.QDialog):

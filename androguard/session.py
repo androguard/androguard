@@ -1,14 +1,9 @@
-from builtins import range
-from builtins import object
 import hashlib
-import collections
 
-from androguard.core import androconf
-from androguard.core.bytecodes.apk import *
-from androguard.core.bytecodes.dvm import *
-from androguard.core.analysis.analysis import *
-from androguard.decompiler.decompiler import *
 from androguard import misc
+from androguard.core.analysis.analysis import *
+from androguard.core.bytecodes.dvm import *
+from androguard.decompiler.decompiler import *
 
 
 def Save(session, filename):

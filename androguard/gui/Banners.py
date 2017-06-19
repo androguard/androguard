@@ -1,13 +1,8 @@
-from __future__ import division
 from __future__ import absolute_import
-from builtins import range
-from builtins import object
-from .cemu import *
-from PyQt5 import QtGui, QtCore
-
-import os, sys, inspect
+from __future__ import division
 
 from .TextDecorators import *
+from .cemu import *
 
 
 class Banner(object):

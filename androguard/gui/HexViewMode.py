@@ -1,19 +1,17 @@
-from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from builtins import hex
-from builtins import chr
-from builtins import range
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
-from .TextDecorators import *
-import string
+from __future__ import division
 
-from androguard.core.androconf import CONF
+import string
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.uic import loadUi
+from builtins import hex
+from builtins import str
+
+from androguard.core.androconf import CONF
+from .TextDecorators import *
+from .ViewMode import *
+from .cemu import *
 
 
 class HexViewMode(ViewMode):

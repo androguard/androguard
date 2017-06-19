@@ -1,11 +1,10 @@
-from builtins import str
+from PyQt5 import QtWidgets
 from builtins import range
-from PyQt5 import QtWidgets, QtGui
+from builtins import str
 
 from androguard.core import androconf
+from androguard.gui.helpers import Signature
 from androguard.gui.xrefwindow import XrefDialogClass
-from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.helpers import classdot2class, Signature
 
 
 class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):

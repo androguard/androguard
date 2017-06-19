@@ -1,4 +1,9 @@
 from __future__ import print_function
+
+import sys
+
+from builtins import input
+from builtins import map
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -15,14 +20,10 @@ from __future__ import print_function
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from builtins import next
-from builtins import input
-from builtins import map
-from builtins import str
-from builtins import range
 from builtins import object
-import sys
+from builtins import range
+from builtins import str
 
 sys.path.append('./')
 
@@ -34,8 +35,7 @@ import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (
-    JSONWriter, parse_descriptor, literal_string, literal_null, literal_int,
-    literal_long, literal_float, literal_double, literal_bool, literal_hex_int,
+    JSONWriter, parse_descriptor, literal_string, literal_hex_int,
     dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (

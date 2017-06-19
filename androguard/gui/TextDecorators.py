@@ -1,12 +1,11 @@
 from __future__ import absolute_import
-from builtins import range
-from builtins import object
-from PyQt5 import QtGui, QtCore
+
 import re
 import string
-from time import time
-import sys
-from . import TextSelection
+
+from PyQt5 import QtGui, QtCore
+from builtins import object
+from builtins import range
 
 
 class CTextDecorator(object):

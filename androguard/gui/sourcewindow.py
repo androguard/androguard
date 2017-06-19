@@ -1,19 +1,17 @@
 from __future__ import print_function
-from builtins import str
-from PyQt5 import QtCore, QtGui, QtWidgets
-from androguard.core import androconf
-from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
-from androguard.gui.renamewindow import RenameDialog
-from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
 import pyperclip
-
+from PyQt5 import QtCore, QtGui, QtWidgets
+from builtins import str
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import JavaLexer
-from pygments.styles import get_style_by_name
-
 from pygments.style import Style
 from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
+
+from androguard.core import androconf
+from androguard.gui.helpers import classdot2class, proto2methodprotofunc
+from androguard.gui.renamewindow import RenameDialog
+from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',

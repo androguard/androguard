@@ -1,17 +1,16 @@
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from __future__ import absolute_import
-from builtins import hex
-from builtins import range
-from builtins import object
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
 
 from PyQt5 import QtGui, QtCore
+from builtins import hex
+from builtins import range
 
-from androguard.core.bytecodes import dvm
 from androguard.core import androconf
+from androguard.core.bytecodes import dvm
+from . import TextSelection
+from .ViewMode import *
+from .cemu import *
 
 MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 30

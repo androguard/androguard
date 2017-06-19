@@ -1,23 +1,19 @@
 from __future__ import print_function
-from builtins import str
-from builtins import range
-from PyQt5 import QtCore, QtGui, QtWidgets
+
+import imp
+import os
 
 import androguard.session as session_module
-from androguard.core import androconf
-from androguard.gui.fileloading import FileLoadingThread
-from androguard.gui.treewindow import TreeWindow
-from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.stringswindow import StringsWindow
-from androguard.gui.methodswindow import MethodsWindow
-from androguard.gui.resourceswindow import ResourcesWindow
+from androguard.gui.DataModel import *
 from androguard.gui.apiwindow import APIWindow
 from androguard.gui.binwindow import binWidget
-from androguard.gui.DataModel import *
-
+from androguard.gui.fileloading import FileLoadingThread
 from androguard.gui.helpers import class2func
-
-import os, imp
+from androguard.gui.methodswindow import MethodsWindow
+from androguard.gui.resourceswindow import ResourcesWindow
+from androguard.gui.sourcewindow import SourceWindow
+from androguard.gui.stringswindow import StringsWindow
+from androguard.gui.treewindow import TreeWindow
 
 
 class TabsWindow(QtWidgets.QTabWidget):
