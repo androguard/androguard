@@ -150,7 +150,7 @@ def clean_name_instruction(instruction):
     op_value = instruction.get_op_value()
 
     # goto range
-    if op_value >= 0x28 and op_value <= 0x2a:
+    if 0x28 <= op_value <= 0x2a:
         return "goto"
 
     return instruction.get_name()
@@ -1479,7 +1479,7 @@ class EncodedValue(object):
         self.value = ""
 
         #  TODO: parse floats/doubles correctly
-        if self.value_type >= VALUE_SHORT and self.value_type < VALUE_STRING:
+        if VALUE_SHORT <= self.value_type < VALUE_STRING:
             self.value, self.raw_value = self._getintvalue(buff.read(
                 self.value_arg + 1))
         elif self.value_type == VALUE_STRING:
@@ -6396,7 +6396,7 @@ class Unresolved(Instruction):
 
 def get_instruction(cm, op_value, buff, odex=False):
     try:
-        if not odex and (op_value >= 0xe3 and op_value <= 0xfe):
+        if not odex and (0xe3 <= op_value <= 0xfe):
             return InstructionInvalid(cm, buff)
         try:
             return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)

@@ -62,7 +62,7 @@ class DVMBasicBlock(object):
         tmp_ins = []
         idx = 0
         for i in self.method.get_instructions():
-            if idx >= self.start and idx < self.end:
+            if self.start <= idx < self.end:
                 tmp_ins.append(i)
 
             idx += i.get_length()
@@ -135,7 +135,7 @@ class DVMBasicBlock(object):
 
         op_value = i.get_op_value()
 
-        if op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c):
+        if op_value == 0x26 or (0x2b <= op_value <= 0x2c):
             code = self.method.get_code().get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
 
@@ -288,7 +288,7 @@ class BasicBlocks(object):
 
     def get_basic_block(self, idx):
         for i in self.bb:
-            if idx >= i.get_start() and idx < i.get_end():
+            if i.get_start() <= idx < i.get_end():
                 return i
         return None
 
@@ -824,8 +824,8 @@ class Analysis(object):
                                         self.classes[current_class.get_name()],
                                         current_method, off)
 
-                        elif ((op_value >= 0x6e and op_value <= 0x72) or
-                                  (op_value >= 0x74 and op_value <= 0x78)):
+                        elif ((0x6e <= op_value <= 0x72) or
+                                  (0x74 <= op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
                             method_info = last_vm.get_cm_method(idx_meth)
                             if method_info:
@@ -867,7 +867,7 @@ class Analysis(object):
                                             self.classes[current_class.get_name()],
                                             current_method, off)
 
-                        elif op_value >= 0x1a and op_value <= 0x1b:
+                        elif 0x1a <= op_value <= 0x1b:
                             string_value = last_vm.get_cm_string(
                                 instruction.get_ref_kind())
                             if string_value not in self.strings:
@@ -877,15 +877,15 @@ class Analysis(object):
                                 self.classes[current_class.get_name()],
                                 current_method)
 
-                        elif op_value >= 0x52 and op_value <= 0x6d:
+                        elif 0x52 <= op_value <= 0x6d:
                             idx_field = instruction.get_ref_kind()
                             field_info = last_vm.get_cm_field(idx_field)
                             field_item = last_vm.get_field_descriptor(
                                 field_info[0], field_info[2], field_info[1])
                             if field_item:
                                 # read access to a field
-                                if (op_value >= 0x52 and op_value <= 0x58) or (
-                                                op_value >= 0x60 and op_value <= 0x66):
+                                if (0x52 <= op_value <= 0x58) or (
+                                                0x60 <= op_value <= 0x66):
                                     self.classes[current_class.get_name(
                                     )].AddFXrefRead(
                                         current_method,

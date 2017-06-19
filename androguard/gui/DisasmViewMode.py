@@ -397,7 +397,7 @@ class DisasmViewMode(ViewMode):
                 return
 
             screenVA = self._getVA(self.dataModel.getOffset())
-            if target > screenVA and target < self._getVA(self.dataModel.getOffset()) + tsize - self.OPCODES[-1].size:
+            if screenVA < target < self._getVA(self.dataModel.getOffset()) + tsize - self.OPCODES[-1].size:
                 # branch target is in screen
 
                 sz = 0
@@ -685,7 +685,7 @@ class DisasmViewMode(ViewMode):
 
         tsize = sum([opcode.get_length() for opcode in self.OPCODES])
 
-        if offset < self.dataModel.getOffset() + tsize and offset > self.dataModel.getOffset():
+        if self.dataModel.getOffset() + tsize > offset > self.dataModel.getOffset():
             # if in current page, move cursor
             row = self._getRowInPage(offset)
             off_row = self._getOffsetOfRow(row)

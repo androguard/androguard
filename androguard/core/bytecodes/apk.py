@@ -1558,10 +1558,10 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
     elif _type == TYPE_FRACTION:
         return "%f%s" % (complexToFloat(_data) * 100, FRACTION_UNITS[_data & COMPLEX_UNIT_MASK])
 
-    elif _type >= TYPE_FIRST_COLOR_INT and _type <= TYPE_LAST_COLOR_INT:
+    elif TYPE_FIRST_COLOR_INT <= _type <= TYPE_LAST_COLOR_INT:
         return "#%08X" % _data
 
-    elif _type >= TYPE_FIRST_INT and _type <= TYPE_LAST_INT:
+    elif TYPE_FIRST_INT <= _type <= TYPE_LAST_INT:
         return "%d" % androconf.long2int(_data)
 
     return "<0x%X, type 0x%02X>" % (_data, _type)

@@ -42,7 +42,7 @@ class DataModel(Observer):
         return self._lastOffset
 
     def inLimits(self, x):
-        if x >= 0 and x < len(self.data):
+        if 0 <= x < len(self.data):
             return True
 
         return False
@@ -56,7 +56,7 @@ class DataModel(Observer):
             self.dataOffset = off
 
     def offsetInPage(self, off):
-        if off >= self.dataOffset and off <= self.dataOffset + self.rows * self.cols:
+        if self.dataOffset <= off <= self.dataOffset + self.rows * self.cols:
             return True
 
         return False
