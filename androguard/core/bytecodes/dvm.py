@@ -4107,7 +4107,7 @@ class Instruction(object):
 
           :rtype: string
       """
-        raise "not implemented"
+        raise Exception("not implemented")
 
     def get_operands(self, idx=-1):
         """
@@ -4115,7 +4115,7 @@ class Instruction(object):
 
           :rtype: list
       """
-        raise "not implemented"
+        raise Exception("not implemented")
 
     def get_length(self):
         """
@@ -4123,7 +4123,7 @@ class Instruction(object):
 
           :rtype: int
       """
-        raise "not implemented"
+        raise Exception("not implemented")
 
     def get_raw(self):
         """
@@ -4131,7 +4131,7 @@ class Instruction(object):
 
           :rtype: string
       """
-        raise "not implemented"
+        raise Exception("not implemented")
 
     def get_ref_kind(self):
         """
@@ -4139,7 +4139,7 @@ class Instruction(object):
 
           :rtype: value
       """
-        raise "not implemented"
+        raise Exception("not implemented")
 
     def get_formatted_operands(self):
         return None
