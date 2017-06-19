@@ -246,7 +246,7 @@ class HexViewMode(ViewMode):
                 else:
                     break
 
-                if self.transformationEngine.chooseBrush(idx) != None:
+                if self.transformationEngine.chooseBrush(idx) is not None:
                     qp.setBackgroundMode(1)
                     qp.setBackground(self.transformationEngine.chooseBrush(idx))
 
@@ -304,7 +304,7 @@ class HexViewMode(ViewMode):
 
                 qp.setPen(self.transformationEngine.choosePen(idx))
 
-                if self.transformationEngine.chooseBrush(idx) != None:
+                if self.transformationEngine.chooseBrush(idx) is not None:
                     qp.setBackgroundMode(1)
                     qp.setBackground(self.transformationEngine.chooseBrush(idx))
 
@@ -376,7 +376,7 @@ class HexViewMode(ViewMode):
 
             qp.setPen(self.transformationEngine.choosePen(w))
 
-            if self.transformationEngine.chooseBrush(w) != None:
+            if self.transformationEngine.chooseBrush(w) is not None:
                 qp.setBackgroundMode(1)
                 qp.setBackground(self.transformationEngine.chooseBrush(w))
 
@@ -737,9 +737,7 @@ class HexViewMode(ViewMode):
 
     @QtCore.pyqtSlot("QItemSelection, QItemSelection")
     def selectionChanged(self, selected, deselected):
-
         item = self.ann_w.treeWidget.currentItem()
-
         if item:
             offset = item.getOffset()
             size = item.getSize()
@@ -929,12 +927,12 @@ class AnnonItem(QtWidgets.QTreeWidgetItem):
 
 
 class QColorButton(QtWidgets.QPushButton):
-    '''
+    """
     Custom Qt Widget to show a chosen color.
 
     Left-clicking the button shows the color-chooser, while
     right-clicking resets the color to None (no-color).
-    '''
+    """
 
     '''
     based on http://martinfitzpatrick.name/article/qcolorbutton-a-color-selector-tool-for-pyqt/
@@ -962,12 +960,12 @@ class QColorButton(QtWidgets.QPushButton):
         return self._color
 
     def onColorPicker(self):
-        '''
+        """
         Show color-picker dialog to select color.
 
         Qt will use the native dialog by default.
 
-        '''
+        """
         dlg = QtGui.QColorDialog(QtGui.QColor(self._color), None)
 
         # if self._color:

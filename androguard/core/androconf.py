@@ -203,8 +203,6 @@ def is_android(filename):
         f_bytes = fd.read()
         return is_android_raw(f_bytes)
 
-    return None
-
 
 def is_android_raw(raw):
     """

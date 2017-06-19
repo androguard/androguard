@@ -27,12 +27,12 @@ logger = logging.getLogger('dad.control_flow')
 
 
 def intervals(graph):
-    '''
+    """
     Compute the intervals of the graph
     Returns
         interval_graph: a graph of the intervals of G
         interv_heads: a dict of (header node, interval)
-    '''
+    """
     interval_graph = Graph()  # graph of intervals
     heads = [graph.entry]  # list of header nodes
     interv_heads = {}  # interv_heads[i] = interval of header i
@@ -84,12 +84,12 @@ def intervals(graph):
 
 
 def derived_sequence(graph):
-    '''
+    """
     Compute the derived sequence of the graph G
     The intervals of G are collapsed into nodes, intervals of these nodes are
     built, and the process is repeated iteratively until we obtain a single
     node (if the graph is not irreducible)
-    '''
+    """
     deriv_seq = [graph]
     deriv_interv = []
     single_node = False

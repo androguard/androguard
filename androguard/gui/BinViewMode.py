@@ -208,7 +208,7 @@ class BinViewMode(ViewMode):
                 c = self.transformationEngine.getChar(idx)
                 qp.setPen(self.transformationEngine.choosePen(idx))
 
-                if self.transformationEngine.chooseBrush(idx) != None:
+                if self.transformationEngine.chooseBrush(idx) is not None:
                     qp.setBackgroundMode(1)
                     qp.setBackground(self.transformationEngine.chooseBrush(idx))
 
@@ -225,9 +225,6 @@ class BinViewMode(ViewMode):
 
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
         start = time()
-
-        #        if cachePix:
-        #           print 'da'
 
         if not cachePix:
             self.qpix.scroll(0, dy * self.fontHeight, self.qpix.rect())
@@ -284,7 +281,7 @@ class BinViewMode(ViewMode):
 
                 qp.setBackgroundMode(0)
                 nextBrush = self.transformationEngine.chooseBrush(idx)
-                if nextBrush != None:
+                if nextBrush is not None:
                     qp.setBackgroundMode(1)
 
                     if nextBrush != lastBrush:
@@ -384,7 +381,7 @@ class BinViewMode(ViewMode):
 
             qp.setPen(self.transformationEngine.choosePen(x))
 
-            if self.transformationEngine.chooseBrush(x) != None:
+            if self.transformationEngine.chooseBrush(x) is not None:
                 qp.setBackgroundMode(1)
                 qp.setBackground(self.transformationEngine.chooseBrush(x))
 
@@ -599,7 +596,7 @@ class BinViewMode(ViewMode):
         letters = string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
 
         # disable/enable shortcuts
-        if mode == False:
+        if not mode:
             self.transformationEngine = self.original_textdecorator
             self.transformationEngine.reset()
             self.draw(refresh=True)

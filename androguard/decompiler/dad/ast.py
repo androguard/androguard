@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''This file is a simplified version of writer.py that outputs an AST instead of source code.'''
+"""This file is a simplified version of writer.py that outputs an AST instead of source code."""
 from builtins import zip
 from builtins import hex
 from builtins import str
@@ -638,7 +638,7 @@ class JSONWriter(object):
                 scopes.append(scope)
 
             is_else = not (follow in (cond.true, cond.false))
-            if is_else and not cond.false in self.visited_nodes:
+            if is_else and cond.false not in self.visited_nodes:
                 with self as scope:
                     self.visit_node(cond.false)
                 scopes.append(scope)

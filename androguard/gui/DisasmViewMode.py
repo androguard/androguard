@@ -393,7 +393,7 @@ class DisasmViewMode(ViewMode):
 
             # branch address
             target = asm.branchAddress()
-            if target == None:
+            if target is None:
                 return
 
             screenVA = self._getVA(self.dataModel.getOffset())
@@ -902,9 +902,9 @@ class DisasmViewMode(ViewMode):
             value = asm.branchAddress()
             if value:
                 fofs = self.plugin.disasmVAtoFA(value)
-                if fofs != None:
+                if fofs is not None:
                     rowOfs = self._getOffsetOfRow(cursorY)
-                    if rowOfs != None:
+                    if rowOfs is not None:
                         self.FlowHistory.append(rowOfs + self.dataModel.getOffset())
                         self.goTo(fofs)
 

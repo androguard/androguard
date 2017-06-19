@@ -194,7 +194,7 @@ class DefaultAndroAnalysis(object):
     """
         return dvm.DalvikVMFormat(dexraw)
 
-    def create_dey(self, log, deyraw):
+    def create_dey(self, log, dexraw):
         """
       This method is called in order to create a DalvikOdexVMFormat object
 
@@ -203,7 +203,7 @@ class DefaultAndroAnalysis(object):
 
       :rtype: a :class:`DalvikOdexVMFormat` object
     """
-        return dvm.DalvikOdexVMFormat(deyraw)
+        return dvm.DalvikOdexVMFormat(dexraw)
 
     def create_adex(self, log, dexobj):
         """

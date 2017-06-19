@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Androguard Gui'''
+"""Androguard Gui"""
 
 import argparse
 import os

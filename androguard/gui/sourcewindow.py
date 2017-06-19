@@ -24,7 +24,7 @@ BINDINGS_NAMES = [
 
 
 class SourceDocument(QtGui.QTextDocument):
-    '''QTextDocument associated with the SourceWindow.'''
+    """QTextDocument associated with the SourceWindow."""
 
     def __init__(self, parent=None, lines=[]):
         super(SourceDocument, self).__init__(parent)
@@ -285,13 +285,13 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
 
 
 class SourceWindow(QtWidgets.QTextEdit):
-    '''Each tab is implemented as a Source Window class.
+    """Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
         path: class FQN
         title: last part of the class FQN
         class_item: ClassDefItem i.e. class.java object for which we create the tab
-    '''
+    """
 
     def __init__(self,
                  parent=None,
@@ -323,10 +323,10 @@ class SourceWindow(QtWidgets.QTextEdit):
         self.cursorPositionChanged.connect(self.cursor_position_changed)
 
     def browse_to_method(self, method):
-        '''Scroll to the right place were the method is.
+        """Scroll to the right place were the method is.
 
            TODO: implement it, because does not work for now.
-        '''
+        """
 
         # TODO: we need to find a way to scroll to the right place because
         #      moving the cursor is not enough. Indeed if it is already in the window
@@ -344,12 +344,12 @@ class SourceWindow(QtWidgets.QTextEdit):
         #                print "-"*10
 
     def reload_java_sources(self):
-        '''Reload completely the sources by asking Androguard
+        """Reload completely the sources by asking Androguard
            to decompile it again. Useful when:
             - an element has been renamed to propagate the info
             - the current tab is changed because we do not know what user
               did since then, so we need to propagate previous changes as well
-        '''
+        """
 
         androconf.debug("Getting sources for %s" % self.current_class)
 
@@ -378,8 +378,8 @@ class SourceWindow(QtWidgets.QTextEdit):
         MyHighlighter(self.doc, lexer=JavaLexer())
 
     def cursor_position_changed(self):
-        '''Used to detect when cursor change position and to auto select word
-           underneath it'''
+        """Used to detect when cursor change position and to auto select word
+           underneath it"""
         androconf.debug("cursor_position_changed")
 
         cur = self.textCursor()
@@ -391,7 +391,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             # androconf.debug("cursor: %s" % cur.selectedText())
 
     def keyPressEvent(self, event):
-        '''Keyboard shortcuts'''
+        """Keyboard shortcuts"""
         key = event.key()
         if key == QtCore.Qt.Key_X:
             self.actionXref()
@@ -637,10 +637,10 @@ class SourceWindow(QtWidgets.QTextEdit):
             self.mainwin.showStatus("No info available.")
 
     def method_name_exist(self, meth_name):
-        '''Check if there is already a meth_name method in the current class
+        """Check if there is already a meth_name method in the current class
            It is useful before allowing to rename a method to check name does
            not already exist.
-        '''
+        """
 
         methods = self.current_class.get_methods()
         for m in methods:
@@ -649,10 +649,10 @@ class SourceWindow(QtWidgets.QTextEdit):
         return False
 
     def field_name_exist(self, field_name):
-        '''Check if there is already a field_name field in the current class
+        """Check if there is already a field_name field in the current class
            It is useful before allowing to rename a field to check name does
            not already exist.
-        '''
+        """
 
         fields = self.class_item.get_fields()
         for f in fields:
@@ -661,8 +661,8 @@ class SourceWindow(QtWidgets.QTextEdit):
         return False
 
     def renameElement(self, oldname, newname, info):
-        '''Called back after a user chose a new name for an element.
-        '''
+        """Called back after a user chose a new name for an element.
+        """
 
         androconf.debug("Renaming %s into %s in %s" %
                         (oldname, newname, self.current_filename))

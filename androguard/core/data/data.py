@@ -164,7 +164,7 @@ class DexViewer(object):
                             val = 0
 
                     # add exceptions node
-                    if i.exception_analysis != None:
+                    if i.exception_analysis is not None:
                         id_exceptions = self.new_id(i.exception_analysis, l_id)
                         buff_nodes += self.add_exception_node(i.exception_analysis, id_exceptions)
                         buff_edges += self.add_edge(None, id_exceptions, None, id_i, l_eid, 2)

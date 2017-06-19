@@ -85,7 +85,7 @@ class SearchWindow(QtWidgets.QDialog):
         else:
             self._lastText = text
 
-        if self.ui.checkHex.isChecked() == False:
+        if not self.ui.checkHex.isChecked():
             text = text.encode('utf-8')
 
         idx = self.searchable.search(text)
@@ -307,9 +307,6 @@ class binWidget(QtWidgets.QWidget, Observable):
 
         self.Banners.draw(qp, self.offsetWindow_h, self.offsetWindow_v, self.size().height())
 
-        #  qp.drawPixmap(self.offsetWindow_h, self.size().height() - 50, self.banner.getPixmap())
-
-        # qp.drawPixmap(20, 0, self.filebanner.getPixmap())
         qp.end()
 
     def eventFilter(self, watched, event):

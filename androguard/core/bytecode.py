@@ -40,7 +40,7 @@ def _PrintBanner():
 
 def _PrintSubBanner(title=None):
     print_fct = CONF["PRINT_FCT"]
-    if title == None:
+    if title is None:
         print_fct("#" * 20 + "\n")
     else:
         print_fct("#" * 10 + " " + title + "\n")
@@ -670,7 +670,7 @@ def object_to_bytes(obj):
         return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
-    elif obj == None:
+    elif obj is None:
         return bytearray()
     elif isinstance(obj, bytearray):
         return obj

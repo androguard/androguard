@@ -313,7 +313,7 @@ def determineNext(i, end, m):
 
         data = code.get_ins_off(off + end)
 
-        if data != None:
+        if data is not None:
             for target in data.get_targets():
                 x.append(target * 2 + end)
 
@@ -424,30 +424,30 @@ class HeaderItem(object):
         pass
 
     def get_obj(self):
-        if self.map_off_obj == None:
+        if self.map_off_obj is None:
             self.map_off_obj = self.CM.get_item_by_offset(self.map_off)
 
-        if self.string_off_obj == None:
+        if self.string_off_obj is None:
             self.string_off_obj = self.CM.get_item_by_offset(
                 self.string_ids_off)
 
-        if self.type_off_obj == None:
+        if self.type_off_obj is None:
             self.type_off_obj = self.CM.get_item_by_offset(self.type_ids_off)
 
-        if self.proto_off_obj == None:
+        if self.proto_off_obj is None:
             self.proto_off_obj = self.CM.get_item_by_offset(self.proto_ids_off)
 
-        if self.field_off_obj == None:
+        if self.field_off_obj is None:
             self.field_off_obj = self.CM.get_item_by_offset(self.field_ids_off)
 
-        if self.method_off_obj == None:
+        if self.method_off_obj is None:
             self.method_off_obj = self.CM.get_item_by_offset(
                 self.method_ids_off)
 
-        if self.class_off_obj == None:
+        if self.class_off_obj is None:
             self.class_off_obj = self.CM.get_item_by_offset(self.class_defs_off)
 
-        if self.data_off_obj == None:
+        if self.data_off_obj is None:
             self.data_off_obj = self.CM.get_item_by_offset(self.data_off)
 
         self.map_off = self.map_off_obj.get_off()
@@ -1553,13 +1553,13 @@ class EncodedValue(object):
         return []
 
     def get_raw(self):
-        if self.raw_value == None:
+        if self.raw_value is None:
             return pack("=B", self.val) + bytecode.object_to_bytes(self.value)
         else:
             return pack("=B", self.val) + bytecode.object_to_bytes(self.raw_value)
 
     def get_length(self):
-        if self.raw_value == None:
+        if self.raw_value is None:
             return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
                 self.value))
         else:
@@ -2121,7 +2121,7 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
-        if self.shorty_idx_value == None:
+        if self.shorty_idx_value is None:
             self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         return self.shorty_idx_value
 
@@ -2131,7 +2131,7 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
-        if self.return_type_idx_value == None:
+        if self.return_type_idx_value is None:
             self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
 
         return self.return_type_idx_value
@@ -2142,7 +2142,7 @@ class ProtoIdItem(object):
 
             :rtype: string
         """
-        if self.parameters_off_value == None:
+        if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
             self.parameters_off_value = '({})'.format(' '.join(params))
         return self.parameters_off_value
@@ -2286,7 +2286,7 @@ class FieldIdItem(object):
 
             :rtype: string
         """
-        if self.class_idx_value == None:
+        if self.class_idx_value is None:
             self.class_idx_value = self.CM.get_type(self.class_idx)
 
         return self.class_idx_value
@@ -2297,7 +2297,7 @@ class FieldIdItem(object):
 
             :rtype: string
         """
-        if self.type_idx_value == None:
+        if self.type_idx_value is None:
             self.type_idx_value = self.CM.get_type(self.type_idx)
 
         return self.type_idx_value
@@ -2308,7 +2308,7 @@ class FieldIdItem(object):
 
             :rtype: string
         """
-        if self.type_idx_value == None:
+        if self.type_idx_value is None:
             self.type_idx_value = self.CM.get_type(self.type_idx)
 
         return self.type_idx_value
@@ -2319,7 +2319,7 @@ class FieldIdItem(object):
 
             :rtype: string
         """
-        if self.name_idx_value == None:
+        if self.name_idx_value is None:
             self.name_idx_value = self.CM.get_string(self.name_idx)
 
         return self.name_idx_value
@@ -2463,7 +2463,7 @@ class MethodIdItem(object):
 
           :rtype: string
         """
-        if self.class_idx_value == None:
+        if self.class_idx_value is None:
             self.class_idx_value = self.CM.get_type(self.class_idx)
 
         return self.class_idx_value
@@ -2474,7 +2474,7 @@ class MethodIdItem(object):
 
             :rtype: string
         """
-        if self.proto_idx_value == None:
+        if self.proto_idx_value is None:
             self.proto_idx_value = self.CM.get_proto(self.proto_idx)
 
         return self.proto_idx_value
@@ -2503,7 +2503,7 @@ class MethodIdItem(object):
 
             :rtype: string
         """
-        if self.name_idx_value == None:
+        if self.name_idx_value is None:
             self.name_idx_value = self.CM.get_string(self.name_idx)
 
         return self.name_idx_value
@@ -2915,7 +2915,7 @@ class EncodedMethod(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -3010,7 +3010,7 @@ class EncodedMethod(object):
         """
         self.show_info()
         self.show_notes()
-        if self.code != None:
+        if self.code is not None:
             self.each_params_by_register(self.code.get_registers_size(),
                                          self.get_descriptor())
             self.code.show(self.CM.get_vmanalysis().get_method(self))
@@ -3059,7 +3059,7 @@ class EncodedMethod(object):
 
           :rtype: int
         """
-        if self.code != None:
+        if self.code is not None:
             return self.code.get_length()
         return 0
 
@@ -3074,7 +3074,7 @@ class EncodedMethod(object):
         return self.code
 
     def is_cached_instructions(self):
-        if self.code == None:
+        if self.code is None:
             return False
 
         return self.code.get_bc().is_cached_instructions()
@@ -3085,7 +3085,7 @@ class EncodedMethod(object):
 
             :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
-        if self.code == None:
+        if self.code is None:
             return []
         return self.code.get_bc().get_instructions()
 
@@ -3096,7 +3096,7 @@ class EncodedMethod(object):
             :param instructions: the list of instructions
             :type instructions: a list of :class:`Instruction`
         """
-        if self.code == None:
+        if self.code is None:
             return []
         return self.code.get_bc().set_instructions(instructions)
 
@@ -3111,7 +3111,7 @@ class EncodedMethod(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if self.code != None:
+        if self.code is not None:
             return self.code.get_bc().get_instruction(idx, off)
         return None
 
@@ -3121,7 +3121,7 @@ class EncodedMethod(object):
 
           :rtype: :class:`DebugInfoItem`
         """
-        if self.code == None:
+        if self.code is None:
             return None
         return self.code.get_debug()
 
@@ -3169,7 +3169,7 @@ class EncodedMethod(object):
             :param off: address of the instruction
             :type off: int
         """
-        if self.code != None:
+        if self.code is not None:
             self.code.add_inote(msg, idx, off)
 
     def add_note(self, msg):
@@ -3330,7 +3330,7 @@ class ClassDataItem(object):
         self.offset = off
 
     def set_static_fields(self, value):
-        if value != None:
+        if value is not None:
             values = value.get_values()
             if len(values) <= len(self.static_fields):
                 for i in range(0, len(values)):
@@ -3458,7 +3458,7 @@ class ClassDefItem(object):
             self.static_values = self.CM.get_encoded_array_item(
                 self.static_values_off)
 
-            if self.class_data_item != None:
+            if self.class_data_item is not None:
                 self.class_data_item.set_static_fields(
                     self.static_values.get_value())
 
@@ -3471,7 +3471,7 @@ class ClassDefItem(object):
 
             :rtype: a list of :class:`EncodedMethod` objects
         """
-        if self.class_data_item != None:
+        if self.class_data_item is not None:
             return self.class_data_item.get_methods()
         return []
 
@@ -3481,7 +3481,7 @@ class ClassDefItem(object):
 
             :rtype: a list of :class:`EncodedField` objects
         """
-        if self.class_data_item != None:
+        if self.class_data_item is not None:
             return self.class_data_item.get_fields()
         return []
 
@@ -3591,7 +3591,7 @@ class ClassDefItem(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -6592,7 +6592,7 @@ class DCode(object):
           :param off: address of the instruction
           :type off: int
       """
-        if off != None:
+        if off is not None:
             idx = self.off_to_pos(off)
 
         if idx not in self.notes:
@@ -6611,7 +6611,7 @@ class DCode(object):
 
             :rtype: an :class:`Instruction` object
         """
-        if off != None:
+        if off is not None:
             idx = self.off_to_pos(off)
         return [i for i in self.get_instructions()][idx]
 
@@ -7111,7 +7111,7 @@ class MapItem(object):
         androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
-        if self.item != None:
+        if self.item is not None:
             if isinstance(self.item, list):
                 for i in self.item:
                     i.reload()
@@ -7121,7 +7121,7 @@ class MapItem(object):
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
 
-        if self.item != None:
+        if self.item is not None:
             if isinstance(self.item, list):
                 for i in self.item:
                     i.show()
@@ -7190,7 +7190,7 @@ class ClassManager(object):
         self.engine = []
         self.engine.append("python")
 
-        if self.vm != None:
+        if self.vm is not None:
             self.odex_format = self.vm.get_format_type() == "ODEX"
 
     def get_ascii_string(self, s):
@@ -7245,7 +7245,7 @@ class ClassManager(object):
         if type_item == "TYPE_STRING_DATA_ITEM":
             sdi = True
 
-        if item != None:
+        if item is not None:
             if isinstance(item, list):
                 for i in item:
                     goff = i.offset
@@ -7385,7 +7385,7 @@ class ClassManager(object):
 
         class_def = self.__manage_item["TYPE_CLASS_DEF_ITEM"].get_class_idx(
             method.get_class_idx())
-        if class_def != None:
+        if class_def is not None:
             try:
                 name = bytecode.FormatNameToPython(encoded_method.get_name())
             except AttributeError:
@@ -7434,7 +7434,7 @@ class ClassManager(object):
 
         class_def = self.__manage_item["TYPE_CLASS_DEF_ITEM"].get_class_idx(
             field.get_class_idx())
-        if class_def != None:
+        if class_def is not None:
             try:
                 name = bytecode.FormatNameToPython(encoded_field.get_name())
             except AttributeError:
@@ -7491,7 +7491,7 @@ class MapList(object):
             buff.set_idx(idx + mi.get_length())
 
             c_item = mi.get_item()
-            if c_item == None:
+            if c_item is None:
                 mi.set_item(self)
                 c_item = mi.get_item()
 
@@ -7634,12 +7634,12 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__cache_fields = None
 
     def get_api_version(self):
-        '''
+        """
             This method returns api version that should be used for loading api
             specific resources.
 
             :rtype: int
-        '''
+        """
         return self.api_version
 
     def get_classes_def_item(self):
@@ -7860,7 +7860,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                            Maybe needed after using a MyClass.set_name().
             :rtype: a list of string
         """
-        if self.classes_names == None or update:
+        if self.classes_names is None or update:
             self.classes_names = [i.get_name() for i in self.classes.class_def]
         return self.classes_names
 
@@ -7968,7 +7968,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
           :rtype: None or an :class:`EncodedMethod` object
         """
-        if self.__cached_methods_idx == None:
+        if self.__cached_methods_idx is None:
             self.__cached_methods_idx = {}
             for i in self.classes.class_def:
                 for j in i.get_methods():
@@ -7994,7 +7994,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         key = class_name + method_name + descriptor
 
-        if self.__cache_methods == None:
+        if self.__cache_methods is None:
             self.__cache_methods = {}
             for i in self.classes.class_def:
                 for j in i.get_methods():
@@ -8073,7 +8073,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         key = class_name + field_name + descriptor
 
-        if self.__cache_fields == None:
+        if self.__cache_fields is None:
             self.__cache_fields = {}
             for i in self.classes.class_def:
                 for j in i.get_fields():
@@ -8128,7 +8128,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self._create_python_export_class(_class, True)
 
     def _create_python_export_class(self, _class, delete=False):
-        if _class != None:
+        if _class is not None:
             ### Class
             name = bytecode.FormatClassToPython(_class.get_name())
             if delete:
@@ -8238,8 +8238,6 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         Disassembles a given offset in the DEX file
 
-        :param dex: the filename of the android dex file
-        :type filename: string
         :param offset: offset to disassemble in the file (from the beginning of the file)
         :type offset: int
         :param size:
@@ -8346,7 +8344,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 self._get_objs(h, index, i)
             else:
                 try:
-                    if i != None:
+                    if i is not None:
                         h[i] = {}
                         index[i] = i.offset
                 except AttributeError:
@@ -8619,7 +8617,7 @@ def get_bytecodes_methodx(method, mx):
     i_buffer += "# %s->%s%s [access_flags=%s]\n#\n" % (
         method.get_class_name(), method.get_name(), method.get_descriptor(),
         method.get_access_flags_string())
-    if method.code != None:
+    if method.code is not None:
         i_buffer += get_params_info(method.code.get_registers_size(),
                                     method.get_descriptor())
 
@@ -8657,7 +8655,7 @@ def get_bytecodes_methodx(method, mx):
 
                 ins_buffer += "\n"
 
-            if i.get_exception_analysis() != None:
+            if i.get_exception_analysis() is not None:
                 ins_buffer += "\t%s\n" % (i.exception_analysis.show_buff())
 
             i_buffer += bb_buffer + "\n" + ins_buffer + "\n"
@@ -8670,7 +8668,9 @@ class ExportObject(object):
 
 
 class ConstString(Instruction21c):
-    """Simulate a const-string instruction."""
+    """
+    Simulate a const-string instruction.
+    """
 
     def __init__(self, orig_ins, value):
         self.OP = orig_ins.OP

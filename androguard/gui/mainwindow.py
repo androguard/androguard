@@ -91,11 +91,11 @@ class TabsWindow(QtWidgets.QTabWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    '''Main window:
+    """Main window:
        self.central: QTabWidget in center area
        self.dock: QDockWidget in left area
        self.tree: TreeWindow(QTreeWidget) in self.dock
-    '''
+    """
 
     def __init__(self, parent=None, session=session_module.Session(), input_file=None, input_plugin=None):
         super(MainWindow, self).__init__(parent)
@@ -130,14 +130,14 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def showStatus(self, msg):
-        '''Helper function called by any window to display a message
+        """Helper function called by any window to display a message
            in status bar.
-        '''
+        """
         androconf.debug(msg)
         self.statusBar().showMessage(msg)
 
     def about(self):
-        '''User clicked About menu. Display a Message box.'''
+        """User clicked About menu. Display a Message box."""
         QtWidgets.QMessageBox.about(self, "About Androguard GUI",
                                     "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
                                     "<br>Have fun !</p>")
@@ -189,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileLoadingThread.load(filepath)
 
     def saveFile(self):
-        '''User clicked Save menu. Display a Dialog to ask whwre to save.'''
+        """User clicked Save menu. Display a Dialog to ask whwre to save."""
         filepath, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save File", '', "Androguard Session (*.ag)")
 
@@ -198,7 +198,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveSession(filepath)
 
     def saveSession(self, filepath):
-        '''Save androguard session.'''
+        """Save androguard session."""
         try:
             session_module.Save(self.session, filepath)
         except RuntimeError as e:
@@ -225,18 +225,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self._runPlugin(filepath)
 
     def closeEvent(self, event):
-        '''Clicked [x] to close main window'''
+        """Clicked [x] to close main window"""
         event.accept()
 
     def setupEmptyTree(self):
-        '''Setup empty Tree at startup. '''
+        """Setup empty Tree at startup. """
         if hasattr(self, "tree"):
             del self.tree
         self.tree = QtWidgets.QTreeWidget(self)
         self.tree.header().close()
 
     def setupDock(self):
-        '''Setup empty Dock at startup. '''
+        """Setup empty Dock at startup. """
         self.dock = QtWidgets.QDockWidget("Classes", self)
         self.dock.setWidget(self.tree)
         self.dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
@@ -249,7 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock.setWidget(self.tree)
 
     def setupCentral(self):
-        '''Setup empty window supporting tabs at startup. '''
+        """Setup empty window supporting tabs at startup. """
         self.central = TabsWindow(self.bin_windows, self)
         self.setCentralWidget(self.central)
 
@@ -291,10 +291,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.helpMenu.addAction("About &Qt", QtWidgets.qApp.aboutQt)
 
     def updateDockWithTree(self, empty=False):
-        '''Update the classes tree. Called when
+        """Update the classes tree. Called when
             - a new APK has been imported
             - a classe has been renamed (displayed in the tree)
-        '''
+        """
         self.setupTree()
         self.tree.fill()
 
@@ -352,10 +352,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.setCurrentWidget(bin_window)
 
     def openSourceWindow(self, current_class, method=None):
-        '''Main function to open a decompile source window
+        """Main function to open a decompile source window
            It checks if it already opened and open that tab,
            otherwise, initialize a new window.
-        '''
+        """
         androconf.debug("openSourceWindow for %s" % current_class)
 
         sourcewin = self.getMeOpenedWindowIfExists(current_class.current_title + "(S)")

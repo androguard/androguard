@@ -290,7 +290,7 @@ class DecompilerDed(object):
                             findsrc += "/"
                         findsrc += f
                         break
-            if findsrc != None:
+            if findsrc is not None:
                 break
 
         for i in vm.get_classes():

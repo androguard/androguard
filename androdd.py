@@ -198,7 +198,7 @@ def export_apps_to_format(filename,
 
 
 def main(options, arguments):
-    if options.input != None and options.output != None:
+    if options.input is not None and options.output is not None:
         s = session.Session()
         with open(options.input, "rb") as fd:
             s.add(options.input, fd.read())

@@ -32,8 +32,8 @@ class TreeWindow(QtWidgets.QTreeWidget):
         self._reverse_cache = {}
 
     def fill(self):
-        '''Parse all the paths (['Lcom/example/myclass/MyActivity$1;', ...])
-           and build a tree using the QTreeWidgetItem insertion method.'''
+        """Parse all the paths (['Lcom/example/myclass/MyActivity$1;', ...])
+           and build a tree using the QTreeWidgetItem insertion method."""
         androconf.debug("Fill classes tree")
 
         for idx, filename, digest, classes in self.session.get_classes():

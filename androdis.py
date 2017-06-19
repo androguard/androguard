@@ -44,7 +44,7 @@ options = [option_0, option_1, option_2]
 
 def disassemble(dex, offset, size):
     d = dvm.auto(dex)
-    if d != None:
+    if d is not None:
         nb = 0
         idx = offset
         for i in d.disassemble(offset, size):

@@ -121,26 +121,26 @@ class Graph(object):
         self.loc_to_ins.pop(loc)
 
     def compute_rpo(self):
-        '''
+        """
         Number the nodes in reverse post order.
         An RPO traversal visit as many predecessors of a node as possible
         before visiting the node itself.
-        '''
+        """
         nb = len(self.nodes) + 1
         for node in self.post_order():
             node.num = nb - node.po
         self.rpo = sorted(self.nodes, key=lambda n: n.num)
 
     def post_order(self):
-        '''
+        """
         Return the nodes of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
-        '''
+        """
 
         def _visit(n, cnt):
             visited.add(n)
             for suc in self.all_sucs(n):
-                if not suc in visited:
+                if suc not in visited:
                     for cnt, s in _visit(suc, cnt):
                         yield cnt, s
             n.po = cnt
@@ -188,10 +188,10 @@ class Graph(object):
 
 
 def split_if_nodes(graph):
-    '''
+    """
     Split IfNodes in two nodes, the first node is the header node, the
     second one is only composed of the jump condition.
-    '''
+    """
     node_map = {n: n for n in graph}
     to_update = set()
     for node in graph.nodes[:]:
@@ -251,13 +251,13 @@ def split_if_nodes(graph):
 
 
 def simplify(graph):
-    '''
+    """
     Simplify the CFG by merging/deleting statement nodes when possible:
     If statement B follows statement A and if B has no other predecessor
     besides A, then we can merge A and B into a new statement node.
     We also remove nodes which do nothing except redirecting the control
     flow (nodes which only contains a goto).
-    '''
+    """
     redo = True
     while redo:
         redo = False
@@ -308,7 +308,7 @@ def simplify(graph):
 
 
 def dom_lt(graph):
-    '''Dominator algorithm from Lengaeur-Tarjan'''
+    """Dominator algorithm from Lengaeur-Tarjan"""
 
     def _dfs(v, n):
         semi[v] = n = n + 1

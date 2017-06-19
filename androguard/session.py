@@ -113,7 +113,7 @@ class Session(object):
         return (digest, d, dx)
 
     def runAnalysis(self, d, dx=None):
-        if dx == None:
+        if dx is None:
             dx = Analysis(d)
         else:
             dx.add(d)

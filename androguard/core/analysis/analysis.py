@@ -112,19 +112,19 @@ class DVMBasicBlock(object):
         # print self, self.start, self.end, values
         if values == []:
             next_block = self.context.get_basic_block(self.end + 1)
-            if next_block != None:
+            if next_block is not None:
                 self.childs.append((self.end - self.get_last_length(), self.end,
                                     next_block))
         else:
             for i in values:
                 if i != -1:
                     next_block = self.context.get_basic_block(i)
-                    if next_block != None:
+                    if next_block is not None:
                         self.childs.append((self.end - self.get_last_length(),
                                             i, next_block))
 
         for c in self.childs:
-            if c[2] != None:
+            if c[2] is not None:
                 c[2].set_fathers((c[1], c[0], self))
 
     def push(self, i):
@@ -149,6 +149,7 @@ class DVMBasicBlock(object):
         """
         try:
             return self.special_ins[idx]
+        # FIXME: Too broad exception clause
         except:
             return None
 
@@ -248,13 +249,13 @@ class Tags(object):
     def emit(self, method):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(method.get_class()) != None:
+                if self.patterns[i][1].search(method.get_class()) is not None:
                     self.tags.add(i)
 
     def emit_by_classname(self, classname):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(classname) != None:
+                if self.patterns[i][1].search(classname) is not None:
                     self.tags.add(i)
 
     def get_list(self):
@@ -322,7 +323,7 @@ class ExceptionAnalysis(object):
         buff = "%x:%x\n" % (self.start, self.end)
 
         for i in self.exceptions:
-            if i[2] == None:
+            if i[2] is None:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
             else:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
@@ -387,7 +388,7 @@ class MethodAnalysis(object):
         self.exceptions = Exceptions(self.__vm)
 
         code = self.method.get_code()
-        if code == None:
+        if code is None:
             return
 
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
@@ -404,7 +405,7 @@ class MethodAnalysis(object):
         instructions = [i for i in bc.get_instructions()]
         for i in instructions:
             for j in BasicOPCODES:
-                if j.match(i.get_name()) != None:
+                if j.match(i.get_name()) is not None:
                     v = dvm.determineNext(i, idx, self.method)
                     h[idx] = v
                     l.extend(v)
@@ -787,7 +788,7 @@ class Analysis(object):
                 debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
-                if code == None:
+                if code is None:
                     continue
 
                 off = 0

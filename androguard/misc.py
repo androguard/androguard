@@ -61,6 +61,7 @@ def AnalyzeAPK(filename, session=None):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
+        :param session: A session (default None)
         :param filename: the filename of the android application or a buffer which represents the application
         :type filename: string
 
@@ -82,6 +83,8 @@ def AnalyzeDex(filename, session=None):
     """
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
+        :param session: A session (Default None)
+        :param decompiler: 
         :param filename: the filename of the android dex file or a buffer which represents the dex file
         :type filename: string
 
@@ -129,7 +132,7 @@ def RunDecompiler(d, dx, decompiler):
         :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
         :type decompiler: string
     """
-    if decompiler != None:
+    if decompiler is not None:
         androconf.debug("Decompiler ...")
         decompiler = decompiler.lower()
         if decompiler == "dex2jad":

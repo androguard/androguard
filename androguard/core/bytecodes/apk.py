@@ -82,7 +82,7 @@ class ChilkatZip(object):
         while e is not None:
             e.get_FileName(filename)
 
-            if re.match(patterns, filename.getString()) != None:
+            if re.match(patterns, filename.getString()) is not None:
                 el.append(e)
             e = e.NextEntry()
 
@@ -205,7 +205,7 @@ class APK(object):
                         androconf.warning("AXML parsing failed", e)
                         self.xml[i] = None
 
-                    if self.xml[i] != None:
+                    if self.xml[i] is not None:
                         self.package = self.xml[i].documentElement.getAttribute(
                             "package")
                         self.androidversion[
@@ -747,11 +747,11 @@ class APK(object):
         return self.permissions
 
     def get_requested_aosp_permissions(self):
-        '''
+        """
             Returns requested permissions declared within AOSP project.
 
             :rtype: list of strings
-        '''
+        """
         aosp_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
@@ -775,11 +775,11 @@ class APK(object):
         return l
 
     def get_requested_third_party_permissions(self):
-        '''
+        """
             Returns list of requested permissions not declared within AOSP project.
 
             :rtype: list of strings
-        '''
+        """
         third_party_permissions = []
         all_permissions = self.get_requested_permissions()
         for perm in all_permissions:
@@ -788,19 +788,19 @@ class APK(object):
         return third_party_permissions
 
     def get_declared_permissions(self):
-        '''
+        """
             Returns list of the declared permissions.
 
             :rtype: list of strings
-        '''
+        """
         return list(self.declared_permissions.keys())
 
     def get_declared_permissions_details(self):
-        '''
+        """
             Returns declared permissions with the details.
 
             :rtype: dict
-        '''
+        """
         return self.declared_permissions
 
     def get_max_sdk_version(self):

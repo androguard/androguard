@@ -72,10 +72,10 @@ def main(options, arguments):
     if options.debug:
         set_debug()
 
-    if options.shell != None:
+    if options.shell is not None:
         interact()
 
-    elif options.version != None:
+    elif options.version is not None:
         print("Androguard version %s" % androconf.ANDROGUARD_VERSION)
 
 

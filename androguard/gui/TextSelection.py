@@ -28,7 +28,7 @@ class Selection(object):
         self.HighlightSelections = []
 
     def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
-        raise "Not Implemented"
+        raise Exception("Not Implemented")
 
     def addSelection(self, t, type=None):
         if len(t) == 4:
@@ -78,7 +78,7 @@ class Selection(object):
             L = self.HighlightSelections
 
         else:
-            raise "Selection type unknown"
+            raise Exception("Selection type unknown")
 
         L[:] = [t for t in L if t[0] != u and t[1] != v]
         return
