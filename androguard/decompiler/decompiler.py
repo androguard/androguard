@@ -103,7 +103,7 @@ class DecompilerDex2Jad(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -118,7 +118,7 @@ class DecompilerDex2Jad(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -196,7 +196,7 @@ class DecompilerDex2WineJad(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -211,7 +211,7 @@ class DecompilerDex2WineJad(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -282,7 +282,7 @@ class DecompilerDed(object):
 
         findsrc = None
         for root, dirs, files in os.walk(dirname + "/optimized-decompiled/"):
-            if dirs != []:
+            if dirs:
                 for f in dirs:
                     if f == "src":
                         findsrc = root
@@ -296,7 +296,7 @@ class DecompilerDed(object):
         for i in vm.get_classes():
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
             # print fname
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -371,7 +371,7 @@ class DecompilerDex2Fernflower(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -391,7 +391,7 @@ class DecompilerDex2Fernflower(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())

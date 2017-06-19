@@ -396,7 +396,7 @@ class HexViewMode(ViewMode):
     def moveCursor(self, direction):
         # TODO: have to move this, don't like it
         if self.isInEditMode():
-            if self.highpart == False:
+            if not self.highpart:
                 self.highpart = True
 
         cursorX, cursorY = self.cursor.getPosition()
@@ -587,7 +587,7 @@ class HexViewMode(ViewMode):
             if not block:
                 x, old_y = self.cursor.getPosition()
 
-                if self.highpart == False:
+                if not self.highpart:
                     self.moveCursor(Directions.Right)
 
                 x, y = self.cursor.getPosition()
@@ -709,7 +709,7 @@ class HexViewMode(ViewMode):
 
     def setEditMode(self, mode):
         super(HexViewMode, self).setEditMode(mode)
-        if mode == False:
+        if not mode:
             self.highpart = True
             self.transformationEngine = self.original_textdecorator
             self.transformationEngine.reset()

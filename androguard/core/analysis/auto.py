@@ -340,7 +340,7 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
 
     def fetcher(self, q):
         for root, dirs, files in os.walk(self.directory, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":

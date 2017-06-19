@@ -110,7 +110,7 @@ class DVMBasicBlock(object):
 
     def set_childs(self, values):
         # print self, self.start, self.end, values
-        if values == []:
+        if not values:
             next_block = self.context.get_basic_block(self.end + 1)
             if next_block is not None:
                 self.childs.append((self.end - self.get_last_length(), self.end,

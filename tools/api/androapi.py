@@ -50,7 +50,7 @@ def extractPerms(filename):
     for i in soup.findAll("table", attrs={'id': "constants"}):
         for j in i.findChildren("tr"):
             td = j.findChildren("td")
-            if td != []:
+            if td:
                 _type = str(td[0].text)
                 _name = str(td[1].text)
                 _desc = str(td[2].text)
@@ -75,11 +75,11 @@ def extractInformation(filename):
         perms = []
         for perm in PERMS:
             perm_access = next_div.findAll(text=re.compile(perm))
-            if perm_access != []:
+            if perm_access:
                 perms.append(perm)
                 #print i.name, i.get("name"), perm_access
 
-        if perms != []:
+        if perms:
             element = None
             descs = i.findNext("span", attrs={'class': 'normal'})
             _descriptor_return = descs.__next__

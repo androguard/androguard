@@ -408,7 +408,7 @@ def method2png(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "png", mx, buff)
@@ -426,7 +426,7 @@ def method2jpg(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "jpg", mx, buff)

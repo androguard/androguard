@@ -1548,7 +1548,7 @@ class EncodedValue(object):
                                (self.val, self.value_arg, self.value_type))
 
     def get_obj(self):
-        if isinstance(self.value, str) == False:
+        if not isinstance(self.value, str):
             return [self.value]
         return []
 
@@ -3036,7 +3036,7 @@ class EncodedMethod(object):
         """
           Display the notes about the method
       """
-        if self.notes != []:
+        if self.notes:
             bytecode._PrintSubBanner("Notes")
             for i in self.notes:
                 bytecode._PrintNote(i)
@@ -4700,7 +4700,7 @@ class Instruction21h(Instruction):
         buff = ""
         buff += "v%d, %d" % (self.AA, self.BBBB)
 
-        if self.formatted_operands != []:
+        if self.formatted_operands:
             buff += " # %s" % (str(self.formatted_operands))
 
         return buff
@@ -4824,7 +4824,7 @@ class Instruction21s(Instruction):
         buff = ""
         buff += "v%d, %d" % (self.AA, self.BBBB)
 
-        if self.formatted_operands != []:
+        if self.formatted_operands:
             buff += " # %s" % str(self.formatted_operands)
 
         return buff
@@ -7253,7 +7253,7 @@ class ClassManager(object):
 
                     self.__obj_offset[i.get_off()] = i
 
-                    if sdi == True:
+                    if sdi:
                         self.__strings_off[goff] = i
             else:
                 self.__manage_item_off.append(c_item.get_offset())

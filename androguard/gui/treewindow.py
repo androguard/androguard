@@ -42,7 +42,7 @@ class TreeWindow(QtWidgets.QTreeWidget):
                 path_node = self.root_path_node
 
                 path = None
-                if sig.class_path == []:
+                if not sig.class_path:
                     path = '.'
                     if path not in path_node[0]:
                         path_node[0][path] = (

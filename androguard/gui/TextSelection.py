@@ -108,7 +108,7 @@ class Selection(object):
         self.Selections = []
 
     def startSelection(self):
-        if self.selecting == False:
+        if not self.selecting:
             self.selecting = True
             self.selectionStartOffset = self.viewMode.getCursorAbsolutePosition()
             if len(self.Selections) >= self.MAX_SELECTIONS:
@@ -136,7 +136,7 @@ class Selection(object):
         return None
 
     def stopSelection(self):
-        if self.selecting == True:
+        if self.selecting:
             u, v = self.getCurrentSelection()
 
             self.addSelection((u, v, QtGui.QBrush(self.themes['selection']), 0.4), type=SelectionType.NORMAL)
