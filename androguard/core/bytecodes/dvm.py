@@ -2252,9 +2252,6 @@ class FieldIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        pass
-
-    def _reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.type_idx_value = self.CM.get_type(self.type_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2429,12 +2426,9 @@ class MethodIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        pass
-
-    def _reload(self):
-       self.class_idx_value = self.CM.get_type(self.class_idx)
-       self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-       self.name_idx_value = self.CM.get_string(self.name_idx)
+        self.class_idx_value = self.CM.get_type(self.class_idx)
+        self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+        self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2567,10 +2561,6 @@ class MethodHIdItem(object):
             return self.methods[idx]
         except IndexError:
             return MethodIdItemInvalid()
-
-    def _reload(self):
-        for i in self.methods:
-            i._reload()
 
     def reload(self):
         for i in self.methods:
@@ -2775,7 +2765,7 @@ class EncodedField(object):
 
             :rtype: string
         """
-        if self.access_flags_string == None:
+        if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
                 self.get_access_flags())
 
@@ -2785,7 +2775,7 @@ class EncodedField(object):
 
     def set_name(self, value):
         self.CM.set_hook_field_name(self, value)
-        self._reload()
+        self.reload()
 
     def get_obj(self):
         return []
@@ -2807,7 +2797,7 @@ class EncodedField(object):
             self.get_access_flags_string()))
 
         init_value = self.get_init_value()
-        if init_value != None:
+        if init_value is not None:
             bytecode._PrintDefault("\tinit value: %s\n" %
                                    str(init_value.get_value()))
 
@@ -3194,15 +3184,15 @@ class EncodedMethod(object):
             :param idx: the index
             :type idx: int
         """
-        if self.code != None:
+        if self.code is not None:
             self.code.set_idx(idx)
 
     def set_name(self, value):
         self.CM.set_hook_method_name(self, value)
-        self._reload()
+        self.reload()
 
     def get_raw(self):
-        if self.code != None:
+        if self.code is not None:
             self.code_off = self.code.get_off()
 
         return writeuleb128(self.method_idx_diff) + writeuleb128(
@@ -7371,7 +7361,7 @@ class ClassManager(object):
         class_def.reload()
 
         # FIXME
-        self.__manage_item["TYPE_METHOD_ID_ITEM"]._reload()
+        self.__manage_item["TYPE_METHOD_ID_ITEM"].reload()
 
         for i in class_def.get_methods():
             i.reload()
