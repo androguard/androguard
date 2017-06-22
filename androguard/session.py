@@ -16,8 +16,8 @@ def Save(session, filename):
     :type filename: string
 
     :Example:
-        s = Session()
-        save(s, "msession.p")
+        s = session.Session()
+        session.Save(s, "msession.p")
     """
     with open(filename, "wb") as fd:
         pickle.dump(session, fd)
@@ -33,7 +33,7 @@ def Load(filename):
       :rtype: the elements of your session :)
 
       :Example:
-          s = load_session("mysession.p")
+          s = session.Load("mysession.p")
     """
     with open(filename, "rb") as fd:
         return pickle.load(fd)
