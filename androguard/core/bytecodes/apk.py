@@ -321,6 +321,11 @@ class APK(object):
         if not app_name:
             app_name = self.get_element('application', 'label')
 
+        if app_name is None:
+            # No App name set
+            # TODO return packagename instead?
+            return ""
+
         if app_name.startswith("@"):
             res_id = int(app_name[1:], 16)
             res_parser = self.get_android_resources()
