@@ -2249,9 +2249,6 @@ class FieldIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        pass
-
-    def _reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.type_idx_value = self.CM.get_type(self.type_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2426,9 +2423,6 @@ class MethodIdItem(object):
         self.name_idx_value = None
 
     def reload(self):
-        pass
-
-    def _reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.proto_idx_value = self.CM.get_proto(self.proto_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2564,10 +2558,6 @@ class MethodHIdItem(object):
             return self.methods[idx]
         except IndexError:
             return MethodIdItemInvalid()
-
-    def _reload(self):
-        for i in self.methods:
-            i._reload()
 
     def reload(self):
         for i in self.methods:
@@ -2779,7 +2769,7 @@ class EncodedField(object):
 
     def set_name(self, value):
         self.CM.set_hook_field_name(self, value)
-        self._reload()
+        self.reload()
 
     def get_obj(self):
         return []
@@ -3193,7 +3183,7 @@ class EncodedMethod(object):
 
     def set_name(self, value):
         self.CM.set_hook_method_name(self, value)
-        self._reload()
+        self.reload()
 
     def get_raw(self):
         if self.code is not None:
@@ -7365,7 +7355,7 @@ class ClassManager(object):
         class_def.reload()
 
         # FIXME
-        self.__manage_item["TYPE_METHOD_ID_ITEM"]._reload()
+        self.__manage_item["TYPE_METHOD_ID_ITEM"].reload()
 
         for i in class_def.get_methods():
             i.reload()
