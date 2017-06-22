@@ -5,8 +5,6 @@ from androguard import session
 from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
 
-from pickle import dump, load
-
 
 def init_print_colors():
     from IPython.utils import coloransi, io
@@ -22,38 +20,6 @@ def get_default_session():
     if CONF["SESSION"] is None:
         CONF["SESSION"] = session.Session()
     return CONF["SESSION"]
-
-
-def save_session(l, filename):
-    """
-      save your session !
-
-      :param l: a list of objects
-      :type: a list of object
-      :param filename: output filename to save the session
-      :type filename: string
-
-      :Example:
-          save_session([a, vm, vmx], "msession.json")
-  """
-    with open(filename, "wb") as fd:
-        dump(l, fd)
-
-
-def load_session(filename):
-    """
-      load your session !
-
-      :param filename: the filename where the session has been saved
-      :type filename: string
-
-      :rtype: the elements of your session :)
-
-      :Example:
-          a, vm, vmx = load_session("mysession.json")
-  """
-    with open(filename, "rb") as fd:
-        return load(fd)
 
 
 def AnalyzeAPK(filename, session=None):

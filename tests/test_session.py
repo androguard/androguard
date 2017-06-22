@@ -1,6 +1,7 @@
 import unittest
 
 import sys
+from androguard.core.bytecodes.apk import APK
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
@@ -36,7 +37,26 @@ class SessionTest(unittest.TestCase):
                   "rb") as fd:
             s.add("examples/android/TestsAndroguard/bin/TestActivity.apk",
                   fd.read())
-            session.Save(s, "test_session")
+            session.save(s, "test_session")
+
+    def testSessionLoad(self):
+        s = session.Session()
+        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  "rb") as fd:
+            s.add("examples/android/TestsAndroguard/bin/TestActivity.apk",
+                  fd.read())
+            session.save(s, "test_session")
+
+        self.assertIn('2f24538b3064f1f88d3eb29ee7fbd2146779a4c9144aefa766d18965be8775c7', s.analyzed_dex.keys())
+        self.assertIn('3bb32dd50129690bce850124ea120aa334e708eaa7987cf2329fd1ea0467a0eb', s.analyzed_apk.keys())
+        x = s.analyzed_apk['3bb32dd50129690bce850124ea120aa334e708eaa7987cf2329fd1ea0467a0eb'][0]
+        self.assertIsInstance(x, APK)
+
+        nsession = session.load("test_session")
+        self.assertIn('2f24538b3064f1f88d3eb29ee7fbd2146779a4c9144aefa766d18965be8775c7', nsession.analyzed_dex.keys())
+        self.assertIn('3bb32dd50129690bce850124ea120aa334e708eaa7987cf2329fd1ea0467a0eb', nsession.analyzed_apk.keys())
+        y = nsession.analyzed_apk['3bb32dd50129690bce850124ea120aa334e708eaa7987cf2329fd1ea0467a0eb'][0]
+        self.assertIsInstance(y, APK)
 
 
 if __name__ == '__main__':

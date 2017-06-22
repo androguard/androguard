@@ -1,17 +1,42 @@
 import hashlib
 
-from androguard import misc
 from androguard.core.analysis.analysis import *
 from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
 
-
-def Save(session, filename):
-    misc.save_session(session, filename)
+import pickle
 
 
-def Load(filename):
-    return misc.load_session(filename)
+def save(session, filename):
+    """
+    save your session!
+
+    :param session: A Session object to save
+    :param filename: output filename to save the session
+    :type filename: string
+
+    :Example:
+        s = Session()
+        save(s, "msession.p")
+    """
+    with open(filename, "wb") as fd:
+        pickle.dump(session, fd)
+
+
+def load(filename):
+    """
+      load your session!
+
+      :param filename: the filename where the session has been saved
+      :type filename: string
+
+      :rtype: the elements of your session :)
+
+      :Example:
+          s = load_session("mysession.p")
+    """
+    with open(filename, "rb") as fd:
+        return pickle.load(fd)
 
 
 class Session(object):
