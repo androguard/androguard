@@ -285,14 +285,6 @@ class APK(object):
                 break
         return string_value
 
-    def get_AndroidManifest(self):
-        """
-            Return the Android Manifest XML file
-
-            :rtype: xml object
-        """
-        return self.xml["AndroidManifest.xml"]
-
     def is_valid_APK(self):
         """
             Return true if the APK is valid, false otherwise
@@ -743,13 +735,14 @@ class APK(object):
 
         return l
 
+    @DeprecationWarning
     def get_requested_permissions(self):
         """
             Returns all requested permissions.
 
             :rtype: list of strings
         """
-        return self.permissions
+        return self.get_permissions()
 
     def get_requested_aosp_permissions(self):
         """
@@ -758,7 +751,7 @@ class APK(object):
             :rtype: list of strings
         """
         aosp_permissions = []
-        all_permissions = self.get_requested_permissions()
+        all_permissions = self.get_permissions()
         for perm in all_permissions:
             if perm in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 aosp_permissions.append(perm)
@@ -786,7 +779,7 @@ class APK(object):
             :rtype: list of strings
         """
         third_party_permissions = []
-        all_permissions = self.get_requested_permissions()
+        all_permissions = self.get_permissions()
         for perm in all_permissions:
             if perm not in list(self.permission_module["AOSP_PERMISSIONS"].keys()):
                 third_party_permissions.append(perm)
@@ -935,7 +928,11 @@ class APK(object):
         """
             Return the name of the first signature file found.
         """
-        return self.get_signature_names()[0]
+        if self.get_signature_names():
+            return self.get_signature_names()[0]
+        else:
+            # Unsigned APK
+            return None
 
     def get_signature_names(self):
         """
@@ -948,16 +945,16 @@ class APK(object):
             if signature_expr.search(i):
                 signatures.append(i)
 
-        if len(signatures) > 0:
-            return signatures
-
-        return None
+        return signatures
 
     def get_signature(self):
         """
             Return the data of the first signature file found.
         """
-        return self.get_signatures()[0]
+        if self.get_signatures():
+            return self.get_signatures()[0]
+        else:
+            return None
 
     def get_signatures(self):
         """
@@ -970,10 +967,7 @@ class APK(object):
             if signature_expr.search(i):
                 signature_datas.append(self.get_file(i))
 
-        if len(signature_datas) > 0:
-            return signature_datas
-
-        return None
+        return signature_datas
 
     def show(self):
         self.get_files_types()
@@ -991,7 +985,7 @@ class APK(object):
             print("\t", i)
 
         print("REQUESTED PERMISSIONS:")
-        requested_permissions = self.get_requested_permissions()
+        requested_permissions = self.get_permissions()
         for i in requested_permissions:
             print("\t", i)
 
@@ -2334,7 +2328,7 @@ class ARSCResTableConfig(object):
 
             self.exceedingSize = self.size - 36
             if self.exceedingSize > 0:
-                androconf.info("Skipping padding bytes!")
+                androconf.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
         else:
             self.start = 0
