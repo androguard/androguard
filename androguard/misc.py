@@ -4,6 +4,7 @@ standard_library.install_aliases()
 from androguard import session
 from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
+from androguard.core.androconf import CONF
 
 
 def init_print_colors():

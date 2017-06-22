@@ -15,6 +15,18 @@ class APKTest(unittest.TestCase):
             a = apk.APK(fd.read(), True)
             self.assertTrue(a)
 
+    def testAPKWrapper(self):
+        from androguard.misc import AnalyzeAPK
+        from androguard.core.bytecodes.apk import APK
+        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.analysis.analysis import Analysis
+        a, d, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity.apk")
+
+        self.assertIsInstance(a, APK)
+        self.assertIsInstance(d, DalvikVMFormat)
+        self.assertIsInstance(dx, Analysis)
+
+
 
 if __name__ == '__main__':
     unittest.main()
