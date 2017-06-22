@@ -34,7 +34,7 @@ class FileLoadingThread(QtCore.QThread):
                                                   open(file_path, 'rb').read())
                     self.file_loaded.emit(ret)
                 elif file_type == "SESSION":
-                    self.parent.session = session.load(file_path)
+                    self.parent.session = session.Load(file_path)
                     self.file_loaded.emit(True)
                 else:
                     self.file_loaded.emit(False)

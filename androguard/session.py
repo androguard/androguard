@@ -7,7 +7,7 @@ from androguard.decompiler.decompiler import *
 import pickle
 
 
-def save(session, filename):
+def Save(session, filename):
     """
     save your session!
 
@@ -23,7 +23,7 @@ def save(session, filename):
         pickle.dump(session, fd)
 
 
-def load(filename):
+def Load(filename):
     """
       load your session!
 

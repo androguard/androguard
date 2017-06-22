@@ -196,7 +196,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def saveSession(self, filepath):
         """Save androguard session."""
         try:
-            session_module.save(self.session, filepath)
+            session_module.Save(self.session, filepath)
         except RuntimeError as e:
             androconf.error(str(e))
             os.remove(filepath)
