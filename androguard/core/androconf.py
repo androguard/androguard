@@ -4,7 +4,6 @@ import logging
 import types
 import random
 import string
-import imp
 
 ANDROGUARD_VERSION = "3.0-dev"
 
@@ -203,8 +202,6 @@ def is_android(filename):
     with open(filename, "rb") as fd:
         f_bytes = fd.read()
         return is_android_raw(f_bytes)
-
-    return None
 
 
 def is_android_raw(raw):

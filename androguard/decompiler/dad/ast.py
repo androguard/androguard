@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''This file is a simplified version of writer.py that outputs an AST instead of source code.'''
+"""This file is a simplified version of writer.py that outputs an AST instead of source code."""
 from builtins import zip
 from builtins import hex
 from builtins import str
@@ -90,6 +90,7 @@ def var_decl(typen, var):
 def dummy(*args):
     return ['Dummy', args]
 
+
 ################################################################################
 
 
@@ -141,6 +142,7 @@ def _append(sb, stmt):
     assert (sb[0] == 'BlockStatement')
     if stmt is not None:
         sb[2].append(stmt)
+
 
 ################################################################################
 TYPE_DESCRIPTOR = {
@@ -449,7 +451,6 @@ def visit_ins(op, isCtor=False):
 
 
 class JSONWriter(object):
-
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -624,8 +625,8 @@ class JSONWriter(object):
 
             self.add(if_stmt(cond_expr, scopes))
         elif follow is not None:
-            if cond.true in (follow, self.next_case) or\
-                                                cond.num > cond.true.num:
+            if cond.true in (follow, self.next_case) or \
+                            cond.num > cond.true.num:
                 # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
@@ -637,7 +638,7 @@ class JSONWriter(object):
                 scopes.append(scope)
 
             is_else = not (follow in (cond.true, cond.false))
-            if is_else and not cond.false in self.visited_nodes:
+            if is_else and cond.false not in self.visited_nodes:
                 with self as scope:
                     self.visit_node(cond.false)
                 scopes.append(scope)

@@ -1,4 +1,5 @@
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import range
 from builtins import object
@@ -146,8 +147,8 @@ class DefaultAndroAnalysis(object):
     """
         file_type = androconf.is_android_raw(fileraw)
         if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
-            return (True, file_type)
-        return (False, None)
+            return True, file_type
+        return False, None
 
     def create_axml(self, log, fileraw):
         """
@@ -193,7 +194,7 @@ class DefaultAndroAnalysis(object):
     """
         return dvm.DalvikVMFormat(dexraw)
 
-    def create_dey(self, log, deyraw):
+    def create_dey(self, log, dexraw):
         """
       This method is called in order to create a DalvikOdexVMFormat object
 
@@ -202,7 +203,7 @@ class DefaultAndroAnalysis(object):
 
       :rtype: a :class:`DalvikOdexVMFormat` object
     """
-        return dvm.DalvikOdexVMFormat(deyraw)
+        return dvm.DalvikOdexVMFormat(dexraw)
 
     def create_adex(self, log, dexobj):
         """
@@ -339,7 +340,7 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
 
     def fetcher(self, q):
         for root, dirs, files in os.walk(self.directory, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":

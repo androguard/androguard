@@ -22,9 +22,9 @@ PERMISSIONS_BY_HAND = {
         ],
     },
     "SET_WALLPAPER":
-    {"android.app.WallpaperManager": [
-        ["F", "setBitmap(Bitmap)", "void"],
-    ],},
+        {"android.app.WallpaperManager": [
+            ["F", "setBitmap(Bitmap)", "void"],
+        ], },
     "READ_CONTACTS": {
         "android.provider.ContactsContract$CommonDataKinds$Phone": [
             ["C", "CONTENT_URI", "Uri"]

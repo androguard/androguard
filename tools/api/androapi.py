@@ -50,7 +50,7 @@ def extractPerms(filename):
     for i in soup.findAll("table", attrs={'id': "constants"}):
         for j in i.findChildren("tr"):
             td = j.findChildren("td")
-            if td != []:
+            if td:
                 _type = str(td[0].text)
                 _name = str(td[1].text)
                 _desc = str(td[2].text)
@@ -75,19 +75,19 @@ def extractInformation(filename):
         perms = []
         for perm in PERMS:
             perm_access = next_div.findAll(text=re.compile(perm))
-            if perm_access != []:
+            if perm_access:
                 perms.append(perm)
                 #print i.name, i.get("name"), perm_access
 
-        if perms != []:
+        if perms:
             element = None
             descs = i.findNext("span", attrs={'class': 'normal'})
-            _descriptor_return = descs.next
+            _descriptor_return = descs.__next__
             _descriptor_return = _descriptor_return.replace('', '')
             _descriptor_return = _descriptor_return.split()
             _descriptor_return = ' '.join(str(_d) for _d in _descriptor_return)
 
-            if isinstance(descs.next.next, Tag):
+            if isinstance(descs.next.__next__, Tag):
                 _descriptor_return += " " + descs.next.next.text
 
             if len(next_div.findNext("h4").findAll("span")) > 2:
@@ -105,7 +105,7 @@ def save_file(filename):
         fd.write("PERMISSIONS = {\n")
         for i in PERMS_API:
             if len(PERMS_API[i]) > 0:
-                fd.write("\"%s\" : {\n" % (i))
+                fd.write("\"%s\" : {\n" % i)
 
             for package in PERMS_API[i]:
                 if len(PERMS_API[i][package]) > 0:
@@ -174,7 +174,7 @@ for i in ANDROID_PACKAGES:
     for root, dirs, files in os.walk(BASE_DOCS + "docs/reference/android/" + i +
                                      "/"):
         for file in files:
-            print "Extracting from %s" % (root + "/" + file)
+            print("Extracting from %s" % (root + "/" + file))
             #extractInformation( "/home/pouik/Bureau/android/android-sdk-linux_86/docs/reference/android/accounts/AccountManager.html" )
             extractInformation(root + "/" + file)
 
@@ -183,16 +183,16 @@ for i in ANDROID_PACKAGES:
 
 for i in PERMS_API:
     if len(PERMS_API[i]) > 0:
-        print "PERMISSION ", i
+        print("PERMISSION ", i)
 
     for package in PERMS_API[i]:
-        print "\t package ", package
+        print("\t package ", package)
 
         for j in PERMS_API[i][package]:
             if isinstance(j, Function):
-                print "\t\t function : ", j.name
+                print("\t\t function : ", j.name)
             else:
-                print "\t\t constant : ", j.name
+                print("\t\t constant : ", j.name)
 
 save_file("./dvm_permissions_unformatted.py")
 

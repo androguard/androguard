@@ -21,11 +21,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#CONSTANTS
+# CONSTANTS
 PATH_TO_PSCOUT_FOLDER = "/home/yury/TMP/PScout/results/API_09"
 API_VERSION = 9
 
-MAPPINGS_MODULE_PATH = "../../androguard/core/api_specific_resources/api_permission_mappings/"  #where to append the results
+MAPPINGS_MODULE_PATH = "../../androguard/core/api_specific_resources/api_permission_mappings/"  # where to append the results
 MAPPINGS_MODULE_NAME = "api_permission_mappings"
 
 PSCOUT_METHOD_MAPPING_FILENAME = "allmappings"
@@ -34,10 +34,10 @@ PSCOUT_CONTENTPROVIDERFIELDS_MAPPING_FILENAME = "contentproviderfieldpermission"
 METHODS_MAPPING_PARAM_NAME = "AOSP_PERMISSIONS_BY_METHODS"
 FIELDS_MAPPING_PARAM_NAME = "AOSP_PERMISSIONS_BY_FIELDS"
 
-#IMPORTS
+# IMPORTS
 import os, re, codecs
 
-#auxiliary
+# auxiliary
 TYPE_DESCRIPTOR = {
     'V': 'void',
     'Z': 'boolean',
@@ -107,39 +107,41 @@ def parseMethod(methodString):
     returnValue = retValue_mName[0:mNameStartPos].strip()
     methodName = retValue_mName[mNameStartPos + 1:].strip()
 
-    return (methodName, params, returnValue)
-#end of auxiliary
+    return methodName, params, returnValue
 
-print "Starting conversion of PScout data: [%s]" % PATH_TO_PSCOUT_FOLDER
+
+# end of auxiliary
+
+print("Starting conversion of PScout data: [%s]" % PATH_TO_PSCOUT_FOLDER)
 
 if not os.path.exists(MAPPINGS_MODULE_PATH):
     os.makedirs(MAPPINGS_MODULE_PATH)
 
-print "Checking if we already have the file with the version %d..." % API_VERSION
+print("Checking if we already have the file with the version %d..." % API_VERSION)
 api_specific_mappings_module_name = "%s_api%s.py" % (MAPPINGS_MODULE_NAME,
                                                      API_VERSION)
 api_specific_mappings_module_path = os.path.join(
     MAPPINGS_MODULE_PATH, api_specific_mappings_module_name)
 if os.path.exists(api_specific_mappings_module_path):
-    print "API specific file for this version already exists!"
-    print "If you want create a file for newer version, please, delete file: %s" % api_specific_mappings_module_path
+    print("API specific file for this version already exists!")
+    print("If you want create a file for newer version, please, delete file: %s" % api_specific_mappings_module_path)
     exit(1)
 
-print "Reading method mapping file..."
+print("Reading method mapping file...")
 pscout_method_mapping_filepath = os.path.join(PATH_TO_PSCOUT_FOLDER,
                                               PSCOUT_METHOD_MAPPING_FILENAME)
 methods_mapping_file_lines = []
 with open(pscout_method_mapping_filepath, 'r') as pscout_file:
     methods_mapping_file_lines = pscout_file.readlines()
 
-print "Starting to parse file: [%s]" % pscout_method_mapping_filepath
+print("Starting to parse file: [%s]" % pscout_method_mapping_filepath)
 perm_name = None
 methods_mapping = {}
 for line in methods_mapping_file_lines:
     line = line.strip()
     if line.startswith("Permission:"):
         perm_name = line.split("Permission:")[1].strip()
-        print "PROCESSING PERMISSIONS: %s" % perm_name
+        print("PROCESSING PERMISSIONS: %s" % perm_name)
     elif line.startswith("<"):
         class_method = line[line.find('<') + 1:line.rfind('>')]
         sepPos = class_method.find(':')
@@ -164,7 +166,7 @@ for line in methods_mapping_file_lines:
             methods_mapping[method_identificator] = set()
             methods_mapping[method_identificator].add(perm_name)
 
-print "Reading contentproviderfield mapping file..."
+print("Reading contentproviderfield mapping file...")
 pscout_contentproviderfields_mapping_filepath = os.path.join(
     PATH_TO_PSCOUT_FOLDER, PSCOUT_CONTENTPROVIDERFIELDS_MAPPING_FILENAME)
 contentproviderfields_mapping_file_lines = []
@@ -177,7 +179,7 @@ for line in contentproviderfields_mapping_file_lines:
     line = line.strip()
     if line.startswith("PERMISSION:"):
         perm_name = line.split("PERMISSION:")[1].strip()
-        print "PROCESSING PERMISSIONS: %s" % perm_name
+        print("PROCESSING PERMISSIONS: %s" % perm_name)
     elif line.startswith("<"):
         field_entry = line[line.find('<') + 1:line.rfind('>')]
         classNameSepPos = field_entry.find(':')
@@ -197,7 +199,7 @@ for line in contentproviderfields_mapping_file_lines:
             fields_mapping[field_identificator] = set()
             fields_mapping[field_identificator].add(perm_name)
 
-print "Appending found information to the mappings file..."
+print("Appending found information to the mappings file...")
 with codecs.open(api_specific_mappings_module_path, 'w',
                  'utf-8') as perm_py_module:
     perm_py_module.write('#!/usr/bin/python\n')
@@ -238,18 +240,18 @@ with codecs.open(api_specific_mappings_module_path, 'w',
         '#################################################\n\n\n')
 
     perm_py_module.write("%s = {\n" % METHODS_MAPPING_PARAM_NAME)
-    for method in methods_mapping.keys():
+    for method in list(methods_mapping.keys()):
         permissions = methods_mapping.get(method)
         perms_string = ", ".join(["'%s'" % prm for prm in permissions])
         perm_py_module.write("\t'%s' : [%s],\n" % (method, perms_string))
     perm_py_module.write("}\n\n")
 
     perm_py_module.write("%s = {\n" % FIELDS_MAPPING_PARAM_NAME)
-    for field in fields_mapping.keys():
+    for field in list(fields_mapping.keys()):
         permissions = fields_mapping.get(field)
         perms_string = ", ".join(["'%s'" % prm for prm in permissions])
         perm_py_module.write("\t'%s' : [%s],\n" % (field, perms_string))
     perm_py_module.write("}\n")
     perm_py_module.write("#################################################\n")
 
-print "Done..."
+print("Done...")

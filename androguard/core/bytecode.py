@@ -26,7 +26,7 @@ def enable_print_colors(colors):
 # Handle exit message
 def Exit(msg):
     warning("Error : " + msg)
-    raise ("oops")
+    raise Exception("oops")
 
 
 def Warning(msg):
@@ -40,7 +40,7 @@ def _PrintBanner():
 
 def _PrintSubBanner(title=None):
     print_fct = CONF["PRINT_FCT"]
-    if title == None:
+    if title is None:
         print_fct("#" * 20 + "\n")
     else:
         print_fct("#" * 10 + " " + title + "\n")
@@ -408,7 +408,7 @@ def method2png(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "png", mx, buff)
@@ -426,7 +426,7 @@ def method2jpg(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "jpg", mx, buff)
@@ -670,7 +670,7 @@ def object_to_bytes(obj):
         return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
-    elif obj == None:
+    elif obj is None:
         return bytearray()
     elif isinstance(obj, bytearray):
         return obj

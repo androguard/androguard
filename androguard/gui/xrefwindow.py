@@ -1,12 +1,13 @@
-from builtins import str
-from builtins import range
 from PyQt5 import QtCore, QtWidgets, QtGui
+from builtins import range
+from builtins import str
+
 from androguard.core import androconf
-from androguard.gui.helpers import display2classmethod, class2func, classmethod2display, method2func
+from androguard.gui.helpers import classmethod2display
 
 
 class XrefDialogClass(QtWidgets.QDialog):
-    '''Dialog holding our Xref listview.
+    """Dialog holding our Xref listview.
         parent: SourceWindow that started the new XrefDialog
         path: complete path of the class we are looking an xref from
         method (optional): method of the class we are looking xref from
@@ -14,7 +15,7 @@ class XrefDialogClass(QtWidgets.QDialog):
 
         path/method are used for the title of the window
         xrefs_list for the content of the QListView
-    '''
+    """
 
     def __init__(self,
                  parent=None,
@@ -67,7 +68,6 @@ class XrefDialogClass(QtWidgets.QDialog):
 
 
 class XrefDialogMethod(QtWidgets.QDialog):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -108,7 +108,6 @@ class XrefDialogMethod(QtWidgets.QDialog):
 
 
 class XrefDialogField(QtWidgets.QDialog):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -153,7 +152,6 @@ class XrefDialogField(QtWidgets.QDialog):
 
 
 class XrefDialogString(QtWidgets.QDialog):
-
     def __init__(self, parent=None, win=None, string_analysis=None):
         super(XrefDialogString, self).__init__(parent)
         self.string_analysis = string_analysis
@@ -187,7 +185,7 @@ class XrefDialogString(QtWidgets.QDialog):
 
 
 class XrefDialog(QtWidgets.QDialog):
-    '''Dialog holding our Xref listview.
+    """Dialog holding our Xref listview.
         parent: SourceWindow that started the new XrefDialog
         path: complete path of the class we are looking an xref from
         method (optional): method of the class we are looking xref from
@@ -195,7 +193,7 @@ class XrefDialog(QtWidgets.QDialog):
 
         path/method are used for the title of the window
         xrefs_list for the content of the QListView
-    '''
+    """
 
     def __init__(self, parent=None, win=None, xrefs_list=None, method=""):
         super(XrefDialog, self).__init__(parent)
@@ -217,10 +215,10 @@ class XrefDialog(QtWidgets.QDialog):
 
     @classmethod
     def get_xrefs_list(cls, class_item, method=None):
-        '''Static method called before creating a XrefDialog
+        """Static method called before creating a XrefDialog
            to check if there are xrefs to display
             method (optional): method of the class we are looking xref from
-        '''
+        """
         androconf.debug("Getting XREF for %s" % class_item)
 
         item = class_item
@@ -231,13 +229,13 @@ class XrefDialog(QtWidgets.QDialog):
 
     @classmethod
     def get_xrefs_list_from_element(cls, element):
-        '''Helper for get_xrefs_list
+        """Helper for get_xrefs_list
 
            element is a ClassDefItem or MethodDefItem
 
            At the end of the function, we lost if we worked on
            a class or method but we do not care for now.
-        '''
+        """
 
         xref_items = element.XREFfrom.items
         androconf.debug("%d XREFs found" % len(xref_items))
@@ -248,12 +246,11 @@ class XrefDialog(QtWidgets.QDialog):
             method_ = xref_item[0].get_name()
             descriptor_ = xref_item[0].get_descriptor()
             xrefs.append(classmethod2display(class_, method_, descriptor_))
-#        print xrefs
+        #        print xrefs
         return xrefs
 
 
 class XrefListView(QtWidgets.QWidget):
-
     def __init__(self,
                  parent=None,
                  win=None,
@@ -290,7 +287,6 @@ class XrefListView(QtWidgets.QWidget):
 
 
 class XrefValueWindow(QtWidgets.QTreeView):
-
     def __init__(self, parent=None, win=None, xrefs=None, headers=None):
         super(XrefValueWindow, self).__init__(parent)
         self.parent = parent

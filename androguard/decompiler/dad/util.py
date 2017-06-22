@@ -76,7 +76,7 @@ ACCESS_FLAGS_METHODS = {
 ACCESS_ORDER = [0x1, 0x4, 0x2, 0x400, 0x8, 0x10, 0x80, 0x40, 0x20, 0x100, 0x800,
                 0x200, 0x1000, 0x2000, 0x4000, 0x10000, 0x20000]
 
-TYPE_LEN = {'J': 2, 'D': 2,}
+TYPE_LEN = {'J': 2, 'D': 2, }
 
 
 def get_access_class(access):
@@ -98,12 +98,12 @@ def get_access_field(access):
 
 
 def build_path(graph, node1, node2, path=None):
-    '''
+    """
     Build the path from node1 to node2.
     The path is composed of all the nodes between node1 and node2,
     node1 excluded. Although if there is a loop starting from node1, it will be
     included in the path.
-    '''
+    """
     if path is None:
         path = []
     if node1 is node2:
@@ -128,11 +128,11 @@ def common_dom(idom, cur, pred):
 
 
 def merge_inner(clsdict):
-    '''
+    """
     Merge the inner class(es) of a class:
     e.g class A { ... } class A$foo{ ... } class A$bar{ ... }
        ==> class A { class foo{...} class bar{...} ... }
-    '''
+    """
     samelist = False
     done = {}
     while not samelist:
@@ -161,16 +161,16 @@ def merge_inner(clsdict):
 
 
 def get_type_size(param):
-    '''
+    """
     Return the number of register needed by the type @param
-    '''
+    """
     return TYPE_LEN.get(param, 1)
 
 
 def get_type(atype, size=None):
-    '''
+    """
     Retrieve the java type of a descriptor (e.g : I)
-    '''
+    """
     res = TYPE_DESCRIPTOR.get(atype)
     if res is None:
         if atype[0] == 'L':
@@ -190,9 +190,9 @@ def get_type(atype, size=None):
 
 
 def get_params_type(descriptor):
-    '''
+    """
     Return the parameters type of a descriptor (e.g (IC)V)
-    '''
+    """
     params = descriptor.split(')')[0][1:].split()
     if params:
         return [param for param in params]

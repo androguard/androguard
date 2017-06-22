@@ -37,12 +37,12 @@ try:
 except ImportError:
     PYGMENTS = False
 
+
     class Filter(object):
         pass
 
 
 class Dex2Jar(object):
-
     def __init__(self,
                  vm,
                  path_dex2jar="./decompiler/dex2jar/",
@@ -70,7 +70,6 @@ class Dex2Jar(object):
 
 
 class DecompilerDex2Jad(object):
-
     def __init__(self,
                  vm,
                  path_dex2jar="./decompiler/dex2jar/",
@@ -104,7 +103,7 @@ class DecompilerDex2Jad(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -119,7 +118,7 @@ class DecompilerDex2Jad(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -164,7 +163,6 @@ class DecompilerDex2Jad(object):
 
 
 class DecompilerDex2WineJad(object):
-
     def __init__(self,
                  vm,
                  path_dex2jar="./decompiler/dex2jar/",
@@ -198,7 +196,7 @@ class DecompilerDex2WineJad(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -213,7 +211,7 @@ class DecompilerDex2WineJad(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -258,7 +256,6 @@ class DecompilerDex2WineJad(object):
 
 
 class DecompilerDed(object):
-
     def __init__(self,
                  vm,
                  path="./decompiler/ded/",
@@ -285,7 +282,7 @@ class DecompilerDed(object):
 
         findsrc = None
         for root, dirs, files in os.walk(dirname + "/optimized-decompiled/"):
-            if dirs != []:
+            if dirs:
                 for f in dirs:
                     if f == "src":
                         findsrc = root
@@ -293,13 +290,13 @@ class DecompilerDed(object):
                             findsrc += "/"
                         findsrc += f
                         break
-            if findsrc != None:
+            if findsrc is not None:
                 break
 
         for i in vm.get_classes():
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
-            #print fname
-            if os.path.isfile(fname) == True:
+            # print fname
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -339,7 +336,6 @@ class DecompilerDed(object):
 
 
 class DecompilerDex2Fernflower(object):
-
     def __init__(self,
                  vm,
                  path_dex2jar="./decompiler/dex2jar/",
@@ -375,7 +371,7 @@ class DecompilerDex2Fernflower(object):
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
-            if files != []:
+            if files:
                 for f in files:
                     real_filename = root
                     if real_filename[-1] != "/":
@@ -395,7 +391,7 @@ class DecompilerDex2Fernflower(object):
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"
-            if os.path.isfile(fname) == True:
+            if os.path.isfile(fname):
                 self.classes[i.get_name()] = read(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
@@ -440,15 +436,14 @@ class DecompilerDex2Fernflower(object):
 
 
 class MethodFilter(Filter):
-
     def __init__(self, **options):
         Filter.__init__(self, **options)
 
         self.method_name = options["method_name"]
-        #self.descriptor = options["descriptor"]
+        # self.descriptor = options["descriptor"]
 
         self.present = False
-        self.get_desc = True  #False
+        self.get_desc = True  # False
 
     def filter(self, lexer, stream):
         a = []
@@ -457,8 +452,8 @@ class MethodFilter(Filter):
 
         for ttype, value in stream:
             if self.method_name == value and (ttype is Token.Name.Function or
-                                                  ttype is Token.Name):
-                #print ttype, value
+                                                      ttype is Token.Name):
+                # print ttype, value
 
                 item_decl = -1
                 for i in range(len(a) - 1, 0, -1):
@@ -504,7 +499,6 @@ class MethodFilter(Filter):
 
 
 class DecompilerDAD(object):
-
     def __init__(self, vm, vmx):
         self.vm = vm
         self.vmx = vmx

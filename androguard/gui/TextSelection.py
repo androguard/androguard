@@ -7,10 +7,12 @@ from __future__ import division
 from builtins import object
 from PyQt5 import QtGui
 
+
 class SelectionType(object):
     NORMAL = 0
     PERMANENT = 1
     TEXTHIGHLIGHT = 2
+
 
 class Selection(object):
     def __init__(self, themes, viewMode):
@@ -26,7 +28,7 @@ class Selection(object):
         self.HighlightSelections = []
 
     def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
-        raise "Not Implemented"
+        raise Exception("Not Implemented")
 
     def addSelection(self, t, type=None):
         if len(t) == 4:
@@ -48,7 +50,6 @@ class Selection(object):
 
         if type == SelectionType.NORMAL:
             if len(self.Selections) >= self.MAX_SELECTIONS:
-
                 self.Selections = []
 
             self.Selections.append(t)
@@ -77,7 +78,7 @@ class Selection(object):
             L = self.HighlightSelections
 
         else:
-            raise "Selection type unknown"
+            raise Exception("Selection type unknown")
 
         L[:] = [t for t in L if t[0] != u and t[1] != v]
         return
@@ -99,7 +100,7 @@ class Selection(object):
             self.drawSelection(qp, start, end)
         self.HighlightSelections = []
 
-        #draw current
+        # draw current
         if self.selecting:
             self.drawSelection(qp, *self.getCurrentSelection())
 
@@ -107,7 +108,7 @@ class Selection(object):
         self.Selections = []
 
     def startSelection(self):
-        if self.selecting == False:
+        if not self.selecting:
             self.selecting = True
             self.selectionStartOffset = self.viewMode.getCursorAbsolutePosition()
             if len(self.Selections) >= self.MAX_SELECTIONS:
@@ -129,16 +130,16 @@ class Selection(object):
                 # but currently, by design we could only have one NORMAL selection
                 return u, v
 
-            #if self.last:
-            #    return self.last
+                # if self.last:
+                #    return self.last
 
         return None
-    
+
     def stopSelection(self):
-        if self.selecting == True:
+        if self.selecting:
             u, v = self.getCurrentSelection()
 
-            self.addSelection((u, v, QtGui.QBrush(self.themes['selection']), 0.4) , type=SelectionType.NORMAL)
+            self.addSelection((u, v, QtGui.QBrush(self.themes['selection']), 0.4), type=SelectionType.NORMAL)
             self.last = u, v
 
             self.selecting = False
@@ -154,7 +155,7 @@ class Selection(object):
         if not t:
             # no selection
             return
-        
+
         start, end = t
 
         if start == end:
@@ -162,7 +163,6 @@ class Selection(object):
 
         text = dataModel.getStream(start, end)
         Exclude = [start]
-
 
         cols, rows = self.viewMode.getGeometry()
 
@@ -179,17 +179,17 @@ class Selection(object):
                 M.append((idx, lenText))
                 idx += lenText
 
-        
-        #Match = [(m.start(), m.end()) for m in re.finditer(bytes(text), bytes(page))]
-        
+        # Match = [(m.start(), m.end()) for m in re.finditer(bytes(text), bytes(page))]
+
         for start, end in M:
-            #print start, end
-            #self._makeSelection(qp, start, end, cols, rows)
+            # print start, end
+            # self._makeSelection(qp, start, end, cols, rows)
             off = dataModel.getOffset()
-            if off+start not in Exclude:
-                #self._makeSelection(off + start, off + start + end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)))
-                #self.viewMode.selector.addSelection((off+start, off + start + end, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.4))
-                self.addSelection((off+start, off + start + end, QtGui.QBrush(self.themes['selection']), 0.4), type=SelectionType.TEXTHIGHLIGHT)
+            if off + start not in Exclude:
+                # self._makeSelection(off + start, off + start + end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)))
+                # self.viewMode.selector.addSelection((off+start, off + start + end, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.4))
+                self.addSelection((off + start, off + start + end, QtGui.QBrush(self.themes['selection']), 0.4),
+                                  type=SelectionType.TEXTHIGHLIGHT)
 
 
 class DefaultSelection(Selection):
@@ -221,20 +221,20 @@ class DefaultSelection(Selection):
             d1 = length
         else:
             d1 = end - off
-        
+
         mark = True
         height = 14
 
         qp.setOpacity(0.4)
         while mark:
             if d0 // cols == d1 // cols:
-                qp.fillRect((d0%cols)*8, (d0 // cols) * height, (d1-d0) * 8, 1 * height, brush)
+                qp.fillRect((d0 % cols) * 8, (d0 // cols) * height, (d1 - d0) * 8, 1 * height, brush)
                 d0 += (d1 - d0)
-            else:    
-                qp.fillRect((d0%cols)*8, (d0 // cols)*height, (cols - d0%cols)*8, 1*height, brush)
-                d0 += (cols - d0%cols)
+            else:
+                qp.fillRect((d0 % cols) * 8, (d0 // cols) * height, (cols - d0 % cols) * 8, 1 * height, brush)
+                d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
 
@@ -263,7 +263,7 @@ class DefaultSelection(Selection):
             d1 = length
         else:
             d1 = end - off
-        
+
         mark = True
         height = self.viewMode.fontHeight
         width = self.viewMode.fontWidth
@@ -274,16 +274,16 @@ class DefaultSelection(Selection):
 
         while mark:
             if d0 // cols == d1 // cols:
-                qp.fillRect((d0%cols)*width, (d0 // cols)*height + offset, (d1-d0)*width, 1*height, brush)
+                qp.fillRect((d0 % cols) * width, (d0 // cols) * height + offset, (d1 - d0) * width, 1 * height, brush)
                 d0 += (d1 - d0)
-            else:    
-                qp.fillRect((d0%cols)*width, (d0 // cols)*height + offset, (cols - d0%cols)*width, 1*height, brush)
-                d0 += (cols - d0%cols)
+            else:
+                qp.fillRect((d0 % cols) * width, (d0 // cols) * height + offset, (cols - d0 % cols) * width, 1 * height,
+                            brush)
+                d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
-
 
 
 class HexSelection(Selection):
@@ -316,7 +316,7 @@ class HexSelection(Selection):
             d1 = length
         else:
             d1 = end - off
-        
+
         mark = True
         height = self.viewMode.fontHeight
         width = self.viewMode.fontWidth
@@ -325,17 +325,21 @@ class HexSelection(Selection):
         while mark:
             if d0 // cols == d1 // cols:
                 # +2 is an offset for letters
-                qp.fillRect(3*(d0%cols)*width,                    (d0 // cols)*height+2, 3*(d1-d0)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0 // cols)*height+2, (d1-d0)*width,           1*height, brush)
+                qp.fillRect(3 * (d0 % cols) * width, (d0 // cols) * height + 2, 3 * (d1 - d0) * width - width,
+                            1 * height, brush)
+                qp.fillRect(3 * cols * width + self.viewMode.gap * width + (d0 % cols) * width,
+                            (d0 // cols) * height + 2, (d1 - d0) * width, 1 * height, brush)
 
                 d0 += (d1 - d0)
-            else:    
-                qp.fillRect(3*(d0%cols)*width,                    (d0 // cols)*height+2, 3*(cols - d0%cols)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0 // cols)*height+2, (cols - d0%cols)*width,       1*height, brush)
+            else:
+                qp.fillRect(3 * (d0 % cols) * width, (d0 // cols) * height + 2, 3 * (cols - d0 % cols) * width - width,
+                            1 * height, brush)
+                qp.fillRect(3 * cols * width + self.viewMode.gap * width + (d0 % cols) * width,
+                            (d0 // cols) * height + 2, (cols - d0 % cols) * width, 1 * height, brush)
 
-                d0 += (cols - d0%cols)
+                d0 += (cols - d0 % cols)
 
-            if (d1 - d0 <= 0):
+            if d1 - d0 <= 0:
                 mark = False
         qp.setOpacity(1)
 
@@ -351,7 +355,7 @@ class DisasmSelection(Selection):
 
         dataModel = self.viewMode.getDataModel()
         off = dataModel.getOffset()
-        length = sum([o.size for o in self.viewMode.OPCODES])        # TODO: not nice!
+        length = sum([o.size for o in self.viewMode.OPCODES])  # TODO: not nice!
         cols, rows = self.viewMode.getGeometry()
 
         # return if out of view
@@ -370,7 +374,7 @@ class DisasmSelection(Selection):
             d1 = length
         else:
             d1 = end - off
-        
+
         mark = True
         height = self.viewMode.fontHeight
         width = self.viewMode.fontWidth
@@ -383,17 +387,17 @@ class DisasmSelection(Selection):
         for i, asm in enumerate(self.viewMode.OPCODES):
             if size + asm.size > d0 and size <= d1:
 
-                    # compute x offset
-                    x = d0-size
-                    if size > d0:
-                        x = 0
+                # compute x offset
+                x = d0 - size
+                if size > d0:
+                    x = 0
 
-                    # compute width
-                    w = asm.size
-                    if size + asm.size > d1:
-                        w = d1 - size
+                # compute width
+                w = asm.size
+                if size + asm.size > d1:
+                    w = d1 - size
 
-                    qp.fillRect(x*3*width, i*height + offset, (w-x)*3*width - width, 1*height, brush)
+                qp.fillRect(x * 3 * width, i * height + offset, (w - x) * 3 * width - width, 1 * height, brush)
 
             size += asm.size
 

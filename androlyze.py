@@ -19,25 +19,15 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
-import sys
 
 from optparse import OptionParser
 
-from androguard.core import *
-from androguard.core.androconf import *
-from androguard.core.bytecode import *
-from androguard.core.bytecodes.dvm import *
-from androguard.core.bytecodes.apk import *
-
-from androguard.core.analysis.analysis import *
-from androguard.decompiler.decompiler import *
-from androguard.session import Session
-
-from androguard.util import *
-from androguard.misc import *
-
 from IPython.terminal.embed import InteractiveShellEmbed
 from traitlets.config import Config
+
+from androguard.core.androconf import *
+from androguard.misc import *
+from androguard.session import Session
 
 option_0 = {
     'name': ('-s', '--shell'),
@@ -72,10 +62,10 @@ def main(options, arguments):
     if options.debug:
         set_debug()
 
-    if options.shell != None:
+    if options.shell is not None:
         interact()
 
-    elif options.version != None:
+    elif options.version is not None:
         print("Androguard version %s" % androconf.ANDROGUARD_VERSION)
 
 

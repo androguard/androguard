@@ -1,41 +1,74 @@
-from builtins import range
-from builtins import object
 import hashlib
-import collections
 
-from androguard.core import androconf
-from androguard.core.bytecodes.apk import *
-from androguard.core.bytecodes.dvm import *
 from androguard.core.analysis.analysis import *
+from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
-from androguard.misc import save_session, load_session
 
+import pickle
 
 
 def Save(session, filename):
-    save_session(session, filename)
+    """
+    save your session!
+
+    :param session: A Session object to save
+    :param filename: output filename to save the session
+    :type filename: string
+
+    :Example:
+        s = session.Session()
+        session.Save(s, "msession.p")
+    """
+    with open(filename, "wb") as fd:
+        pickle.dump(session, fd)
+
 
 def Load(filename):
-    return load_session(filename)
+    """
+      load your session!
+
+      :param filename: the filename where the session has been saved
+      :type filename: string
+
+      :rtype: the elements of your session :)
+
+      :Example:
+          s = session.Load("mysession.p")
+    """
+    with open(filename, "rb") as fd:
+        return pickle.load(fd)
+
 
 class Session(object):
     def __init__(self, export_ipython=False):
-        self.setupObjects()
+        self._setupObjects()
         self.export_ipython = export_ipython
 
-    def setupObjects(self):
+    def _setupObjects(self):
         self.analyzed_files = collections.OrderedDict()
         self.analyzed_digest = {}
         self.analyzed_apk = {}
         self.analyzed_dex = {}
 
     def reset(self):
-        self.setupObjects()
+        self._setupObjects()
 
     def isOpen(self):
+        """
+        Test if any file was analyzed in this session
+        
+        :return: `True` if any file was analyzed, `False` otherwise
+        """
         return self.analyzed_digest != {}
 
     def addAPK(self, filename, data):
+        """
+        Add an APK file to the Session and run analysis on it.
+        
+        :param filename: (file)name of APK file
+        :param data: binary data of the APK file
+        :return: a tuple of SHA256 Checksum and APK Object
+        """
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add APK:%s" % digest)
         apk = APK(data, True)
@@ -43,9 +76,17 @@ class Session(object):
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
         androconf.debug("added APK:%s" % digest)
-        return (digest, apk)
+        return digest, apk
 
     def addDEX(self, filename, data, dx=None):
+        """
+        Add a DEX file to the Session and run analysis.
+        
+        :param filename: the (file)name of the DEX file
+        :param data: binary data of the dex file
+        :param dx: an existing Analysis Object (optional)
+        :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
+        """
         digest = hashlib.sha256(data).hexdigest()
         androconf.debug("add DEX:%s" % digest)
 
@@ -68,7 +109,7 @@ class Session(object):
             androconf.debug("Exporting in ipython")
             d.create_python_export()
 
-        return (digest, d, dx)
+        return digest, d, dx
 
     def addDEY(self, filename, data, dx=None):
         digest = hashlib.sha256(data).hexdigest()
@@ -89,10 +130,10 @@ class Session(object):
         if self.export_ipython:
             d.create_python_export()
 
-        return (digest, d, dx)
+        return digest, d, dx
 
     def runAnalysis(self, d, dx=None):
-        if dx == None:
+        if dx is None:
             dx = Analysis(d)
         else:
             dx.add(d)

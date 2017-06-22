@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Androguard Gui'''
+"""Androguard Gui"""
 
 import argparse
 import os
@@ -9,7 +9,6 @@ from androguard.core import androconf
 from androguard.gui.mainwindow import MainWindow
 
 from PyQt5 import QtWidgets, QtGui
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Androguard GUI")
