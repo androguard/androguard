@@ -51,7 +51,7 @@ class BasicReachDef(object):
                 self.DB[node].add(max(values))
 
     def run(self):
-        nodes = self.g.rpo
+        nodes = list(self.g.rpo)
         while nodes:
             node = nodes.pop(0)
             newR = set()

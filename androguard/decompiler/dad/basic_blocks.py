@@ -42,7 +42,7 @@ class BasicBlock(Node):
 
     def get_loc_with_ins(self):
         if self.loc_ins is None:
-            self.loc_ins = zip(range(*self.ins_range), self.ins)
+            self.loc_ins = list(zip(range(*self.ins_range), self.ins))
         return self.loc_ins
 
     def remove_ins(self, loc, ins):
