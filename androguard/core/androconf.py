@@ -211,7 +211,14 @@ def is_android_raw(raw):
     """
     val = None
 
-    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
+    # We do not check for META-INF/MANIFEST.MF,
+    # as you also want to analyze unsigned APKs...
+    # AndroidManifest.xml should be in every APK.
+    # classes.dex and resources.arsc are not required!
+    # if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
+    # TODO this check might be still invalid. A ZIP file with stored APK inside would match as well.
+    # probably it would be better to rewrite this and add more sanity checks.
+    if raw[0:2] == b"PK" and b'AndroidManifest.xml' in raw:
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"
