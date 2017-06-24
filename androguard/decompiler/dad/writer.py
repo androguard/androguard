@@ -601,12 +601,20 @@ class Writer(object):
         data = value.get_data()
         tab = []
         elem_size = value.element_width
+        elem_id = None
         if elem_size == 4:
-            for i in range(0, value.size * 4, 4):
-                tab.append('%s' % unpack('i', data[i:i + 4])[0])
-        else:  # FIXME: other cases
-            for i in range(value.size):
-                tab.append('%s' % data[i])
+            elem_id = 'i'
+#            for i in range(0, value.size * 4, 4):
+#                tab.append('%s' % unpack('i', data[i:i + 4])[0])
+        elif elem_size == 2:
+            elem_id = 'h'
+        else:
+            elem_id = 'b'
+        for i in range(0, value.size*elem_size, elem_size):
+            tab.append('%s' % unpack(elem_id, data[i:i+elem_size])[0])
+ #       else:  # FIXME: other cases
+ #           for i in range(value.size):
+ #               tab.append('%s' % unpack('b', data[i])[0])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
         self.end_ins()
