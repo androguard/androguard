@@ -202,7 +202,7 @@ class APK(object):
                     try:
                         self.xml[i] = minidom.parseString(self.axml[i].get_buff())
                     except Exception as e:
-                        androconf.warning("AXML parsing failed", e)
+                        androconf.warning("AXML parsing failed: " + str(e))
                         self.xml[i] = None
 
                     if self.xml[i] is not None:
