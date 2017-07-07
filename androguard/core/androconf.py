@@ -5,7 +5,8 @@ import types
 import random
 import string
 
-ANDROGUARD_VERSION = "3.0-dev"
+from androguard import __version__
+ANDROGUARD_VERSION = __version__
 
 
 def is_ascii_problem(s):

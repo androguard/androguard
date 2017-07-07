@@ -18,10 +18,11 @@ if sys.version_info >= (3,3):
 else:
     install_requires = ['pyasn1', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
 
+from androguard import __version__
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
-    version='2.0',
+    version=__version__,
     packages=find_packages(),
     data_files = [(data_prefix,
                    ['androguard/gui/annotation.ui',
