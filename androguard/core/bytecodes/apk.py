@@ -115,6 +115,7 @@ class ChilkatZip(object):
 
 def sign_apk(filename, keystore, storepass):
     from subprocess import Popen, PIPE, STDOUT
+    # TODO use apksigner instead of jarsigner
     compile = Popen([androconf.CONF["PATH_JARSIGNER"], "-sigalg", "MD5withRSA",
                      "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
                      keystore, filename, "alias_name"],
@@ -248,7 +249,6 @@ class APK(object):
 
                         self.valid_apk = True
 
-            self.get_files_types()
             self.permission_module = androconf.load_api_specific_resource_module(
                 "aosp_permissions", self.get_target_sdk_version())
 
