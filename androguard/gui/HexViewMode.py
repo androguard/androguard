@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import sys
 import string
 
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -12,7 +13,7 @@ from androguard.core.androconf import CONF
 from .TextDecorators import *
 from .ViewMode import *
 from .cemu import *
-
+from . import TextSelection
 
 class HexViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
