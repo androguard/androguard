@@ -556,7 +556,7 @@ class APK(object):
                 value = item.getAttributeNS(NS_ANDROID_URI, attribute)
                 value = self.format_value(value)
 
-                l.append(str(value))
+                l.append(value.encode('utf-8'))
         return l
 
     def format_value(self, value):
