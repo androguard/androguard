@@ -623,6 +623,9 @@ class ExternalClass(object):
         self.name = name
         self.methods = {}
 
+    def get_methods(self):
+        return self.methods.values()
+
     def GetMethod(self, name, descriptor):
         key = name + str(descriptor)
         if key not in self.methods:
