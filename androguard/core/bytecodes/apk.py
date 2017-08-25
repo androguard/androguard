@@ -479,7 +479,7 @@ class APK(object):
     def get_files_crc32(self):
         """
         Calculates and returns a dictionary of filenames and CRC32
-        
+
         :return: dict of filename: CRC32
         """
         if self.files_crc32 == {}:
@@ -1019,7 +1019,7 @@ class APK(object):
 def get_Name(name, short=False):
     """
         Return the distinguished name of an X509 Certificate
-        
+
         :param name: Name object to return the DN from
         :param short: Use short form (Default: False)
 
