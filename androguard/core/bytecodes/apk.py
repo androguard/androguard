@@ -200,11 +200,15 @@ class APK(object):
             for i in self.zip.namelist():
                 if i == "AndroidManifest.xml":
                     self.axml[i] = AXMLPrinter(self.zip.read(i))
-                    try:
-                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                    except Exception as e:
-                        androconf.warning("AXML parsing failed: " + str(e))
-                        self.xml[i] = None
+                    self.xml[i] = None
+                    raw_xml = self.axml[i].get_buff()
+                    if len(raw_xml) == 0:
+                        androconf.warning("AXML parsing failed, file is empty")
+                    else:
+                        try:
+                            self.xml[i] = minidom.parseString(raw_xml)
+                        except Exception as e:
+                            androconf.warning("reading AXML as XML failed: " + str(e))
 
                     if self.xml[i] is not None:
                         self.package = self.xml[i].documentElement.getAttribute(
@@ -1266,7 +1270,7 @@ class AXMLParser(object):
             self.visited_ns = []
         else:
             self.valid_axml = False
-            androconf.warning("Not a valid xml file")
+            androconf.warning("Not a valid xml file, header mismatched: {:08x}".format(axml_file))
 
     def is_valid(self):
         return self.valid_axml
