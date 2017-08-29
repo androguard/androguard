@@ -15,9 +15,9 @@ else:
 # IPython Issue: For python2.x, a version <6 is required
 # There is a bug in pyasn1 0.3.1 and 0.3.2, so do not use them!
 if sys.version_info >= (3, 3):
-    install_requires = ['pyasn1!=0.3.1,!=0.3.2', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
+    install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3', 'cryptography>=1.0', 'future', 'ipython>=5.0.0', 'networkx', 'pygments']
 else:
-    install_requires = ['pyasn1!=0.3.1,!=0.3.2', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
+    install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3', 'cryptography>=1.0', 'future', 'ipython>=5.0.0,<6', 'networkx', 'pygments'],
 
 from androguard import __version__
 setup(
