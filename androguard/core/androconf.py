@@ -261,12 +261,23 @@ def get_debug():
 
 
 def warning(x):
+    """
+    Print out message x and the current traceback
+
+    :param x: String to be printed on stderr
+    """
     log_runtime.warning(x)
     import traceback
     traceback.print_exc()
 
 
 def error(x):
+    """
+    Print out a message and raise an exception
+    TODO should this really raise an exception?
+
+    :param x: String to be printed on stderr
+    """
     log_runtime.error(x)
     raise ()
 
