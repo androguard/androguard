@@ -262,13 +262,14 @@ def get_debug():
 
 def warning(x):
     """
-    Print out message x and the current traceback
+    Print out message x and the current traceback (if any)
 
     :param x: String to be printed on stderr
     """
     log_runtime.warning(x)
-    import traceback
-    traceback.print_exc()
+    if sys.exc_info()[0] is not None:
+        import traceback
+        traceback.print_exc()
 
 
 def error(x):

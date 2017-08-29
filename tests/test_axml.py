@@ -34,7 +34,8 @@ class AXMLTest(unittest.TestCase):
         """
         filename = "examples/axml/AndroidManifestNonZeroStyle.xml"
 
-        ap = apk.AXMLPrinter(open(filename, "rb").read())
+        with open(filename, "rb") as f:
+            ap = apk.AXMLPrinter(f.read())
         self.assertIsInstance(ap, apk.AXMLPrinter)
 
         e = minidom.parseString(ap.get_buff())
@@ -46,7 +47,8 @@ class AXMLTest(unittest.TestCase):
         """
         filename = "examples/axml/AndroidManifestExtraNamespace.xml"
 
-        ap = apk.AXMLPrinter(open(filename, "rb").read())
+        with open(filename, "rb") as f:
+            ap = apk.AXMLPrinter(f.read())
         self.assertIsInstance(ap, apk.AXMLPrinter)
 
         e = minidom.parseString(ap.get_buff())
@@ -59,7 +61,8 @@ class AXMLTest(unittest.TestCase):
         filename = "examples/axml/AndroidManifestWrongFilesize.xml"
 
         with self.assertRaises(AssertionError) as cnx:
-            apk.AXMLPrinter(open(filename, "rb").read())
+            with open(filename, "rb") as f:
+                apk.AXMLPrinter(f.read())
         self.assertTrue("Declared filesize does not match" in str(cnx.exception))
 
 
