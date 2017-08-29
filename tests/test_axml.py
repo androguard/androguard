@@ -1,7 +1,7 @@
 import unittest
 
 import sys
-from lxml import etree
+from xml.dom import minidom
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
@@ -24,6 +24,9 @@ class AXMLTest(unittest.TestCase):
                 ap = apk.AXMLPrinter(fd.read())
                 self.assertIsNotNone(ap)
 
+                e = minidom.parseString(ap.get_buff())
+                self.assertIsNotNone(e)
+
     def testNonZeroStyleOffset(self):
         """
         Test if a nonzero style offset in the string section causes problems
@@ -34,8 +37,7 @@ class AXMLTest(unittest.TestCase):
         ap = apk.AXMLPrinter(open(filename, "rb").read())
         self.assertIsInstance(ap, apk.AXMLPrinter)
 
-        # Try to load in etree
-        e = etree.fromstring(ap.get_buff())
+        e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
     def testExtraNamespace(self):
@@ -47,8 +49,7 @@ class AXMLTest(unittest.TestCase):
         ap = apk.AXMLPrinter(open(filename, "rb").read())
         self.assertIsInstance(ap, apk.AXMLPrinter)
 
-        # Try to load in etree
-        e = etree.fromstring(ap.get_buff())
+        e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
     def testExtraNamespace(self):
