@@ -1249,28 +1249,35 @@ class AXMLParser(object):
         self.valid_axml = True
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        axml_file = unpack('<L', self.buff.read(4))[0]
+        axml_file, = unpack('<L', self.buff.read(4))
 
-        if axml_file == CHUNK_AXML_FILE:
-            # Next is the filesize
-            filesize, = unpack('<L', self.buff.read(4))
-            assert filesize == self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(filesize, self.buff.size())
+        if axml_file != CHUNK_AXML_FILE:
+            # It looks like the header is wrong.
+            # need some other checks.
+            # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
+            if axml_file >> 16 == 0x0008:
+                androconf.warning("AXML file has an unusual header, but we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
+            else:
+                self.valid_axml = False
+                androconf.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
+                return
 
-            # Now we parse the STRING POOL
-            header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
-            assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
+        # Next is the filesize
+        filesize, = unpack('<L', self.buff.read(4))
+        assert filesize == self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(filesize, self.buff.size())
 
-            self.sb = StringBlock(self.buff, header)
+        # Now we parse the STRING POOL
+        header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
+        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
 
-            self.m_resourceIDs = []
-            self.m_prefixuri = {}
-            self.m_uriprefix = {}
-            self.m_prefixuriL = []
+        self.sb = StringBlock(self.buff, header)
 
-            self.visited_ns = []
-        else:
-            self.valid_axml = False
-            androconf.warning("Not a valid xml file, header mismatched: {:08x}".format(axml_file))
+        self.m_resourceIDs = []
+        self.m_prefixuri = {}
+        self.m_uriprefix = {}
+        self.m_prefixuriL = []
+
+        self.visited_ns = []
 
     def is_valid(self):
         return self.valid_axml
