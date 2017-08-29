@@ -1097,7 +1097,7 @@ class StringBlock(object):
         if self.stylesOffset != 0:
             size = self.stylesOffset - self.stringsOffset
 
-        # FIXME
+        # FIXME unaligned
         if (size % 4) != 0:
             androconf.warning("ooo")
 
@@ -1581,6 +1581,11 @@ class AXMLPrinter(object):
             elif _type == START_TAG:
                 self.buff += u'<' + self.getPrefix(self.axml.getPrefix(
                 )) + self.axml.getName() + u'\n'
+                # FIXME in some axml files, the namespaces are not on top, but only where they are used
+                # Therefore not all namespaces are known if the parser parses the manifest field,
+                # Which cases the XML parser to fail.
+                # Therefore we need to parse everything and collect namespaces on the way,
+                # Then write this attribute to the manifest tag.
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
