@@ -220,24 +220,25 @@ class APK(object):
 
                         for item in self.xml[i].getElementsByTagName('uses-permission'):
                             self.permissions.append(str(item.getAttributeNS(
-                                NS_ANDROID_URI, "name")))
+                                NS_ANDROID_URI, "name").encode('utf-8')))
 
                         # getting details of the declared permissions
                         for d_perm_item in self.xml[i].getElementsByTagName('permission'):
                             d_perm_name = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                           "name").encode('utf-8')))
                             d_perm_label = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "label")))
+                                                           "label").encode('utf-8')))
                             d_perm_description = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "description")))
+                                                           "description").encode('utf-8')))
                             d_perm_permissionGroup = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "permissionGroup")))
+                                                           "permissionGroup").encode('utf-8')))
                             d_perm_protectionLevel = self._get_res_string_value(str(
                                 d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "protectionLevel")))
+                                                           "protectionLevel").encode('utf-8')))
 
                             d_perm_details = {
                                 "label": d_perm_label,
