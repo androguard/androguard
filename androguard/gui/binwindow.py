@@ -5,6 +5,7 @@ from __future__ import print_function
 from .Banners import *
 from .DataModel import *
 
+import sys
 
 class SearchWindow(QtWidgets.QDialog):
     def __init__(self, parent, plugin, searchable):

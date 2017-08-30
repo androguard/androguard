@@ -443,7 +443,10 @@ class APK(object):
                     m = magic.Magic()
                 ftype = m.id_buffer(buffer)
         else:
-            m = magic.Magic(magic_file=self.magic_file)
+            if self.magic_file is not None:
+                m = magic.Magic(magic_file=self.magic_file)
+            else:
+                m = magic.Magic()
             ftype = m.from_buffer(buffer)
 
         if ftype is None:
