@@ -1806,17 +1806,14 @@ class ARSCParser(object):
                     if header.type == RES_TABLE_TYPE_TYPE:
                         a_res_type = self.packages[package_name][nb + 1]
 
-                        if a_res_type.config.get_language(
-                        ) not in self.values[package_name]:
-                            self.values[package_name][
-                                a_res_type.config.get_language()
-                            ] = {}
-                            self.values[package_name][a_res_type.config.get_language(
-                            )]["public"] = []
+                        language = a_res_type.config.get_language()
+                        region = a_res_type.config.get_country()
+                        if region == "\x00\x00":
+                            locale = language
+                        else:
+                            locale = "{}-r{}".format(anguage, region)
 
-                        c_value = self.values[package_name][
-                            a_res_type.config.get_language()
-                        ]
+                        c_value = self.values[package_name].setdefault(locale, {"public":[]})
 
                         entries = self.packages[package_name][nb + 2]
                         nb_i = 0
