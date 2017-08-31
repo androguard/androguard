@@ -23,6 +23,7 @@ import re
 import collections
 import sys
 import binascii
+import zipfile
 
 from xml.dom import minidom
 
@@ -34,84 +35,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
-
-# 0: chilkat
-# 1: default python zipfile module
-# 2: patch zipfile module
-ZIPMODULE = 1
-
-if sys.hexversion < 0x2070000:
-    try:
-        import chilkat
-
-        ZIPMODULE = 0
-        # UNLOCK : change it with your valid key !
-        try:
-            CHILKAT_KEY = read("key.txt")
-        except Exception:
-            CHILKAT_KEY = "testme"
-
-    except ImportError:
-
-        ZIPMODULE = 1
-else:
-    ZIPMODULE = 1
-
-
-################################################### CHILKAT ZIP FORMAT #####################################################
-class ChilkatZip(object):
-    def __init__(self, raw):
-        self.files = []
-        self.zip = chilkat.CkZip()
-
-        self.zip.UnlockComponent(CHILKAT_KEY)
-
-        self.zip.OpenFromMemory(raw, len(raw))
-
-        filename = chilkat.CkString()
-        e = self.zip.FirstEntry()
-        while e is not None:
-            e.get_FileName(filename)
-            self.files.append(filename.getString())
-            e = e.NextEntry()
-
-    def delete(self, patterns):
-        el = []
-
-        filename = chilkat.CkString()
-        e = self.zip.FirstEntry()
-        while e is not None:
-            e.get_FileName(filename)
-
-            if re.match(patterns, filename.getString()) is not None:
-                el.append(e)
-            e = e.NextEntry()
-
-        for i in el:
-            self.zip.DeleteEntry(i)
-
-    def remplace_file(self, filename, buff):
-        entry = self.zip.GetEntryByName(filename)
-        if entry is not None:
-            obj = chilkat.CkByteData()
-            obj.append2(buff, len(buff))
-            return entry.ReplaceData(obj)
-        return False
-
-    def write(self):
-        obj = chilkat.CkByteData()
-        self.zip.WriteToMemory(obj)
-        return obj.getBytes()
-
-    def namelist(self):
-        return self.files
-
-    def read(self, elem):
-        e = self.zip.GetEntryByName(elem)
-        s = chilkat.CkByteData()
-
-        e.Inflate(s)
-        return s.getBytes()
 
 
 def sign_apk(filename, keystore, storepass):
@@ -147,7 +70,6 @@ class APK(object):
         :param raw: specify if the filename is a path or raw data (optional)
         :param mode: specify the mode to open the file (optional)
         :param magic_file: specify the magic file (optional)
-        :param zipmodule: specify the type of zip module to use (0:chilkat, 1:zipfile, 2:patch zipfile)
         :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
         :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken (default True)
 
@@ -155,7 +77,6 @@ class APK(object):
         :type raw: boolean
         :type mode: string
         :type magic_file: string
-        :type zipmodule: int
         :type skip_analysis: boolean
         :type testzip: boolean
 
@@ -169,7 +90,6 @@ class APK(object):
                  raw=False,
                  mode="r",
                  magic_file=None,
-                 zipmodule=ZIPMODULE,
                  skip_analysis=False,
                  testzip=True ):
         self.filename = filename
@@ -179,7 +99,6 @@ class APK(object):
         self.arsc = {}
 
         self.mode = mode
-        self.zipmodule = zipmodule
 
         self.package = ""
         self.androidversion = {}
@@ -197,16 +116,9 @@ class APK(object):
         else:
             self.__raw = bytearray(read(filename))
 
-        if self.zipmodule == 0:
-            self.zip = ChilkatZip(self.__raw)
-        elif self.zipmodule == 2:
-            from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
-        else:
-            import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
-        if testzip and self.zipmodule != 0:
+        if testzip:
             # Test the zipfile for integrity before continuing.
             # This process might be slow, as the whole file is read.
             # Therefore it is possible to disable it.
@@ -312,14 +224,7 @@ class APK(object):
         """
         self.__dict__ = state
 
-        if self.zipmodule == 0:
-            self.zip = ChilkatZip(self.__raw)
-        elif self.zipmodule == 2:
-            from androguard.patch import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
-        else:
-            import zipfile
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -924,12 +829,7 @@ class APK(object):
             :type deleted_files: None or a string
             :type new_files: a dictionnary (key:filename, value:content of the file)
         """
-        if self.zipmodule == 2:
-            from androguard.patch import zipfile
-            zout = zipfile.ZipFile(filename, 'w')
-        else:
-            import zipfile
-            zout = zipfile.ZipFile(filename, 'w')
+        zout = zipfile.ZipFile(filename, 'w')
 
         for item in self.zip.infolist():
             if deleted_files is not None:
