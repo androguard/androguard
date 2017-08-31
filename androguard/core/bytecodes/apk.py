@@ -52,6 +52,7 @@ if sys.hexversion < 0x2070000:
             CHILKAT_KEY = "testme"
 
     except ImportError:
+
         ZIPMODULE = 1
 else:
     ZIPMODULE = 1
@@ -133,6 +134,10 @@ class FileNotPresent(Error):
     pass
 
 
+class BrokenAPKError(Error):
+    pass
+
+
 ######################################################## APK FORMAT ########################################################
 class APK(object):
     """
@@ -143,12 +148,16 @@ class APK(object):
         :param mode: specify the mode to open the file (optional)
         :param magic_file: specify the magic file (optional)
         :param zipmodule: specify the type of zip module to use (0:chilkat, 1:zipfile, 2:patch zipfile)
+        :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
+        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken (default True)
 
         :type filename: string
         :type raw: boolean
         :type mode: string
         :type magic_file: string
         :type zipmodule: int
+        :type skip_analysis: boolean
+        :type testzip: boolean
 
         :Example:
           APK("myfile.apk")
@@ -161,7 +170,8 @@ class APK(object):
                  mode="r",
                  magic_file=None,
                  zipmodule=ZIPMODULE,
-                 skip_analysis=False):
+                 skip_analysis=False,
+                 testzip=True ):
         self.filename = filename
 
         self.xml = {}
@@ -196,63 +206,96 @@ class APK(object):
             import zipfile
             self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
 
+        if testzip and self.zipmodule != 0:
+            # Test the zipfile for integrity before continuing.
+            # This process might be slow, as the whole file is read.
+            # Therefore it is possible to disable it.
+            #
+            # A short benchmark showed, that testing the zip takes about 10 times longer!
+            # e.g. normal zip loading (skip_analysis=True) takes about 0.01s, where
+            # testzip takes 0.1s!
+            ret = self.zip.testzip()
+            if ret is not None:
+                # we could print the filename here, but there are zip which are so broken
+                # That the filename is either very very long or does not make any sense.
+                # Thus we do not do it, the user might find out by using other tools.
+                androconf.warning("The APK is probably broken: testzip returned an error.")
+
         if not skip_analysis:
-            for i in self.zip.namelist():
-                if i == "AndroidManifest.xml":
-                    self.axml[i] = AXMLPrinter(self.zip.read(i))
-                    try:
-                        self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                    except Exception as e:
-                        androconf.warning("AXML parsing failed: " + str(e))
-                        self.xml[i] = None
+            self._apk_analysis()
 
-                    if self.xml[i] is not None:
-                        self.package = self.xml[i].documentElement.getAttribute(
-                            "package")
-                        self.androidversion[
-                            "Code"
-                        ] = self.xml[i].documentElement.getAttributeNS(
-                            NS_ANDROID_URI, "versionCode")
-                        self.androidversion[
-                            "Name"
-                        ] = self.xml[i].documentElement.getAttributeNS(
-                            NS_ANDROID_URI, "versionName")
+    def _apk_analysis(self):
+        """
+        Run analysis on the APK file.
 
-                        for item in self.xml[i].getElementsByTagName('uses-permission'):
-                            self.permissions.append(str(item.getAttributeNS(
-                                NS_ANDROID_URI, "name")))
+        This method is usually called by __init__ except if skip_analysis is False.
+        It will then parse the AndroidManifest.xml and set all fields in the APK class which can be
+        extracted from the Manifest.
+        """
+        for i in self.zip.namelist():
+            if i == "AndroidManifest.xml":
+                self.axml[i] = AXMLPrinter(self.zip.read(i))
+                try:
+                    self.xml[i] = minidom.parseString(self.axml[i].get_buff())
+                except Exception as e:
+                    androconf.warning("AXML parsing failed: " + str(e))
+                    self.xml[i] = None
 
-                        # getting details of the declared permissions
-                        for d_perm_item in self.xml[i].getElementsByTagName('permission'):
-                            d_perm_name = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
-                            d_perm_label = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "label")))
-                            d_perm_description = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "description")))
-                            d_perm_permissionGroup = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "permissionGroup")))
-                            d_perm_protectionLevel = self._get_res_string_value(str(
-                                d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                           "protectionLevel")))
+                if self.xml[i] is not None:
+                    self.package = self.xml[i].documentElement.getAttribute(
+                        "package")
+                    self.androidversion[
+                        "Code"
+                    ] = self.xml[i].documentElement.getAttributeNS(
+                        NS_ANDROID_URI, "versionCode")
+                    self.androidversion[
+                        "Name"
+                    ] = self.xml[i].documentElement.getAttributeNS(
+                        NS_ANDROID_URI, "versionName")
 
-                            d_perm_details = {
-                                "label": d_perm_label,
-                                "description": d_perm_description,
-                                "permissionGroup": d_perm_permissionGroup,
-                                "protectionLevel": d_perm_protectionLevel,
-                            }
-                            self.declared_permissions[d_perm_name] = d_perm_details
+                    for item in self.xml[i].getElementsByTagName('uses-permission'):
+                        self.permissions.append(str(item.getAttributeNS(
+                            NS_ANDROID_URI, "name")))
 
-                        self.valid_apk = True
+                    # getting details of the declared permissions
+                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                        d_perm_name = self._get_res_string_value(str(
+                            d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                        d_perm_label = self._get_res_string_value(str(
+                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                       "label")))
+                        d_perm_description = self._get_res_string_value(str(
+                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                       "description")))
+                        d_perm_permissionGroup = self._get_res_string_value(str(
+                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                       "permissionGroup")))
+                        d_perm_protectionLevel = self._get_res_string_value(str(
+                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
+                                                       "protectionLevel")))
 
-            self.permission_module = androconf.load_api_specific_resource_module(
-                "aosp_permissions", self.get_target_sdk_version())
+                        d_perm_details = {
+                            "label": d_perm_label,
+                            "description": d_perm_description,
+                            "permissionGroup": d_perm_permissionGroup,
+                            "protectionLevel": d_perm_protectionLevel,
+                        }
+                        self.declared_permissions[d_perm_name] = d_perm_details
+
+                    self.valid_apk = True
+
+        self.permission_module = androconf.load_api_specific_resource_module(
+            "aosp_permissions", self.get_target_sdk_version())
 
     def __getstate__(self):
+        """
+        Function for pickling APK Objects.
+
+        We remove the zip from the Object, as it is not pickable
+        And it does not make any sense to pickle it anyways.
+
+        :return: the picklable APK Object without zip.
+        """
         # Upon pickling, we need to remove the ZipFile
         x = self.__dict__
         del x['zip']
@@ -260,6 +303,13 @@ class APK(object):
         return x
 
     def __setstate__(self, state):
+        """
+        Load a pickled APK Object and restore the state
+
+        We load the zip file back by reading __raw from the Object.
+
+        :param state: pickled state
+        """
         self.__dict__ = state
 
         if self.zipmodule == 0:
@@ -845,15 +895,18 @@ class APK(object):
         message, _ = decode(pkcs7message)
         cert = encode(message[1][3])
         # Remove the first identifier
+        # We need to do this for PyASN1 versions <0.3.4
         # byte 0 == identifier, skip
         # byte 1 == length. If byte1 & 0x80 > 1, we have long format
         #                   The length of to read bytes is then coded
         #                   in byte1 & 0x7F
-        l = cert[1]
-        # Python2 compliance
-        if not isinstance(l, int):
-            l = ord(l)
-        cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
+        # Check if the first byte is 0xA0 (Sequence Tag)
+        if cert[0] == 0xA0:
+            l = cert[1]
+            # Python2 compliance
+            if not isinstance(l, int):
+                l = ord(l)
+            cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
 
         certificate = x509.load_der_x509_certificate(cert, default_backend())
 
