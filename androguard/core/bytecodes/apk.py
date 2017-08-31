@@ -149,11 +149,15 @@ class APK(object):
         for i in self.zip.namelist():
             if i == "AndroidManifest.xml":
                 self.axml[i] = AXMLPrinter(self.zip.read(i))
-                try:
-                    self.xml[i] = minidom.parseString(self.axml[i].get_buff())
-                except Exception as e:
-                    androconf.warning("AXML parsing failed: " + str(e))
-                    self.xml[i] = None
+                self.xml[i] = None
+                raw_xml = self.axml[i].get_buff()
+                if len(raw_xml) == 0:
+                    androconf.warning("AXML parsing failed, file is empty")
+                else:
+                    try:
+                        self.xml[i] = minidom.parseString(raw_xml)
+                    except Exception as e:
+                        androconf.warning("reading AXML as XML failed: " + str(e))
 
                 if self.xml[i] is not None:
                     self.package = self.xml[i].documentElement.getAttribute(
@@ -1043,45 +1047,70 @@ UTF8_FLAG = 0x00000100
 
 
 class StringBlock(object):
+    """
+    StringBlock is a CHUNK inside an AXML File
+    It contains all strings, which are used by referecing to ID's
+    """
     def __init__(self, buff, header):
         self._cache = {}
         self.header = header
+        # We already read the header (which was chunk_type and chunk_size
+        # Now, we read the string_count:
         self.stringCount = unpack('<i', buff.read(4))[0]
+        # style_count
         self.styleOffsetCount = unpack('<i', buff.read(4))[0]
 
+        # flags
         self.flags = unpack('<i', buff.read(4))[0]
         self.m_isUTF8 = ((self.flags & UTF8_FLAG) != 0)
 
+        # string_pool_offset
+        # The string offset is counted from the beginning of the string section
         self.stringsOffset = unpack('<i', buff.read(4))[0]
+        # style_pool_offset
+        # The styles offset is counted as well from the beginning of the string section
         self.stylesOffset = unpack('<i', buff.read(4))[0]
+
+        # Check if they supplied a stylesOffset even if the count is 0:
+        if self.styleOffsetCount == 0 and self.stylesOffset > 0:
+            androconf.warning("Styles Offset given, but styleCount is zero.")
 
         self.m_stringOffsets = []
         self.m_styleOffsets = []
         self.m_charbuff = ""
         self.m_styles = []
 
+        # Next, there is a list of string following
+        # This is only a list of offsets (4 byte each)
         for i in range(0, self.stringCount):
             self.m_stringOffsets.append(unpack('<i', buff.read(4))[0])
 
+        # And a list of styles
+        # again, a list of offsets
         for i in range(0, self.styleOffsetCount):
             self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
 
+
+        # FIXME it is probably better to parse n strings and not calculate the size
         size = self.header.size - self.stringsOffset
-        if self.stylesOffset != 0:
+
+        # if there are styles as well, we do not want to read them too.
+        # Only read them, if no
+        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
             size = self.stylesOffset - self.stringsOffset
 
         # FIXME unaligned
         if (size % 4) != 0:
-            androconf.warning("ooo")
+            androconf.warning("Size of strings is not aligned by four bytes.")
 
         self.m_charbuff = buff.read(size)
 
-        if self.stylesOffset != 0:
+        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
             size = self.header.size - self.stylesOffset
 
-            # FIXME
+            # FIXME unaligned
             if (size % 4) != 0:
-                androconf.warning("ooo")
+                androconf.warning("Size of styles is not aligned by four bytes.")
 
             for i in range(0, size // 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
@@ -1193,25 +1222,35 @@ class AXMLParser(object):
         self.valid_axml = True
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        axml_file = unpack('<L', self.buff.read(4))[0]
+        axml_file, = unpack('<L', self.buff.read(4))
 
-        if axml_file == CHUNK_AXML_FILE:
-            self.buff.read(4)
+        if axml_file != CHUNK_AXML_FILE:
+            # It looks like the header is wrong.
+            # need some other checks.
+            # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
+            if axml_file >> 16 == 0x0008:
+                androconf.warning("AXML file has an unusual header, but we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
+            else:
+                self.valid_axml = False
+                androconf.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
+                return
 
-            header = ARSCHeader(self.buff)
-            assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
+        # Next is the filesize
+        filesize, = unpack('<L', self.buff.read(4))
+        assert filesize == self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(filesize, self.buff.size())
 
-            self.sb = StringBlock(self.buff, header)
+        # Now we parse the STRING POOL
+        header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
+        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
 
-            self.m_resourceIDs = []
-            self.m_prefixuri = {}
-            self.m_uriprefix = {}
-            self.m_prefixuriL = []
+        self.sb = StringBlock(self.buff, header)
 
-            self.visited_ns = []
-        else:
-            self.valid_axml = False
-            androconf.warning("Not a valid xml file")
+        self.m_resourceIDs = []
+        self.m_prefixuri = {}
+        self.m_uriprefix = {}
+        self.m_prefixuriL = []
+
+        self.visited_ns = []
 
     def is_valid(self):
         return self.valid_axml
@@ -1257,7 +1296,7 @@ class AXMLParser(object):
                 chunkSize = unpack('<L', self.buff.read(4))[0]
                 # FIXME
                 if chunkSize < 8 or chunkSize % 4 != 0:
-                    androconf.warning("Invalid chunk size")
+                    androconf.warning("Invalid chunk size in chunk RESOURCEIDS")
 
                 for i in range(0, (chunkSize // 4) - 2):
                     self.m_resourceIDs.append(
@@ -1265,19 +1304,32 @@ class AXMLParser(object):
 
                 continue
 
-            # FIXME
+            # FIXME, unknown chunk types might cause problems
             if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
-                androconf.warning("invalid chunk type")
+                androconf.warning("invalid chunk type 0x{:08x}".format(chunkType))
 
             # Fake START_DOCUMENT event.
             if chunkType == CHUNK_XML_START_TAG and event == -1:
                 self.m_event = START_DOCUMENT
                 break
 
-            self.buff.read(4)  # /*chunkSize*/
-            lineNumber = unpack('<L', self.buff.read(4))[0]
-            self.buff.read(4)  # 0xFFFFFFFF
+            # After the chunk_type, there are always (?) 3 fields:
+            # Chunk Size (we do not need it)
+            # TODO for sanity checks, we should use it and check if the chunks are correct in size
+            self.buff.read(4)
+            # Line Number
+            self.m_lineNumber = unpack('<L', self.buff.read(4))[0]
+            # Comment_Index (usually 0xFFFFFFFF, we do not need it)
+            self.buff.read(4)
 
+            # Now start to parse the field
+
+            # There are five (maybe more) types of Chunks:
+            # * START_NAMESPACE
+            # * END_NAMESPACE
+            # * START_TAG
+            # * END_TAG
+            # * TEXT
             if chunkType == CHUNK_XML_START_NAMESPACE or chunkType == CHUNK_XML_END_NAMESPACE:
                 if chunkType == CHUNK_XML_START_NAMESPACE:
                     prefix = unpack('<L', self.buff.read(4))[0]
@@ -1289,15 +1341,29 @@ class AXMLParser(object):
                     self.ns = uri
                 else:
                     self.ns = -1
-                    self.buff.read(4)
-                    self.buff.read(4)
-                    (prefix, uri) = self.m_prefixuriL.pop()
+                    # END_PREFIX contains again prefix and uri field
+                    prefix, = unpack('<L', self.buff.read(4))
+                    uri, = unpack('<L', self.buff.read(4))
+
+                    # We can then remove those from the prefixuriL
+                    if (prefix, uri) in self.m_prefixuriL:
+                        self.m_prefixuriL.remove((prefix, uri))
+                    else:
+                        androconf.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
                 continue
 
-            self.m_lineNumber = lineNumber
-
+            # START_TAG is the start of a new tag.
             if chunkType == CHUNK_XML_START_TAG:
+                # The TAG consists of some fields:
+                # * (chunk_size, line_number, comment_index - we read before)
+                # * namespace_uri
+                # * name
+                # * flags
+                # * attribute_count
+                # * class_attribute
+                # After that, there are two lists of attributes, 20 bytes each
+
                 self.m_namespaceUri = unpack('<L', self.buff.read(4))[0]
                 self.m_name = unpack('<L', self.buff.read(4))[0]
 
@@ -1312,9 +1378,12 @@ class AXMLParser(object):
 
                 self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
 
+                # Now, we parse the attributes.
+                # Each attribute has 5 fields of 4 byte
                 for i in range(0, attributeCount * ATTRIBUTE_LENGHT):
                     self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
 
+                # Then there are class_attributes
                 for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes),
                                ATTRIBUTE_LENGHT):
                     self.m_attributes[i] = self.m_attributes[i] >> 24
@@ -1329,6 +1398,7 @@ class AXMLParser(object):
                 break
 
             if chunkType == CHUNK_XML_TEXT:
+                # TODO we do not know what the TEXT field does...
                 self.m_name = unpack('<L', self.buff.read(4))[0]
 
                 # FIXME
@@ -1373,12 +1443,12 @@ class AXMLParser(object):
 
     def getXMLNS(self):
         buff = ""
-        for i in self.m_uriprefix:
-            if i not in self.visited_ns:
+        for uri, prefix in self.m_uriprefix.items():
+            if (uri, prefix) not in self.visited_ns:
                 buff += "xmlns:%s=\"%s\"\n" % (
-                    self.sb.getString(self.m_uriprefix[i]),
-                    self.sb.getString(self.m_prefixuri[self.m_uriprefix[i]]))
-                self.visited_ns.append(i)
+                    self.sb.getString(prefix),
+                    self.sb.getString(self.m_prefixuri[prefix]))
+                self.visited_ns.append((uri, prefix))
         return buff
 
     def getNamespaceCount(self, pos):
@@ -1554,11 +1624,6 @@ class AXMLPrinter(object):
             elif _type == START_TAG:
                 self.buff += u'<' + self.getPrefix(self.axml.getPrefix(
                 )) + self.axml.getName() + u'\n'
-                # FIXME in some axml files, the namespaces are not on top, but only where they are used
-                # Therefore not all namespaces are known if the parser parses the manifest field,
-                # Which cases the XML parser to fail.
-                # Therefore we need to parse everything and collect namespaces on the way,
-                # Then write this attribute to the manifest tag.
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
