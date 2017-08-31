@@ -91,7 +91,7 @@ class APK(object):
                  mode="r",
                  magic_file=None,
                  skip_analysis=False,
-                 testzip=True ):
+                 testzip=False):
         self.filename = filename
 
         self.xml = {}
@@ -105,6 +105,7 @@ class APK(object):
         self.permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
+        self.brokenzip = False
 
         self.files = {}
         self.files_crc32 = {}
@@ -121,7 +122,7 @@ class APK(object):
         if testzip:
             # Test the zipfile for integrity before continuing.
             # This process might be slow, as the whole file is read.
-            # Therefore it is possible to disable it.
+            # Therefore it is possible to enable it as a separate feature.
             #
             # A short benchmark showed, that testing the zip takes about 10 times longer!
             # e.g. normal zip loading (skip_analysis=True) takes about 0.01s, where
@@ -132,6 +133,7 @@ class APK(object):
                 # That the filename is either very very long or does not make any sense.
                 # Thus we do not do it, the user might find out by using other tools.
                 androconf.warning("The APK is probably broken: testzip returned an error.")
+                self.brokenzip = True
 
         if not skip_analysis:
             self._apk_analysis()
@@ -239,6 +241,14 @@ class APK(object):
                 string_value = extracted_values[1]
                 break
         return string_value
+
+    def is_broken_ZIP(self):
+        """
+        Return true if the ZIP file is broken
+
+        :return: boolean
+        """
+        return self.brokenzip
 
     def is_valid_APK(self):
         """
