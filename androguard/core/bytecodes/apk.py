@@ -389,6 +389,7 @@ class APK(object):
         # There are several implementations of magic,
         # unfortunately all called magic
         try:
+            # We test for the python-magic package here
             import magic
             getattr(magic, "MagicException")
         except ImportError:
@@ -396,18 +397,22 @@ class APK(object):
             return default
         except AttributeError:
             try:
+                # Check for filemagic package
                 getattr(magic.Magic, "id_buffer")
             except AttributeError:
+                # Here, we load the file-magic package
                 ms = magic.open(magic.MAGIC_NONE)
                 ms.load()
                 ftype = ms.buffer(buffer)
             else:
+                # This is now the filemagic package
                 if self.magic_file is not None:
                     m = magic.Magic(paths=[self.magic_file])
                 else:
                     m = magic.Magic()
                 ftype = m.id_buffer(buffer)
         else:
+            # This is the code for python-magic
             if self.magic_file is not None:
                 m = magic.Magic(magic_file=self.magic_file)
             else:
