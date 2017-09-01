@@ -1236,8 +1236,8 @@ class AXMLParser(object):
                 return
 
         # Next is the filesize
-        filesize, = unpack('<L', self.buff.read(4))
-        assert filesize == self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(filesize, self.buff.size())
+        self.filesize, = unpack('<L', self.buff.read(4))
+        assert self.filesize <= self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
 
         # Now we parse the STRING POOL
         header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
@@ -1287,7 +1287,8 @@ class AXMLParser(object):
             if event == START_DOCUMENT:
                 chunkType = CHUNK_XML_START_TAG
             else:
-                if self.buff.end():
+                # Stop at the declared filesize or at the end of the file
+                if self.buff.end() or self.buff.get_idx() == self.filesize:
                     self.m_event = END_DOCUMENT
                     break
                 chunkType = unpack('<L', self.buff.read(4))[0]
