@@ -68,14 +68,12 @@ class APK(object):
 
         :param filename: specify the path of the file, or raw data
         :param raw: specify if the filename is a path or raw data (optional)
-        :param mode: specify the mode to open the file (optional)
         :param magic_file: specify the magic file (optional)
         :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
-        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken (default True)
+        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
 
         :type filename: string
         :type raw: boolean
-        :type mode: string
         :type magic_file: string
         :type skip_analysis: boolean
         :type testzip: boolean
@@ -88,7 +86,6 @@ class APK(object):
     def __init__(self,
                  filename,
                  raw=False,
-                 mode="r",
                  magic_file=None,
                  skip_analysis=False,
                  testzip=False):
@@ -98,14 +95,11 @@ class APK(object):
         self.axml = {}
         self.arsc = {}
 
-        self.mode = mode
-
         self.package = ""
         self.androidversion = {}
         self.permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
-        self.brokenzip = False
 
         self.files = {}
         self.files_crc32 = {}
@@ -117,7 +111,7 @@ class APK(object):
         else:
             self.__raw = bytearray(read(filename))
 
-        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
 
         if testzip:
             # Test the zipfile for integrity before continuing.
@@ -132,8 +126,7 @@ class APK(object):
                 # we could print the filename here, but there are zip which are so broken
                 # That the filename is either very very long or does not make any sense.
                 # Thus we do not do it, the user might find out by using other tools.
-                androconf.warning("The APK is probably broken: testzip returned an error.")
-                self.brokenzip = True
+                raise BrokenAPKError("The APK is probably broken: testzip returned an error.")
 
         if not skip_analysis:
             self._apk_analysis()
@@ -230,7 +223,7 @@ class APK(object):
         """
         self.__dict__ = state
 
-        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode=self.mode)
+        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -245,14 +238,6 @@ class APK(object):
                 string_value = extracted_values[1]
                 break
         return string_value
-
-    def is_broken_ZIP(self):
-        """
-        Return true if the ZIP file is broken
-
-        :return: boolean
-        """
-        return self.brokenzip
 
     def is_valid_APK(self):
         """
@@ -486,6 +471,7 @@ class APK(object):
     def get_file(self, filename):
         """
             Return the raw data of the specified filename
+            inside the APK
 
             :rtype: string
         """
@@ -810,12 +796,17 @@ class APK(object):
         """
         return self.get_elements("uses-library", "name")
 
-    def get_certificate(self, filename):
+
+    def get_certificate_der(self, filename):
         """
-            Return a certificate object by giving the name in the apk file
+        Return the DER coded X.509 certificate from the signature file.
+
+        :param filename: Signature filename in APK
+        :return: DER coded X.509 certificate as binary
         """
         pkcs7message = self.get_file(filename)
 
+        # TODO for correct parsing, we would need to write our own ASN1Spec for the SignatureBlock format
         message, _ = decode(pkcs7message)
         cert = encode(message[1][3])
         # Remove the first identifier
@@ -834,6 +825,16 @@ class APK(object):
         if tag == 0xA0:
             cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
 
+        return cert
+
+    def get_certificate(self, filename):
+        """
+        Return a X.509 certificate object by giving the name in the apk file
+
+        :param filename: filename of the signature file in the APK
+        :return: a `x509` certificate
+        """
+        cert = self.get_certificate_der(filename)
         certificate = x509.load_der_x509_certificate(cert, default_backend())
 
         return certificate
