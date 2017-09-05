@@ -1040,6 +1040,7 @@ def show_Certificate(cert, short=False):
     print("Subject: {}".format(get_Name(cert.subject, short=short)))
 
 
+# TODO remove those from apk and put into seperate file
 ################################## AXML FORMAT ########################################
 # Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java

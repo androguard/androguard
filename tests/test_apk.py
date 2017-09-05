@@ -60,6 +60,33 @@ class APKTest(unittest.TestCase):
 
         self.assertEqual(binascii.hexlify(cert).decode("ascii").upper(), expected)
 
+    def testAPKCertFingerprint(self):
+        """
+        Test if certificates are correctly unpacked from the SignatureBlock files
+        Check if fingerprints matches
+        :return:
+        """
+        from androguard.core.bytecodes.apk import APK
+        import binascii
+        from cryptography.hazmat.primitives import hashes
+        from hashlib import md5, sha1, sha256
+        a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk", skip_analysis=True)
+
+        cert = a.get_certificate(a.get_signature_name())
+        cert_der = a.get_certificate_der(a.get_signature_name())
+
+        # Keytool are the hashes collected by keytool -printcert -file CERT.RSA
+        for h, h2, keytool in [(hashes.MD5, md5, "99:FF:FC:37:D3:64:87:DD:BA:AB:F1:7F:94:59:89:B5"),
+                               (hashes.SHA1, sha1, "1E:0B:E4:01:F9:34:60:E0:8D:89:A3:EF:6E:27:25:55:6B:E1:D1:6B"),
+                               (hashes.SHA256, sha256, "6F:5C:31:60:8F:1F:9E:28:5E:B6:34:3C:7C:8A:F0:7D:E8:1C:1F:B2:14:8B:53:49:BE:C9:06:44:41:44:57:6D")]:
+            hash_x509 = binascii.hexlify(cert.fingerprint(h())).decode("ascii")
+            x = h2()
+            x.update(cert_der)
+            hash_hashlib = x.hexdigest()
+
+            self.assertEqual(hash_x509.lower(), hash_hashlib.lower())
+            self.assertEqual(hash_x509.lower(), keytool.replace(":", "").lower())
+
     def testAPKWrapperUnsigned(self):
         from androguard.misc import AnalyzeAPK
         from androguard.core.bytecodes.apk import APK
