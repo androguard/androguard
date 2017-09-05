@@ -1513,7 +1513,9 @@ class AXMLParser(object):
                     attr
                 ]
             else:
-                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE'
+                # Attach the HEX Number, so for multiple missing attributes we do not run
+                # into problems.
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
 
         return res
 
