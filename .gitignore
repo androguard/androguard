@@ -24,3 +24,5 @@ dist/
 
 # Files from tests
 test_session
+
+.eggs/
