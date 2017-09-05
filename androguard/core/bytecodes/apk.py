@@ -1043,13 +1043,17 @@ def show_Certificate(cert, short=False):
 # Translated from
 # http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
 
-UTF8_FLAG = 0x00000100
+# Flags in the STRING Section
+SORTED_FLAG = 1 << 0
+UTF8_FLAG = 1 << 8
 
 
 class StringBlock(object):
     """
     StringBlock is a CHUNK inside an AXML File
     It contains all strings, which are used by referecing to ID's
+
+    TODO might migrate this block into the ARSCParser, as it it not a "special" block but a normal tag.
     """
     def __init__(self, buff, header):
         self._cache = {}
@@ -1191,6 +1195,7 @@ class StringBlock(object):
             print(i, repr(self.getString(i)))
 
 
+# Position of the fields inside an attribute
 ATTRIBUTE_IX_NAMESPACE_URI = 0
 ATTRIBUTE_IX_NAME = 1
 ATTRIBUTE_IX_VALUE_STRING = 2
@@ -1198,7 +1203,9 @@ ATTRIBUTE_IX_VALUE_TYPE = 3
 ATTRIBUTE_IX_VALUE_DATA = 4
 ATTRIBUTE_LENGHT = 5
 
+# Chunk Headers
 CHUNK_AXML_FILE = 0x00080003
+CHUNK_STRING = 0x001C0001
 CHUNK_RESOURCEIDS = 0x00080180
 CHUNK_XML_FIRST = 0x00100100
 CHUNK_XML_START_NAMESPACE = 0x00100100
@@ -1278,6 +1285,8 @@ class AXMLParser(object):
         self.reset()
         while True:
             chunkType = -1
+            # General notes:
+            # * chunkSize is from start of chunk, including the tag type
 
             # Fake END_DOCUMENT event.
             if event == END_TAG:
@@ -1293,15 +1302,17 @@ class AXMLParser(object):
                     break
                 chunkType = unpack('<L', self.buff.read(4))[0]
 
+            # Parse ResourceIDs. This chunk is after the String section
             if chunkType == CHUNK_RESOURCEIDS:
                 chunkSize = unpack('<L', self.buff.read(4))[0]
-                # FIXME
+
+                # Check size: < 8 bytes mean that the chunk is not complete
+                # Should be aligned to 4 bytes.
                 if chunkSize < 8 or chunkSize % 4 != 0:
                     androconf.warning("Invalid chunk size in chunk RESOURCEIDS")
 
                 for i in range(0, (chunkSize // 4) - 2):
-                    self.m_resourceIDs.append(
-                        unpack('<L', self.buff.read(4))[0])
+                    self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
 
                 continue
 
@@ -1314,7 +1325,7 @@ class AXMLParser(object):
                 self.m_event = START_DOCUMENT
                 break
 
-            # After the chunk_type, there are always (?) 3 fields:
+            # After the chunk_type, there are always 3 fields for the remaining tags we need to parse:
             # Chunk Size (we do not need it)
             # TODO for sanity checks, we should use it and check if the chunks are correct in size
             self.buff.read(4)
@@ -1382,6 +1393,7 @@ class AXMLParser(object):
                 # Now, we parse the attributes.
                 # Each attribute has 5 fields of 4 byte
                 for i in range(0, attributeCount * ATTRIBUTE_LENGHT):
+                    # Each field is linearly parsed into the array
                     self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
 
                 # Then there are class_attributes
@@ -1403,7 +1415,9 @@ class AXMLParser(object):
                 self.m_name = unpack('<L', self.buff.read(4))[0]
 
                 # FIXME
+                # Raw_value
                 self.buff.read(4)
+                # typed_value, is an enum
                 self.buff.read(4)
 
                 self.m_event = TEXT
@@ -1512,33 +1526,40 @@ class AXMLParser(object):
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
     def getAttributeValue(self, index):
+        """
+        This function is only used to look up strings
+        All other work is made by format_value
+        # FIXME should unite those functions
+        :param index:
+        :return:
+        """
         offset = self.getAttributeOffset(index)
         valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
         if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
             return self.sb.getString(valueString)
-        # WIP
         return ""
 
 
-TYPE_ATTRIBUTE = 2
-TYPE_DIMENSION = 5
-TYPE_FIRST_COLOR_INT = 28
-TYPE_FIRST_INT = 16
-TYPE_FLOAT = 4
-TYPE_FRACTION = 6
-TYPE_INT_BOOLEAN = 18
-TYPE_INT_COLOR_ARGB4 = 30
-TYPE_INT_COLOR_ARGB8 = 28
-TYPE_INT_COLOR_RGB4 = 31
-TYPE_INT_COLOR_RGB8 = 29
-TYPE_INT_DEC = 16
-TYPE_INT_HEX = 17
-TYPE_LAST_COLOR_INT = 31
-TYPE_LAST_INT = 31
+# FIXME there are duplicates and missing values...
 TYPE_NULL = 0
 TYPE_REFERENCE = 1
+TYPE_ATTRIBUTE = 2
 TYPE_STRING = 3
+TYPE_FLOAT = 4
+TYPE_DIMENSION = 5
+TYPE_FRACTION = 6
+TYPE_FIRST_INT = 16
+TYPE_INT_DEC = 16
+TYPE_INT_HEX = 17
+TYPE_INT_BOOLEAN = 18
+TYPE_FIRST_COLOR_INT = 28
+TYPE_INT_COLOR_ARGB8 = 28
+TYPE_INT_COLOR_RGB8 = 29
+TYPE_INT_COLOR_ARGB4 = 30
+TYPE_INT_COLOR_RGB4 = 31
+TYPE_LAST_COLOR_INT = 31
+TYPE_LAST_INT = 31
 
 TYPE_TABLE = {
     TYPE_ATTRIBUTE: "attribute",
@@ -1611,6 +1632,9 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 
 
 class AXMLPrinter(object):
+    """
+    Converter for AXML Files into a XML string
+    """
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
         self.xmlns = False
@@ -1629,8 +1653,7 @@ class AXMLPrinter(object):
 
                 for i in range(0, self.axml.getAttributeCount()):
                     self.buff += "%s%s=\"%s\"\n" % (
-                        self.getPrefix(
-                            self.axml.getAttributePrefix(i)),
+                        self.getPrefix(self.axml.getAttributePrefix(i)),
                         self.axml.getAttributeName(i),
                         self._escape(self.getAttributeValue(i)))
 
@@ -1641,12 +1664,12 @@ class AXMLPrinter(object):
                     self.getPrefix(self.axml.getPrefix()), self.axml.getName())
 
             elif _type == TEXT:
-                self.buff += "%s\n" % self.axml.getText()
-
+                self.buff += "%s\n" % self._escape(self.axml.getText())
             elif _type == END_DOCUMENT:
                 break
 
     # pleed patch
+    # FIXME should this be applied for strings directly?
     def _escape(self, s):
         s = s.replace("&", "&amp;")
         s = s.replace('"', "&quot;")
@@ -1672,12 +1695,19 @@ class AXMLPrinter(object):
         return prefix + u':'
 
     def getAttributeValue(self, index):
+        """
+        Wrapper function for format_value
+        to resolve the actual value of an attribute in a tag
+        :param index:
+        :return:
+        """
         _type = self.axml.getAttributeValueType(index)
         _data = self.axml.getAttributeValueData(index)
 
         return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
 
 
+# Constants for ARSC Files
 RES_NULL_TYPE = 0x0000
 RES_STRING_POOL_TYPE = 0x0001
 RES_TABLE_TYPE = 0x0002
@@ -1718,6 +1748,9 @@ ACONFIGURATION_UI_MODE = 0x1000
 
 
 class ARSCParser(object):
+    """
+    Parser for resource.arsc files
+    """
     def __init__(self, raw_buff):
         self.analyzed = False
         self._resolved_strings = None
