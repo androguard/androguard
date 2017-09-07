@@ -6,7 +6,7 @@ from xml.dom import minidom
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import apk
+from androguard.core.bytecodes import axml
 
 
 class AXMLTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class AXMLTest(unittest.TestCase):
 
         for filename in filenames:
             with open(filename, "rb") as fd:
-                ap = apk.AXMLPrinter(fd.read())
+                ap = axml.AXMLPrinter(fd.read())
                 self.assertIsNotNone(ap)
 
                 e = minidom.parseString(ap.get_buff())
@@ -35,8 +35,8 @@ class AXMLTest(unittest.TestCase):
         filename = "examples/axml/AndroidManifestNonZeroStyle.xml"
 
         with open(filename, "rb") as f:
-            ap = apk.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, apk.AXMLPrinter)
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -48,8 +48,8 @@ class AXMLTest(unittest.TestCase):
         filename = "examples/axml/AndroidManifestExtraNamespace.xml"
 
         with open(filename, "rb") as f:
-            ap = apk.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, apk.AXMLPrinter)
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -61,8 +61,8 @@ class AXMLTest(unittest.TestCase):
         filename = "examples/axml/AndroidManifestTextChunksXML.xml"
 
         with open(filename, "rb") as f:
-            ap = apk.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, apk.AXMLPrinter)
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -75,7 +75,7 @@ class AXMLTest(unittest.TestCase):
 
         with self.assertRaises(AssertionError) as cnx:
             with open(filename, "rb") as f:
-                apk.AXMLPrinter(f.read())
+                axml.AXMLPrinter(f.read())
         self.assertTrue("Declared filesize does not match" in str(cnx.exception))
 
 

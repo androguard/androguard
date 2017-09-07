@@ -4,7 +4,7 @@ import unittest
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import apk
+from androguard.core.bytecodes import apk, axml
 
 TEST_APP_NAME = "TestsAndroguardApplication"
 TEST_ICONS = {
@@ -14,12 +14,12 @@ TEST_ICONS = {
     65536: "res/drawable-hdpi/icon.png"
 }
 TEST_CONFIGS = {
-    "layout": [apk.ARSCResTableConfig.default_config()],
-    "string": [apk.ARSCResTableConfig.default_config()],
+    "layout": [axml.ARSCResTableConfig.default_config()],
+    "string": [axml.ARSCResTableConfig.default_config()],
     "drawable": [
-        apk.ARSCResTableConfig(sdkVersion=4, density=120),
-        apk.ARSCResTableConfig(sdkVersion=4, density=160),
-        apk.ARSCResTableConfig(sdkVersion=4, density=240)
+        axml.ARSCResTableConfig(sdkVersion=4, density=120),
+        axml.ARSCResTableConfig(sdkVersion=4, density=160),
+        axml.ARSCResTableConfig(sdkVersion=4, density=240)
     ]
 }
 
