@@ -685,18 +685,18 @@ class AXMLPrinter(object):
                     # If the name is a system name AND the prefix is set, we have a problem.
                     # FIXME we are not sure how this happens, but a quick fix is to remove the prefix if it already in the name
                     if name.startswith(prefix):
-                        prefix = ''
+                        prefix = u''
 
-                    self.buff += '{}{}="{}"\n'.format(prefix, name, value)
+                    self.buff += u'{}{}="{}"\n'.format(prefix, name, value)
 
                 self.buff += u'>\n'
 
             elif _type == END_TAG:
-                self.buff += "</%s%s>\n" % (
+                self.buff += u"</%s%s>\n" % (
                     self.getPrefix(self.axml.getPrefix()), self.axml.getName())
 
             elif _type == TEXT:
-                self.buff += "%s\n" % self._escape(self.axml.getText())
+                self.buff += u"%s\n" % self._escape(self.axml.getText())
             elif _type == END_DOCUMENT:
                 break
 
