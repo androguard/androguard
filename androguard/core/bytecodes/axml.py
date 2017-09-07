@@ -331,6 +331,10 @@ class AXMLParser(object):
                     self.m_uriprefix[uri] = prefix
                     self.m_prefixuriL.append((prefix, uri))
                     self.ns = uri
+
+                    # Workaround for closing tags
+                    if (uri, prefix) in self.visited_ns:
+                        self.visited_ns.remove((uri, prefix))
                 else:
                     self.ns = -1
                     # END_PREFIX contains again prefix and uri field
@@ -340,6 +344,12 @@ class AXMLParser(object):
                     # We can then remove those from the prefixuriL
                     if (prefix, uri) in self.m_prefixuriL:
                         self.m_prefixuriL.remove((prefix, uri))
+                    # Need to remove them from visisted namespaces as well, as it might pop up later
+                    # FIXME we need to remove it also if we leave a tag which closes it namespace
+                    # Workaround for now: remove it on a START_NAMESPACE tag
+                    if (uri, prefix) in self.visited_ns:
+                        self.visited_ns.remove((uri, prefix))
+
                     else:
                         androconf.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 

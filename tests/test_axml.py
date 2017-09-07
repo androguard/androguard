@@ -91,6 +91,20 @@ class AXMLTest(unittest.TestCase):
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
+    def testNullbytes(self):
+        """
+        Assert that Namespaces which are used in a tag and the tag is closed
+        are actually correctly parsed.
+        """
+        filename = "examples/axml/AndroidManifestMaskingNamespace.xml"
+
+        with open(filename, "rb") as f:
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
+
+        e = minidom.parseString(ap.get_buff())
+        self.assertIsNotNone(e)
+
     def testPackers(self):
         """
         Assert that Packed files are read
