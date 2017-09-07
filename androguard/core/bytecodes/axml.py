@@ -15,6 +15,7 @@ from androguard.core.resources import public
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 import collections
+from collections import defaultdict
 
 from xml.dom import minidom
 
@@ -234,9 +235,10 @@ class AXMLParser(object):
 
         self.m_resourceIDs = []
         self.m_prefixuri = {}
-        self.m_uriprefix = {}
+        self.m_uriprefix = defaultdict(list)
+        # Contains a list of current prefix/uri pairs
         self.m_prefixuriL = []
-
+        # Store which namespaces are already printed
         self.visited_ns = []
 
     def is_valid(self):
@@ -327,8 +329,11 @@ class AXMLParser(object):
                     prefix = unpack('<L', self.buff.read(4))[0]
                     uri = unpack('<L', self.buff.read(4))[0]
 
+                    # FIXME We will get a problem here, if the same uri is used with different prefixes!
+                    # prefix --> uri is a 1:1 mapping
                     self.m_prefixuri[prefix] = uri
-                    self.m_uriprefix[uri] = prefix
+                    # but uri --> prefix is a 1:n mapping!
+                    self.m_uriprefix[uri].append(prefix)
                     self.m_prefixuriL.append((prefix, uri))
                     self.ns = uri
 
@@ -344,6 +349,12 @@ class AXMLParser(object):
                     # We can then remove those from the prefixuriL
                     if (prefix, uri) in self.m_prefixuriL:
                         self.m_prefixuriL.remove((prefix, uri))
+
+                    # We also remove the entry from prefixuri and uriprefix:
+                    if prefix in self.m_prefixuri:
+                        del self.m_prefixuri[prefix]
+                    if uri in self.m_uriprefix:
+                        self.m_uriprefix[uri].remove(prefix)
                     # Need to remove them from visisted namespaces as well, as it might pop up later
                     # FIXME we need to remove it also if we leave a tag which closes it namespace
                     # Workaround for now: remove it on a START_NAMESPACE tag
@@ -414,15 +425,29 @@ class AXMLParser(object):
                 break
 
     def getPrefixByUri(self, uri):
-        try:
-            return self.m_uriprefix[uri]
-        except KeyError:
+        # As uri --> prefix is 1:n mapping,
+        # We will just return the first one we match.
+        if uri not in self.m_uriprefix:
             return -1
+        else:
+            if len(self.m_uriprefix[uri]) == 0:
+                return -1
+            return self.m_uriprefix[uri][0]
 
     def getPrefix(self):
-        try:
-            return self.sb.getString(self.m_uriprefix[self.m_namespaceUri])
-        except KeyError:
+        # The default is, that the namespaceUri is 0xFFFFFFFF
+        # Then we know, there is none
+        if self.m_namespaceUri == 0xFFFFFFFF:
+            return u''
+
+        # FIXME this could be problematic. Need to find the correct namespace prefix
+        if self.m_namespaceUri in self.m_uriprefix:
+            candidate = self.m_uriprefix[self.m_namespaceUri][0]
+            try:
+                return self.sb.getString(candidate)
+            except KeyError:
+                return u''
+        else:
             return u''
 
     def getName(self):
@@ -448,7 +473,7 @@ class AXMLParser(object):
 
     def getXMLNS(self):
         buff = ""
-        for uri, prefix in self.m_uriprefix.items():
+        for prefix, uri in self.m_prefixuri.items():
             if (uri, prefix) not in self.visited_ns:
                 prefix_str = self.sb.getString(prefix)
                 prefix_uri = self.sb.getString(self.m_prefixuri[prefix])
@@ -649,8 +674,7 @@ class AXMLPrinter(object):
             if _type == START_DOCUMENT:
                 self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
             elif _type == START_TAG:
-                self.buff += u'<' + self.getPrefix(self.axml.getPrefix(
-                )) + self.axml.getName() + u'\n'
+                self.buff += u'<' + self.getPrefix(self.axml.getPrefix()) + self.axml.getName() + u'\n'
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):

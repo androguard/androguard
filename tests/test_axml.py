@@ -105,6 +105,19 @@ class AXMLTest(unittest.TestCase):
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
+    def testDoubleNamespace(self):
+        """
+        Test if weird namespace constelations cause problems
+        """
+        filename = "examples/axml/AndroidManifestDoubleNamespace.xml"
+
+        with open(filename, "rb") as f:
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
+
+        e = minidom.parseString(ap.get_buff())
+        self.assertIsNotNone(e)
+
     def testPackers(self):
         """
         Assert that Packed files are read
