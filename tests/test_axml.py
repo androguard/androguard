@@ -54,6 +54,19 @@ class AXMLTest(unittest.TestCase):
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
+    def testTextChunksWithXML(self):
+        """
+        Test for Text chunks containing XML
+        """
+        filename = "examples/axml/AndroidManifestTextChunksXML.xml"
+
+        with open(filename, "rb") as f:
+            ap = apk.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, apk.AXMLPrinter)
+
+        e = minidom.parseString(ap.get_buff())
+        self.assertIsNotNone(e)
+
     def testExtraNamespace(self):
         """
         Assert that files with a broken filesize are not parsed
