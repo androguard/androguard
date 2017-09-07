@@ -1992,8 +1992,14 @@ class AXMLParser(object):
         buff = ""
         for uri, prefix in self.m_uriprefix.items():
             if (uri, prefix) not in self.visited_ns:
-                buff += "xmlns:%s=\"%s\"\n" % (
-                    self.sb.getString(prefix),
+                prefix_str = self.sb.getString(prefix)
+
+                # if prefix is (null), which is indicated by an empty str, then do not print :
+                if prefix_str != '':
+                    prefix_str = ":" + prefix_str
+
+                buff += "xmlns{}=\"{}\"\n".format(
+                    prefix_str,
                     self.sb.getString(self.m_prefixuri[prefix]))
                 self.visited_ns.append((uri, prefix))
         return buff
