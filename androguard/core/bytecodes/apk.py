@@ -805,7 +805,6 @@ class APK(object):
         message, _ = decode(pkcs7message)
         cert = encode(message[1][3])
         # Remove the first identifier
-        # We need to do this for PyASN1 versions <0.3.4
         # byte 0 == identifier, skip
         # byte 1 == length. If byte1 & 0x80 > 1, we have long format
         #                   The length of to read bytes is then coded
