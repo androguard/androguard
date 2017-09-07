@@ -481,6 +481,7 @@ class AXMLParser(object):
         offset = self.getAttributeOffset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
 
+
         if name == -1:
             return ""
 
@@ -2044,6 +2045,7 @@ class AXMLParser(object):
             return ""
 
         res = self.sb.getString(name)
+        # If the result is a (null) string, we need to look it up.
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
@@ -2192,10 +2194,16 @@ class AXMLPrinter(object):
                 self.buff += self.axml.getXMLNS()
 
                 for i in range(0, self.axml.getAttributeCount()):
-                    self.buff += "%s%s=\"%s\"\n" % (
-                        self.getPrefix(self.axml.getAttributePrefix(i)),
-                        self.axml.getAttributeName(i),
-                        self._escape(self.getAttributeValue(i)))
+                    prefix = self.getPrefix(self.axml.getAttributePrefix(i))
+                    name = self.axml.getAttributeName(i)
+                    value = self._escape(self.getAttributeValue(i))
+
+                    # If the name is a system name AND the prefix is set, we have a problem.
+                    # FIXME we are not sure how this happens, but a quick fix is to remove the prefix if it already in the name
+                    if name.startswith(prefix):
+                        prefix = ''
+
+                    self.buff += '{}{}="{}"\n'.format(prefix, name, value)
 
                 self.buff += u'>\n'
 
