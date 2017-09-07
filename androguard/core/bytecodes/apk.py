@@ -143,6 +143,8 @@ class APK(object):
                     androconf.warning("AXML parsing failed, file is empty")
                 else:
                     try:
+                        if self.axml[i].is_packed():
+                            androconf.warning("XML Seems to be packed, parsing is very likely to fail.")
                         self.xml[i] = minidom.parseString(raw_xml)
                     except Exception as e:
                         androconf.warning("reading AXML as XML failed: " + str(e))

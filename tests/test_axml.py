@@ -78,6 +78,31 @@ class AXMLTest(unittest.TestCase):
                 axml.AXMLPrinter(f.read())
         self.assertTrue("Declared filesize does not match" in str(cnx.exception))
 
+    def testNullbytes(self):
+        """
+        Assert that Strings with nullbytes are handled correctly
+        """
+        filename = "examples/axml/AndroidManifestNullbytes.xml"
+
+        with open(filename, "rb") as f:
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
+
+        e = minidom.parseString(ap.get_buff())
+        self.assertIsNotNone(e)
+
+    def testPackers(self):
+        """
+        Assert that Packed files are read
+        """
+        filename = "examples/axml/AndroidManifestLiapp.xml"
+
+        with open(filename, "rb") as f:
+            ap = axml.AXMLPrinter(f.read())
+        self.assertIsInstance(ap, axml.AXMLPrinter)
+
+        self.assertTrue(ap.is_packed())
+
 
 if __name__ == '__main__':
     unittest.main()
