@@ -328,7 +328,8 @@ class DummyNode(Node):
 def group_variables(lvars, DU, UD):
     treated = defaultdict(list)
     variables = defaultdict(list)
-    for var, loc in sorted(DU):
+    # FIXME
+    for var, loc in sorted(DU, key=lambda x: (str(x[0]), str(x[1]))):
         if var not in lvars:
             continue
         if loc in treated[var]:
