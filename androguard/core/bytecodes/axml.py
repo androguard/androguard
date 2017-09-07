@@ -206,6 +206,7 @@ class AXMLParser(object):
         self.reset()
 
         self.valid_axml = True
+        self.packerwarning = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
         axml_file, = unpack('<L', self.buff.read(4))
@@ -440,14 +441,17 @@ class AXMLParser(object):
         for uri, prefix in self.m_uriprefix.items():
             if (uri, prefix) not in self.visited_ns:
                 prefix_str = self.sb.getString(prefix)
+                prefix_uri = self.sb.getString(self.m_prefixuri[prefix])
+                # FIXME Packers like Liapp use empty uri to fool XML Parser
+                # FIXME they also mess around with the Manifest, thus it can not be parsed easily
+                if prefix_uri == '':
+                    androconf.warning("Empty Namespace URI for Namespace {}.".format(prefix_str))
+                    self.packerwarning = True
 
                 # if prefix is (null), which is indicated by an empty str, then do not print :
                 if prefix_str != '':
                     prefix_str = ":" + prefix_str
-
-                buff += "xmlns{}=\"{}\"\n".format(
-                    prefix_str,
-                    self.sb.getString(self.m_prefixuri[prefix]))
+                buff += 'xmlns{}="{}"\n'.format(prefix_str, prefix_uri)
                 self.visited_ns.append((uri, prefix))
         return buff
 
@@ -665,12 +669,25 @@ class AXMLPrinter(object):
     # pleed patch
     # FIXME should this be applied for strings directly?
     def _escape(self, s):
+        # FIXME Strings might contain null bytes. Should they be removed?
+        # We guess so, as normaly the string would terminate there...?!
+        s = s.replace("\x00", "")
+        # Other HTML Conversions
         s = s.replace("&", "&amp;")
         s = s.replace('"', "&quot;")
         s = s.replace("'", "&apos;")
         s = s.replace("<", "&lt;")
         s = s.replace(">", "&gt;")
         return escape(s)
+
+    def is_packed(self):
+        """
+        Return True if we believe that the AXML file is packed
+        If it is, we can not be sure that the AXML file can be read by a XML Parser
+
+        :return: boolean
+        """
+        return self.axml.packerwarning
 
     def get_buff(self):
         return self.buff.encode('utf-8')
