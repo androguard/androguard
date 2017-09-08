@@ -151,7 +151,7 @@ class DvMethod(object):
         # FIXME var_to_name need to contain the created tmp variables.
         # This seems to be a workaround, we add them into the list manually
         for var, i in def_uses:
-            if isinstance(var, str):
+            if not isinstance(var, int):
                 self.var_to_name[var] = var.upper()
 
         place_declarations(graph, self.var_to_name, def_uses, use_defs)
