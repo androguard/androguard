@@ -4,7 +4,7 @@ from androguard.misc import AnalyzeDex
 import sys
 import re
 from androguard.misc import AnalyzeAPK
-from androguard.decompiler.dad.decompile import DvMethod
+from androguard.decompiler.dad.decompile import DvMethod, DvClass
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
@@ -33,7 +33,7 @@ class DecompilerTest(unittest.TestCase):
         self.assertNotIn("{5, 0, 10, 0};", z.get_source())
 
 
-def test_generator(c, dx, doAST=False):
+def gen(c, dx, doAST=False):
     """
     Generate test cases to process methods
     """
@@ -45,20 +45,34 @@ def test_generator(c, dx, doAST=False):
             self.assertIsNotNone(ms.get_source())
     return test
 
+def gen_cl(c, dx):
+    def test(self):
+        dc = DvClass(c, dx)
+        dc.process()
+
+        self.assertIsNotNone(dc.get_source())
+    return test
+
 
 if __name__ == '__main__':
     # Generate test cases for this APK:
     a,d,dx = AnalyzeAPK("examples/tests/hello-world.apk")
 
     for c in d.get_classes():
+        test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])
+        # Test the decompilation of a single class
+        testcase = gen_cl(c, dx)
+        setattr(DecompilerTest, "test_class_{}".format(test_name), testcase)
+
+        # Test the decompilation of all single methods in the class
+        # if methods are in the class
         if len(c.get_methods()) == 0:
             continue
-        test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])
 
-        testcase = test_generator(c, dx)
+        testcase = gen(c, dx)
         setattr(DecompilerTest, "test_process_{}".format(test_name), testcase)
 
-        testcase_ast = test_generator(c, dx, doAST=True)
+        testcase_ast = gen(c, dx, doAST=True)
         setattr(DecompilerTest, "tes_astprocess_{}".format(test_name), testcase_ast)
 
     unittest.main()
