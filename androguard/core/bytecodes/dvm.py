@@ -5495,7 +5495,7 @@ class Instruction3rc(Instruction):
                     (self.get_kind() + OPERAND_KIND, self.BBBB, kind)]
         else:
             l = []
-            for i in range(self.CCCC, self.NNNN):
+            for i in range(self.CCCC, self.NNNN + 1):
                 l.append((OPERAND_REGISTER, i))
 
             l.append((self.get_kind() + OPERAND_KIND, self.BBBB, kind))
