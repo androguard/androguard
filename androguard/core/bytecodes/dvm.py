@@ -1091,7 +1091,7 @@ class TypeList(object):
 
         self.offset = buff.get_idx()
 
-        self.pad = ""
+        self.pad = b""
         if self.offset % 4 != 0:
             self.pad = buff.read(self.offset % 4)
 
