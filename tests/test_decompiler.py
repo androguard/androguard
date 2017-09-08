@@ -2,6 +2,7 @@ import unittest
 
 from androguard.misc import AnalyzeDex
 import sys
+import re
 from androguard.misc import AnalyzeAPK
 from androguard.decompiler.dad.decompile import DvMethod
 
@@ -31,21 +32,27 @@ class DecompilerTest(unittest.TestCase):
         # Failed version of short array
         self.assertNotIn("{5, 0, 10, 0};", z.get_source())
 
-    def testProcessMethods(self):
-        """
-        Test if processing of methods works fine.
-        This can take some time!
-        """
-        a,d,dx = AnalyzeAPK("examples/tests/hello-world.apk")
 
-        for c in d.get_classes():
-            for m in d.get_methods():
-                mx = dx.get_method(m)
-                ms = DvMethod(mx)
-                ms.process()
-
-                self.assertIsNotNone(ms.get_source())
+def test_generator(c, dx):
+    """
+    Generate test cases to process methods
+    """
+    def test(self):
+        for m in c.get_methods():
+            mx = dx.get_method(m)
+            ms = DvMethod(mx)
+            ms.process()
+            self.assertIsNotNone(ms.get_source())
+    return test
 
 
 if __name__ == '__main__':
+    # Generate test cases for this APK:
+    a,d,dx = AnalyzeAPK("examples/tests/hello-world.apk")
+
+    for c in d.get_classes():
+        testcase = test_generator(c, dx)
+        test_name = "test_process_{}".format(re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1]))
+        setattr(DecompilerTest, test_name, testcase)
+
     unittest.main()
