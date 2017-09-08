@@ -33,7 +33,7 @@ class DecompilerTest(unittest.TestCase):
         self.assertNotIn("{5, 0, 10, 0};", z.get_source())
 
 
-def test_generator(c, dx):
+def test_generator(c, dx, doAST=False):
     """
     Generate test cases to process methods
     """
@@ -41,7 +41,7 @@ def test_generator(c, dx):
         for m in c.get_methods():
             mx = dx.get_method(m)
             ms = DvMethod(mx)
-            ms.process()
+            ms.process(doAST=doAST)
             self.assertIsNotNone(ms.get_source())
     return test
 
@@ -51,8 +51,14 @@ if __name__ == '__main__':
     a,d,dx = AnalyzeAPK("examples/tests/hello-world.apk")
 
     for c in d.get_classes():
+        if len(c.get_methods()) == 0:
+            continue
+        test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])
+
         testcase = test_generator(c, dx)
-        test_name = "test_process_{}".format(re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1]))
-        setattr(DecompilerTest, test_name, testcase)
+        setattr(DecompilerTest, "test_process_{}".format(test_name), testcase)
+
+        testcase_ast = test_generator(c, dx, doAST=True)
+        setattr(DecompilerTest, "tes_astprocess_{}".format(test_name), testcase_ast)
 
     unittest.main()
