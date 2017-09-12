@@ -927,7 +927,7 @@ class AnnotationsDirectoryItem(object):
         or 0 if the class has no direct annotations
 
         :rtype: int
-         """
+        """
         return self.class_annotations_off
 
     def get_annotated_fields_size(self):
@@ -1107,7 +1107,7 @@ class TypeList(object):
     def get_pad(self):
         """
         Return the alignment string
-
+        
         :rtype: string
         """
         return self.pad
@@ -1875,7 +1875,7 @@ class StringDataItem(object):
     def get_utf16_size(self):
         """
         Return the size of this string, in UTF-16 code units
-
+        
         :rtype:int
         """
         return self.utf16_size
@@ -2294,7 +2294,7 @@ class FieldIdItem(object):
         """
         Return the index into the type_ids list for the type of this field
 
-       :rtype: int
+        :rtype: int
         """
         return self.type_idx
 
@@ -3320,10 +3320,12 @@ class ClassDataItem(object):
 
     def get_virtual_methods(self):
         """
-      Return the defined virtual (none of static, private, or constructor) methods, represented as a sequence of encoded elements
+        Return the defined virtual (none of static, private, or constructor) methods, represented as a sequence of encoded elements
 
-      :rtype: a list of :class:`EncodedMethod` objects
-      """
+        :rtype: a list of :class:`EncodedMethod` objects
+
+        """
+
         return self.virtual_methods
 
     def get_methods(self):
@@ -3598,10 +3600,10 @@ class ClassDefItem(object):
 
     def get_interfaces(self):
         """
-      Return the name of the interface
+        Return the name of the interface
 
-      :rtype: string
-      """
+        :rtype: string
+        """
         return self.interfaces
 
     def get_access_flags_string(self):
@@ -4526,17 +4528,18 @@ class PackedSwitch(object):
         """
       Return an additional output of the instruction
 
-      :rtype: string
-      """
+        :rtype: string
+
+        """
         return " ".join("%x" % (self.first_key + i)
                         for i in range(0, len(self.targets)))
 
     def get_operands(self, idx=-1):
         """
-      Return an additional output of the instruction
+        Return an additional output of the instruction
 
-      :rtype: string
-      """
+        :rtype: string
+        """
         return []
 
     def get_formatted_operands(self):
@@ -6536,7 +6539,7 @@ class DCode(object):
         self.size = size
 
         self.notes = {}
-        self.cached_instructions = []
+        self.cached_instructions = None
 
         self.idx = 0
 
@@ -6568,7 +6571,7 @@ class DCode(object):
         self.idx = idx
 
     def is_cached_instructions(self):
-        if self.cached_instructions:
+        if self.cached_instructions is not None:
             return True
         return False
 
@@ -6588,18 +6591,17 @@ class DCode(object):
         :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
         # it is possible to a cache for instructions (avoid a new disasm)
-        if self.cached_instructions:
-            for i in self.cached_instructions:
-                yield i
-
-        else:
+        if self.cached_instructions is None:
             lsa = LinearSweepAlgorithm()
-            for i in lsa.get_instructions(self.CM, self.size, self.insn,
-                                          self.idx):
-                yield i
+            ins = lsa.get_instructions(self.CM, self.size, self.insn,
+                                          self.idx)
+            self.cached_instructions = list(ins)
+
+        for i in self.cached_instructions:
+            yield i
 
     def reload(self):
-        pass
+        self.cached_instructions = None
 
     def add_inote(self, msg, idx, off=None):
         """
@@ -6633,7 +6635,9 @@ class DCode(object):
         """
         if off is not None:
             idx = self.off_to_pos(off)
-        return [i for i in self.get_instructions()][idx]
+        if self.cached_instructions is None:
+            self.get_instructions()
+        return self.cached_instructions[idx]
 
     def off_to_pos(self, off):
         """
@@ -7648,10 +7652,21 @@ class DalvikVMFormat(bytecode._Bytecode):
             self.debug = self.map_list.get_item_type("TYPE_DEBUG_INFO_ITEM")
             self.header = self.map_list.get_item_type("TYPE_HEADER_ITEM")
 
+        self._flush()
+
+    def _flush(self):
+        """
+        Flush all caches
+        Might be used after classes, methods or fields are added.
+        """
         self.classes_names = None
         self.__cache_methods = None
         self.__cached_methods_idx = None
         self.__cache_fields = None
+
+        # cache methods and fields as well, otherwise the decompiler is quite slow
+        self.__cache_all_methods = None
+        self.__cache_all_fields = None
 
     def get_api_version(self):
         """
@@ -7954,11 +7969,12 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list of :class:`EncodedField` objects
         """
-        l = []
-        for i in self.classes.class_def:
-            for j in i.get_fields():
-                l.append(j)
-        return l
+        if self.__cache_all_fields is None:
+            self.__cache_all_fields = []
+            for i in self.classes.class_def:
+                for j in i.get_fields():
+                    self.__cache_all_fields.append(j)
+        return self.__cache_all_fields
 
     def get_methods(self):
         """
@@ -7966,11 +7982,12 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list of :class:`EncodedMethod` objects
         """
-        l = []
-        for i in self.classes.class_def:
-            for j in i.get_methods():
-                l.append(j)
-        return l
+        if self.__cache_all_methods is None:
+            self.__cache_all_methods = []
+            for i in self.classes.class_def:
+                for j in i.get_methods():
+                    self.__cache_all_methods.append(j)
+        return self.__cache_all_methods
 
     def get_len_methods(self):
         """
@@ -8574,7 +8591,7 @@ class DalvikOdexVMFormat(DalvikVMFormat):
     def save(self):
         """
           Do not use !
-      """
+        """
         dex_raw = super(DalvikOdexVMFormat, self).save()
         return self.magic + self.odex_header.get_raw(
         ) + dex_raw + self.dependencies.get_raw() + self.padding
