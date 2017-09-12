@@ -1894,7 +1894,7 @@ class StringDataItem(object):
         return []
 
     def get_raw(self):
-        return writeuleb128(self.utf16_size) + bytearray(self.data)
+        return writeuleb128(self.utf16_size) + bytearray(self.data, "UTF-16")
 
     def get_length(self):
         return len(writeuleb128(self.utf16_size)) + len(self.data)
