@@ -76,7 +76,7 @@ def export_apps_to_format(filename,
                           methods_filter=None,
                           jar=None,
                           decompiler_type=None,
-                          format=None):
+                          form=None):
     print("Dump information %s in %s" % (filename, output))
 
     if not os.path.exists(output):
@@ -173,9 +173,9 @@ def export_apps_to_format(filename,
 
             buff = method2dot(vmx.get_method(method))
 
-            if format:
-                print("%s ..." % format, end=' ')
-                method2format(filename + "." + format, format, None, buff)
+            if form:
+                print("%s ..." % form, end=' ')
+                method2format(filename + "." + form, form, None, buff)
 
             if method.get_class_name() not in dump_classes:
                 print("source codes ...", end=' ')

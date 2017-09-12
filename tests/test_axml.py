@@ -67,7 +67,7 @@ class AXMLTest(unittest.TestCase):
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
-    def testExtraNamespace(self):
+    def testWrongFilesize(self):
         """
         Assert that files with a broken filesize are not parsed
         """
@@ -91,7 +91,7 @@ class AXMLTest(unittest.TestCase):
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
 
-    def testNullbytes(self):
+    def testMaskingNamespace(self):
         """
         Assert that Namespaces which are used in a tag and the tag is closed
         are actually correctly parsed.

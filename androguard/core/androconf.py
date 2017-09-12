@@ -384,15 +384,15 @@ def load_api_specific_resource_module(resource_name, api):
     from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
 
     if resource_name == "aosp_permissions":
-        module = AOSP_PERMISSIONS
+        mod = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":
-        module = AOSP_PERMISSIONS_MAPPINGS
+        mod = AOSP_PERMISSIONS_MAPPINGS
     else:
         error("Invalid resource: %s" % resource_name)
 
     if not api:
         api = CONF["DEFAULT_API"]
-    value = module.get(api)
+    value = mod.get(api)
     if value:
         return value
-    return module.get('9')
+    return mod.get('9')

@@ -9,10 +9,8 @@ from builtins import object
 import re, collections
 import threading, queue, time
 
-from androguard.core.androconf import error, warning, debug, is_ascii_problem, \
-    load_api_specific_resource_module
+from androguard.core.androconf import warning, debug, is_ascii_problem
 from androguard.core.bytecodes import dvm
-from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
 
 
 class DVMBasicBlock(object):

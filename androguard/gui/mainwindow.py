@@ -1,7 +1,6 @@
 from __future__ import print_function
 
-import imp
-import os
+import importlib
 
 import androguard.session as session_module
 from androguard.gui.DataModel import *
@@ -205,11 +204,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def _runPlugin(self, filepath):
         androconf.debug("RUN plugin from %s" % filepath)
         module_name = os.path.splitext(os.path.basename(filepath))[0]
-        f, filename, description = imp.find_module(
+        f, filename, description = importlib.find_module(
             module_name,
             [os.path.dirname(filepath)])
         print(f, filename, description)
-        mod = imp.load_module(module_name, f, filename, description)
+        mod = importlib.load_module(module_name, f, filename, description)
         mod.PluginEntry(self.session)
 
     def openRunPluginWindow(self):

@@ -6,6 +6,7 @@ from .Banners import *
 from .DataModel import *
 
 import sys
+import pyperclip
 
 class SearchWindow(QtWidgets.QDialog):
     def __init__(self, parent, plugin, searchable):
@@ -336,7 +337,6 @@ class binWidget(QtWidgets.QWidget, Observable):
                 print('OPEN SOURCE')
                 self.parent.openSourceWindow(self.dataModel.current_class)
 
-            import pyperclip
             if event.modifiers() & QtCore.Qt.ControlModifier:
                 if key == QtCore.Qt.Key_Insert:
                     if self.viewMode.selector.getCurrentSelection():

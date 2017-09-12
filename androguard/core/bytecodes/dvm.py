@@ -304,9 +304,7 @@ def determineNext(i, end, m):
         return [end + i.get_length(), off + end]
     # sparse/packed
     elif op_value in (0x2b, 0x2c):
-        x = []
-
-        x.append(end + i.get_length())
+        x = [end + i.get_length()]
 
         code = m.get_code().get_bc()
         off = i.get_ref_off() * 2
@@ -4240,7 +4238,7 @@ class FillArrayData(object):
 
         buff += repr(data) + " | "
         for i in range(0, len(data)):
-            buff += "\\x%02x" % data[i]
+            buff += "\\x{:02x}".format(data[i])
 
         return buff
 
@@ -6393,6 +6391,7 @@ def get_instruction(cm, op_value, buff, odex=False):
         except KeyError:
             return InstructionInvalid(cm, buff)
     except Exception as e:
+        # FIXME too broad exception
         return Unresolved(cm, buff)
 
 
@@ -8306,8 +8305,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
             for n in node.children:
                 if len(n.children) > 0:
-                    w = {}
-                    w[n.title] = []
+                    w = {n.title: []}
                     l[node.title].append(w)
 
                     print_map(n, w)

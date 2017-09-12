@@ -84,14 +84,14 @@ def transformClassParam(atype):
     return res
 
 
-def FormatClassToJava(input):
+def FormatClassToJava(i):
     """
        Transoform a typical xml format class into java format
 
-       :param input: the input class name
+       :param i: the input class name
        :rtype: string
     """
-    return "L" + input.replace(".", "/") + ";"
+    return "L" + i.replace(".", "/") + ";"
 
 
 def parseMethod(methodString):

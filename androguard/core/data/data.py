@@ -14,8 +14,8 @@ class DexViewer(object):
         self.vmx = vmx
         self.gvmx = gvmx
 
-    def _create_node(self, id, height, width, color, label):
-        buff = "<node id=\"%d\">\n" % id
+    def _create_node(self, i, height, width, color, label):
+        buff = "<node id=\"%d\">\n" % i
         buff += "<data key=\"d6\">\n"
         buff += "<y:ShapeNode>\n"
 
