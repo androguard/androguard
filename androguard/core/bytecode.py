@@ -99,7 +99,7 @@ def _PrintDRef(tag, items):
 
 def _PrintDefault(msg):
     print_fct = CONF["PRINT_FCT"]
-    print_fct(msg.encode('utf-8', 'surrogateescape').decode("ASCII"))
+    print_fct(msg.encode('unicode_escape').decode("ASCII"))
 
 
 def PrettyShow(m_a, basic_blocks, notes={}):
