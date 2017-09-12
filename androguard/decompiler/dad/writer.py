@@ -601,20 +601,17 @@ class Writer(object):
         data = value.get_data()
         tab = []
         elem_size = value.element_width
-        elem_id = None
-        if elem_size == 4:
-            elem_id = 'i'
-#            for i in range(0, value.size * 4, 4):
-#                tab.append('%s' % unpack('i', data[i:i + 4])[0])
-        elif elem_size == 2:
-            elem_id = 'h'
-        else:
-            elem_id = 'b'
+        elem_id = 'b'
+        # FIXME other cases?
+        # Set type depending on size of elements
+        data_types = {2: 'h', 4: 'i', 8: 'd'}
+
+        if elem_size in data_types:
+            elem_id = data_types[elem_size]
+
         for i in range(0, value.size*elem_size, elem_size):
+            # FIXME make sure unpack has data to unpack.
             tab.append('%s' % unpack(elem_id, data[i:i+elem_size])[0])
- #       else:  # FIXME: other cases
- #           for i in range(value.size):
- #               tab.append('%s' % unpack('b', data[i])[0])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
         self.end_ins()
