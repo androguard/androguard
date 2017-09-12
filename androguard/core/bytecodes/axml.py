@@ -925,7 +925,7 @@ class ARSCParser(object):
                         if region == "\x00\x00":
                             locale = language
                         else:
-                            locale = "{}-r{}".format(anguage, region)
+                            locale = "{}-r{}".format(language, region)
 
                         c_value = self.values[package_name].setdefault(locale, {"public":[]})
 
