@@ -1,14 +1,15 @@
 from __future__ import print_function
-
 from future import standard_library
 
 standard_library.install_aliases()
 from builtins import str
 from builtins import range
 from builtins import object
-import re, collections
-import threading, queue, time
-
+import re
+import collections
+import threading
+import queue
+import time
 from androguard.core.androconf import warning, debug, is_ascii_problem
 from androguard.core.bytecodes import dvm
 
@@ -39,6 +40,8 @@ class DVMBasicBlock(object):
 
         self.notes = []
 
+        self.__cached_instructions = None
+
     def get_notes(self):
         return self.notes
 
@@ -56,15 +59,13 @@ class DVMBasicBlock(object):
         Get all instructions from a basic block.
 
         :rtype: Return all instructions in the current basic block
-      """
+        """
         tmp_ins = []
         idx = 0
         for i in self.method.get_instructions():
             if self.start <= idx < self.end:
-                tmp_ins.append(i)
-
+                yield i
             idx += i.get_length()
-        return tmp_ins
 
     def get_nb_instructions(self):
         return self.nb_instructions
@@ -400,8 +401,7 @@ class MethodAnalysis(object):
         idx = 0
 
         debug("Parsing instructions")
-        instructions = [i for i in bc.get_instructions()]
-        for i in instructions:
+        for i in bc.get_instructions():
             for j in BasicOPCODES:
                 if j.match(i.get_name()) is not None:
                     v = dvm.determineNext(i, idx, self.method)
@@ -420,7 +420,7 @@ class MethodAnalysis(object):
 
         debug("Creating basic blocks in %s" % self.method)
         idx = 0
-        for i in instructions:
+        for i in bc.get_instructions():
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
@@ -461,7 +461,6 @@ class MethodAnalysis(object):
             i.set_exception_analysis(self.exceptions.get_exception(i.start,
                                                                    i.end - 1))
 
-        del instructions
         del h, l
 
     def get_basic_blocks(self):
@@ -749,10 +748,14 @@ class Analysis(object):
         self.vms = [vm]
         self.classes = {}
         self.strings = {}
+        self.methods = {}
 
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(
                 current_class, True)
+
+        for method in vm.get_methods():
+            self.methods[method] = MethodAnalysis(vm, method)
 
     def create_xref(self):
         debug("Creating XREF/DREF")
@@ -906,10 +909,14 @@ class Analysis(object):
             queue_classes.task_done()
 
     def get_method(self, method):
-        for vm in self.vms:
-            if method in vm.get_methods():
-                return MethodAnalysis(vm, method)
-        return None
+        """
+        :param method: 
+        :return: `MethodAnalysis` object for the given method
+        """
+        if method in self.methods:
+            return self.methods[method]
+        else:
+            return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
         if class_name in self.classes:
@@ -920,6 +927,10 @@ class Analysis(object):
         return None
 
     def get_method_analysis(self, method):
+        """
+        :param method: 
+        :return: `MethodClassAnalysis` for the given method
+        """
         class_analysis = self.get_class_analysis(method.get_class_name())
         if class_analysis:
             return class_analysis.get_method_analysis(method)
