@@ -1791,7 +1791,7 @@ class EncodedArrayItem(object):
         return self.offset
 
 
-def utf8_to_string(buff, length):
+def mutf8_to_string(buff, length):
     """
     Decode a MUTF-8 Encoded string from the current position of a buffer
 
@@ -1854,14 +1854,17 @@ class StringDataItem(object):
     def __init__(self, buff, cm):
         self.CM = cm
 
-        self.offset = buff.get_idx()
+        self.buff = buff
 
-        self.utf16_size = readuleb128(buff)
+        self.offset = self.buff.get_idx()
 
-        self.data = utf8_to_string(buff, self.utf16_size)
+        self.utf16_size = readuleb128(self.buff)
+
+        self.data = mutf8_to_string(buff, self.utf16_size)
         # Save the raw string as well
-        self.raw = buff[self.offset:buff.get_idx() + 1]
-        expected = get_byte(buff)
+        # We save only the end offset, as we can easily retrieve the string later
+        self.raw_size = self.buff.get_idx()
+        expected = get_byte(self.buff)
         if expected != 0:
             warning('\x00 expected at offset: %x, found: %x' %
                     (buff.get_idx(), expected))
@@ -1871,7 +1874,7 @@ class StringDataItem(object):
           Return the size of this string, in UTF-16 code units
 
           :rtype:int
-      """
+        """
         return self.utf16_size
 
     def get_data(self):
@@ -1879,7 +1882,7 @@ class StringDataItem(object):
           Return a series of MUTF-8 code units (a.k.a. octets, a.k.a. bytes) followed by a byte of value 0
 
           :rtype: string
-      """
+        """
         return self.data
 
     def set_off(self, off):
@@ -1903,10 +1906,26 @@ class StringDataItem(object):
         return []
 
     def get_raw(self):
-        return self.raw
+        """
+        Returns the raw string including the ULEB128 coded length
+        and null byte string terminator
+
+        :return: bytes
+        """
+        return self.buff[self.offset:self.raw_size]
 
     def get_length(self):
-        return len(writeuleb128(self.utf16_size)) + len(self.data)
+        """
+        Get the length of the raw string including the ULEB128 coded
+        length and the null byte terminator
+
+        :return: int
+        """
+        # FIXME before this code would return something different, which was probably wrong!
+        # It would return the length of the ULEB128 coded length + the length of the UTF8 coded string!
+        # It will significatly differ this way.
+        # If you find an error, we might need to change this back to the old behaviour
+        return self.raw_size - self.offset
 
 
 class StringIdItem(object):
