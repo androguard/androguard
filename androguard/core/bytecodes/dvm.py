@@ -1894,6 +1894,8 @@ class StringDataItem(object):
         return []
 
     def get_raw(self):
+        # FIXME this does not work in some cases
+        # We need to create function String_to_UTF8 or store the raw we read.
         return writeuleb128(self.utf16_size) + bytearray(self.data, "UTF-16")
 
     def get_length(self):
