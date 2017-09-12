@@ -717,6 +717,12 @@ class _Bytecode(object):
         self.__buff = bytearray(buff)
         self.__idx = 0
 
+    def __getitem__(self, item):
+        return self.__buff[item]
+
+    def __len__(self):
+        return len(self.__buff)
+
     def read(self, size):
         if isinstance(size, SV):
             size = size.value

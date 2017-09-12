@@ -1792,6 +1792,13 @@ class EncodedArrayItem(object):
 
 
 def utf8_to_string(buff, length):
+    """
+    Decode a MUTF-8 Encoded string from the current position of a buffer
+
+    :param buff: Buffer object
+    :param length: length of characters to read
+    :return: a unicode str object
+    """
     chars = []
 
     for _ in range(length):
@@ -1852,6 +1859,8 @@ class StringDataItem(object):
         self.utf16_size = readuleb128(buff)
 
         self.data = utf8_to_string(buff, self.utf16_size)
+        # Save the raw string as well
+        self.raw = buff[self.offset:buff.get_idx() + 1]
         expected = get_byte(buff)
         if expected != 0:
             warning('\x00 expected at offset: %x, found: %x' %
@@ -1894,9 +1903,7 @@ class StringDataItem(object):
         return []
 
     def get_raw(self):
-        # FIXME this does not work in some cases
-        # We need to create function String_to_UTF8 or store the raw we read.
-        return writeuleb128(self.utf16_size) + bytearray(self.data, "UTF-16")
+        return self.raw
 
     def get_length(self):
         return len(writeuleb128(self.utf16_size)) + len(self.data)
@@ -7710,7 +7717,7 @@ class DalvikVMFormat(bytecode._Bytecode):
           (beta: do not use !)
 
           :rtype: string
-      """
+        """
         l = []
         h = {}
         s = {}
@@ -7776,7 +7783,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
             if idx != last_idx:
                 debug("Adjust alignment @%x with 00 %x" % (idx, idx - last_idx))
-                buff += bytearray("\x00" * (idx - last_idx))
+                buff += bytearray([0] * (idx - last_idx))
 
             buff += i.get_raw()
             if isinstance(i, StringDataItem):
@@ -7792,7 +7799,7 @@ class DalvikVMFormat(bytecode._Bytecode):
           Fix a dex format buffer by setting all checksums
 
           :rtype: string
-      """
+        """
         import zlib
         import hashlib
 
@@ -7809,47 +7816,47 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_cm_field(self, idx):
         """
-          Get a specific field by using an index
+        Get a specific field by using an index
 
-          :param idx: index of the field
-          :type idx: int
+        :param idx: index of the field
+        :type idx: int
         """
         return self.CM.get_field(idx)
 
     def get_cm_method(self, idx):
         """
-          Get a specific method by using an index
+        Get a specific method by using an index
 
-          :param idx: index of the method
-          :type idx: int
+        :param idx: index of the method
+        :type idx: int
         """
         return self.CM.get_method(idx)
 
     def get_cm_string(self, idx):
         """
-          Get a specific string by using an index
+        Get a specific string by using an index
 
-          :param idx: index of the string
-          :type idx: int
+        :param idx: index of the string
+        :type idx: int
         """
         return self.CM.get_raw_string(idx)
 
     def get_cm_type(self, idx):
         """
-          Get a specific type by using an index
+        Get a specific type by using an index
 
-          :param idx: index of the type
-          :type idx: int
+        :param idx: index of the type
+        :type idx: int
         """
         return self.CM.get_type(idx)
 
     def get_classes_names(self, update=False):
         """
-            Return the names of classes
+        Return the names of classes
 
-            :param update: True indicates to recompute the list.
-                           Maybe needed after using a MyClass.set_name().
-            :rtype: a list of string
+        :param update: True indicates to recompute the list.
+                       Maybe needed after using a MyClass.set_name().
+        :rtype: a list of string
         """
         if self.classes_names is None or update:
             self.classes_names = [i.get_name() for i in self.classes.class_def]
@@ -7857,19 +7864,19 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_classes(self):
         """
-          Return all classes
+        Return all classes
 
-          :rtype: a list of :class:`ClassDefItem` objects
+        :rtype: a list of :class:`ClassDefItem` objects
         """
         return self.classes.class_def
 
     def get_class(self, name):
         """
-          Return a specific class
+        Return a specific class
 
-            :param name: the name of the class
+        :param name: the name of the class
 
-          :rtype: a :class:`ClassDefItem` object
+        :rtype: a :class:`ClassDefItem` object
         """
         for i in self.classes.class_def:
             if i.get_name() == name:
@@ -7878,11 +7885,11 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_method(self, name):
         """
-            Return a list all methods which corresponds to the regexp
+        Return a list all methods which corresponds to the regexp
 
-            :param name: the name of the method (a python regexp)
+        :param name: the name of the method (a python regexp)
 
-            :rtype: a list with all :class:`EncodedMethod` objects
+        :rtype: a list with all :class:`EncodedMethod` objects
         """
         prog = re.compile(name)
         l = []
@@ -7894,11 +7901,11 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_field(self, name):
         """
-            Return a list all fields which corresponds to the regexp
+        Return a list all fields which corresponds to the regexp
 
-            :param name: the name of the field (a python regexp)
+        :param name: the name of the field (a python regexp)
 
-            :rtype: a list with all :class:`EncodedField` objects
+        :rtype: a list with all :class:`EncodedField` objects
         """
         prog = re.compile(name)
         l = []
@@ -7910,9 +7917,9 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_all_fields(self):
         """
-            Return a list of field items
+        Return a list of field items
 
-            :rtype: a list of :class:`FieldIdItem` objects
+        :rtype: a list of :class:`FieldIdItem` objects
         """
         try:
             return self.fields.gets()
@@ -7921,9 +7928,9 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_fields(self):
         """
-          Return all field objects
+        Return all field objects
 
-          :rtype: a list of :class:`EncodedField` objects
+        :rtype: a list of :class:`EncodedField` objects
         """
         l = []
         for i in self.classes.class_def:
@@ -7933,9 +7940,9 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_methods(self):
         """
-          Return all method objects
+        Return all method objects
 
-          :rtype: a list of :class:`EncodedMethod` objects
+        :rtype: a list of :class:`EncodedMethod` objects
         """
         l = []
         for i in self.classes.class_def:
@@ -7945,19 +7952,19 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_len_methods(self):
         """
-          Return the number of methods
+        Return the number of methods
 
-          :rtype: int
+        :rtype: int
         """
         return len(self.get_methods())
 
     def get_method_by_idx(self, idx):
         """
-          Return a specific method by using an index
-          :param idx: the index of the method
-          :type idx: int
+        Return a specific method by using an index
+        :param idx: the index of the method
+        :type idx: int
 
-          :rtype: None or an :class:`EncodedMethod` object
+        :rtype: None or an :class:`EncodedMethod` object
         """
         if self.__cached_methods_idx is None:
             self.__cached_methods_idx = {}
@@ -7972,16 +7979,16 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_method_descriptor(self, class_name, method_name, descriptor):
         """
-            Return the specific method
+        Return the specific method
 
-            :param class_name: the class name of the method
-            :type class_name: string
-            :param method_name: the name of the method
-            :type method_name: string
-            :param descriptor: the descriptor of the method
-            :type descriptor: string
+        :param class_name: the class name of the method
+        :type class_name: string
+        :param method_name: the name of the method
+        :type method_name: string
+        :param descriptor: the descriptor of the method
+        :type descriptor: string
 
-            :rtype: None or a :class:`EncodedMethod` object
+        :rtype: None or a :class:`EncodedMethod` object
         """
         key = class_name + method_name + descriptor
 
@@ -7996,14 +8003,14 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_methods_descriptor(self, class_name, method_name):
         """
-            Return the specific methods of the class
+        Return the specific methods of the class
 
-            :param class_name: the class name of the method
-            :type class_name: string
-            :param method_name: the name of the method
-            :type method_name: string
+        :param class_name: the class name of the method
+        :type class_name: string
+        :param method_name: the name of the method
+        :type method_name: string
 
-            :rtype: None or a :class:`EncodedMethod` object
+        :rtype: None or a :class:`EncodedMethod` object
         """
         l = []
         for i in self.classes.class_def:
@@ -8016,12 +8023,12 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_methods_class(self, class_name):
         """
-            Return all methods of a specific class
+        Return all methods of a specific class
 
-            :param class_name: the class name
-            :type class_name: string
+        :param class_name: the class name
+        :type class_name: string
 
-            :rtype: a list with :class:`EncodedMethod` objects
+        :rtype: a list with :class:`EncodedMethod` objects
         """
         l = []
         for i in self.classes.class_def:
@@ -8033,12 +8040,12 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_fields_class(self, class_name):
         """
-            Return all fields of a specific class
+        Return all fields of a specific class
 
-            :param class_name: the class name
-            :type class_name: string
+        :param class_name: the class name
+        :type class_name: string
 
-            :rtype: a list with :class:`EncodedField` objects
+        :rtype: a list with :class:`EncodedField` objects
         """
         l = []
         for i in self.classes.class_def:
@@ -8050,16 +8057,16 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_field_descriptor(self, class_name, field_name, descriptor):
         """
-            Return the specific field
+        Return the specific field
 
-            :param class_name: the class name of the field
-            :type class_name: string
-            :param field_name: the name of the field
-            :type field_name: string
-            :param descriptor: the descriptor of the field
-            :type descriptor: string
+        :param class_name: the class name of the field
+        :type class_name: string
+        :param field_name: the name of the field
+        :type field_name: string
+        :param descriptor: the descriptor of the field
+        :type descriptor: string
 
-            :rtype: None or a :class:`EncodedField` object
+        :rtype: None or a :class:`EncodedField` object
         """
 
         key = class_name + field_name + descriptor
@@ -8075,20 +8082,20 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_strings(self):
         """
-            Return all strings
+        Return all strings
 
-            :rtype: a list with all strings used in the format (types, names ...)
+        :rtype: a list with all strings used in the format (types, names ...)
         """
         return [i.get() for i in self.strings]
 
     def get_regex_strings(self, regular_expressions):
         """
-            Return all target strings matched the regex
+        Return all target strings matched the regex
 
-            :param regular_expressions: the python regex
-            :type regular_expressions: string
+        :param regular_expressions: the python regex
+        :type regular_expressions: string
 
-            :rtype: a list of strings matching the regex expression
+        :rtype: a list of strings matching the regex expression
         """
         str_list = []
         if regular_expressions.count is None:
@@ -8100,15 +8107,15 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def get_format_type(self):
         """
-            Return the type
+        Return the type
 
-            :rtype: a string
+        :rtype: a string
         """
         return "DEX"
 
     def create_python_export(self):
         """
-            Export classes/methods/fields' names in the python namespace
+        Export classes/methods/fields' names in the python namespace
         """
         setattr(self, "C", ExportObject())
 
