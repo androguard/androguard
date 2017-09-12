@@ -7769,17 +7769,17 @@ class DalvikVMFormat(bytecode._Bytecode):
                     last_idx += j.get_size()
 
         last_idx = 0
-        buff = ""
+        buff = bytearray()
         for i in l:
             idx = h[i]
 
             if idx != last_idx:
                 debug("Adjust alignment @%x with 00 %x" % (idx, idx - last_idx))
-                buff += "\x00" * (idx - last_idx)
+                buff += bytearray("\x00" * (idx - last_idx))
 
             buff += i.get_raw()
             if isinstance(i, StringDataItem):
-                buff += "\x00"
+                buff += b"\x00"
             last_idx = idx + s[idx]
 
         debug("GLOBAL SIZE %d" % len(buff))
