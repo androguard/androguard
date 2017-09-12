@@ -28,6 +28,8 @@ from androguard.decompiler.dad.instruction import (
     Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
     NewInstance, Variable, BinaryCompExpression)
 
+from androguard.core.androconf import warning
+
 logger = logging.getLogger('dad.writer')
 
 
@@ -601,16 +603,19 @@ class Writer(object):
         data = value.get_data()
         tab = []
         elem_size = value.element_width
-        elem_id = 'b'
-        # FIXME other cases?
+
         # Set type depending on size of elements
-        data_types = {2: 'h', 4: 'i', 8: 'd'}
+        data_types = {1: 'b', 2: 'h', 4: 'i', 8: 'd'}
 
         if elem_size in data_types:
             elem_id = data_types[elem_size]
+        else:
+            # FIXME for other types we just assume bytes...
+            warning("Unknown element size {} for array. Assume bytes.".format(elem_size))
+            elem_id = 'b'
+            elem_size = 1
 
         for i in range(0, value.size*elem_size, elem_size):
-            # FIXME make sure unpack has data to unpack.
             tab.append('%s' % unpack(elem_id, data[i:i+elem_size])[0])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
