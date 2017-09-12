@@ -174,25 +174,8 @@ def parse_descriptor(desc):
 
 # Note: the literal_foo functions (and dummy) are also imported by decompile.py
 def literal_string(s):
-    escapes = {
-        '\0': '\\0',
-        '\t': '\\t',
-        '\r': '\\r',
-        '\n': '\\n',
-        '"': '\\"',
-        '\\': '\\\\'
-    }
-
-    buf = ['"']
-    for c in s.decode('utf8'):
-        if c in escapes:
-            buf.append(escapes[c])
-        elif ' ' <= c < '\x7f':
-            buf.append(c)
-        else:
-            buf.append(r'\u{:04x}'.format(ord(c)))
-    buf.append('"')
-    return literal(''.join(buf), ('java/lang/String', 0))
+    # We return a escaped string in ASCII encoding
+    return literal(s.encode('unicode_escape').decode("ascii"), ('java/lang/String', 0))
 
 
 def literal_class(desc):
@@ -242,7 +225,7 @@ def visit_arr_data(value):
             tab.append(struct.unpack('<i', data[i:i + 4])[0])
     else:  # FIXME: other cases
         for i in range(value.size):
-            tab.append(struct.unpack('<b', data[i])[0])
+            tab.append(data[i])
     return array_initializer(list(map(literal_int, tab)))
 
 

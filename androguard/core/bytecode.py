@@ -99,7 +99,7 @@ def _PrintDRef(tag, items):
 
 def _PrintDefault(msg):
     print_fct = CONF["PRINT_FCT"]
-    print_fct(msg.encode('utf-8', 'surrogateescape').decode("ASCII"))
+    print_fct(msg.encode('unicode_escape').decode("ASCII"))
 
 
 def PrettyShow(m_a, basic_blocks, notes={}):
@@ -121,7 +121,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
 
     for i in basic_blocks:
         print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
-        instructions = i.get_instructions()
+        instructions = list(i.get_instructions())
         for ins in instructions:
             if nb in notes:
                 for note in notes[nb]:
@@ -716,6 +716,12 @@ class _Bytecode(object):
     def __init__(self, buff):
         self.__buff = bytearray(buff)
         self.__idx = 0
+
+    def __getitem__(self, item):
+        return self.__buff[item]
+
+    def __len__(self):
+        return len(self.__buff)
 
     def read(self, size):
         if isinstance(size, SV):
