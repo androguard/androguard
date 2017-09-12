@@ -121,7 +121,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
 
     for i in basic_blocks:
         print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
-        instructions = i.get_instructions()
+        instructions = list(i.get_instructions())
         for ins in instructions:
             if nb in notes:
                 for note in notes[nb]:
