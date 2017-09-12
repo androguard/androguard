@@ -50,7 +50,6 @@ def AnalyzeDex(filename, session=None):
         Analyze an android dex file and setup all stuff for a more quickly analysis !
 
         :param session: A session (Default None)
-        :param decompiler: 
         :param filename: the filename of the android dex file or a buffer which represents the dex file
         :type filename: string
 
@@ -73,6 +72,7 @@ def AnalyzeODex(filename, session=None):
 
         :param filename: the filename of the android dex file or a buffer which represents the dex file
         :type filename: string
+        :param session: The Androguard Session to add the ODex to (default: None)
 
         :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
     """

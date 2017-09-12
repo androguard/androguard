@@ -42,6 +42,7 @@ options = [option_0, option_1, option_2]
 
 
 def disassemble(dex, offset, size):
+    # FIXME where is auto gone?
     d = dvm.auto(dex)
     if d is not None:
         nb = 0

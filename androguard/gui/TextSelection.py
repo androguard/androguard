@@ -30,7 +30,7 @@ class Selection(object):
     def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
         raise Exception("Not Implemented")
 
-    def addSelection(self, t, type=None):
+    def addSelection(self, t, seltype=None):
         if len(t) == 4:
             u, v, b, o = t
         else:
@@ -48,13 +48,13 @@ class Selection(object):
 
         t = u, v, b, o
 
-        if type == SelectionType.NORMAL:
+        if seltype == SelectionType.NORMAL:
             if len(self.Selections) >= self.MAX_SELECTIONS:
                 self.Selections = []
 
             self.Selections.append(t)
 
-        if type == SelectionType.PERMANENT:
+        if seltype == SelectionType.PERMANENT:
             for w in self.PermanentSelections:
                 if t[0] == w[0] and t[1] == w[1]:
                     return False
@@ -62,19 +62,19 @@ class Selection(object):
             # u, v not found
             self.PermanentSelections.append(t)
 
-        if type == SelectionType.TEXTHIGHLIGHT:
+        if seltype == SelectionType.TEXTHIGHLIGHT:
             self.HighlightSelections.append(t)
 
         return True
 
-    def removeSelection(self, u, v, type):
-        if type == SelectionType.NORMAL:
+    def removeSelection(self, u, v, seltype):
+        if seltype == SelectionType.NORMAL:
             L = self.selectionStartOffset
 
-        elif type == SelectionType.PERMANENT:
+        elif seltype == SelectionType.PERMANENT:
             L = self.PermanentSelections
 
-        elif type == SelectionType.TEXTHIGHLIGHT:
+        elif seltype == SelectionType.TEXTHIGHLIGHT:
             L = self.HighlightSelections
 
         else:

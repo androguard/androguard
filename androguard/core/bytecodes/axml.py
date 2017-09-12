@@ -616,8 +616,8 @@ def complexToFloat(xcomplex):
     return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
-def getPackage(id):
-    if id >> 24 == 1:
+def getPackage(i):
+    if i >> 24 == 1:
         return "android:"
     return ""
 

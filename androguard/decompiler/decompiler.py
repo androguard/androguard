@@ -57,10 +57,10 @@ class Dex2Jar(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        compile = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname)
 
         self.jarfile = fdname + "_dex2jar.jar"
@@ -89,17 +89,17 @@ class DecompilerDex2Jad(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        compile = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname)
 
         pathclasses = fdname + "dex2jar/"
-        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
+        cmd = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
@@ -110,11 +110,11 @@ class DecompilerDex2Jad(object):
                         real_filename += "/"
                     real_filename += f
 
-                    compile = Popen([path_jad + bin_jad, "-o", "-d", root,
+                    cmd = Popen([path_jad + bin_jad, "-o", "-d", root,
                                      real_filename],
                                     stdout=PIPE,
                                     stderr=STDOUT)
-                    stdout, stderr = compile.communicate()
+                    stdout, stderr = cmd.communicate()
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
@@ -182,17 +182,17 @@ class DecompilerDex2WineJad(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        compile = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname)
 
         pathclasses = fdname + "dex2jar/"
-        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
+        cmd = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
@@ -203,11 +203,11 @@ class DecompilerDex2WineJad(object):
                         real_filename += "/"
                     real_filename += f
 
-                    compile = Popen(["wine", path_jad + bin_jad, "-o", "-d",
+                    cmd = Popen(["wine", path_jad + bin_jad, "-o", "-d",
                                      root, real_filename],
                                     stdout=PIPE,
                                     stderr=STDOUT)
-                    stdout, stderr = compile.communicate()
+                    stdout, stderr = cmd.communicate()
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
@@ -274,10 +274,10 @@ class DecompilerDed(object):
             fd.flush()
 
         dirname = tempfile.mkdtemp(prefix=fdname + "-src")
-        compile = Popen([path + bin_ded, "-c", "-o", "-d", dirname, fdname],
+        cmd = Popen([path + bin_ded, "-c", "-o", "-d", dirname, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname)
 
         findsrc = None
@@ -357,17 +357,17 @@ class DecompilerDex2Fernflower(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        compile = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname)
 
         pathclasses = fdname + "dex2jar/"
-        compile = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
+        cmd = Popen(["unzip", fdname + "_dex2jar.jar", "-d", pathclasses],
                         stdout=PIPE,
                         stderr=STDOUT)
-        stdout, stderr = compile.communicate()
+        stdout, stderr = cmd.communicate()
         os.unlink(fdname + "_dex2jar.jar")
 
         for root, dirs, files in os.walk(pathclasses, followlinks=True):
@@ -386,8 +386,8 @@ class DecompilerDex2Fernflower(object):
                     l.append(real_filename)
                     l.append(root)
 
-                    compile = Popen(l, stdout=PIPE, stderr=STDOUT)
-                    stdout, stderr = compile.communicate()
+                    cmd = Popen(l, stdout=PIPE, stderr=STDOUT)
+                    stdout, stderr = cmd.communicate()
 
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"

@@ -56,7 +56,7 @@ def gen_cl(c, dx):
 
 if __name__ == '__main__':
     # Generate test cases for this APK:
-    a,d,dx = AnalyzeAPK("examples/tests/hello-world.apk")
+    a, d, dx = AnalyzeAPK("examples/tests/hello-world.apk")
 
     for c in d.get_classes():
         test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])

@@ -351,10 +351,9 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         androconf.debug("Getting sources for %s" % self.current_class)
 
-        lines = []
-        lines.append(("COMMENTS", [(
+        lines = [("COMMENTS", [(
             "COMMENT", "// filename:%s\n// digest:%s\n\n" % (
-                self.current_filename, self.current_digest))]))
+                self.current_filename, self.current_digest))])]
 
         method_info_buff = ""
         for method in self.current_class.get_methods():

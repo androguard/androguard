@@ -35,12 +35,12 @@ NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 def sign_apk(filename, keystore, storepass):
     from subprocess import Popen, PIPE, STDOUT
     # TODO use apksigner instead of jarsigner
-    compile = Popen([androconf.CONF["PATH_JARSIGNER"], "-sigalg", "MD5withRSA",
+    cmd = Popen([androconf.CONF["PATH_JARSIGNER"], "-sigalg", "MD5withRSA",
                      "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
                      keystore, filename, "alias_name"],
                     stdout=PIPE,
                     stderr=STDOUT)
-    stdout, stderr = compile.communicate()
+    stdout, stderr = cmd.communicate()
 
 
 class Error(Exception):
@@ -375,12 +375,14 @@ class APK(object):
         # There are several implementations of magic,
         # unfortunately all called magic
         try:
-            # We test for the python-magic package here
             import magic
-            getattr(magic, "MagicException")
         except ImportError:
             # no lib magic at all, return unknown
             return default
+
+        try:
+            # We test for the python-magic package here
+            getattr(magic, "MagicException")
         except AttributeError:
             try:
                 # Check for filemagic package
@@ -634,10 +636,7 @@ class APK(object):
         return self.get_elements("provider", "name")
 
     def get_intent_filters(self, category, name):
-        d = {}
-
-        d["action"] = []
-        d["category"] = []
+        d = {"action": [], "category": []}
 
         for i in self.xml:
             for item in self.xml[i].getElementsByTagName(category):

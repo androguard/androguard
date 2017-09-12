@@ -343,10 +343,8 @@ class DvClass(object):
                 ('PACKAGE', [('PACKAGE_START', 'package '), (
                     'NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')
                              ]))
-        list_proto = []
-        list_proto.append(
-            ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
-        list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
+        list_proto = [('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)),
+                      ('NAME_PROTOTYPE', '%s' % self.name, self.package)]
         superclass = self.superclass
         if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
