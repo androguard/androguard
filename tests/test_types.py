@@ -20,6 +20,7 @@
 
 from __future__ import print_function
 import sys
+import unittest
 
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
@@ -30,54 +31,76 @@ TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 VALUES = {
     'Ltests/androguard/TestActivity; testDouble ()V': [
-        -5.0, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, -5, -4, -3, -2, -1, 0, 1, 2, 3,
-        4, 5, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 65534, 65535, 65536, 65537,
-        32769, 32768, 32767, 32766, 65534, 65535, 65536, 65537, 32769, 32768,
-        32767, 32766, 65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
-        5346952, 5346952, 5346952, 65534.5, 65535.5, 65536.5, 65537.5, 32769.5,
-        32768.5, 32767.5, 32766.5, 65534.5, 65535.5, 65536.5, 65537.5, 32769.5,
-        32768.5, 32767.5, 32766.5, -5, -65535, -65536,
-        -123456789123456789.555555555, -123456789123456789.555555555,
-        -606384730, -123456790519087104, -606384730, 3.5
+        # double values
+        -5.0, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
+        # long values
+        -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
+        # float values
+        -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
+        # Double values
+        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
+        # Long values
+        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
+        # Float values
+        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
+        # Double, long, float
+        5346952, 5346952, 5346952,
+        # Double
+        65534.5, 65535.5, 65536.5, 65537.5,
+        32769.5, 32768.5, 32767.5, 32766.5,
+        # Float
+        65534.5, 65535.5, 65536.5, 65537.5,
+        32769.5, 32768.5, 32767.5, 32766.5,
+        # Float
+        -5, -65535, -65536,
+        # As this is a IEEE-754 float, we believe the result should not be
+        # -123456789123456789.555555555 but -123456790519087104
+        -123456790519087104,
+        # Double
+        -123456789123456789.555555555,
+        # int
+        -606384730,
+        # float
+        -123456790519087104,
+        # -606384730 + 2 + 3.5f
+        -606384730,
+        # constant from calculation
+        3.5
     ],
 }
 
+class TypesTest(unittest.TestCase):
+    def testTypes(self):
+        s = Session()
+        with open(TEST_CASE, "rb") as fd:
+            digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
-def _test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print('%s got: %s expected: %s' % (prefix, repr(got), repr(expected)))
+        for method in d.get_methods():
+            key = method.get_class_name() + " " + method.get_name(
+            ) + " " + method.get_descriptor()
 
+            if key not in VALUES:
+                continue
 
-s = Session()
-with open(TEST_CASE, "rb") as fd:
-    digest, d, dx = s.addDEX(TEST_CASE, fd.read())
+            print("METHOD", method.get_class_name(), method.get_name(
+            ), method.get_descriptor())
 
-for method in d.get_methods():
-    key = method.get_class_name() + " " + method.get_name(
-    ) + " " + method.get_descriptor()
+            code = method.get_code()
+            bc = code.get_bc()
 
-    if key not in VALUES:
-        continue
+            idx = 0
+            for i in bc.get_instructions():
+                if "const" in i.get_name():
+                    i.show(0)
+                    formatted_operands = i.get_formatted_operands()
+                    print(formatted_operands)
+                    if not formatted_operands:
+                        VALUES[key].pop(0)
+                    else:
+                        for f in formatted_operands:
+                            self.assertAlmostEqual(f, VALUES[key].pop(0), places=4)
 
-    print("METHOD", method.get_class_name(), method.get_name(
-    ), method.get_descriptor())
+                idx += i.get_length()
 
-    code = method.get_code()
-    bc = code.get_bc()
-
-    idx = 0
-    for i in bc.get_instructions():
-        if "const" in i.get_name():
-            i.show(0)
-            formatted_operands = i.get_formatted_operands()
-            print(formatted_operands)
-            if not formatted_operands:
-                VALUES[key].pop(0)
-            else:
-                for f in formatted_operands:
-                    _test(f, VALUES[key].pop(0))
-
-        idx += i.get_length()
+if __name__ == '__main__':
+    unittest.main()
