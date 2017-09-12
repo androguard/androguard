@@ -148,6 +148,12 @@ class DvMethod(object):
         dead_code_elimination(graph, def_uses, use_defs)
         register_propagation(graph, def_uses, use_defs)
 
+        # FIXME var_to_name need to contain the created tmp variables.
+        # This seems to be a workaround, we add them into the list manually
+        for var, i in def_uses:
+            if not isinstance(var, int):
+                self.var_to_name[var] = var.upper()
+
         place_declarations(graph, self.var_to_name, def_uses, use_defs)
         del def_uses, use_defs
         # After the DCE pass, some nodes may be empty, so we can simplify the
@@ -262,8 +268,7 @@ class DvClass(object):
             try:
                 self.process_method(i, doAST=doAST)
             except Exception as e:
-                logger.debug(
-                    'Error decompiling method %s: %s', self.methods[i], e)
+                logger.warning('Error decompiling method %s: %s', self.methods[i], e)
 
     def get_ast(self):
         fields = [get_field_ast(f) for f in self.fields]
