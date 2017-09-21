@@ -19,10 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
+from __future__ import print_function
+
 from optparse import OptionParser
-from androguard.core import androconf
+
 from androguard.core.bytecodes import dvm
 from androguard.core.bytecodes.apk import *
 
@@ -42,14 +42,15 @@ options = [option_0, option_1, option_2]
 
 
 def disassemble(dex, offset, size):
+    # FIXME where is auto gone?
     d = dvm.auto(dex)
-    if d != None:
+    if d is not None:
         nb = 0
         idx = offset
         for i in d.disassemble(offset, size):
-            print "%-8d(%08x)" % (nb, idx),
+            print("%-8d(%08x)" % (nb, idx), end=' ')
             i.show(idx)
-            print
+            print()
 
             idx += i.get_length()
             nb += 1

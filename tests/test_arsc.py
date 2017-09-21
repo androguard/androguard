@@ -1,12 +1,10 @@
+import sys
 import unittest
 
-import sys
 PATH_INSTALL = "./"
 sys.path.append(PATH_INSTALL)
 
-from androguard.core.bytecodes import apk
-import collections
-
+from androguard.core.bytecodes import apk, axml
 
 TEST_APP_NAME = "TestsAndroguardApplication"
 TEST_ICONS = {
@@ -16,12 +14,12 @@ TEST_ICONS = {
     65536: "res/drawable-hdpi/icon.png"
 }
 TEST_CONFIGS = {
-    "layout": [apk.ARSCResTableConfig.default_config()],
-    "string": [apk.ARSCResTableConfig.default_config()],
+    "layout": [axml.ARSCResTableConfig.default_config()],
+    "string": [axml.ARSCResTableConfig.default_config()],
     "drawable": [
-        apk.ARSCResTableConfig(sdkVersion=4, density=120),
-        apk.ARSCResTableConfig(sdkVersion=4, density=160),
-        apk.ARSCResTableConfig(sdkVersion=4, density=240)
+        axml.ARSCResTableConfig(sdkVersion=4, density=120),
+        axml.ARSCResTableConfig(sdkVersion=4, density=160),
+        axml.ARSCResTableConfig(sdkVersion=4, density=240)
     ]
 }
 
@@ -30,7 +28,7 @@ class ARSCTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
-                  "r") as fd:
+                  "rb") as fd:
             cls.apk = apk.APK(fd.read(), True)
 
     def testARSC(self):
@@ -42,7 +40,7 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(app_name, TEST_APP_NAME, "Couldn't deduce application/activity label")
 
     def testAppIcon(self):
-        for wanted_density, correct_path in TEST_ICONS.iteritems():
+        for wanted_density, correct_path in TEST_ICONS.items():
             app_icon_path = self.apk.get_app_icon(wanted_density)
             self.assertEqual(app_icon_path, correct_path,
                              "Incorrect icon path for requested density")
@@ -51,7 +49,7 @@ class ARSCTest(unittest.TestCase):
         arsc = self.apk.get_android_resources()
         configs = arsc.get_type_configs(None)
 
-        for res_type, test_configs in TEST_CONFIGS.items():
+        for res_type, test_configs in list(TEST_CONFIGS.items()):
             config_set = set(test_configs)
             self.assertIn(res_type, configs,
                           "resource type %s was not found" % res_type)

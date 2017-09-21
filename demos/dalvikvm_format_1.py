@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 PATH_INSTALL = "./"
@@ -16,10 +17,10 @@ j.show()
 
 # SHOW FIELDS
 for i in j.get_fields():
-    print i.get_access_flags(), i.get_name(), i.get_descriptor()
+    print(i.get_access_flags(), i.get_name(), i.get_descriptor())
 
-print
+print()
 
 # SHOW METHODS
 for i in j.get_methods():
-    print i.get_access_flags(), i.get_name(), i.get_descriptor()
+    print(i.get_access_flags(), i.get_name(), i.get_descriptor())

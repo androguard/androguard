@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 from optparse import OptionParser
 from xml.dom import minidom
@@ -46,7 +47,7 @@ options = [option_0, option_1, option_2]
 
 
 def main(options, arguments):
-    if options.input != None:
+    if options.input is not None:
         buff = ""
 
         ret_type = androconf.is_android(options.input)
@@ -58,18 +59,18 @@ def main(options, arguments):
             buff = minidom.parseString(ap.get_buff()).toprettyxml(
                 encoding="utf-8")
         else:
-            print "Unknown file type"
+            print("Unknown file type")
             return
 
-        if options.output != None:
+        if options.output is not None:
             fd = codecs.open(options.output, "w", "utf-8")
             fd.write(buff)
             fd.close()
         else:
-            print buff
+            print(buff)
 
-    elif options.version != None:
-        print "Androaxml version %s" % androconf.ANDROGUARD_VERSION
+    elif options.version is not None:
+        print("Androaxml version %s" % androconf.ANDROGUARD_VERSION)
 
 
 if __name__ == "__main__":

@@ -1,26 +1,18 @@
-# This file is part of Androguard.
-#
-# Copyright (C) 2012, Anthony Desnos <desnos at t0t0.fr>
-# All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS-IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from __future__ import print_function
+from future import standard_library
 
-import re, random, cPickle, collections
-
-from androguard.core.androconf import error, warning, debug, is_ascii_problem,\
-    load_api_specific_resource_module
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
+import re
+import collections
+import threading
+import queue
+import time
+from androguard.core.androconf import warning, debug, is_ascii_problem
 from androguard.core.bytecodes import dvm
-from androguard.core.bytecodes.api_permissions import DVM_PERMISSIONS_BY_PERMISSION, DVM_PERMISSIONS_BY_ELEMENT
+
 
 class DVMBasicBlock(object):
     """
@@ -48,6 +40,8 @@ class DVMBasicBlock(object):
 
         self.notes = []
 
+        self.__cached_instructions = None
+
     def get_notes(self):
         return self.notes
 
@@ -65,15 +59,13 @@ class DVMBasicBlock(object):
         Get all instructions from a basic block.
 
         :rtype: Return all instructions in the current basic block
-      """
+        """
         tmp_ins = []
         idx = 0
         for i in self.method.get_instructions():
-            if idx >= self.start and idx < self.end:
-                tmp_ins.append(i)
-
+            if self.start <= idx < self.end:
+                yield i
             idx += i.get_length()
-        return tmp_ins
 
     def get_nb_instructions(self):
         return self.nb_instructions
@@ -116,22 +108,22 @@ class DVMBasicBlock(object):
         return self.last_length
 
     def set_childs(self, values):
-        #print self, self.start, self.end, values
-        if values == []:
+        # print self, self.start, self.end, values
+        if not values:
             next_block = self.context.get_basic_block(self.end + 1)
-            if next_block != None:
+            if next_block is not None:
                 self.childs.append((self.end - self.get_last_length(), self.end,
                                     next_block))
         else:
             for i in values:
                 if i != -1:
                     next_block = self.context.get_basic_block(i)
-                    if next_block != None:
+                    if next_block is not None:
                         self.childs.append((self.end - self.get_last_length(),
                                             i, next_block))
 
         for c in self.childs:
-            if c[2] != None:
+            if c[2] is not None:
                 c[2].set_fathers((c[1], c[0], self))
 
     def push(self, i):
@@ -142,7 +134,7 @@ class DVMBasicBlock(object):
 
         op_value = i.get_op_value()
 
-        if op_value == 0x26 or (op_value >= 0x2b and op_value <= 0x2c):
+        if op_value == 0x26 or (0x2b <= op_value <= 0x2c):
             code = self.method.get_code().get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
 
@@ -156,6 +148,7 @@ class DVMBasicBlock(object):
         """
         try:
             return self.special_ins[idx]
+        # FIXME: Too broad exception clause
         except:
             return None
 
@@ -165,9 +158,11 @@ class DVMBasicBlock(object):
     def set_exception_analysis(self, exception_analysis):
         self.exception_analysis = exception_analysis
 
+    def show(self):
+        print(self.get_name(), self.get_start(), self.get_end())
+
 
 class Enum(object):
-
     def __init__(self, names):
         self.names = names
         for value, name in enumerate(self.names):
@@ -253,13 +248,13 @@ class Tags(object):
     def emit(self, method):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(method.get_class()) != None:
+                if self.patterns[i][1].search(method.get_class()) is not None:
                     self.tags.add(i)
 
     def emit_by_classname(self, classname):
         for i in self.patterns:
             if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(classname) != None:
+                if self.patterns[i][1].search(classname) is not None:
                     self.tags.add(i)
 
     def get_list(self):
@@ -292,7 +287,7 @@ class BasicBlocks(object):
 
     def get_basic_block(self, idx):
         for i in self.bb:
-            if idx >= i.get_start() and idx < i.get_end():
+            if i.get_start() <= idx < i.get_end():
                 return i
         return None
 
@@ -314,7 +309,6 @@ class BasicBlocks(object):
 
 
 class ExceptionAnalysis(object):
-
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -328,7 +322,7 @@ class ExceptionAnalysis(object):
         buff = "%x:%x\n" % (self.start, self.end)
 
         for i in self.exceptions:
-            if i[2] == None:
+            if i[2] is None:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
             else:
                 buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
@@ -345,7 +339,6 @@ class ExceptionAnalysis(object):
 
 
 class Exceptions(object):
-
     def __init__(self, _vm):
         self.__vm = _vm
         self.exceptions = []
@@ -394,7 +387,7 @@ class MethodAnalysis(object):
         self.exceptions = Exceptions(self.__vm)
 
         code = self.method.get_code()
-        if code == None:
+        if code is None:
             return
 
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
@@ -408,10 +401,9 @@ class MethodAnalysis(object):
         idx = 0
 
         debug("Parsing instructions")
-        instructions = [i for i in bc.get_instructions()]
-        for i in instructions:
+        for i in bc.get_instructions():
             for j in BasicOPCODES:
-                if j.match(i.get_name()) != None:
+                if j.match(i.get_name()) is not None:
                     v = dvm.determineNext(i, idx, self.method)
                     h[idx] = v
                     l.extend(v)
@@ -428,7 +420,7 @@ class MethodAnalysis(object):
 
         debug("Creating basic blocks in %s" % self.method)
         idx = 0
-        for i in instructions:
+        for i in bc.get_instructions():
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
@@ -469,7 +461,6 @@ class MethodAnalysis(object):
             i.set_exception_analysis(self.exceptions.get_exception(i.start,
                                                                    i.end - 1))
 
-        del instructions
         del h, l
 
     def get_basic_blocks(self):
@@ -491,23 +482,23 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
-        print "METHOD", self.method.get_class_name(), self.method.get_name(
-        ), self.method.get_descriptor()
+        print("METHOD", self.method.get_class_name(), self.method.get_name(
+        ), self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
-            print "\t", i
+            print("\t", i)
             i.show()
-            print ""
+            print("")
 
     def show_methods(self):
-        print "\t #METHODS :"
+        print("\t #METHODS :")
         for i in self.__bb:
             methods = i.get_methods()
             for method in methods:
-                print "\t\t-->", method.get_class_name(), method.get_name(
-                ), method.get_descriptor()
+                print("\t\t-->", method.get_class_name(), method.get_name(
+                ), method.get_descriptor())
                 for context in methods[method]:
-                    print "\t\t\t |---|", context.details
+                    print("\t\t\t |---|", context.details)
 
     def get_tags(self):
         """
@@ -519,14 +510,13 @@ class MethodAnalysis(object):
 
 
 class StringAnalysis(object):
-
     def __init__(self, value):
         self.value = value
         self.orig_value = value
         self.xreffrom = set()
 
     def AddXrefFrom(self, classobj, methodobj):
-        #debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
+        # debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
         self.xreffrom.add((classobj, methodobj))
 
     def get_xref_from(self):
@@ -545,23 +535,22 @@ class StringAnalysis(object):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
         return data
 
 
 class MethodClassAnalysis(object):
-
     def __init__(self, method):
         self.method = method
         self.xrefto = set()
         self.xreffrom = set()
 
     def AddXrefTo(self, classobj, methodobj, offset):
-        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefto.add((classobj, methodobj, offset))
 
     def AddXrefFrom(self, classobj, methodobj, offset):
-        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -575,30 +564,29 @@ class MethodClassAnalysis(object):
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
             data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                )
+                                       )
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
             data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                )
+                                       )
 
         return data
 
 
 class FieldClassAnalysis(object):
-
     def __init__(self, field):
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
 
     def AddXrefRead(self, classobj, methodobj):
-        #debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefread.add((classobj, methodobj))
 
     def AddXrefWrite(self, classobj, methodobj):
-        #debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
+        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefwrite.add((classobj, methodobj))
 
     def get_xref_read(self):
@@ -612,13 +600,13 @@ class FieldClassAnalysis(object):
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
             data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                )
+                                 )
 
         return data
 
@@ -627,21 +615,74 @@ REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
 
-class ClassAnalysis(object):
+class ExternalClass(object):
+    def __init__(self, name):
+        self.name = name
+        self.methods = {}
 
-    def __init__(self, classobj):
+    def get_methods(self):
+        return self.methods.values()
+
+    def GetMethod(self, name, descriptor):
+        key = name + str(descriptor)
+        if key not in self.methods:
+            self.methods[key] = ExternalMethod(self.name, name, descriptor)
+
+        return self.methods[key]
+
+
+class ExternalMethod(object):
+    def __init__(self, class_name, name, descriptor):
+        self.class_name = class_name
+        self.name = name
+        self.descriptor = descriptor
+
+    def get_name(self):
+        return self.name
+
+    def get_class_name(self):
+        return self.class_name
+
+    def get_descriptor(self):
+        return ''.join(self.descriptor)
+
+    def __str__(self):
+        return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
+
+
+class ClassAnalysis(object):
+    def __init__(self, classobj, internal=False):
         self.orig_class = classobj
+        self._inherits_methods = {}
         self._methods = {}
         self._fields = {}
+        self.internal = internal
 
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
+
+    def get_methods(self):
+        return list(self._methods.values())
+
+    def get_nb_methods(self):
+        return len(self._methods)
 
     def get_method_analysis(self, method):
         return self._methods.get(method)
 
     def get_field_analysis(self, field):
         return self._fields.get(field)
+
+    def GetFakeMethod(self, name, descriptor):
+        if not self.internal:
+            return self.orig_class.GetMethod(name, descriptor)
+
+        # We are searching an unknown method in this class
+        # It could be something that the class herits
+        key = name + str(descriptor)
+        if key not in self._inherits_methods:
+            self._inherits_methods[key] = ExternalMethod(self.orig_class.get_name(), name, descriptor)
+        return self._inherits_methods[key]
 
     def AddFXrefRead(self, method, classobj, field):
         if field not in self._fields:
@@ -679,6 +720,8 @@ class ClassAnalysis(object):
         return self.orig_class
 
     def __str__(self):
+        # Print only instanceiations from other classes here
+        # TODO also method xref and field xref should be printed?
         data = "XREFto for %s\n" % self.orig_class
         for ref_class in self.xrefto:
             data += str(ref_class.get_vm_class().get_name()) + " "
@@ -700,29 +743,56 @@ class ClassAnalysis(object):
         return data
 
 
-class newVMAnalysis(object):
-
+class Analysis(object):
     def __init__(self, vm):
         self.vms = [vm]
         self.classes = {}
         self.strings = {}
+        self.methods = {}
 
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(
-                current_class)
+                current_class, True)
+
+        for method in vm.get_methods():
+            self.methods[method] = MethodAnalysis(vm, method)
 
     def create_xref(self):
         debug("Creating XREF/DREF")
+        started_at = time.time()
 
-        instances_class_name = self.classes.keys()
+        instances_class_name = list(self.classes.keys())
 
+        queue_classes = queue.Queue()
         last_vm = self.vms[-1]
         for current_class in last_vm.get_classes():
+            queue_classes.put(current_class)
+
+        threads = []
+        # TODO maybe adjust this number by the 
+        # number of cores or make it configureable?
+        for n in range(2):
+            thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+
+        debug("Waiting all threads")
+        queue_classes.join()
+
+        debug("")
+        diff = time.time() - started_at
+        debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
+
+    def _create_xref(self, instances_class_name, last_vm, queue_classes):
+        while not queue_classes.empty():
+            current_class = queue_classes.get()
+            debug("Creating XREF/DREF for %s" % current_class.get_name())
             for current_method in current_class.get_methods():
                 debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
-                if code == None:
+                if code is None:
                     continue
 
                 off = 0
@@ -758,8 +828,8 @@ class newVMAnalysis(object):
                                         self.classes[current_class.get_name()],
                                         current_method, off)
 
-                        elif ((op_value >= 0x6e and op_value <= 0x72) or
-                              (op_value >= 0x74 and op_value <= 0x78)):
+                        elif ((0x6e <= op_value <= 0x72) or
+                                  (0x74 <= op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
                             method_info = last_vm.get_cm_method(idx_meth)
                             if method_info:
@@ -768,6 +838,15 @@ class newVMAnalysis(object):
                                 method_item = last_vm.get_method_descriptor(
                                     method_info[0], method_info[1],
                                     ''.join(method_info[2]))
+
+                                # Seems to be an external classes
+                                if not method_item:
+                                    if method_info[0] not in self.classes:
+                                        self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]),
+                                                                                     False)
+                                    method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1],
+                                                                                             method_info[2])
+
                                 if method_item:
                                     self.classes[current_class.get_name(
                                     )].AddMXrefTo(current_method,
@@ -792,7 +871,7 @@ class newVMAnalysis(object):
                                             self.classes[current_class.get_name()],
                                             current_method, off)
 
-                        elif op_value >= 0x1a and op_value <= 0x1b:
+                        elif 0x1a <= op_value <= 0x1b:
                             string_value = last_vm.get_cm_string(
                                 instruction.get_ref_kind())
                             if string_value not in self.strings:
@@ -802,15 +881,15 @@ class newVMAnalysis(object):
                                 self.classes[current_class.get_name()],
                                 current_method)
 
-                        elif op_value >= 0x52 and op_value <= 0x6d:
+                        elif 0x52 <= op_value <= 0x6d:
                             idx_field = instruction.get_ref_kind()
                             field_info = last_vm.get_cm_field(idx_field)
                             field_item = last_vm.get_field_descriptor(
                                 field_info[0], field_info[2], field_info[1])
                             if field_item:
                                 # read access to a field
-                                if (op_value >= 0x52 and op_value <= 0x58) or (
-                                        op_value >= 0x60 and op_value <= 0x66):
+                                if (0x52 <= op_value <= 0x58) or (
+                                                0x60 <= op_value <= 0x66):
                                     self.classes[current_class.get_name(
                                     )].AddFXrefRead(
                                         current_method,
@@ -827,12 +906,17 @@ class newVMAnalysis(object):
                         off += instruction.get_length()
                 except dvm.InvalidInstruction as e:
                     warning("Invalid instruction %s" % str(e))
+            queue_classes.task_done()
 
     def get_method(self, method):
-        for vm in self.vms:
-            if method in vm.get_methods():
-                return MethodAnalysis(vm, method)
-        return None
+        """
+        :param method: 
+        :return: `MethodAnalysis` object for the given method
+        """
+        if method in self.methods:
+            return self.methods[method]
+        else:
+            return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
         if class_name in self.classes:
@@ -843,6 +927,10 @@ class newVMAnalysis(object):
         return None
 
     def get_method_analysis(self, method):
+        """
+        :param method: 
+        :return: `MethodClassAnalysis` for the given method
+        """
         class_analysis = self.get_class_analysis(method.get_class_name())
         if class_analysis:
             return class_analysis.get_method_analysis(method)
@@ -866,6 +954,11 @@ class newVMAnalysis(object):
     def get_class_analysis(self, class_name):
         return self.classes.get(class_name)
 
+    def get_external_classes(self):
+        for i in self.classes:
+            if not self.classes[i].internal:
+                yield self.classes[i]
+
     def get_strings_analysis(self):
         return self.strings
 
@@ -875,7 +968,8 @@ class newVMAnalysis(object):
         for current_class in vm.get_classes():
             if current_class.get_name() not in self.classes:
                 self.classes[current_class.get_name()] = ClassAnalysis(
-                    current_class)
+                    current_class, True)
+
 
 def is_ascii_obfuscation(vm):
     for classe in vm.get_classes():

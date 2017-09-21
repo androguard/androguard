@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, sys, re, string
+import string
 
 from dvm_permissions_unformatted import PERMISSIONS
 from permissions_by_hand import PERMISSIONS_BY_HAND
@@ -98,11 +98,11 @@ def translateDescReturn(desc_return):
 
 
 def translateToCLASS(desc_params, desc_return):
-    print desc_params, desc_return,
+    print(desc_params, desc_return, end=' ')
 
     buff = "(" + translateDescParams(desc_params[desc_params.find(
         "(") + 1:-1]) + ")" + translateDescReturn(desc_return)
-    print "----->", buff
+    print("----->", buff)
 
     return [desc_params[:desc_params.find("(")], buff]
 

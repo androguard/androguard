@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 
-import shutil
-import sys
+from __future__ import print_function
+
 import os
 import re
-
+import shutil
+import sys
 from optparse import OptionParser
 
-from androguard.core import androconf
 from androguard import session
-from androguard.core.analysis import analysis
-from androguard.core.bytecodes import dvm
-
+from androguard.core import androconf
 from androguard.core.bytecode import method2dot, method2format
+from androguard.core.bytecodes import dvm
 from androguard.decompiler import decompiler
 
 option_0 = {
@@ -77,14 +76,14 @@ def export_apps_to_format(filename,
                           methods_filter=None,
                           jar=None,
                           decompiler_type=None,
-                          format=None):
-    print "Dump information %s in %s" % (filename, output)
+                          form=None):
+    print("Dump information %s in %s" % (filename, output))
 
     if not os.path.exists(output):
-        print "Create directory %s" % output
+        print("Create directory %s" % output)
         os.makedirs(output)
     else:
-        print "Clean directory %s" % output
+        print("Clean directory %s" % output)
         androconf.rrmdir(output)
         os.makedirs(output)
 
@@ -97,19 +96,19 @@ def export_apps_to_format(filename,
         output_name = output_name + "/"
 
     dump_classes = []
-    for vm, vmx in s.get_objects_dex():
-        print "Decompilation ...",
+    for _, vm, vmx in s.get_objects_dex():
+        print("Decompilation ...", end=' ')
         sys.stdout.flush()
 
         if decompiler_type == "dex2jad":
             vm.set_decompiler(decompiler.DecompilerDex2Jad(
                 vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
+                ], androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2winejad":
             vm.set_decompiler(decompiler.DecompilerDex2WineJad(
                 vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
+                ], androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_WINEJAD"], androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "ded":
             vm.set_decompiler(decompiler.DecompilerDed(
@@ -122,18 +121,18 @@ def export_apps_to_format(filename,
                 ], androconf.CONF["PATH_FERNFLOWER"], androconf.CONF[
                     "BIN_FERNFLOWER"
                 ], androconf.CONF["OPTIONS_FERNFLOWER"
-                                 ], androconf.CONF["TMP_DIRECTORY"]))
+                ], androconf.CONF["TMP_DIRECTORY"]))
 
-        print "End"
+        print("End")
 
         if options.jar:
-            print "jar ...",
+            print("jar ...", end=' ')
             filenamejar = decompiler.Dex2Jar(
                 vm, androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
                 androconf.CONF["TMP_DIRECTORY"]).get_jar()
             shutil.move(filenamejar, output + "classes.jar")
-            print "End"
+            print("End")
 
         for method in vm.get_methods():
             if methods_filter_expr:
@@ -145,9 +144,9 @@ def export_apps_to_format(filename,
             filename_class = valid_class_name(method.get_class_name())
             create_directory(filename_class, output)
 
-            print "Dump %s %s %s ..." % (method.get_class_name(),
+            print("Dump %s %s %s ..." % (method.get_class_name(),
                                          method.get_name(),
-                                         method.get_descriptor()),
+                                         method.get_descriptor()), end=' ')
 
             filename_class = output_name + filename_class
             if filename_class[-1] != "/":
@@ -174,12 +173,12 @@ def export_apps_to_format(filename,
 
             buff = method2dot(vmx.get_method(method))
 
-            if format:
-                print "%s ..." % format,
-                method2format(filename + "." + format, format, None, buff)
+            if form:
+                print("%s ..." % form, end=' ')
+                method2format(filename + "." + form, form, None, buff)
 
             if method.get_class_name() not in dump_classes:
-                print "source codes ...",
+                print("source codes ...", end=' ')
                 current_class = vm.get_class(method.get_class_name())
                 current_filename_class = valid_class_name(
                     current_class.get_name())
@@ -189,22 +188,22 @@ def export_apps_to_format(filename,
                     fd.write(current_class.get_source())
                 dump_classes.append(method.get_class_name())
 
-            print "bytecodes ...",
+            print("bytecodes ...", end=' ')
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
             with open(filename + ".ag", "w") as fd:
                 fd.write(bytecode_buff)
-            print
+            print()
 
 
 def main(options, arguments):
-    if options.input != None and options.output != None:
+    if options.input is not None and options.output is not None:
         s = session.Session()
-        with open(options.input, "r") as fd:
+        with open(options.input, "rb") as fd:
             s.add(options.input, fd.read())
             export_apps_to_format(options.input, s, options.output, options.limit,
                                   options.jar, options.decompiler, options.format)
     else:
-        print "Please, specify an input file and an output directory"
+        print("Please, specify an input file and an output directory")
 
 
 if __name__ == "__main__":

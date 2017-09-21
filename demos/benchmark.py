@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import division
+from __future__ import print_function
+from past.utils import old_div
 import sys, os
 import cProfile
 
@@ -63,9 +66,9 @@ for i in os.walk(TEST):
     for j in i[2]:
         l.append(i[0] + j)
 
-print len(l), l
+print(len(l), l)
 
 _a = androguard.Androguard(l)
 
-print "MEMORY : ", memory() / _scale["MB"], "RESIDENT ", resident(
-) / _scale["MB"], "STACKSIZE ", stacksize() / _scale["MB"]
+print("MEMORY : ", old_div(memory(), _scale["MB"]), "RESIDENT ", old_div(resident(
+), _scale["MB"]), "STACKSIZE ", old_div(stacksize(), _scale["MB"]))

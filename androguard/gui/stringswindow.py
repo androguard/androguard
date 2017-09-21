@@ -1,23 +1,22 @@
-from PySide import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from androguard.gui.xrefwindow import XrefDialogString
 
 
-class StringsWindow(QtGui.QWidget):
-
+class StringsWindow(QtWidgets.QWidget):
     def __init__(self, parent=None, win=None, session=None):
         super(StringsWindow, self).__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Strings"
 
-        self.filterPatternLineEdit = QtGui.QLineEdit()
-        self.filterPatternLabel = QtGui.QLabel("&Filter string pattern:")
+        self.filterPatternLineEdit = QtWidgets.QLineEdit()
+        self.filterPatternLabel = QtWidgets.QLabel("&Filter string pattern:")
         self.filterPatternLabel.setBuddy(self.filterPatternLineEdit)
         self.filterPatternLineEdit.textChanged.connect(self.filterRegExpChanged)
 
         self.stringswindow = StringsValueWindow(self, win, session)
 
-        sourceLayout = QtGui.QVBoxLayout()
+        sourceLayout = QtWidgets.QVBoxLayout()
         sourceLayout.addWidget(self.stringswindow)
         sourceLayout.addWidget(self.filterPatternLabel)
         sourceLayout.addWidget(self.filterPatternLineEdit)
@@ -29,8 +28,7 @@ class StringsWindow(QtGui.QWidget):
         self.stringswindow.proxyModel.setFilterRegExp(regExp)
 
 
-class StringsValueWindow(QtGui.QTreeView):
-
+class StringsValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, session=None):
         super(StringsValueWindow, self).__init__(parent)
         self.mainwin = win
@@ -39,7 +37,7 @@ class StringsValueWindow(QtGui.QTreeView):
 
         self.reverse_strings = {}
 
-        self.proxyModel = QtGui.QSortFilterProxyModel()
+        self.proxyModel = QtCore.QSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
 
         self.model = QtGui.QStandardItemModel(self.session.get_nb_strings(), 4,
@@ -63,7 +61,7 @@ class StringsValueWindow(QtGui.QTreeView):
                 self.model.setData(self.model.index(
                     row, 3, QtCore.QModelIndex()), digest)
                 self.reverse_strings[repr(strings_analysis[string_value].get_value()) + digest
-                                    ] = strings_analysis[string_value]
+                                     ] = strings_analysis[string_value]
                 row += 1
 
         self.proxyModel.setSourceModel(self.model)
@@ -72,7 +70,7 @@ class StringsValueWindow(QtGui.QTreeView):
         self.setAlternatingRowColors(True)
         self.setModel(self.proxyModel)
         self.setSortingEnabled(True)
-        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
         self.doubleClicked.connect(self.slotDoubleClicked)
 
