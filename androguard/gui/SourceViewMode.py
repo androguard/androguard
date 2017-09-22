@@ -1,8 +1,12 @@
-from ViewMode import *
-from cemu import *
-import TextSelection
+from __future__ import division
+from __future__ import absolute_import
+from builtins import range
+from .ViewMode import *
+from .cemu import *
+from . import TextSelection
 
 from PyQt5 import QtGui, QtCore
+
 
 class SourceViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
@@ -31,7 +35,7 @@ class SourceViewMode(ViewMode):
         self.font.setKerning(False)
         self.font.setFixedPitch(True)
         fm = QtGui.QFontMetrics(self.font)
-        self._fontWidth  = fm.width('a')
+        self._fontWidth = fm.width('a')
         self._fontHeight = fm.height()
 
         self.textPen = QtGui.QPen(self.themes['pen'], 0, QtCore.Qt.SolidLine)
@@ -60,15 +64,15 @@ class SourceViewMode(ViewMode):
         return QtGui.QPixmap(width, height)
 
     def resize(self, width, height):
-        self.width = width - width%self.fontWidth
-        self.height = height - height%self.fontHeight
+        self.width = width - width % self.fontWidth
+        self.height = height - height % self.fontHeight
         self.computeTextArea()
         self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width // self.fontWidth
+        self.ROWS = self.height // self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def getPixmap(self):
@@ -80,7 +84,7 @@ class SourceViewMode(ViewMode):
                 t[0](*t[1:])
 
         self.Ops = []
-        
+
         if not self.newPix:
             self.draw()
 
@@ -99,7 +103,7 @@ class SourceViewMode(ViewMode):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
-            #print 'hit'
+            # print 'hit'
             self.drawAdditionals()
             return
 
@@ -116,11 +120,11 @@ class SourceViewMode(ViewMode):
         self.newPix = self._getNewPixmap(self.width, self.height + self.SPACER)
         qp = QtGui.QPainter()
         qp.begin(self.newPix)
-        qp.setWindow(-50, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight)
+        qp.setWindow(-50, 0, self.COLUMNS * self.fontWidth, self.ROWS * self.fontHeight)
 
         qp.drawPixmap(0, 0, self.qpix)
 
-        #self.transformationEngine.decorateText()
+        # self.transformationEngine.decorateText()
 
         # highlight selected text
         self.selector.highlightText()
@@ -135,19 +139,19 @@ class SourceViewMode(ViewMode):
         qp.end()
 
     def drawLine(self, qp):
-        qp.fillRect(-50, 0, 50,  self.ROWS * self.fontHeight, self.backgroundBrush)
+        qp.fillRect(-50, 0, 50, self.ROWS * self.fontHeight, self.backgroundBrush)
 
     def drawTextMode(self, qp):
         # draw background
-        qp.fillRect(0, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight, self.backgroundBrush)
+        qp.fillRect(0, 0, self.COLUMNS * self.fontWidth, self.ROWS * self.fontHeight, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
         qp.setPen(self.textPen)
-        
+
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
-        #ast = self.dataModel.current_class.get_ast()
-        #print ast
+        # ast = self.dataModel.current_class.get_ast()
+        # print ast
 
         for i in range(self.ROWS):
             if i < len(self.LINES):
@@ -170,7 +174,7 @@ class SourceViewMode(ViewMode):
         qp.setBrush(QtGui.QColor(255, 255, 0))
 
         qp.setOpacity(0.5)
-        qp.drawRect(xstart*self.fontWidth, cursorY*self.fontHeight, width*self.fontWidth, self.fontHeight + 2)
+        qp.drawRect(xstart * self.fontWidth, cursorY * self.fontHeight, width * self.fontWidth, self.fontHeight + 2)
         qp.setOpacity(1)
 
     def handleKeyEvent(self, modifiers, key, event=None):

@@ -16,8 +16,11 @@
 # limitations under the License.
 
 
-class MakeProperties(type):
+from builtins import object
+from future.utils import with_metaclass
 
+
+class MakeProperties(type):
     def __init__(cls, name, bases, dct):
 
         def _wrap_set(names, name):
@@ -38,7 +41,7 @@ class MakeProperties(type):
         super(MakeProperties, cls).__init__(name, bases, dct)
         attrs = []
         prefixes = ('_get_', '_set_')
-        for key in dct.keys():
+        for key in list(dct.keys()):
             for prefix in prefixes:
                 if key.startswith(prefix):
                     attrs.append(key[4:])
@@ -55,20 +58,18 @@ class MakeProperties(type):
         return obj
 
 
-class LoopType(object):
-    __metaclass__ = MakeProperties
+class LoopType(with_metaclass(MakeProperties, object)):
     _set_is_pretest = _set_is_posttest = _set_is_endless = None
     _get_is_pretest = _get_is_posttest = _get_is_endless = None
 
     def copy(self):
         res = LoopType()
-        for key, value in self.__dict__.iteritems():
+        for key, value in self.__dict__.items():
             setattr(res, key, value)
         return res
 
 
-class NodeType(object):
-    __metaclass__ = MakeProperties
+class NodeType(with_metaclass(MakeProperties, object)):
     _set_is_cond = _set_is_switch = _set_is_stmt = None
     _get_is_cond = _get_is_switch = _get_is_stmt = None
     _set_is_return = _set_is_throw = None
@@ -76,13 +77,12 @@ class NodeType(object):
 
     def copy(self):
         res = NodeType()
-        for key, value in self.__dict__.iteritems():
+        for key, value in self.__dict__.items():
             setattr(res, key, value)
         return res
 
 
 class Node(object):
-
     def __init__(self, name):
         self.name = name
         self.num = 0
@@ -108,7 +108,7 @@ class Node(object):
 
     def update_attribute_with(self, n_map):
         self.latch = n_map.get(self.latch, self.latch)
-        for follow_type, value in self.follow.iteritems():
+        for follow_type, value in self.follow.items():
             self.follow[follow_type] = n_map.get(value, value)
         self.loop_nodes = list(set(n_map.get(n, n) for n in self.loop_nodes))
 
@@ -123,7 +123,6 @@ class Node(object):
 
 
 class Interval(object):
-
     def __init__(self, head):
         self.name = 'Interval-%s' % head.name
         self.content = set([head])

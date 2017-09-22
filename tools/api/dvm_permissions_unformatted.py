@@ -87,7 +87,7 @@ PERMISSIONS = {
             ["C", "FLAG_VIBRATE", "public static final int"],
             ["C", "RINGER_MODE_VIBRATE", "public static final int"],
             ["C", "VIBRATE_SETTING_CHANGED_ACTION", "public static final String"
-                ],
+             ],
             ["C", "VIBRATE_SETTING_OFF", "public static final int"],
             ["C", "VIBRATE_SETTING_ON", "public static final int"],
             ["C", "VIBRATE_SETTING_ONLY_SILENT", "public static final int"],
@@ -115,7 +115,7 @@ PERMISSIONS = {
         ],
         "android.content.ContextWrapper": [
             ["F", "removeStickyBroadcast(android.content.Intent)", "public void"
-                ],
+             ],
             ["F", "sendStickyBroadcast(android.content.Intent)", "public void"],
         ],
     },
@@ -407,11 +407,11 @@ PERMISSIONS = {
         ],
         "android.telephony.PhoneStateListener": [
             ["C", "LISTEN_CALL_FORWARDING_INDICATOR", "public static final int"
-                ],
+             ],
             ["C", "LISTEN_CALL_STATE", "public static final int"],
             ["C", "LISTEN_DATA_ACTIVITY", "public static final int"],
             ["C", "LISTEN_MESSAGE_WAITING_INDICATOR", "public static final int"
-                ],
+             ],
             ["C", "LISTEN_SIGNAL_STRENGTH", "public static final int"],
         ],
         "android.os.Build.VERSION_CODES": [

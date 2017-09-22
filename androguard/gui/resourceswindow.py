@@ -1,8 +1,8 @@
+from builtins import str
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class ResourcesWindow(QtWidgets.QWidget):
-
     def __init__(self, parent=None, win=None, session=None):
         super(ResourcesWindow, self).__init__(parent)
         self.mainwin = win
@@ -29,7 +29,6 @@ class ResourcesWindow(QtWidgets.QWidget):
 
 
 class ResourcesValueWindow(QtWidgets.QTreeView):
-
     def __init__(self, parent=None, win=None, session=None):
         super(ResourcesValueWindow, self).__init__(parent)
         self.mainwin = win

@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import range
+from builtins import object
 import logging
 from struct import pack, unpack
 import androguard.decompiler.dad.util as util
@@ -283,7 +285,7 @@ def constwide(ins, vmap):
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
 def constwidehigh16(ins, vmap):
     logger.debug('ConstWideHigh16 : %s', ins.get_output())
-    value = unpack('=d', '\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
+    value = unpack('=d', b'\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
     cst = Constant(value, 'D', ins.BBBB)
     return assign_const(ins.AA, cst, vmap)
 
@@ -541,7 +543,7 @@ def iflez(ins, vmap):
     return ConditionalZExpression(Op.LEQUAL, get_variables(vmap, ins.AA))
 
 
-#TODO: check type for all aget
+# TODO: check type for all aget
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
 def aget(ins, vmap):
     logger.debug('AGet : %s', ins.get_output())
@@ -980,7 +982,7 @@ def invokevirtualrange(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    largs = range(ins.CCCC, ins.NNNN + 1)
+    largs = list(range(ins.CCCC, ins.NNNN + 1))
     this_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
@@ -997,7 +999,7 @@ def invokesuperrange(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    largs = range(ins.CCCC, ins.NNNN + 1)
+    largs = list(range(ins.CCCC, ins.NNNN + 1))
     args = get_args(vmap, param_type, largs[1:])
     base = get_variables(vmap, ins.CCCC)
     if ret_type != 'V':
@@ -1019,7 +1021,7 @@ def invokedirectrange(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    largs = range(ins.CCCC, ins.NNNN + 1)
+    largs = list(range(ins.CCCC, ins.NNNN + 1))
     this_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     base = get_variables(vmap, ins.CCCC)
@@ -1041,7 +1043,7 @@ def invokestaticrange(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    largs = range(ins.CCCC, ins.NNNN + 1)
+    largs = list(range(ins.CCCC, ins.NNNN + 1))
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
@@ -1058,7 +1060,7 @@ def invokeinterfacerange(ins, vmap, ret):
     name = method.get_name()
     param_type, ret_type = method.get_proto()
     param_type = util.get_params_type(param_type)
-    largs = range(ins.CCCC, ins.NNNN + 1)
+    largs = list(range(ins.CCCC, ins.NNNN + 1))
     base_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()

@@ -1,13 +1,21 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from builtins import range
+from builtins import str
 
 from androguard.core import androconf
+from androguard.gui.helpers import Signature
 from androguard.gui.xrefwindow import XrefDialogClass
-from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.helpers import classdot2class, Signature
+
+
+class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
+    # TODO this is a pure workaround to have a hash method!
+    # It seems that for python2 is __hash__ available
+    # But not on python3
+    def __hash__(self):
+        return hash(self.__str__())
 
 
 class TreeWindow(QtWidgets.QTreeWidget):
-
     def __init__(self, parent=None, win=None, session=None):
         super(TreeWindow, self).__init__(parent)
         self.itemDoubleClicked.connect(self.itemDoubleClickedHandler)
@@ -23,8 +31,8 @@ class TreeWindow(QtWidgets.QTreeWidget):
         self._reverse_cache = {}
 
     def fill(self):
-        '''Parse all the paths (['Lcom/example/myclass/MyActivity$1;', ...])
-           and build a tree using the QTreeWidgetItem insertion method.'''
+        """Parse all the paths (['Lcom/example/myclass/MyActivity$1;', ...])
+           and build a tree using the QTreeWidgetItem insertion method."""
         androconf.debug("Fill classes tree")
 
         for idx, filename, digest, classes in self.session.get_classes():
@@ -33,11 +41,11 @@ class TreeWindow(QtWidgets.QTreeWidget):
                 path_node = self.root_path_node
 
                 path = None
-                if sig.class_path == []:
+                if not sig.class_path:
                     path = '.'
                     if path not in path_node[0]:
                         path_node[0][path] = (
-                            {}, QtWidgets.QTreeWidgetItem(path_node[1]))
+                            {}, HashableQTreeWidgetItem(path_node[1]))
                         path_node[0][path][1].setText(0, path)
                     path_node = path_node[0][path]
                 else:
@@ -45,12 +53,12 @@ class TreeWindow(QtWidgets.QTreeWidget):
                     for path in sig.class_path:
                         if path not in path_node[0]:
                             path_node[0][path] = (
-                                {}, QtWidgets.QTreeWidgetItem(path_node[1]))
+                                {}, HashableQTreeWidgetItem(path_node[1]))
                             path_node[0][path][1].setText(0, path)
                         path_node = path_node[0][path]
 
                 # Class
-                path_node[0][path] = ({}, QtWidgets.QTreeWidgetItem(path_node[1]))
+                path_node[0][path] = ({}, HashableQTreeWidgetItem(path_node[1]))
 
                 class_name = sig.class_name
 
@@ -82,13 +90,13 @@ class TreeWindow(QtWidgets.QTreeWidget):
             statusTip="List the references where this element is used",
             triggered=self.actionXref)
         self.expandAct = QtWidgets.QAction("Expand",
-                                       self,
-                                       statusTip="Expand all the subtrees",
-                                       triggered=self.actionExpand)
+                                           self,
+                                           statusTip="Expand all the subtrees",
+                                           triggered=self.actionExpand)
         self.collapseAct = QtWidgets.QAction("Collapse",
-                                         self,
-                                         statusTip="Collapse all the subtrees",
-                                         triggered=self.actionCollapse)
+                                             self,
+                                             statusTip="Collapse all the subtrees",
+                                             triggered=self.actionCollapse)
 
     def actionXref(self):
         item = self.currentItem()
@@ -115,7 +123,6 @@ class TreeWindow(QtWidgets.QTreeWidget):
                                current_class=current_class,
                                class_analysis=class_analysis)
         xwin.show()
-
 
     def expand_children(self, item):
         self.expandItem(item)

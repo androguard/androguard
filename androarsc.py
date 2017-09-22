@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import sys
 from optparse import OptionParser
 from xml.dom import minidom
@@ -57,7 +58,7 @@ options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 
 def main(options, arguments):
-    if options.input != None:
+    if options.input is not None:
         buff = ""
 
         arscobj = None
@@ -68,7 +69,7 @@ def main(options, arguments):
         elif ret_type == "ARSC":
             arscobj = apk.ARSCParser(read(options.input))
         else:
-            print "Unknown file type"
+            print("Unknown file type")
             return
 
         if not options.package and not options.type and not options.locale:
@@ -89,15 +90,15 @@ def main(options, arguments):
                 arscobj, "get_" + ttype + "_resources")(package,
                                                         locale)).toprettyxml()
 
-        if options.output != None:
+        if options.output is not None:
             fd = codecs.open(options.output, "w", "utf-8")
             fd.write(buff)
             fd.close()
         else:
-            print buff
+            print(buff)
 
-    elif options.version != None:
-        print "Androarsc version %s" % androconf.ANDROGUARD_VERSION
+    elif options.version is not None:
+        print("Androarsc version %s" % androconf.ANDROGUARD_VERSION)
 
 
 if __name__ == "__main__":

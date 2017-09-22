@@ -13,7 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''This file is a simplified version of writer.py that outputs an AST instead of source code.'''
+"""This file is a simplified version of writer.py that outputs an AST instead of source code."""
+from builtins import zip
+from builtins import hex
+from builtins import str
+from builtins import map
+from builtins import range
+from builtins import object
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
@@ -84,6 +90,7 @@ def var_decl(typen, var):
 def dummy(*args):
     return ['Dummy', args]
 
+
 ################################################################################
 
 
@@ -136,6 +143,7 @@ def _append(sb, stmt):
     if stmt is not None:
         sb[2].append(stmt)
 
+
 ################################################################################
 TYPE_DESCRIPTOR = {
     'V': 'void',
@@ -166,25 +174,8 @@ def parse_descriptor(desc):
 
 # Note: the literal_foo functions (and dummy) are also imported by decompile.py
 def literal_string(s):
-    escapes = {
-        '\0': '\\0',
-        '\t': '\\t',
-        '\r': '\\r',
-        '\n': '\\n',
-        '"': '\\"',
-        '\\': '\\\\'
-    }
-
-    buf = ['"']
-    for c in s.decode('utf8'):
-        if c in escapes:
-            buf.append(escapes[c])
-        elif ' ' <= c < '\x7f':
-            buf.append(c)
-        else:
-            buf.append('\u{:04x}'.format(ord(c)))
-    buf.append('"')
-    return literal(''.join(buf), ('java/lang/String', 0))
+    # We return a escaped string in ASCII encoding
+    return literal(s.encode('unicode_escape').decode("ascii"), ('java/lang/String', 0))
 
 
 def literal_class(desc):
@@ -234,8 +225,8 @@ def visit_arr_data(value):
             tab.append(struct.unpack('<i', data[i:i + 4])[0])
     else:  # FIXME: other cases
         for i in range(value.size):
-            tab.append(struct.unpack('<b', data[i])[0])
-    return array_initializer(map(literal_int, tab))
+            tab.append(data[i])
+    return array_initializer(list(map(literal_int, tab)))
 
 
 def write_inplace_if_possible(lhs, rhs):
@@ -324,7 +315,7 @@ def visit_expr(op):
             return literal_double(op.cst)
         elif op.type == 'Ljava/lang/Class;':
             return literal_class(op.clsdesc)
-        return dummy('???')
+        return dummy('??? Unexpected constant: ' + str(op.type))
 
     if isinstance(op, instruction.FillArrayExpression):
         array_expr = visit_expr(op.var_map[op.reg])
@@ -347,10 +338,11 @@ def visit_expr(op):
     if isinstance(op, instruction.InvokeInstruction):
         base = op.var_map[op.base]
         params = [op.var_map[arg] for arg in op.args]
-        params = map(visit_expr, params)
+        params = list(map(visit_expr, params))
         if op.name == '<init>':
             if isinstance(base, instruction.ThisParam):
-                return method_invocation(op.triple, 'this', None, params)
+                keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
+                return method_invocation(op.triple, keyword, None, params)
             elif isinstance(base, instruction.NewInstance):
                 return ['ClassInstanceCreation', params,
                         parse_descriptor(base.type)]
@@ -402,7 +394,7 @@ def visit_expr(op):
     if isinstance(op, instruction.Variable):
         # assert(op.declared)
         return local('v{}'.format(op.name))
-    return dummy('???')
+    return dummy('??? Unexpected op: ' + type(op).__name__)
 
 
 def visit_ins(op, isCtor=False):
@@ -442,7 +434,6 @@ def visit_ins(op, isCtor=False):
 
 
 class JSONWriter(object):
-
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -495,7 +486,7 @@ class JSONWriter(object):
         if len(params) != len(m.params_type):
             assert ('abstract' in flags or 'native' in flags)
             assert (not params)
-            params = range(len(m.params_type))
+            params = list(range(len(m.params_type)))
 
         paramdecls = []
         for ptype, name in zip(m.params_type, params):
@@ -617,8 +608,8 @@ class JSONWriter(object):
 
             self.add(if_stmt(cond_expr, scopes))
         elif follow is not None:
-            if cond.true in (follow, self.next_case) or\
-                                                cond.num > cond.true.num:
+            if cond.true in (follow, self.next_case) or \
+                            cond.num > cond.true.num:
                 # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
@@ -630,7 +621,7 @@ class JSONWriter(object):
                 scopes.append(scope)
 
             is_else = not (follow in (cond.true, cond.false))
-            if is_else and not cond.false in self.visited_nodes:
+            if is_else and cond.false not in self.visited_nodes:
                 with self as scope:
                     self.visit_node(cond.false)
                 scopes.append(scope)

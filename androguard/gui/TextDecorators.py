@@ -1,9 +1,11 @@
-from PyQt5 import QtGui, QtCore
+from __future__ import absolute_import
+
 import re
 import string
-from time import time
-import sys
-import TextSelection
+
+from PyQt5 import QtGui, QtCore
+from builtins import object
+from builtins import range
 
 
 class CTextDecorator(object):
@@ -12,13 +14,14 @@ class CTextDecorator(object):
     greenPen = QtGui.QPen(QtGui.QColor(255, 255, 0))
     whitePen = QtGui.QPen(QtGui.QColor(255, 255, 255))
 
-    normalPen = QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine)        
+    normalPen = QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine)
 
     MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
     grayBrush = QtGui.QBrush(QtGui.QColor(128, 128, 128))
 
     def __init__(self):
         pass
+
 
 class TextDecorator(CTextDecorator):
     def __init__(self, viewmode):
@@ -32,27 +35,37 @@ class TextDecorator(CTextDecorator):
         self.normalPen = QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine)
 
         # if we want to generate T/F table
-        self.Special =  string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
-        self.Special = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, True, True, True, False, False, False, False, True, True, 
-                        True, False, False, False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, False, True, False, True, 
-                        False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, 
-                        True, True, True, False, True, False, False, True, False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True,
-                        True, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
-                        False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
-
+        self.Special = string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
+        self.Special = [False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, True, True,
+                        True, False, False, False, False, True, True,
+                        True, False, False, False, True, True, True, True, True, True, True, True, True, True, True,
+                        True, True, True, True, False, True, False, True,
+                        False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True,
+                        True, True, True, True, True, True, True, True,
+                        True, True, True, False, True, False, False, True, False, True, True, True, True, True, True,
+                        True, True, True, True, True, True, True, True, True,
+                        True, True, True, True, True, True, True, True, True, True, True, False, False, False, False,
+                        False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False,
+                        False, False, False, False, False, False, False, False, False, False, False, False, False,
+                        False, False, False, False]
 
     def reset(self):
         self.penMap = {}
         self.brushMap = {}
         self.PenInterval = []
 
-        
     def getDataModel(self):
         return self.dataModel
 
@@ -73,7 +86,7 @@ class TextDecorator(CTextDecorator):
         return self.Special[ord(c)]
 
     def getChar(self, idx):
-        #self.page = self.getDataModel().getDisplayablePage()
+        # self.page = self.getDataModel().getDisplayablePage()
 
 
         if idx < len(self.page):
@@ -81,24 +94,21 @@ class TextDecorator(CTextDecorator):
 
         return 0
 
-
     def decorate(self, pageOffset=None):
-        
+
         if pageOffset:
             self.page = self.viewmode.getDisplayablePage(pageOffset=pageOffset)
-        else:    
+        else:
             self.page = self.viewmode.getDisplayablePage()
 
         return self.page
-
-
 
     def addPenInterval(self, a, b, pen, ignoreHighlights=True):
         self.PenInterval.append((a, b, pen, ignoreHighlights))
 
     def choosePen(self, idx):
         key = self.dataModel.getOffset() + idx
-        
+
         # if we do have a pen with that index, return it if it's different than default pen
         # otherwise, return the pen that was set in that interval
         # the priority here is de pen from other transformations, than interval pen
@@ -133,7 +143,6 @@ class PageDecorator(TextDecorator):
     def __init__(self, decorated):
         pass
 
- 
     def reset(self):
         self.decorated.reset()
 
@@ -153,6 +162,7 @@ class PageDecorator(TextDecorator):
     def getDataModel(self):
         return self.dataModel
 
+
 class HighlightASCII(PageDecorator):
     def __init__(self, decorated):
         self.dataModel = decorated.getDataModel()
@@ -160,8 +170,6 @@ class HighlightASCII(PageDecorator):
         self.decorated = decorated
         super(HighlightASCII, self).__init__(decorated)
         self.dataModel = super(HighlightASCII, self).getDataModel()
-
-
 
     def decorate(self, pageOffset=None):
         page = self.decorated.decorate(pageOffset)
@@ -172,18 +180,15 @@ class HighlightASCII(PageDecorator):
 
         off = self.dataModel.getOffset()
 
-        Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? _<>]){4,}', page)]
+        Match = [(m.start(), m.end()) for m in re.finditer(b'([a-zA-Z0-9\\-\\\\.%*:/? _<>]){4,}', page)]
         for s, e in Match:
-            for i in range(e-s):
+            for i in range(e - s):
                 idx = off + s + i
                 if idx not in self.penMap:
                     self.penMap[off + s + i] = self.redPen
 
-
         self.page = page
         return self.page
-        
-
 
 
 class HighlightPrefix(PageDecorator):
@@ -204,14 +209,10 @@ class HighlightPrefix(PageDecorator):
         self.brushMap = self.decorated.brushMap
         self.penMap = self.decorated.penMap
 
-
         self.page = self.highliteWithPrefix(page, self.text, self.additionalLength, self.brush, self.pen)
         return self.page
 
-
     def highliteWithPrefix(self, page, text, additionalLength=0, brush=None, pen=None):
-
-
 
         # todo: nu am gasit o metoda mai eleganta pentru a selecta toate aparitiile ale lui text
         # regexp nu merg, "bad re expression"
@@ -228,16 +229,15 @@ class HighlightPrefix(PageDecorator):
                 M.append((idx, lenText + additionalLength))
                 idx += lenText + additionalLength
 
-        
         off = self.dataModel.getOffset()
         for start, length in M:
-           
+
             for i in range(length):
                 self.penMap[off + start + i] = pen
                 self.brushMap[off + start + i] = brush
 
-
         return page
+
 
 class HighlightWideChar(PageDecorator):
     def __init__(self, decorated):
@@ -246,7 +246,6 @@ class HighlightWideChar(PageDecorator):
         self.dataModel = decorated.getDataModel()
         self.decorated = decorated
 
-
     def decorate(self, pageOffset=None):
         self.page = self.decorated.decorate(pageOffset)
 
@@ -254,28 +253,24 @@ class HighlightWideChar(PageDecorator):
         self.brushMap = self.decorated.brushMap
         self.penMap = self.decorated.penMap
 
-
         self.page = self.highliteWidechar2(self.page)
         return self.page
 
-
-
-
     def highliteWidechar2(self, page):
-        
+
         pageStart = self.dataModel.getOffset()
-        pageEnd   = pageStart  + len(page)
+        pageEnd = pageStart + len(page)
 
         touched = False
-        #for s, e in self.Intervals:
+        # for s, e in self.Intervals:
         #    touched = True
 
         if not touched:
             # expand
             Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? ]\x00){4,}', page)]
             for s, e in Match:
-                for i in range(e-s):
-                    #print i
+                for i in range(e - s):
+                    # print i
                     self.penMap[pageStart + s + i] = QtGui.QPen(QtGui.QColor(255, 255, 0))
 
                 # get rid of '\x00'
@@ -284,11 +279,9 @@ class HighlightWideChar(PageDecorator):
                 # copy string that has no zeros
                 page[s:s + l] = string
                 # fill with zeros the remaining space
-                page[s + l: s + 2*l] = '\x00'*l
-
+                page[s + l: s + 2 * l] = '\x00' * l
 
         return page
-
 
     ### todo: other way to highlight widechar, should test and see which one is faster
     """

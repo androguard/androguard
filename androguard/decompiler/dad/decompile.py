@@ -1,3 +1,9 @@
+from __future__ import print_function
+
+import sys
+
+from builtins import input
+from builtins import map
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -14,8 +20,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from builtins import next
+from builtins import object
+from builtins import range
+from builtins import str
 
-import sys
 sys.path.append('./')
 
 import logging
@@ -26,8 +35,7 @@ import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (
-    JSONWriter, parse_descriptor, literal_string, literal_null, literal_int,
-    literal_long, literal_float, literal_double, literal_bool, literal_hex_int,
+    JSONWriter, parse_descriptor, literal_string, literal_hex_int,
     dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (
@@ -64,7 +72,7 @@ def get_field_ast(field):
             if field.get_descriptor() == 'Ljava/lang/String;':
                 expr = literal_string(val)
             elif field.proto == 'B':
-                expr = literal_hex_int(struct.unpack('<b', val)[0])
+                expr = literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
 
     return {
         'triple': triple,
@@ -75,7 +83,6 @@ def get_field_ast(field):
 
 
 class DvMethod(object):
-
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
         self.method = method
@@ -115,7 +122,7 @@ class DvMethod(object):
         if not __debug__:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
-                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
+                                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
     def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
@@ -140,6 +147,12 @@ class DvMethod(object):
         split_variables(graph, self.var_to_name, def_uses, use_defs)
         dead_code_elimination(graph, def_uses, use_defs)
         register_propagation(graph, def_uses, use_defs)
+
+        # FIXME var_to_name need to contain the created tmp variables.
+        # This seems to be a workaround, we add them into the list manually
+        for var, i in def_uses:
+            if not isinstance(var, int):
+                self.var_to_name[var] = var.upper()
 
         place_declarations(graph, self.var_to_name, def_uses, use_defs)
         del def_uses, use_defs
@@ -174,11 +187,11 @@ class DvMethod(object):
         return self.ast
 
     def show_source(self):
-        print self.get_source()
+        print(self.get_source())
 
     def get_source(self):
         if self.writer:
-            return '%s' % self.writer
+            return str(self.writer)
         return ''
 
     def get_source_ext(self):
@@ -187,12 +200,11 @@ class DvMethod(object):
         return []
 
     def __repr__(self):
-        #return 'Method %s' % self.name
+        # return 'Method %s' % self.name
         return 'class DvMethod(object): %s' % self.name
 
 
 class DvClass(object):
-
     def __init__(self, dvclass, vma):
         name = dvclass.get_name()
         if name.find('/') > 0:
@@ -237,17 +249,8 @@ class DvClass(object):
     def process_method(self, num, doAST=False):
         method = self.methods[num]
         if not isinstance(method, DvMethod):
-            # Do not change the instructions if it is already cached in the past
-            cached = True
-            if not method.is_cached_instructions():
-                method.set_instructions([i for i in method.get_instructions()])
-                cached = False
-
             self.methods[num] = DvMethod(self.vma.get_method(method))
             self.methods[num].process(doAST=doAST)
-
-            if not cached:
-                method.set_instructions([])
         else:
             method.process(doAST=doAST)
 
@@ -256,15 +259,14 @@ class DvClass(object):
             try:
                 self.process_method(i, doAST=doAST)
             except Exception as e:
-                logger.debug(
-                    'Error decompiling method %s: %s', self.methods[i], e)
+                logger.warning('Error decompiling method %s: %s', self.methods[i], e)
 
     def get_ast(self):
         fields = [get_field_ast(f) for f in self.fields]
         methods = []
         for m in self.methods:
-          if isinstance(m, DvMethod) and m.ast:
-            methods.append(m.get_ast())
+            if isinstance(m, DvMethod) and m.ast:
+                methods.append(m.get_ast())
         isInterface = 'interface' in self.access
         return {
             'rawname': self.thisclass[1:-1],
@@ -272,7 +274,7 @@ class DvClass(object):
             'super': parse_descriptor(self.superclass),
             'flags': self.access,
             'isInterface': isInterface,
-            'interfaces': map(parse_descriptor, self.interfaces),
+            'interfaces': list(map(parse_descriptor, self.interfaces)),
             'fields': fields,
             'methods': methods,
         }
@@ -304,9 +306,16 @@ class DvClass(object):
             if init_value:
                 value = init_value.value
                 if f_type == 'String':
-                    value = '"%s"' % value
+                    if value:
+                        value = '"%s"' % value.encode("unicode-escape").decode("ascii")
+                    else:
+                        # FIXME we can not check if this value here is null or ""
+                        # In both cases we end up here...
+                        value = '""'
                 elif field.proto == 'B':
-                    value = '0x%x' % struct.unpack('b', value)[0]
+                    # byte value: convert from unsiged int to signed and print as hex
+                    # as bytes are signed in Java
+                    value = hex(struct.unpack("b", struct.pack("B", value))[0])
                 source.append('%s %s = %s;\n' % (f_type, name, value))
             else:
                 source.append('%s %s;\n' % (f_type, name))
@@ -324,11 +333,9 @@ class DvClass(object):
             source.append(
                 ('PACKAGE', [('PACKAGE_START', 'package '), (
                     'NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')
-                        ]))
-        list_proto = []
-        list_proto.append(
-            ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
-        list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
+                             ]))
+        list_proto = [('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)),
+                      ('NAME_PROTOTYPE', '%s' % self.name, self.package)]
         superclass = self.superclass
         if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
@@ -362,23 +369,29 @@ class DvClass(object):
             if init_value:
                 value = init_value.value
                 if f_type == 'String':
-                    value = ' = "%s"' % value
+                    if value:
+                        value = ' = "%s"' % value.encode("unicode-escape").decode("ascii")
+                    else:
+                        # FIXME we can not check if this value here is null or ""
+                        # In both cases we end up here...
+                        value = ' = ""'
                 elif field.proto == 'B':
-                    value = ' = 0x%x' % struct.unpack('b', value)[0]
+                    # a byte
+                    value = ' = %s' % hex(struct.unpack("b", struct.pack("B", value))[0])
                 else:
                     value = ' = %s' % str(value)
             if value:
                 source.append(
                     ('FIELD', [('FIELD_ACCESS', access_str), (
                         'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
-                                                                        ';\n')]))
+                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
+                                                                                                       ';\n')]))
             else:
                 source.append(
                     ('FIELD', [('FIELD_ACCESS', access_str), (
                         'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
-                                                                        ';\n')]))
+                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
+                                                                               ';\n')]))
 
         for method in self.methods:
             if isinstance(method, DvMethod):
@@ -387,28 +400,27 @@ class DvClass(object):
         return source
 
     def show_source(self):
-        print self.get_source()
+        print(self.get_source())
 
     def __repr__(self):
         return 'Class(%s)' % self.name
 
 
 class DvMachine(object):
-
     def __init__(self, name):
         vm = auto_vm(name)
         if vm is None:
             raise ValueError('Format not recognised: %s' % name)
-        self.vma = analysis.newVMAnalysis(vm)
+        self.vma = analysis.Analysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
-        #util.merge_inner(self.classes)
+        # util.merge_inner(self.classes)
 
     def get_classes(self):
-        return self.classes.keys()
+        return list(self.classes.keys())
 
     def get_class(self, class_name):
-        for name, klass in self.classes.iteritems():
+        for name, klass in self.classes.items():
             if class_name in name:
                 if isinstance(klass, DvClass):
                     return klass
@@ -416,7 +428,7 @@ class DvMachine(object):
                 return dvclass
 
     def process(self):
-        for name, klass in self.classes.iteritems():
+        for name, klass in self.classes.items():
             logger.info('Processing class: %s', name)
             if isinstance(klass, DvClass):
                 klass.process()
@@ -429,7 +441,7 @@ class DvMachine(object):
             klass.show_source()
 
     def process_and_show(self):
-        for name, klass in sorted(self.classes.iteritems()):
+        for name, klass in sorted(self.classes.items()):
             logger.info('Processing class: %s', name)
             if not isinstance(klass, DvClass):
                 klass = DvClass(klass, self.vma)
@@ -461,7 +473,7 @@ def main():
         logger.info(' %s', class_name)
     logger.info('========================')
 
-    cls_name = raw_input('Choose a class: ')
+    cls_name = input('Choose a class: ')
     if cls_name == '*':
         machine.process_and_show()
     else:
@@ -473,7 +485,7 @@ def main():
             for i, method in enumerate(cls.get_methods()):
                 logger.info('%d: %s', i, method.name)
             logger.info('======================')
-            meth = raw_input('Method: ')
+            meth = input('Method: ')
             if meth == '*':
                 logger.info('CLASS = %s', cls)
                 cls.process()

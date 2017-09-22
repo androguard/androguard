@@ -1,16 +1,25 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from future import standard_library
+
+standard_library.install_aliases()
 import os
 import mmap
 
-from BinViewMode import *
-from HexViewMode import *
-from DisasmViewMode import *
-from SourceViewMode import *
+from .BinViewMode import *
+from .HexViewMode import *
+from .DisasmViewMode import *
+from .SourceViewMode import *
 
-class Observer:
+
+class Observer(object):
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
-class DataModel(object, Observer):
+
+class DataModel(Observer):
     def __init__(self, data):
         self._dataOffset = 0
         self.rows = self.cols = 0
@@ -21,10 +30,10 @@ class DataModel(object, Observer):
     @property
     def dataOffset(self):
         return self._dataOffset
-    
+
     @dataOffset.setter
     def dataOffset(self, value):
-        print "DATA OFFSET", value
+        print("DATA OFFSET", value)
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -32,7 +41,7 @@ class DataModel(object, Observer):
         return self._lastOffset
 
     def inLimits(self, x):
-        if x >= 0 and x < len(self.data):
+        if 0 <= x < len(self.data):
             return True
 
         return False
@@ -46,7 +55,7 @@ class DataModel(object, Observer):
             self.dataOffset = off
 
     def offsetInPage(self, off):
-        if off >= self.dataOffset and off <= self.dataOffset + self.rows*self.cols:
+        if self.dataOffset <= off <= self.dataOffset + self.rows * self.cols:
             return True
 
         return False
@@ -56,87 +65,87 @@ class DataModel(object, Observer):
         self.cols = cols
 
     def slideLine(self, factor):
-        self.slide(factor*self.cols)
+        self.slide(factor * self.cols)
 
     def slidePage(self, factor):
-        self.slide(factor*self.cols*self.rows)
+        self.slide(factor * self.cols * self.rows)
 
     def slideToLastPage(self):
-        if self.rows*self.cols > len(self.data):
+        if self.rows * self.cols > len(self.data):
             return
 
-        self.dataOffset = len(self.data) - self.cols*self.rows
+        self.dataOffset = len(self.data) - self.cols * self.rows
 
     def slideToFirstPage(self):
         self.dataOffset = 0
 
     def getXYInPage(self, off):
         off -= self.dataOffset
-        x, y = off/self.cols, off%self.cols
+        x, y = off // self.cols, off % self.cols
         return x, y
 
     def getPageOffset(self, page):
-        return self.getOffset() + (page)*self.rows*self.cols
-
+        return self.getOffset() + page * self.rows * self.cols
 
     def getQWORD(self, offset, asString=False):
         if offset + 8 > len(self.data):
             return None
 
-        b = bytearray(self.data[offset:offset+8])
+        b = bytearray(self.data[offset:offset + 8])
 
-        d = ((b[7] << 56) | (b[6] << 48) | (b[5] << 40) | (b[4] << 32) | (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0])) & 0xFFFFFFFFFFFFFFFF
+        d = ((b[7] << 56) | (b[6] << 48) | (b[5] << 40) | (b[4] << 32) | (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (
+        b[0])) & 0xFFFFFFFFFFFFFFFF
 
-        if not asString:        
+        if not asString:
             return d
 
         s = '{0:016X}'.format(d)
-        
+
         return s
 
     def getDWORD(self, offset, asString=False):
         if offset + 4 >= len(self.data):
             return None
 
-        b = bytearray(self.data[offset:offset+4])
+        b = bytearray(self.data[offset:offset + 4])
 
         d = ((b[3] << 24) | (b[2] << 16) | (b[1] << 8) | (b[0])) & 0xFFFFFFFF
 
-        if not asString:        
+        if not asString:
             return d
 
         s = '{0:08X}'.format(d)
-        
+
         return s
 
     def getWORD(self, offset, asString=False):
         if offset + 2 > len(self.data):
             return None
 
-        b = bytearray(self.data[offset:offset+2])
+        b = bytearray(self.data[offset:offset + 2])
 
         d = ((b[1] << 8) | (b[0])) & 0xFFFF
 
-        if not asString:        
+        if not asString:
             return d
 
         s = '{0:04X}'.format(d)
-        
+
         return s
 
     def getBYTE(self, offset, asString=False):
         if offset + 1 > len(self.data):
             return None
 
-        b = bytearray(self.data[offset:offset+1])
+        b = bytearray(self.data[offset:offset + 1])
 
         d = (b[0]) & 0xFF
 
-        if not asString:        
+        if not asString:
             return d
 
         s = '{0:02X}'.format(d)
-        
+
         return s
 
     def getChar(self, offset):
@@ -192,6 +201,7 @@ class DataModel(object, Observer):
     def size(self):
         pass
 
+
 class FileDataModel(DataModel):
     def __init__(self, filename):
         self._filename = filename
@@ -212,7 +222,7 @@ class FileDataModel(DataModel):
         # open for writing
         try:
             self._f = open(self._filename, "r+b")
-        except Exception, e:
+        except OSError as e:
             # could not open for writing
             return False
         self._f.write(self._mapped)
@@ -230,14 +240,18 @@ class FileDataModel(DataModel):
     def size(self):
         return os.path.getsize(self._filename)
 
-import StringIO
-class MyStringIO(StringIO.StringIO, object):
+
+import io
+
+
+class MyStringIO(io.StringIO, object):
     def __init__(self, data):
         self.raw = data
         super(MyStringIO, self).__init__(data)
 
     def __len__(self):
         return len(self.raw)
+
 
 class MyByte(bytearray):
     def __init__(self, data):
@@ -268,6 +282,7 @@ class MyByte(bytearray):
         self._pointer += size
         return data
 
+
 class BufferDataModel(DataModel):
     def __init__(self, data, name):
         self._filename = name
@@ -284,26 +299,20 @@ class BufferDataModel(DataModel):
     def close(self):
         return
 
-#    def write(self, offset, stream):
-#        self._mapped.seek(offset)
-#        self._mapped.write(stream)
+    #    def write(self, offset, stream):
+    #        self._mapped.seek(offset)
+    #        self._mapped.write(stream)
 
     def size(self):
         return len(self.data)
 
+
 class ApkModel(DataModel):
     def __init__(self, apkobj):
-        print apkobj
+        print(apkobj)
         self._filename = str(apkobj)
         self.raw = apkobj.get_raw()
-        #import StringIO
-#        self.data = bytearray(data)
-#        self.data = bytearray(data)
         self.data = MyByte(self.raw)
-        #self.data.__len__ = f
-        #self.data.__len__ = self.data.len
-        #print self.data.len
-        #self.data.__len__ = f
 
         super(ApkModel, self).__init__(self.data)
 
@@ -323,6 +332,7 @@ class ApkModel(DataModel):
     def size(self):
         return len(self.data)
 
+
 class DexClassModel(DataModel):
     def __init__(self, current_class):
         self.current_class = current_class
@@ -332,7 +342,7 @@ class DexClassModel(DataModel):
         super(DexClassModel, self).__init__(raw)
 
     def GetRawData(self, current_class):
-        buff = ""
+        buff = bytearray()
         self.ins_size = 0
         for method in current_class.get_methods():
             for ins in method.get_instructions():

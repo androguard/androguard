@@ -1,6 +1,7 @@
 """Tests for def_use."""
 
 import sys
+
 sys.path.append('.')
 
 import collections
@@ -8,12 +9,21 @@ import mock
 import unittest
 from androguard.decompiler.dad import dataflow
 from androguard.decompiler.dad import graph
-from androguard.decompiler.dad import node
 from androguard.decompiler.dad import instruction
 from androguard.decompiler.dad import basic_blocks
 
 
 class DataflowTest(unittest.TestCase):
+    def assertItemsEqual(self, a, b):
+        """
+        This method was renamed in python3.
+        To provide compability with python2,
+        we added this wrapper.
+        """
+        try:
+            return super(DataflowTest, self).assertItemsEqual(a, b)
+        except AttributeError as e:
+            return self.assertCountEqual(a, b)
 
     def _CreateMockIns(self, uses, lhs=None):
         mock_ins = mock.create_autospec(instruction.IRForm)
@@ -95,7 +105,7 @@ class DataflowTest(unittest.TestCase):
             n8: [n9]
         }
         preds = collections.defaultdict(list)
-        for pred, lsucs in sucs.iteritems():
+        for pred, lsucs in sucs.items():
             for suc in lsucs:
                 preds[suc].append(pred)
 
@@ -117,7 +127,7 @@ class DataflowTest(unittest.TestCase):
             for dummy_mock in dummy_entry_mock, dummy_exit_mock:
                 dummy_mock.get_loc_with_ins.return_value = []
             dummynode_mock.side_effect = [dummy_entry_mock, dummy_exit_mock]
-            analysis = dataflow.reach_def_analysis(graph_mock, set(['a', 'b']))
+            analysis = dataflow.reach_def_analysis(graph_mock, ['a', 'b'])
         expected_A = {
             dummy_entry_mock: set([-2, -1]),
             n1: set([-2, -1, 0, 1]),
@@ -152,7 +162,7 @@ class DataflowTest(unittest.TestCase):
         }
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
-        self.assertDictEqual(analysis.def_to_loc, expected_def_to_loc)
+        self.assertItemsEqual(analysis.def_to_loc, expected_def_to_loc)
 
     @mock.patch.object(dataflow, 'reach_def_analysis')
     def testDefUseGCD(self, mock_reach_def):
@@ -225,6 +235,7 @@ class DataflowTest(unittest.TestCase):
             ('d', 7): [1],
             ('ret', 9): [3, 8]
         }
+
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
         self.assertItemsEqual(du, expected_du)
         for entry in du:
@@ -295,8 +306,8 @@ class DataflowTest(unittest.TestCase):
         }
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
-        self.assertEqual(du, expected_du)
         self.assertEqual(ud, expected_ud)
+        self.assertItemsEqual(du, expected_du)
 
     def testGroupVariablesGCD(self):
         du = {
@@ -331,7 +342,7 @@ class DataflowTest(unittest.TestCase):
             'ret': [([3, 8], [9])]
         }
         groups = dataflow.group_variables(['a', 'b', 'c', 'd', 'ret'], du, ud)
-        self.assertEqual(groups, expected_groups)
+        self.assertItemsEqual(groups, expected_groups)
 
     def testGroupVariablesIfBool(self):
         du = {

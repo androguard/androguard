@@ -1,14 +1,14 @@
-#!/usr/bin/env python2
-'''Androguard Gui'''
+#!/usr/bin/env python
+"""Androguard Gui"""
 
 import argparse
+import os
 import sys
 
 from androguard.core import androconf
 from androguard.gui.mainwindow import MainWindow
 
 from PyQt5 import QtWidgets, QtGui
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Androguard GUI")
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     sys.setrecursionlimit(50000)
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon("./androguard/gui/androguard.ico"))
+    app.setWindowIcon(QtGui.QIcon(os.path.join(androconf.CONF['data_prefix'], "androguard.ico")))
 
     window = MainWindow(input_file=args.input_file,
                         input_plugin=args.input_plugin)

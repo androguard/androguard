@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 PATH_INSTALL = "./"
@@ -22,9 +23,9 @@ for method in vm.get_methods():
     if method.get_code() == None:
         continue
 
-    print method.get_class_name(), method.get_name(), method.get_descriptor()
+    print(method.get_class_name(), method.get_name(), method.get_descriptor())
 
     ms = decompile.DvMethod(mx)
     ms.process()
 
-    print ms.get_source()
+    print(ms.get_source())
