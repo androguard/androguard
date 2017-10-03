@@ -70,7 +70,7 @@ class DexViewer(object):
         idx = i.start
         label = ""
         for ins in i.get_instructions():
-            c_label = "%x %s\n" % (idx, self.vm.dotbuff(ins, idx))
+            c_label = "%x %s %s\n" % (idx, ins.get_name(), ins.get_output(idx))
             idx += ins.get_length()
             label += c_label
             width = max(width, len(c_label))
