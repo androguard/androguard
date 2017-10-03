@@ -386,8 +386,8 @@ class MethodAnalysis(object):
         self.basic_blocks = BasicBlocks(self.__vm)
         self.exceptions = Exceptions(self.__vm)
 
-        code = self.method.get_code()
-        if code is None:
+        self.code = self.method.get_code()
+        if self.code is None:
             return
 
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
@@ -395,7 +395,7 @@ class MethodAnalysis(object):
 
         ##########################################################
 
-        bc = code.get_bc()
+        bc = self.code.get_bc()
         l = []
         h = {}
         idx = 0
@@ -473,7 +473,7 @@ class MethodAnalysis(object):
         """
             :rtype: an integer which is the length of the code
         """
-        return self.get_code().get_length()
+        return self.code.get_length() if self.code else 0
 
     def get_vm(self):
         return self.__vm
