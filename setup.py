@@ -15,7 +15,6 @@ else:
 
 # There is a bug in pyasn1 0.3.1 and 0.3.2, so do not use them!
 base_requirements = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
-                     'cryptography>=1.0',
                      'future',
                      'networkx',
                      'pygments',
@@ -26,6 +25,14 @@ if sys.version_info >= (3, 3):
     install_requires = ['ipython>=5.0.0'] + base_requirements
 else:
     install_requires = ['ipython>=5.0.0,<6'] + base_requirements
+
+
+if sys.version_info == (3, 3):
+    # pycrypography >= 2 is not supported by py 3.3
+    # See https://cryptography.io/en/latest/changelog/#v2-0
+    install_requires.append('cryptography>=1.0,<2.0')
+else:
+    install_requires.append('cryptography>=1.0')
 
 setup(
     name='androguard',
