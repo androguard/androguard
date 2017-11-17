@@ -22,6 +22,7 @@ from subprocess import Popen, PIPE, STDOUT
 
 import tempfile
 import os
+import sys
 
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
@@ -569,11 +570,12 @@ class DecompilerJADX:
         """
         self.vm = vm
         self.vmx = vmx
+        # Dictionary to store classnames: sourcecode
         self.classes = {}
 
         # Result directory:
         # TODO need to remove the folder correctly!
-        self.res = tempfile.mkdtemp()
+        tmpfolder = tempfile.mkdtemp()
 
         # We need to decompile the whole dex file, as we do not have an API...
         # dump the dex file into a temp file
@@ -585,7 +587,7 @@ class DecompilerJADX:
         with tempfile.NamedTemporaryFile(suffix=".dex") as tf:
             tf.write(vm.get_buff())
 
-            cmd = [jadx, "-d", self.res, "--escape-unicode", "--no-res", tf.name]
+            cmd = [jadx, "-d", tmpfolder, "--escape-unicode", "--no-res", tf.name]
             print(cmd)
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             # FIXME should be written somewhere...
@@ -601,44 +603,62 @@ class DecompilerJADX:
 
         andr_class_names = {x.get_name()[1:-1]: x for x in vm.get_classes()}
 
-        print(andr_class_names)
-
-        for root, dirs, files in os.walk(self.res):
+        for root, dirs, files in os.walk(tmpfolder):
             for f in files:
                 if not f.endswith(".java"):
                     # FIXME panik!!!
                     continue
                 # as the path begins always with `self.res` (hopefully), we remove that length
                 # also, all files should end with .java
-                path = os.path.join(root, f)[len(self.res) + 1:-5]
+                path = os.path.join(root, f)[len(self.tmpfolder) + 1:-5]
                 path = path.replace(os.sep, "/")
-
-                print(path)
 
                 if path in andr_class_names:
                     with open(os.path.join(root, f), "rb") as fp:
-                        self.classes[andr_class_names[path]] = fp.read()
+                        # Need to convert back to the "full" classname
+                        self.classes["L{};".format(path)] = fp.read()
                 else:
                     # FIXME panik!!!
-                    pass
+                    print("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
 
-        rrmdir(self.res)
+        for cl in andr_class_names:
+            if not os.path.isfile(os.path.join(tmpfolder, cl.replace("/", os.sep))):
+                print("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+
+        rrmdir(tmpfolder)
 
     def get_source_method(self, m):
         """
+        Return the Java source of a single method
 
-        :param m:
+        :param m: `EncodedMethod` Object
         :return:
         """
-        pass
+        class_name = m.get_class_name()
+        method_name = m.get_name()
+
+        if class_name not in self.classes:
+            return ""
+
+        if PYGMENTS:
+            lexer = get_lexer_by_name("java", stripall=True)
+            lexer.add_filter(MethodFilter(method_name=method_name))
+            formatter = TerminalFormatter()
+            result = highlight(self.classes[class_name], lexer, formatter)
+            return result
+
+        return self.classes[class_name]
 
     def get_source_class(self, _class):
         """
+        Return the Java source code of a whole class
 
-        :param _class:
+        :param _class: `ClassDefItem` object, to get the source from
         :return:
         """
-        pass
+        if not _class.get_name() in self.classes:
+            return ""
+        return self.classes[_class.get_name()]
 
     def get_all(self, class_name):
         """
