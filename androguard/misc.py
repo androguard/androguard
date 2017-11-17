@@ -101,6 +101,8 @@ def RunDecompiler(d, dx, decompiler):
     if decompiler is not None:
         androconf.debug("Decompiler ...")
         decompiler = decompiler.lower()
+        # TODO put this into the configuration object and make it more dynamic
+        # e.g. detect new decompilers and so on...
         if decompiler == "dex2jad":
             d.set_decompiler(DecompilerDex2Jad(
                 d,
