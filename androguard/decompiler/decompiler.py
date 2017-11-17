@@ -580,7 +580,7 @@ class DecompilerJADX:
         # THIS WILL NOT WORK ON WINDOWS!!!
         # See https://stackoverflow.com/q/15169101/446140
         # Files can not be read, only if they specify temp file. But jadx does not do that...
-        with tempfile.TemporaryFile() as tf:
+        with tempfile.NamedTemporaryFile() as tf:
             tf.write(vm.get_buff())
 
             cmd = [jadx, "-d", self.res, "--escape-unicode", "--no-res", tf.name]
