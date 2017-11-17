@@ -28,15 +28,11 @@ from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
 from androguard.util import read
 
-PYGMENTS = True
-try:
-    from pygments.filter import Filter
-    from pygments import highlight
-    from pygments.lexers import get_lexer_by_name
-    from pygments.formatters import TerminalFormatter
-    from pygments.token import Token
-except ImportError:
-    PYGMENTS = False
+from pygments.filter import Filter
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import TerminalFormatter
+from pygments.token import Token
 
 
     class Filter(object):
@@ -137,14 +133,11 @@ class DecompilerDex2Jad(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            lexer.add_filter(MethodFilter(method_name=method_name))
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        lexer.add_filter(MethodFilter(method_name=method_name))
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_source(self, method):
         print(self.get_source_method(method))
@@ -156,12 +149,10 @@ class DecompilerDex2Jad(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_all(self, _class):
         print(self.get_all(_class.get_name()))
@@ -230,14 +221,11 @@ class DecompilerDex2WineJad(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            lexer.add_filter(MethodFilter(method_name=method_name))
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        lexer.add_filter(MethodFilter(method_name=method_name))
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_source(self, method):
         print(self.get_source_method(method))
@@ -249,12 +237,10 @@ class DecompilerDex2WineJad(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_all(self, _class):
         print(self.get_all(_class.get_name()))
@@ -410,14 +396,11 @@ class DecompilerDex2Fernflower(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            lexer.add_filter(MethodFilter(method_name=method_name))
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        lexer.add_filter(MethodFilter(method_name=method_name))
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_source(self, method):
         print(self.get_source_method(method))
@@ -429,12 +412,10 @@ class DecompilerDex2Fernflower(object):
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def display_all(self, _class):
         print(self.get_all(_class.get_name()))
@@ -523,10 +504,9 @@ class DecompilerDAD(object):
     def display_source(self, m):
         result = self.get_source_method(m)
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            formatter = TerminalFormatter()
-            result = highlight(result, lexer, formatter)
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(result, lexer, formatter)
         print(result)
 
     def get_source_class(self, _class):
@@ -550,10 +530,9 @@ class DecompilerDAD(object):
     def display_all(self, _class):
         result = self.get_source_class(_class)
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            formatter = TerminalFormatter()
-            result = highlight(result, lexer, formatter)
+        lexer = get_lexer_by_name("java", stripall=True)
+        formatter = TerminalFormatter()
+        result = highlight(result, lexer, formatter)
         print(result)
 
     def get_all(self, class_name):
@@ -656,14 +635,11 @@ class DecompilerJADX:
         if class_name not in self.classes:
             return ""
 
-        if PYGMENTS:
-            lexer = get_lexer_by_name("java", stripall=True)
-            lexer.add_filter(MethodFilter(method_name=method_name))
-            formatter = TerminalFormatter()
-            result = highlight(self.classes[class_name], lexer, formatter)
-            return result
-
-        return self.classes[class_name]
+        lexer = get_lexer_by_name("java", stripall=True)
+        lexer.add_filter(MethodFilter(method_name=method_name))
+        formatter = TerminalFormatter()
+        result = highlight(self.classes[class_name], lexer, formatter)
+        return result
 
     def get_source_class(self, _class):
         """
