@@ -586,6 +586,7 @@ class DecompilerJADX:
             print(stdout)
 
             if x.returncode != 0:
+                rrmdir(tmpfolder)
                 raise JADXDecompilerError("Could not decompile file. Args: {}".format(" ".join(cmd)))
 
         # Next we parse the folder structure for later lookup
@@ -626,7 +627,8 @@ class DecompilerJADX:
             if not os.path.isfile(os.path.join(tmpfolder, cl.replace("/", os.sep))):
                 print("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
 
-        rrmdir(tmpfolder)
+        if not keepfiles:
+            rrmdir(tmpfolder)
 
     def get_source_method(self, m):
         """
