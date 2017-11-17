@@ -43,6 +43,10 @@ except ImportError:
         pass
 
 
+class JADXDecompilerError(Exception):
+    pass
+
+
 class Dex2Jar(object):
     def __init__(self,
                  vm,
@@ -595,6 +599,9 @@ class DecompilerJADX:
             print(stderr)
             print(stdout)
 
+            if x.returncode != 0:
+                raise JADXDecompilerError("Could not decompile file. Args: {}".format(" ".join(cmd)))
+
         # Next we parse the folder structure for later lookup
         # We read the content of each file here, so we can later delete the folder
         # We check here two ways, first we iterate all files and see if the class exists
@@ -610,7 +617,7 @@ class DecompilerJADX:
                     continue
                 # as the path begins always with `self.res` (hopefully), we remove that length
                 # also, all files should end with .java
-                path = os.path.join(root, f)[len(self.tmpfolder) + 1:-5]
+                path = os.path.join(root, f)[len(tmpfolder) + 1:-5]
                 path = path.replace(os.sep, "/")
 
                 if path in andr_class_names:
