@@ -620,6 +620,10 @@ class DecompilerJADX:
                 path = os.path.join(root, f)[len(tmpfolder) + 1:-5]
                 path = path.replace(os.sep, "/")
 
+                if path.startswith("defpackage"):
+                    # Special care for files without package
+                    path = path[len("defpackage/"):]
+
                 if path in andr_class_names:
                     with open(os.path.join(root, f), "rb") as fp:
                         # Need to convert back to the "full" classname
