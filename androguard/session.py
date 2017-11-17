@@ -140,6 +140,7 @@ class Session(object):
 
         dx.create_xref()
 
+        # TODO we would like to be able to specify the decompiler here
         d.set_decompiler(DecompilerDAD(d, dx))
         d.set_vmanalysis(dx)
 

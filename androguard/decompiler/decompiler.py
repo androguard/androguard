@@ -43,6 +43,7 @@ class JADXDecompilerError(Exception):
     pass
 
 
+# TODO move it somewhere else
 class Dex2Jar(object):
     def __init__(self,
                  vm,
@@ -486,6 +487,12 @@ class MethodFilter(Filter):
 
 class DecompilerDAD(object):
     def __init__(self, vm, vmx):
+        """
+        Decompiler wrapper for DAD
+
+        :param vm: `DalvikVMFormat` object
+        :param vmx: `Analysis` object
+        """
         self.vm = vm
         self.vmx = vmx
 
@@ -652,26 +659,30 @@ class DecompilerJADX:
             return ""
         return self.classes[_class.get_name()]
 
-    def get_all(self, class_name):
-        """
-
-        :param class_name:
-        :return:
-        """
-        pass
-
     def display_source(self, m):
         """
+        This method does the same as `get_source_method`
+        but prints the result directly to stdout
 
-        :param m:
+        :param m: `EncodedMethod` to print
         :return:
         """
-        pass
+        print(self.get_source_method(m))
 
     def display_all(self, _class):
         """
+        ???
 
         :param _class:
+        :return:
+        """
+        pass
+
+    def get_all(self, class_name):
+        """
+        ???
+
+        :param class_name:
         :return:
         """
         pass
