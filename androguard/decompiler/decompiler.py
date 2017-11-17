@@ -35,11 +35,10 @@ from pygments.formatters import TerminalFormatter
 from pygments.token import Token
 
 
-    class Filter(object):
-        pass
-
-
 class JADXDecompilerError(Exception):
+    """
+    Exception for JADX related problems
+    """
     pass
 
 
