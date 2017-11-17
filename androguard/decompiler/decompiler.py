@@ -561,7 +561,7 @@ class DecompilerDAD(object):
 
 
 class DecompilerJADX:
-    def __init__(self, vm, vmx, jadx="jadx"):
+    def __init__(self, vm, vmx, jadx="jadx", keepfiles=False):
         """
         DecompilerJADX is a wrapper for the jadx decompiler:
         https://github.com/skylot/jadx
@@ -571,6 +571,7 @@ class DecompilerJADX:
         :param vm: `DalvikVMFormat` object
         :param vmx: `Analysis` object
         :param jadx: path to the jadx executable
+        :param keepfiles: set to True, if you like to keep temporary files
         """
         self.vm = vm
         self.vmx = vmx
@@ -610,6 +611,8 @@ class DecompilerJADX:
 
         andr_class_names = {x.get_name()[1:-1]: x for x in vm.get_classes()}
 
+        # TODO the problem with this approach is, that jadx does not create single files for inner classes
+        # Androguard has them separatly, but jadx puts inner classes into the outer class...
         for root, dirs, files in os.walk(tmpfolder):
             for f in files:
                 if not f.endswith(".java"):
@@ -620,8 +623,10 @@ class DecompilerJADX:
                 path = os.path.join(root, f)[len(tmpfolder) + 1:-5]
                 path = path.replace(os.sep, "/")
 
+                # Special care for files without package
+                # All files that have no package set, will get the
+                # package `defpackage` automatically
                 if path.startswith("defpackage"):
-                    # Special care for files without package
                     path = path[len("defpackage/"):]
 
                 if path in andr_class_names:
