@@ -553,3 +553,111 @@ class DecompilerDAD(object):
 
     def get_all(self, class_name):
         pass
+
+
+class DecompilerJADX:
+    def __init__(self, vm, vmx, jadx="jadx"):
+        """
+        DecompilerJADX is a wrapper for the jadx decompiler:
+        https://github.com/skylot/jadx
+
+        Note, that jadx need to write files to your local disk.
+
+        :param vm: `DalvikVMFormat` object
+        :param vmx: `Analysis` object
+        :param jadx: path to the jadx executable
+        """
+        self.vm = vm
+        self.vmx = vmx
+        self.classes = {}
+
+        # Result directory:
+        # TODO need to remove the folder correctly!
+        self.res = tempfile.mkdtemp()
+
+        # We need to decompile the whole dex file, as we do not have an API...
+        # dump the dex file into a temp file
+        # THIS WILL NOT WORK ON WINDOWS!!!
+        # See https://stackoverflow.com/q/15169101/446140
+        # Files can not be read, only if they specify temp file. But jadx does not do that...
+        with tempfile.TemporaryFile() as tf:
+            tf.write(vm.get_buff())
+
+            cmd = [jadx, "-d", self.res, "--escape-unicode", "--no-res", tf.name]
+            print(cmd)
+            x = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            # FIXME should be written somewhere...
+            stdout, stderr = x.communicate()
+            print(stderr)
+            print(stdout)
+
+        # Next we parse the folder structure for later lookup
+        # We read the content of each file here, so we can later delete the folder
+        # We check here two ways, first we iterate all files and see if the class exists
+        # in androguard
+        # then, we iterate all classes in androguard and check if the file exists.
+
+        andr_class_names = {x.get_name()[1:-1]: x for x in vm.get_classes()}
+
+        print(andr_class_names)
+
+        for root, dirs, files in os.walk(self.res):
+            for f in files:
+                if not f.endswith(".java"):
+                    # FIXME panik!!!
+                    continue
+                # as the path begins always with `self.res` (hopefully), we remove that length
+                # also, all files should end with .java
+                path = os.path.join(root, f)[len(self.res) + 1:-5]
+                path = path.replace(os.sep, "/")
+
+                print(path)
+
+                if path in andr_class_names:
+                    with open(os.path.join(root, f), "rb") as fp:
+                        self.classes[andr_class_names[path]] = fp.read()
+                else:
+                    # FIXME panik!!!
+                    pass
+
+        rrmdir(self.res)
+
+    def get_source_method(self, m):
+        """
+
+        :param m:
+        :return:
+        """
+        pass
+
+    def get_source_class(self, _class):
+        """
+
+        :param _class:
+        :return:
+        """
+        pass
+
+    def get_all(self, class_name):
+        """
+
+        :param class_name:
+        :return:
+        """
+        pass
+
+    def display_source(self, m):
+        """
+
+        :param m:
+        :return:
+        """
+        pass
+
+    def display_all(self, _class):
+        """
+
+        :param _class:
+        :return:
+        """
+        pass
