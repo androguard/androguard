@@ -6,6 +6,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7-dev"
+  - "pypy"
 # command to install dependencies
 install:
   - "pip install ."
