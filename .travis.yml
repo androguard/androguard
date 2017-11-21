@@ -1,15 +1,18 @@
 language: python
 # Pypy versions are badly documented...
 python:
+  - "3.6"
   - "2.7"
   - "3.3"
   - "3.4"
   - "3.5"
-  - "3.6"
   - "3.7-dev"
   - "pypy"
   - "pypy3"
+  - "pypy-5.0.1"
+  - "pypy-5.1.1"
   - "pypy-5.3.1"
+  - "pypy-5.4.1"
   - "pypy-5.7.1"
 # command to install dependencies
 install:
