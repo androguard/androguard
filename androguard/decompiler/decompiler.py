@@ -27,6 +27,7 @@ import sys
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
 from androguard.util import read
+from androguard.androconf import debug, info, warning
 
 from pygments.filter import Filter
 from pygments import highlight
@@ -641,12 +642,13 @@ class DecompilerJADX:
             tf.write(vm.get_buff())
 
             cmd = [jadx, "-d", tmpfolder, "--escape-unicode", "--no-res", tf.name]
-            print(cmd)
+            debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, _ = x.communicate()
-            # TODO should write this to the androguard log...
             # Looks like jadx does not use stderr
-            print(stdout.decode("UTF-8"))
+            info("Output of JADX during decompilation")
+            for line in stdout.decode("UTF-8").splitlines():
+                info(line)
 
             if x.returncode != 0:
                 rrmdir(tmpfolder)
@@ -660,12 +662,11 @@ class DecompilerJADX:
 
         andr_class_names = {x.get_name()[1:-1]: x for x in vm.get_classes()}
 
-        # TODO the problem with this approach is, that jadx does not create single files for inner classes
-        # Androguard has them separatly, but jadx puts inner classes into the outer class...
+        # First, try to find classes for the files we have
         for root, dirs, files in os.walk(tmpfolder):
             for f in files:
                 if not f.endswith(".java"):
-                    # FIXME panik!!!
+                    warning("found a file in jadx folder which is not a java file: {}".format(f))
                     continue
                 # as the path begins always with `self.res` (hopefully), we remove that length
                 # also, all files should end with .java
@@ -683,9 +684,9 @@ class DecompilerJADX:
                         # Need to convert back to the "full" classname
                         self.classes["L{};".format(path)] = fp.read()
                 else:
-                    # FIXME panik!!!
-                    print("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
+                    warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
 
+        # Next, try to find files for the classes we have
         for cl in andr_class_names:
             fname = self._find_class(cl, tmpfolder)
             if fname:
@@ -697,7 +698,15 @@ class DecompilerJADX:
                     # Class was already found...
                     pass
             else:
-                print("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+                warning("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+
+        # check if we have good matching
+        if len(self.classes) == len(andr_class_names):
+            debug("JADX looks good, we have the same number of classes: {}".format(len(self.classes)))
+        else:
+            info("Looks like JADX is missing some classes or "
+                 "we decompiled too much: decompiled: {} vs androguard: {}".format(len(self.classes),
+                                                                                   len(andr_class_names)))
 
         if not keepfiles:
             rrmdir(tmpfolder)
@@ -713,8 +722,8 @@ class DecompilerJADX:
 
         # We try to map inner classes here
         if "$" in clname:
-            # TODO Need to be careful with recursion of inner classes...
-            # Also, sometimes the inner class get's an extra file, sometimes not...
+            # sometimes the inner class get's an extra file, sometimes not...
+            # So we try all possibilities
             for x in range(clname.count("$")):
                 tokens = clname.split("$", x + 1)
                 base = "$".join(tokens[:-1])
