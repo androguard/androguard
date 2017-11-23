@@ -3,7 +3,7 @@ from androguard.core.bytecodes.dvm import DalvikVMFormat
 from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerJADX
 import logging
-sys
+import sys
 
 # Enable log output
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
