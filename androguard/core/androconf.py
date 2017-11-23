@@ -235,12 +235,7 @@ def is_android_raw(raw):
 
 
 # Init Logger
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-
 logger = logging.getLogger("androguard.runtime")  # logs at runtime
-
-logger.addHandler(console_handler)
 
 
 def set_lazy():
