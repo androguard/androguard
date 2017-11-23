@@ -636,7 +636,6 @@ class DecompilerJADX:
             else:
                 print("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
 
-
         if not keepfiles:
             rrmdir(tmpfolder)
 
@@ -654,13 +653,13 @@ class DecompilerJADX:
             # TODO Need to be careful with recursion of inner classes...
             # Also, sometimes the inner class get's an extra file, sometimes not...
             for x in range(clname.count("$")):
-                base, trail = clname.split("$", x + 1)
-                base = "$".join(base)
+                tokens = clname.split("$", x + 1)
+                base = "$".join(tokens[:-1])
                 res = self._find_class(base, basefolder)
-                # We also try here the basename first, if we not succed, we try the other name as well
                 if res:
                     return res
 
+        # Check the whole supplied name
         fname = os.path.join(basefolder, clname.replace("/", os.sep) + ".java")
         if not os.path.isfile(fname):
             return None
