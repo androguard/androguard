@@ -42,6 +42,74 @@ class JADXDecompilerError(Exception):
     pass
 
 
+class MethodFilter(Filter):
+    def __init__(self, **options):
+        """
+        Filter Method Code from a whole class
+
+        :param options:
+        """
+        Filter.__init__(self, **options)
+
+        self.method_name = options["method_name"]
+        # self.descriptor = options["descriptor"]
+
+        self.present = False
+        self.get_desc = True  # False
+
+    def filter(self, lexer, stream):
+        a = []
+        l = []
+        rep = []
+
+        for ttype, value in stream:
+            if self.method_name == value and (ttype is Token.Name.Function or
+                                                      ttype is Token.Name):
+                # print ttype, value
+
+                item_decl = -1
+                for i in range(len(a) - 1, 0, -1):
+                    if a[i][0] is Token.Keyword.Declaration:
+                        if a[i][1] != "class":
+                            item_decl = i
+                        break
+
+                if item_decl != -1:
+                    self.present = True
+                    l.extend(a[item_decl:])
+
+            if self.present and ttype is Token.Keyword.Declaration:
+                item_end = -1
+                for i in range(len(l) - 1, 0, -1):
+                    if l[i][0] is Token.Operator and l[i][1] == "}":
+                        item_end = i
+                        break
+
+                if item_end != -1:
+                    rep.extend(l[:item_end + 1])
+                    l = []
+                    self.present = False
+
+            if self.present:
+                l.append((ttype, value))
+
+            a.append((ttype, value))
+
+        if self.present:
+            nb = 0
+            item_end = -1
+            for i in range(len(l) - 1, 0, -1):
+                if l[i][0] is Token.Operator and l[i][1] == "}":
+                    nb += 1
+                    if nb == 2:
+                        item_end = i
+                        break
+
+            rep.extend(l[:item_end + 1])
+
+        return rep
+
+
 # TODO move it somewhere else
 class Dex2Jar(object):
     def __init__(self,
@@ -49,6 +117,14 @@ class Dex2Jar(object):
                  path_dex2jar="./decompiler/dex2jar/",
                  bin_dex2jar="dex2jar.sh",
                  tmp_dir="/tmp/"):
+        """
+        DEX2JAR is a tool to convert a Dalvik file into Java Classes
+
+        :param vm:
+        :param path_dex2jar:
+        :param bin_dex2jar:
+        :param tmp_dir:
+        """
         pathtmp = tmp_dir
         if not os.path.exists(pathtmp):
             os.makedirs(pathtmp)
@@ -78,6 +154,17 @@ class DecompilerDex2Jad(object):
                  path_jad="./decompiler/jad/",
                  bin_jad="jad",
                  tmp_dir="/tmp/"):
+        """
+        Decompiler interface for JAD
+        JAD is not a native Dalvik decompiler, therefore dex2jar is required.
+
+        :param vm:
+        :param path_dex2jar:
+        :param bin_dex2jar:
+        :param path_jad:
+        :param bin_jad:
+        :param tmp_dir:
+        """
         self.classes = {}
         self.classes_failed = []
 
@@ -166,6 +253,16 @@ class DecompilerDex2WineJad(object):
                  path_jad="./decompiler/jad/",
                  bin_jad="jad",
                  tmp_dir="/tmp/"):
+        """
+        Use JAD on wine
+
+        :param vm:
+        :param path_dex2jar:
+        :param bin_dex2jar:
+        :param path_jad:
+        :param bin_jad:
+        :param tmp_dir:
+        """
         self.classes = {}
         self.classes_failed = []
 
@@ -252,6 +349,17 @@ class DecompilerDed(object):
                  path="./decompiler/ded/",
                  bin_ded="ded.sh",
                  tmp_dir="/tmp/"):
+        """
+        DED is an old, probably deprecated, decompiler
+        http://siis.cse.psu.edu/ded/
+
+        It is now replaced by DARE.
+
+        :param vm: `DalvikVMFormat` object
+        :param path:
+        :param bin_ded:
+        :param tmp_dir:
+        """
         self.classes = {}
         self.classes_failed = []
 
@@ -336,6 +444,23 @@ class DecompilerDex2Fernflower(object):
                  options_fernflower={"dgs": '1',
                                      "asc": '1'},
                  tmp_dir="/tmp/"):
+        """
+        Decompiler interface for Fernflower
+        Fernflower is a java decompiler by IntelliJ:
+        https://github.com/JetBrains/intellij-community/tree/master/plugins/java-decompiler/engine
+
+        As it can not decompile Dalvik code directly, the DEX is first
+        decompiled as a JAR file.
+
+
+        :param vm: `DalvikVMFormtat` object
+        :param path_dex2jar:
+        :param bin_dex2jar:
+        :param path_fernflower:
+        :param bin_fernflower:
+        :param options_fernflower:
+        :param tmp_dir:
+        """
         self.classes = {}
         self.classes_failed = []
 
@@ -421,73 +546,11 @@ class DecompilerDex2Fernflower(object):
         print(self.get_all(_class.get_name()))
 
 
-class MethodFilter(Filter):
-    def __init__(self, **options):
-        Filter.__init__(self, **options)
-
-        self.method_name = options["method_name"]
-        # self.descriptor = options["descriptor"]
-
-        self.present = False
-        self.get_desc = True  # False
-
-    def filter(self, lexer, stream):
-        a = []
-        l = []
-        rep = []
-
-        for ttype, value in stream:
-            if self.method_name == value and (ttype is Token.Name.Function or
-                                                      ttype is Token.Name):
-                # print ttype, value
-
-                item_decl = -1
-                for i in range(len(a) - 1, 0, -1):
-                    if a[i][0] is Token.Keyword.Declaration:
-                        if a[i][1] != "class":
-                            item_decl = i
-                        break
-
-                if item_decl != -1:
-                    self.present = True
-                    l.extend(a[item_decl:])
-
-            if self.present and ttype is Token.Keyword.Declaration:
-                item_end = -1
-                for i in range(len(l) - 1, 0, -1):
-                    if l[i][0] is Token.Operator and l[i][1] == "}":
-                        item_end = i
-                        break
-
-                if item_end != -1:
-                    rep.extend(l[:item_end + 1])
-                    l = []
-                    self.present = False
-
-            if self.present:
-                l.append((ttype, value))
-
-            a.append((ttype, value))
-
-        if self.present:
-            nb = 0
-            item_end = -1
-            for i in range(len(l) - 1, 0, -1):
-                if l[i][0] is Token.Operator and l[i][1] == "}":
-                    nb += 1
-                    if nb == 2:
-                        item_end = i
-                        break
-
-            rep.extend(l[:item_end + 1])
-
-        return rep
-
-
-class DecompilerDAD(object):
+class DecompilerDAD:
     def __init__(self, vm, vmx):
         """
         Decompiler wrapper for DAD
+        DAD is the androguard internal decompiler.
 
         :param vm: `DalvikVMFormat` object
         :param vmx: `Analysis` object
@@ -580,9 +643,9 @@ class DecompilerJADX:
             cmd = [jadx, "-d", tmpfolder, "--escape-unicode", "--no-res", tf.name]
             print(cmd)
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            # FIXME should be written somewhere...
-            stdout, stderr = x.communicate()
-            print(stderr.decode("UTF-8"))
+            stdout, _ = x.communicate()
+            # TODO should write this to the androguard log...
+            # Looks like jadx does not use stderr
             print(stdout.decode("UTF-8"))
 
             if x.returncode != 0:
@@ -628,7 +691,7 @@ class DecompilerJADX:
             if fname:
                 if "L{};".format(cl) not in self.classes:
                     with open(fname, "rb") as fp:
-                        # TODO need to snip inner classes
+                        # TODO need to snip inner class from file
                         self.classes["L{};".format(cl)] = fp.read()
                 else:
                     # Class was already found...
