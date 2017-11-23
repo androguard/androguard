@@ -393,9 +393,6 @@ class APK(object):
         try:
             # We test for the python-magic package here
             getattr(magic, "MagicException")
-        except ImportError:
-            # no lib magic at all, return unknown
-            return default
         except AttributeError:
             try:
                 # Check for filemagic package
