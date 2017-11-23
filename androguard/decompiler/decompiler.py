@@ -582,8 +582,8 @@ class DecompilerJADX:
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             # FIXME should be written somewhere...
             stdout, stderr = x.communicate()
-            print(stderr)
-            print(stdout)
+            print(stderr.decode("UTF-8"))
+            print(stdout.decode("UTF-8"))
 
             if x.returncode != 0:
                 rrmdir(tmpfolder)

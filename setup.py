@@ -14,7 +14,7 @@ else:
     data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
 # There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
-install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
+install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.4.1',
                     'future',
                     'networkx',
                     'pygments',
