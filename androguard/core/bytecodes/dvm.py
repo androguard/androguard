@@ -3086,7 +3086,8 @@ class EncodedMethod(object):
         """
         Return the code object associated to the method
 
-        :rtype: :class:`DalvikCode` object
+
+        :rtype: :class:`DalvikCode` object or None if no Code
         """
         if not self.loaded:
             self.load()
@@ -8663,7 +8664,8 @@ def get_bytecodes_methodx(method, mx):
 
             bb_buffer += "%s : " % i.name
 
-            instructions = i.get_instructions()
+            # TODO using the generator object as a list again is not ideal...
+            instructions = list(i.get_instructions())
             for ins in instructions:
                 ins_buffer += "\t%-8d(%08x) " % (nb, idx)
                 ins_buffer += "%-20s %s" % (ins.get_name(), ins.get_output(idx))
@@ -8671,8 +8673,7 @@ def get_bytecodes_methodx(method, mx):
                 op_value = ins.get_op_value()
                 if ins == instructions[-1] and i.childs != []:
                     # packed/sparse-switch
-                    if (op_value == 0x2b or op_value == 0x2c
-                        ) and len(i.childs) > 1:
+                    if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
                         values = i.get_special_ins(idx).get_values()
                         bb_buffer += "[ D:%s " % i.childs[0][2].name
                         bb_buffer += ' '.join(
@@ -8683,8 +8684,7 @@ def get_bytecodes_methodx(method, mx):
                         #    i_buffer += "%s[ %s%s " % (branch_false_color, i.childs[0][2].name, branch_true_color))
                         #    print_fct(' '.join("%s" % c[2].name for c in i.childs[1:]) + " ]%s" % normal_color)
                         # else:
-                        bb_buffer += "[ " + ' '.join("%s" % c[2].name
-                                                     for c in i.childs) + " ]"
+                        bb_buffer += "[ " + ' '.join("%s" % c[2].name for c in i.childs) + " ]"
 
                 idx += ins.get_length()
                 nb += 1

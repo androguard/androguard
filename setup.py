@@ -19,14 +19,23 @@ base_requirements = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
                      'future',
                      'networkx',
                      'pygments',
-		     'lxml',
+                     'lxml',
                      ]
 
+# python version specific library versions:
+#
 # IPython Issue: For python2.x, a version <6 is required
 if sys.version_info >= (3, 3):
-    install_requires = ['ipython>=5.0.0'] + base_requirements
+    install_requires.append('ipython>=5.0.0')
 else:
-    install_requires = ['ipython>=5.0.0,<6'] + base_requirements
+    install_requires.append('ipython>=5.0.0,<6')
+
+# pycrypography >= 2 is not supported by py3.3
+# See https://cryptography.io/en/latest/changelog/#v2-0
+if sys.version_info.major == 3 and sys.version_info.minor == 3:
+    install_requires.append('cryptography>=1.0,<2.0')
+else:
+    install_requires.append('cryptography>=1.0')
 
 setup(
     name='androguard',

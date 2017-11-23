@@ -215,6 +215,7 @@ class AXMLParser(object):
         self.reset()
 
         self.valid_axml = True
+        self.axml_tampered = False
         self.packerwarning = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
@@ -225,7 +226,8 @@ class AXMLParser(object):
             # need some other checks.
             # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
             if axml_file >> 16 == 0x0008:
-                androconf.warning("AXML file has an unusual header, but we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
+                self.axml_tampered = True
+                androconf.warning("AXML file has an unusual header, most malwares like doing such stuff to anti androguard! But we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
             else:
                 self.valid_axml = False
                 androconf.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
