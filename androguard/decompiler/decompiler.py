@@ -644,7 +644,7 @@ class DecompilerJADX:
             base, trail = clname.split("$", 1)
             return self._find_class(base, basefolder)
 
-        fname = os.path.join(basefolder, clname.replace("/", os.sep))
+        fname = os.path.join(basefolder, clname.replace("/", os.sep) + ".java")
         if not os.path.isfile(fname):
             return None
         return fname
