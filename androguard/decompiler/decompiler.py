@@ -626,9 +626,13 @@ class DecompilerJADX:
         for cl in andr_class_names:
             fname = self._find_class(cl, tmpfolder)
             if fname:
-                with open(fname, "rb") as fp:
-                    # TODO need to snip inner classes
-                    self.classes["L{};".format(cl)] = fp.read()
+                if "L{};".format(cl) not in self.classes:
+                    with open(fname, "rb") as fp:
+                        # TODO need to snip inner classes
+                        self.classes["L{};".format(cl)] = fp.read()
+                else:
+                    # Class was already found...
+                    pass
             else:
                 print("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
 
@@ -637,7 +641,15 @@ class DecompilerJADX:
             rrmdir(tmpfolder)
 
     def _find_class(self, clname, basefolder):
-        # We try to map inner classes here first.
+        # check if defpackage
+        if "/" not in clname:
+            # this is a defpackage class probably...
+            # Search first for defpackage, then search for requested string
+            res = self._find_class("defpackage/{}".format(clname), basefolder)
+            if res:
+                return res
+
+        # We try to map inner classes here
         if "$" in clname:
             # Need to be careful with recursion of inner classes...
             # Also, sometimes the inner class get's an extra file, sometimes not...
