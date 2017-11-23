@@ -19,6 +19,7 @@ base_requirements = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
                      'future',
                      'networkx',
                      'pygments',
+		     'lxml',
                      ]
 
 # IPython Issue: For python2.x, a version <6 is required
