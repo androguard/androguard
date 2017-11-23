@@ -13,9 +13,8 @@ elif sys.platform == 'win32':
 else:
     data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
-# There is a bug in pyasn1 0.3.1 and 0.3.2, so do not use them!
+# There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
 install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
-                    'cryptography>=1.0',
                     'future',
                     'networkx',
                     'pygments',
