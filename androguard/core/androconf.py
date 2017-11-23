@@ -30,6 +30,7 @@ class Color(object):
     Bold = "\033[1m"
 
 
+# TODO most of these options are duplicated, as they are also the default arguments to the functions
 CONF = {
     "BIN_DED": "ded.sh",
     "PATH_DED": "./decompiler/ded/",
