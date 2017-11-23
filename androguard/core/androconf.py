@@ -235,14 +235,12 @@ def is_android_raw(raw):
 
 
 # Init Logger
-log_andro = logging.getLogger("androguard")
-
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-log_andro.addHandler(console_handler)
-log_runtime = logging.getLogger("androguard.runtime")  # logs at runtime
-log_interactive = logging.getLogger("androguard.interactive")  # logs in interactive functions
-log_loading = logging.getLogger("androguard.loading")  # logs when loading andro
+
+logger = logging.getLogger("androguard.runtime")  # logs at runtime
+
+logger.addHandler(console_handler)
 
 
 def set_lazy():
@@ -250,15 +248,11 @@ def set_lazy():
 
 
 def set_debug():
-    log_andro.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
 
 
 def set_info():
-    log_andro.setLevel(logging.INFO)
-
-
-def get_debug():
-    return log_andro.getEffectiveLevel() == logging.DEBUG
+    logger.setLevel(logging.INFO)
 
 
 def warning(x):
@@ -267,7 +261,7 @@ def warning(x):
 
     :param x: String to be printed on stderr
     """
-    log_runtime.warning(x)
+    logger.warning(x)
     if sys.exc_info()[0] is not None:
         import traceback
         traceback.print_exc()
@@ -280,16 +274,16 @@ def error(x):
 
     :param x: String to be printed on stderr
     """
-    log_runtime.error(x)
+    logger.error(x)
     raise ()
 
 
 def debug(x):
-    log_runtime.debug(x)
+    logger.debug(x)
 
 
 def info(x):
-    log_runtime.info(x)
+    logger.info(x)
 
 
 def set_options(key, value):
