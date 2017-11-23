@@ -624,7 +624,7 @@ class DecompilerJADX:
                     print("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
 
         for cl in andr_class_names:
-            fname = self.find_class(cl, tmpfolder)
+            fname = self._find_class(cl, tmpfolder)
             if fname:
                 with open(fname, "rb") as fp:
                     # TODO need to snip inner classes
@@ -642,7 +642,7 @@ class DecompilerJADX:
             # Need to be careful with recursion of inner classes...
             # Also, sometimes the inner class get's an extra file, sometimes not...
             base, trail = clname.split("$", 1)
-            return self.find_class(base, basefolder)
+            return self._find_class(base, basefolder)
 
         fname = os.path.join(basefolder, clname.replace("/", os.sep))
         if not os.path.isfile(fname):
