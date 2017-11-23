@@ -651,10 +651,15 @@ class DecompilerJADX:
 
         # We try to map inner classes here
         if "$" in clname:
-            # Need to be careful with recursion of inner classes...
+            # TODO Need to be careful with recursion of inner classes...
             # Also, sometimes the inner class get's an extra file, sometimes not...
-            base, trail = clname.split("$", 1)
-            return self._find_class(base, basefolder)
+            for x in range(clname.count("$")):
+                base, trail = clname.split("$", x + 1)
+                base = "$".join(base)
+                res = self._find_class(base, basefolder)
+                # We also try here the basename first, if we not succed, we try the other name as well
+                if res:
+                    return res
 
         fname = os.path.join(basefolder, clname.replace("/", os.sep) + ".java")
         if not os.path.isfile(fname):
