@@ -24,10 +24,9 @@ import tempfile
 import os
 import sys
 
-from androguard.core.androconf import rrmdir
+from androguard.core.androconf import rrmdir, debug, info, warning
 from androguard.decompiler.dad import decompile
 from androguard.util import read
-from androguard.androconf import debug, info, warning
 
 from pygments.filter import Filter
 from pygments import highlight
