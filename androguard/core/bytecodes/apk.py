@@ -298,6 +298,14 @@ class APK(object):
             unless exact icon resolution is set in the manifest, in which case
             return the exact file
 
+            From https://developer.android.com/guide/practices/screens_support.html
+            ldpi (low) ~120dpi
+            mdpi (medium) ~160dpi
+            hdpi (high) ~240dpi
+            xhdpi (extra-high) ~320dpi
+            xxhdpi (extra-extra-high) ~480dpi
+            xxxhdpi (extra-extra-extra-high) ~640dpi
+
             :rtype: string
         """
         main_activity_name = self.get_main_activity()

@@ -72,6 +72,8 @@ class APKTest(unittest.TestCase):
         from hashlib import md5, sha1, sha256
         a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk", skip_analysis=True)
 
+        self.assertEqual(a.get_signature_name(), "META-INF/CERT.RSA")
+
         cert = a.get_certificate(a.get_signature_name())
         cert_der = a.get_certificate_der(a.get_signature_name())
 
@@ -101,6 +103,26 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_signature_name(), None)
         self.assertEqual(a.get_signature_names(), [])
 
+    def testAPKManifest(self):
+        from androguard.core.bytecodes.apk import APK
+        a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk", testzip=True)
+
+        self.assertEqual(a.get_app_name(), "TestsAndroguardApplication")
+        self.assertEqual(a.get_app_icon(), "res/drawable-hdpi/icon.png")
+        self.assertEqual(a.get_app_icon(max_dpi=120), "res/drawable-ldpi/icon.png")
+        self.assertEqual(a.get_app_icon(max_dpi=160), "res/drawable-mdpi/icon.png")
+        self.assertEqual(a.get_app_icon(max_dpi=240), "res/drawable-hdpi/icon.png")
+        self.assertIsNone(a.get_app_icon(max_dpi=1))
+        self.assertEqual(a.get_main_activity(), "tests.androguard.TestActivity")
+        self.assertEqual(a.get_package(), "tests.androguard")
+        self.assertEqual(a.get_androidversion_code(), '1')
+        self.assertEqual(a.get_androidversion_name(), "1.0")
+        self.assertEqual(a.get_min_sdk_version(), "9")
+        self.assertEqual(a.get_target_sdk_version(), "16")
+        self.assertIsNone(a.get_max_sdk_version())
+        self.assertEqual(a.get_permissions(), [])
+        self.assertEqual(a.get_declared_permissions(), [])
+        self.assertTrue(a.is_valid_APK())
 
 
 if __name__ == '__main__':
