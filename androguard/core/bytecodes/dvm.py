@@ -3490,6 +3490,9 @@ class ClassDefItem(object):
     def __str__(self):
         return "%s->%s" % (self.get_superclassname(), self.get_name())
 
+    def __repr__(self):
+        return "<dvm.ClassDefItem {}>".format(self.__str__())
+
     def get_methods(self):
         """
         Return all methods of this class
