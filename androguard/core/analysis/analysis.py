@@ -517,7 +517,6 @@ class StringAnalysis(object):
         self.xreffrom = set()
 
     def AddXrefFrom(self, classobj, methodobj):
-        log.debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
         self.xreffrom.add((classobj, methodobj))
 
     def get_xref_from(self):
@@ -547,11 +546,9 @@ class MethodClassAnalysis(object):
         self.xreffrom = set()
 
     def AddXrefTo(self, classobj, methodobj, offset):
-        log.debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefto.add((classobj, methodobj, offset))
 
     def AddXrefFrom(self, classobj, methodobj, offset):
-        log.debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -583,11 +580,9 @@ class FieldClassAnalysis(object):
         self.xrefwrite = set()
 
     def AddXrefRead(self, classobj, methodobj):
-        log.debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefread.add((classobj, methodobj))
 
     def AddXrefWrite(self, classobj, methodobj):
-        log.debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefwrite.add((classobj, methodobj))
 
     def get_xref_read(self):
