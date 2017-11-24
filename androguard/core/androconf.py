@@ -2,12 +2,11 @@ import sys
 import os
 import logging
 import types
-import random
-import string
 
 from androguard import __version__
 ANDROGUARD_VERSION = __version__
 
+log = logging.getLogger("androguard")
 
 def is_ascii_problem(s):
     try:
@@ -252,7 +251,7 @@ def warning(x):
 
     :param x: String to be printed on stderr
     """
-    logger.warning(x)
+    log.warning(x)
     if sys.exc_info()[0] is not None:
         import traceback
         traceback.print_exc()
@@ -265,16 +264,16 @@ def error(x):
 
     :param x: String to be printed on stderr
     """
-    logger.error(x)
+    log.error(x)
     raise ()
 
 
 def debug(x):
-    logger.debug(x)
+    log.debug(x)
 
 
 def info(x):
-    logger.info(x)
+    log.info(x)
 
 
 def set_options(key, value):
