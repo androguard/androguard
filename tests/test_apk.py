@@ -124,6 +124,29 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_declared_permissions(), [])
         self.assertTrue(a.is_valid_APK())
 
+    def testAPKPermissions(self):
+        from androguard.core.bytecodes.apk import APK
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+
+        self.assertEqual(a.get_package(), "a2dp.Vol")
+        self.assertListEqual(sorted(a.get_permissions()), sorted(["android.permission.RECEIVE_BOOT_COMPLETED",
+                                                                  "android.permission.CHANGE_WIFI_STATE",
+                                                                  "android.permission.ACCESS_WIFI_STATE",
+                                                                  "android.permission.KILL_BACKGROUND_PROCESSES",
+                                                                  "android.permission.BLUETOOTH",
+                                                                  "android.permission.BLUETOOTH_ADMIN",
+                                                                  "com.android.launcher.permission.READ_SETTINGS",
+                                                                  "android.permission.RECEIVE_SMS",
+                                                                  "android.permission.MODIFY_AUDIO_SETTINGS",
+                                                                  "android.permission.READ_CONTACTS",
+                                                                  "android.permission.ACCESS_COARSE_LOCATION",
+                                                                  "android.permission.ACCESS_FINE_LOCATION",
+                                                                  "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+                                                                  "android.permission.WRITE_EXTERNAL_STORAGE",
+                                                                  "android.permission.READ_PHONE_STATE",
+                                                                  "android.permission.BROADCAST_STICKY",
+                                                                  "android.permission.GET_ACCOUNTS"]))
+
 
 if __name__ == '__main__':
     unittest.main()
