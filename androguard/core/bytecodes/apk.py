@@ -19,17 +19,11 @@ import re
 import sys
 import binascii
 import zipfile
+import logging
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 from lxml import etree
-
-
-def parse_lxml_dom(tree):
-    handler = SAX2DOM()
-    lxml.sax.saxify(tree, handler)
-    return handler.document
-
 
 # Used for reading Certificates
 from pyasn1.codec.der.decoder import decode
@@ -40,16 +34,13 @@ from cryptography.hazmat.primitives import hashes
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
+log = logging.getLogger("androguard.apk")
 
-def sign_apk(filename, keystore, storepass):
-    from subprocess import Popen, PIPE, STDOUT
-    # TODO use apksigner instead of jarsigner
-    cmd = Popen([androconf.CONF["PATH_JARSIGNER"], "-sigalg", "MD5withRSA",
-                     "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
-                     keystore, filename, "alias_name"],
-                    stdout=PIPE,
-                    stderr=STDOUT)
-    stdout, stderr = cmd.communicate()
+
+def parse_lxml_dom(tree):
+    handler = SAX2DOM()
+    lxml.sax.saxify(tree, handler)
+    return handler.document
 
 
 class Error(Exception):
@@ -67,32 +58,31 @@ class BrokenAPKError(Error):
 
 ######################################################## APK FORMAT ########################################################
 class APK(object):
-    """
-        This class can access to all elements in an APK file
-
-        :param filename: specify the path of the file, or raw data
-        :param raw: specify if the filename is a path or raw data (optional)
-        :param magic_file: specify the magic file (optional)
-        :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
-        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
-
-        :type filename: string
-        :type raw: boolean
-        :type magic_file: string
-        :type skip_analysis: boolean
-        :type testzip: boolean
-
-        :Example:
-          APK("myfile.apk")
-          APK(read("myfile.apk"), raw=True)
-    """
-
     def __init__(self,
                  filename,
                  raw=False,
                  magic_file=None,
                  skip_analysis=False,
                  testzip=False):
+        """
+            This class can access to all elements in an APK file
+
+            :param filename: specify the path of the file, or raw data
+            :param raw: specify if the filename is a path or raw data (optional)
+            :param magic_file: specify the magic file (optional)
+            :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
+            :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
+
+            :type filename: string
+            :type raw: boolean
+            :type magic_file: string
+            :type skip_analysis: boolean
+            :type testzip: boolean
+
+            :Example:
+              APK("myfile.apk")
+              APK(read("myfile.apk"), raw=True)
+        """
         self.filename = filename
 
         self.xml = {}
@@ -149,16 +139,16 @@ class APK(object):
                 self.xml[i] = None
                 raw_xml = self.axml[i].get_buff()
                 if len(raw_xml) == 0:
-                    androconf.warning("AXML parsing failed, file is empty")
+                    log.warning("AXML parsing failed, file is empty")
                 else:
                     try:
                         if self.axml[i].is_packed():
-                            androconf.warning("XML Seems to be packed, parsing is very likely to fail.")
+                            log.warning("XML Seems to be packed, parsing is very likely to fail.")
                         parser = etree.XMLParser(recover=True)
                         tree = etree.fromstring(raw_xml, parser=parser)
                         self.xml[i] = parse_lxml_dom(tree)
                     except Exception as e:
-                        androconf.warning("reading AXML as XML failed: " + str(e))
+                        log.warning("reading AXML as XML failed: " + str(e))
 
                 if self.xml[i] is not None:
                     self.package = self.xml[i].documentElement.getAttribute(
@@ -288,7 +278,7 @@ class APK(object):
                     res_id,
                     ARSCResTableConfig.default_config())[0][1]
             except Exception as e:
-                androconf.warning("Exception selecting app name: %s" % e)
+                log.warning("Exception selecting app name: %s" % e)
                 app_name = ""
         return app_name
 
@@ -344,7 +334,7 @@ class APK(object):
                         app_icon = file_name
                         current_dpi = dpi
             except Exception as e:
-                androconf.warning("Exception selecting app icon: %s" % e)
+                log.warning("Exception selecting app icon: %s" % e)
 
         return app_icon
 

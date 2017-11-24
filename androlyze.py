@@ -59,9 +59,6 @@ def interact():
 
 
 def main(options, arguments):
-    if options.debug:
-        set_debug()
-
     if options.shell is not None:
         interact()
 

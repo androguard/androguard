@@ -10,8 +10,11 @@ import collections
 import threading
 import queue
 import time
-from androguard.core.androconf import warning, debug, is_ascii_problem
+from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
+import logging
+
+log = logging.getLogger("androguard.analysis")
 
 
 class DVMBasicBlock(object):
@@ -146,10 +149,9 @@ class DVMBasicBlock(object):
 
             :rtype: None or an Instruction
         """
-        try:
+        if idx in self.special_ins:
             return self.special_ins[idx]
-        # FIXME: Too broad exception clause
-        except:
+        else:
             return None
 
     def get_exception_analysis(self):
@@ -349,7 +351,6 @@ class Exceptions(object):
 
     def get_exception(self, addr_start, addr_end):
         for i in self.exceptions:
-            #            print hex(i.start), hex(i.end), hex(addr_start), hex(addr_end), i.start >= addr_start and i.end <= addr_end, addr_end <= i.end and addr_start >= i.start
             if i.start >= addr_start and i.end <= addr_end:
                 return i
 
@@ -400,7 +401,7 @@ class MethodAnalysis(object):
         h = {}
         idx = 0
 
-        debug("Parsing instructions")
+        log.debug("Parsing instructions")
         for i in bc.get_instructions():
             for j in BasicOPCODES:
                 if j.match(i.get_name()) is not None:
@@ -411,14 +412,14 @@ class MethodAnalysis(object):
 
             idx += i.get_length()
 
-        debug("Parsing exceptions")
+        log.debug("Parsing exceptions")
         excepts = dvm.determineException(self.__vm, self.method)
         for i in excepts:
             l.extend([i[0]])
             for handler in i[2:]:
                 l.append(handler[1])
 
-        debug("Creating basic blocks in %s" % self.method)
+        log.debug("Creating basic blocks in %s" % self.method)
         idx = 0
         for i in bc.get_instructions():
             # index is a destination
@@ -443,7 +444,7 @@ class MethodAnalysis(object):
         if current_basic.get_nb_instructions() == 0:
             self.basic_blocks.pop(-1)
 
-        debug("Settings basic blocks childs")
+        log.debug("Settings basic blocks childs")
 
         for i in self.basic_blocks.get():
             try:
@@ -451,7 +452,7 @@ class MethodAnalysis(object):
             except KeyError:
                 i.set_childs([])
 
-        debug("Creating exceptions")
+        log.debug("Creating exceptions")
 
         # Create exceptions
         self.exceptions.add(excepts, self.basic_blocks)
@@ -516,7 +517,6 @@ class StringAnalysis(object):
         self.xreffrom = set()
 
     def AddXrefFrom(self, classobj, methodobj):
-        # debug("Added strings xreffrom for %s to %s" % (self.value, methodobj))
         self.xreffrom.add((classobj, methodobj))
 
     def get_xref_from(self):
@@ -546,11 +546,9 @@ class MethodClassAnalysis(object):
         self.xreffrom = set()
 
     def AddXrefTo(self, classobj, methodobj, offset):
-        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefto.add((classobj, methodobj, offset))
 
     def AddXrefFrom(self, classobj, methodobj, offset):
-        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -582,11 +580,9 @@ class FieldClassAnalysis(object):
         self.xrefwrite = set()
 
     def AddXrefRead(self, classobj, methodobj):
-        # debug("Added method xrefto for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefread.add((classobj, methodobj))
 
     def AddXrefWrite(self, classobj, methodobj):
-        # debug("Added method xreffrom for %s [%s] to %s" % (self.method, classobj, methodobj))
         self.xrefwrite.add((classobj, methodobj))
 
     def get_xref_read(self):
@@ -758,7 +754,7 @@ class Analysis(object):
             self.methods[method] = MethodAnalysis(vm, method)
 
     def create_xref(self):
-        debug("Creating XREF/DREF")
+        log.debug("Creating XREF/DREF")
         started_at = time.time()
 
         instances_class_name = list(self.classes.keys())
@@ -777,19 +773,19 @@ class Analysis(object):
             thread.start()
             threads.append(thread)
 
-        debug("Waiting all threads")
+        log.debug("Waiting all threads")
         queue_classes.join()
 
-        debug("")
+        log.debug("")
         diff = time.time() - started_at
-        debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
+        log.debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
 
     def _create_xref(self, instances_class_name, last_vm, queue_classes):
         while not queue_classes.empty():
             current_class = queue_classes.get()
-            debug("Creating XREF/DREF for %s" % current_class.get_name())
+            log.debug("Creating XREF/DREF for %s" % current_class.get_name())
             for current_method in current_class.get_methods():
-                debug("Creating XREF for %s" % current_method)
+                log.debug("Creating XREF for %s" % current_method)
 
                 code = current_method.get_code()
                 if code is None:
@@ -905,7 +901,7 @@ class Analysis(object):
 
                         off += instruction.get_length()
                 except dvm.InvalidInstruction as e:
-                    warning("Invalid instruction %s" % str(e))
+                    log.warning("Invalid instruction %s" % str(e))
             queue_classes.task_done()
 
     def get_method(self, method):
@@ -972,6 +968,13 @@ class Analysis(object):
 
 
 def is_ascii_obfuscation(vm):
+    """
+    Tests if any class inside a DalvikVMObject
+    uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
+
+    :param vm: `DalvikVMObject`
+    :return: True if ascii obfuscation otherwise False
+    """
     for classe in vm.get_classes():
         if is_ascii_problem(classe.get_name()):
             return True

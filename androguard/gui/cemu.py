@@ -1,7 +1,8 @@
 from builtins import object
 from PyQt5 import QtGui
 
-from androguard.core import androconf
+import logging
+log = logging.getLogger("androguard.gui")
 
 
 class Cursor(object):
@@ -60,11 +61,11 @@ class ConsoleEmulator(object):
 
     def _validatePosition(self, x, y):
         if x >= self._cols:
-            androconf.warning("x > cols")
+            log.warning("x > cols")
             return False
 
         if y >= self._rows:
-            androconf.warning("y > rows")
+            log.warning("y > rows")
             return False
         return True
 

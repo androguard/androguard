@@ -8,7 +8,6 @@ from builtins import chr
 from builtins import range
 from builtins import object
 from androguard.core import bytecode
-from androguard.core import androconf
 
 from androguard.core.resources import public
 
@@ -20,6 +19,9 @@ from collections import defaultdict
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 from lxml import etree
+import logging
+
+log = logging.getLogger("androguard.axml")
 
 
 def parse_lxml_dom(tree):
@@ -65,7 +67,7 @@ class StringBlock(object):
 
         # Check if they supplied a stylesOffset even if the count is 0:
         if self.styleOffsetCount == 0 and self.stylesOffset > 0:
-            androconf.warning("Styles Offset given, but styleCount is zero.")
+            log.warning("Styles Offset given, but styleCount is zero.")
 
         self.m_stringOffsets = []
         self.m_styleOffsets = []
@@ -93,7 +95,7 @@ class StringBlock(object):
 
         # FIXME unaligned
         if (size % 4) != 0:
-            androconf.warning("Size of strings is not aligned by four bytes.")
+            log.warning("Size of strings is not aligned by four bytes.")
 
         self.m_charbuff = buff.read(size)
 
@@ -102,7 +104,7 @@ class StringBlock(object):
 
             # FIXME unaligned
             if (size % 4) != 0:
-                androconf.warning("Size of styles is not aligned by four bytes.")
+                log.warning("Size of styles is not aligned by four bytes.")
 
             for i in range(0, size // 4):
                 self.m_styles.append(unpack('<i', buff.read(4))[0])
@@ -152,7 +154,7 @@ class StringBlock(object):
     def decode_bytes(self, data, encoding, str_len):
         string = data.decode(encoding, 'replace')
         if len(string) != str_len:
-            androconf.warning("invalid decoded string length")
+            log.warning("invalid decoded string length")
         return string
 
     def decodeLength(self, offset, sizeof_char):
@@ -227,10 +229,10 @@ class AXMLParser(object):
             # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
             if axml_file >> 16 == 0x0008:
                 self.axml_tampered = True
-                androconf.warning("AXML file has an unusual header, most malwares like doing such stuff to anti androguard! But we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
+                log.warning("AXML file has an unusual header, most malwares like doing such stuff to anti androguard! But we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
             else:
                 self.valid_axml = False
-                androconf.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
+                log.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
                 return
 
         # Next is the filesize
@@ -301,7 +303,7 @@ class AXMLParser(object):
                 # Check size: < 8 bytes mean that the chunk is not complete
                 # Should be aligned to 4 bytes.
                 if chunkSize < 8 or chunkSize % 4 != 0:
-                    androconf.warning("Invalid chunk size in chunk RESOURCEIDS")
+                    log.warning("Invalid chunk size in chunk RESOURCEIDS")
 
                 for i in range(0, (chunkSize // 4) - 2):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
@@ -310,7 +312,7 @@ class AXMLParser(object):
 
             # FIXME, unknown chunk types might cause problems
             if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
-                androconf.warning("invalid chunk type 0x{:08x}".format(chunkType))
+                log.warning("invalid chunk type 0x{:08x}".format(chunkType))
 
             # Fake START_DOCUMENT event.
             if chunkType == CHUNK_XML_START_TAG and event == -1:
@@ -372,7 +374,7 @@ class AXMLParser(object):
                         self.visited_ns.remove((uri, prefix))
 
                     else:
-                        androconf.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
+                        log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
                 continue
 
@@ -490,7 +492,7 @@ class AXMLParser(object):
                 # FIXME Packers like Liapp use empty uri to fool XML Parser
                 # FIXME they also mess around with the Manifest, thus it can not be parsed easily
                 if prefix_uri == '':
-                    androconf.warning("Empty Namespace URI for Namespace {}.".format(prefix_str))
+                    log.warning("Empty Namespace URI for Namespace {}.".format(prefix_str))
                     self.packerwarning = True
 
                 # if prefix is (null), which is indicated by an empty str, then do not print :
@@ -506,12 +508,12 @@ class AXMLParser(object):
     def getAttributeOffset(self, index):
         # FIXME
         if self.m_event != START_TAG:
-            androconf.warning("Current event is not START_TAG.")
+            log.warning("Current event is not START_TAG.")
 
         offset = index * 5
         # FIXME
         if offset >= len(self.m_attributes):
-            androconf.warning("Invalid attribute index")
+            log.warning("Invalid attribute index")
 
         return offset
 
@@ -626,6 +628,40 @@ def complexToFloat(xcomplex):
     return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
+def long2int(l):
+    if l > 0x7fffffff:
+        l = (0x7fffffff & l) - 0x80000000
+    return l
+
+
+def long2str(l):
+    """Convert an integer to a string."""
+    if type(l) not in (types.IntType, types.LongType):
+        raise ValueError('the input must be an integer')
+
+    if l < 0:
+        raise ValueError('the input must be greater than 0')
+    s = ''
+    while l:
+        s = s + chr(l & 255)
+        l >>= 8
+
+    return s
+
+
+def str2long(s):
+    """Convert a string to a long integer."""
+    if type(s) not in (types.StringType, types.UnicodeType):
+        raise ValueError('the input must be a string')
+
+    l = 0
+    for i in s:
+        l <<= 8
+        l |= ord(i)
+
+    return l
+
+
 def getPackage(i):
     if i >> 24 == 1:
         return "android:"
@@ -663,7 +699,7 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
         return "#%08X" % _data
 
     elif TYPE_FIRST_INT <= _type <= TYPE_LAST_INT:
-        return "%d" % androconf.long2int(_data)
+        return "%d" % long2int(_data)
 
     return "<0x%X, type 0x%02X>" % (_data, _type)
 
@@ -906,7 +942,7 @@ class ARSCParser(object):
                                 ate = ARSCResTableEntry(self.buff, res_id, pc)
                                 self.packages[package_name].append(ate)
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
-                        androconf.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
+                        log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
                         # silently skip other chunk types
                         pass
@@ -1030,7 +1066,7 @@ class ARSCParser(object):
                     DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])
             ]
         except IndexError:
-            androconf.debug("Out of range dimension unit index for %s: %s" % (
+            log.debug("Out of range dimension unit index for %s: %s" % (
                 complexToFloat(ate.key.get_data()),
                 ate.key.get_data() & COMPLEX_UNIT_MASK))
             return [ate.get_value(), ate.key.get_data()]
@@ -1460,7 +1496,7 @@ class ARSCResTableConfig(object):
 
             self.exceedingSize = self.size - 36
             if self.exceedingSize > 0:
-                androconf.debug("Skipping padding bytes!")
+                log.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
         else:
             self.start = 0

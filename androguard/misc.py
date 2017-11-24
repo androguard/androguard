@@ -2,15 +2,17 @@ from future import standard_library
 
 standard_library.install_aliases()
 from androguard import session
-from androguard.core.bytecodes.dvm import *
-from androguard.decompiler.decompiler import *
-from androguard.core.androconf import CONF
+from androguard.decompiler import decompiler
+from androguard.core import androconf
+
+import logging
+log = logging.getLogger("androguard.misc")
 
 
 def init_print_colors():
     from IPython.utils import coloransi, io
     androconf.default_colors(coloransi.TermColors)
-    CONF["PRINT_FCT"] = io.stdout.write
+    androconf.CONF["PRINT_FCT"] = io.stdout.write
 
 
 def get_default_session():
@@ -18,9 +20,9 @@ def get_default_session():
         Return the default Session from the configuration
         or create a new one, if the session is None.
     """
-    if CONF["SESSION"] is None:
-        CONF["SESSION"] = session.Session()
-    return CONF["SESSION"]
+    if androconf.CONF["SESSION"] is None:
+        androconf.CONF["SESSION"] = session.Session()
+    return androconf.CONF["SESSION"]
 
 
 def AnalyzeAPK(filename, session=None):
@@ -33,7 +35,7 @@ def AnalyzeAPK(filename, session=None):
 
         :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeAPK")
+    log.debug("AnalyzeAPK")
 
     if not session:
         session = get_default_session()
@@ -55,7 +57,7 @@ def AnalyzeDex(filename, session=None):
 
         :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeDex")
+    log.debug("AnalyzeDex")
 
     if not session:
         session = get_default_session()
@@ -76,7 +78,7 @@ def AnalyzeODex(filename, session=None):
 
         :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeODex")
+    log.debug("AnalyzeODex")
 
     if not session:
         session = get_default_session()
@@ -87,7 +89,7 @@ def AnalyzeODex(filename, session=None):
     return session.addDEY(filename, data)
 
 
-def RunDecompiler(d, dx, decompiler):
+def RunDecompiler(d, dx, decompiler_name):
     """
         Run the decompiler on a specific analysis
 
@@ -98,31 +100,48 @@ def RunDecompiler(d, dx, decompiler):
         :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
         :type decompiler: string
     """
-    if decompiler is not None:
-        androconf.debug("Decompiler ...")
-        decompiler = decompiler.lower()
-        if decompiler == "dex2jad":
-            d.set_decompiler(DecompilerDex2Jad(
+    if decompiler_name is not None:
+        log.debug("Decompiler ...")
+        decompiler_name = decompiler_name.lower()
+        # TODO put this into the configuration object and make it more dynamic
+        # e.g. detect new decompilers and so on...
+        if decompiler_name == "dex2jad":
+            d.set_decompiler(decompiler.DecompilerDex2Jad(
                 d,
-                androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"],
                 androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler == "dex2fernflower":
-            d.set_decompiler(DecompilerDex2Fernflower(
+        elif decompiler_name == "dex2fernflower":
+            d.set_decompiler(decompiler.DecompilerDex2Fernflower(
                 d,
-                androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["PATH_FERNFLOWER"],
                 androconf.CONF["BIN_FERNFLOWER"],
                 androconf.CONF["OPTIONS_FERNFLOWER"],
                 androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler == "ded":
-            d.set_decompiler(DecompilerDed(
+        elif decompiler_name == "ded":
+            d.set_decompiler(decompiler.DecompilerDed(
                 d,
-                androconf.CONF["PATH_DED"],
                 androconf.CONF["BIN_DED"],
                 androconf.CONF["TMP_DIRECTORY"]))
+        elif decompiler_name == "jadx":
+            d.set_decompiler(decompiler.DecompilerJADX(d, dx, jadx=androconf.CONF["BIN_JADX"]))
         else:
-            d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_decompiler(decompiler.DecompilerDAD(d, dx))
+
+
+def sign_apk(filename, keystore, storepass):
+    """
+    Use jarsigner to sign an APK file.
+
+    :param filename: APK file on disk to sign (path)
+    :param keystore: path to keystore
+    :param storepass: your keystorage passphrase
+    """
+    from subprocess import Popen, PIPE, STDOUT
+    # TODO use apksigner instead of jarsigner
+    cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",
+                 "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
+                 keystore, filename, "alias_name"],
+                stdout=PIPE,
+                stderr=STDOUT)
+    stdout, stderr = cmd.communicate()

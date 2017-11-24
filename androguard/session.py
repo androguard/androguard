@@ -3,8 +3,12 @@ import hashlib
 from androguard.core.analysis.analysis import *
 from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
+from androguard.core import androconf
 
 import pickle
+import logging
+
+log = logging.getLogger("androguard.session")
 
 
 def Save(session, filename):
@@ -70,12 +74,12 @@ class Session(object):
         :return: a tuple of SHA256 Checksum and APK Object
         """
         digest = hashlib.sha256(data).hexdigest()
-        androconf.debug("add APK:%s" % digest)
+        log.debug("add APK:%s" % digest)
         apk = APK(data, True)
         self.analyzed_apk[digest] = [apk]
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
-        androconf.debug("added APK:%s" % digest)
+        log.debug("added APK:%s" % digest)
         return digest, apk
 
     def addDEX(self, filename, data, dx=None):
@@ -88,15 +92,15 @@ class Session(object):
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
-        androconf.debug("add DEX:%s" % digest)
+        log.debug("add DEX:%s" % digest)
 
-        androconf.debug("Parsing format ...")
+        log.debug("Parsing format ...")
         d = DalvikVMFormat(data)
 
-        androconf.debug("Running analysis ...")
+        log.debug("Running analysis ...")
         dx = self.runAnalysis(d, dx)
 
-        androconf.debug("added DEX:%s" % digest)
+        log.debug("added DEX:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
         if filename not in self.analyzed_files:
@@ -106,19 +110,19 @@ class Session(object):
         self.analyzed_digest[digest] = filename
 
         if self.export_ipython:
-            androconf.debug("Exporting in ipython")
+            log.debug("Exporting in ipython")
             d.create_python_export()
 
         return digest, d, dx
 
     def addDEY(self, filename, data, dx=None):
         digest = hashlib.sha256(data).hexdigest()
-        androconf.debug("add DEY:%s" % digest)
+        log.debug("add DEY:%s" % digest)
 
         d = DalvikOdexVMFormat(data)
         dx = self.runAnalysis(d, dx)
 
-        androconf.debug("added DEY:%s" % digest)
+        log.debug("added DEY:%s" % digest)
 
         self.analyzed_dex[digest] = (d, dx)
         if filename not in self.analyzed_files:
@@ -140,6 +144,7 @@ class Session(object):
 
         dx.create_xref()
 
+        # TODO we would like to be able to specify the decompiler here
         d.set_decompiler(DecompilerDAD(d, dx))
         d.set_vmanalysis(dx)
 

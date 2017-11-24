@@ -5,9 +5,9 @@ from builtins import chr
 from builtins import str
 from builtins import range
 from builtins import object
-from androguard.core import bytecode, androconf
+from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
-from androguard.core.androconf import CONF, debug, warning
+from androguard.core.androconf import CONF
 
 import sys
 import re
@@ -15,6 +15,9 @@ import struct
 import binascii
 import time
 from struct import pack, unpack, calcsize
+import logging
+
+log = logging.getLogger("androguard.dvm")
 
 # TODO there is DEX 38 already
 DEX_FILE_MAGIC_35 = 'dex\n035\x00'
@@ -205,7 +208,7 @@ def readuleb128(buff):
                 if cur > 0x7f:
                     cur = get_byte(buff)
                     if cur > 0x0f:
-                        warning("possible error while decoding number")
+                        log.warning("possible error while decoding number")
                     result |= cur << 28
 
     return result
@@ -1517,7 +1520,7 @@ class EncodedValue(object):
             else:
                 self.value = False
         else:
-            androconf.warning("Unknown value 0x%x" % self.value_type)
+            log.warning("Unknown value 0x%x" % self.value_type)
 
     def get_value(self):
         """
@@ -1809,37 +1812,37 @@ def mutf8_to_string(buff, length):
         value = first_char >> 4
         if value in (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07):
             if first_char == 0:
-                warning('at offset %x: single zero byte illegal' %
+                log.warning('at offset %x: single zero byte illegal' %
                         buff.get_idx())
             chars.append(chr(first_char))
         elif value in (0x0c, 0x0d):
             second_char = get_byte(buff)
             if (second_char & 0xc0) != 0x80:
-                warning('bad utf8 at offset: %x' % buff.get_idx())
+                log.warning('bad utf8 at offset: %x' % buff.get_idx())
             value = ((first_char & 0x1f) << 6) | (second_char & 0x3f)
             if value != 0 and value < 0x80:
-                warning(
+                log.warning(
                     'at offset %x: utf8 should have been represented with one byte encoding'
                     % buff.get_idx())
             chars.append(chr(value))
         elif value == 0x0e:
             second_char = get_byte(buff)
             if second_char & 0xc0 != 0x80:
-                warning('bad utf8 byte %x at offset %x' %
+                log.warning('bad utf8 byte %x at offset %x' %
                         (second_char, buff.get_idx()))
             third_char = get_byte(buff)
             if third_char & 0xc0 != 0x80:
-                warning('bad utf8 byte %x at offset %x' %
+                log.warning('bad utf8 byte %x at offset %x' %
                         (third_char, buff.get_idx()))
             value = ((first_char & 0x0f) << 12) | (
                 (second_char & 0x3f) << 6) | (third_char & 0x3f)
             if value < 0x800:
-                warning(
+                log.warning(
                     'at offset %x: utf8 should have been represented with two-byte encoding'
                     % buff.get_idx())
             chars.append(chr(value))
         else:
-            warning('at offset %x: illegal utf8' % buff.get_idx())
+            log.warning('at offset %x: illegal utf8' % buff.get_idx())
     # FIXME correct handling of utf8?
     return ''.join(chars)
 
@@ -1869,7 +1872,7 @@ class StringDataItem(object):
         self.raw_size = self.buff.get_idx()
         expected = get_byte(self.buff)
         if expected != 0:
-            warning('\x00 expected at offset: %x, found: %x' %
+            log.warning('\x00 expected at offset: %x, found: %x' %
                     (buff.get_idx(), expected))
 
     def get_utf16_size(self):
@@ -4182,7 +4185,7 @@ class InstructionInvalid(Instruction):
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
 
-        # debug("OP:%x" % (self.OP))
+        # log.debug("OP:%x" % (self.OP))
 
     def get_name(self):
         """
@@ -4705,8 +4708,6 @@ class Instruction21h(Instruction):
 
         self.BBBB = unpack("=h", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
-
         self.formatted_operands = []
 
         if self.OP == 0x15:
@@ -4754,8 +4755,6 @@ class Instruction11n(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12)
 
-        # log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
-
     def get_output(self, idx=-1):
         buff = ""
         buff += "v%d, %d" % (self.A, self.B)
@@ -4788,7 +4787,6 @@ class Instruction21c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -4837,9 +4835,6 @@ class Instruction21s(Instruction):
         if self.OP == 0x16:
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0
                                            ])
-
-            # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
-
     def get_length(self):
         return 4
 
@@ -4880,8 +4875,6 @@ class Instruction22c(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
-
     def get_length(self):
         return 4
 
@@ -4919,8 +4912,6 @@ class Instruction22cs(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
-
     def get_length(self):
         return 4
 
@@ -4955,7 +4946,6 @@ class Instruction31t(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=i", buff[2:6])[0]
-        # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self):
         return 6
@@ -4991,7 +4981,6 @@ class Instruction31c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-        # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
 
     def get_length(self):
         return 6
@@ -5039,8 +5028,6 @@ class Instruction12x(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
 
-        # log_andro.debug("OP:%x %s A:%x B:%x" % (self.OP, args[0], self.A, self.B))
-
     def get_length(self):
         return 2
 
@@ -5067,8 +5054,6 @@ class Instruction11x(Instruction):
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
-
-        # log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
 
     def get_length(self):
         return 2
@@ -5104,8 +5089,6 @@ class Instruction51l(Instruction):
         if self.OP == 0x18:
             self.formatted_operands.append(unpack('=d', pack(
                 '=q', self.BBBBBBBBBBBBBBBB))[0])
-
-            # log_andro.debug("OP:%x %s AA:%x BBBBBBBBBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBBBBBBBBBB))
 
     def get_length(self):
         return 10
@@ -5158,8 +5141,6 @@ class Instruction31i(Instruction):
             self.formatted_operands.append(unpack('=d', pack('=d',
                                                              self.BBBBBBBB))[0])
 
-            # log_andro.debug("OP:%x %s AA:%x BBBBBBBBB:%x" % (self.OP, args[0], self.AA, self.BBBBBBBB))
-
     def get_length(self):
         return 6
 
@@ -5199,8 +5180,6 @@ class Instruction22x(Instruction):
 
         self.BBBB = unpack("=H", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
-
     def get_length(self):
         return 4
 
@@ -5232,8 +5211,6 @@ class Instruction23x(Instruction):
         self.BB = i16 & 0xff
         self.CC = (i16 >> 8) & 0xff
 
-        # log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
-
     def get_length(self):
         return 4
 
@@ -5261,8 +5238,6 @@ class Instruction20t(Instruction):
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
         self.AAAA = unpack("=h", buff[2:4])[0]
-
-        # log_andro.debug("OP:%x %s AAAA:%x" % (self.OP, args[0], self.AAAA))
 
     def get_length(self):
         return 4
@@ -5296,8 +5271,6 @@ class Instruction21t(Instruction):
 
         self.BBBB = unpack("=h", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
-
     def get_length(self):
         return 4
 
@@ -5326,8 +5299,6 @@ class Instruction10t(Instruction):
 
         self.OP = unpack("=B", buff[0:1])[0]
         self.AA = unpack("=b", buff[1:2])[0]
-
-        # log_andro.debug("OP:%x %s AA:%x" % (self.OP, args[0], self.AA))
 
     def get_length(self):
         return 2
@@ -5361,8 +5332,6 @@ class Instruction22t(Instruction):
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
 
-        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
-
     def get_length(self):
         return 4
 
@@ -5395,8 +5364,6 @@ class Instruction22s(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
-
-        # log_andro.debug("OP:%x %s A:%x B:%x CCCC:%x" % (self.OP, args[0], self.A, self.B, self.CCCC))
 
     def get_length(self):
         return 4
@@ -5432,8 +5399,6 @@ class Instruction22b(Instruction):
         self.BB = unpack("=B", buff[2:3])[0]
         self.CC = unpack("=b", buff[3:4])[0]
 
-        # log_andro.debug("OP:%x %s AA:%x BB:%x CC:%x" % (self.OP, args[0], self.AA, self.BB, self.CC))
-
     def get_length(self):
         return 4
 
@@ -5466,7 +5431,6 @@ class Instruction30t(Instruction):
 
         self.AAAAAAAA = unpack("=i", buff[2:6])[0]
 
-        # log_andro.debug("OP:%x %s AAAAAAAA:%x" % (self.OP, args[0], self.AAAAAAAA))
 
     def get_length(self):
         return 6
@@ -5503,8 +5467,6 @@ class Instruction3rc(Instruction):
         self.CCCC = unpack("=H", buff[4:6])[0]
 
         self.NNNN = self.CCCC + self.AA - 1
-
-        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 6
@@ -5554,8 +5516,6 @@ class Instruction32x(Instruction):
         self.AAAA = unpack("=H", buff[2:4])[0]
         self.BBBB = unpack("=H", buff[4:6])[0]
 
-        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
-
     def get_length(self):
         return 6
 
@@ -5584,8 +5544,6 @@ class Instruction20bc(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-
-        # log_andro.debug("OP:%x %s AA:%x BBBBB:%x" % (self.OP, args[0], self.AA, self.BBBB))
 
     def get_length(self):
         return 4
@@ -5622,8 +5580,6 @@ class Instruction35mi(Instruction):
         self.D = (i16 >> 4) & 0xf
         self.E = (i16 >> 8) & 0xf
         self.F = (i16 >> 12) & 0xf
-
-        # log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5703,8 +5659,6 @@ class Instruction35ms(Instruction):
         self.E = (i16 >> 8) & 0xf
         self.F = (i16 >> 12) & 0xf
 
-        # log_andro.debug("OP:%x %s G:%x A:%x BBBB:%x C:%x D:%x E:%x F:%x" % (self.OP, args[0], self.G, self.A, self.BBBB, self.C, self.D, self.E, self.F))
-
     def get_output(self, idx=-1):
         buff = ""
 
@@ -5780,8 +5734,6 @@ class Instruction3rmi(Instruction):
 
         self.NNNN = self.CCCC + self.AA - 1
 
-        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
-
     def get_length(self):
         return 6
 
@@ -5835,8 +5787,6 @@ class Instruction3rms(Instruction):
 
         self.NNNN = self.CCCC + self.AA - 1
 
-        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AA, self.BBBB, self.CCCC, self.NNNN))
-
     def get_length(self):
         return 6
 
@@ -5886,8 +5836,6 @@ class Instruction41c(Instruction):
 
         self.AAAA = unpack("=H", buff[6:8])[0]
 
-        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
-
     def get_length(self):
         return 8
 
@@ -5922,8 +5870,6 @@ class Instruction40sc(Instruction):
         self.OP = unpack("=H", buff[0:2])[0]
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
         self.AAAA = unpack("=H", buff[6:8])[0]
-
-        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBBBBBB))
 
     def get_length(self):
         return 8
@@ -5960,8 +5906,6 @@ class Instruction52c(Instruction):
         self.CCCCCCCC = unpack("=I", buff[2:6])[0]
         self.AAAA = unpack("=H", buff[6:8])[0]
         self.BBBB = unpack("=H", buff[8:10])[0]
-
-        # log_andro.debug("OP:%x %s AAAAA:%x BBBBB:%x" % (self.OP, args[0], self.AAAA, self.BBBB))
 
     def get_length(self):
         return 10
@@ -6000,8 +5944,6 @@ class Instruction5rc(Instruction):
         self.CCCC = unpack("=H", buff[8:10])[0]
 
         self.NNNN = self.CCCC + self.AAAA - 1
-
-        # log_andro.debug("OP:%x %s AA:%x BBBB:%x CCCC:%x NNNN:%d" % (self.OP, args[0], self.AAAA, self.BBBBBBBB, self.CCCC, self.NNNN))
 
     def get_length(self):
         return 10
@@ -6494,14 +6436,14 @@ class LinearSweepAlgorithm(object):
                         obj = get_instruction_payload(op_value, insn[idx:])
                         classic_instruction = False
                     except struct.error:
-                        warning("error while decoding instruction ...")
+                        log.warning("error while decoding instruction ...")
 
                 elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH:
                     try:
                         obj = get_extented_instruction(cm, op_value, insn[idx:])
                         classic_instruction = False
                     except struct.error as why:
-                        warning("error while decoding instruction ..." +
+                        log.warning("error while decoding instruction ..." +
                                 why.__str__())
 
                 # optimized instructions ?
@@ -6893,12 +6835,12 @@ class DalvikCode(object):
         return self.insns_size
 
     def _begin_show(self):
-        debug("registers_size: %d" % self.registers_size)
-        debug("ins_size: %d" % self.ins_size)
-        debug("outs_size: %d" % self.outs_size)
-        debug("tries_size: %d" % self.tries_size)
-        debug("debug_info_off: %d" % self.debug_info_off)
-        debug("insns_size: %d" % self.insns_size)
+        log.debug("registers_size: %d" % self.registers_size)
+        log.debug("ins_size: %d" % self.ins_size)
+        log.debug("outs_size: %d" % self.outs_size)
+        log.debug("tries_size: %d" % self.tries_size)
+        log.debug("debug_info_off: %d" % self.debug_info_off)
+        log.debug("insns_size: %d" % self.insns_size)
 
         bytecode._PrintBanner()
 
@@ -7066,7 +7008,7 @@ class MapItem(object):
         return self.size
 
     def next(self, buff, cm):
-        androconf.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
+        log.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
         started_at = time.time()
 
         if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
@@ -7128,12 +7070,12 @@ class MapItem(object):
             pass  # It's me I think !!!
 
         else:
-            androconf.warning("Map item %d @ 0x%x(%d) is unknown" %
+            log.warning("Map item %d @ 0x%x(%d) is unknown" %
                               (self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
         minutes, seconds = float(diff // 60), float(diff % 60)
-        androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
+        log.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
         if self.item is not None:
@@ -7294,7 +7236,7 @@ class ClassManager(object):
             if i.get_off() == off:
                 return i
 
-        androconf.warning("unknown class data item @ 0x%x" % off)
+        log.warning("unknown class data item @ 0x%x" % off)
 
     def get_encoded_array_item(self, off):
         for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM"]:
@@ -7308,7 +7250,7 @@ class ClassManager(object):
         try:
             off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
         except IndexError:
-            bytecode.Warning("unknown string item @ %d" % idx)
+            log.warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
 
         try:
@@ -7319,7 +7261,7 @@ class ClassManager(object):
                 return self.get_ascii_string(self.__strings_off[off].get())
             return self.__strings_off[off].get()
         except KeyError:
-            bytecode.Warning("unknown string item @ 0x%x(%d)" % (off, idx))
+            log.warning("unknown string item @ 0x%x(%d)" % (off, idx))
             return "AG:IS: invalid string"
 
     def get_raw_string(self, idx):
@@ -7327,13 +7269,13 @@ class ClassManager(object):
             off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off(
             )
         except IndexError:
-            bytecode.Warning("unknown string item @ %d" % idx)
+            log.warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
 
         try:
             return self.__strings_off[off].get()
         except KeyError:
-            bytecode.Warning("unknown string item @ 0x%x(%d)" % (off, idx))
+            log.warning("unknown string item @ 0x%x(%d)" % (off, idx))
             return "AG:IS: invalid string"
 
     def get_type_list(self, off):
@@ -7417,12 +7359,12 @@ class ClassManager(object):
                 name += "_" + bytecode.FormatDescriptorToPython(
                     encoded_method.get_descriptor())
 
-            debug("try deleting old name in python...")
+            log.debug("try deleting old name in python...")
             try:
                 delattr(class_def.M, name)
-                debug("success with regular name")
+                log.debug("success with regular name")
             except AttributeError:
-                debug("WARNING: fail with regular name")
+                log.debug("WARNING: fail with regular name")
                 # python_export = False
 
                 try:
@@ -7436,17 +7378,17 @@ class ClassManager(object):
 
                 try:
                     delattr(class_def.M, name)
-                    debug("success with name containing prototype")
+                    log.debug("success with name containing prototype")
                 except AttributeError:
-                    debug("WARNING: fail with name containing prototype")
+                    log.debug("WARNING: fail with name containing prototype")
                     python_export = False
 
             if python_export:
                 name = bytecode.FormatNameToPython(value)
                 setattr(class_def.M, name, encoded_method)
-                debug("new name in python: created: %s." % name)
+                log.debug("new name in python: created: %s." % name)
             else:
-                debug("skipping creating new name in python")
+                log.debug("skipping creating new name in python")
 
         method.reload()
 
@@ -7523,12 +7465,12 @@ class MapList(object):
             self.CM.add_type_item(TYPE_MAP_ITEM[mi.get_type()], mi, c_item)
 
         for i in self.map_item:
-            androconf.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
+            log.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
             started_at = time.time()
             i.reload()
             diff = time.time() - started_at
             minutes, seconds = float(diff // 60), float(diff % 60)
-            androconf.debug(
+            log.debug(
                 "End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
@@ -7641,7 +7583,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__header = HeaderItem(0, self, ClassManager(None, self.config))
 
         if self.__header.map_off == 0:
-            androconf.warning("no map list ...")
+            log.warning("no map list ...")
         else:
             self.map_list = MapList(self.CM, self.__header.map_off, self)
 
@@ -7781,9 +7723,9 @@ class DalvikVMFormat(bytecode._Bytecode):
                     s[idx + length] = c_length
 
                     length += c_length
-                    # debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
+                    # log.debug("SAVE" + str(j) + " @ 0x%x" % (idx+length))
 
-                debug("SAVE " + str(i[0]) + " @0x%x (%x)" % (idx, length))
+                log.debug("SAVE " + str(i[0]) + " @0x%x (%x)" % (idx, length))
 
             else:
                 if isinstance(i, MapList):
@@ -7798,7 +7740,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
                 s[idx] = length
 
-                debug("SAVE " + str(i) + " @0x%x (%x)" % (idx, length))
+                log.debug("SAVE " + str(i) + " @0x%x (%x)" % (idx, length))
 
             idx += length
 
@@ -7820,7 +7762,7 @@ class DalvikVMFormat(bytecode._Bytecode):
             idx = h[i]
 
             if idx != last_idx:
-                debug("Adjust alignment @%x with 00 %x" % (idx, idx - last_idx))
+                log.debug("Adjust alignment @%x with 00 %x" % (idx, idx - last_idx))
                 buff += bytearray([0] * (idx - last_idx))
 
             buff += i.get_raw()
@@ -7828,7 +7770,7 @@ class DalvikVMFormat(bytecode._Bytecode):
                 buff += b"\x00"
             last_idx = idx + s[idx]
 
-        debug("GLOBAL SIZE %d" % len(buff))
+        log.debug("GLOBAL SIZE %d" % len(buff))
 
         return self.fix_checksums(buff)
 
@@ -7847,8 +7789,8 @@ class DalvikVMFormat(bytecode._Bytecode):
         checksum = zlib.adler32(buff[12:])
         buff = buff[:8] + pack("=i", checksum) + buff[12:]
 
-        debug("NEW SIGNATURE %s" % repr(signature))
-        debug("NEW CHECKSUM %x" % checksum)
+        log.debug("NEW SIGNATURE %s" % repr(signature))
+        log.debug("NEW CHECKSUM %x" % checksum)
 
         return buff
 
