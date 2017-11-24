@@ -10,6 +10,7 @@ python:
 install:
   - "pip install ."
   - "pip install -r requirements.txt"
+  - pip install codecov
 # command to run tests
 script:
   # DEX tests
@@ -37,3 +38,6 @@ notifications:
       - desnos@t0t0.fr
     on_success: always
     on_failure: always
+
+after_success:
+  - codecov
