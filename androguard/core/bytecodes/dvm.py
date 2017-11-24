@@ -4166,6 +4166,15 @@ class Instruction(object):
         """
         raise Exception("not implemented")
 
+    def get_ref_off(self):
+        """
+        Return the offset of an t instruction
+        (Branch target)
+
+        :rtype: int
+        """
+        raise Exception("not implemented")
+
     def get_formatted_operands(self):
         return None
 
