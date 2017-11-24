@@ -2,11 +2,11 @@ from androguard.core.bytecodes.apk import APK
 from androguard.core.bytecodes.dvm import DalvikVMFormat
 from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.decompiler import DecompilerJADX
+from androguard.core.androconf import show_logging
 import logging
-import sys
 
 # Enable log output
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+show_logging(level=logging.DEBUG)
 
 # Load our example APK
 a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk")

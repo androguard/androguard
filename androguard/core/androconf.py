@@ -229,18 +229,16 @@ def is_android_raw(raw):
     return val
 
 
-# Init Logger
-# By default this logger will now be shown to the outer world (e.g. stdout)
-# but you can use `show_logging()` to activate it.
-logger = logging.getLogger("androguard")
-
-
 def show_logging(level=logging.INFO):
     """
     enable log messages on stdout
+
+    We will catch all messages here! From all loggers...
     """
+    logger = logging.getLogger()
+
     h = logging.StreamHandler(stream=sys.stdout)
-    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-9s] %(name)s (%(filename)s): %(message)s"))
+    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-8s] %(name)s (%(filename)s): %(message)s"))
 
     logger.addHandler(h)
     logger.setLevel(level)

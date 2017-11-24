@@ -24,7 +24,7 @@ import tempfile
 import os
 import sys
 
-from androguard.core.androconf import rrmdir, debug, info, warning
+from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
 from androguard.util import read
 
@@ -33,6 +33,10 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import TerminalFormatter
 from pygments.token import Token
+
+import logging
+
+log = logging.getLogger("androguard.decompiler")
 
 
 class JADXDecompilerError(Exception):
@@ -641,13 +645,13 @@ class DecompilerJADX:
             tf.write(vm.get_buff())
 
             cmd = [jadx, "-d", tmpfolder, "--escape-unicode", "--no-res", tf.name]
-            debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
+            log.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, _ = x.communicate()
             # Looks like jadx does not use stderr
-            info("Output of JADX during decompilation")
+            log.info("Output of JADX during decompilation")
             for line in stdout.decode("UTF-8").splitlines():
-                info(line)
+                log.info(line)
 
             if x.returncode != 0:
                 rrmdir(tmpfolder)
@@ -665,7 +669,7 @@ class DecompilerJADX:
         for root, dirs, files in os.walk(tmpfolder):
             for f in files:
                 if not f.endswith(".java"):
-                    warning("found a file in jadx folder which is not a java file: {}".format(f))
+                    log.warning("found a file in jadx folder which is not a java file: {}".format(f))
                     continue
                 # as the path begins always with `self.res` (hopefully), we remove that length
                 # also, all files should end with .java
@@ -683,7 +687,7 @@ class DecompilerJADX:
                         # Need to convert back to the "full" classname
                         self.classes["L{};".format(path)] = fp.read()
                 else:
-                    warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
+                    log.warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
@@ -697,13 +701,13 @@ class DecompilerJADX:
                     # Class was already found...
                     pass
             else:
-                warning("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+                log.warning("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
 
         # check if we have good matching
         if len(self.classes) == len(andr_class_names):
-            debug("JADX looks good, we have the same number of classes: {}".format(len(self.classes)))
+            log.debug("JADX looks good, we have the same number of classes: {}".format(len(self.classes)))
         else:
-            info("Looks like JADX is missing some classes or "
+            log.info("Looks like JADX is missing some classes or "
                  "we decompiled too much: decompiled: {} vs androguard: {}".format(len(self.classes),
                                                                                    len(andr_class_names)))
 
