@@ -89,7 +89,7 @@ def AnalyzeODex(filename, session=None):
     return session.addDEY(filename, data)
 
 
-def RunDecompiler(d, dx, decompiler):
+def RunDecompiler(d, dx, decompiler_name):
     """
         Run the decompiler on a specific analysis
 
@@ -100,12 +100,12 @@ def RunDecompiler(d, dx, decompiler):
         :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
         :type decompiler: string
     """
-    if decompiler is not None:
+    if decompiler_name is not None:
         log.debug("Decompiler ...")
-        decompiler = decompiler.lower()
+        decompiler_name = decompiler_name.lower()
         # TODO put this into the configuration object and make it more dynamic
         # e.g. detect new decompilers and so on...
-        if decompiler == "dex2jad":
+        if decompiler_name == "dex2jad":
             d.set_decompiler(decompiler.DecompilerDex2Jad(
                 d,
                 androconf.CONF["PATH_DEX2JAR"],
@@ -113,7 +113,7 @@ def RunDecompiler(d, dx, decompiler):
                 androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"],
                 androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler == "dex2fernflower":
+        elif decompiler_name == "dex2fernflower":
             d.set_decompiler(decompiler.DecompilerDex2Fernflower(
                 d,
                 androconf.CONF["PATH_DEX2JAR"],
@@ -122,7 +122,7 @@ def RunDecompiler(d, dx, decompiler):
                 androconf.CONF["BIN_FERNFLOWER"],
                 androconf.CONF["OPTIONS_FERNFLOWER"],
                 androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler == "ded":
+        elif decompiler_name == "ded":
             d.set_decompiler(decompiler.DecompilerDed(
                 d,
                 androconf.CONF["PATH_DED"],
