@@ -15,6 +15,9 @@ import struct
 import binascii
 import time
 from struct import pack, unpack, calcsize
+import logging
+
+log = logging.getLogger("androguard.dvm")
 
 # TODO there is DEX 38 already
 DEX_FILE_MAGIC_35 = 'dex\n035\x00'
@@ -1517,7 +1520,7 @@ class EncodedValue(object):
             else:
                 self.value = False
         else:
-            androconf.warning("Unknown value 0x%x" % self.value_type)
+            log.warning("Unknown value 0x%x" % self.value_type)
 
     def get_value(self):
         """
@@ -7066,7 +7069,7 @@ class MapItem(object):
         return self.size
 
     def next(self, buff, cm):
-        androconf.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
+        log.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
         started_at = time.time()
 
         if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
@@ -7128,12 +7131,12 @@ class MapItem(object):
             pass  # It's me I think !!!
 
         else:
-            androconf.warning("Map item %d @ 0x%x(%d) is unknown" %
+            log.warning("Map item %d @ 0x%x(%d) is unknown" %
                               (self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
         minutes, seconds = float(diff // 60), float(diff % 60)
-        androconf.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
+        log.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
         if self.item is not None:
@@ -7294,7 +7297,7 @@ class ClassManager(object):
             if i.get_off() == off:
                 return i
 
-        androconf.warning("unknown class data item @ 0x%x" % off)
+        log.warning("unknown class data item @ 0x%x" % off)
 
     def get_encoded_array_item(self, off):
         for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM"]:
@@ -7523,12 +7526,12 @@ class MapList(object):
             self.CM.add_type_item(TYPE_MAP_ITEM[mi.get_type()], mi, c_item)
 
         for i in self.map_item:
-            androconf.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
+            log.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
             started_at = time.time()
             i.reload()
             diff = time.time() - started_at
             minutes, seconds = float(diff // 60), float(diff % 60)
-            androconf.debug(
+            log.debug(
                 "End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds, 2))))
 
     def reload(self):
@@ -7641,7 +7644,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__header = HeaderItem(0, self, ClassManager(None, self.config))
 
         if self.__header.map_off == 0:
-            androconf.warning("no map list ...")
+            log.warning("no map list ...")
         else:
             self.map_list = MapList(self.CM, self.__header.map_off, self)
 

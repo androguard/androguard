@@ -6,7 +6,7 @@ import types
 from androguard import __version__
 ANDROGUARD_VERSION = __version__
 
-log = logging.getLogger("androguard")
+log = logging.getLogger("androguard.default")
 
 def is_ascii_problem(s):
     try:
