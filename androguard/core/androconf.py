@@ -225,54 +225,6 @@ def show_logging(level=logging.INFO):
     logger.setLevel(level)
 
 
-# FIXME all those functions should be replaced directly by logging functions...
-# Each class should use its own logger, so it is much easier to use.
-def warning(x):
-    """
-    DEPRECATED
-
-    Print out message x and the current traceback (if any)
-
-    :param x: String to be printed on stderr
-    """
-    log.warning(x)
-    if sys.exc_info()[0] is not None:
-        import traceback
-        traceback.print_exc()
-
-
-def error(x):
-    """
-    DEPRECATED
-    Print out a message and raise an exception
-    TODO should this really raise an exception?
-
-    :param x: String to be printed on stderr
-    """
-    log.error(x)
-    raise ()
-
-
-def debug(x):
-    """
-    DEPRECATED
-
-    :param x:
-    :return:
-    """
-    log.debug(x)
-
-
-def info(x):
-    """
-    DEPRECATED
-
-    :param x:
-    :return:
-    """
-    log.info(x)
-
-
 def set_options(key, value):
     CONF[key] = value
 

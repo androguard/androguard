@@ -8,10 +8,13 @@ from pygments.lexers import JavaLexer
 from pygments.style import Style
 from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
 
-from androguard.core import androconf
 from androguard.gui.helpers import classdot2class, proto2methodprotofunc
 from androguard.gui.renamewindow import RenameDialog
 from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
+
+import logging
+
+log = logging.getLogger("androguard.gui")
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
@@ -301,7 +304,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                  session=None):
         super(SourceWindow, self).__init__(parent)
 
-        androconf.debug("New source tab for: %s" % current_class)
+        log.debug("New source tab for: %s" % current_class)
 
         self.mainwin = win
         self.session = session
@@ -332,7 +335,7 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         # TODO: idea, highlight the method in the screen so we do not have to search for it
 
-        androconf.debug("Browsing to %s -> %s" % (self.current_class, method))
+        log.debug("Browsing to %s -> %s" % (self.current_class, method))
 
         # debug
         #        if False:
@@ -349,7 +352,7 @@ class SourceWindow(QtWidgets.QTextEdit):
               did since then, so we need to propagate previous changes as well
         """
 
-        androconf.debug("Getting sources for %s" % self.current_class)
+        log.debug("Getting sources for %s" % self.current_class)
 
         lines = [("COMMENTS", [(
             "COMMENT", "// filename:%s\n// digest:%s\n\n" % (
@@ -377,15 +380,15 @@ class SourceWindow(QtWidgets.QTextEdit):
     def cursor_position_changed(self):
         """Used to detect when cursor change position and to auto select word
            underneath it"""
-        androconf.debug("cursor_position_changed")
+        log.debug("cursor_position_changed")
 
         cur = self.textCursor()
-        androconf.debug(cur.position())
-        androconf.debug(cur.selectedText())
+        log.debug(cur.position())
+        log.debug(cur.selectedText())
         if len(cur.selectedText()) == 0:
             cur.select(QtGui.QTextCursor.WordUnderCursor)
             self.setTextCursor(cur)
-            # androconf.debug("cursor: %s" % cur.selectedText())
+            # log.debug("cursor: %s" % cur.selectedText())
 
     def keyPressEvent(self, event):
         """Keyboard shortcuts"""
@@ -441,7 +444,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Xref asked for '%s' (%d, %d)" %
+        log.debug("Xref asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -465,7 +468,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             method_proto = proto_
             current_analysis = self.session.get_analysis(self.current_class)
 
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s %s %s in source file: %s" %
                 (method_class_name, method_name, method_proto,
                  self.current_filename))
@@ -538,7 +541,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Rename asked for '%s' (%d, %d)" %
+        log.debug("Rename asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -554,23 +557,23 @@ class SourceWindow(QtWidgets.QTextEdit):
             method_ = t[1]
             if method_ == self.title:
                 method_ = 'init'
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s -> %s in source file: %s" %
                 (class_, method_, self.current_filename))
         elif t[0] == 'NAME_METHOD_INVOKE':
             class_, method_ = t[2].split(' -> ')
             if class_ == 'this':
                 class_ = self.current_class
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s -> %s in source file: %s" %
                 (class_, method_, self.current_filename))
         elif t[0] == 'NAME_PROTOTYPE':
             class_ = t[2] + '.' + t[1]
-            androconf.debug("Found corresponding class: %s in source file: %s" %
+            log.debug("Found corresponding class: %s in source file: %s" %
                             (class_, self.current_filename))
         elif t[0] == 'NAME_FIELD':
             field_ = t[1]
-            androconf.debug("Found corresponding field: %s in source file: %s" %
+            log.debug("Found corresponding field: %s in source file: %s" %
                             (field_, self.current_filename))
         else:
             self.mainwin.showStatus(
@@ -589,7 +592,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Goto asked for '%s' (%d, %d)" %
+        log.debug("Goto asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -610,7 +613,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                 selection)
             return
 
-        androconf.debug(
+        log.debug(
             "Found corresponding method: %s -> %s in source file: %s" %
             (class_, method_, self.path))
 
@@ -625,7 +628,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
+        log.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in list(self.doc.binding.keys()):
             self.mainwin.showStatus('%s at position: (%d, %d)' %
@@ -661,7 +664,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         """Called back after a user chose a new name for an element.
         """
 
-        androconf.debug("Renaming %s into %s in %s" %
+        log.debug("Renaming %s into %s in %s" %
                         (oldname, newname, self.current_filename))
         start, end = info
         try:
@@ -678,7 +681,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                 method_ = 'init'
 
             proto_ = t[2].method.proto
-            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+            log.debug("Found: class=%s, method=%s, proto=%s" %
                             (self.current_class, method_, proto_))
             type_ = "METHOD"
         elif t[0] == 'NAME_METHOD_INVOKE':  # method call in a method
@@ -687,13 +690,13 @@ class SourceWindow(QtWidgets.QTextEdit):
             if class_ == 'this':
                 class_ = self.path
             proto_ = proto2methodprotofunc("".join(t[3]) + t[4])
-            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+            log.debug("Found: class=%s, method=%s, proto=%s" %
                             (class_, method_, proto_))
             type_ = "METHOD"
         elif t[0] == 'NAME_PROTOTYPE':  # class definition on top of a class
             class_ = t[2] + '.' + t[1]
             package_ = t[2]
-            androconf.debug("Found: package=%s, class=%s" % (package_, class_))
+            log.debug("Found: package=%s, class=%s" % (package_, class_))
             type_ = "CLASS"
         elif t[0] == 'NAME_FIELD':
             field_item = t[3]

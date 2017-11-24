@@ -3,7 +3,10 @@ import traceback
 from PyQt5 import QtCore
 
 import androguard.session as session
-from androguard.misc import *
+from androguard.core import androconf
+import logging
+
+log = logging.getLogger("androguard.gui")
 
 
 class FileLoadingThread(QtCore.QThread):
@@ -39,8 +42,8 @@ class FileLoadingThread(QtCore.QThread):
                 else:
                     self.file_loaded.emit(False)
             except Exception as e:
-                androconf.debug(e)
-                androconf.debug(traceback.format_exc())
+                log.debug(e)
+                log.debug(traceback.format_exc())
                 self.file_loaded.emit(False)
 
             self.incoming_file = []

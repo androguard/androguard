@@ -24,7 +24,6 @@ import sys
 
 from optparse import OptionParser
 from androguard.core.analysis import auto
-from androguard.core.androconf import set_debug
 
 option_0 = {
     'name': ('-d', '--directory'),

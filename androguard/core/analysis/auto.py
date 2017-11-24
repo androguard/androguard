@@ -12,9 +12,11 @@ import zlib
 from androguard.core import androconf
 from androguard.core.bytecodes import apk, dvm
 from androguard.core.analysis import analysis
-from androguard.core.androconf import debug
 from androguard.util import read
 
+import logging
+
+log = logging.getLogger("androguard.auto")
 
 class AndroAuto(object):
     """
@@ -46,7 +48,7 @@ class AndroAuto(object):
         myandro = self.settings["my"]
 
         def worker(idx, q):
-            debug("Running worker-%d" % idx)
+            log.debug("Running worker-%d" % idx)
 
             while True:
                 a, d, dx, axmlobj, arscobj = None, None, None, None, None
@@ -54,16 +56,16 @@ class AndroAuto(object):
                     filename, fileraw = q.get()
                     id_file = zlib.adler32(fileraw)
 
-                    debug("(worker-%d) get %s %d" % (idx, filename, id_file))
+                    log.debug("(worker-%d) get %s %d" % (idx, filename, id_file))
 
                     log = self.settings["log"](id_file, filename)
 
                     is_analysis_dex, is_analysis_adex = True, True
-                    debug("(worker-%d) filtering file %d" % (idx, id_file))
+                    log.debug("(worker-%d) filtering file %d" % (idx, id_file))
                     filter_file_ret, filter_file_type = myandro.filter_file(
                         log, fileraw)
                     if filter_file_ret:
-                        debug("(worker-%d) analysis %s" %
+                        log.debug("(worker-%d) analysis %s" %
                               (id_file, filter_file_type))
 
                         if filter_file_type == "APK":

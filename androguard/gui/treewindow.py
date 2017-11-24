@@ -2,9 +2,11 @@ from PyQt5 import QtWidgets
 from builtins import range
 from builtins import str
 
-from androguard.core import androconf
 from androguard.gui.helpers import Signature
 from androguard.gui.xrefwindow import XrefDialogClass
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 
 class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
@@ -33,7 +35,7 @@ class TreeWindow(QtWidgets.QTreeWidget):
     def fill(self):
         """Parse all the paths (['Lcom/example/myclass/MyActivity$1;', ...])
            and build a tree using the QTreeWidgetItem insertion method."""
-        androconf.debug("Fill classes tree")
+        log.debug("Fill classes tree")
 
         for idx, filename, digest, classes in self.session.get_classes():
             for c in sorted(classes, key=lambda c: c.name):
@@ -72,7 +74,7 @@ class TreeWindow(QtWidgets.QTreeWidget):
                 path_node[0][path][1].setText(0, class_name)
 
     def itemDoubleClickedHandler(self, item, column):
-        androconf.debug("item %s has been double clicked at column %s" %
+        log.debug("item %s has been double clicked at column %s" %
                         (str(item), str(column)))
         if item.childCount() != 0:
             self.mainwin.showStatus("Sources not available.")
