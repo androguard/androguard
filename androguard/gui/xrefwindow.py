@@ -2,8 +2,10 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from builtins import range
 from builtins import str
 
-from androguard.core import androconf
 from androguard.gui.helpers import classmethod2display
+import logging
+
+log = logging.getLogger("androguard.gui")
 
 
 class XrefDialogClass(QtWidgets.QDialog):
@@ -199,7 +201,7 @@ class XrefDialog(QtWidgets.QDialog):
         super(XrefDialog, self).__init__(parent)
 
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
-            androconf.warning("Bad XrefDialog creation")
+            log.warning("Bad XrefDialog creation")
             return
 
         if not method:
@@ -219,7 +221,7 @@ class XrefDialog(QtWidgets.QDialog):
            to check if there are xrefs to display
             method (optional): method of the class we are looking xref from
         """
-        androconf.debug("Getting XREF for %s" % class_item)
+        log.debug("Getting XREF for %s" % class_item)
 
         item = class_item
         if method:
@@ -238,7 +240,7 @@ class XrefDialog(QtWidgets.QDialog):
         """
 
         xref_items = element.XREFfrom.items
-        androconf.debug("%d XREFs found" % len(xref_items))
+        log.debug("%d XREFs found" % len(xref_items))
         #        print xref_items
         xrefs = []
         for xref_item in xref_items:

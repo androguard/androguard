@@ -6,11 +6,13 @@ from PyQt5 import QtGui, QtCore
 from builtins import hex
 from builtins import range
 
-from androguard.core import androconf
 from androguard.core.bytecodes import dvm
 from . import TextSelection
 from .ViewMode import *
 from .cemu import *
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 30
@@ -328,7 +330,7 @@ class DisasmViewMode(ViewMode):
         xstart = cursorX
 
         if cursorY not in self.OPCODES:
-            androconf.warning("Impossible to find instruction at cursor %d, %d" % (cursorY, len(self.OPCODES)))
+            log.warning("Impossible to find instruction at cursor %d, %d" % (cursorY, len(self.OPCODES)))
             return
 
         asm = self.OPCODES[cursorY]
