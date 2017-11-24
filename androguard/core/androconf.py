@@ -45,14 +45,12 @@ class Color(object):
 
 # TODO most of these options are duplicated, as they are also the default arguments to the functions
 CONF = {
+    # Assume the binary is in $PATH, otherwise give full path
+    "BIN_JADX": "jadx",
     "BIN_DED": "ded.sh",
-    "PATH_DED": "./decompiler/ded/",
-    "PATH_DEX2JAR": "./decompiler/dex2jar/",
     "BIN_DEX2JAR": "dex2jar.sh",
-    "PATH_JAD": "./decompiler/jad/",
     "BIN_JAD": "jad",
     "BIN_WINEJAD": "jad.exe",
-    "PATH_FERNFLOWER": "./decompiler/fernflower/",
     "BIN_FERNFLOWER": "fernflower.jar",
     "OPTIONS_FERNFLOWER": {"dgs": '1',
                            "asc": '1'},
@@ -65,7 +63,7 @@ CONF = {
     "RECODE_ASCII_STRING_METH": None,
     "DEOBFUSCATED_STRING": True,
     #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
-    "PATH_JARSIGNER": "jarsigner",
+    "BIN_JARSIGNER": "jarsigner",
     "COLORS": {
         "OFFSET": Color.Yellow,
         "OFFSET_ADDR": Color.Green,

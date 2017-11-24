@@ -44,7 +44,7 @@ def parse_lxml_dom(tree):
 def sign_apk(filename, keystore, storepass):
     from subprocess import Popen, PIPE, STDOUT
     # TODO use apksigner instead of jarsigner
-    cmd = Popen([androconf.CONF["PATH_JARSIGNER"], "-sigalg", "MD5withRSA",
+    cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",
                      "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
                      keystore, filename, "alias_name"],
                     stdout=PIPE,

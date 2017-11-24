@@ -108,25 +108,22 @@ def RunDecompiler(d, dx, decompiler_name):
         if decompiler_name == "dex2jad":
             d.set_decompiler(decompiler.DecompilerDex2Jad(
                 d,
-                androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["PATH_JAD"],
                 androconf.CONF["BIN_JAD"],
                 androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_name == "dex2fernflower":
             d.set_decompiler(decompiler.DecompilerDex2Fernflower(
                 d,
-                androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["PATH_FERNFLOWER"],
                 androconf.CONF["BIN_FERNFLOWER"],
                 androconf.CONF["OPTIONS_FERNFLOWER"],
                 androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_name == "ded":
             d.set_decompiler(decompiler.DecompilerDed(
                 d,
-                androconf.CONF["PATH_DED"],
                 androconf.CONF["BIN_DED"],
                 androconf.CONF["TMP_DIRECTORY"]))
+        elif decompiler_name == "jadx":
+            d.set_decompiler(decompiler.DecompilerJADX(d, dx, jadx=androconf.CONF["BIN_JADX"]))
         else:
             d.set_decompiler(decompiler.DecompilerDAD(d, dx))

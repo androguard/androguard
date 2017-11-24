@@ -118,14 +118,12 @@ class MethodFilter(Filter):
 class Dex2Jar(object):
     def __init__(self,
                  vm,
-                 path_dex2jar="./decompiler/dex2jar/",
                  bin_dex2jar="dex2jar.sh",
                  tmp_dir="/tmp/"):
         """
         DEX2JAR is a tool to convert a Dalvik file into Java Classes
 
         :param vm:
-        :param path_dex2jar:
         :param bin_dex2jar:
         :param tmp_dir:
         """
@@ -138,7 +136,7 @@ class Dex2Jar(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
         stdout, stderr = cmd.communicate()
@@ -153,9 +151,7 @@ class Dex2Jar(object):
 class DecompilerDex2Jad(object):
     def __init__(self,
                  vm,
-                 path_dex2jar="./decompiler/dex2jar/",
                  bin_dex2jar="dex2jar.sh",
-                 path_jad="./decompiler/jad/",
                  bin_jad="jad",
                  tmp_dir="/tmp/"):
         """
@@ -163,9 +159,7 @@ class DecompilerDex2Jad(object):
         JAD is not a native Dalvik decompiler, therefore dex2jar is required.
 
         :param vm:
-        :param path_dex2jar:
         :param bin_dex2jar:
-        :param path_jad:
         :param bin_jad:
         :param tmp_dir:
         """
@@ -181,7 +175,7 @@ class DecompilerDex2Jad(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
         stdout, stderr = cmd.communicate()
@@ -202,7 +196,7 @@ class DecompilerDex2Jad(object):
                         real_filename += "/"
                     real_filename += f
 
-                    cmd = Popen([path_jad + bin_jad, "-o", "-d", root,
+                    cmd = Popen([bin_jad, "-o", "-d", root,
                                      real_filename],
                                     stdout=PIPE,
                                     stderr=STDOUT)
@@ -252,18 +246,14 @@ class DecompilerDex2Jad(object):
 class DecompilerDex2WineJad(object):
     def __init__(self,
                  vm,
-                 path_dex2jar="./decompiler/dex2jar/",
                  bin_dex2jar="dex2jar.sh",
-                 path_jad="./decompiler/jad/",
                  bin_jad="jad",
                  tmp_dir="/tmp/"):
         """
         Use JAD on wine
 
         :param vm:
-        :param path_dex2jar:
         :param bin_dex2jar:
-        :param path_jad:
         :param bin_jad:
         :param tmp_dir:
         """
@@ -279,7 +269,7 @@ class DecompilerDex2WineJad(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
         stdout, stderr = cmd.communicate()
@@ -300,7 +290,7 @@ class DecompilerDex2WineJad(object):
                         real_filename += "/"
                     real_filename += f
 
-                    cmd = Popen(["wine", path_jad + bin_jad, "-o", "-d",
+                    cmd = Popen(["wine", bin_jad, "-o", "-d",
                                      root, real_filename],
                                     stdout=PIPE,
                                     stderr=STDOUT)
@@ -350,7 +340,6 @@ class DecompilerDex2WineJad(object):
 class DecompilerDed(object):
     def __init__(self,
                  vm,
-                 path="./decompiler/ded/",
                  bin_ded="ded.sh",
                  tmp_dir="/tmp/"):
         """
@@ -360,7 +349,6 @@ class DecompilerDed(object):
         It is now replaced by DARE.
 
         :param vm: `DalvikVMFormat` object
-        :param path:
         :param bin_ded:
         :param tmp_dir:
         """
@@ -377,7 +365,7 @@ class DecompilerDed(object):
             fd.flush()
 
         dirname = tempfile.mkdtemp(prefix=fdname + "-src")
-        cmd = Popen([path + bin_ded, "-c", "-o", "-d", dirname, fdname],
+        cmd = Popen([bin_ded, "-c", "-o", "-d", dirname, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
         stdout, stderr = cmd.communicate()
@@ -441,9 +429,7 @@ class DecompilerDed(object):
 class DecompilerDex2Fernflower(object):
     def __init__(self,
                  vm,
-                 path_dex2jar="./decompiler/dex2jar/",
                  bin_dex2jar="dex2jar.sh",
-                 path_fernflower="./decompiler/fernflower/",
                  bin_fernflower="fernflower.jar",
                  options_fernflower={"dgs": '1',
                                      "asc": '1'},
@@ -458,9 +444,7 @@ class DecompilerDex2Fernflower(object):
 
 
         :param vm: `DalvikVMFormtat` object
-        :param path_dex2jar:
         :param bin_dex2jar:
-        :param path_fernflower:
         :param bin_fernflower:
         :param options_fernflower:
         :param tmp_dir:
@@ -477,7 +461,7 @@ class DecompilerDex2Fernflower(object):
             fd.write(vm.get_buff())
             fd.flush()
 
-        cmd = Popen([path_dex2jar + bin_dex2jar, fdname],
+        cmd = Popen([bin_dex2jar, fdname],
                         stdout=PIPE,
                         stderr=STDOUT)
         stdout, stderr = cmd.communicate()
@@ -498,7 +482,7 @@ class DecompilerDex2Fernflower(object):
                         real_filename += "/"
                     real_filename += f
 
-                    l = ["java", "-jar", path_fernflower + bin_fernflower]
+                    l = ["java", "-jar", bin_fernflower]
 
                     for option in options_fernflower:
                         l.append("-%s:%s" %
