@@ -8,8 +8,8 @@ addons:
 # Download jadx decompiler
 before_script:
   - wget https://github.com/skylot/jadx/releases/download/v0.6.1/jadx-0.6.1.zip -O /tmp/jadx-0.6.1.zip
-  - unzip /tmp/jadx-0.6.1.zip
-  - export PATH=$PATH:$PWD/bin
+  - unzip /tmp/jadx-0.6.1.zip -d jadx-0.6.1
+  - export PATH=$PATH:$PWD/jadx-0.6.1/bin
 
 python:
   - "2.7"
