@@ -514,6 +514,14 @@ class APK(object):
         except FileNotPresent:
             pass
 
+    def is_multidex(self):
+        """
+        Test if the APK has multiple DEX files
+
+        :return: True if multiple dex found, otherwise False
+        """
+        return "classes1.dex" in self.get_files()
+
     def get_elements(self, tag_name, attribute):
         """
             Return elements in xml files which match with the tag name and the specific attribute

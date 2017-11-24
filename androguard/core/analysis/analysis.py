@@ -740,12 +740,33 @@ class ClassAnalysis(object):
 
 
 class Analysis(object):
-    def __init__(self, vm):
-        self.vms = [vm]
+    def __init__(self, vm=None):
+        """
+        Analysis Object
+
+        The Analysis contains a lot of information about (multiple) DalvikVMFormat objects
+        Features are for example XREFs between Classes, Methods, Fields and Strings.
+
+        Multiple DalvikVMFormat Objects can be added using the function `add`
+
+        :param vm: inital DalvikVMFormat object.
+        """
+        self.vms = []
         self.classes = {}
         self.strings = {}
         self.methods = {}
 
+        if vm:
+            self.add(vm)
+
+    def add(self, vm):
+        """
+        Add a DalvikVMFormat to this Analysis
+
+        :param vm:
+        :return:
+        """
+        self.vms.append(vm)
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(
                 current_class, True)
@@ -957,14 +978,6 @@ class Analysis(object):
 
     def get_strings_analysis(self):
         return self.strings
-
-    def add(self, vm):
-        self.vms.append(vm)
-
-        for current_class in vm.get_classes():
-            if current_class.get_name() not in self.classes:
-                self.classes[current_class.get_name()] = ClassAnalysis(
-                    current_class, True)
 
 
 def is_ascii_obfuscation(vm):
