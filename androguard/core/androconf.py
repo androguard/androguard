@@ -250,6 +250,19 @@ def set_info():
     logger.setLevel(logging.INFO)
 
 
+def show_logging(level=logging.INFO):
+    """
+    enable log messages on stdout
+    """
+    h = logging.StreamHandler(stream=sys.stdout)
+    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-9s] %(name)s: %(message)s"))
+
+    logger.addHandler(h)
+    logger.setLevel(level)
+
+
+# FIXME all those functions should be replaced directly by logging functions...
+# Each class should use its own logger, so it is much easier to use.
 def warning(x):
     """
     Print out message x and the current traceback (if any)
