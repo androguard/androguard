@@ -2,15 +2,17 @@ from future import standard_library
 
 standard_library.install_aliases()
 from androguard import session
-from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
-from androguard.core.androconf import CONF
+from androguard.core import androconf
+
+import logging
+log = logging.getLogger("androguard.misc")
 
 
 def init_print_colors():
     from IPython.utils import coloransi, io
     androconf.default_colors(coloransi.TermColors)
-    CONF["PRINT_FCT"] = io.stdout.write
+    androconf.CONF["PRINT_FCT"] = io.stdout.write
 
 
 def get_default_session():
@@ -18,9 +20,9 @@ def get_default_session():
         Return the default Session from the configuration
         or create a new one, if the session is None.
     """
-    if CONF["SESSION"] is None:
-        CONF["SESSION"] = session.Session()
-    return CONF["SESSION"]
+    if androconf.CONF["SESSION"] is None:
+        androconf.CONF["SESSION"] = session.Session()
+    return androconf.CONF["SESSION"]
 
 
 def AnalyzeAPK(filename, session=None):
@@ -33,7 +35,7 @@ def AnalyzeAPK(filename, session=None):
 
         :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeAPK")
+    log.debug("AnalyzeAPK")
 
     if not session:
         session = get_default_session()
@@ -55,7 +57,7 @@ def AnalyzeDex(filename, session=None):
 
         :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeDex")
+    log.debug("AnalyzeDex")
 
     if not session:
         session = get_default_session()
@@ -76,7 +78,7 @@ def AnalyzeODex(filename, session=None):
 
         :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
     """
-    androconf.debug("AnalyzeODex")
+    log.debug("AnalyzeODex")
 
     if not session:
         session = get_default_session()
@@ -99,7 +101,7 @@ def RunDecompiler(d, dx, decompiler):
         :type decompiler: string
     """
     if decompiler is not None:
-        androconf.debug("Decompiler ...")
+        log.debug("Decompiler ...")
         decompiler = decompiler.lower()
         # TODO put this into the configuration object and make it more dynamic
         # e.g. detect new decompilers and so on...
