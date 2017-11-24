@@ -20,13 +20,11 @@ python:
   - "3.7-dev"
 # command to install dependencies
 install:
-  - pip install nose codecov coverage
+  - "pip install -r test-requirements.txt"
   - "pip install ."
-  - "pip install -r requirements.txt"
-  - pip install codecov
 # command to run tests
 script:
-  - nosetests -v --with-coverage
+  - nosetests --with-coverage
 
 notifications:
   email:
