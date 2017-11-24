@@ -149,10 +149,9 @@ class DVMBasicBlock(object):
 
             :rtype: None or an Instruction
         """
-        try:
+        if idx in self.special_ins:
             return self.special_ins[idx]
-        # FIXME: Too broad exception clause
-        except:
+        else:
             return None
 
     def get_exception_analysis(self):
