@@ -8,7 +8,21 @@ ANDROGUARD_VERSION = __version__
 
 log = logging.getLogger("androguard.default")
 
+
+class InvalidResourceError(Exception):
+    """
+    Invalid Resource Erorr is thrown by load_api_specific_resource_module
+    """
+    pass
+
+
 def is_ascii_problem(s):
+    """
+    Test if a string contains other chars than ASCII
+
+    :param s: a string to test
+    :return: True if string contains other chars than ASCII, False otherwise
+    """
     try:
         s.decode("ascii")
         return False
@@ -91,6 +105,7 @@ elif sys.platform == 'win32':
     CONF['data_prefix'] = os.path.join(sys.prefix, 'Scripts', 'androguard')
 else:
     CONF['data_prefix'] = os.path.join(sys.prefix, 'share', 'androguard')
+
 
 def default_colors(obj):
     CONF["COLORS"]["OFFSET"] = obj.Yellow
@@ -247,6 +262,8 @@ def show_logging(level=logging.INFO):
 # Each class should use its own logger, so it is much easier to use.
 def warning(x):
     """
+    DEPRECATED
+
     Print out message x and the current traceback (if any)
 
     :param x: String to be printed on stderr
@@ -259,6 +276,7 @@ def warning(x):
 
 def error(x):
     """
+    DEPRECATED
     Print out a message and raise an exception
     TODO should this really raise an exception?
 
@@ -269,10 +287,22 @@ def error(x):
 
 
 def debug(x):
+    """
+    DEPRECATED
+
+    :param x:
+    :return:
+    """
     log.debug(x)
 
 
 def info(x):
+    """
+    DEPRECATED
+
+    :param x:
+    :return:
+    """
     log.info(x)
 
 
@@ -281,6 +311,11 @@ def set_options(key, value):
 
 
 def rrmdir(directory):
+    """
+    Recursivly delete a directory
+
+    :param directory: directory to remove
+    """
     for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
             os.remove(os.path.join(root, name))
@@ -360,6 +395,7 @@ def color_range(startcolor, goalcolor, steps):
 
 def load_api_specific_resource_module(resource_name, api):
     # Those two imports are quite slow.
+    # Therefor we put them directly into this method
     from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
     from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
 
@@ -368,7 +404,7 @@ def load_api_specific_resource_module(resource_name, api):
     elif resource_name == "api_permission_mappings":
         mod = AOSP_PERMISSIONS_MAPPINGS
     else:
-        error("Invalid resource: %s" % resource_name)
+        raise InvalidResourceError("Invalid Resource {}".format(resource_name))
 
     if not api:
         api = CONF["DEFAULT_API"]
