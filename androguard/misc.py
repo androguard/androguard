@@ -2,7 +2,7 @@ from future import standard_library
 
 standard_library.install_aliases()
 from androguard import session
-from androguard.decompiler.decompiler import *
+from androguard.decompiler import decompiler
 from androguard.core import androconf
 
 import logging
@@ -106,7 +106,7 @@ def RunDecompiler(d, dx, decompiler):
         # TODO put this into the configuration object and make it more dynamic
         # e.g. detect new decompilers and so on...
         if decompiler == "dex2jad":
-            d.set_decompiler(DecompilerDex2Jad(
+            d.set_decompiler(decompiler.DecompilerDex2Jad(
                 d,
                 androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
@@ -114,7 +114,7 @@ def RunDecompiler(d, dx, decompiler):
                 androconf.CONF["BIN_JAD"],
                 androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "dex2fernflower":
-            d.set_decompiler(DecompilerDex2Fernflower(
+            d.set_decompiler(decompiler.DecompilerDex2Fernflower(
                 d,
                 androconf.CONF["PATH_DEX2JAR"],
                 androconf.CONF["BIN_DEX2JAR"],
@@ -123,10 +123,10 @@ def RunDecompiler(d, dx, decompiler):
                 androconf.CONF["OPTIONS_FERNFLOWER"],
                 androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler == "ded":
-            d.set_decompiler(DecompilerDed(
+            d.set_decompiler(decompiler.DecompilerDed(
                 d,
                 androconf.CONF["PATH_DED"],
                 androconf.CONF["BIN_DED"],
                 androconf.CONF["TMP_DIRECTORY"]))
         else:
-            d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_decompiler(decompiler.DecompilerDAD(d, dx))
