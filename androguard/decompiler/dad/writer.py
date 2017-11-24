@@ -28,8 +28,6 @@ from androguard.decompiler.dad.instruction import (
     Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
     NewInstance, Variable, BinaryCompExpression)
 
-from androguard.core.androconf import warning
-
 logger = logging.getLogger('dad.writer')
 
 
@@ -611,7 +609,7 @@ class Writer(object):
             elem_id = data_types[elem_size]
         else:
             # FIXME for other types we just assume bytes...
-            warning("Unknown element size {} for array. Assume bytes.".format(elem_size))
+            logger.warning("Unknown element size {} for array. Assume bytes.".format(elem_size))
             elem_id = 'b'
             elem_size = 1
 
