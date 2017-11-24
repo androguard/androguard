@@ -187,11 +187,6 @@ def str2long(s):
     return l
 
 
-def random_string():
-    return random.choice(string.letters) + ''.join([random.choice(
-        string.letters + string.digits) for i in range(10 - 1)])
-
-
 def is_android(filename):
     """Return the type of the file
 
@@ -235,19 +230,9 @@ def is_android_raw(raw):
 
 
 # Init Logger
-logger = logging.getLogger("androguard.runtime")  # logs at runtime
-
-
-def set_lazy():
-    CONF["LAZY_ANALYSIS"] = True
-
-
-def set_debug():
-    logger.setLevel(logging.DEBUG)
-
-
-def set_info():
-    logger.setLevel(logging.INFO)
+# By default this logger will now be shown to the outer world (e.g. stdout)
+# but you can use `show_logging()` to activate it.
+logger = logging.getLogger("androguard")
 
 
 def show_logging(level=logging.INFO):
@@ -255,7 +240,7 @@ def show_logging(level=logging.INFO):
     enable log messages on stdout
     """
     h = logging.StreamHandler(stream=sys.stdout)
-    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-9s] %(name)s: %(message)s"))
+    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-9s] %(name)s (%(filename)s): %(message)s"))
 
     logger.addHandler(h)
     logger.setLevel(level)
@@ -296,11 +281,6 @@ def info(x):
 
 def set_options(key, value):
     CONF[key] = value
-
-
-def save_to_disk(buff, output):
-    with open(output, "w") as fd:
-        fd.write(buff)
 
 
 def rrmdir(directory):

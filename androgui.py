@@ -18,9 +18,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.debug:
-        androconf.set_debug()
-
     # We need that to save huge sessions when leaving and avoid
     # RuntimeError: maximum recursion depth exceeded while pickling an object
     # or

@@ -47,9 +47,6 @@ class AndroTest(auto.DirectoryAndroAnalysis):
 
 
 def main(options, arguments):
-    if options.verbose:
-        set_debug()
-
     if options.directory:
         settings = {
             "my": AndroTest(options.directory),
