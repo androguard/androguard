@@ -17,7 +17,15 @@ from xml.sax.saxutils import escape
 import collections
 from collections import defaultdict
 
-from xml.dom import minidom
+import lxml.sax
+from xml.dom.pulldom import SAX2DOM
+from lxml import etree
+
+
+def parse_lxml_dom(tree):
+    handler = SAX2DOM()
+    lxml.sax.saxify(tree, handler)
+    return handler.document
 
 ################################## AXML FORMAT ########################################
 # Translated from
@@ -729,11 +737,14 @@ class AXMLPrinter(object):
         return self.buff.encode('utf-8')
 
     def get_xml(self):
-        return minidom.parseString(self.get_buff()).toprettyxml(
-            encoding="utf-8")
+        parser = etree.XMLParser(recover=True)
+        tree = etree.fromstring(self.get_buff(), parser=parser)
+        return parse_lxml_dom(tree).toprettyxml(encoding="utf-8")
 
     def get_xml_obj(self):
-        return minidom.parseString(self.get_buff())
+        parser = etree.XMLParser(recover=True)
+        tree = etree.fromstring(self.get_buff(), parser=parser)
+        return parse_lxml_dom(tree)
 
     def getPrefix(self, prefix):
         if prefix is None or len(prefix) == 0:

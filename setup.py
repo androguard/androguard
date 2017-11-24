@@ -18,6 +18,7 @@ install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3',
                     'future',
                     'networkx',
                     'pygments',
+                    'lxml',
                     ]
 
 # python version specific library versions:
