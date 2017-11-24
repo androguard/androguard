@@ -3,9 +3,6 @@ import unittest
 import sys
 from androguard.core.bytecodes.apk import APK
 
-PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL)
-
 from androguard import session
 
 

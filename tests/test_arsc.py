@@ -1,9 +1,6 @@
 import sys
 import unittest
 
-PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL)
-
 from androguard.core.bytecodes import apk, axml
 
 TEST_APP_NAME = "TestsAndroguardApplication"

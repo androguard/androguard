@@ -3,9 +3,6 @@ import unittest
 import sys
 from xml.dom import minidom
 
-PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL)
-
 from androguard.core.bytecodes import axml
 
 

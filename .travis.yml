@@ -1,4 +1,11 @@
 language: python
+
+# Download jadx decompiler
+before_script:
+  - wget https://github.com/skylot/jadx/releases/download/v0.6.1/jadx-0.6.1.zip -O /tmp/jadx-0.6.1.zip
+  - unzip /tmp/jadx-0.6.1.zip -d jadx-0.6.1
+  - export PATH=$PATH:$PWD/jadx-0.6.1/bin
+
 python:
   - "2.7"
   - "3.3"
@@ -8,28 +15,11 @@ python:
   - "3.7-dev"
 # command to install dependencies
 install:
+  - "pip install -r test-requirements.txt"
   - "pip install ."
-  - "pip install -r requirements.txt"
 # command to run tests
 script:
-  # DEX tests
-  - python tests/test_dex.py
-  # Analysis tests
-  - python tests/test_analysis.py
-  # APK tests
-  - python tests/test_apk.py
-  - python tests/test_axml.py
-  - python tests/test_arsc.py
-  # Session tests
-  - python tests/test_session.py
-  - python tests/test_rename.py
-  # Decompiler Tests
-  - python tests/test_decompiler.py
-
-  # DAD tests
-  - python androguard/decompiler/dad/tests/dataflow_test.py
-  - python androguard/decompiler/dad/tests/dominator_test.py
-  - python androguard/decompiler/dad/tests/rpo_test.py
+  - nosetests --with-coverage
 
 notifications:
   email:
@@ -37,3 +27,6 @@ notifications:
       - desnos@t0t0.fr
     on_success: always
     on_failure: always
+
+after_success:
+  - codecov
