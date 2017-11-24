@@ -2,9 +2,6 @@ import unittest
 
 import sys
 
-PATH_INSTALL = "./"
-sys.path.append(PATH_INSTALL)
-
 from androguard.core.bytecodes import dvm
 
 
