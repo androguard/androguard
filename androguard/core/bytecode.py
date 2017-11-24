@@ -10,7 +10,10 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from .androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from .androconf import CONF, enable_colors, remove_colors, save_colors, color_range
+import logging
+
+log = logging.getLogger("androguard.bytecode")
 
 
 def disable_print_colors():
@@ -25,12 +28,8 @@ def enable_print_colors(colors):
 
 # Handle exit message
 def Exit(msg):
-    warning("Error : " + msg)
+    log.warning("Error : " + msg)
     raise Exception("oops")
-
-
-def Warning(msg):
-    warning(msg)
 
 
 def _PrintBanner():
@@ -367,10 +366,8 @@ def method2format(output, _format="png", mx=None, raw=None):
         @param mx : specify the MethodAnalysis object
         @param raw : use directly a dot raw buffer if None
     """
-    try:
-        import pydot
-    except ImportError:
-        error("module pydot not found")
+    # pydot is optional!
+    import pydot
 
     buff = "digraph {\n"
     buff += "graph [rankdir=TB]\n"
@@ -654,7 +651,6 @@ def object_to_bytes(obj):
     elif isinstance(obj, bytearray):
         return obj
     else:
-        #print type(obj), obj
         return obj.get_raw()
 
 
@@ -770,7 +766,7 @@ class _Bytecode(object):
 
 def FormatClassToJava(i):
     """
-       Transoform a typical xml format class into java format
+       Transform a typical xml format class into java format
 
        :param i: the input class name
        :rtype: string
