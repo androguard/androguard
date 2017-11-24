@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-import types
+import tempfile
 
 from androguard import __version__
 ANDROGUARD_VERSION = __version__
@@ -52,18 +52,19 @@ CONF = {
     "BIN_JAD": "jad",
     "BIN_WINEJAD": "jad.exe",
     "BIN_FERNFLOWER": "fernflower.jar",
+    "BIN_JARSIGNER": "jarsigner",
+
     "OPTIONS_FERNFLOWER": {"dgs": '1',
                            "asc": '1'},
     "PRETTY_SHOW": 1,
-    "TMP_DIRECTORY": "/tmp/",
+    "TMP_DIRECTORY": tempfile.gettempdir(),
     # Full python or mix python/c++ (native)
-    #"ENGINE" : "automatic",
+    # "ENGINE" : "automatic",
     "ENGINE": "python",
     "RECODE_ASCII_STRING": False,
     "RECODE_ASCII_STRING_METH": None,
     "DEOBFUSCATED_STRING": True,
     #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
-    "BIN_JARSIGNER": "jarsigner",
     "COLORS": {
         "OFFSET": Color.Yellow,
         "OFFSET_ADDR": Color.Green,

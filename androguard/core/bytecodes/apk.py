@@ -36,20 +36,11 @@ NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 
 log = logging.getLogger("androguard.apk")
 
+
 def parse_lxml_dom(tree):
     handler = SAX2DOM()
     lxml.sax.saxify(tree, handler)
     return handler.document
-
-def sign_apk(filename, keystore, storepass):
-    from subprocess import Popen, PIPE, STDOUT
-    # TODO use apksigner instead of jarsigner
-    cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",
-                     "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
-                     keystore, filename, "alias_name"],
-                    stdout=PIPE,
-                    stderr=STDOUT)
-    stdout, stderr = cmd.communicate()
 
 
 class Error(Exception):

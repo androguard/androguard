@@ -127,3 +127,21 @@ def RunDecompiler(d, dx, decompiler_name):
             d.set_decompiler(decompiler.DecompilerJADX(d, dx, jadx=androconf.CONF["BIN_JADX"]))
         else:
             d.set_decompiler(decompiler.DecompilerDAD(d, dx))
+
+
+def sign_apk(filename, keystore, storepass):
+    """
+    Use jarsigner to sign an APK file.
+
+    :param filename: APK file on disk to sign (path)
+    :param keystore: path to keystore
+    :param storepass: your keystorage passphrase
+    """
+    from subprocess import Popen, PIPE, STDOUT
+    # TODO use apksigner instead of jarsigner
+    cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",
+                 "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
+                 keystore, filename, "alias_name"],
+                stdout=PIPE,
+                stderr=STDOUT)
+    stdout, stderr = cmd.communicate()
