@@ -6,4 +6,3 @@ coverage
 sphinx
 sphinxcontrib.programoutput
 sphinx_rtd_theme
-PyQt5
