@@ -144,6 +144,37 @@ class APKTest(unittest.TestCase):
                                                                   "android.permission.BROADCAST_STICKY",
                                                                   "android.permission.GET_ACCOUNTS"]))
 
+    def testAPKActivitiesAreString(self):
+        from androguard.core.bytecodes.apk import APK
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+        activities = a.get_activities()
+        self.assertTrue(isinstance(activities[0], str), 'activities[0] is not of type str')
+
+    def testAPKIntentFilters(self):
+        from androguard.core.bytecodes.apk import APK
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+        activities = a.get_activities()
+        receivers = a.get_receivers()
+        services = a.get_services()
+        filter_list = []
+        for i in activities:
+            filters = a.get_intent_filters("activity", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for i in receivers:
+            filters = a.get_intent_filters("receiver", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for i in services:
+            filters = a.get_intent_filters("service", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        pairs = zip(filter_list, [{'action': ['android.intent.action.MAIN'], 'category': ['android.intent.category.LAUNCHER']},
+                                                         {'action': ['android.service.notification.NotificationListenerService']},
+                                                         {'action': ['android.intent.action.BOOT_COMPLETED', 'android.intent.action.MY_PACKAGE_REPLACED'], 'category': ['android.intent.category.HOME']},
+                                                         {'action': ['android.appwidget.action.APPWIDGET_UPDATE']}])
+        self.assertTrue(any(x != y for x, y in pairs))
+
 
 if __name__ == '__main__':
     unittest.main()
