@@ -9,7 +9,6 @@ Subpackages
     androguard.core
     androguard.decompiler
     androguard.gui
-    androguard.patch
 
 Submodules
 ----------

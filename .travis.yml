@@ -20,6 +20,7 @@ install:
 # command to run tests
 script:
   - nosetests --with-coverage
+  - python setup.py build_sphinx
 
 notifications:
   email:
