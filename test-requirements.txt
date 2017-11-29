@@ -3,7 +3,7 @@ future
 nose
 codecov
 coverage
-sphix
+sphinx
 sphinxcontrib.programoutput
 sphinx_rtd_theme
 pyqt5
