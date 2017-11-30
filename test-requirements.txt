@@ -4,5 +4,4 @@ nose
 codecov
 coverage
 sphinx
-sphinxcontrib.programoutput
 sphinx_rtd_theme

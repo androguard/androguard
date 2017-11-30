@@ -16,6 +16,8 @@ python:
 # command to install dependencies
 install:
   - "pip install -r test-requirements.txt"
+  # sphinxcontrib-programoutput >= 0.9 is not supported by python 2.6, 3.2 and 3.3
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.3 ]]; then pip install sphinxcontrib-programoutput==0.8; else pip install sphinxcontrib-programoutput; fi
   - "pip install ."
 # command to run tests
 script:
