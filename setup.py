@@ -12,6 +12,9 @@ if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_
           "Please upgrade at least to python 2.7 or 3.3!", file=sys.stderr)
     sys.exit(1)
 
+# PyQT5 is only available for python 3.5 and 3.6
+if sys.version_info <= (3, 4) or sys.version_info >= (3, 7):
+    print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
 
 # workaround issue on OSX, where sys.prefix is not an installable location
 if sys.platform == 'darwin' and sys.prefix.startswith('/System'):
