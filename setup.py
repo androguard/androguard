@@ -76,6 +76,7 @@ setup(
         'magic': ['file-magic'],
         'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme'],
         'graphing': ['pydot'],
+	'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage'],
     },
     setup_requires=['setuptools'],
 
