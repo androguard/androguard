@@ -1,9 +1,17 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 import os
 from androguard import __version__
 
 from setuptools import setup, find_packages
+
+# We do not support python versions <2.7 and python <3.3
+if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_info.major == 2 and sys.version_info.minor < 7):
+    print("Unfortunatly, your python version is not supported!\n"
+          "Please upgrade at least to python 2.7 or 3.3!", file=sys.stderr)
+    sys.exit(1)
+
 
 # workaround issue on OSX, where sys.prefix is not an installable location
 if sys.platform == 'darwin' and sys.prefix.startswith('/System'):
@@ -30,11 +38,16 @@ else:
     install_requires.append('ipython>=5.0.0,<6')
 
 # pycrypography >= 2 is not supported by py3.3
-# See https://cryptography.io/en/latest/changelog/#v2-0
+#  See https://cryptography.io/en/latest/changelog/#v2-0
+# sphinxcontrib-programoutput >= 0.9 is not supported by python 2.6, 3.2 or 3.3
+#  But we do not support 2.6 or 3.2 anyways...
+#  See https://sphinxcontrib-programoutput.readthedocs.io/en/latest/#id5
 if sys.version_info.major == 3 and sys.version_info.minor == 3:
     install_requires.append('cryptography>=1.0,<2.0')
+    sphinxprogram = "sphinxcontrib-programoutput==0.8"
 else:
     install_requires.append('cryptography>=1.0')
+    sphinxprogram = "sphinxcontrib-programoutput>0.8"
 
 setup(
     name='androguard',
@@ -58,7 +71,7 @@ setup(
         # * python-magic from https://pypi.python.org/pypi/python-magic
         # If you are installing on debian you can use python3-magic instead, which fulfills the dependency to file-magic
         'magic': ['file-magic'],
-        'docs': ['sphinx', 'sphinxcontrib-programoutput', 'sphinx_rtd_theme'],
+        'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme'],
         'graphing': ['pydot'],
     },
     setup_requires=['setuptools'],
