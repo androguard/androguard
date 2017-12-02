@@ -15,11 +15,11 @@ python:
   - "3.7-dev"
 # command to install dependencies
 install:
-  - "pip install -r test-requirements.txt"
-  - "pip install ."
+  - "pip install .[tests,docs]"
 # command to run tests
 script:
   - nosetests --with-coverage
+  - python setup.py build_sphinx
 
 notifications:
   email:
