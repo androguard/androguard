@@ -177,7 +177,10 @@ class APKTest(unittest.TestCase):
 
     def testNewZipWithoutModification(self):
         from androguard.core.bytecodes.apk import APK
-        from unittest.mock import patch, MagicMock
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
         a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
@@ -188,7 +191,10 @@ class APKTest(unittest.TestCase):
 
     def testNewZipWithDeletedFile(self):
         from androguard.core.bytecodes.apk import APK
-        from unittest.mock import patch, MagicMock
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
         a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
@@ -199,7 +205,10 @@ class APKTest(unittest.TestCase):
 
     def testNewZipWithNewFile(self):
         from androguard.core.bytecodes.apk import APK
-        from unittest.mock import patch, MagicMock
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
         a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
