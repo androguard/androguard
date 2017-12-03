@@ -865,13 +865,30 @@ class APK(object):
         zout = zipfile.ZipFile(filename, 'w')
 
         for item in self.zip.infolist():
+            # Block one: deleted_files, or deleted_files and new_files
             if deleted_files is not None:
                 if re.match(deleted_files, item.filename) is None:
+                    # if the regex of deleted_files doesn't match the filename
+                    if new_files is not False:
+                        if item.filename in new_files:
+                            # and if the filename is in new_files
+                            zout.writestr(item, new_files[item.filename])
+                            continue
+                    # Otherwise, write the original file.
                     buffer = self.zip.read(item.filename)
                     zout.writestr(item, buffer)
-            if new_files is not False:
+            # Block two: deleted_files is None, new_files is not empty
+            elif new_files is not False:
                 if item.filename in new_files:
                     zout.writestr(item, new_files[item.filename])
+                else:
+                    buffer = self.zip.read(item.filename)
+                    zout.writestr(item, buffer)
+            # Block three: deleted_files is None, new_files is empty.
+            # Just write out the default zip
+            else:
+                buffer = self.zip.read(item.filename)
+                zout.writestr(item, buffer)
         zout.close()
 
     def get_android_manifest_axml(self):

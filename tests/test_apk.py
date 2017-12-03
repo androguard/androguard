@@ -175,6 +175,48 @@ class APKTest(unittest.TestCase):
                                                          {'action': ['android.appwidget.action.APPWIDGET_UPDATE']}])
         self.assertTrue(any(x != y for x, y in pairs))
 
+    def testNewZipWithoutModification(self):
+        from androguard.core.bytecodes.apk import APK
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+        with patch('zipfile.ZipFile') as zipFile:
+            mockZip = MagicMock()
+            zipFile.return_value=mockZip
+            a.new_zip("testout.apk")
+            self.assertTrue(mockZip.writestr.call_count == 48)
+            self.assertTrue(mockZip.close.called)
+
+    def testNewZipWithDeletedFile(self):
+        from androguard.core.bytecodes.apk import APK
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+        with patch('zipfile.ZipFile') as zipFile:
+            mockZip = MagicMock()
+            zipFile.return_value=mockZip
+            a.new_zip("testout.apk", deleted_files="res/menu/menu.xml")
+            self.assertTrue(mockZip.writestr.call_count == 47)
+            self.assertTrue(mockZip.close.called)
+
+    def testNewZipWithNewFile(self):
+        from androguard.core.bytecodes.apk import APK
+        try:
+            from unittest.mock import patch, MagicMock
+        except:
+            from mock import patch, MagicMock
+        a = APK("examples/tests/a2dp.Vol_137.apk", testzip=True)
+        with patch('zipfile.ZipFile') as zipFile:
+            mockZip = MagicMock()
+            zipFile.return_value=mockZip
+            a.new_zip("testout.apk", new_files={'res/menu/menu.xml': 'content'})
+            self.assertTrue(mockZip.writestr.call_count == 48)
+            self.assertTrue(mockZip.close.called)
+
 
 if __name__ == '__main__':
     unittest.main()
