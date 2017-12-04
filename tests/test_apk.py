@@ -28,6 +28,25 @@ class APKTest(unittest.TestCase):
 
         self.assertIsNotNone(a.get_certificate(a.get_signature_name()))
 
+    def testAPKWrapperRaw(self):
+        from androguard.misc import AnalyzeAPK
+        from androguard.core.bytecodes.apk import APK
+        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.analysis.analysis import Analysis
+        with open(
+            "examples/android/TestsAndroguard/bin/TestActivity.apk", 'rb') \
+                as file_obj:
+            file_contents = file_obj.read()
+        a, d, dx = AnalyzeAPK(file_contents, raw=True)
+        self.assertIsInstance(a, APK)
+        self.assertIsInstance(d, DalvikVMFormat)
+        self.assertIsInstance(dx, Analysis)
+
+        self.assertEqual(a.get_signature_name(), "META-INF/CERT.RSA")
+        self.assertEqual(a.get_signature_names(), ["META-INF/CERT.RSA"])
+
+        self.assertIsNotNone(a.get_certificate(a.get_signature_name()))
+
     def testAPKCert(self):
         """
         Test if certificates are correctly unpacked from the SignatureBlock files
