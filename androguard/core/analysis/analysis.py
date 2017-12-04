@@ -10,11 +10,64 @@ import collections
 import threading
 import queue
 import time
-from androguard.core.androconf import is_ascii_problem
+from androguard.core.androconf import is_ascii_problem, \
+    load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 import logging
 
+
 log = logging.getLogger("androguard.analysis")
+
+
+TAINTED_LOCAL_VARIABLE = 0
+TAINTED_FIELD = 1
+TAINTED_STRING = 2
+TAINTED_PACKAGE_CREATE = 0
+TAINTED_PACKAGE_CALL = 1
+
+TAINTED_PACKAGE = {
+    TAINTED_PACKAGE_CREATE: "C",
+    TAINTED_PACKAGE_CALL: "M"
+}
+
+TAINTED_PACKAGE_INTERNAL_CALL = 2
+FIELD_ACCESS = {"R": 0, "W": 1}
+PACKAGE_ACCESS = {TAINTED_PACKAGE_CREATE: 0,
+                  TAINTED_PACKAGE_CALL: 1, TAINTED_PACKAGE_INTERNAL_CALL: 2}
+
+DVM_FIELDS_ACCESS = {
+    "iget": "R",
+    "iget-wide": "R",
+    "iget-object": "R",
+    "iget-boolean": "R",
+    "iget-byte": "R",
+    "iget-char": "R",
+    "iget-short": "R",
+
+    "iput": "W",
+    "iput-wide": "W",
+    "iput-object": "W",
+    "iput-boolean": "W",
+    "iput-byte": "W",
+    "iput-char": "W",
+    "iput-short": "W",
+
+    "sget": "R",
+    "sget-wide": "R",
+    "sget-object": "R",
+    "sget-boolean": "R",
+    "sget-byte": "R",
+    "sget-char": "R",
+    "sget-short": "R",
+
+    "sput": "W",
+    "sput-wide": "W",
+    "sput-object": "W",
+    "sput-boolean": "W",
+    "sput-byte": "W",
+    "sput-char": "W",
+    "sput-short": "W",
+}
 
 
 class DVMBasicBlock(object):
@@ -44,6 +97,9 @@ class DVMBasicBlock(object):
         self.notes = []
 
         self.__cached_instructions = None
+
+        self.tainted_variables = self.context.get_tainted_variables()
+        self.tainted_packages = self.context.get_tainted_packages()
 
     def get_notes(self):
         return self.notes
@@ -137,7 +193,39 @@ class DVMBasicBlock(object):
 
         op_value = i.get_op_value()
 
-        if op_value == 0x26 or (0x2b <= op_value <= 0x2c):
+        if (op_value >= 0x52 and op_value <= 0x6d):
+                desc = self.__vm.get_cm_field(i.get_ref_kind())
+                if self.tainted_variables is not None:
+                    self.tainted_variables.push_info(
+                        TAINTED_FIELD, desc,
+                        DVM_FIELDS_ACCESS[i.get_name()][0], idx, self.method)
+
+        # invoke
+        elif (op_value >= 0x6e and op_value <= 0x72) or (
+                op_value >= 0x74 and op_value <= 0x78):
+            idx_meth = i.get_ref_kind()
+            method_info = self.__vm.get_cm_method(idx_meth)
+            if self.tainted_packages is not None:
+                self.tainted_packages.push_info(
+                    method_info[0], TAINTED_PACKAGE_CALL, idx, self.method,
+                    idx_meth)
+
+        # new_instance
+        elif op_value == 0x22:
+            idx_type = i.get_ref_kind()
+            type_info = self.__vm.get_cm_type(idx_type)
+            if self.tainted_packages is not None:
+                self.tainted_packages.push_info(
+                    type_info, TAINTED_PACKAGE_CREATE, idx, self.method, None)
+
+        # const-string
+        elif (op_value >= 0x1a and op_value <= 0x1b):
+            string_name = self.__vm.get_cm_string(i.get_ref_kind())
+            if self.tainted_variables is not None:
+                self.tainted_variables.push_info(
+                    TAINTED_STRING, string_name, "R", idx, self.method)
+
+        elif op_value == 0x26 or (0x2b <= op_value <= 0x2c):
             code = self.method.get_code().get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
 
@@ -162,6 +250,639 @@ class DVMBasicBlock(object):
 
     def show(self):
         print(self.get_name(), self.get_start(), self.get_end())
+
+
+class PathVar(object):
+
+    def __init__(self, access, idx, dst_idx, info_obj):
+        self.access_flag = access
+        self.idx = idx
+        self.dst_idx = dst_idx
+        self.info_obj = info_obj
+
+    def get_var_info(self):
+        return self.info_obj.get_info()
+
+    def get_access_flag(self):
+        return self.access_flag
+
+    def get_src(self, cm):
+        method = cm.get_method_ref(self.idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
+
+    def get_dst(self, cm):
+        method = cm.get_method_ref(self.dst_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
+
+    def get_idx(self):
+        return self.idx
+
+
+class TaintedVariable(object):
+
+    def __init__(self, var, _type):
+        self.var = var
+        self.type = _type
+
+        self.paths = {}
+        self.__cache = []
+
+    def get_type(self):
+        return self.type
+
+    def get_info(self):
+        if self.type == TAINTED_FIELD:
+            return [self.var[0], self.var[2], self.var[1]]
+        return self.var
+
+    def push(self, access, idx, ref):
+        m_idx = ref.get_method_idx()
+
+        if m_idx not in self.paths:
+            self.paths[m_idx] = []
+
+        self.paths[m_idx].append((access, idx))
+
+    def get_paths_access(self, mode):
+        for i in self.paths:
+            for j in self.paths[i]:
+                for k, v in self.paths[i][j]:
+                    if k in mode:
+                        yield i, j, k, v
+
+    def get_paths(self):
+        if self.__cache != []:
+            return self.__cache
+
+        for i in self.paths:
+            for j in self.paths[i]:
+                self.__cache.append([j, i])
+                # yield j, i
+        return self.__cache
+
+    def get_paths_length(self):
+        return len(self.paths)
+
+    def show_paths(self, vm):
+        show_PathVariable(vm, self.get_paths())
+
+
+class TaintedVariables(object):
+
+    def __init__(self, _vm):
+        self.__vm = _vm
+        self.__vars = {
+            TAINTED_LOCAL_VARIABLE: {},
+            TAINTED_FIELD: {},
+            TAINTED_STRING: {},
+        }
+
+        self.__cache_field_by_method = {}
+        self.__cache_string_by_method = {}
+
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module(
+            "aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module(
+            "api_permission_mappings", self.__vm.get_api_version())
+
+    # functions to get particulars elements
+    def get_string(self, s):
+        try:
+            return self.__vars[TAINTED_STRING][s]
+        except KeyError:
+            return None
+
+    def get_field(self, class_name, name, descriptor):
+        key = class_name + descriptor + name
+
+        try:
+            return self.__vars[TAINTED_FIELD][key]
+        except KeyError:
+            return None
+
+    def toPathVariable(self, obj):
+        z = []
+        for i in obj.get_paths():
+            access, idx = i[0]
+            m_idx = i[1]
+
+            z.append(PathVar(access, idx, m_idx, obj))
+        return z
+
+    # permission functions
+    def get_permissions_method(self, method):
+        permissions = set()
+
+        for f, f1 in self.get_fields():
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
+            if data in list(
+                    self.API_PERMISSION_MAPPINGS_MODULE[
+                        "AOSP_PERMISSIONS_BY_FIELDS"].keys()):
+                for path in f.get_paths():
+                    #access, idx = path[0]
+                    m_idx = path[1]
+                    if m_idx == method.get_idx():
+                        permissions.update(self.API_PERMISSION_MAPPINGS_MODULE[
+                                           "AOSP_PERMISSIONS_BY_FIELDS"][data])
+
+        return permissions
+
+    def get_permissions(self, permissions_needed):
+        """
+            @param permissions_needed : a list of restricted permissions to get
+                                        ([] returns all permissions)
+
+            @rtype : a dictionnary of permissions' paths
+        """
+        permissions = {}
+
+        pn = set(permissions_needed)
+        if permissions_needed == []:
+            pn = set(self.AOSP_PERMISSIONS_MODULE["AOSP_PERMISSIONS"].keys())
+
+        for f, _ in self.get_fields():
+            data = "%s-%s-%s" % (f.var[0], f.var[2], f.var[1])
+            if data in list(
+                    self.API_PERMISSION_MAPPINGS_MODULE[
+                        "AOSP_PERMISSIONS_BY_FIELDS"].keys()):
+                perm_intersection = pn.intersection(
+                    self.API_PERMISSION_MAPPINGS_MODULE[
+                        "AOSP_PERMISSIONS_BY_FIELDS"][data])
+                for p in perm_intersection:
+                    try:
+                        permissions[p].extend(self.toPathVariable(f))
+                    except KeyError:
+                        permissions[p] = []
+                        permissions[p].extend(self.toPathVariable(f))
+
+        return permissions
+
+    # global functions
+    def get_strings(self):
+        for i in self.__vars[TAINTED_STRING]:
+            yield self.__vars[TAINTED_STRING][i], i
+
+    def get_fields(self):
+        for i in self.__vars[TAINTED_FIELD]:
+            yield self.__vars[TAINTED_FIELD][i], i
+
+    # specifics functions
+    def get_strings_by_method(self, method):
+        z = {}
+
+        try:
+            for i in self.__cache_string_by_method[method.get_method_idx()]:
+                z[i] = []
+                for j in i.get_paths():
+                    if method.get_method_idx() == j[1]:
+                        z[i].append(j[0])
+
+            return z
+        except:
+            return z
+
+    def get_fields_by_method(self, method):
+        z = {}
+
+        try:
+            for i in self.__cache_field_by_method[method.get_method_idx()]:
+                z[i] = []
+                for j in i.get_paths():
+                    if method.get_method_idx() == j[1]:
+                        z[i].append(j[0])
+            return z
+        except:
+            return z
+
+    def add(self, var, _type, _method=None):
+        if _type == TAINTED_FIELD:
+            key = var[0] + var[1] + var[2]
+            if key not in self.__vars[TAINTED_FIELD]:
+                self.__vars[TAINTED_FIELD][key] = TaintedVariable(var, _type)
+        elif _type == TAINTED_STRING:
+            if var not in self.__vars[TAINTED_STRING]:
+                self.__vars[TAINTED_STRING][var] = TaintedVariable(var, _type)
+        elif _type == TAINTED_LOCAL_VARIABLE:
+            if _method not in self.__vars[TAINTED_LOCAL_VARIABLE]:
+                self.__vars[TAINTED_LOCAL_VARIABLE][_method] = {}
+
+            if var not in self.__vars[TAINTED_LOCAL_VARIABLE][_method]:
+                self.__vars[TAINTED_LOCAL_VARIABLE][_method][
+                    var] = TaintedVariable(var, _type)
+
+    def push_info(self, _type, var, access, idx, ref):
+        if _type == TAINTED_FIELD:
+            self.add(var, _type)
+            key = var[0] + var[1] + var[2]
+            self.__vars[_type][key].push(access, idx, ref)
+
+            method_idx = ref.get_method_idx()
+            if method_idx not in self.__cache_field_by_method:
+                self.__cache_field_by_method[method_idx] = set()
+
+            self.__cache_field_by_method[method_idx].add(
+                self.__vars[TAINTED_FIELD][key])
+
+        elif _type == TAINTED_STRING:
+            self.add(var, _type)
+            self.__vars[_type][var].push(access, idx, ref)
+
+            method_idx = ref.get_method_idx()
+
+            if method_idx not in self.__cache_string_by_method:
+                self.__cache_string_by_method[method_idx] = set()
+
+            self.__cache_string_by_method[method_idx].add(
+                self.__vars[TAINTED_STRING][var])
+
+
+class PathP(object):
+
+    def __init__(self, access, idx, src_idx, dst_idx):
+        self.access_flag = access
+        self.idx = idx
+        self.src_idx = src_idx
+        self.dst_idx = dst_idx
+
+    def get_access_flag(self):
+        return self.access_flag
+
+    def get_dst(self, cm):
+        method = cm.get_method_ref(self.dst_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
+
+    def get_src(self, cm):
+        method = cm.get_method_ref(self.src_idx)
+        return method.get_class_name(), method.get_name(), method.get_descriptor()
+
+    def get_idx(self):
+        return self.idx
+
+    def get_src_idx(self):
+        return self.src_idx
+
+    def get_dst_idx(self):
+        return self.dst_idx
+
+
+class TaintedPackage(object):
+
+    def __init__(self, vm, name):
+        self.vm = vm
+        self.name = name
+        self.paths = {TAINTED_PACKAGE_CREATE: [], TAINTED_PACKAGE_CALL: []}
+
+    def get_name(self):
+        return self.name
+
+    def gets(self):
+        return self.paths
+
+    def push(self, access, idx, src_idx, dst_idx):
+        p = PathP(access, idx, src_idx, dst_idx)
+        self.paths[access].append(p)
+        return p
+
+    def get_objects_paths(self):
+        return self.paths[TAINTED_PACKAGE_CREATE]
+
+    def search_method(self, name, descriptor):
+        """
+            @param name : a regexp for the name of the method
+            @param descriptor : a regexp for the descriptor of the method
+
+            @rtype : a list of called paths
+        """
+        l = []
+        m_name = re.compile(name)
+        m_descriptor = re.compile(descriptor)
+
+        for path in self.paths[TAINTED_PACKAGE_CALL]:
+            _, dst_name, dst_descriptor = path.get_dst(
+                self.vm.get_class_manager())
+            if m_name.match(dst_name) is not None and m_descriptor.match(dst_descriptor) is not None:
+                l.append(path)
+        return l
+
+    def get_method(self, name, descriptor):
+        l = []
+        for path in self.paths[TAINTED_PACKAGE_CALL]:
+            if path.get_name() == name and path.get_descriptor() == descriptor:
+                l.append(path)
+        return l
+
+    def get_paths(self):
+        for i in self.paths:
+            for j in self.paths[i]:
+                yield j
+
+    def get_paths_length(self):
+        x = 0
+        for i in self.paths:
+            x += len(self.paths[i])
+        return x
+
+    def get_methods(self):
+        return [path for path in self.paths[TAINTED_PACKAGE_CALL]]
+
+    def get_new(self):
+        return [path for path in self.paths[TAINTED_PACKAGE_CREATE]]
+
+    def show(self):
+        return
+        cm = self.vm.get_class_manager()
+        print(self.get_name())
+        for _type in self.paths:
+            print("\t -->", _type)
+            if _type == TAINTED_PACKAGE_CALL:
+                for path in self.paths[_type]:
+                    print("\t\t => %s <-- %x in %s" %
+                          (path.get_dst(cm), path.get_idx(), path.get_src(cm)))
+            else:
+                for path in self.paths[_type]:
+                    print("\t\t => %x in %s" %
+                          (path.get_idx(), path.get_src(cm)))
+
+
+class TaintedPackages(object):
+
+    def __init__(self, _vm):
+        self.__vm = _vm
+        self.__packages = {}
+        self.__methods = {}
+
+        self.AOSP_PERMISSIONS_MODULE = load_api_specific_resource_module(
+            "aosp_permissions", self.__vm.get_api_version())
+        self.API_PERMISSION_MAPPINGS_MODULE = load_api_specific_resource_module(
+            "api_permission_mappings", self.__vm.get_api_version())
+
+    def _add_pkg(self, name):
+        if name not in self.__packages:
+            self.__packages[name] = TaintedPackage(self.__vm, name)
+
+    #self.context.get_tainted_packages().push_info( method_info[0], TAINTED_PACKAGE_CALL, idx, self, self.method, method_info[1], method_info[2][0] + method_info[2][1] )
+    def push_info(self, class_name, access, idx, method, idx_method):
+        self._add_pkg(class_name)
+        p = self.__packages[class_name].push(
+            access, idx, method.get_method_idx(), idx_method)
+
+        try:
+            self.__methods[method][class_name].append(p)
+        except:
+            try:
+                self.__methods[method][class_name] = []
+            except:
+                self.__methods[method] = {}
+                self.__methods[method][class_name] = []
+
+            self.__methods[method][class_name].append(p)
+
+    def get_packages_by_method(self, method):
+        try:
+            return self.__methods[method]
+        except KeyError:
+            return {}
+
+    def get_package(self, name):
+        return self.__packages[name]
+
+    def get_packages_by_bb(self, bb):
+        """
+            :rtype: return a list of packaged used in a basic block
+        """
+        l = []
+        for i in self.__packages:
+            paths = self.__packages[i].gets()
+            for j in paths:
+                for k in paths[j]:
+                    if k.get_bb() == bb:
+                        l.append((i, k.get_access_flag(),
+                                  k.get_idx(), k.get_method()))
+
+        return l
+
+    def get_packages(self):
+        for i in self.__packages:
+            yield self.__packages[i], i
+
+    def get_internal_packages_from_package(self, package):
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages():
+            paths = m.get_methods()
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
+
+                if src_class_name == package and dst_class_name in classes:
+                    l.append(j)
+        return l
+
+    def get_internal_packages(self):
+        """
+            :rtype: return a list of the internal packages called in the application
+        """
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages():
+            paths = m.get_methods()
+            for j in paths:
+                if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                    dst_class_name, _, _ = j.get_dst(
+                        self.__vm.get_class_manager())
+                    if dst_class_name in classes and m.get_name() in classes:
+                        l.append(j)
+        return l
+
+    def get_internal_new_packages(self):
+        """
+            :rtype: return a list of the internal packages created in the application
+        """
+        classes = self.__vm.get_classes_names()
+        l = {}
+        for m, _ in self.get_packages():
+            paths = m.get_new()
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                if src_class_name in classes and m.get_name() in classes:
+                    if j.get_access_flag() == TAINTED_PACKAGE_CREATE:
+                        try:
+                            l[m.get_name()].append(j)
+                        except:
+                            l[m.get_name()] = []
+                            l[m.get_name()].append(j)
+        return l
+
+    def get_external_packages(self):
+        """
+            :rtype: return a list of the external packages called in the application
+        """
+        classes = self.__vm.get_classes_names()
+        l = []
+        for m, _ in self.get_packages():
+            paths = m.get_methods()
+            for j in paths:
+                src_class_name, _, _ = j.get_src(self.__vm.get_class_manager())
+                dst_class_name, _, _ = j.get_dst(self.__vm.get_class_manager())
+                if src_class_name in classes and dst_class_name not in classes:
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                        l.append(j)
+        return l
+
+    def search_packages(self, package_name):
+        """
+            :param package_name: a regexp for the name of the package
+
+            :rtype: a list of called packages' paths
+        """
+        ex = re.compile(package_name)
+
+        l = []
+        for m, _ in self.get_packages():
+            if ex.search(m.get_name()) is not None:
+                l.extend(m.get_methods())
+        return l
+
+    def search_unique_packages(self, package_name):
+        """
+            :param package_name: a regexp for the name of the package
+        """
+        ex = re.compile(package_name)
+
+        l = []
+        d = {}
+        for m, _ in self.get_packages():
+            if ex.match(m.get_info()) is not None:
+                for path in m.get_methods():
+                    try:
+                        d[path.get_class_name() + path.get_name() +
+                          path.get_descriptor()] += 1
+                    except KeyError:
+                        d[path.get_class_name() + path.get_name() +
+                          path.get_descriptor()] = 0
+                        l.append([path.get_class_name(),
+                                  path.get_name(), path.get_descriptor()])
+        return l, d
+
+    def search_methods(self, class_name, name, descriptor, re_expr=True):
+        """
+            @param class_name : a regexp for the class name of the method (the package)
+            @param name : a regexp for the name of the method
+            @param descriptor : a regexp for the descriptor of the method
+
+            @rtype : a list of called methods' paths
+        """
+        l = []
+        if re_expr:
+            ex = re.compile(class_name)
+
+            for m, _ in self.get_packages():
+                if ex.search(m.get_name()) is not None:
+                    l.extend(m.search_method(name, descriptor))
+
+        return l
+
+    def search_objects(self, class_name):
+        """
+            @param class_name : a regexp for the class name
+
+            @rtype : a list of created objects' paths
+        """
+        ex = re.compile(class_name)
+        l = []
+
+        for m, _ in self.get_packages():
+            if ex.search(m.get_name()) is not None:
+                l.extend(m.get_objects_paths())
+
+        return l
+
+    def search_crypto_packages(self):
+        """
+            @rtype : a list of called crypto packages
+        """
+        return self.search_packages("Ljavax/crypto/")
+
+    def search_telephony_packages(self):
+        """
+            @rtype : a list of called telephony packages
+        """
+        return self.search_packages("Landroid/telephony/")
+
+    def search_net_packages(self):
+        """
+            @rtype : a list of called net packages
+        """
+        return self.search_packages("Landroid/net/")
+
+    def get_method(self, class_name, name, descriptor):
+        try:
+            return self.__packages[class_name].get_method(name, descriptor)
+        except KeyError:
+            return []
+
+    def get_permissions_method(self, method):
+        permissions = set()
+        for m, _ in self.get_packages():
+            paths = m.get_methods()
+            for j in paths:
+                if j.get_method() == method:
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                        dst_class_name, dst_method_name, dst_descriptor = \
+                            j.get_dst(self.__vm.get_class_manager())
+                        data = "%s-%s-%s" % (
+                            dst_class_name,
+                            dst_method_name, dst_descriptor)
+                        if data in list(
+                                self.API_PERMISSION_MAPPINGS_MODULE[
+                                    "AOSP_PERMISSIONS_BY_METHODS"].keys()):
+                            permissions.update(
+                                self.API_PERMISSION_MAPPINGS_MODULE[
+                                    "AOSP_PERMISSIONS_BY_METHODS"][data])
+
+        return permissions
+
+    def get_permissions(self, permissions_needed):
+        """
+            @param permissions_needed : a list of restricted permissions to get
+                                        ([] returns all permissions)
+            @rtype : a dictionnary of permissions' paths
+        """
+        permissions = {}
+
+        pn = set(permissions_needed)
+        if permissions_needed == []:
+            pn = set(self.AOSP_PERMISSIONS_MODULE["AOSP_PERMISSIONS"].keys())
+
+        classes = self.__vm.get_classes_names()
+
+        for m, _ in self.get_packages():
+            paths = m.get_methods()
+            for j in paths:
+                src_class_name, src_method_name, src_descriptor = j.get_src(
+                    self.__vm.get_class_manager())
+                dst_class_name, dst_method_name, dst_descriptor = j.get_dst(
+                    self.__vm.get_class_manager())
+                if (src_class_name in classes) and (
+                        dst_class_name not in classes):
+                    if j.get_access_flag() == TAINTED_PACKAGE_CALL:
+                        data = "%s-%s-%s" % (
+                            dst_class_name,
+                            dst_method_name, dst_descriptor)
+                        if data in list(
+                                self.API_PERMISSION_MAPPINGS_MODULE[
+                                    "AOSP_PERMISSIONS_BY_METHODS"].keys()):
+                            perm_intersection = pn.intersection(
+                                self.API_PERMISSION_MAPPINGS_MODULE[
+                                    "AOSP_PERMISSIONS_BY_METHODS"][data])
+                            for p in perm_intersection:
+                                try:
+                                    permissions[p].append(j)
+                                except KeyError:
+                                    permissions[p] = []
+                                    permissions[p].append(j)
+
+        return permissions
 
 
 class Enum(object):
@@ -277,8 +998,9 @@ class BasicBlocks(object):
         This class represents all basic blocks of a method
     """
 
-    def __init__(self, _vm):
+    def __init__(self, _vm, tv):
         self.__vm = _vm
+        self.tainted = tv
         self.bb = []
 
     def push(self, bb):
@@ -292,6 +1014,24 @@ class BasicBlocks(object):
             if i.get_start() <= idx < i.get_end():
                 return i
         return None
+
+    def get_tainted_integers(self):
+        try:
+            return self.tainted.get_tainted_integers()
+        except:
+            return None
+
+    def get_tainted_packages(self):
+        try:
+            return self.tainted.get_tainted_packages()
+        except:
+            return None
+
+    def get_tainted_variables(self):
+        try:
+            return self.tainted.get_tainted_variables()
+        except:
+            return None
 
     def get(self):
         """
@@ -380,11 +1120,13 @@ class MethodAnalysis(object):
         :type method: a :class:`EncodedMethod` object
     """
 
-    def __init__(self, vm, method):
+    def __init__(self, vm, method, tv):
         self.__vm = vm
         self.method = method
 
-        self.basic_blocks = BasicBlocks(self.__vm)
+        self.tainted = tv
+
+        self.basic_blocks = BasicBlocks(self.__vm, self.tainted)
         self.exceptions = Exceptions(self.__vm)
 
         self.code = self.method.get_code()
@@ -767,12 +1509,24 @@ class Analysis(object):
         :return:
         """
         self.vms.append(vm)
+        self.tainted_variables = TaintedVariables(vm)
+        self.tainted_packages = TaintedPackages(vm)
+
+        self.tainted = {"variables": self.tainted_variables,
+                        "packages": self.tainted_packages,
+                        }
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(
                 current_class, True)
 
         for method in vm.get_methods():
-            self.methods[method] = MethodAnalysis(vm, method)
+            self.methods[method] = MethodAnalysis(vm, method, self)
+
+        for field in vm.get_all_fields():
+            self.tainted_variables.add([
+                field.get_class_name(),
+                field.get_descriptor(),
+                field.get_name()], TAINTED_FIELD)
 
     def create_xref(self):
         log.debug("Creating XREF/DREF")
@@ -786,7 +1540,7 @@ class Analysis(object):
             queue_classes.put(current_class)
 
         threads = []
-        # TODO maybe adjust this number by the 
+        # TODO maybe adjust this number by the
         # number of cores or make it configureable?
         for n in range(2):
             thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
@@ -927,7 +1681,7 @@ class Analysis(object):
 
     def get_method(self, method):
         """
-        :param method: 
+        :param method:
         :return: `MethodAnalysis` object for the given method
         """
         if method in self.methods:
@@ -945,7 +1699,7 @@ class Analysis(object):
 
     def get_method_analysis(self, method):
         """
-        :param method: 
+        :param method:
         :return: `MethodClassAnalysis` for the given method
         """
         class_analysis = self.get_class_analysis(method.get_class_name())
@@ -978,6 +1732,70 @@ class Analysis(object):
 
     def get_strings_analysis(self):
         return self.strings
+
+    def get_tainted_variables(self):
+        """
+           Return the tainted variables
+
+           :rtype: a :class:`TaintedVariables` object
+        """
+        return self.tainted_variables
+
+    def get_tainted_packages(self):
+        """
+           Return the tainted packages
+
+           :rtype: a :class:`TaintedPackages` object
+        """
+        return self.tainted_packages
+
+    def get_tainted_fields(self):
+        return self.get_tainted_variables().get_fields()
+
+    def get_tainted_field(self, class_name, name, descriptor):
+        """
+           Return a specific tainted field
+
+           :param class_name: the name of the class
+           :param name: the name of the field
+           :param descriptor: the descriptor of the field
+           :type class_name: string
+           :type name: string
+           :type descriptor: string
+
+           :rtype: a :class:`TaintedVariable` object
+        """
+        return self.get_tainted_variables().get_field(
+            class_name, name, descriptor)
+
+    def get_permissions(self, permissions_needed):
+        """
+            Return the permissions used
+
+            :param permissions_needed: a list of restricted permissions to get
+                                        ([] returns all permissions)
+            :type permissions_needed: list
+
+            :rtype: a dictionnary of permissions paths
+        """
+        permissions = {}
+
+        permissions.update(self.get_tainted_packages(
+        ).get_permissions(permissions_needed))
+        permissions.update(self.get_tainted_variables(
+        ).get_permissions(permissions_needed))
+
+        return permissions
+
+    def get_permissions_method(self, method):
+        permissions_f = self.get_tainted_packages().\
+            get_permissions_method(method)
+        permissions_v = self.get_tainted_variables().\
+            get_permissions_method(method)
+
+        all_permissions_of_method = permissions_f.union(permissions_v)
+
+        return list(all_permissions_of_method)
 
 
 def is_ascii_obfuscation(vm):
