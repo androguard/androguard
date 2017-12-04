@@ -25,7 +25,7 @@ def get_default_session():
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(filename, session=None):
+def AnalyzeAPK(filename, session=None, raw=False):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
@@ -40,8 +40,11 @@ def AnalyzeAPK(filename, session=None):
     if not session:
         session = get_default_session()
 
-    with open(filename, "rb") as fd:
-        data = fd.read()
+    if raw:
+        data = filename
+    else:
+        with open(filename, "rb") as fd:
+            data = fd.read()
 
     session.add(filename, data)
     return session.get_objects_apk(filename)
