@@ -4,6 +4,7 @@ standard_library.install_aliases()
 from androguard import session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
+import hashlib
 
 import logging
 log = logging.getLogger("androguard.misc")
@@ -25,13 +26,13 @@ def get_default_session():
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(filename, session=None):
+def AnalyzeAPK(_file, session=None, raw=False):
     """
         Analyze an android application and setup all stuff for a more quickly analysis !
 
         :param session: A session (default None)
-        :param filename: the filename of the android application or a buffer which represents the application
-        :type filename: string
+        :param _file: the filename of the android application or a buffer which represents the application
+        :type _file: string or bytes
 
         :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
     """
@@ -40,8 +41,13 @@ def AnalyzeAPK(filename, session=None):
     if not session:
         session = get_default_session()
 
-    with open(filename, "rb") as fd:
-        data = fd.read()
+    if raw:
+        data = _file
+        filename = hashlib.md5(_file).hexdigest()
+    else:
+        with open(_file, "rb") as fd:
+            data = fd.read()
+            filename = _file
 
     session.add(filename, data)
     return session.get_objects_apk(filename)
