@@ -46,7 +46,7 @@ def dvclass(c, dx):
 def test_all_decompiler():
     # Generate test cases for this APK:
     a, d, dx = AnalyzeAPK("examples/tests/hello-world.apk")
-    for c in d.get_classes():
+    for c in d[0].get_classes():
         test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])
         # Test the decompilation of a single class
         yield dvclass, c, dx

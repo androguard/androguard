@@ -14,7 +14,7 @@ Use :code:`AnalyzeAPK(filename)` or :code:`AnalyzeDEX(filename)` to load a file 
 
     a, d, dx = AnalyzeAPK("/home/user/some-app.apk")
 
-The three objects you get are :code:`a` an :code:`APK` object, :code:`d` a :code:`DalvikVMFormat` object and :code:`dx` an :code:`Analysis` object.
+The three objects you get are :code:`a` an :code:`APK` object, :code:`d` an array of :code:`DalvikVMFormat` object and :code:`dx` an :code:`Analysis` object.
 
 Inside the :code:`APK` object, you can find all information about the APK, like package name, permissions, the AndroidManifest.xml
 or its resources.

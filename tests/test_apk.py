@@ -20,13 +20,43 @@ class APKTest(unittest.TestCase):
         a, d, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity.apk")
 
         self.assertIsInstance(a, APK)
-        self.assertIsInstance(d, DalvikVMFormat)
+        self.assertIsInstance(d[0], DalvikVMFormat)
         self.assertIsInstance(dx, Analysis)
 
         self.assertEqual(a.get_signature_name(), "META-INF/CERT.RSA")
         self.assertEqual(a.get_signature_names(), ["META-INF/CERT.RSA"])
 
         self.assertIsNotNone(a.get_certificate(a.get_signature_name()))
+
+    def testAPKWrapperRaw(self):
+        from androguard.misc import AnalyzeAPK
+        from androguard.core.bytecodes.apk import APK
+        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.analysis.analysis import Analysis
+        with open(
+            "examples/android/TestsAndroguard/bin/TestActivity.apk", 'rb') \
+                as file_obj:
+            file_contents = file_obj.read()
+        a, d, dx = AnalyzeAPK(file_contents, raw=True)
+        self.assertIsInstance(a, APK)
+        self.assertIsInstance(d[0], DalvikVMFormat)
+        self.assertIsInstance(dx, Analysis)
+
+        self.assertEqual(a.get_signature_name(), "META-INF/CERT.RSA")
+        self.assertEqual(a.get_signature_names(), ["META-INF/CERT.RSA"])
+
+        self.assertIsNotNone(a.get_certificate(a.get_signature_name()))
+
+    def testMultiDexAPK(self):
+        from androguard.misc import AnalyzeAPK
+        from androguard.core.bytecodes.apk import APK
+        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.analysis.analysis import Analysis
+        a, d, dx = AnalyzeAPK('examples/android/abcore/app-prod-debug.apk')
+        self.assertIsInstance(a, APK)
+        self.assertIsInstance(d[0], DalvikVMFormat)
+        self.assertIsInstance(d[1], DalvikVMFormat)
+        self.assertIsInstance(dx, Analysis)
 
     def testAPKCert(self):
         """
@@ -94,7 +124,7 @@ class APKTest(unittest.TestCase):
         a, d, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity_unsigned.apk")
 
         self.assertIsInstance(a, APK)
-        self.assertIsInstance(d, DalvikVMFormat)
+        self.assertIsInstance(d[0], DalvikVMFormat)
         self.assertIsInstance(dx, Analysis)
 
         self.assertEqual(a.get_signature_name(), None)
