@@ -33,14 +33,13 @@ class DecompilerTest(unittest.TestCase):
     def testJadx(self):
         a, d, dx = AnalyzeAPK("examples/tests/hello-world.apk")
 
-        decomp = DecompilerJADX(d, dx)
+        decomp = DecompilerJADX(d[0], dx)
         self.assertIsNotNone(decomp)
 
-        d.set_decompiler(decomp)
+        d[0].set_decompiler(decomp)
 
-        for c in d.get_classes():
+        for c in d[0].get_classes():
             self.assertIsNotNone(c.get_source())
 
 if __name__ == '__main__':
     unittest.main()
-

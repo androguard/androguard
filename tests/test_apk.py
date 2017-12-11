@@ -125,7 +125,7 @@ class APKTest(unittest.TestCase):
         a, d, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity_unsigned.apk")
 
         self.assertIsInstance(a, APK)
-        self.assertIsInstance(d, DalvikVMFormat)
+        self.assertIsInstance(d[0], DalvikVMFormat)
         self.assertIsInstance(dx, Analysis)
 
         self.assertEqual(a.get_signature_name(), None)
