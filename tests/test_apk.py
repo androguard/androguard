@@ -52,8 +52,7 @@ class APKTest(unittest.TestCase):
         from androguard.core.bytecodes.apk import APK
         from androguard.core.bytecodes.dvm import DalvikVMFormat
         from androguard.core.analysis.analysis import Analysis
-        a, d, dx = AnalyzeAPK(
-            'examples/android/examples/android/abcore/app-prod-debug.apk')
+        a, d, dx = AnalyzeAPK('examples/android/abcore/app-prod-debug.apk')
         self.assertIsInstance(a, APK)
         self.assertIsInstance(d[0], DalvikVMFormat)
         self.assertIsInstance(d[1], DalvikVMFormat)
