@@ -60,7 +60,7 @@ class Session(object):
     def isOpen(self):
         """
         Test if any file was analyzed in this session
-        
+
         :return: `True` if any file was analyzed, `False` otherwise
         """
         return self.analyzed_digest != {}
@@ -68,7 +68,7 @@ class Session(object):
     def addAPK(self, filename, data):
         """
         Add an APK file to the Session and run analysis on it.
-        
+
         :param filename: (file)name of APK file
         :param data: binary data of the APK file
         :return: a tuple of SHA256 Checksum and APK Object
@@ -85,7 +85,7 @@ class Session(object):
     def addDEX(self, filename, data, dx=None):
         """
         Add a DEX file to the Session and run analysis.
-        
+
         :param filename: the (file)name of the DEX file
         :param data: binary data of the dex file
         :param dx: an existing Analysis Object (optional)
@@ -231,24 +231,16 @@ class Session(object):
 
     def get_objects_apk(self, filename):
         digest = self.analyzed_files.get(filename)
-        if digest:
-            a = self.analyzed_apk[digest[0]][0]
-
-            d = None
-            dx = None
-
-            if len(self.analyzed_apk[digest[0]][1:]) == 1:
-                dex_file = self.analyzed_dex[self.analyzed_apk[digest[0]][1]]
-                d = dex_file[0]
-                dx = dex_file[1]
-            elif len(self.analyzed_apk[digest[0]][1:]) > 1:
-                d = []
-                dx = []
-                for dex_file in self.analyzed_apk[digest[0]][1:]:
-                    d.append(self.analyzed_dex[dex_file][0])
-                    dx.append(self.analyzed_dex[dex_file][1])
-            return a, d, dx
-        return None
+        # Negate to reduce tree
+        if not digest:
+            return None
+        a = self.analyzed_apk[digest[0]][0]
+        d = []
+        dx = None
+        for dex_file in self.analyzed_apk[digest[0]][1:]:
+            d.append(self.analyzed_dex[dex_file][0])
+            dx = self.analyzed_dex[dex_file][1]
+        return a, d, dx
 
     def get_objects_dex(self):
         for digest in self.analyzed_dex:
