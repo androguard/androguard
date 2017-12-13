@@ -508,9 +508,10 @@ class APK(object):
             yield self.get_file("classes.dex")
 
             # Multidex support
-            basename = "classes%d.dex"
-            for i in range(2, sys.maxsize):
-                yield self.get_file(basename % i)
+            dexre = re.compile("^classes(\d+).dex$")
+            for file in self.get_files():
+                if dexre.search(file):
+                    yield self.get_file(file)
         except FileNotPresent:
             pass
 
