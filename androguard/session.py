@@ -53,6 +53,7 @@ class Session(object):
         self.analyzed_digest = {}
         self.analyzed_apk = {}
         self.analyzed_dex = {}
+        self.analyzed_vms = collections.OrderedDict()
 
     def reset(self):
         self._setupObjects()
@@ -79,6 +80,7 @@ class Session(object):
         self.analyzed_apk[digest] = [apk]
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
+        self.analyzed_vms[digest] = Analysis()
         log.debug("added APK:%s" % digest)
         return digest, apk
 
@@ -96,13 +98,8 @@ class Session(object):
 
         log.debug("Parsing format ...")
         d = DalvikVMFormat(data)
-
-        log.debug("Running analysis ...")
-        dx = self.runAnalysis(d, dx)
-
         log.debug("added DEX:%s" % digest)
 
-        self.analyzed_dex[digest] = (d, dx)
         if filename not in self.analyzed_files:
             self.analyzed_files[filename] = []
 
@@ -118,13 +115,9 @@ class Session(object):
     def addDEY(self, filename, data, dx=None):
         digest = hashlib.sha256(data).hexdigest()
         log.debug("add DEY:%s" % digest)
-
         d = DalvikOdexVMFormat(data)
-        dx = self.runAnalysis(d, dx)
-
         log.debug("added DEY:%s" % digest)
 
-        self.analyzed_dex[digest] = (d, dx)
         if filename not in self.analyzed_files:
             self.analyzed_files[filename] = []
 
@@ -136,92 +129,82 @@ class Session(object):
 
         return digest, d, dx
 
-    def runAnalysis(self, d, dx=None):
-        if dx is None:
-            dx = Analysis(d)
-        else:
+    def add(self, filename, raw_data, dx=None):
+        ret = androconf.is_android_raw(raw_data)
+        digest = None
+        if not ret:
+            return None
+        self.analyzed_files[filename] = []
+        if ret == "APK":
+            digest, apk = self.addAPK(filename, raw_data)
+            dex_files = list(apk.get_all_dex())
+            dx = self.analyzed_vms[digest]
+            for dex in dex_files:
+                _, d, _ = self.addDEX(filename, dex)
+                dx.add(d)
+        elif ret == "DEX":
+            digest, d, _ = self.addDEX(filename, raw_data)
+            dx = self.analyzed_vms.get(digest, Analysis())
             dx.add(d)
+        elif ret == "DEY":
+            digest, d, _ = self.addDEY(filename, raw_data, dx)
+            dx = self.analyzed_vms.get(digest, Analysis())
+            dx.add(d)
+        else:
+            return None
 
         dx.create_xref()
 
-        # TODO we would like to be able to specify the decompiler here
-        d.set_decompiler(DecompilerDAD(d, dx))
-        d.set_vmanalysis(dx)
+        for d in dx.vms:
+            d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_vmanalysis(dx)
 
-        return dx
-
-    def add(self, filename, raw_data, dx=None):
-        ret = androconf.is_android_raw(raw_data)
-        if ret:
-            self.analyzed_files[filename] = []
-            digest = hashlib.sha256(raw_data).hexdigest()
-            if ret == "APK":
-                apk_digest, apk = self.addAPK(filename, raw_data)
-                dex_files = list(apk.get_all_dex())
-
-                if dex_files:
-                    dex_digest, _, dx = self.addDEX(filename, dex_files[0], dx)
-                    self.analyzed_apk[digest].append(dex_digest)
-                    for i in range(1, len(dex_files)):
-                        dex_digest, _, _ = self.addDEX(filename, dex_files[i],
-                                                       dx)
-                        self.analyzed_apk[digest].append(dex_digest)
-            elif ret == "DEX":
-                self.addDEX(filename, raw_data, dx)
-            elif ret == "DEY":
-                self.addDEY(filename, raw_data, dx)
-            else:
-                return False
-            return True
-        return False
+        return digest
 
     def get_classes(self):
+        # NOTE: verify idx for this api.
         idx = 0
-        for filename in self.analyzed_files:
-            for digest in self.analyzed_files[filename]:
-                if digest in self.analyzed_dex:
-                    d, _ = self.analyzed_dex[digest]
-                    yield idx, filename, digest, d.get_classes()
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
+            for vm in dx.vms:
+                filename = self.analyzed_digest[digest]
+                yield idx, filename, digest, vm.get_classes()
             idx += 1
 
     def get_analysis(self, current_class):
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
                 return dx
         return None
 
     def get_format(self, current_class):
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
-            if dx.is_class_present(current_class.get_name()):
-                return d
-        return None
+        return current_class.CM.vm
 
     def get_filename_by_class(self, current_class):
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
                 return self.analyzed_digest[digest]
         return None
 
     def get_digest_by_class(self, current_class):
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
                 return digest
         return None
 
     def get_strings(self):
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
             yield digest, self.analyzed_digest[digest], dx.get_strings_analysis(
             )
 
     def get_nb_strings(self):
         nb = 0
-        for digest in self.analyzed_dex:
-            d, dx = self.analyzed_dex[digest]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
             nb += len(dx.get_strings_analysis())
         return nb
 
@@ -230,18 +213,23 @@ class Session(object):
             yield digest, self.analyzed_apk[digest]
 
     def get_objects_apk(self, filename):
-        digest = self.analyzed_files.get(filename)
+        digests = self.analyzed_files.get(filename)
         # Negate to reduce tree
-        if not digest:
-            return None
-        a = self.analyzed_apk[digest[0]][0]
-        d = []
-        dx = None
-        for dex_file in self.analyzed_apk[digest[0]][1:]:
-            d.append(self.analyzed_dex[dex_file][0])
-            dx = self.analyzed_dex[dex_file][1]
-        return a, d, dx
+        if not digests:
+            return None, None, None
+        digest = digests[0]
+
+        a = self.analyzed_apk[digest][0]
+        dx = self.analyzed_vms[digest]
+        return a, dx.vms, dx
+
+    def get_objects_apk_by_digest(self, digest):
+        a = self.analyzed_apk[digest][0]
+        dx = self.analyzed_vms[digest]
+        return a, dx.vms, dx
 
     def get_objects_dex(self):
-        for digest in self.analyzed_dex:
-            yield digest, self.analyzed_dex[digest][0], self.analyzed_dex[digest][1]
+        for digest in self.analyzed_vms:
+            dx = self.analyzed_vms[digest]
+            for vm in dx.vms:
+                yield digest, vm, dx
