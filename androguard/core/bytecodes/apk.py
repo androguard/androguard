@@ -144,7 +144,7 @@ class APK(object):
                     try:
                         if self.axml[i].is_packed():
                             log.warning("XML Seems to be packed, parsing is very likely to fail.")
-                        parser = etree.XMLParser(recover=True)
+                        parser = etree.XMLParser(recover=True, resolve_entities=False)
                         tree = etree.fromstring(raw_xml, parser=parser)
                         self.xml[i] = parse_lxml_dom(tree)
                     except Exception as e:

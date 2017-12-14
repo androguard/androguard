@@ -773,12 +773,12 @@ class AXMLPrinter(object):
         return self.buff.encode('utf-8')
 
     def get_xml(self):
-        parser = etree.XMLParser(recover=True)
+        parser = etree.XMLParser(recover=True, resolve_entities=False)
         tree = etree.fromstring(self.get_buff(), parser=parser)
         return parse_lxml_dom(tree).toprettyxml(encoding="utf-8")
 
     def get_xml_obj(self):
-        parser = etree.XMLParser(recover=True)
+        parser = etree.XMLParser(recover=True, resolve_entities=False)
         tree = etree.fromstring(self.get_buff(), parser=parser)
         return parse_lxml_dom(tree)
 
