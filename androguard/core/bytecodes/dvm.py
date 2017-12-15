@@ -6984,6 +6984,7 @@ class CodeItem(object):
 class MapItem(object):
     def __init__(self, buff, cm):
         self.CM = cm
+        self.buff = buff
 
         self.off = buff.get_idx()
 
@@ -6993,10 +6994,6 @@ class MapItem(object):
         self.offset = unpack("=I", buff.read(4))[0]
 
         self.item = None
-
-        buff.set_idx(self.offset)
-
-        self.next(buff, cm)
 
     def get_off(self):
         return self.off
@@ -7010,9 +7007,12 @@ class MapItem(object):
     def get_size(self):
         return self.size
 
-    def next(self, buff, cm):
+    def parse(self):
         log.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
         started_at = time.time()
+        buff = self.buff
+        buff.set_idx(self.offset)
+        cm = self.CM
 
         if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
             self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
@@ -7459,6 +7459,13 @@ class MapList(object):
             self.map_item.append(mi)
 
             buff.set_idx(idx + mi.get_length())
+
+        # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
+        ordered = sorted(self.map_item,
+                         key=lambda mi: TYPE_MAP_ITEM[mi.get_type()] != "TYPE_STRING_DATA_ITEM")
+
+        for mi in ordered:
+            mi.parse()
 
             c_item = mi.get_item()
             if c_item is None:
