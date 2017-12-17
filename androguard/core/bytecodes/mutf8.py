@@ -1,52 +1,35 @@
-# Copyright 2015 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# Unfortunately, there's no easy way to decode Modified UTF8 in Python, so we
-# have to write a custom decoder. This one is error tolerant and will decode
-# anything resembling mutf8.
-
-def _decode(b):
-    # decode arbitrary utf8 codepoints, tolerating surrogate pairs, nonstandard encodings, etc.
-    for x in b:
-        if x < 128:
-            yield x
-        else:
-            # figure out how many bytes
-            extra = 0
-            for i in range(6, 0, -1):
-                if x & (1<<i):
-                    extra += 1
-                else:
-                    break
-
-            bits = x % (1 << 6-extra)
-            for _ in range(extra):
-                bits = (bits << 6) ^ (next(b) & 63)
-            yield bits
-
-def _fixPairs(codes):
-    # convert surrogate pairs to single code points
-    for x in codes:
-        if 0xD800 <= x < 0xDC00:
-            high = x - 0xD800
-            low = next(codes) - 0xDC00
-            yield 0x10000 + (high << 10) + (low & 1023)
-        else:
-            yield x
+from builtins import chr, str
 
 def decode(b):
-    try:
-        return b.decode('utf8')
-    except UnicodeDecodeError:
-        return ''.join(map(chr, _fixPairs(_decode(iter(b)))))
+    """
+    Decode bytes as MUTF-8
+    See https://docs.oracle.com/javase/6/docs/api/java/io/DataInput.html#modified-utf-8
+    for more information
+
+    :param b: bytes to decode
+    :rtype: unicode (py2), str (py3)
+    """
+    res = u""
+
+    b = iter(bytearray(b))
+
+    for x in b:
+        if x >> 7 == 0:
+            # Single char:
+            res += chr(x & 0x7f)
+        elif x >> 5 == 0b110:
+            # 2 byte Multichar
+            b2 = next(b)
+            assert b2 >> 6 == 0b10, "Second byte of 2 byte sequence does not looks right."
+            res += chr((x & 0x1f) << 6 | b2 & 0x3f)
+        elif x >> 4 == 0b1110:
+            # 3 byte Multichar
+            b2 = next(b)
+            b3 = next(b)
+            assert b2 >> 6 == 0b10, "Second byte of 3 byte sequence does not looks right."
+            assert b3 >> 6 == 0b10, "Third byte of 3 byte sequence does not looks right."
+            res += chr((x & 0xf) << 12 | (b2 & 0x3f) << 6 | b3 & 0x3f)
+        else:
+            raise UnicodeDecodeError("Could not decode byte")
+
+    return res

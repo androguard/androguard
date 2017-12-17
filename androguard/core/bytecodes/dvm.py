@@ -1860,7 +1860,11 @@ class StringDataItem:
         pass
 
     def get(self):
-        return mutf8.decode(self.data)
+        s = mutf8.decode(self.data)
+        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        # We need to escape surrogates and other stuff that might not be
+        # printable...
+        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
