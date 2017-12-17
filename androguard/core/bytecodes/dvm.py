@@ -6690,6 +6690,8 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
+        # FIXME int_padding does not seems to be used in the dalvik code
+        # documetnation! What does it?
         self.int_padding = bytearray()
         off = buff.get_idx()
         while off % 4 != 0:
@@ -6711,7 +6713,7 @@ class DalvikCode(object):
         self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
             self.insns_size * ushort))
 
-        if self.insns_size % 2 == 1:
+        if self.insns_size % 2 == 1 and self.tries_size > 0:
             self.padding = unpack("=H", buff.read(2))[0]
 
         self.tries = []
