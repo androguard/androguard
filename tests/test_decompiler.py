@@ -49,11 +49,15 @@ def test_all_decompiler():
     for c in d[0].get_classes():
         test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name()[1:-1])
         # Test the decompilation of a single class
-        yield dvclass, c, dx
+        # disable for now, as testing all DvMethods has the same effect as
+        # testing all DvClasses.
+        #yield dvclass, c, dx
 
         # Test the decompilation of all single methods in the class
         # if methods are in the class
         if len(c.get_methods()) == 0:
+            # But we test on all classes that have no methods.
+            yield dvclass, c, dx
             continue
 
         yield dvmethod, c, dx, False
