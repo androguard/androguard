@@ -226,18 +226,14 @@ class Session(object):
         for digest in self.analyzed_apk:
             yield digest, self.analyzed_apk[digest]
 
-    def get_objects_apk(self, filename):
-        digests = self.analyzed_files.get(filename)
-        # Negate to reduce tree
-        if not digests:
-            return None, None, None
-        digest = digests[0]
+    def get_objects_apk(self, filename, digest=None):
+        if digest is None:
+            digests = self.analyzed_files.get(filename)
+            # Negate to reduce tree
+            if not digests:
+                return None, None, None
+            digest = digests[0]
 
-        a = self.analyzed_apk[digest][0]
-        dx = self.analyzed_vms[digest]
-        return a, dx.vms, dx
-
-    def get_objects_apk_by_digest(self, digest):
         a = self.analyzed_apk[digest][0]
         dx = self.analyzed_vms[digest]
         return a, dx.vms, dx
