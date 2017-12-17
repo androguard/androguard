@@ -3,7 +3,7 @@ import unittest
 
 import sys
 
-from androguard.core.bytecodes import dvm
+from androguard.core.bytecodes import dvm, mutf8
 from androguard.core.analysis import analysis
 
 
@@ -26,6 +26,11 @@ class StringTest(unittest.TestCase):
             for s in stests:
                 self.assertIn(s, d.get_strings())
 
+    def testMUTF8(self):
+        self.assertEqual(u"\x67", mutf8.decode(b"\x67"))
+        self.assertEqual(u"\x00", mutf8.decode(b"\xc0\x80"))
+        self.assertEqual(u"\uacf0", mutf8.decode(b"\xea\xb3\xb0"))
+        self.assertEqual(u"\ud83d\ude4f", mutf8.decode(b"\xed\xa0\xbd\xed\xb9\x8f"))
 
 
 if __name__ == '__main__':
