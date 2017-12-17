@@ -120,7 +120,11 @@ def read_dex(fname):
                 padding = unpack("<H", f.read(2))
 
             if tries_size > 0:
+
+                # try_item[tries_size]
                 tries = unpack("<{}".format("".join(["IHH"] * tries_size)), f.read(8 * tries_size))
+
+                # encoded_catch_handler_list
                 size = readuleb128(f)
                 for _ in range(size):
                     # encoded_catch_handler
@@ -129,7 +133,7 @@ def read_dex(fname):
                         # encoded_type_addr_pair
                         _ = readuleb128(f)
                         _ = readuleb128(f)
-                    if size < 0:
+                    if size <= 0:
                         catch_all_addr = readuleb128(f)
 
             l = f.tell() - code_off
