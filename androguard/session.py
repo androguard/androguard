@@ -52,7 +52,7 @@ class Session(object):
         self.analyzed_files = collections.OrderedDict()
         self.analyzed_digest = {}
         self.analyzed_apk = {}
-        self.analyzed_dex = {}
+        self.analyzed_dex = collections.OrderedDict()
         self.analyzed_vms = collections.OrderedDict()
 
     def reset(self):
@@ -119,6 +119,7 @@ class Session(object):
         for d in dx.vms:
             d.set_decompiler(DecompilerDAD(d, dx))
             d.set_vmanalysis(dx)
+        self.analyzed_dex[digest] = dx
 
         return digest, d, dx
 
@@ -147,6 +148,8 @@ class Session(object):
             d.set_decompiler(DecompilerDAD(d, dx))
             d.set_vmanalysis(dx)
 
+        self.analyzed_dex[digest] = dx
+
         return digest, d, dx
 
     def add(self, filename, raw_data, dx=None):
@@ -158,26 +161,17 @@ class Session(object):
         if ret == "APK":
             digest, apk = self.addAPK(filename, raw_data)
             dex_files = list(apk.get_all_dex())
-            dx = self.analyzed_vms[digest]
+            dx = self.analyzed_vms.get(digest)
             for dex in dex_files:
-                _, d, _ = self.addDEX(filename, dex)
-                dx.add(d)
+                _, d, dx = self.addDEX(filename, dex, dx)
         elif ret == "DEX":
             digest, d, _ = self.addDEX(filename, raw_data)
-            dx = self.analyzed_vms.get(digest, Analysis())
-            dx.add(d)
+            dx = self.analyzed_dex.get(digest)
         elif ret == "DEY":
             digest, d, _ = self.addDEY(filename, raw_data, dx)
-            dx = self.analyzed_vms.get(digest, Analysis())
-            dx.add(d)
+            dx = self.analyzed_dex.get(digest)
         else:
             return None
-
-        dx.create_xref()
-
-        for d in dx.vms:
-            d.set_decompiler(DecompilerDAD(d, dx))
-            d.set_vmanalysis(dx)
 
         return digest
 
