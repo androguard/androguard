@@ -3910,8 +3910,13 @@ class EncodedCatchHandler(object):
             bytecode._PrintDefault("catch_all_addr=%x\n" % self.catch_all_addr)
 
     def get_raw(self):
-        buff = writesleb128(self.size) + b''.join(i.get_raw()
-                                                  for i in self.handlers)
+        """
+        :rtype: bytearray
+        """
+        buff = bytearray()
+        buff += writesleb128(self.size)
+        for i in self.handlers:
+            buff += i.get_raw()
 
         if self.size <= 0:
             buff += writeuleb128(self.catch_all_addr)
@@ -3982,7 +3987,14 @@ class EncodedCatchHandlerList(object):
         return writeuleb128(self.size)
 
     def get_raw(self):
-        return self.get_obj() + b''.join(i.get_raw() for i in self.list)
+        """
+        :rtype: bytearray
+        """
+        buff = bytearray()
+        buff += self.get_obj()
+        for i in self.list:
+            buff += i.get_raw()
+        return buff
 
     def get_length(self):
         length = len(self.get_obj())
@@ -6632,9 +6644,12 @@ class DCode(object):
         """
         Return the raw buffer of this object
 
-        :rtype: string
+        :rtype: bytearray
         """
-        return b''.join(i.get_raw() for i in self.get_instructions())
+        buff = bytearray()
+        for i in self.get_instructions():
+            buff += i.get_raw()
+        return buff
 
     def get_length(self):
         """
@@ -6859,10 +6874,16 @@ class DalvikCode(object):
         return [self.code, self.tries, self.handlers]
 
     def get_raw(self):
+        """
+        Get the reconstructed code as bytearray
+
+        :rtype: bytearray
+        """
         code_raw = self.code.get_raw()
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
-        buff = self.int_padding
+        buff = bytearray()
+        buff += self.int_padding
         buff += pack("=H", self.registers_size) + \
                 pack("=H", self.ins_size) + \
                 pack("=H", self.outs_size) + \
@@ -6875,7 +6896,8 @@ class DalvikCode(object):
         #     buff += pack("=H", self.padding)
 
         if self.tries_size > 0:
-            buff += b''.join(i.get_raw() for i in self.tries)
+            for i in self.tries:
+                buff += i.get_raw()
             buff += self.handlers.get_raw()
 
         return buff
