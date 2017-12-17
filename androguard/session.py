@@ -110,6 +110,16 @@ class Session(object):
             log.debug("Exporting in ipython")
             d.create_python_export()
 
+        if dx is None:
+            dx = Analysis()
+
+        dx.add(d)
+        dx.create_xref()
+
+        for d in dx.vms:
+            d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_vmanalysis(dx)
+
         return digest, d, dx
 
     def addDEY(self, filename, data, dx=None):
@@ -126,6 +136,16 @@ class Session(object):
 
         if self.export_ipython:
             d.create_python_export()
+
+        if dx is None:
+            dx = Analysis()
+
+        dx.add(d)
+        dx.create_xref()
+
+        for d in dx.vms:
+            d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_vmanalysis(dx)
 
         return digest, d, dx
 
