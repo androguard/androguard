@@ -6690,7 +6690,6 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
-
         self.registers_size = unpack("=H", buff.read(2))[0]
         self.ins_size = unpack("=H", buff.read(2))[0]
         self.outs_size = unpack("=H", buff.read(2))[0]

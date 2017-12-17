@@ -133,7 +133,7 @@ def read_dex(fname):
                         # encoded_type_addr_pair
                         _ = readuleb128(f)
                         _ = readuleb128(f)
-                    if size <= 0:
+                    if s <= 0:
                         catch_all_addr = readuleb128(f)
 
             l = f.tell() - code_off
@@ -147,6 +147,6 @@ def read_dex(fname):
 if __name__ == "__main__":
     for midx, buff in read_dex(sys.argv[1]).items():
         pass
-        print(midx, buff)
+        #print(midx, buff)
 
 

@@ -9,12 +9,7 @@ from difflib import Differ
 class TestDexCodeParsing(unittest.TestCase):
 
     def testcode(self):
-        # FIXME these methods do not produce the same output.
-        # But we are not sure if the parse_dex is broken or androguard...
-        skipped_methods = [1185, 1186, 1187, 1188, 1190, 1325, 1360, 1363, 1364,
-                1365, 1366, 1367, 1368, 1369, 1370, 1372, 1374, 1375, 1376,
-                1404, 1405, 3494, 3586, 611, 633, 634, 635, 640, 674, 824, 825,
-                836, 1073, 1074]
+        skipped_methods = []
 
         fname = "examples/android/TestsAndroguard/bin/classes.dex"
 
@@ -37,11 +32,16 @@ class TestDexCodeParsing(unittest.TestCase):
                                  code,
                                  "incorrect code for "
                                  "[{}]: {} --> {}:\n"
-                                 "{}".format(m.get_method_idx(),
+                                 "{}\ntries_size: {}, insns_size: {}\nSHOULD BE {}\n{}\n{}".format(m.get_method_idx(),
                                              m.get_class_name(),
                                              m.get_name(),
                                              "".join(dif.compare(parsed[m.get_method_idx()],
-                                             code))))
+                                             code)),
+                                             m.get_code().tries_size,
+                                             m.get_code().insns_size,
+                                             hexlify(m.get_code().get_raw()),
+                                             parsed[m.get_method_idx()],
+                                             hexlify(m.get_code().code.get_raw())))
 
 
 if __name__ == '__main__':
