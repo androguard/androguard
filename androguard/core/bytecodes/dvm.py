@@ -6690,16 +6690,6 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
-        # FIXME int_padding does not seems to be used in the dalvik code
-        # documetnation! What does it?
-        self.int_padding = bytearray()
-        off = buff.get_idx()
-        while off % 4 != 0:
-            self.int_padding.append(0)
-            off += 1
-        buff.set_idx(off)
-
-        self.__off = buff.get_idx()
 
         self.registers_size = unpack("=H", buff.read(2))[0]
         self.ins_size = unpack("=H", buff.read(2))[0]
@@ -6905,10 +6895,10 @@ class DalvikCode(object):
         return length
 
     def set_off(self, off):
-        self.__off = off
+        self.offset = off
 
     def get_off(self):
-        return self.__off
+        return self.offset
 
 
 class CodeItem(object):
@@ -6921,6 +6911,13 @@ class CodeItem(object):
         self.__code_off = {}
 
         for i in range(0, size):
+            # As we read the DalvikCode items from the map, there might be
+            # padding bytes in between.
+            # We know, that the alignment is 4 bytes.
+            off = buff.get_idx()
+            if off % 4 != 0:
+                buff.set_idx(off + (4 - (off % 4)))
+
             x = DalvikCode(buff, cm)
             self.code.append(x)
             self.__code_off[x.get_off()] = x
