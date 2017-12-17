@@ -782,14 +782,15 @@ class Analysis(object):
 
         queue_classes = queue.Queue()
         last_vm = self.vms[-1]
-        for current_class in last_vm.get_classes():
-            queue_classes.put(current_class)
+        for vm in self.vms:
+            for current_class in vm.get_classes():
+                queue_classes.put(current_class)
 
         threads = []
-        # TODO maybe adjust this number by the 
+        # TODO maybe adjust this number by the
         # number of cores or make it configureable?
         for n in range(2):
-            thread = threading.Thread(target=self._create_xref, args=(instances_class_name, last_vm, queue_classes))
+            thread = threading.Thread(target=self._create_xref, args=(instances_class_name, queue_classes))
             thread.daemon = True
             thread.start()
             threads.append(thread)
@@ -801,7 +802,7 @@ class Analysis(object):
         diff = time.time() - started_at
         log.debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
 
-    def _create_xref(self, instances_class_name, last_vm, queue_classes):
+    def _create_xref(self, instances_class_name, queue_classes):
         while not queue_classes.empty():
             current_class = queue_classes.get()
             log.debug("Creating XREF/DREF for %s" % current_class.get_name())
@@ -819,13 +820,14 @@ class Analysis(object):
                         op_value = instruction.get_op_value()
                         if op_value in [0x1c, 0x22]:
                             idx_type = instruction.get_ref_kind()
-                            type_info = last_vm.get_cm_type(idx_type)
+                            type_info = instruction.cm.vm.get_cm_type(idx_type)
 
                             # Internal xref related to class manipulation
                             if type_info in instances_class_name and type_info != current_class.get_name(
                             ):
                                 # new instance
                                 if op_value == 0x22:
+
                                     self.classes[current_class.get_name(
                                     )].AddXrefTo(REF_NEW_INSTANCE,
                                                  self.classes[type_info],
@@ -848,11 +850,11 @@ class Analysis(object):
                         elif ((0x6e <= op_value <= 0x72) or
                                   (0x74 <= op_value <= 0x78)):
                             idx_meth = instruction.get_ref_kind()
-                            method_info = last_vm.get_cm_method(idx_meth)
+                            method_info = instruction.cm.vm.get_cm_method(idx_meth)
                             if method_info:
                                 class_info = method_info[0]
 
-                                method_item = last_vm.get_method_descriptor(
+                                method_item = instruction.cm.vm.get_method_descriptor(
                                     method_info[0], method_info[1],
                                     ''.join(method_info[2]))
 
@@ -889,7 +891,7 @@ class Analysis(object):
                                             current_method, off)
 
                         elif 0x1a <= op_value <= 0x1b:
-                            string_value = last_vm.get_cm_string(
+                            string_value = instruction.cm.vm.get_cm_string(
                                 instruction.get_ref_kind())
                             if string_value not in self.strings:
                                 self.strings[string_value] = StringAnalysis(
@@ -900,8 +902,8 @@ class Analysis(object):
 
                         elif 0x52 <= op_value <= 0x6d:
                             idx_field = instruction.get_ref_kind()
-                            field_info = last_vm.get_cm_field(idx_field)
-                            field_item = last_vm.get_field_descriptor(
+                            field_info = instruction.cm.vm.get_cm_field(idx_field)
+                            field_item = instruction.cm.vm.get_field_descriptor(
                                 field_info[0], field_info[2], field_info[1])
                             if field_item:
                                 # read access to a field
@@ -927,7 +929,7 @@ class Analysis(object):
 
     def get_method(self, method):
         """
-        :param method: 
+        :param method:
         :return: `MethodAnalysis` object for the given method
         """
         if method in self.methods:
@@ -945,7 +947,7 @@ class Analysis(object):
 
     def get_method_analysis(self, method):
         """
-        :param method: 
+        :param method:
         :return: `MethodClassAnalysis` for the given method
         """
         class_analysis = self.get_class_analysis(method.get_class_name())

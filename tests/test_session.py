@@ -15,6 +15,7 @@ class SessionTest(unittest.TestCase):
             self.assertEqual(len(s.analyzed_apk), 0)
             self.assertEqual(len(s.analyzed_files), 1)
             self.assertEqual(len(s.analyzed_digest), 1)
+            self.assertEqual(len(s.analyzed_vms), 0)
             self.assertEqual(len(s.analyzed_dex), 1)
 
     def testSessionAPK(self):
@@ -26,6 +27,7 @@ class SessionTest(unittest.TestCase):
             self.assertEqual(len(s.analyzed_apk), 1)
             self.assertEqual(len(s.analyzed_files), 1)
             self.assertEqual(len(s.analyzed_digest), 2)
+            self.assertEqual(len(s.analyzed_vms), 1)
             self.assertEqual(len(s.analyzed_dex), 1)
 
     def testSessionSave(self):

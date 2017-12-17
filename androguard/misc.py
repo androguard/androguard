@@ -49,8 +49,8 @@ def AnalyzeAPK(_file, session=None, raw=False):
             data = fd.read()
             filename = _file
 
-    session.add(filename, data)
-    return session.get_objects_apk(filename)
+    digest = session.add(filename, data)
+    return session.get_objects_apk(filename, digest)
 
 
 def AnalyzeDex(filename, session=None):
