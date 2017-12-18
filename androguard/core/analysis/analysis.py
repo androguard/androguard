@@ -373,14 +373,14 @@ for i in dvm.BRANCH_DVM_OPCODES:
 
 
 class MethodAnalysis(object):
-    """
+
+    def __init__(self, vm, method):
+        """
         This class analyses in details a method of a class/dex file
 
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
-    """
-
-    def __init__(self, vm, method):
+        """
         self.__vm = vm
         self.method = method
 
@@ -509,9 +509,20 @@ class MethodAnalysis(object):
       """
         return self.tags
 
+    def __repr__(self):
+        return "<analysis.MethodAnalysis {}>".format(self.method)
+
 
 class StringAnalysis(object):
     def __init__(self, value):
+        """
+        StringAnalysis contains the XREFs of a string.
+
+        As Strings are only used as a source, they only contain
+        the XREF_FROM set, i.e. where the string is used.
+
+        This Array stores the information in which method the String is used.
+        """
         self.value = value
         self.orig_value = value
         self.xreffrom = set()
@@ -534,13 +545,26 @@ class StringAnalysis(object):
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
         return data
+
+    def __repr__(self):
+        # TODO should remove all chars that are not pleasent. e.g. newlines
+        if len(self.get_value()) > 20:
+            s = "'{}'...".format(self.get_value()[:20])
+        else:
+            s = "'{}'".format(self.get_value())
+        return "<analysis.StringAnalysis {}>".format(s)
 
 
 class MethodClassAnalysis(object):
     def __init__(self, method):
+        """
+        MethodClassAnalysis contains the XREFs for a given method.
+
+        Both referneces to other methods (XREF_TO) as well as methods calling
+        this method (XREF_FROM) are saved.
+        """
         self.method = method
         self.xrefto = set()
         self.xreffrom = set()
@@ -561,20 +585,29 @@ class MethodClassAnalysis(object):
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                       )
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                       )
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
 
         return data
+
+    def __repr__(self):
+        return "<analysis.MethodClassAnalysis {}>".format(self.method)
 
 
 class FieldClassAnalysis(object):
     def __init__(self, field):
+        """
+        FieldClassAnalysis contains the XREFs for a class field.
+
+        Instead of using XREF_FROM/XREF_TO, this object has methods for READ and
+        WRITE access to the field.
+
+        That means, that it will show you, where the field is read or written.
+        """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
@@ -595,24 +628,29 @@ class FieldClassAnalysis(object):
         data = "XREFRead for %s\n" % self.field
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
 
         return data
+
+    def __repr__(self):
+        return "<analysis.FieldClassAnalysis {}>".format(self.field)
 
 
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
 
-class ExternalClass(object):
+class ExternalClass:
     def __init__(self, name):
+        """
+        The ExternalClass is used for all classes that are not defined in the
+        DEX file, thus are external classes.
+        """
         self.name = name
         self.methods = {}
 
@@ -625,6 +663,15 @@ class ExternalClass(object):
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
 
         return self.methods[key]
+
+    def get_name(self):
+        """
+        Returns the name of the ExternalClass object
+        """
+        return self.name
+
+    def __repr__(self):
+        return "<analysis.ExternalClass {}>".format(self.name)
 
 
 class ExternalMethod(object):
@@ -645,9 +692,19 @@ class ExternalMethod(object):
     def __str__(self):
         return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
 
+    def __repr__(self):
+        return "<analysis.ExternalMethod {}>".format(self.__str__())
+
 
 class ClassAnalysis(object):
     def __init__(self, classobj, internal=False):
+        """
+        ClassAnalysis contains the XREFs from a given Class.
+
+        Also external classes will generate xrefs, obviously only XREF_FROM are
+        shown for external classes.
+        """
+
         self.orig_class = classobj
         self._inherits_methods = {}
         self._methods = {}
@@ -658,9 +715,21 @@ class ClassAnalysis(object):
         self.xreffrom = collections.defaultdict(set)
 
     def get_methods(self):
+        """
+        Return all `MethodClassAnalysis` objects of this class
+        """
         return list(self._methods.values())
 
+    def get_fields(self):
+        """
+        Return all `FieldClassAnalysis` objects of this class
+        """
+        return self._fields.values()
+
     def get_nb_methods(self):
+        """
+        Get the number of methods in this class
+        """
         return len(self._methods)
 
     def get_method_analysis(self, method):
@@ -715,6 +784,9 @@ class ClassAnalysis(object):
     def get_vm_class(self):
         return self.orig_class
 
+    def __repr__(self):
+        return "<analysis.ClassAnalysis {}>".format(self.orig_class.get_name())
+
     def __str__(self):
         # Print only instanceiations from other classes here
         # TODO also method xref and field xref should be printed?
@@ -749,7 +821,13 @@ class Analysis(object):
 
         Multiple DalvikVMFormat Objects can be added using the function `add`
 
-        :param vm: inital DalvikVMFormat object.
+        XREFs are created for:
+        * classes (`ClassAnalysis`)
+        * methods (`MethodClassAnalysis`)
+        * strings (`StringAnalyis`)
+        * fields (`FieldClassAnalysis`)
+
+        :param vm: inital DalvikVMFormat object (default None)
         """
         self.vms = []
         self.classes = {}
@@ -764,7 +842,6 @@ class Analysis(object):
         Add a DalvikVMFormat to this Analysis
 
         :param vm:
-        :return:
         """
         self.vms.append(vm)
         for current_class in vm.get_classes():
@@ -789,6 +866,8 @@ class Analysis(object):
         threads = []
         # TODO maybe adjust this number by the
         # number of cores or make it configureable?
+        # TODO: instead of using Threads, we can use multiprocessing.Pool
+        # which is started by default with the number of cores.
         for n in range(2):
             thread = threading.Thread(target=self._create_xref, args=(instances_class_name, queue_classes))
             thread.daemon = True
@@ -974,12 +1053,52 @@ class Analysis(object):
         return self.classes.get(class_name)
 
     def get_external_classes(self):
+        """
+        Returns all external classes, that means all classes that are not
+        defined in the given set of `DalvikVMObjects`.
+
+        :rtype: generator of `ClassAnalysis`
+        """
         for i in self.classes:
             if not self.classes[i].internal:
                 yield self.classes[i]
 
     def get_strings_analysis(self):
         return self.strings
+
+    def get_strings(self):
+        """
+        Returns a list of `StringAnalysis` objects
+
+        :rtype: list of `StringAnalysis`
+        """
+        return self.strings.values()
+
+    def get_classes(self):
+        """
+        Returns a list of `ClassAnalysis` objects
+
+        :rtype: list of `ClassAnalysis`
+        """
+        return self.classes.values()
+
+    def get_methods(self):
+        """
+        Returns a list of `MethodClassAnalysis` objects
+
+        """
+        for c in self.classes.values():
+            for m in c.get_methods():
+                yield m
+
+    def get_fields(self):
+        """
+        Returns a list of `FieldClassAnalysis` objects
+
+        """
+        for c in self.classes.values():
+            for f in c.get_fields():
+                yield f
 
 
 def is_ascii_obfuscation(vm):
