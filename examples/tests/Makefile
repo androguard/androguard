@@ -1,4 +1,4 @@
-all: Test.dex Switch.dex FillArrays.dex
+all: Test.dex Switch.dex FillArrays.dex StringTests.dex
 
 %.class: %.java
 	javac -source 1.7 -target 1.7 $^

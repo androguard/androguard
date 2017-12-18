@@ -9,6 +9,8 @@ from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
+from androguard.core.bytecodes import mutf8
+
 import sys
 import re
 import struct
@@ -1797,57 +1799,23 @@ class EncodedArrayItem(object):
         return self.offset
 
 
-def mutf8_to_string(buff, length):
+def read_null_terminated_string(f):
     """
-    Decode a MUTF-8 Encoded string from the current position of a buffer
+    Read a null terminated string from a file-like object.
 
-    :param buff: Buffer object
-    :param length: length of characters to read
-    :return: a unicode str object
+    :param f: file-like object
+    :rtype: bytearray
     """
-    chars = []
-
-    for _ in range(length):
-        first_char = get_byte(buff)
-        value = first_char >> 4
-        if value in (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07):
-            if first_char == 0:
-                log.warning('at offset %x: single zero byte illegal' %
-                        buff.get_idx())
-            chars.append(chr(first_char))
-        elif value in (0x0c, 0x0d):
-            second_char = get_byte(buff)
-            if (second_char & 0xc0) != 0x80:
-                log.warning('bad utf8 at offset: %x' % buff.get_idx())
-            value = ((first_char & 0x1f) << 6) | (second_char & 0x3f)
-            if value != 0 and value < 0x80:
-                log.warning(
-                    'at offset %x: utf8 should have been represented with one byte encoding'
-                    % buff.get_idx())
-            chars.append(chr(value))
-        elif value == 0x0e:
-            second_char = get_byte(buff)
-            if second_char & 0xc0 != 0x80:
-                log.warning('bad utf8 byte %x at offset %x' %
-                        (second_char, buff.get_idx()))
-            third_char = get_byte(buff)
-            if third_char & 0xc0 != 0x80:
-                log.warning('bad utf8 byte %x at offset %x' %
-                        (third_char, buff.get_idx()))
-            value = ((first_char & 0x0f) << 12) | (
-                (second_char & 0x3f) << 6) | (third_char & 0x3f)
-            if value < 0x800:
-                log.warning(
-                    'at offset %x: utf8 should have been represented with two-byte encoding'
-                    % buff.get_idx())
-            chars.append(chr(value))
+    x = bytearray()
+    while True:
+        z = f.read(1)
+        if ord(z) == 0:
+            return x
         else:
-            log.warning('at offset %x: illegal utf8' % buff.get_idx())
-    # FIXME correct handling of utf8?
-    return ''.join(chars)
+            x.append(ord(z))
 
 
-class StringDataItem(object):
+class StringDataItem:
     """
     This class can parse a string_data_item of a dex file
 
@@ -1860,25 +1828,16 @@ class StringDataItem(object):
     def __init__(self, buff, cm):
         self.CM = cm
 
-        self.buff = buff
+        self.offset = buff.get_idx()
 
-        self.offset = self.buff.get_idx()
-
-        self.utf16_size = readuleb128(self.buff)
-
-        self.data = mutf8_to_string(buff, self.utf16_size)
-        # Save the raw string as well
-        # We save only the end offset, as we can easily retrieve the string later
-        self.raw_size = self.buff.get_idx()
-        expected = get_byte(self.buff)
-        if expected != 0:
-            log.warning('\x00 expected at offset: %x, found: %x' %
-                    (buff.get_idx(), expected))
+        # Content of string_data_item
+        self.utf16_size = readuleb128(buff)
+        self.data = read_null_terminated_string(buff)
 
     def get_utf16_size(self):
         """
         Return the size of this string, in UTF-16 code units
-        
+
         :rtype:int
         """
         return self.utf16_size
@@ -1889,7 +1848,7 @@ class StringDataItem(object):
 
         :rtype: string
         """
-        return self.data
+        return self.data + b"\x00"
 
     def set_off(self, off):
         self.offset = off
@@ -1901,12 +1860,16 @@ class StringDataItem(object):
         pass
 
     def get(self):
-        return self.data
+        s = mutf8.decode(self.data)
+        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        # We need to escape surrogates and other stuff that might not be
+        # printable...
+        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
         bytecode._PrintDefault("utf16_size=%d data=%s\n" %
-                               (self.utf16_size, repr(self.data)))
+                               (self.utf16_size, repr(self.get())))
 
     def get_obj(self):
         return []
@@ -1918,7 +1881,7 @@ class StringDataItem(object):
 
         :return: bytes
         """
-        return self.buff[self.offset:self.raw_size]
+        return writeuleb128(self.utf16_size) + self.data + b"\x00"
 
     def get_length(self):
         """
@@ -1927,11 +1890,7 @@ class StringDataItem(object):
 
         :return: int
         """
-        # FIXME before this code would return something different, which was probably wrong!
-        # It would return the length of the ULEB128 coded length + the length of the UTF8 coded string!
-        # It will significatly differ this way.
-        # If you find an error, we might need to change this back to the old behaviour
-        return self.raw_size - self.offset
+        return len(writeuleb128(self.utf16_size)) + len(self.data) + 1
 
 
 class StringIdItem(object):
@@ -3910,8 +3869,13 @@ class EncodedCatchHandler(object):
             bytecode._PrintDefault("catch_all_addr=%x\n" % self.catch_all_addr)
 
     def get_raw(self):
-        buff = writesleb128(self.size) + b''.join(i.get_raw()
-                                                  for i in self.handlers)
+        """
+        :rtype: bytearray
+        """
+        buff = bytearray()
+        buff += writesleb128(self.size)
+        for i in self.handlers:
+            buff += i.get_raw()
 
         if self.size <= 0:
             buff += writeuleb128(self.catch_all_addr)
@@ -3982,7 +3946,14 @@ class EncodedCatchHandlerList(object):
         return writeuleb128(self.size)
 
     def get_raw(self):
-        return self.get_obj() + b''.join(i.get_raw() for i in self.list)
+        """
+        :rtype: bytearray
+        """
+        buff = bytearray()
+        buff += self.get_obj()
+        for i in self.list:
+            buff += i.get_raw()
+        return buff
 
     def get_length(self):
         length = len(self.get_obj())
@@ -6632,9 +6603,12 @@ class DCode(object):
         """
         Return the raw buffer of this object
 
-        :rtype: string
+        :rtype: bytearray
         """
-        return b''.join(i.get_raw() for i in self.get_instructions())
+        buff = bytearray()
+        for i in self.get_instructions():
+            buff += i.get_raw()
+        return buff
 
     def get_length(self):
         """
@@ -6716,15 +6690,6 @@ class DalvikCode(object):
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.int_padding = bytearray()
-        off = buff.get_idx()
-        while off % 4 != 0:
-            self.int_padding.append(0)
-            off += 1
-        buff.set_idx(off)
-
-        self.__off = buff.get_idx()
-
         self.registers_size = unpack("=H", buff.read(2))[0]
         self.ins_size = unpack("=H", buff.read(2))[0]
         self.outs_size = unpack("=H", buff.read(2))[0]
@@ -6737,7 +6702,7 @@ class DalvikCode(object):
         self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
             self.insns_size * ushort))
 
-        if self.insns_size % 2 == 1:
+        if self.insns_size % 2 == 1 and self.tries_size > 0:
             self.padding = unpack("=H", buff.read(2))[0]
 
         self.tries = []
@@ -6859,10 +6824,16 @@ class DalvikCode(object):
         return [self.code, self.tries, self.handlers]
 
     def get_raw(self):
+        """
+        Get the reconstructed code as bytearray
+
+        :rtype: bytearray
+        """
         code_raw = self.code.get_raw()
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
-        buff = self.int_padding
+        buff = bytearray()
+        # buff += self.int_padding
         buff += pack("=H", self.registers_size) + \
                 pack("=H", self.ins_size) + \
                 pack("=H", self.outs_size) + \
@@ -6871,11 +6842,13 @@ class DalvikCode(object):
                 pack("=I", self.insns_size) + \
                 code_raw
 
-        # if (self.insns_size % 2 == 1):
-        #     buff += pack("=H", self.padding)
 
         if self.tries_size > 0:
-            buff += b''.join(i.get_raw() for i in self.tries)
+            if (self.insns_size % 2 == 1):
+                buff += pack("=H", self.padding)
+
+            for i in self.tries:
+                buff += i.get_raw()
             buff += self.handlers.get_raw()
 
         return buff
@@ -6909,7 +6882,7 @@ class DalvikCode(object):
                       pack("=I", self.insns_size))
         length += self.code.get_length()
 
-        if self.insns_size % 2 == 1:
+        if self.insns_size % 2 == 1 and self.tries_size > 0:
             length += len(pack("=H", self.padding))
 
         if self.tries_size > 0:
@@ -6921,10 +6894,10 @@ class DalvikCode(object):
         return length
 
     def set_off(self, off):
-        self.__off = off
+        self.offset = off
 
     def get_off(self):
-        return self.__off
+        return self.offset
 
 
 class CodeItem(object):
@@ -6937,6 +6910,13 @@ class CodeItem(object):
         self.__code_off = {}
 
         for i in range(0, size):
+            # As we read the DalvikCode items from the map, there might be
+            # padding bytes in between.
+            # We know, that the alignment is 4 bytes.
+            off = buff.get_idx()
+            if off % 4 != 0:
+                buff.set_idx(off + (4 - (off % 4)))
+
             x = DalvikCode(buff, cm)
             self.code.append(x)
             self.__code_off[x.get_off()] = x
