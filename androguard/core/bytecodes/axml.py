@@ -17,17 +17,11 @@ import collections
 from collections import defaultdict
 
 import lxml.sax
-from xml.dom.pulldom import SAX2DOM
 from lxml import etree
 import logging
 
 log = logging.getLogger("androguard.axml")
 
-
-def parse_lxml_dom(tree):
-    handler = SAX2DOM()
-    lxml.sax.saxify(tree, handler)
-    return handler.document
 
 ################################## AXML FORMAT ########################################
 # Translated from
@@ -775,12 +769,12 @@ class AXMLPrinter(object):
     def get_xml(self):
         parser = etree.XMLParser(recover=True, resolve_entities=False)
         tree = etree.fromstring(self.get_buff(), parser=parser)
-        return parse_lxml_dom(tree).toprettyxml(encoding="utf-8")
+        return etree.tostring(tree, encoding="utf-8", pretty_print=True)
 
     def get_xml_obj(self):
         parser = etree.XMLParser(recover=True, resolve_entities=False)
         tree = etree.fromstring(self.get_buff(), parser=parser)
-        return parse_lxml_dom(tree)
+        return tree
 
     def getPrefix(self, prefix):
         if prefix is None or len(prefix) == 0:
