@@ -33,6 +33,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
+NS_ANDROID = '{http://schemas.android.com/apk/res/android}'
 
 log = logging.getLogger("androguard.apk")
 
@@ -144,44 +145,32 @@ class APK(object):
                     try:
                         if self.axml[i].is_packed():
                             log.warning("XML Seems to be packed, parsing is very likely to fail.")
-                        parser = etree.XMLParser(recover=True, resolve_entities=False)
-                        tree = etree.fromstring(raw_xml, parser=parser)
-                        self.xml[i] = parse_lxml_dom(tree)
+                        self.xml[i] = self.axml[i].get_xml_obj()
                     except Exception as e:
                         log.warning("reading AXML as XML failed: " + str(e))
 
                 if self.xml[i] is not None:
-                    self.package = self.xml[i].documentElement.getAttribute(
-                        "package")
-                    self.androidversion[
-                        "Code"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionCode")
-                    self.androidversion[
-                        "Name"
-                    ] = self.xml[i].documentElement.getAttributeNS(
-                        NS_ANDROID_URI, "versionName")
+                    self.package = self.xml[i].get("package")
+                    self.androidversion["Code"] = self.xml[i].get(
+                        NS_ANDROID + "versionCode")
+                    self.androidversion["Name"] = self.xml[i].get(
+                        NS_ANDROID + "versionName")
 
-                    for item in self.xml[i].getElementsByTagName('uses-permission'):
-                        self.permissions.append(str(item.getAttributeNS(
-                            NS_ANDROID_URI, "name")))
+                    for item in self.xml[i].findall('uses-permission'):
+                        self.permissions.append(item.get(NS_ANDROID + "name"))
 
                     # getting details of the declared permissions
-                    for d_perm_item in self.xml[i].getElementsByTagName('permission'):
+                    for d_perm_item in self.xml[i].findall('permission'):
                         d_perm_name = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI, "name")))
+                            d_perm_item.get(NS_ANDROID + "name")))
                         d_perm_label = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "label")))
+                            d_perm_item.get(NS_ANDROID + "label")))
                         d_perm_description = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "description")))
+                            d_perm_item.get(NS_ANDROID + "description")))
                         d_perm_permissionGroup = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "permissionGroup")))
+                            d_perm_item.get(NS_ANDROID + "permissionGroup")))
                         d_perm_protectionLevel = self._get_res_string_value(str(
-                            d_perm_item.getAttributeNS(NS_ANDROID_URI,
-                                                       "protectionLevel")))
+                            d_perm_item.get(NS_ANDROID + "protectionLevel")))
 
                         d_perm_details = {
                             "label": d_perm_label,
@@ -207,6 +196,8 @@ class APK(object):
         """
         # Upon pickling, we need to remove the ZipFile
         x = self.__dict__
+        x['axml'] = str(x['axml'])
+        x['xml'] = str(x['xml'])
         del x['zip']
 
         return x
@@ -535,8 +526,8 @@ class APK(object):
         """
         l = []
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(tag_name):
-                value = item.getAttributeNS(NS_ANDROID_URI, attribute)
+            for item in self.xml[i].findall('.//' + tag_name):
+                value = item.get(NS_ANDROID + attribute)
                 value = self.format_value(value)
 
                 l.append(value)
@@ -568,13 +559,13 @@ class APK(object):
         for i in self.xml:
             if self.xml[i] is None:
                 continue
-            tag = self.xml[i].getElementsByTagName(tag_name)
-            if tag is None:
+            tag = self.xml[i].findall('.//' + tag_name)
+            if len(tag) == 0:
                 return None
             for item in tag:
                 skip_this_item = False
                 for attr, val in list(attribute_filter.items()):
-                    attr_val = item.getAttributeNS(NS_ANDROID_URI, attr)
+                    attr_val = item.get(NS_ANDROID + attr)
                     if attr_val != val:
                         skip_this_item = True
                         break
@@ -582,9 +573,9 @@ class APK(object):
                 if skip_this_item:
                     continue
 
-                value = item.getAttributeNS(NS_ANDROID_URI, attribute)
+                value = item.get(NS_ANDROID + attribute)
 
-                if len(value) > 0:
+                if value is not None:
                     return value
         return None
 
@@ -598,25 +589,25 @@ class APK(object):
         y = set()
 
         for i in self.xml:
-            activities_and_aliases = self.xml[i].getElementsByTagName("activity") + \
-                                     self.xml[i].getElementsByTagName("activity-alias")
+            activities_and_aliases = self.xml[i].findall(".//activity") + \
+                                     self.xml[i].findall(".//activity-alias")
 
             for item in activities_and_aliases:
                 # Some applications have more than one MAIN activity.
                 # For example: paid and free content
-                activityEnabled = item.getAttributeNS(NS_ANDROID_URI, "enabled")
+                activityEnabled = item.get(NS_ANDROID + "enabled")
                 if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
                     continue
 
-                for sitem in item.getElementsByTagName("action"):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
+                for sitem in item.findall(".//action"):
+                    val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.action.MAIN":
-                        x.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
+                        x.add(item.get(NS_ANDROID + "name"))
 
-                for sitem in item.getElementsByTagName("category"):
-                    val = sitem.getAttributeNS(NS_ANDROID_URI, "name")
+                for sitem in item.findall(".//category"):
+                    val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.category.LAUNCHER":
-                        y.add(item.getAttributeNS(NS_ANDROID_URI, "name"))
+                        y.add(item.get(NS_ANDROID + "name"))
 
         z = x.intersection(y)
         if len(z) > 0:
@@ -659,21 +650,21 @@ class APK(object):
         d = {"action": [], "category": []}
 
         for i in self.xml:
-            for item in self.xml[i].getElementsByTagName(category):
+            for item in self.xml[i].findall(".//" + category):
                 if self.format_value(
-                        item.getAttributeNS(NS_ANDROID_URI, "name")
+                        item.get(NS_ANDROID + "name")
                 ) == name:
-                    for sitem in item.getElementsByTagName("intent-filter"):
-                        for ssitem in sitem.getElementsByTagName("action"):
-                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
+                    for sitem in item.findall(".//intent-filter"):
+                        for ssitem in sitem.findall("action"):
+                            if ssitem.get(NS_ANDROID + "name") \
                                     not in d["action"]:
-                                d["action"].append(ssitem.getAttributeNS(
-                                    NS_ANDROID_URI, "name"))
-                        for ssitem in sitem.getElementsByTagName("category"):
-                            if ssitem.getAttributeNS(NS_ANDROID_URI, "name") \
+                                d["action"].append(ssitem.get(
+                                    NS_ANDROID + "name"))
+                        for ssitem in sitem.findall("category"):
+                            if ssitem.get(NS_ANDROID + "name") \
                                     not in d["category"]:
-                                d["category"].append(ssitem.getAttributeNS(
-                                    NS_ANDROID_URI, "name"))
+                                d["category"].append(ssitem.get(
+                                    NS_ANDROID + "name"))
 
         if not d["action"]:
             del d["action"]
