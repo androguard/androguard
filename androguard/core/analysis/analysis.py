@@ -388,13 +388,12 @@ class MethodAnalysis(object):
         self.exceptions = Exceptions(self.__vm)
 
         self.code = self.method.get_code()
-        if self.code is None:
-            return
+        if self.code:
+            self._create_basic_block()
 
+    def _create_basic_block(self):
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
         self.basic_blocks.push(current_basic)
-
-        ##########################################################
 
         bc = self.code.get_bc()
         l = []
@@ -425,18 +424,14 @@ class MethodAnalysis(object):
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
-                    current_basic = DVMBasicBlock(current_basic.get_end(),
-                                                  self.__vm, self.method,
-                                                  self.basic_blocks)
+                    current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                     self.basic_blocks.push(current_basic)
 
             current_basic.push(i)
 
             # index is a branch instruction
             if idx in h:
-                current_basic = DVMBasicBlock(current_basic.get_end(),
-                                              self.__vm, self.method,
-                                              self.basic_blocks)
+                current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                 self.basic_blocks.push(current_basic)
 
             idx += i.get_length()
@@ -459,10 +454,7 @@ class MethodAnalysis(object):
 
         for i in self.basic_blocks.get():
             # setup exception by basic block
-            i.set_exception_analysis(self.exceptions.get_exception(i.start,
-                                                                   i.end - 1))
-
-        del h, l
+            i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
 
     def get_basic_blocks(self):
         """
@@ -564,6 +556,8 @@ class MethodClassAnalysis(object):
 
         Both referneces to other methods (XREF_TO) as well as methods calling
         this method (XREF_FROM) are saved.
+
+        :param method: `dvm.EncodedMethod`
         """
         self.method = method
         self.xrefto = set()
@@ -607,6 +601,8 @@ class FieldClassAnalysis(object):
         WRITE access to the field.
 
         That means, that it will show you, where the field is read or written.
+
+        :param field: `dvm.EncodedField`
         """
         self.field = field
         self.xrefread = set()
@@ -638,7 +634,7 @@ class FieldClassAnalysis(object):
         return data
 
     def __repr__(self):
-        return "<analysis.FieldClassAnalysis {}>".format(self.field)
+        return "<analysis.FieldClassAnalysis {}->{}>".format(self.field.class_name, self.field.name)
 
 
 REF_NEW_INSTANCE = 0
@@ -1039,6 +1035,9 @@ class Analysis(object):
         for c in self.classes.values():
             for f in c.get_fields():
                 yield f
+
+    def __repr__(self):
+        return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
 
 
 def is_ascii_obfuscation(vm):
