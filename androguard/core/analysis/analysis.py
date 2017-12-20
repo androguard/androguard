@@ -592,7 +592,8 @@ class MethodClassAnalysis(object):
         return data
 
     def __repr__(self):
-        return "<analysis.MethodClassAnalysis {}>".format(self.method)
+        return "<analysis.MethodClassAnalysis {}{}>".format(self.method,
+                " EXTERNAL" if isinstance(self.method, ExternalMethod) else "")
 
 
 class FieldClassAnalysis(object):
@@ -694,6 +695,7 @@ class ExternalMethod(object):
     def get_access_flags_string(self):
         # TODO can we assume that external methods are always public?
         # they can also be static...
+        # or constructor...
         return ""
 
     def __str__(self):
@@ -792,7 +794,8 @@ class ClassAnalysis(object):
         return self.orig_class
 
     def __repr__(self):
-        return "<analysis.ClassAnalysis {}>".format(self.orig_class.get_name())
+        return "<analysis.ClassAnalysis {}{}>".format(self.orig_class.get_name(),
+                " EXTERNAL" if isinstance(self.orig_class, ExternalClass) else "")
 
     def __str__(self):
         # Print only instanceiations from other classes here
@@ -1047,21 +1050,24 @@ class Analysis(object):
             for f in c.get_fields():
                 yield f
 
-    def find_class(self, name=".*"):
+    def find_classes(self, name=".*", no_external=False):
         """
         Find classes by name, using regular expression
         This method will return all ClassAnalysis Object that match the name of
         the class.
 
         :param name: regular expression for class name (default ".*")
+        :param no_external: Remove external classes from the output (default False)
         :rtype: generator of `ClassAnalysis`
         """
         for cname, c in self.classes.items():
-            if re.matches(name, cname):
+            if no_external and isinstance(c.get_vm_class(), ExternalClass):
+                continue
+            if re.match(name, cname):
                 yield c
 
-    def find_method(self, classname=".*", methodname=".*", descriptor=".*",
-            accessflags=".*"):
+    def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
+            accessflags=".*", no_external=False):
         """
         Find a method by name using regular expression.
         This method will return all MethodClassAnalysis objects, which match the
@@ -1071,18 +1077,24 @@ class Analysis(object):
         :param methodname: regular expression for the method name
         :param descriptor: regular expression for the descriptor
         :param accessflags: regular expression for the accessflags
+        :param no_external: Remove external method from the output (default False)
         :rtype: generator of `MethodClassAnalysis`
         """
         for cname, c in self.classes.items():
-            if re.matches(classname, cname):
+            if re.match(classname, cname):
                 for m in c.get_methods():
                     z = m.get_method()
-                    if re.matches(methodname, z.get_name()) and \
-                       re.matches(descriptor, z.get_descriptor()) and \
-                       re.matches(accessflags, z.get_accessflags_string()):
+                    # TODO is it even possible that an internal class has
+                    # external methods? Maybe we should check for ExternalClass
+                    # instead...
+                    if no_external and isinstance(z, ExternalMethod):
+                        continue
+                    if re.match(methodname, z.get_name()) and \
+                       re.match(descriptor, z.get_descriptor()) and \
+                       re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
-    def find_string(self, string=".*"):
+    def find_strings(self, string=".*"):
         """
         Find strings by regex
 
@@ -1090,10 +1102,10 @@ class Analysis(object):
         :rtype: generator of `StringAnalysis`
         """
         for s, sa in self.strings.items():
-            if re.matches(string, s):
+            if re.match(string, s):
                 yield sa
 
-    def find_field(self, classname=".*", fieldname=".*", fieldtype=".*",
+    def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*",
             accessflags=".*"):
         """
         find fields by regex
@@ -1102,14 +1114,15 @@ class Analysis(object):
         :param fieldname: regular expression of the fieldname
         :param fieldtype: regular expression of the fieldtype
         :param accessflags: regular expression of the access flags
+        :rtype: generator of `FieldClassAnalysis`
         """
-        for cname, c in self.classes():
-            if re.matches(classname, cname):
+        for cname, c in self.classes.items():
+            if re.match(classname, cname):
                 for f in c.get_fields():
                     z = f.get_field()
-                    if re.matches(fieldname, z.get_name()) and \
-                       re.matches(fieldtype, z.get_descriptor()) and \
-                       re.matches(accessflags, z.get_access_flags_string()):
+                    if re.match(fieldname, z.get_name()) and \
+                       re.match(fieldtype, z.get_descriptor()) and \
+                       re.match(accessflags, z.get_access_flags_string()):
                            yield f
 
     def __repr__(self):

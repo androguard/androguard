@@ -26,5 +26,19 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.get_fields())), 3033)
         self.assertEqual(len(list(dx.get_external_classes())), 392)
 
+        # Filter all support libraries
+        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$"))), 514)
+        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$", no_external=True))), 124)
+
+        # Find all constructors by method name
+        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor="^\(.+\).*$"))), 138)
+        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor="^\(.+\).*$", no_external=True))), 94)
+
+        # Find url like strings
+        self.assertEqual(len(list(dx.find_strings(".*:\/\/.*"))), 15)
+
+        # find String fields
+        self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype="Ljava\/lang\/String;"))), 63)
+
 if __name__ == '__main__':
     unittest.main()
