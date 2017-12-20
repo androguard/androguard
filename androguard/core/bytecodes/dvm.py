@@ -7617,7 +7617,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the class def item
 
-        :rtype: :class:`ClassDefItem` object
+        :rtype: :class:`ClassHDefItem` object
         """
         return self.classes
 
@@ -7625,7 +7625,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the method id item
 
-        :rtype: :class:`MethodIdItem` object
+        :rtype: :class:`MethodHIdItem` object
         """
         return self.methods
 
@@ -7633,7 +7633,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the field id item
 
-        :rtype: :class:`FieldIdItem` object
+        :rtype: :class:`FieldHIdItem` object
         """
         return self.fields
 
@@ -7864,6 +7864,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list with all :class:`EncodedMethod` objects
         """
+        # TODO could use a generator here
         prog = re.compile(name)
         l = []
         for i in self.classes.class_def:
@@ -7880,6 +7881,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list with all :class:`EncodedField` objects
         """
+        # TODO could use a generator here
         prog = re.compile(name)
         l = []
         for i in self.classes.class_def:
