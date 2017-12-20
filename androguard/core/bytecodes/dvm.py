@@ -29,6 +29,7 @@ ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
 ODEX_FILE_MAGIC_37 = 'dey\n037\x00'
 
+# https://source.android.com/devices/tech/dalvik/dex-format#type-codes
 TYPE_MAP_ITEM = {
     0x0: "TYPE_HEADER_ITEM",
     0x1: "TYPE_STRING_ID_ITEM",
@@ -50,26 +51,28 @@ TYPE_MAP_ITEM = {
     0x2006: "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
 }
 
-ACCESS_FLAGS = [
-    (0x1, 'public'),
-    (0x2, 'private'),
-    (0x4, 'protected'),
-    (0x8, 'static'),
-    (0x10, 'final'),
-    (0x20, 'synchronized'),
-    (0x40, 'bridge'),
-    (0x80, 'varargs'),
-    (0x100, 'native'),
-    (0x200, 'interface'),
-    (0x400, 'abstract'),
-    (0x800, 'strictfp'),
-    (0x1000, 'synthetic'),
-    (0x4000, 'enum'),
-    (0x8000, 'unused'),
-    (0x10000, 'constructor'),
-    (0x20000, 'synchronized'),
-]
+# https://source.android.com/devices/tech/dalvik/dex-format#access-flags
+ACCESS_FLAGS = {
+    0x1: 'public',
+    0x2: 'private',
+    0x4: 'protected',
+    0x8: 'static',
+    0x10: 'final',
+    0x20: 'synchronized',
+    0x40: 'bridge',
+    0x80: 'varargs',
+    0x100: 'native',
+    0x200: 'interface',
+    0x400: 'abstract',
+    0x800: 'strictfp',
+    0x1000: 'synthetic',
+    0x4000: 'enum',
+    0x8000: 'unused',
+    0x10000: 'constructor',
+    0x20000: 'synchronized',
+}
 
+# https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 TYPE_DESCRIPTOR = {
     'V': 'void',
     'Z': 'boolean',
@@ -96,21 +99,19 @@ class InvalidInstruction(Error):
 
 def get_access_flags_string(value):
     """
-    Transform an access flags to the corresponding string
+    Transform an access flag field to the corresponding string
 
     :param value: the value of the access flags
     :type value: int
 
     :rtype: string
     """
-    buff = ""
-    for i in ACCESS_FLAGS:
-        if (i[0] & value) == i[0]:
-            buff += i[1] + " "
+    flags = []
+    for k, v in ACCESS_FLAGS.items():
+        if (k & value) == k:
+            flags.append(v)
 
-    if buff != "":
-        return buff[:-1]
-    return buff
+    return " ".join(flags)
 
 
 def get_type(atype, size=None):
@@ -2894,13 +2895,15 @@ class EncodedMethod(object):
         """
         Return the access flags string of the method
 
+        A description of all access flags can be found here:
+        https://source.android.com/devices/tech/dalvik/dex-format#access-flags
+
         :rtype: string
         """
         if self.access_flags_string is None:
-            self.access_flags_string = get_access_flags_string(
-                self.get_access_flags())
+            self.access_flags_string = get_access_flags_string(self.get_access_flags())
 
-            if self.access_flags_string == "":
+            if self.access_flags_string == "" and self.get_access_flags() != 0x0:
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
@@ -2996,22 +2999,6 @@ class EncodedMethod(object):
                                          self.get_descriptor())
             self.code.show(self.CM.get_vmanalysis().get_method(self))
             self.show_xref(self.CM.get_vmanalysis().get_method_analysis(self))
-
-    def show_xref(self, m_a):
-        if m_a:
-            bytecode._PrintSubBanner("XREF From")
-            xrefs_from = m_a.get_xref_from()
-            for ref_class, ref_method, _ in xrefs_from:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF To")
-            xrefs_to = m_a.get_xref_to()
-            for ref_class, ref_method, _ in xrefs_to:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
 
     def show_notes(self):
         """
@@ -3110,6 +3097,20 @@ class EncodedMethod(object):
     def get_descriptor(self):
         """
         Return the descriptor of the method
+        A method descriptor will have the form (A A A ...)R
+        Where A are the arguments to the method and R is the return type.
+        Basic types will have the short form, i.e. I for integer, V for void
+        and class types will be named like a classname, e.g. Ljava/lang/String;.
+
+        Typical descriptors will look like this:
+        (I)I   // one integer argument, integer return
+        (C)Z   // one char argument, boolean as return
+        (Ljava/lang/CharSequence; I)I   // CharSequence and integer as
+            argyument, integer as return
+        (C)Ljava/lang/String;  // char as argument, String as return.
+
+        More information about type descriptors are found here:
+        https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 
         :rtype: string
         """

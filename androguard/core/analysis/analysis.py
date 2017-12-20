@@ -685,6 +685,11 @@ class ExternalMethod(object):
     def get_descriptor(self):
         return ''.join(self.descriptor)
 
+    def get_access_flags_string(self):
+        # TODO can we assume that external methods are always public?
+        # they can also be static...
+        return ""
+
     def __str__(self):
         return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
 
@@ -1035,6 +1040,30 @@ class Analysis(object):
         for c in self.classes.values():
             for f in c.get_fields():
                 yield f
+
+    def find_class(self, name=".*"):
+        """
+        Find classes by name, using regular expression
+        This method will return all ClassAnalysis Object that match the name of
+        the class.
+
+        :param name: regular expression for class name (default ".*")
+        """
+        pass
+
+    def find_method(self, classname=".*", methodname=".*", descriptor=".*",
+            accessflags=".*"):
+        """
+        Find a method by name using regular expression.
+        This method will return all MethodClassAnalysis objects, which match the
+        classname, methodname, descriptor and accessflags of the method.
+
+        :param classname: regular expression for the classname
+        :param methodname: regular expression for the method name
+        :param descriptor: regular expression for the descriptor
+        :param accessflags: regular expression for the accessflags
+        """
+        pass
 
     def __repr__(self):
         return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
