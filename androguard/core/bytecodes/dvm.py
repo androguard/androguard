@@ -2996,11 +2996,9 @@ class EncodedMethod(object):
         """
         self.show_info()
         self.show_notes()
-        if self.code is not None:
-            self.each_params_by_register(self.code.get_registers_size(),
-                                         self.get_descriptor())
+        if self.code:
+            self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
             self.code.show(self.CM.get_vmanalysis().get_method(self))
-            self.show_xref(self.CM.get_vmanalysis().get_method_analysis(self))
 
     def show_notes(self):
         """
