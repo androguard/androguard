@@ -87,6 +87,58 @@ TYPE_DESCRIPTOR = {
     'D': 'double',
 }
 
+# https://source.android.com/devices/tech/dalvik/dex-format#value-formats
+VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
+VALUE_SHORT = 0x02  # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
+VALUE_CHAR = 0x03  # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
+VALUE_INT = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
+VALUE_LONG = 0x06  # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
+VALUE_FLOAT = 0x10  # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
+VALUE_DOUBLE = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
+VALUE_STRING = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
+VALUE_TYPE = 0x18  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
+VALUE_FIELD = 0x19  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
+VALUE_METHOD = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
+VALUE_ENUM = 0x1b  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
+VALUE_ARRAY = 0x1c  # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
+VALUE_ANNOTATION = 0x1d  # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
+VALUE_NULL = 0x1e  # (none; must be 0)      (none)  null reference value
+VALUE_BOOLEAN = 0x1f  # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
+
+# https://source.android.com/devices/tech/dalvik/dex-format#debug-info-item
+DBG_END_SEQUENCE = 0x00  # (none)  terminates a debug info sequence for a code_item
+DBG_ADVANCE_PC = 0x01  # uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
+DBG_ADVANCE_LINE = 0x02  # sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
+DBG_START_LOCAL = 0x03  # uleb128 register_num
+#    uleb128p1 name_idx
+#    uleb128p1 type_idx
+#         register_num: register that will contain local name_idx: string index of the name
+#         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
+DBG_START_LOCAL_EXTENDED = 0x04  # uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
+#         register_num: register that will contain local
+#         name_idx: string index of the name
+#         type_idx: type index of the type
+#         sig_idx: string index of the type signature
+# introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
+# If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
+# Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
+DBG_END_LOCAL = 0x05  # uleb128 register_num
+#           register_num: register that contained local
+#           marks a currently-live local variable as out of scope at the current address
+DBG_RESTART_LOCAL = 0x06  # uleb128 register_num
+#           register_num: register to restart re-introduces a local variable at the current address.
+#           The name and type are the same as the last local that was live in the specified register.
+DBG_SET_PROLOGUE_END = 0x07  # (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
+#               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
+DBG_SET_EPILOGUE_BEGIN = 0x08  # (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
+#               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
+DBG_SET_FILE = 0x09  # uleb128p1 name_idx
+#           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
+#           instead of the default name specified in code_item
+DBG_Special_Opcodes_BEGIN = 0x0a  # (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
+DBG_Special_Opcodes_END = 0xff
+DBG_LINE_BASE = -4
+DBG_LINE_RANGE = 15
 
 class Error(Exception):
     """
@@ -97,6 +149,22 @@ class Error(Exception):
 
 class InvalidInstruction(Error):
     pass
+
+
+def read_null_terminated_string(f):
+    """
+    Read a null terminated string from a file-like object.
+
+    :param f: file-like object
+    :rtype: bytearray
+    """
+    x = bytearray()
+    while True:
+        z = f.read(1)
+        if ord(z) == 0:
+            return x
+        else:
+            x.append(ord(z))
 
 
 def get_access_flags_string(value):
@@ -180,15 +248,6 @@ def static_operand_instruction(instruction):
         buff += instruction.get_string()
 
     return buff
-
-
-html_escape_table = {
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;",
-    ">": "&gt;",
-    "<": "&lt;",
-}
 
 
 def get_sbyte(buff):
@@ -1182,41 +1241,6 @@ class TypeList(object):
         return length
 
 
-DBG_END_SEQUENCE = 0x00  # (none)  terminates a debug info sequence for a code_item
-DBG_ADVANCE_PC = 0x01  # uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
-DBG_ADVANCE_LINE = 0x02  # sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
-DBG_START_LOCAL = 0x03  # uleb128 register_num
-#    uleb128p1 name_idx
-#    uleb128p1 type_idx
-#         register_num: register that will contain local name_idx: string index of the name
-#         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
-DBG_START_LOCAL_EXTENDED = 0x04  # uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
-#         register_num: register that will contain local
-#         name_idx: string index of the name
-#         type_idx: type index of the type
-#         sig_idx: string index of the type signature
-# introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
-# If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
-# Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
-DBG_END_LOCAL = 0x05  # uleb128 register_num
-#           register_num: register that contained local
-#           marks a currently-live local variable as out of scope at the current address
-DBG_RESTART_LOCAL = 0x06  # uleb128 register_num
-#           register_num: register to restart re-introduces a local variable at the current address.
-#           The name and type are the same as the last local that was live in the specified register.
-DBG_SET_PROLOGUE_END = 0x07  # (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
-#               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_EPILOGUE_BEGIN = 0x08  # (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
-#               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_FILE = 0x09  # uleb128p1 name_idx
-#           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
-#           instead of the default name specified in code_item
-DBG_Special_Opcodes_BEGIN = 0x0a  # (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
-DBG_Special_Opcodes_END = 0xff
-DBG_LINE_BASE = -4
-DBG_LINE_RANGE = 15
-
-
 class DBGBytecode(object):
     def __init__(self, cm, op_value):
         self.CM = cm
@@ -1351,24 +1375,6 @@ class DebugInfoItem(object):
 
     def get_off(self):
         return self.offset
-
-
-VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
-VALUE_SHORT = 0x02  # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
-VALUE_CHAR = 0x03  # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
-VALUE_INT = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
-VALUE_LONG = 0x06  # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
-VALUE_FLOAT = 0x10  # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
-VALUE_DOUBLE = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
-VALUE_STRING = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
-VALUE_TYPE = 0x18  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
-VALUE_FIELD = 0x19  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
-VALUE_METHOD = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
-VALUE_ENUM = 0x1b  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
-VALUE_ARRAY = 0x1c  # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
-VALUE_ANNOTATION = 0x1d  # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
-VALUE_NULL = 0x1e  # (none; must be 0)      (none)  null reference value
-VALUE_BOOLEAN = 0x1f  # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
 
 
 class DebugInfoItemEmpty(object):
@@ -1799,22 +1805,6 @@ class EncodedArrayItem(object):
 
     def get_off(self):
         return self.offset
-
-
-def read_null_terminated_string(f):
-    """
-    Read a null terminated string from a file-like object.
-
-    :param f: file-like object
-    :rtype: bytearray
-    """
-    x = bytearray()
-    while True:
-        z = f.read(1)
-        if ord(z) == 0:
-            return x
-        else:
-            x.append(ord(z))
 
 
 class StringDataItem:
