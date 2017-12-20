@@ -18,6 +18,7 @@ import binascii
 import time
 from struct import pack, unpack, calcsize
 import logging
+import binascii
 
 log = logging.getLogger("androguard.dvm")
 
@@ -513,7 +514,8 @@ class HeaderItem(object):
     def show(self):
         bytecode._PrintSubBanner("Header Item")
         bytecode._PrintDefault("magic=%s, checksum=%s, signature=%s\n" %
-                               (self.magic, self.checksum, self.signature))
+                               (self.magic, self.checksum,
+                                   binascii.hexlify(self.signature).decode("ASCII")))
         bytecode._PrintDefault("file_size=%x, header_size=%x, endian_tag=%x\n" %
                                (self.file_size, self.header_size,
                                 self.endian_tag))
@@ -3598,8 +3600,7 @@ class ClassDefItem(object):
             % (self.class_idx, self.superclass_idx, self.interfaces_off,
                self.source_file_idx, self.annotations_off, self.class_data_off,
                self.static_values_off))
-        self.show_xref(self.CM.get_vmanalysis().get_class_analysis(
-            self.get_name()))
+        self.show_xref(self.CM.get_vmanalysis().get_class_analysis(self.get_name()))
 
     def show_xref(self, c_a):
         """
@@ -6944,7 +6945,7 @@ class CodeItem(object):
         # Otherwise the real code is printed...
         print("CODE_ITEM")
         if m_a is None:
-            print(self.get_raw())
+            print(binascii.hexlify(self.get_raw()).decode("ASCII"))
         else:
             for i in self.code:
                 i.show(m_a)
@@ -6953,7 +6954,10 @@ class CodeItem(object):
         return [i for i in self.code]
 
     def get_raw(self):
-        return b''.join(i.get_raw() for i in self.code)
+        buff = bytearray()
+        for c in self.code:
+            buff += c.get_raw()
+        return buff
 
     def get_length(self):
         length = 0
