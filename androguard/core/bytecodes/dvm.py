@@ -2729,6 +2729,8 @@ class EncodedField(object):
         """
         Return the descriptor of the field
 
+        The descriptor of a field is the type of the field.
+
         :rtype: string
         """
         if not self.loaded:

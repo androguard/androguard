@@ -575,6 +575,9 @@ class MethodClassAnalysis(object):
     def get_xref_to(self):
         return self.xrefto
 
+    def get_method(self):
+        return self.method
+
     def __str__(self):
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
@@ -619,6 +622,9 @@ class FieldClassAnalysis(object):
 
     def get_xref_write(self):
         return self.xrefwrite
+
+    def get_field(self):
+        return self.field
 
     def __str__(self):
         data = "XREFRead for %s\n" % self.field
@@ -1048,8 +1054,11 @@ class Analysis(object):
         the class.
 
         :param name: regular expression for class name (default ".*")
+        :rtype: generator of `ClassAnalysis`
         """
-        pass
+        for cname, c in self.classes.items():
+            if re.matches(name, cname):
+                yield c
 
     def find_method(self, classname=".*", methodname=".*", descriptor=".*",
             accessflags=".*"):
@@ -1062,8 +1071,46 @@ class Analysis(object):
         :param methodname: regular expression for the method name
         :param descriptor: regular expression for the descriptor
         :param accessflags: regular expression for the accessflags
+        :rtype: generator of `MethodClassAnalysis`
         """
-        pass
+        for cname, c in self.classes.items():
+            if re.matches(classname, cname):
+                for m in c.get_methods():
+                    z = m.get_method()
+                    if re.matches(methodname, z.get_name()) and \
+                       re.matches(descriptor, z.get_descriptor()) and \
+                       re.matches(accessflags, z.get_accessflags_string()):
+                        yield m
+
+    def find_string(self, string=".*"):
+        """
+        Find strings by regex
+
+        :param string: regular expression for the string to search for
+        :rtype: generator of `StringAnalysis`
+        """
+        for s, sa in self.strings.items():
+            if re.matches(string, s):
+                yield sa
+
+    def find_field(self, classname=".*", fieldname=".*", fieldtype=".*",
+            accessflags=".*"):
+        """
+        find fields by regex
+
+        :param classname: regular expression of the classname
+        :param fieldname: regular expression of the fieldname
+        :param fieldtype: regular expression of the fieldtype
+        :param accessflags: regular expression of the access flags
+        """
+        for cname, c in self.classes():
+            if re.matches(classname, cname):
+                for f in c.get_fields():
+                    z = f.get_field()
+                    if re.matches(fieldname, z.get_name()) and \
+                       re.matches(fieldtype, z.get_descriptor()) and \
+                       re.matches(accessflags, z.get_access_flags_string()):
+                           yield f
 
     def __repr__(self):
         return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
