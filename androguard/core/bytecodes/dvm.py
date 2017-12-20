@@ -19,6 +19,7 @@ import time
 from struct import pack, unpack, calcsize
 import logging
 import binascii
+import warnings
 
 log = logging.getLogger("androguard.dvm")
 
@@ -2791,27 +2792,6 @@ class EncodedField(object):
             bytecode._PrintDefault("\tinit value: %s\n" %
                                    str(init_value.get_value()))
 
-        self.show_xref(self.CM.get_vmanalysis().get_field_analysis(self))
-
-    def show_xref(self, f_a):
-        """
-        Display where this field is read or written
-        """
-        if f_a:
-            bytecode._PrintSubBanner("XREF Read")
-            xrefs_from = f_a.get_xref_read()
-            for ref_class, ref_method in xrefs_from:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF Write")
-            xrefs_to = f_a.get_xref_write()
-            for ref_class, ref_method in xrefs_to:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
-
     def __str__(self):
         return "%s->%s %s [access_flags=%s]\n" % (
             self.get_class_name(), self.get_name(), self.get_descriptor(),
@@ -3000,7 +2980,6 @@ class EncodedMethod(object):
         self.show_notes()
         if self.code:
             self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
-            self.code.show(self.CM.get_vmanalysis().get_method(self))
 
     def show_notes(self):
         """
@@ -3600,42 +3579,6 @@ class ClassDefItem(object):
             % (self.class_idx, self.superclass_idx, self.interfaces_off,
                self.source_file_idx, self.annotations_off, self.class_data_off,
                self.static_values_off))
-        self.show_xref(self.CM.get_vmanalysis().get_class_analysis(self.get_name()))
-
-    def show_xref(self, c_a):
-        """
-        Display where the method is called or which method is called
-        """
-        if c_a:
-            ref_kind_map = {0: "Class instanciation", 1: "Class reference"}
-            bytecode._PrintSubBanner("XREF From")
-
-            xrefs_from = c_a.get_xref_from()
-            for ref_class in xrefs_from:
-                if ref_class.get_vm_class().get_name() == self.get_name():
-                    continue
-                for ref_kind, ref_method, ref_offset in xrefs_from[ref_class]:
-                    bytecode._PrintDefault(ref_kind_map[ref_kind])
-                    bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method.get_name())
-                    bytecode._PrintDefault(' @ 0x%x' % ref_offset)
-                    bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF To")
-            xrefs_to = c_a.get_xref_to()
-            for ref_class in xrefs_to:
-                if ref_class.get_vm_class().get_name() == self.get_name():
-                    continue
-                bytecode._PrintDefault(ref_class.get_vm_class().get_name())
-                bytecode._PrintDefault(' -->\n')
-                for ref_kind, ref_method, ref_offset in xrefs_to[ref_class]:
-                    bytecode._PrintDefault(ref_kind_map[ref_kind])
-                    bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method.get_name())
-                    bytecode._PrintDefault(' @ 0x%x' % ref_offset)
-                    bytecode._PrintDefault('\n')
 
     def source(self):
         """
@@ -6592,14 +6535,12 @@ class DCode(object):
             idx += i.get_length()
         return None
 
-    def show(self, m_a):
+    def show(self):
         """
         Display (with a pretty print) this object
-
-        :param m_a: :class:`MethodAnalysis` object
         """
-        bytecode.PrettyShow(m_a, m_a.basic_blocks.gets(), self.notes)
-        bytecode.PrettyShowEx(m_a.exceptions.gets())
+        # TODO
+        return "FIXME"
 
     def get_raw(self):
         """
@@ -6814,9 +6755,10 @@ class DalvikCode(object):
 
         bytecode._PrintBanner()
 
-    def show(self, m_a):
+    def show(self):
         self._begin_show()
-        self.code.show(m_a)
+        # FIXME
+        # self.code.show(m_a)
         self._end_show()
 
     def _end_show(self):
@@ -6939,16 +6881,13 @@ class CodeItem(object):
         for i in self.code:
             i.reload()
 
-    def show(self, m_a=None):
+    def show(self):
         # FIXME workaround for showing the MAP_ITEMS
         # if m_a is none, we use get_raw.
         # Otherwise the real code is printed...
-        print("CODE_ITEM")
-        if m_a is None:
-            print(binascii.hexlify(self.get_raw()).decode("ASCII"))
-        else:
-            for i in self.code:
-                i.show(m_a)
+        bytecode._PrintDefault("CODE_ITEM\n")
+        bytecode._PrintDefault(binascii.hexlify(self.get_raw()).decode("ASCII"))
+        bytecode._PrintDefault("\n")
 
     def get_obj(self):
         return [i for i in self.code]
@@ -7125,8 +7064,6 @@ class ClassManager(object):
         self.buff = vm
 
         self.decompiler_ob = None
-        self.vmanalysis_ob = None
-        self.gvmanalysis_ob = None
 
         self.__manage_item = {}
         self.__manage_item_off = []
@@ -7179,12 +7116,6 @@ class ClassManager(object):
 
     def get_lazy_analysis(self):
         return self.lazy_analysis
-
-    def get_vmanalysis(self):
-        return self.vmanalysis_ob
-
-    def set_vmanalysis(self, vmanalysis):
-        self.vmanalysis_ob = vmanalysis
 
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
@@ -7522,22 +7453,6 @@ class MapList(object):
         return len(self.get_raw())
 
 
-class XREF(object):
-    def __init__(self):
-        self.items = []
-
-    def add(self, x, y):
-        self.items.append((x, y))
-
-
-class DREF(object):
-    def __init__(self):
-        self.items = []
-
-    def add(self, x, y):
-        self.items.append((x, y))
-
-
 class DalvikVMFormat(bytecode._Bytecode):
     """
     This class can parse a classes.dex file of an Android application (APK).
@@ -7612,6 +7527,21 @@ class DalvikVMFormat(bytecode._Bytecode):
         # cache methods and fields as well, otherwise the decompiler is quite slow
         self.__cache_all_methods = None
         self.__cache_all_fields = None
+
+
+    def get_vmanalysis(self):
+        """
+        The Analysis Object should contain all the information required,
+        inclduing the DalvikVMFormats.
+        """
+        warnings.warn("deprecated", DeprecationWarning)
+
+    def set_vmanalysis(self, analysis):
+        """
+        The Analysis Object should contain all the information required,
+        inclduing the DalvikVMFormats.
+        """
+        warnings.warn("deprecated", DeprecationWarning)
 
     def get_api_version(self):
         """
@@ -8135,22 +8065,6 @@ class DalvikVMFormat(bytecode._Bytecode):
             setattr(method, "XF", ExportObject())
             setattr(method, "XT", ExportObject())
 
-            m_a = self.CM.get_vmanalysis().get_method_analysis(method)
-            if m_a:
-                xrefs_from = m_a.get_xref_from()
-                for ref_class, ref_method, _ in xrefs_from:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(method.XF, name, ref_method)
-
-                xrefs_to = m_a.get_xref_to()
-                for ref_class, ref_method, _ in xrefs_to:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(method.XT, name, ref_method)
-
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
@@ -8171,22 +8085,6 @@ class DalvikVMFormat(bytecode._Bytecode):
             f[field.get_name()].append(field)
             setattr(field, "XR", ExportObject())
             setattr(field, "XW", ExportObject())
-
-            f_a = self.CM.get_vmanalysis().get_field_analysis(field)
-            if f_a:
-                xrefs_from = f_a.get_xref_read()
-                for ref_class, ref_method in xrefs_from:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(field.XR, name, ref_method)
-
-                xrefs_to = f_a.get_xref_write()
-                for ref_class, ref_method in xrefs_to:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(field.XW, name, ref_method)
 
         for i in f:
             if len(f[i]) == 1:
@@ -8211,12 +8109,6 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
-
-    def set_vmanalysis(self, vmanalysis):
-        self.CM.set_vmanalysis(vmanalysis)
-
-    def set_gvmanalysis(self, gvmanalysis):
-        self.CM.set_gvmanalysis(gvmanalysis)
 
     def disassemble(self, offset, size):
         """
