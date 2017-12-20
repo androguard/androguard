@@ -1094,20 +1094,18 @@ class TypeList(object):
 
     def __init__(self, buff, cm):
         self.CM = cm
-
         self.offset = buff.get_idx()
-
-        self.pad = b""
-        if self.offset % 4 != 0:
-            self.pad = buff.read(self.offset % 4)
-
-        self.len_pad = len(self.pad)
-
         self.size = unpack("=I", buff.read(4))[0]
 
         self.list = []
         for i in range(0, self.size):
             self.list.append(TypeItem(buff, cm))
+
+        self.pad = b""
+        if self.size % 2 != 0:
+            self.pad = buff.read(2)
+
+        self.len_pad = len(self.pad)
 
     def get_pad(self):
         """
@@ -1123,7 +1121,7 @@ class TypeList(object):
 
         :rtype: int
         """
-        return self.offset + self.len_pad
+        return self.offset
 
     def get_string(self):
         """
@@ -7122,6 +7120,8 @@ class ClassManager(object):
         self.__manage_item_off = []
 
         self.__strings_off = {}
+        self.__typelists_off = {}
+        self.__classdata_off = {}
 
         self.__obj_offset = {}
         self.__item_offset = {}
@@ -7191,22 +7191,23 @@ class ClassManager(object):
         self.__obj_offset[c_item.get_off()] = c_item
         self.__item_offset[c_item.get_offset()] = item
 
-        sdi = False
-        if type_item == "TYPE_STRING_DATA_ITEM":
-            sdi = True
+        if item is None:
+            pass
+        elif isinstance(item, list):
+            for i in item:
+                goff = i.offset
+                self.__manage_item_off.append(goff)
 
-        if item is not None:
-            if isinstance(item, list):
-                for i in item:
-                    goff = i.offset
-                    self.__manage_item_off.append(goff)
+                self.__obj_offset[i.get_off()] = i
 
-                    self.__obj_offset[i.get_off()] = i
-
-                    if sdi:
-                        self.__strings_off[goff] = i
-            else:
-                self.__manage_item_off.append(c_item.get_offset())
+                if type_item == "TYPE_STRING_DATA_ITEM":
+                    self.__strings_off[goff] = i
+                elif type_item == "TYPE_TYPE_LIST":
+                    self.__typelists_off[goff] = i
+                elif type_item == "TYPE_CLASS_DATA_ITEM":
+                    self.__classdata_off[goff] = i
+        else:
+            self.__manage_item_off.append(c_item.get_offset())
 
     def get_code(self, idx):
         try:
@@ -7215,11 +7216,11 @@ class ClassManager(object):
             return None
 
     def get_class_data_item(self, off):
-        for i in self.__manage_item["TYPE_CLASS_DATA_ITEM"]:
-            if i.get_off() == off:
-                return i
+        i = self.__classdata_off.get(off)
+        if i is None:
+            log.warning("unknown class data item @ 0x%x" % off)
 
-        log.warning("unknown class data item @ 0x%x" % off)
+        return i
 
     def get_encoded_array_item(self, off):
         for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM"]:
@@ -7265,9 +7266,8 @@ class ClassManager(object):
         if off == 0:
             return []
 
-        for i in self.__manage_item["TYPE_TYPE_LIST"]:
-            if i.get_type_list_off() == off:
-                return [type_.get_string() for type_ in i.get_list()]
+        i = self.__typelists_off[off]
+        return [type_.get_string() for type_ in i.get_list()]
 
     def get_type(self, idx):
         _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
