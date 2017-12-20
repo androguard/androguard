@@ -6966,6 +6966,11 @@ class CodeItem(object):
 
 class MapItem(object):
     def __init__(self, buff, cm):
+        """
+        Implementation of a map_item, which occours in a map_list
+
+        https://source.android.com/devices/tech/dalvik/dex-format#map-item
+        """
         self.CM = cm
         self.buff = buff
 
@@ -7423,6 +7428,8 @@ class ClassManager(object):
 class MapList(object):
     """
     This class can parse the "map_list" of the dex format
+
+    https://source.android.com/devices/tech/dalvik/dex-format#map-list
     """
 
     def __init__(self, cm, off, buff):
