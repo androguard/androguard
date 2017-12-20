@@ -106,10 +106,6 @@ class Session(object):
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
-        if self.export_ipython:
-            log.debug("Exporting in ipython")
-            d.create_python_export()
-
         if dx is None:
             dx = Analysis()
 
@@ -120,6 +116,10 @@ class Session(object):
             d.set_decompiler(DecompilerDAD(d, dx))
             d.set_vmanalysis(dx)
         self.analyzed_dex[digest] = dx
+
+        if self.export_ipython:
+            log.debug("Exporting in ipython")
+            d.create_python_export()
 
         return digest, d, dx
 
