@@ -1862,7 +1862,11 @@ class StringDataItem:
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
         # We need to escape surrogates and other stuff that might not be
         # printable...
-        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
+        nstr = s.encode("UTF-16", "surrogatepass")
+        try:
+            return nstr.decode("UTF-16")
+        except UnicodeDecodeError:
+            return nstr.decode("UTF-16", "surrogateescape")
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
