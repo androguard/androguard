@@ -1866,6 +1866,7 @@ class StringDataItem:
         try:
             return nstr.decode("UTF-16")
         except UnicodeDecodeError:
+            log.warning("Error decoding UTF16 string with IDX {} and hexdata '{}'".format(self.offset, binascii.hexlify(self.data)))
             return nstr.decode("UTF-16", "surrogateescape")
 
     def show(self):
