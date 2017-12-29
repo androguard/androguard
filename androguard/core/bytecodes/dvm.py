@@ -1867,7 +1867,8 @@ class StringDataItem:
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
 
-        return s
+        # Return a UTF16 String
+        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
 
     def get(self):
         """
@@ -8068,6 +8069,15 @@ class DalvikVMFormat(bytecode._Bytecode):
                                         j.get_descriptor()] = j
 
         return self.__cache_fields.get(key)
+
+    def get_strings_unicode(self):
+        """
+        Return all strings
+
+        :rtype: a list with all strings used in the format (types, names ...)
+        """
+        for i in self.strings:
+            yield i.get_unicode()
 
     def get_strings(self):
         """
