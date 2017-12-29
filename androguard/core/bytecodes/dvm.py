@@ -1863,7 +1863,7 @@ class StringDataItem:
         log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
         # unicode_escape produces a string which is printable
         # Then we decode that one as UTF-16
-        return s.encode("unicode_escape").decode("utf-16")
+        return s.encode("unicode_escape").decode("ascii")
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
