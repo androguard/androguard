@@ -1860,14 +1860,10 @@ class StringDataItem:
     def get(self):
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
-        # We need to escape surrogates and other stuff that might not be
-        # printable...
-        nstr = s.encode("UTF-16", "surrogatepass")
-        try:
-            return nstr.decode("UTF-16")
-        except UnicodeDecodeError:
-            log.warning("Error decoding UTF16 string with IDX {} and hexdata '{}'. Fallback to surrogateescape string.".format(self.offset, binascii.hexlify(self.data)))
-            return nstr.decode("UTF-16", "surrogateescape")
+        log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
+        # unicode_escape produces a string which is printable
+        # Then we decode that one as UTF-16
+        return s.encode("unicode_escape").decode("utf-16")
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
