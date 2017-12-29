@@ -1857,7 +1857,23 @@ class StringDataItem:
     def reload(self):
         pass
 
+    def get_unicode(self):
+        """
+        Returns an Unicode String
+        This is the actual string. Beware that some strings might be not
+        decodeable with usual UTF-16 decoder, as they use surrogates that are
+        not supported by python.
+        """
+        s = mutf8.decode(self.data)
+        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+
+        return s
+
     def get(self):
+        """
+        Returns an ASCII String
+        unicode characters are displayed as escaped characters: i.e. \\u1337
+        """
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
         log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))

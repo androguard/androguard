@@ -24,7 +24,8 @@ class StringTest(unittest.TestCase):
                       u"\u0420\u043e\u0441\u0441\u0438\u044f"]
 
             for s in stests:
-                self.assertIn(s, d.get_strings())
+                self.assertIn(s, [i.get_unicode() for i in d.strings])
+                self.assertIn(s.encode("unicode_escape").decode("ascii"), d.get_strings())
 
     def testMUTF8(self):
         self.assertEqual(u"\x67", mutf8.decode(b"\x67"))
