@@ -1,6 +1,7 @@
 # Androguard
 
 [![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)
+[![Documentation Status](https://readthedocs.org/projects/androguard/badge/?version=latest)](http://androguard.readthedocs.io/en/latest/?badge=latest)
 
 ## Features
 
@@ -27,12 +28,13 @@ https://github.com/androguard/androguard/releases
 You can also install androguard from the Debian repositories: [androguard](http://packages.debian.org/androguard).
 
 Note that androguard only works with python >= 2.7 or >= 3.3!
+Androguard also supports PyPy2>=5.9.0.
 
 ## 3. Documentation
 
-Link here to the documentation... sometime...
+Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
 
-Meanwhile you can build the documentation with `sphinx`!
+There are some (probably broken/outdated) examples and demos in the folders [demos](https://github.com/androguard/androguard/tree/master/demos) and [examples](https://github.com/androguard/androguard/tree/master/examples).
 
 ## 4. Building and Requirements
 

@@ -1,15 +1,28 @@
 import sys
 import os
 import logging
-import types
-import random
-import string
-import imp
+import tempfile
 
-ANDROGUARD_VERSION = "3.0-dev"
+from androguard import __version__
+ANDROGUARD_VERSION = __version__
+
+log = logging.getLogger("androguard.default")
+
+
+class InvalidResourceError(Exception):
+    """
+    Invalid Resource Erorr is thrown by load_api_specific_resource_module
+    """
+    pass
 
 
 def is_ascii_problem(s):
+    """
+    Test if a string contains other chars than ASCII
+
+    :param s: a string to test
+    :return: True if string contains other chars than ASCII, False otherwise
+    """
     try:
         s.decode("ascii")
         return False
@@ -30,28 +43,28 @@ class Color(object):
     Bold = "\033[1m"
 
 
+# TODO most of these options are duplicated, as they are also the default arguments to the functions
 CONF = {
+    # Assume the binary is in $PATH, otherwise give full path
+    "BIN_JADX": "jadx",
     "BIN_DED": "ded.sh",
-    "PATH_DED": "./decompiler/ded/",
-    "PATH_DEX2JAR": "./decompiler/dex2jar/",
     "BIN_DEX2JAR": "dex2jar.sh",
-    "PATH_JAD": "./decompiler/jad/",
     "BIN_JAD": "jad",
     "BIN_WINEJAD": "jad.exe",
-    "PATH_FERNFLOWER": "./decompiler/fernflower/",
     "BIN_FERNFLOWER": "fernflower.jar",
+    "BIN_JARSIGNER": "jarsigner",
+
     "OPTIONS_FERNFLOWER": {"dgs": '1',
                            "asc": '1'},
     "PRETTY_SHOW": 1,
-    "TMP_DIRECTORY": "/tmp/",
+    "TMP_DIRECTORY": tempfile.gettempdir(),
     # Full python or mix python/c++ (native)
-    #"ENGINE" : "automatic",
+    # "ENGINE" : "automatic",
     "ENGINE": "python",
     "RECODE_ASCII_STRING": False,
     "RECODE_ASCII_STRING_METH": None,
     "DEOBFUSCATED_STRING": True,
     #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
-    "PATH_JARSIGNER": "jarsigner",
     "COLORS": {
         "OFFSET": Color.Yellow,
         "OFFSET_ADDR": Color.Green,
@@ -91,6 +104,7 @@ elif sys.platform == 'win32':
     CONF['data_prefix'] = os.path.join(sys.prefix, 'Scripts', 'androguard')
 else:
     CONF['data_prefix'] = os.path.join(sys.prefix, 'share', 'androguard')
+
 
 def default_colors(obj):
     CONF["COLORS"]["OFFSET"] = obj.Yellow
@@ -152,43 +166,6 @@ def save_colors():
     return c
 
 
-def long2int(l):
-    if l > 0x7fffffff:
-        l = (0x7fffffff & l) - 0x80000000
-    return l
-
-
-def long2str(l):
-    """Convert an integer to a string."""
-    if type(l) not in (types.IntType, types.LongType):
-        raise ValueError('the input must be an integer')
-
-    if l < 0:
-        raise ValueError('the input must be greater than 0')
-    s = ''
-    while l:
-        s = s + chr(l & 255)
-        l >>= 8
-
-    return s
-
-
-def str2long(s):
-    """Convert a string to a long integer."""
-    if type(s) not in (types.StringType, types.UnicodeType):
-        raise ValueError('the input must be a string')
-
-    l = 0
-    for i in s:
-        l <<= 8
-        l |= ord(i)
-
-    return l
-
-
-def random_string():
-    return random.choice(string.letters) + ''.join([random.choice(
-        string.letters + string.digits) for i in range(10 - 1)])
 
 
 def is_android(filename):
@@ -204,8 +181,6 @@ def is_android(filename):
         f_bytes = fd.read()
         return is_android_raw(f_bytes)
 
-    return None
-
 
 def is_android_raw(raw):
     """
@@ -214,7 +189,14 @@ def is_android_raw(raw):
     """
     val = None
 
-    if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
+    # We do not check for META-INF/MANIFEST.MF,
+    # as you also want to analyze unsigned APKs...
+    # AndroidManifest.xml should be in every APK.
+    # classes.dex and resources.arsc are not required!
+    # if raw[0:2] == b"PK" and b'META-INF/MANIFEST.MF' in raw:
+    # TODO this check might be still invalid. A ZIP file with stored APK inside would match as well.
+    # probably it would be better to rewrite this and add more sanity checks.
+    if raw[0:2] == b"PK" and b'AndroidManifest.xml' in raw:
         val = "APK"
     elif raw[0:3] == b"dex":
         val = "DEX"
@@ -228,62 +210,31 @@ def is_android_raw(raw):
     return val
 
 
-# Init Logger
-log_andro = logging.getLogger("androguard")
+def show_logging(level=logging.INFO):
+    """
+    enable log messages on stdout
 
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-log_andro.addHandler(console_handler)
-log_runtime = logging.getLogger("androguard.runtime")  # logs at runtime
-log_interactive = logging.getLogger("androguard.interactive")  # logs in interactive functions
-log_loading = logging.getLogger("androguard.loading")  # logs when loading andro
+    We will catch all messages here! From all loggers...
+    """
+    logger = logging.getLogger()
 
+    h = logging.StreamHandler(stream=sys.stdout)
+    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-8s] %(name)s (%(filename)s): %(message)s"))
 
-def set_lazy():
-    CONF["LAZY_ANALYSIS"] = True
-
-
-def set_debug():
-    log_andro.setLevel(logging.DEBUG)
-
-
-def set_info():
-    log_andro.setLevel(logging.INFO)
-
-
-def get_debug():
-    return log_andro.getEffectiveLevel() == logging.DEBUG
-
-
-def warning(x):
-    log_runtime.warning(x)
-    import traceback
-    traceback.print_exc()
-
-
-def error(x):
-    log_runtime.error(x)
-    raise ()
-
-
-def debug(x):
-    log_runtime.debug(x)
-
-
-def info(x):
-    log_runtime.info(x)
+    logger.addHandler(h)
+    logger.setLevel(level)
 
 
 def set_options(key, value):
     CONF[key] = value
 
 
-def save_to_disk(buff, output):
-    with open(output, "w") as fd:
-        fd.write(buff)
-
-
 def rrmdir(directory):
+    """
+    Recursivly delete a directory
+
+    :param directory: directory to remove
+    """
     for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
             os.remove(os.path.join(root, name))
@@ -363,19 +314,20 @@ def color_range(startcolor, goalcolor, steps):
 
 def load_api_specific_resource_module(resource_name, api):
     # Those two imports are quite slow.
+    # Therefor we put them directly into this method
     from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
     from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
 
     if resource_name == "aosp_permissions":
-        module = AOSP_PERMISSIONS
+        mod = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":
-        module = AOSP_PERMISSIONS_MAPPINGS
+        mod = AOSP_PERMISSIONS_MAPPINGS
     else:
-        error("Invalid resource: %s" % resource_name)
+        raise InvalidResourceError("Invalid Resource {}".format(resource_name))
 
     if not api:
         api = CONF["DEFAULT_API"]
-    value = module.get(api)
+    value = mod.get(api)
     if value:
         return value
-    return module.get('9')
+    return mod.get('9')

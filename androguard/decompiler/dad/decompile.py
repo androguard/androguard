@@ -1,4 +1,9 @@
 from __future__ import print_function
+
+import sys
+
+from builtins import input
+from builtins import map
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -15,14 +20,11 @@ from __future__ import print_function
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from builtins import next
-from builtins import input
-from builtins import map
-from builtins import str
-from builtins import range
 from builtins import object
-import sys
+from builtins import range
+from builtins import str
+
 sys.path.append('./')
 
 import logging
@@ -33,8 +35,7 @@ import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
 from androguard.decompiler.dad.ast import (
-    JSONWriter, parse_descriptor, literal_string, literal_null, literal_int,
-    literal_long, literal_float, literal_double, literal_bool, literal_hex_int,
+    JSONWriter, parse_descriptor, literal_string, literal_hex_int,
     dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dataflow import (
@@ -82,7 +83,6 @@ def get_field_ast(field):
 
 
 class DvMethod(object):
-
     def __init__(self, methanalysis):
         method = methanalysis.get_method()
         self.method = method
@@ -122,7 +122,7 @@ class DvMethod(object):
         if not __debug__:
             from androguard.core import bytecode
             bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % \
-                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
+                                (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
     def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
@@ -147,6 +147,12 @@ class DvMethod(object):
         split_variables(graph, self.var_to_name, def_uses, use_defs)
         dead_code_elimination(graph, def_uses, use_defs)
         register_propagation(graph, def_uses, use_defs)
+
+        # FIXME var_to_name need to contain the created tmp variables.
+        # This seems to be a workaround, we add them into the list manually
+        for var, i in def_uses:
+            if not isinstance(var, int):
+                self.var_to_name[var] = var.upper()
 
         place_declarations(graph, self.var_to_name, def_uses, use_defs)
         del def_uses, use_defs
@@ -194,12 +200,11 @@ class DvMethod(object):
         return []
 
     def __repr__(self):
-        #return 'Method %s' % self.name
+        # return 'Method %s' % self.name
         return 'class DvMethod(object): %s' % self.name
 
 
 class DvClass(object):
-
     def __init__(self, dvclass, vma):
         name = dvclass.get_name()
         if name.find('/') > 0:
@@ -244,17 +249,8 @@ class DvClass(object):
     def process_method(self, num, doAST=False):
         method = self.methods[num]
         if not isinstance(method, DvMethod):
-            # Do not change the instructions if it is already cached in the past
-            cached = True
-            if not method.is_cached_instructions():
-                method.set_instructions([i for i in method.get_instructions()])
-                cached = False
-
             self.methods[num] = DvMethod(self.vma.get_method(method))
             self.methods[num].process(doAST=doAST)
-
-            if not cached:
-                method.set_instructions([])
         else:
             method.process(doAST=doAST)
 
@@ -263,15 +259,14 @@ class DvClass(object):
             try:
                 self.process_method(i, doAST=doAST)
             except Exception as e:
-                logger.debug(
-                    'Error decompiling method %s: %s', self.methods[i], e)
+                logger.warning('Error decompiling method %s: %s', self.methods[i], e)
 
     def get_ast(self):
         fields = [get_field_ast(f) for f in self.fields]
         methods = []
         for m in self.methods:
-          if isinstance(m, DvMethod) and m.ast:
-            methods.append(m.get_ast())
+            if isinstance(m, DvMethod) and m.ast:
+                methods.append(m.get_ast())
         isInterface = 'interface' in self.access
         return {
             'rawname': self.thisclass[1:-1],
@@ -338,11 +333,9 @@ class DvClass(object):
             source.append(
                 ('PACKAGE', [('PACKAGE_START', 'package '), (
                     'NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')
-                        ]))
-        list_proto = []
-        list_proto.append(
-            ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)))
-        list_proto.append(('NAME_PROTOTYPE', '%s' % self.name, self.package))
+                             ]))
+        list_proto = [('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)),
+                      ('NAME_PROTOTYPE', '%s' % self.name, self.package)]
         superclass = self.superclass
         if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
@@ -391,14 +384,14 @@ class DvClass(object):
                 source.append(
                     ('FIELD', [('FIELD_ACCESS', access_str), (
                         'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
-                                                                        ';\n')]))
+                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
+                                                                                                       ';\n')]))
             else:
                 source.append(
                     ('FIELD', [('FIELD_ACCESS', access_str), (
                         'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                            'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
-                                                                        ';\n')]))
+                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
+                                                                               ';\n')]))
 
         for method in self.methods:
             if isinstance(method, DvMethod):
@@ -414,7 +407,6 @@ class DvClass(object):
 
 
 class DvMachine(object):
-
     def __init__(self, name):
         vm = auto_vm(name)
         if vm is None:
@@ -422,7 +414,7 @@ class DvMachine(object):
         self.vma = analysis.Analysis(vm)
         self.classes = dict((dvclass.get_name(), dvclass)
                             for dvclass in vm.get_classes())
-        #util.merge_inner(self.classes)
+        # util.merge_inner(self.classes)
 
     def get_classes(self):
         return list(self.classes.keys())

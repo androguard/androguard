@@ -1,7 +1,7 @@
 androdd
 =======
 
-.. program-output:: python ../../androdd.py -h
+.. program-output:: python ../androdd.py -h
 
 .. automodule:: androdd
     :members:

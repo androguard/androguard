@@ -25,15 +25,15 @@ import os, re, codecs
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
-PATH_TO_AOSP_ROOT = ""  #path to AOSP folder
+PATH_TO_AOSP_ROOT = ""  # path to AOSP folder
 
 AOSP_PERMISSION_MODULE_NAME = "aosp_permissions"
-AOSP_PERMISSION_MODULE_PATH = "../../androguard/core/api_specific_resources/aosp_permissions/"  #where to append the results
+AOSP_PERMISSION_MODULE_PATH = "../../androguard/core/api_specific_resources/aosp_permissions/"  # where to append the results
 
 SDK_VERSION_PATTERN = re.compile(
-    "\s*PLATFORM_SDK_VERSION\s*:=\s*(?P<sdk_version>\d{1,3})\s*")  #hope Android will get 3digit version number :)
+    "\s*PLATFORM_SDK_VERSION\s*:=\s*(?P<sdk_version>\d{1,3})\s*")  # hope Android will get 3digit version number :)
 PLATFORM_VERSION_PATTERN = re.compile(
-    "\s*PLATFORM_VERSION\s*:=\s*(?P<platform_version>.+)\s*")  #just to add as a comment from which version the parsing has happened
+    "\s*PLATFORM_VERSION\s*:=\s*(?P<platform_version>.+)\s*")  # just to add as a comment from which version the parsing has happened
 
 ANDROID_MANIFEST_NAME = "AndroidManifest.xml"
 STRINGS_REL_PATH = "res/values/strings.xml"
@@ -82,7 +82,7 @@ def get_permission_details(manifest_dir):
     strings_document = None
     strings_document_path = os.path.join(manifest_dir, STRINGS_REL_PATH)
     if os.path.exists(strings_document_path):
-        print "Parsing file: %s" % strings_document_path
+        print("Parsing file: %s" % strings_document_path)
         strings_document = None
         try:
             strings_document = minidom.parse(strings_document_path)
@@ -93,7 +93,7 @@ def get_permission_details(manifest_dir):
                     '<?xml version="1.0" encoding="utf-8"?>'):]
                 strings_document = minidom.parseString(xml_string)
 
-        #loading strings into memory
+        # loading strings into memory
         dstrings = {}
         for i in strings_document.getElementsByTagName("string"):
             try:
@@ -102,8 +102,8 @@ def get_permission_details(manifest_dir):
                 pass
 
     manifest_path = os.path.join(manifest_dir, ANDROID_MANIFEST_NAME)
-    print "Working with file: %s" % manifest_path
-    #getting permissions
+    print("Working with file: %s" % manifest_path)
+    # getting permissions
     manifest_document = None
     try:
         manifest_document = minidom.parse(manifest_path)
@@ -130,7 +130,7 @@ def get_permission_details(manifest_dir):
         if description_string_id != "":
             description = dstrings.get(description_string_id, "")
 
-        #removing auxiliary symbols
+        # removing auxiliary symbols
         label = ' '.join(label.split())
         description = ' '.join(description.split())
 
@@ -141,7 +141,7 @@ def get_permission_details(manifest_dir):
             "permissionGroup": permission_group
         }
 
-    #getting permission groups
+    # getting permission groups
     for i in manifest_document.getElementsByTagName("permission-group"):
         name = i.getAttributeNS(NS_ANDROID_URI, "name")
 
@@ -156,7 +156,7 @@ def get_permission_details(manifest_dir):
         if description_string_id != "":
             description = dstrings.get(description_string_id, "")
 
-        #removing auxiliary symbols
+        # removing auxiliary symbols
         label = ' '.join(label.split())
         description = ' '.join(description.split())
         perm_groups[name] = {"label": label, "description": description}
@@ -164,28 +164,28 @@ def get_permission_details(manifest_dir):
     return perms, perm_groups
 
 
-print "Starting analysis [%s] ..." % PATH_TO_AOSP_ROOT
+print("Starting analysis [%s] ..." % PATH_TO_AOSP_ROOT)
 
 platform_version, sdk_version = getPlatformVersions(
     aosp_root_dir=PATH_TO_AOSP_ROOT)
-print "Detected sdk_version [%s], platform_version [%s]..." % (platform_version,
-                                                               sdk_version)
-if sdk_version == None:
-    print "Cannot detect SDK version. Exiting!"
+print("Detected sdk_version [%s], platform_version [%s]..." % (platform_version,
+                                                               sdk_version))
+if sdk_version is None:
+    print("Cannot detect SDK version. Exiting!")
     exit(1)
 
-print "Checking if we already have the file with the version..."
+print("Checking if we already have the file with the version...")
 perms_module_name = "%s_api%s.py" % (AOSP_PERMISSION_MODULE_NAME, sdk_version)
 perms_module_path = os.path.join(AOSP_PERMISSION_MODULE_PATH, perms_module_name)
 if os.path.exists(perms_module_path):
-    print "API specific file for this version already exists!"
-    print "If you want create a file for newer version, please, delete file: %s" % perms_module_path
+    print("API specific file for this version already exists!")
+    print("If you want create a file for newer version, please, delete file: %s" % perms_module_path)
     exit(1)
 
 permissions = {}
 permission_groups = {}
 
-print "Searching aosp for all manifest files..."
+print("Searching aosp for all manifest files...")
 dirs_with_manifest = get_all_dirs_with_manifest(root_dir_path=PATH_TO_AOSP_ROOT)
 for m_dir in dirs_with_manifest:
     perms, perm_groups = get_permission_details(m_dir)
@@ -194,14 +194,14 @@ for m_dir in dirs_with_manifest:
     if perm_groups:
         permission_groups.update(perm_groups)
 
-    #print "Permission:\n", permissions
-    #print "Permission Groups:\n", permission_groups
+        # print "Permission:\n", permissions
+        # print "Permission Groups:\n", permission_groups
 
-print "Checking if folder exists..."
+print("Checking if folder exists...")
 if not os.path.exists(AOSP_PERMISSION_MODULE_PATH):
     os.makedirs(AOSP_PERMISSION_MODULE_PATH)
 
-print "Appending found information to the permission file..."
+print("Appending found information to the permission file...")
 with codecs.open(perms_module_path, 'w', 'utf-8') as perm_py_module:
     perm_py_module.write("#!/usr/bin/python\n")
     perm_py_module.write("# -*- coding: %s -*-\n" % "utf-8")
@@ -211,20 +211,20 @@ with codecs.open(perms_module_path, 'w', 'utf-8') as perm_py_module:
     perm_py_module.write("#################################################\n")
 
     perm_py_module.write("%s = {\n" % AOSP_PERMISSIONS_PARAM_NAME)
-    for p_key in permissions.keys():
+    for p_key in list(permissions.keys()):
         properties = permissions.get(p_key)
         props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(
-            prop_key)) for prop_key in properties.keys()])
+            prop_key)) for prop_key in list(properties.keys())])
         perm_py_module.write("\t'%s' : {%s},\n" % (p_key, props_string))
     perm_py_module.write("}\n\n")
 
     perm_py_module.write("%s = {\n" % AOSP_PERMISSION_GROUPS_PARAM_NAME)
-    for pg_key in permission_groups.keys():
+    for pg_key in list(permission_groups.keys()):
         properties = permission_groups.get(pg_key)
         props_string = ", ".join(["'%s' : '%s'" % (prop_key, properties.get(
-            prop_key)) for prop_key in properties.keys()])
+            prop_key)) for prop_key in list(properties.keys())])
         perm_py_module.write("\t'%s' : {%s},\n" % (pg_key, props_string))
     perm_py_module.write("}\n")
     perm_py_module.write("#################################################\n")
 
-print "Done..."
+print("Done...")

@@ -1,24 +1,21 @@
 from __future__ import print_function
-from builtins import str
-from builtins import range
-from PyQt5 import QtCore, QtGui, QtWidgets
+
+import importlib
 
 import androguard.session as session_module
-from androguard.core import androconf
-from androguard.gui.fileloading import FileLoadingThread
-from androguard.gui.treewindow import TreeWindow
-from androguard.gui.sourcewindow import SourceWindow
-from androguard.gui.stringswindow import StringsWindow
-from androguard.gui.methodswindow import MethodsWindow
-from androguard.gui.resourceswindow import ResourcesWindow
+from androguard.gui.DataModel import *
 from androguard.gui.apiwindow import APIWindow
 from androguard.gui.binwindow import binWidget
-from androguard.gui.DataModel import *
-
+from androguard.gui.fileloading import FileLoadingThread
 from androguard.gui.helpers import class2func
+from androguard.gui.methodswindow import MethodsWindow
+from androguard.gui.resourceswindow import ResourcesWindow
+from androguard.gui.sourcewindow import SourceWindow
+from androguard.gui.stringswindow import StringsWindow
+from androguard.gui.treewindow import TreeWindow
 
-import os, imp
-
+import logging
+log = logging.getLogger("androguard.gui")
 
 class TabsWindow(QtWidgets.QTabWidget):
     def __init__(self, bin_windows, parent=None):
@@ -49,14 +46,14 @@ class TabsWindow(QtWidgets.QTabWidget):
         self.clear()
 
     def actioncloseOtherTabs(self):
-        for i in range(self.currentIndex()-1, -1, -1):
+        for i in range(self.currentIndex() - 1, -1, -1):
             self.removeTab(i)
 
         for i in range(self.count(), self.currentIndex(), -1):
             self.removeTab(i)
 
     def actioncloseLeftTabs(self):
-        for i in range(self.currentIndex()-1, -1, -1):
+        for i in range(self.currentIndex() - 1, -1, -1):
             self.removeTab(i)
 
     def actioncloseRightTabs(self):
@@ -67,20 +64,19 @@ class TabsWindow(QtWidgets.QTabWidget):
         self.removeTab(index)
 
     def currentTabChanged(self, index):
-        androconf.debug("curentTabChanged -> %d (%s)" % (index, self.tabToolTip(index)))
+        log.debug("curentTabChanged -> %d (%s)" % (index, self.tabToolTip(index)))
         if index == -1:
             return
 
         current_title = self.tabToolTip(index)
         for title in self.bin_windows:
             if title != current_title:
-                androconf.debug("Disable %s" % title)
+                log.debug("Disable %s" % title)
                 self.bin_windows[title].disable()
 
         if current_title in self.bin_windows:
-            androconf.debug("Enable %s" % title)
+            log.debug("Enable %s" % title)
             self.bin_windows[current_title].enable()
-
 
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
@@ -90,12 +86,13 @@ class TabsWindow(QtWidgets.QTabWidget):
         menu.addAction(self.closeRightTabs)
         menu.exec_(event.globalPos())
 
+
 class MainWindow(QtWidgets.QMainWindow):
-    '''Main window:
+    """Main window:
        self.central: QTabWidget in center area
        self.dock: QDockWidget in left area
        self.tree: TreeWindow(QTreeWidget) in self.dock
-    '''
+    """
 
     def __init__(self, parent=None, session=session_module.Session(), input_file=None, input_plugin=None):
         super(MainWindow, self).__init__(parent)
@@ -130,20 +127,20 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def showStatus(self, msg):
-        '''Helper function called by any window to display a message
+        """Helper function called by any window to display a message
            in status bar.
-        '''
-        androconf.debug(msg)
+        """
+        log.debug(msg)
         self.statusBar().showMessage(msg)
 
     def about(self):
-        '''User clicked About menu. Display a Message box.'''
+        """User clicked About menu. Display a Message box."""
         QtWidgets.QMessageBox.about(self, "About Androguard GUI",
-                "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
-                "<br>Have fun !</p>")
+                                    "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
+                                    "<br>Have fun !</p>")
 
     def setupSession(self):
-        androconf.debug("Setup Session")
+        log.debug("Setup Session")
         self.fileLoadingThread = FileLoadingThread(self)
         self.fileLoadingThread.file_loaded.connect(self.loadedFile)
 
@@ -189,7 +186,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileLoadingThread.load(filepath)
 
     def saveFile(self):
-        '''User clicked Save menu. Display a Dialog to ask whwre to save.'''
+        """User clicked Save menu. Display a Dialog to ask whwre to save."""
         filepath, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save File", '', "Androguard Session (*.ag)")
 
@@ -198,22 +195,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveSession(filepath)
 
     def saveSession(self, filepath):
-        '''Save androguard session.'''
+        """Save androguard session."""
         try:
             session_module.Save(self.session, filepath)
         except RuntimeError as e:
-            androconf.error(str(e))
+            log.error(str(e))
             os.remove(filepath)
-            androconf.warning("Session not saved")
+            log.warning("Session not saved")
 
     def _runPlugin(self, filepath):
-        androconf.debug("RUN plugin from %s" % filepath)
+        log.debug("RUN plugin from %s" % filepath)
         module_name = os.path.splitext(os.path.basename(filepath))[0]
-        f, filename, description = imp.find_module(
+        f, filename, description = importlib.find_module(
             module_name,
             [os.path.dirname(filepath)])
         print(f, filename, description)
-        mod = imp.load_module(module_name, f, filename, description)
+        mod = importlib.load_module(module_name, f, filename, description)
         mod.PluginEntry(self.session)
 
     def openRunPluginWindow(self):
@@ -225,31 +222,31 @@ class MainWindow(QtWidgets.QMainWindow):
             self._runPlugin(filepath)
 
     def closeEvent(self, event):
-        '''Clicked [x] to close main window'''
+        """Clicked [x] to close main window"""
         event.accept()
 
     def setupEmptyTree(self):
-        '''Setup empty Tree at startup. '''
+        """Setup empty Tree at startup. """
         if hasattr(self, "tree"):
             del self.tree
         self.tree = QtWidgets.QTreeWidget(self)
         self.tree.header().close()
 
     def setupDock(self):
-        '''Setup empty Dock at startup. '''
+        """Setup empty Dock at startup. """
         self.dock = QtWidgets.QDockWidget("Classes", self)
         self.dock.setWidget(self.tree)
         self.dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dock)
 
     def setupTree(self):
-        androconf.debug("Setup Tree")
+        log.debug("Setup Tree")
         self.tree = TreeWindow(win=self, session=self.session)
         self.tree.setWindowTitle("Tree model")
         self.dock.setWidget(self.tree)
 
     def setupCentral(self):
-        '''Setup empty window supporting tabs at startup. '''
+        """Setup empty window supporting tabs at startup. """
         self.central = TabsWindow(self.bin_windows, self)
         self.setCentralWidget(self.central)
 
@@ -257,7 +254,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.actioncloseAllTabs()
 
     def setupFileMenu(self):
-        androconf.debug("Setup File Menu")
+        log.debug("Setup File Menu")
         self.fileMenu = self.menuBar().addMenu("&File")
 
         self.fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
@@ -266,7 +263,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileMenu.addAction("E&xit", self.close, "Ctrl+Q")
 
     def setupViewMenu(self):
-        androconf.debug("Setup View Menu")
+        log.debug("Setup View Menu")
 
         self.viewMenu = self.menuBar().addMenu("&View")
 
@@ -277,13 +274,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.viewMenu.addAction("&Resources...", self.openResourcesWindow)
 
     def setupPluginsMenu(self):
-        androconf.debug("Setup Plugins Menu")
+        log.debug("Setup Plugins Menu")
 
         self.pluginsMenu = self.menuBar().addMenu("&Plugins")
         self.pluginsMenu.addAction("&Run...", self.openRunPluginWindow)
 
     def setupHelpMenu(self):
-        androconf.debug("Setup Help Menu")
+        log.debug("Setup Help Menu")
 
         self.helpMenu = self.menuBar().addMenu("&Help")
 
@@ -291,10 +288,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.helpMenu.addAction("About &Qt", QtWidgets.qApp.aboutQt)
 
     def updateDockWithTree(self, empty=False):
-        '''Update the classes tree. Called when
+        """Update the classes tree. Called when
             - a new APK has been imported
             - a classe has been renamed (displayed in the tree)
-        '''
+        """
         self.setupTree()
         self.tree.fill()
 
@@ -327,7 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central.setCurrentWidget(apiwin)
 
     def openApkWindow(self):
-        androconf.debug("openApkWindow for %s" % self.session.analyzed_apk)
+        log.debug("openApkWindow for %s" % self.session.analyzed_apk)
         bin_window = binWidget(self, ApkModel(self.session.get_objects_apk(self.fileLoadingThread.file_path)[0]), "APK")
         bin_window.activateWindow()
         self.central.addTab(bin_window, bin_window.title)
@@ -336,7 +333,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bin_windows[bin_window.title] = bin_window
 
     def openBinWindow(self, current_class):
-        androconf.debug("openBinWindow for %s" % current_class)
+        log.debug("openBinWindow for %s" % current_class)
 
         bin_window = self.getMeOpenedWindowIfExists(current_class.current_title)
         if not bin_window:
@@ -351,13 +348,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.central.setCurrentWidget(bin_window)
 
-
     def openSourceWindow(self, current_class, method=None):
-        '''Main function to open a decompile source window
+        """Main function to open a decompile source window
            It checks if it already opened and open that tab,
            otherwise, initialize a new window.
-        '''
-        androconf.debug("openSourceWindow for %s" % current_class)
+        """
+        log.debug("openSourceWindow for %s" % current_class)
 
         sourcewin = self.getMeOpenedWindowIfExists(current_class.current_title + "(S)")
         if not sourcewin:
@@ -383,7 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def getMeOpenedWindowIfExists(self, name):
         for idx in range(self.central.count()):
             if name == self.central.tabToolTip(idx):
-                androconf.debug("Tab %s already opened at: %d" %
+                log.debug("Tab %s already opened at: %d" %
                                 (name, idx))
                 return self.central.widget(idx)
         return None

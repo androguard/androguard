@@ -32,7 +32,6 @@ logger = logging.getLogger('dad.writer')
 
 
 class Writer(object):
-
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -104,7 +103,7 @@ class Writer(object):
             rhs.visit(self)
         self.end_ins()
 
-    #TODO: prefer this class as write_ind_visit_end that should be deprecated
+    # TODO: prefer this class as write_ind_visit_end that should be deprecated
     # at the end
     def write_ind_visit_end_ext(self,
                                 lhs,
@@ -127,8 +126,8 @@ class Writer(object):
     def write_inplace_if_possible(self, lhs, rhs):
         if isinstance(rhs, BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
             exp_rhs = rhs.var_map[rhs.arg2]
-            if rhs.op in '+-' and isinstance(exp_rhs, Constant) and\
-                                  exp_rhs.get_int_value() == 1:
+            if rhs.op in '+-' and isinstance(exp_rhs, Constant) and \
+                            exp_rhs.get_int_value() == 1:
                 return self.write_ind_visit_end(lhs, rhs.op * 2, data=rhs)
             return self.write_ind_visit_end(
                 lhs,
@@ -172,7 +171,7 @@ class Writer(object):
         self.write_ext(('PARENTHESIS_START', '('))
         if self.method.params_type:
             proto = ', '.join(['%s p%s' % (get_type(p_type), param) for p_type,
-                               param in zip(self.method.params_type, params)])
+                                                                        param in zip(self.method.params_type, params)])
             first = True
             for p_type, param in zip(self.method.params_type, params):
                 if not first:
@@ -288,8 +287,8 @@ class Writer(object):
             self.write('%s}\n' % self.space(), data="IF_END_2")
             self.visit_node(cond.false)
         elif follow is not None:
-            if cond.true in (follow, self.next_case) or\
-                                                cond.num > cond.true.num:
+            if cond.true in (follow, self.next_case) or \
+                            cond.num > cond.true.num:
                 # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
@@ -525,7 +524,7 @@ class Writer(object):
                         call_name = "%s -> %s" % (base2base.type, name)
                         break
                     elif (hasattr(base2base, "base") and
-                          hasattr(base2base, "var_map")):
+                              hasattr(base2base, "var_map")):
                         continue
                     else:
                         call_name = "UNKNOWN_TODO"
@@ -602,12 +601,20 @@ class Writer(object):
         data = value.get_data()
         tab = []
         elem_size = value.element_width
-        if elem_size == 4:
-            for i in range(0, value.size * 4, 4):
-                tab.append('%s' % unpack('i', data[i:i + 4])[0])
-        else:  # FIXME: other cases
-            for i in range(value.size):
-                tab.append('%s' % data[i])
+
+        # Set type depending on size of elements
+        data_types = {1: 'b', 2: 'h', 4: 'i', 8: 'd'}
+
+        if elem_size in data_types:
+            elem_id = data_types[elem_size]
+        else:
+            # FIXME for other types we just assume bytes...
+            logger.warning("Unknown element size {} for array. Assume bytes.".format(elem_size))
+            elem_id = 'b'
+            elem_size = 1
+
+        for i in range(0, value.size*elem_size, elem_size):
+            tab.append('%s' % unpack(elem_id, data[i:i+elem_size])[0])
         self.write(', '.join(tab), data="COMMA")
         self.write('}', data="ARRAY_FILLED_END")
         self.end_ins()

@@ -20,14 +20,6 @@ androguard.core.analysis.auto module
     :undoc-members:
     :show-inheritance:
 
-androguard.core.analysis.sign module
-------------------------------------
-
-.. automodule:: androguard.core.analysis.sign
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

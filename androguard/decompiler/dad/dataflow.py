@@ -27,7 +27,6 @@ logger = logging.getLogger('dad.control_flow')
 
 
 class BasicReachDef(object):
-
     def __init__(self, graph, params):
         self.g = graph
         self.A = defaultdict(set)
@@ -52,7 +51,7 @@ class BasicReachDef(object):
                 self.DB[node].add(max(values))
 
     def run(self):
-        nodes = self.g.rpo
+        nodes = list(self.g.rpo)
         while nodes:
             node = nodes.pop(0)
             newR = set()
@@ -81,13 +80,13 @@ class BasicReachDef(object):
 
 
 def update_chain(graph, loc, du, ud):
-    '''
+    """
     Updates the DU chain of the instruction located at loc such that there is
     no more reference to it so that we can remove it.
     When an instruction is found to be dead (i.e it has no side effect, and the
     register defined is not used) we have to update the DU chain of all the
     variables that may me used by the dead instruction.
-    '''
+    """
     ins = graph.get_ins_from_loc(loc)
     for var in ins.get_used_vars():
         # We get the definition points of the current variable
@@ -117,12 +116,12 @@ def update_chain(graph, loc, du, ud):
 
 
 def dead_code_elimination(graph, du, ud):
-    '''
+    """
     Run a dead code elimination pass.
     Instructions are checked to be dead. If it is the case, we remove them and
     we update the DU & UD chains of its variables to check for further dead
     instructions.
-    '''
+    """
     for node in graph.rpo:
         for i, ins in node.get_loc_with_ins():
             reg = ins.get_lhs()
@@ -162,12 +161,12 @@ def clear_path_node(graph, reg, loc1, loc2):
 
 
 def clear_path(graph, reg, loc1, loc2):
-    '''
+    """
     Check that the path from loc1 to loc2 is clear.
     We have to check that there is no side effect between the two location
     points. We also have to check that the variable `reg` is not redefined
     along one of the possible pathes from loc1 to loc2.
-    '''
+    """
     logger.debug('clear_path: reg(%s), loc1(%s), loc2(%s)', reg, loc1, loc2)
     node1 = graph.get_node_from_loc(loc1)
     node2 = graph.get_node_from_loc(loc2)
@@ -190,7 +189,7 @@ def clear_path(graph, reg, loc1, loc2):
 
 
 def register_propagation(graph, du, ud):
-    '''
+    """
     Propagate the temporary registers between instructions and remove them if
     necessary.
     We process the nodes of the graph in reverse post order. For each
@@ -199,7 +198,7 @@ def register_propagation(graph, du, ud):
     its definition.
     We have to be careful to the side effects some instructions may have.
     To do the propagation, we use the computed DU and UD chains.
-    '''
+    """
     change = True
     while change:
         change = False
@@ -313,7 +312,6 @@ def register_propagation(graph, du, ud):
 
 
 class DummyNode(Node):
-
     def __init__(self, name):
         super(DummyNode, self).__init__(name)
 
@@ -330,7 +328,8 @@ class DummyNode(Node):
 def group_variables(lvars, DU, UD):
     treated = defaultdict(list)
     variables = defaultdict(list)
-    for var, loc in sorted(DU):
+    # FIXME
+    for var, loc in sorted(DU, key=lambda x: (str(x[0]), str(x[1]))):
         if var not in lvars:
             continue
         if loc in treated[var]:
@@ -422,10 +421,10 @@ def reach_def_analysis(graph, lparams):
 
 
 def build_def_use(graph, lparams):
-    '''
+    """
     Builds the Def-Use and Use-Def (DU/UD) chains of the variables of the
     method.
-    '''
+    """
     analysis = reach_def_analysis(graph, lparams)
 
     UD = defaultdict(list)
@@ -465,7 +464,7 @@ def place_declarations(graph, dvars, du, ud):
         for loc, ins in node.get_loc_with_ins():
             for var in ins.get_used_vars():
                 if (not isinstance(dvars[var], Variable) or
-                    isinstance(dvars[var], Param)):
+                        isinstance(dvars[var], Param)):
                     continue
                 var_defs_locs = ud[var, loc]
                 def_nodes = set()

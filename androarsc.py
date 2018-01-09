@@ -58,7 +58,7 @@ options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 
 def main(options, arguments):
-    if options.input != None:
+    if options.input is not None:
         buff = ""
 
         arscobj = None
@@ -90,14 +90,14 @@ def main(options, arguments):
                 arscobj, "get_" + ttype + "_resources")(package,
                                                         locale)).toprettyxml()
 
-        if options.output != None:
+        if options.output is not None:
             fd = codecs.open(options.output, "w", "utf-8")
             fd.write(buff)
             fd.close()
         else:
             print(buff)
 
-    elif options.version != None:
+    elif options.version is not None:
         print("Androarsc version %s" % androconf.ANDROGUARD_VERSION)
 
 

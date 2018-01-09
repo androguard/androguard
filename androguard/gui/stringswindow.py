@@ -3,7 +3,6 @@ from androguard.gui.xrefwindow import XrefDialogString
 
 
 class StringsWindow(QtWidgets.QWidget):
-
     def __init__(self, parent=None, win=None, session=None):
         super(StringsWindow, self).__init__(parent)
         self.mainwin = win
@@ -30,7 +29,6 @@ class StringsWindow(QtWidgets.QWidget):
 
 
 class StringsValueWindow(QtWidgets.QTreeView):
-
     def __init__(self, parent=None, win=None, session=None):
         super(StringsValueWindow, self).__init__(parent)
         self.mainwin = win
@@ -63,7 +61,7 @@ class StringsValueWindow(QtWidgets.QTreeView):
                 self.model.setData(self.model.index(
                     row, 3, QtCore.QModelIndex()), digest)
                 self.reverse_strings[repr(strings_analysis[string_value].get_value()) + digest
-                                    ] = strings_analysis[string_value]
+                                     ] = strings_analysis[string_value]
                 row += 1
 
         self.proxyModel.setSourceModel(self.model)

@@ -1,19 +1,17 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import shutil
-import sys
+
 import os
 import re
-
+import shutil
+import sys
 from optparse import OptionParser
 
-from androguard.core import androconf
 from androguard import session
-from androguard.core.analysis import analysis
-from androguard.core.bytecodes import dvm
-
+from androguard.core import androconf
 from androguard.core.bytecode import method2dot, method2format
+from androguard.core.bytecodes import dvm
 from androguard.decompiler import decompiler
 
 option_0 = {
@@ -78,7 +76,7 @@ def export_apps_to_format(filename,
                           methods_filter=None,
                           jar=None,
                           decompiler_type=None,
-                          format=None):
+                          form=None):
     print("Dump information %s in %s" % (filename, output))
 
     if not os.path.exists(output):
@@ -103,36 +101,33 @@ def export_apps_to_format(filename,
         sys.stdout.flush()
 
         if decompiler_type == "dex2jad":
-            vm.set_decompiler(decompiler.DecompilerDex2Jad(
-                vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
-                androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
+            vm.set_decompiler(decompiler.DecompilerDex2Jad(vm,
+                                                           androconf.CONF["BIN_DEX2JAR"],
+                                                           androconf.CONF["BIN_JAD"],
+                                                           androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2winejad":
-            vm.set_decompiler(decompiler.DecompilerDex2WineJad(
-                vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"
-                              ], androconf.CONF["PATH_JAD"],
-                androconf.CONF["BIN_WINEJAD"], androconf.CONF["TMP_DIRECTORY"]))
+            vm.set_decompiler(decompiler.DecompilerDex2WineJad(vm,
+                                                               androconf.CONF["BIN_DEX2JAR"],
+                                                               androconf.CONF["BIN_WINEJAD"],
+                                                               androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "ded":
-            vm.set_decompiler(decompiler.DecompilerDed(
-                vm, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"],
-                androconf.CONF["TMP_DIRECTORY"]))
+            vm.set_decompiler(decompiler.DecompilerDed(vm,
+                                                       androconf.CONF["BIN_DED"],
+                                                       androconf.CONF["TMP_DIRECTORY"]))
         elif decompiler_type == "dex2fernflower":
-            vm.set_decompiler(decompiler.DecompilerDex2Fernflower(
-                vm, androconf.CONF["PATH_DEX2JAR"], androconf.CONF[
-                    "BIN_DEX2JAR"
-                ], androconf.CONF["PATH_FERNFLOWER"], androconf.CONF[
-                    "BIN_FERNFLOWER"
-                ], androconf.CONF["OPTIONS_FERNFLOWER"
-                                 ], androconf.CONF["TMP_DIRECTORY"]))
+            vm.set_decompiler(decompiler.DecompilerDex2Fernflower(vm,
+                                                                  androconf.CONF["BIN_DEX2JAR"],
+                                                                  androconf.CONF["BIN_FERNFLOWER"],
+                                                                  androconf.CONF["OPTIONS_FERNFLOWER"],
+                                                                  androconf.CONF["TMP_DIRECTORY"]))
 
         print("End")
 
         if options.jar:
             print("jar ...", end=' ')
-            filenamejar = decompiler.Dex2Jar(
-                vm, androconf.CONF["PATH_DEX2JAR"],
-                androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["TMP_DIRECTORY"]).get_jar()
+            filenamejar = decompiler.Dex2Jar(vm,
+                                             androconf.CONF["BIN_DEX2JAR"],
+                                             androconf.CONF["TMP_DIRECTORY"]).get_jar()
             shutil.move(filenamejar, output + "classes.jar")
             print("End")
 
@@ -175,9 +170,9 @@ def export_apps_to_format(filename,
 
             buff = method2dot(vmx.get_method(method))
 
-            if format:
-                print("%s ..." % format, end=' ')
-                method2format(filename + "." + format, format, None, buff)
+            if form:
+                print("%s ..." % form, end=' ')
+                method2format(filename + "." + form, form, None, buff)
 
             if method.get_class_name() not in dump_classes:
                 print("source codes ...", end=' ')
@@ -198,7 +193,7 @@ def export_apps_to_format(filename,
 
 
 def main(options, arguments):
-    if options.input != None and options.output != None:
+    if options.input is not None and options.output is not None:
         s = session.Session()
         with open(options.input, "rb") as fd:
             s.add(options.input, fd.read())

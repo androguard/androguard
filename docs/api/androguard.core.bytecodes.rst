@@ -20,14 +20,6 @@ androguard.core.bytecodes.apk module
     :undoc-members:
     :show-inheritance:
 
-androguard.core.bytecodes.arm module
-------------------------------------
-
-.. automodule:: androguard.core.bytecodes.arm
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 androguard.core.bytecodes.dvm module
 ------------------------------------
 

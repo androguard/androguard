@@ -10,7 +10,10 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from .androconf import warning, error, CONF, enable_colors, remove_colors, save_colors, color_range
+from .androconf import CONF, enable_colors, remove_colors, save_colors, color_range
+import logging
+
+log = logging.getLogger("androguard.bytecode")
 
 
 def disable_print_colors():
@@ -25,12 +28,8 @@ def enable_print_colors(colors):
 
 # Handle exit message
 def Exit(msg):
-    warning("Error : " + msg)
-    raise ("oops")
-
-
-def Warning(msg):
-    warning(msg)
+    log.warning("Error : " + msg)
+    raise Exception("oops")
 
 
 def _PrintBanner():
@@ -40,7 +39,7 @@ def _PrintBanner():
 
 def _PrintSubBanner(title=None):
     print_fct = CONF["PRINT_FCT"]
-    if title == None:
+    if title is None:
         print_fct("#" * 20 + "\n")
     else:
         print_fct("#" * 10 + " " + title + "\n")
@@ -99,7 +98,7 @@ def _PrintDRef(tag, items):
 
 def _PrintDefault(msg):
     print_fct = CONF["PRINT_FCT"]
-    print_fct(msg)
+    print_fct(msg.encode('unicode_escape').decode("ASCII"))
 
 
 def PrettyShow(m_a, basic_blocks, notes={}):
@@ -121,7 +120,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
 
     for i in basic_blocks:
         print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
-        instructions = i.get_instructions()
+        instructions = list(i.get_instructions())
         for ins in instructions:
             if nb in notes:
                 for note in notes[nb]:
@@ -367,10 +366,8 @@ def method2format(output, _format="png", mx=None, raw=None):
         @param mx : specify the MethodAnalysis object
         @param raw : use directly a dot raw buffer if None
     """
-    try:
-        import pydot
-    except ImportError:
-        error("module pydot not found")
+    # pydot is optional!
+    import pydot
 
     buff = "digraph {\n"
     buff += "graph [rankdir=TB]\n"
@@ -408,7 +405,7 @@ def method2png(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "png", mx, buff)
@@ -426,26 +423,20 @@ def method2jpg(output, mx, raw=False):
         :type raw: string
     """
     buff = raw
-    if raw == False:
+    if not raw:
         buff = method2dot(mx)
 
     method2format(output, "jpg", mx, buff)
 
 
 def vm2json(vm):
-    d = {}
-    d["name"] = "root"
-    d["children"] = []
+    d = {"name": "root", "children": []}
 
     for _class in vm.get_classes():
-        c_class = {}
-        c_class["name"] = _class.get_name()
-        c_class["children"] = []
+        c_class = {"name": _class.get_name(), "children": []}
 
         for method in _class.get_methods():
-            c_method = {}
-            c_method["name"] = method.get_name()
-            c_method["children"] = []
+            c_method = {"name": method.get_name(), "children": []}
 
             c_class["children"].append(c_method)
 
@@ -475,19 +466,14 @@ def method2json_undirect(mx):
     d["reports"] = reports
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
-        cblock = {}
-
-        cblock["BasicBlockId"] = DVMBasicMethodBlock.get_name()
-        cblock["registers"] = mx.get_method().get_code().get_registers_size()
-        cblock["instructions"] = []
+        cblock = {"BasicBlockId": DVMBasicMethodBlock.get_name(),
+                  "registers": mx.get_method().get_code().get_registers_size(), "instructions": []}
 
         ins_idx = DVMBasicMethodBlock.start
         for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
-            c_ins = {}
-            c_ins["idx"] = ins_idx
-            c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
-            c_ins["operands"] = DVMBasicMethodBlockInstruction.get_operands(
-                ins_idx)
+            c_ins = {"idx": ins_idx, "name": DVMBasicMethodBlockInstruction.get_name(),
+                     "operands": DVMBasicMethodBlockInstruction.get_operands(
+                         ins_idx)}
 
             cblock["instructions"].append(c_ins)
             ins_idx += DVMBasicMethodBlockInstruction.get_length()
@@ -517,16 +503,13 @@ def method2json_direct(mx):
 
                 preblock = TmpBlock(DVMBasicMethodBlock.get_name() + "-pre")
 
-                cnblock = {}
-                cnblock["BasicBlockId"] = DVMBasicMethodBlock.get_name(
-                ) + "-pre"
-                cnblock["start"] = DVMBasicMethodBlock.start
-                cnblock["notes"] = []
-
-                cnblock["Edge"] = [DVMBasicMethodBlock.get_name()]
-                cnblock["registers"] = 0
-                cnblock["instructions"] = []
-                cnblock["info_bb"] = 0
+                cnblock = {"BasicBlockId": DVMBasicMethodBlock.get_name() + "-pre",
+                           "start": DVMBasicMethodBlock.start,
+                           "notes": [],
+                           "Edge": [DVMBasicMethodBlock.get_name()],
+                           "registers": 0,
+                           "instructions": [],
+                           "info_bb": 0}
 
                 l.append(cnblock)
 
@@ -540,26 +523,19 @@ def method2json_direct(mx):
                             hooks[parent[-1].get_name()].append(child[-1])
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
-        cblock = {}
-
-        cblock["BasicBlockId"] = DVMBasicMethodBlock.get_name()
-        cblock["start"] = DVMBasicMethodBlock.start
-        cblock["notes"] = DVMBasicMethodBlock.get_notes()
-
-        cblock["registers"] = mx.get_method().get_code().get_registers_size()
-        cblock["instructions"] = []
+        cblock = {"BasicBlockId": DVMBasicMethodBlock.get_name(),
+                  "start": DVMBasicMethodBlock.start,
+                  "notes": DVMBasicMethodBlock.get_notes(),
+                  "registers": mx.get_method().get_code().get_registers_size(),
+                  "instructions": []}
 
         ins_idx = DVMBasicMethodBlock.start
         last_instru = None
         for DVMBasicMethodBlockInstruction in DVMBasicMethodBlock.get_instructions():
-            c_ins = {}
-            c_ins["idx"] = ins_idx
-            c_ins["name"] = DVMBasicMethodBlockInstruction.get_name()
-            c_ins["operands"] = DVMBasicMethodBlockInstruction.get_operands(
-                ins_idx)
-
-            c_ins["formatted_operands"
-                 ] = DVMBasicMethodBlockInstruction.get_formatted_operands()
+            c_ins = {"idx": ins_idx,
+                     "name": DVMBasicMethodBlockInstruction.get_name(),
+                     "operands": DVMBasicMethodBlockInstruction.get_operands(ins_idx),
+                     "formatted_operands": DVMBasicMethodBlockInstruction.get_formatted_operands()}
 
             cblock["instructions"].append(c_ins)
 
@@ -670,12 +646,11 @@ def object_to_bytes(obj):
         return bytearray()
     elif isinstance(obj, int):
         return pack("<L", obj)
-    elif obj == None:
+    elif obj is None:
         return bytearray()
     elif isinstance(obj, bytearray):
         return obj
     else:
-        #print type(obj), obj
         return obj.get_raw()
 
 
@@ -738,6 +713,12 @@ class _Bytecode(object):
         self.__buff = bytearray(buff)
         self.__idx = 0
 
+    def __getitem__(self, item):
+        return self.__buff[item]
+
+    def __len__(self):
+        return len(self.__buff)
+
     def read(self, size):
         if isinstance(size, SV):
             size = size.value
@@ -783,34 +764,34 @@ class _Bytecode(object):
             fd.write(buff)
 
 
-def FormatClassToJava(input):
+def FormatClassToJava(i):
     """
-       Transoform a typical xml format class into java format
+       Transform a typical xml format class into java format
 
-       :param input: the input class name
+       :param i: the input class name
        :rtype: string
     """
-    return "L" + input.replace(".", "/") + ";"
+    return "L" + i.replace(".", "/") + ";"
 
 
-def FormatClassToPython(input):
-    i = input[:-1]
+def FormatClassToPython(i):
+    i = i[:-1]
     i = i.replace("/", "_")
     i = i.replace("$", "_")
 
     return i
 
 
-def FormatNameToPython(input):
-    i = input.replace("<", "")
+def FormatNameToPython(i):
+    i = i.replace("<", "")
     i = i.replace(">", "")
     i = i.replace("$", "_")
 
     return i
 
 
-def FormatDescriptorToPython(input):
-    i = input.replace("/", "_")
+def FormatDescriptorToPython(i):
+    i = i.replace("/", "_")
     i = i.replace(";", "")
     i = i.replace("[", "")
     i = i.replace("(", "")

@@ -27,12 +27,12 @@ logger = logging.getLogger('dad.control_flow')
 
 
 def intervals(graph):
-    '''
+    """
     Compute the intervals of the graph
     Returns
         interval_graph: a graph of the intervals of G
         interv_heads: a dict of (header node, interval)
-    '''
+    """
     interval_graph = Graph()  # graph of intervals
     heads = [graph.entry]  # list of header nodes
     interv_heads = {}  # interv_heads[i] = interval of header i
@@ -54,7 +54,7 @@ def intervals(graph):
                 change = False
                 for node in graph.rpo[1:]:
                     if all(
-                        p in interv_heads[head] for p in graph.all_preds(node)):
+                                    p in interv_heads[head] for p in graph.all_preds(node)):
                         change |= interv_heads[head].add_node(node)
 
             # At this stage, a node which is not in the interval, but has one
@@ -63,7 +63,7 @@ def intervals(graph):
             for node in graph:
                 if node not in interv_heads[head] and node not in heads:
                     if any(
-                        p in interv_heads[head] for p in graph.all_preds(node)):
+                                    p in interv_heads[head] for p in graph.all_preds(node)):
                         edges[interv_heads[head]].append(node)
                         assert (node not in heads)
                         heads.append(node)
@@ -84,12 +84,12 @@ def intervals(graph):
 
 
 def derived_sequence(graph):
-    '''
+    """
     Compute the derived sequence of the graph G
     The intervals of G are collapsed into nodes, intervals of these nodes are
     built, and the process is repeated iteratively until we obtain a single
     node (if the graph is not irreducible)
-    '''
+    """
     deriv_seq = [graph]
     deriv_interv = []
     single_node = False
@@ -165,11 +165,11 @@ def loop_follow(start, end, nodes_in_loop):
         for node in nodes_in_loop:
             if node.type.is_cond:
                 if (node.true.num < num_next and
-                    node.true not in nodes_in_loop):
+                            node.true not in nodes_in_loop):
                     follow = node.true
                     num_next = follow.num
                 elif (node.false.num < num_next and
-                      node.false not in nodes_in_loop):
+                              node.false not in nodes_in_loop):
                     follow = node.false
                     num_next = follow.num
     start.follow['loop'] = follow
@@ -239,7 +239,6 @@ def switch_struct(graph, idoms):
 
 # TODO: deal with preds which are in catch
 def short_circuit_struct(graph, idom, node_map):
-
     def MergeNodes(node1, node2, is_and, is_not):
         lpreds = set()
         ldests = set()

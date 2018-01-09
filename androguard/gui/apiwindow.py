@@ -3,7 +3,6 @@ from androguard.gui.xrefwindow import XrefDialogMethod
 
 
 class APIWindow(QtWidgets.QWidget):
-
     def __init__(self, parent=None, win=None, session=None):
         super(APIWindow, self).__init__(parent)
         self.mainwin = win
@@ -30,7 +29,6 @@ class APIWindow(QtWidgets.QWidget):
 
 
 class APIValueWindow(QtWidgets.QTreeView):
-
     def __init__(self, parent=None, win=None, session=None):
         super(APIValueWindow, self).__init__(parent)
         self.mainwin = win
@@ -68,7 +66,7 @@ class APIValueWindow(QtWidgets.QTreeView):
                     self.model.setData(self.model.index(
                         row, 3, QtCore.QModelIndex()), digest)
                     self.reverse_methods[method.get_name() + method.get_class_name() + method.get_descriptor()
-                                        ] = dx.get_method_analysis(method)
+                                         ] = dx.get_method_analysis(method)
                     row += 1
 
         self.proxyModel.setSourceModel(self.model)
@@ -91,6 +89,6 @@ class APIValueWindow(QtWidgets.QTreeView):
                 parent=self.mainwin,
                 win=self.mainwin,
                 method_analysis=self.reverse_methods[self.model.item(row).text() +
-                                                     self.model.item(row, 1).text() + 
+                                                     self.model.item(row, 1).text() +
                                                      self.model.item(row, 2).text()])
             xwin.show()

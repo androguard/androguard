@@ -1,22 +1,20 @@
 from __future__ import print_function
-from builtins import str
-from PyQt5 import QtCore, QtGui, QtWidgets
-from androguard.core import androconf
-from androguard.gui.helpers import class2func, method2func, classdot2func, classdot2class, proto2methodprotofunc
-from androguard.gui.renamewindow import RenameDialog
-from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
-
 
 import pyperclip
-
-
+from PyQt5 import QtCore, QtGui, QtWidgets
+from builtins import str
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import JavaLexer
-from pygments.styles import get_style_by_name
-
 from pygments.style import Style
 from pygments.token import Token, Comment, Name, Keyword, Generic, Number, Operator, String
 
+from androguard.gui.helpers import classdot2class, proto2methodprotofunc
+from androguard.gui.renamewindow import RenameDialog
+from androguard.gui.xrefwindow import XrefDialogMethod, XrefDialogField
+
+import logging
+
+log = logging.getLogger("androguard.gui")
 
 BINDINGS_NAMES = [
     'NAME_PACKAGE', 'NAME_PROTOTYPE', 'NAME_SUPERCLASS', 'NAME_INTERFACE',
@@ -27,7 +25,7 @@ BINDINGS_NAMES = [
 
 
 class SourceDocument(QtGui.QTextDocument):
-    '''QTextDocument associated with the SourceWindow.'''
+    """QTextDocument associated with the SourceWindow."""
 
     def __init__(self, parent=None, lines=[]):
         super(SourceDocument, self).__init__(parent)
@@ -45,6 +43,7 @@ class SourceDocument(QtGui.QTextDocument):
                     self.binding[cursor.position()] = t
                 cursor.insertText(t[1])
 
+
 class PygmentsBlockUserData(QtGui.QTextBlockUserData):
     """ Storage for the user data associated with each line.
     """
@@ -58,9 +57,10 @@ class PygmentsBlockUserData(QtGui.QTextBlockUserData):
 
     def __repr__(self):
         attrs = ['syntax_stack']
-        kwds = ', '.join([ '%s=%r' % (attr, getattr(self, attr))
-                           for attr in attrs ])
+        kwds = ', '.join(['%s=%r' % (attr, getattr(self, attr))
+                          for attr in attrs])
         return 'PygmentsBlockUserData(%s)' % kwds
+
 
 BASE03 = '#002B36'
 BASE02 = '#073642'
@@ -79,18 +79,19 @@ BLUE = '#268BD2'
 CYAN = '#2AA198'
 GREEN = '#859900'
 
+
 class SolarizedStyle(Style):
     background_color = BASE03
     styles = {
         Keyword: GREEN,
         Keyword.Constant: ORANGE,
         Keyword.Declaration: BLUE,
-        #Keyword.Namespace
-        #Keyword.Pseudo
+        # Keyword.Namespace
+        # Keyword.Pseudo
         Keyword.Reserved: BLUE,
         Keyword.Type: RED,
 
-        #Name
+        # Name
         Name.Attribute: BASE1,
         Name.Builtin: YELLOW,
         Name.Builtin.Pseudo: BLUE,
@@ -100,69 +101,70 @@ class SolarizedStyle(Style):
         Name.Entity: ORANGE,
         Name.Exception: ORANGE,
         Name.Function: BLUE,
-        #Name.Label
-        #Name.Namespace
-        #Name.Other
+        # Name.Label
+        # Name.Namespace
+        # Name.Other
         Name.Tag: BLUE,
         Name.Variable: BLUE,
-        #Name.Variable.Class
-        #Name.Variable.Global
-        #Name.Variable.Instance
+        # Name.Variable.Class
+        # Name.Variable.Global
+        # Name.Variable.Instance
 
-        #Literal
-        #Literal.Date
+        # Literal
+        # Literal.Date
         String: CYAN,
         String.Backtick: BASE01,
         String.Char: CYAN,
         String.Doc: BASE1,
-        #String.Double
+        # String.Double
         String.Escape: ORANGE,
         String.Heredoc: BASE1,
-        #String.Interpol
-        #String.Other
+        # String.Interpol
+        # String.Other
         String.Regex: RED,
-        #String.Single
-        #String.Symbol
+        # String.Single
+        # String.Symbol
         Number: CYAN,
-        #Number.Float
-        #Number.Hex
-        #Number.Integer
-        #Number.Integer.Long
-        #Number.Oct
+        # Number.Float
+        # Number.Hex
+        # Number.Integer
+        # Number.Integer.Long
+        # Number.Oct
 
         Operator: GREEN,
-        #Operator.Word
+        # Operator.Word
 
-        #Punctuation: ORANGE,
+        # Punctuation: ORANGE,
 
         Comment: BASE01,
-        #Comment.Multiline
+        # Comment.Multiline
         Comment.Preproc: GREEN,
-        #Comment.Single
+        # Comment.Single
         Comment.Special: GREEN,
 
-        #Generic
+        # Generic
         Generic.Deleted: CYAN,
         Generic.Emph: 'italic',
         Generic.Error: RED,
         Generic.Heading: ORANGE,
         Generic.Inserted: GREEN,
-        #Generic.Output
-        #Generic.Prompt
+        # Generic.Output
+        # Generic.Prompt
         Generic.Strong: 'bold',
         Generic.Subheading: ORANGE,
-        #Generic.Traceback
+        # Generic.Traceback
 
         Token: BASE1,
         Token.Other: ORANGE,
     }
 
+
 class MyHighlighter(QtGui.QSyntaxHighlighter):
     """ Syntax highlighter that uses Pygments for parsing. """
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # 'QSyntaxHighlighter' interface
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self, parent, lexer=None):
         super(MyHighlighter, self).__init__(parent)
@@ -195,14 +197,14 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
             # Clean up for the next go-round.
             del self._lexer._saved_state_stack
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # 'PygmentsHighlighter' interface
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def set_style(self, style):
         """ Sets the style to the specified Pygments style.
         """
-        style = SolarizedStyle#get_style_by_name(style)
+        style = SolarizedStyle  # get_style_by_name(style)
         self._style = style
         self._clear_caches()
 
@@ -217,9 +219,9 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
         self._style = None
         self._clear_caches()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Protected interface
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def _clear_caches(self):
         """ Clear caches for brushes and formats.
@@ -282,14 +284,15 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
                       int(color[4:6], base=16))
         return qcolor
 
+
 class SourceWindow(QtWidgets.QTextEdit):
-    '''Each tab is implemented as a Source Window class.
+    """Each tab is implemented as a Source Window class.
        Attributes:
         mainwin: MainWindow
         path: class FQN
         title: last part of the class FQN
         class_item: ClassDefItem i.e. class.java object for which we create the tab
-    '''
+    """
 
     def __init__(self,
                  parent=None,
@@ -301,7 +304,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                  session=None):
         super(SourceWindow, self).__init__(parent)
 
-        androconf.debug("New source tab for: %s" % current_class)
+        log.debug("New source tab for: %s" % current_class)
 
         self.mainwin = win
         self.session = session
@@ -315,25 +318,24 @@ class SourceWindow(QtWidgets.QTextEdit):
         self.setReadOnly(True)
         self.setStyleSheet("background: rgba(0,43,54,100%)")
 
-
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.CustomContextMenuHandler)
 
         self.cursorPositionChanged.connect(self.cursor_position_changed)
 
     def browse_to_method(self, method):
-        '''Scroll to the right place were the method is.
+        """Scroll to the right place were the method is.
 
            TODO: implement it, because does not work for now.
-        '''
+        """
 
-        #TODO: we need to find a way to scroll to the right place because
+        # TODO: we need to find a way to scroll to the right place because
         #      moving the cursor is not enough. Indeed if it is already in the window
         #      it does not do nothing
 
-        #TODO: idea, highlight the method in the screen so we do not have to search for it
+        # TODO: idea, highlight the method in the screen so we do not have to search for it
 
-        androconf.debug("Browsing to %s -> %s" % (self.current_class, method))
+        log.debug("Browsing to %s -> %s" % (self.current_class, method))
 
         # debug
         #        if False:
@@ -343,19 +345,18 @@ class SourceWindow(QtWidgets.QTextEdit):
         #                print "-"*10
 
     def reload_java_sources(self):
-        '''Reload completely the sources by asking Androguard
+        """Reload completely the sources by asking Androguard
            to decompile it again. Useful when:
             - an element has been renamed to propagate the info
             - the current tab is changed because we do not know what user
               did since then, so we need to propagate previous changes as well
-        '''
+        """
 
-        androconf.debug("Getting sources for %s" % self.current_class)
+        log.debug("Getting sources for %s" % self.current_class)
 
-        lines = []
-        lines.append(("COMMENTS", [(
+        lines = [("COMMENTS", [(
             "COMMENT", "// filename:%s\n// digest:%s\n\n" % (
-                self.current_filename, self.current_digest))]))
+                self.current_filename, self.current_digest))])]
 
         method_info_buff = ""
         for method in self.current_class.get_methods():
@@ -366,31 +367,31 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         lines.extend(self.current_class.get_source_ext())
 
-        #TODO: delete doc when tab is closed? not deleted by "self" :(
+        # TODO: delete doc when tab is closed? not deleted by "self" :(
         if hasattr(self, "doc"):
             del self.doc
         self.doc = SourceDocument(parent=self, lines=lines)
         self.setDocument(self.doc)
 
-        #No need to save hightlighter. highlighBlock will automatically be called
-        #because we passed the QTextDocument to QSyntaxHighlighter constructor
+        # No need to save hightlighter. highlighBlock will automatically be called
+        # because we passed the QTextDocument to QSyntaxHighlighter constructor
         MyHighlighter(self.doc, lexer=JavaLexer())
 
     def cursor_position_changed(self):
-        '''Used to detect when cursor change position and to auto select word
-           underneath it'''
-        androconf.debug("cursor_position_changed")
+        """Used to detect when cursor change position and to auto select word
+           underneath it"""
+        log.debug("cursor_position_changed")
 
         cur = self.textCursor()
-        androconf.debug(cur.position())
-        androconf.debug(cur.selectedText())
+        log.debug(cur.position())
+        log.debug(cur.selectedText())
         if len(cur.selectedText()) == 0:
             cur.select(QtGui.QTextCursor.WordUnderCursor)
             self.setTextCursor(cur)
-            #androconf.debug("cursor: %s" % cur.selectedText())
+            # log.debug("cursor: %s" % cur.selectedText())
 
     def keyPressEvent(self, event):
-        '''Keyboard shortcuts'''
+        """Keyboard shortcuts"""
         key = event.key()
         if key == QtCore.Qt.Key_X:
             self.actionXref()
@@ -411,14 +412,14 @@ class SourceWindow(QtWidgets.QTextEdit):
             statusTip="List the references where this element is used",
             triggered=self.actionXref))
         menu.addAction(QtWidgets.QAction("&Goto",
-                                     self,
-                                     statusTip="Go to element definition",
-                                     triggered=self.actionGoto))
+                                         self,
+                                         statusTip="Go to element definition",
+                                         triggered=self.actionGoto))
         menu.addAction(
             QtWidgets.QAction("Rename...",
-                          self,
-                          statusTip="Rename an element (class, method, ...)",
-                          triggered=self.actionRename))
+                              self,
+                              statusTip="Rename an element (class, method, ...)",
+                              triggered=self.actionRename))
         menu.addAction(QtWidgets.QAction(
             "&Info",
             self,
@@ -432,10 +433,10 @@ class SourceWindow(QtWidgets.QTextEdit):
             "Reload sources (needed when renaming changed other tabs)",
             triggered=self.reload_java_sources))
         menu.addAction(QtWidgets.QAction("&Copy",
-                self,
-                shortcut=QtGui.QKeySequence.Copy,
-                statusTip="Copy the current selection's contents to the clipboard",
-                triggered=self.actionCopy))
+                                         self,
+                                         shortcut=QtGui.QKeySequence.Copy,
+                                         statusTip="Copy the current selection's contents to the clipboard",
+                                         triggered=self.actionCopy))
         menu.exec_(QtGui.QCursor.pos())
 
     def actionXref(self):
@@ -443,7 +444,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Xref asked for '%s' (%d, %d)" %
+        log.debug("Xref asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -467,7 +468,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             method_proto = proto_
             current_analysis = self.session.get_analysis(self.current_class)
 
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s %s %s in source file: %s" %
                 (method_class_name, method_name, method_proto,
                  self.current_filename))
@@ -518,17 +519,17 @@ class SourceWindow(QtWidgets.QTextEdit):
             self.mainwin.showStatus("No xref returned.")
             return
 
-        #elif t[0] == 'NAME_METHOD_INVOKE':
-        #    class_, method_ = t[2].split(' -> ')
-        #    if class_ == 'this':
-        #        class_ = self.current_class
-        #    else:
-        #        class_ = classdot2class(class_)
-        #elif t[0] == 'NAME_PROTOTYPE':
-        #    class_ = classdot2class(t[2] + '.' + t[1])
-        #else:
-        #    self.mainwin.showStatus("Xref not available. Info ok: '%s' but object not supported." % selection)
-        #    return
+            # elif t[0] == 'NAME_METHOD_INVOKE':
+            #    class_, method_ = t[2].split(' -> ')
+            #    if class_ == 'this':
+            #        class_ = self.current_class
+            #    else:
+            #        class_ = classdot2class(class_)
+            # elif t[0] == 'NAME_PROTOTYPE':
+            #    class_ = classdot2class(t[2] + '.' + t[1])
+            # else:
+            #    self.mainwin.showStatus("Xref not available. Info ok: '%s' but object not supported." % selection)
+            #    return
 
     def actionCopy(self):
         print('COPY')
@@ -540,7 +541,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Rename asked for '%s' (%d, %d)" %
+        log.debug("Rename asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -556,23 +557,23 @@ class SourceWindow(QtWidgets.QTextEdit):
             method_ = t[1]
             if method_ == self.title:
                 method_ = 'init'
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s -> %s in source file: %s" %
                 (class_, method_, self.current_filename))
         elif t[0] == 'NAME_METHOD_INVOKE':
             class_, method_ = t[2].split(' -> ')
             if class_ == 'this':
                 class_ = self.current_class
-            androconf.debug(
+            log.debug(
                 "Found corresponding method: %s -> %s in source file: %s" %
                 (class_, method_, self.current_filename))
         elif t[0] == 'NAME_PROTOTYPE':
             class_ = t[2] + '.' + t[1]
-            androconf.debug("Found corresponding class: %s in source file: %s" %
+            log.debug("Found corresponding class: %s in source file: %s" %
                             (class_, self.current_filename))
         elif t[0] == 'NAME_FIELD':
             field_ = t[1]
-            androconf.debug("Found corresponding field: %s in source file: %s" %
+            log.debug("Found corresponding field: %s in source file: %s" %
                             (field_, self.current_filename))
         else:
             self.mainwin.showStatus(
@@ -591,7 +592,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
         selection = cursor.selectedText()
-        androconf.debug("Goto asked for '%s' (%d, %d)" %
+        log.debug("Goto asked for '%s' (%d, %d)" %
                         (selection, start, end))
 
         if start not in list(self.doc.binding.keys()):
@@ -612,7 +613,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                 selection)
             return
 
-        androconf.debug(
+        log.debug(
             "Found corresponding method: %s -> %s in source file: %s" %
             (class_, method_, self.path))
 
@@ -627,7 +628,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         cursor = self.textCursor()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        androconf.debug("actionInfo asked for (%d, %d)" % (start, end))
+        log.debug("actionInfo asked for (%d, %d)" % (start, end))
 
         if start in list(self.doc.binding.keys()):
             self.mainwin.showStatus('%s at position: (%d, %d)' %
@@ -636,10 +637,10 @@ class SourceWindow(QtWidgets.QTextEdit):
             self.mainwin.showStatus("No info available.")
 
     def method_name_exist(self, meth_name):
-        '''Check if there is already a meth_name method in the current class
+        """Check if there is already a meth_name method in the current class
            It is useful before allowing to rename a method to check name does
            not already exist.
-        '''
+        """
 
         methods = self.current_class.get_methods()
         for m in methods:
@@ -648,10 +649,10 @@ class SourceWindow(QtWidgets.QTextEdit):
         return False
 
     def field_name_exist(self, field_name):
-        '''Check if there is already a field_name field in the current class
+        """Check if there is already a field_name field in the current class
            It is useful before allowing to rename a field to check name does
            not already exist.
-        '''
+        """
 
         fields = self.class_item.get_fields()
         for f in fields:
@@ -660,10 +661,10 @@ class SourceWindow(QtWidgets.QTextEdit):
         return False
 
     def renameElement(self, oldname, newname, info):
-        '''Called back after a user chose a new name for an element.
-        '''
+        """Called back after a user chose a new name for an element.
+        """
 
-        androconf.debug("Renaming %s into %s in %s" %
+        log.debug("Renaming %s into %s in %s" %
                         (oldname, newname, self.current_filename))
         start, end = info
         try:
@@ -680,7 +681,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                 method_ = 'init'
 
             proto_ = t[2].method.proto
-            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+            log.debug("Found: class=%s, method=%s, proto=%s" %
                             (self.current_class, method_, proto_))
             type_ = "METHOD"
         elif t[0] == 'NAME_METHOD_INVOKE':  # method call in a method
@@ -689,13 +690,13 @@ class SourceWindow(QtWidgets.QTextEdit):
             if class_ == 'this':
                 class_ = self.path
             proto_ = proto2methodprotofunc("".join(t[3]) + t[4])
-            androconf.debug("Found: class=%s, method=%s, proto=%s" %
+            log.debug("Found: class=%s, method=%s, proto=%s" %
                             (class_, method_, proto_))
             type_ = "METHOD"
         elif t[0] == 'NAME_PROTOTYPE':  # class definition on top of a class
             class_ = t[2] + '.' + t[1]
             package_ = t[2]
-            androconf.debug("Found: package=%s, class=%s" % (package_, class_))
+            log.debug("Found: package=%s, class=%s" % (package_, class_))
             type_ = "CLASS"
         elif t[0] == 'NAME_FIELD':
             field_item = t[3]
@@ -723,12 +724,12 @@ class SourceWindow(QtWidgets.QTextEdit):
                 self.mainwin.showStatus("Impossible to find the method")
                 return
 
-            method_item.set_name(str(newname))  #unicode to ascii
+            method_item.set_name(str(newname))  # unicode to ascii
         elif type_ == "CLASS":
             newname_class = classdot2class(package_ + '.' + newname)
             self.mainwin.showStatus("New name: %s" % newname_class)
-            class_item = self.current_class  #getattr(self.mainwin.d, classdot2func(class_))
-            class_item.set_name(str(newname_class))  #unicode to ascii
+            class_item = self.current_class  # getattr(self.mainwin.d, classdot2func(class_))
+            class_item.set_name(str(newname_class))  # unicode to ascii
             self.mainwin.updateDockWithTree()
         elif type_ == 'FIELD':
             if self.field_name_exist(newname):

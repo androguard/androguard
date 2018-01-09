@@ -1,6 +1,7 @@
 """Tests for rpo."""
 
 import sys
+
 sys.path.append('.')
 
 import unittest
@@ -9,7 +10,6 @@ from androguard.decompiler.dad import node
 
 
 class NodeTest(node.Node):
-
     def __init__(self, name):
         super(NodeTest, self).__init__(name)
 
@@ -18,7 +18,6 @@ class NodeTest(node.Node):
 
 
 class RpoTest(unittest.TestCase):
-
     def _getNode(self, node_map, n):
         ret_node = node_map.get(n)
         if not ret_node:
@@ -67,7 +66,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testTarjan_graph', '/tmp')
+        # self.graph.draw('_testTarjan_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'a': 7,
@@ -111,7 +110,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testFirst_graph', '/tmp')
+        # self.graph.draw('_testFirst_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'x1': 2,
@@ -150,7 +149,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testSecond_graph', '/tmp')
+        # self.graph.draw('_testSecond_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'x11': 3,
@@ -186,7 +185,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testFourth_graph', '/tmp')
+        # self.graph.draw('_testFourth_graph', '/tmp')
         expected_rpo = {'r': 1, 'x1': 2, 'x2': 3, 'y1': 5, 'y2': 4}
         self._verifyRpo(n_map, expected_rpo)
 
@@ -205,7 +204,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testFifth_graph', '/tmp')
+        # self.graph.draw('_testFifth_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'a': 2,
@@ -236,7 +235,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testLinearVit_graph', '/tmp')
+        # self.graph.draw('_testLinearVit_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'w': 3,
@@ -264,7 +263,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testCross_graph', '/tmp')
+        # self.graph.draw('_testCross_graph', '/tmp')
         expected_rpo = {
             'r': 1,
             'a': 2,
@@ -295,7 +294,7 @@ class RpoTest(unittest.TestCase):
         }
         n_map = self._createGraphFrom(edges)
         self.graph.compute_rpo()
-        #self.graph.draw('_testTVerify_graph', '/tmp')
+        # self.graph.draw('_testTVerify_graph', '/tmp')
         expected_rpo = {
             'n1': 1,
             'n2': 2,
