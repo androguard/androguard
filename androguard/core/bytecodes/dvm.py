@@ -18,6 +18,8 @@ import binascii
 import time
 from struct import pack, unpack, calcsize
 import logging
+import binascii
+import warnings
 
 log = logging.getLogger("androguard.dvm")
 
@@ -29,6 +31,7 @@ ODEX_FILE_MAGIC_35 = 'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = 'dey\n036\x00'
 ODEX_FILE_MAGIC_37 = 'dey\n037\x00'
 
+# https://source.android.com/devices/tech/dalvik/dex-format#type-codes
 TYPE_MAP_ITEM = {
     0x0: "TYPE_HEADER_ITEM",
     0x1: "TYPE_STRING_ID_ITEM",
@@ -50,26 +53,28 @@ TYPE_MAP_ITEM = {
     0x2006: "TYPE_ANNOTATIONS_DIRECTORY_ITEM",
 }
 
-ACCESS_FLAGS = [
-    (0x1, 'public'),
-    (0x2, 'private'),
-    (0x4, 'protected'),
-    (0x8, 'static'),
-    (0x10, 'final'),
-    (0x20, 'synchronized'),
-    (0x40, 'bridge'),
-    (0x80, 'varargs'),
-    (0x100, 'native'),
-    (0x200, 'interface'),
-    (0x400, 'abstract'),
-    (0x800, 'strictfp'),
-    (0x1000, 'synthetic'),
-    (0x4000, 'enum'),
-    (0x8000, 'unused'),
-    (0x10000, 'constructor'),
-    (0x20000, 'synchronized'),
-]
+# https://source.android.com/devices/tech/dalvik/dex-format#access-flags
+ACCESS_FLAGS = {
+    0x1: 'public',
+    0x2: 'private',
+    0x4: 'protected',
+    0x8: 'static',
+    0x10: 'final',
+    0x20: 'synchronized',
+    0x40: 'bridge',
+    0x80: 'varargs',
+    0x100: 'native',
+    0x200: 'interface',
+    0x400: 'abstract',
+    0x800: 'strictfp',
+    0x1000: 'synthetic',
+    0x4000: 'enum',
+    0x8000: 'unused',
+    0x10000: 'constructor',
+    0x20000: 'synchronized',
+}
 
+# https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 TYPE_DESCRIPTOR = {
     'V': 'void',
     'Z': 'boolean',
@@ -82,6 +87,58 @@ TYPE_DESCRIPTOR = {
     'D': 'double',
 }
 
+# https://source.android.com/devices/tech/dalvik/dex-format#value-formats
+VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
+VALUE_SHORT = 0x02  # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
+VALUE_CHAR = 0x03  # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
+VALUE_INT = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
+VALUE_LONG = 0x06  # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
+VALUE_FLOAT = 0x10  # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
+VALUE_DOUBLE = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
+VALUE_STRING = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
+VALUE_TYPE = 0x18  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
+VALUE_FIELD = 0x19  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
+VALUE_METHOD = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
+VALUE_ENUM = 0x1b  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
+VALUE_ARRAY = 0x1c  # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
+VALUE_ANNOTATION = 0x1d  # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
+VALUE_NULL = 0x1e  # (none; must be 0)      (none)  null reference value
+VALUE_BOOLEAN = 0x1f  # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
+
+# https://source.android.com/devices/tech/dalvik/dex-format#debug-info-item
+DBG_END_SEQUENCE = 0x00  # (none)  terminates a debug info sequence for a code_item
+DBG_ADVANCE_PC = 0x01  # uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
+DBG_ADVANCE_LINE = 0x02  # sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
+DBG_START_LOCAL = 0x03  # uleb128 register_num
+#    uleb128p1 name_idx
+#    uleb128p1 type_idx
+#         register_num: register that will contain local name_idx: string index of the name
+#         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
+DBG_START_LOCAL_EXTENDED = 0x04  # uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
+#         register_num: register that will contain local
+#         name_idx: string index of the name
+#         type_idx: type index of the type
+#         sig_idx: string index of the type signature
+# introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
+# If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
+# Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
+DBG_END_LOCAL = 0x05  # uleb128 register_num
+#           register_num: register that contained local
+#           marks a currently-live local variable as out of scope at the current address
+DBG_RESTART_LOCAL = 0x06  # uleb128 register_num
+#           register_num: register to restart re-introduces a local variable at the current address.
+#           The name and type are the same as the last local that was live in the specified register.
+DBG_SET_PROLOGUE_END = 0x07  # (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
+#               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
+DBG_SET_EPILOGUE_BEGIN = 0x08  # (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
+#               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
+DBG_SET_FILE = 0x09  # uleb128p1 name_idx
+#           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
+#           instead of the default name specified in code_item
+DBG_Special_Opcodes_BEGIN = 0x0a  # (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
+DBG_Special_Opcodes_END = 0xff
+DBG_LINE_BASE = -4
+DBG_LINE_RANGE = 15
 
 class Error(Exception):
     """
@@ -94,23 +151,37 @@ class InvalidInstruction(Error):
     pass
 
 
+def read_null_terminated_string(f):
+    """
+    Read a null terminated string from a file-like object.
+
+    :param f: file-like object
+    :rtype: bytearray
+    """
+    x = bytearray()
+    while True:
+        z = f.read(1)
+        if ord(z) == 0:
+            return x
+        else:
+            x.append(ord(z))
+
+
 def get_access_flags_string(value):
     """
-    Transform an access flags to the corresponding string
+    Transform an access flag field to the corresponding string
 
     :param value: the value of the access flags
     :type value: int
 
     :rtype: string
     """
-    buff = ""
-    for i in ACCESS_FLAGS:
-        if (i[0] & value) == i[0]:
-            buff += i[1] + " "
+    flags = []
+    for k, v in ACCESS_FLAGS.items():
+        if (k & value) == k:
+            flags.append(v)
 
-    if buff != "":
-        return buff[:-1]
-    return buff
+    return " ".join(flags)
 
 
 def get_type(atype, size=None):
@@ -177,15 +248,6 @@ def static_operand_instruction(instruction):
         buff += instruction.get_string()
 
     return buff
-
-
-html_escape_table = {
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;",
-    ">": "&gt;",
-    "<": "&lt;",
-}
 
 
 def get_sbyte(buff):
@@ -512,7 +574,8 @@ class HeaderItem(object):
     def show(self):
         bytecode._PrintSubBanner("Header Item")
         bytecode._PrintDefault("magic=%s, checksum=%s, signature=%s\n" %
-                               (self.magic, self.checksum, self.signature))
+                               (self.magic, self.checksum,
+                                   binascii.hexlify(self.signature).decode("ASCII")))
         bytecode._PrintDefault("file_size=%x, header_size=%x, endian_tag=%x\n" %
                                (self.file_size, self.header_size,
                                 self.endian_tag))
@@ -1178,41 +1241,6 @@ class TypeList(object):
         return length
 
 
-DBG_END_SEQUENCE = 0x00  # (none)  terminates a debug info sequence for a code_item
-DBG_ADVANCE_PC = 0x01  # uleb128 addr_diff       addr_diff: amount to add to address register    advances the address register without emitting a positions entry
-DBG_ADVANCE_LINE = 0x02  # sleb128 line_diff       line_diff: amount to change line register by    advances the line register without emitting a positions entry
-DBG_START_LOCAL = 0x03  # uleb128 register_num
-#    uleb128p1 name_idx
-#    uleb128p1 type_idx
-#         register_num: register that will contain local name_idx: string index of the name
-#         type_idx: type index of the type  introduces a local variable at the current address. Either name_idx or type_idx may be NO_INDEX to indicate that that value is unknown.
-DBG_START_LOCAL_EXTENDED = 0x04  # uleb128 register_num uleb128p1 name_idx uleb128p1 type_idx uleb128p1 sig_idx
-#         register_num: register that will contain local
-#         name_idx: string index of the name
-#         type_idx: type index of the type
-#         sig_idx: string index of the type signature
-# introduces a local with a type signature at the current address. Any of name_idx, type_idx, or sig_idx may be NO_INDEX to indicate that that value is unknown. (
-# If sig_idx is -1, though, the same data could be represented more efficiently using the opcode DBG_START_LOCAL.)
-# Note: See the discussion under "dalvik.annotation.Signature" below for caveats about handling signatures.
-DBG_END_LOCAL = 0x05  # uleb128 register_num
-#           register_num: register that contained local
-#           marks a currently-live local variable as out of scope at the current address
-DBG_RESTART_LOCAL = 0x06  # uleb128 register_num
-#           register_num: register to restart re-introduces a local variable at the current address.
-#           The name and type are the same as the last local that was live in the specified register.
-DBG_SET_PROLOGUE_END = 0x07  # (none)  sets the prologue_end state machine register, indicating that the next position entry that is added should be considered the end of a
-#               method prologue (an appropriate place for a method breakpoint). The prologue_end register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_EPILOGUE_BEGIN = 0x08  # (none)  sets the epilogue_begin state machine register, indicating that the next position entry that is added should be considered the beginning
-#               of a method epilogue (an appropriate place to suspend execution before method exit). The epilogue_begin register is cleared by any special (>= 0x0a) opcode.
-DBG_SET_FILE = 0x09  # uleb128p1 name_idx
-#           name_idx: string index of source file name; NO_INDEX if unknown indicates that all subsequent line number entries make reference to this source file name,
-#           instead of the default name specified in code_item
-DBG_Special_Opcodes_BEGIN = 0x0a  # (none)  advances the line and address registers, emits a position entry, and clears prologue_end and epilogue_begin. See below for description.
-DBG_Special_Opcodes_END = 0xff
-DBG_LINE_BASE = -4
-DBG_LINE_RANGE = 15
-
-
 class DBGBytecode(object):
     def __init__(self, cm, op_value):
         self.CM = cm
@@ -1347,24 +1375,6 @@ class DebugInfoItem(object):
 
     def get_off(self):
         return self.offset
-
-
-VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
-VALUE_SHORT = 0x02  # size - 1 (0..1)  ubyte[size]    signed two-byte integer value, sign-extended
-VALUE_CHAR = 0x03  # size - 1 (0..1)  ubyte[size]    unsigned two-byte integer value, zero-extended
-VALUE_INT = 0x04  # size - 1 (0..3)  ubyte[size]    signed four-byte integer value, sign-extended
-VALUE_LONG = 0x06  # size - 1 (0..7)  ubyte[size]    signed eight-byte integer value, sign-extended
-VALUE_FLOAT = 0x10  # size - 1 (0..3)  ubyte[size]    four-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 32-bit floating point value
-VALUE_DOUBLE = 0x11  # size - 1 (0..7)  ubyte[size]    eight-byte bit pattern, zero-extended to the right, and interpreted as an IEEE754 64-bit floating point value
-VALUE_STRING = 0x17  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the string_ids section and representing a string value
-VALUE_TYPE = 0x18  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the type_ids section and representing a reflective type/class value
-VALUE_FIELD = 0x19  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing a reflective field value
-VALUE_METHOD = 0x1a  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the method_ids section and representing a reflective method value
-VALUE_ENUM = 0x1b  # size - 1 (0..3)  ubyte[size]    unsigned (zero-extended) four-byte integer value, interpreted as an index into the field_ids section and representing the value of an enumerated type constant
-VALUE_ARRAY = 0x1c  # (none; must be 0)      encoded_array  an array of values, in the format specified by "encoded_array Format" below. The size of the value is implicit in the encoding.
-VALUE_ANNOTATION = 0x1d  # (none; must be 0)      encoded_annotation     a sub-annotation, in the format specified by "encoded_annotation Format" below. The size of the value is implicit in the encoding.
-VALUE_NULL = 0x1e  # (none; must be 0)      (none)  null reference value
-VALUE_BOOLEAN = 0x1f  # boolean (0..1) (none)  one-bit value; 0 for false and 1 for true. The bit is represented in the value_arg.
 
 
 class DebugInfoItemEmpty(object):
@@ -1795,22 +1805,6 @@ class EncodedArrayItem(object):
 
     def get_off(self):
         return self.offset
-
-
-def read_null_terminated_string(f):
-    """
-    Read a null terminated string from a file-like object.
-
-    :param f: file-like object
-    :rtype: bytearray
-    """
-    x = bytearray()
-    while True:
-        z = f.read(1)
-        if ord(z) == 0:
-            return x
-        else:
-            x.append(ord(z))
 
 
 class StringDataItem:
@@ -2726,6 +2720,8 @@ class EncodedField(object):
         """
         Return the descriptor of the field
 
+        The descriptor of a field is the type of the field.
+
         :rtype: string
         """
         if not self.loaded:
@@ -2783,27 +2779,6 @@ class EncodedField(object):
         if init_value is not None:
             bytecode._PrintDefault("\tinit value: %s\n" %
                                    str(init_value.get_value()))
-
-        self.show_xref(self.CM.get_vmanalysis().get_field_analysis(self))
-
-    def show_xref(self, f_a):
-        """
-        Display where this field is read or written
-        """
-        if f_a:
-            bytecode._PrintSubBanner("XREF Read")
-            xrefs_from = f_a.get_xref_read()
-            for ref_class, ref_method in xrefs_from:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF Write")
-            xrefs_to = f_a.get_xref_write()
-            for ref_class, ref_method in xrefs_to:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
 
     def __str__(self):
         return "%s->%s %s [access_flags=%s]\n" % (
@@ -2892,13 +2867,15 @@ class EncodedMethod(object):
         """
         Return the access flags string of the method
 
+        A description of all access flags can be found here:
+        https://source.android.com/devices/tech/dalvik/dex-format#access-flags
+
         :rtype: string
         """
         if self.access_flags_string is None:
-            self.access_flags_string = get_access_flags_string(
-                self.get_access_flags())
+            self.access_flags_string = get_access_flags_string(self.get_access_flags())
 
-            if self.access_flags_string == "":
+            if self.access_flags_string == "" and self.get_access_flags() != 0x0:
                 self.access_flags_string = "0x%x" % self.get_access_flags()
         return self.access_flags_string
 
@@ -2989,27 +2966,8 @@ class EncodedMethod(object):
         """
         self.show_info()
         self.show_notes()
-        if self.code is not None:
-            self.each_params_by_register(self.code.get_registers_size(),
-                                         self.get_descriptor())
-            self.code.show(self.CM.get_vmanalysis().get_method(self))
-            self.show_xref(self.CM.get_vmanalysis().get_method_analysis(self))
-
-    def show_xref(self, m_a):
-        if m_a:
-            bytecode._PrintSubBanner("XREF From")
-            xrefs_from = m_a.get_xref_from()
-            for ref_class, ref_method, _ in xrefs_from:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF To")
-            xrefs_to = m_a.get_xref_to()
-            for ref_class, ref_method, _ in xrefs_to:
-                bytecode._PrintDefault(ref_method.get_name())
-                bytecode._PrintDefault('\n')
+        if self.code:
+            self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
 
     def show_notes(self):
         """
@@ -3108,6 +3066,20 @@ class EncodedMethod(object):
     def get_descriptor(self):
         """
         Return the descriptor of the method
+        A method descriptor will have the form (A A A ...)R
+        Where A are the arguments to the method and R is the return type.
+        Basic types will have the short form, i.e. I for integer, V for void
+        and class types will be named like a classname, e.g. Ljava/lang/String;.
+
+        Typical descriptors will look like this:
+        (I)I   // one integer argument, integer return
+        (C)Z   // one char argument, boolean as return
+        (Ljava/lang/CharSequence; I)I   // CharSequence and integer as
+            argyument, integer as return
+        (C)Ljava/lang/String;  // char as argument, String as return.
+
+        More information about type descriptors are found here:
+        https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 
         :rtype: string
         """
@@ -3595,43 +3567,6 @@ class ClassDefItem(object):
             % (self.class_idx, self.superclass_idx, self.interfaces_off,
                self.source_file_idx, self.annotations_off, self.class_data_off,
                self.static_values_off))
-        self.show_xref(self.CM.get_vmanalysis().get_class_analysis(
-            self.get_name()))
-
-    def show_xref(self, c_a):
-        """
-        Display where the method is called or which method is called
-        """
-        if c_a:
-            ref_kind_map = {0: "Class instanciation", 1: "Class reference"}
-            bytecode._PrintSubBanner("XREF From")
-
-            xrefs_from = c_a.get_xref_from()
-            for ref_class in xrefs_from:
-                if ref_class.get_vm_class().get_name() == self.get_name():
-                    continue
-                for ref_kind, ref_method, ref_offset in xrefs_from[ref_class]:
-                    bytecode._PrintDefault(ref_kind_map[ref_kind])
-                    bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method.get_name())
-                    bytecode._PrintDefault(' @ 0x%x' % ref_offset)
-                    bytecode._PrintDefault('\n')
-
-            bytecode._PrintDefault('\n')
-
-            bytecode._PrintSubBanner("XREF To")
-            xrefs_to = c_a.get_xref_to()
-            for ref_class in xrefs_to:
-                if ref_class.get_vm_class().get_name() == self.get_name():
-                    continue
-                bytecode._PrintDefault(ref_class.get_vm_class().get_name())
-                bytecode._PrintDefault(' -->\n')
-                for ref_kind, ref_method, ref_offset in xrefs_to[ref_class]:
-                    bytecode._PrintDefault(ref_kind_map[ref_kind])
-                    bytecode._PrintDefault(' ')
-                    bytecode._PrintDefault(ref_method.get_name())
-                    bytecode._PrintDefault(' @ 0x%x' % ref_offset)
-                    bytecode._PrintDefault('\n')
 
     def source(self):
         """
@@ -6588,14 +6523,12 @@ class DCode(object):
             idx += i.get_length()
         return None
 
-    def show(self, m_a):
+    def show(self):
         """
         Display (with a pretty print) this object
-
-        :param m_a: :class:`MethodAnalysis` object
         """
-        bytecode.PrettyShow(m_a, m_a.basic_blocks.gets(), self.notes)
-        bytecode.PrettyShowEx(m_a.exceptions.gets())
+        # TODO
+        return "FIXME"
 
     def get_raw(self):
         """
@@ -6810,9 +6743,10 @@ class DalvikCode(object):
 
         bytecode._PrintBanner()
 
-    def show(self, m_a):
+    def show(self):
         self._begin_show()
-        self.code.show(m_a)
+        # FIXME
+        # self.code.show(m_a)
         self._end_show()
 
     def _end_show(self):
@@ -6935,22 +6869,22 @@ class CodeItem(object):
         for i in self.code:
             i.reload()
 
-    def show(self, m_a=None):
+    def show(self):
         # FIXME workaround for showing the MAP_ITEMS
         # if m_a is none, we use get_raw.
         # Otherwise the real code is printed...
-        print("CODE_ITEM")
-        if m_a is None:
-            print(self.get_raw())
-        else:
-            for i in self.code:
-                i.show(m_a)
+        bytecode._PrintDefault("CODE_ITEM\n")
+        bytecode._PrintDefault(binascii.hexlify(self.get_raw()).decode("ASCII"))
+        bytecode._PrintDefault("\n")
 
     def get_obj(self):
         return [i for i in self.code]
 
     def get_raw(self):
-        return b''.join(i.get_raw() for i in self.code)
+        buff = bytearray()
+        for c in self.code:
+            buff += c.get_raw()
+        return buff
 
     def get_length(self):
         length = 0
@@ -6961,6 +6895,11 @@ class CodeItem(object):
 
 class MapItem(object):
     def __init__(self, buff, cm):
+        """
+        Implementation of a map_item, which occours in a map_list
+
+        https://source.android.com/devices/tech/dalvik/dex-format#map-item
+        """
         self.CM = cm
         self.buff = buff
 
@@ -7113,8 +7052,6 @@ class ClassManager(object):
         self.buff = vm
 
         self.decompiler_ob = None
-        self.vmanalysis_ob = None
-        self.gvmanalysis_ob = None
 
         self.__manage_item = {}
         self.__manage_item_off = []
@@ -7169,12 +7106,6 @@ class ClassManager(object):
 
     def get_lazy_analysis(self):
         return self.lazy_analysis
-
-    def get_vmanalysis(self):
-        return self.vmanalysis_ob
-
-    def set_vmanalysis(self, vmanalysis):
-        self.vmanalysis_ob = vmanalysis
 
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
@@ -7420,6 +7351,8 @@ class ClassManager(object):
 class MapList(object):
     """
     This class can parse the "map_list" of the dex format
+
+    https://source.android.com/devices/tech/dalvik/dex-format#map-list
     """
 
     def __init__(self, cm, off, buff):
@@ -7510,22 +7443,6 @@ class MapList(object):
         return len(self.get_raw())
 
 
-class XREF(object):
-    def __init__(self):
-        self.items = []
-
-    def add(self, x, y):
-        self.items.append((x, y))
-
-
-class DREF(object):
-    def __init__(self):
-        self.items = []
-
-    def add(self, x, y):
-        self.items.append((x, y))
-
-
 class DalvikVMFormat(bytecode._Bytecode):
     """
     This class can parse a classes.dex file of an Android application (APK).
@@ -7601,6 +7518,21 @@ class DalvikVMFormat(bytecode._Bytecode):
         self.__cache_all_methods = None
         self.__cache_all_fields = None
 
+
+    def get_vmanalysis(self):
+        """
+        The Analysis Object should contain all the information required,
+        inclduing the DalvikVMFormats.
+        """
+        warnings.warn("deprecated", DeprecationWarning)
+
+    def set_vmanalysis(self, analysis):
+        """
+        The Analysis Object should contain all the information required,
+        inclduing the DalvikVMFormats.
+        """
+        warnings.warn("deprecated", DeprecationWarning)
+
     def get_api_version(self):
         """
         This method returns api version that should be used for loading api
@@ -7614,7 +7546,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the class def item
 
-        :rtype: :class:`ClassDefItem` object
+        :rtype: :class:`ClassHDefItem` object
         """
         return self.classes
 
@@ -7622,7 +7554,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the method id item
 
-        :rtype: :class:`MethodIdItem` object
+        :rtype: :class:`MethodHIdItem` object
         """
         return self.methods
 
@@ -7630,7 +7562,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         This function returns the field id item
 
-        :rtype: :class:`FieldIdItem` object
+        :rtype: :class:`FieldHIdItem` object
         """
         return self.fields
 
@@ -7861,6 +7793,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list with all :class:`EncodedMethod` objects
         """
+        # TODO could use a generator here
         prog = re.compile(name)
         l = []
         for i in self.classes.class_def:
@@ -7877,6 +7810,7 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         :rtype: a list with all :class:`EncodedField` objects
         """
+        # TODO could use a generator here
         prog = re.compile(name)
         l = []
         for i in self.classes.class_def:
@@ -8121,22 +8055,6 @@ class DalvikVMFormat(bytecode._Bytecode):
             setattr(method, "XF", ExportObject())
             setattr(method, "XT", ExportObject())
 
-            m_a = self.CM.get_vmanalysis().get_method_analysis(method)
-            if m_a:
-                xrefs_from = m_a.get_xref_from()
-                for ref_class, ref_method, _ in xrefs_from:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(method.XF, name, ref_method)
-
-                xrefs_to = m_a.get_xref_to()
-                for ref_class, ref_method, _ in xrefs_to:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(method.XT, name, ref_method)
-
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
@@ -8157,22 +8075,6 @@ class DalvikVMFormat(bytecode._Bytecode):
             f[field.get_name()].append(field)
             setattr(field, "XR", ExportObject())
             setattr(field, "XW", ExportObject())
-
-            f_a = self.CM.get_vmanalysis().get_field_analysis(field)
-            if f_a:
-                xrefs_from = f_a.get_xref_read()
-                for ref_class, ref_method in xrefs_from:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(field.XR, name, ref_method)
-
-                xrefs_to = f_a.get_xref_write()
-                for ref_class, ref_method in xrefs_to:
-                    name = (bytecode.FormatNameToPython(ref_method.get_name()) +
-                            "_" + bytecode.FormatDescriptorToPython(
-                        ref_method.get_descriptor()))
-                    setattr(field.XW, name, ref_method)
 
         for i in f:
             if len(f[i]) == 1:
@@ -8197,12 +8099,6 @@ class DalvikVMFormat(bytecode._Bytecode):
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
-
-    def set_vmanalysis(self, vmanalysis):
-        self.CM.set_vmanalysis(vmanalysis)
-
-    def set_gvmanalysis(self, gvmanalysis):
-        self.CM.set_gvmanalysis(gvmanalysis)
 
     def disassemble(self, offset, size):
         """

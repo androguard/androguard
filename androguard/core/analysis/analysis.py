@@ -7,7 +7,7 @@ from builtins import range
 from builtins import object
 import re
 import collections
-import threading
+import multiprocessing
 import queue
 import time
 from androguard.core.androconf import is_ascii_problem
@@ -373,14 +373,14 @@ for i in dvm.BRANCH_DVM_OPCODES:
 
 
 class MethodAnalysis(object):
-    """
+
+    def __init__(self, vm, method):
+        """
         This class analyses in details a method of a class/dex file
 
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
-    """
-
-    def __init__(self, vm, method):
+        """
         self.__vm = vm
         self.method = method
 
@@ -388,13 +388,12 @@ class MethodAnalysis(object):
         self.exceptions = Exceptions(self.__vm)
 
         self.code = self.method.get_code()
-        if self.code is None:
-            return
+        if self.code:
+            self._create_basic_block()
 
+    def _create_basic_block(self):
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
         self.basic_blocks.push(current_basic)
-
-        ##########################################################
 
         bc = self.code.get_bc()
         l = []
@@ -425,18 +424,14 @@ class MethodAnalysis(object):
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
-                    current_basic = DVMBasicBlock(current_basic.get_end(),
-                                                  self.__vm, self.method,
-                                                  self.basic_blocks)
+                    current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                     self.basic_blocks.push(current_basic)
 
             current_basic.push(i)
 
             # index is a branch instruction
             if idx in h:
-                current_basic = DVMBasicBlock(current_basic.get_end(),
-                                              self.__vm, self.method,
-                                              self.basic_blocks)
+                current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                 self.basic_blocks.push(current_basic)
 
             idx += i.get_length()
@@ -459,10 +454,7 @@ class MethodAnalysis(object):
 
         for i in self.basic_blocks.get():
             # setup exception by basic block
-            i.set_exception_analysis(self.exceptions.get_exception(i.start,
-                                                                   i.end - 1))
-
-        del h, l
+            i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
 
     def get_basic_blocks(self):
         """
@@ -509,9 +501,20 @@ class MethodAnalysis(object):
       """
         return self.tags
 
+    def __repr__(self):
+        return "<analysis.MethodAnalysis {}>".format(self.method)
+
 
 class StringAnalysis(object):
     def __init__(self, value):
+        """
+        StringAnalysis contains the XREFs of a string.
+
+        As Strings are only used as a source, they only contain
+        the XREF_FROM set, i.e. where the string is used.
+
+        This Array stores the information in which method the String is used.
+        """
         self.value = value
         self.orig_value = value
         self.xreffrom = set()
@@ -534,13 +537,28 @@ class StringAnalysis(object):
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
         return data
+
+    def __repr__(self):
+        # TODO should remove all chars that are not pleasent. e.g. newlines
+        if len(self.get_value()) > 20:
+            s = "'{}'...".format(self.get_value()[:20])
+        else:
+            s = "'{}'".format(self.get_value())
+        return "<analysis.StringAnalysis {}>".format(s)
 
 
 class MethodClassAnalysis(object):
     def __init__(self, method):
+        """
+        MethodClassAnalysis contains the XREFs for a given method.
+
+        Both referneces to other methods (XREF_TO) as well as methods calling
+        this method (XREF_FROM) are saved.
+
+        :param method: `dvm.EncodedMethod`
+        """
         self.method = method
         self.xrefto = set()
         self.xreffrom = set()
@@ -557,24 +575,39 @@ class MethodClassAnalysis(object):
     def get_xref_to(self):
         return self.xrefto
 
+    def get_method(self):
+        return self.method
+
     def __str__(self):
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                       )
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset
-                                       )
+            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
 
         return data
+
+    def __repr__(self):
+        return "<analysis.MethodClassAnalysis {}{}>".format(self.method,
+                " EXTERNAL" if isinstance(self.method, ExternalMethod) else "")
 
 
 class FieldClassAnalysis(object):
     def __init__(self, field):
+        """
+        FieldClassAnalysis contains the XREFs for a class field.
+
+        Instead of using XREF_FROM/XREF_TO, this object has methods for READ and
+        WRITE access to the field.
+
+        That means, that it will show you, where the field is read or written.
+
+        :param field: `dvm.EncodedField`
+        """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
@@ -591,28 +624,36 @@ class FieldClassAnalysis(object):
     def get_xref_write(self):
         return self.xrefwrite
 
+    def get_field(self):
+        return self.field
+
     def __str__(self):
         data = "XREFRead for %s\n" % self.field
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method
-                                 )
+            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
 
         return data
+
+    def __repr__(self):
+        return "<analysis.FieldClassAnalysis {}->{}>".format(self.field.class_name, self.field.name)
 
 
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
 
-class ExternalClass(object):
+class ExternalClass:
     def __init__(self, name):
+        """
+        The ExternalClass is used for all classes that are not defined in the
+        DEX file, thus are external classes.
+        """
         self.name = name
         self.methods = {}
 
@@ -625,6 +666,15 @@ class ExternalClass(object):
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
 
         return self.methods[key]
+
+    def get_name(self):
+        """
+        Returns the name of the ExternalClass object
+        """
+        return self.name
+
+    def __repr__(self):
+        return "<analysis.ExternalClass {}>".format(self.name)
 
 
 class ExternalMethod(object):
@@ -642,12 +692,28 @@ class ExternalMethod(object):
     def get_descriptor(self):
         return ''.join(self.descriptor)
 
+    def get_access_flags_string(self):
+        # TODO can we assume that external methods are always public?
+        # they can also be static...
+        # or constructor...
+        return ""
+
     def __str__(self):
         return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
+
+    def __repr__(self):
+        return "<analysis.ExternalMethod {}>".format(self.__str__())
 
 
 class ClassAnalysis(object):
     def __init__(self, classobj, internal=False):
+        """
+        ClassAnalysis contains the XREFs from a given Class.
+
+        Also external classes will generate xrefs, obviously only XREF_FROM are
+        shown for external classes.
+        """
+
         self.orig_class = classobj
         self._inherits_methods = {}
         self._methods = {}
@@ -658,9 +724,21 @@ class ClassAnalysis(object):
         self.xreffrom = collections.defaultdict(set)
 
     def get_methods(self):
+        """
+        Return all `MethodClassAnalysis` objects of this class
+        """
         return list(self._methods.values())
 
+    def get_fields(self):
+        """
+        Return all `FieldClassAnalysis` objects of this class
+        """
+        return self._fields.values()
+
     def get_nb_methods(self):
+        """
+        Get the number of methods in this class
+        """
         return len(self._methods)
 
     def get_method_analysis(self, method):
@@ -715,6 +793,10 @@ class ClassAnalysis(object):
     def get_vm_class(self):
         return self.orig_class
 
+    def __repr__(self):
+        return "<analysis.ClassAnalysis {}{}>".format(self.orig_class.get_name(),
+                " EXTERNAL" if isinstance(self.orig_class, ExternalClass) else "")
+
     def __str__(self):
         # Print only instanceiations from other classes here
         # TODO also method xref and field xref should be printed?
@@ -749,7 +831,13 @@ class Analysis(object):
 
         Multiple DalvikVMFormat Objects can be added using the function `add`
 
-        :param vm: inital DalvikVMFormat object.
+        XREFs are created for:
+        * classes (`ClassAnalysis`)
+        * methods (`MethodClassAnalysis`)
+        * strings (`StringAnalyis`)
+        * fields (`FieldClassAnalysis`)
+
+        :param vm: inital DalvikVMFormat object (default None)
         """
         self.vms = []
         self.classes = {}
@@ -764,168 +852,109 @@ class Analysis(object):
         Add a DalvikVMFormat to this Analysis
 
         :param vm:
-        :return:
         """
         self.vms.append(vm)
         for current_class in vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(
-                current_class, True)
+            self.classes[current_class.get_name()] = ClassAnalysis(current_class, True)
 
         for method in vm.get_methods():
             self.methods[method] = MethodAnalysis(vm, method)
+
+    def _get_all_classes(self):
+        """
+        Returns all Class objects of all VMs in this Analysis
+        Used by create_xref().
+        """
+        for vm in self.vms:
+            for current_class in vm.get_classes():
+                yield current_class
 
     def create_xref(self):
         log.debug("Creating XREF/DREF")
         started_at = time.time()
 
-        instances_class_name = list(self.classes.keys())
+        # TODO multiprocessing
+        for c in  self._get_all_classes():
+            self._create_xref(c)
 
-        queue_classes = queue.Queue()
-        last_vm = self.vms[-1]
-        for vm in self.vms:
-            for current_class in vm.get_classes():
-                queue_classes.put(current_class)
-
-        threads = []
-        # TODO maybe adjust this number by the
-        # number of cores or make it configureable?
-        for n in range(2):
-            thread = threading.Thread(target=self._create_xref, args=(instances_class_name, queue_classes))
-            thread.daemon = True
-            thread.start()
-            threads.append(thread)
-
-        log.debug("Waiting all threads")
-        queue_classes.join()
-
-        log.debug("")
         diff = time.time() - started_at
-        log.debug("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
+        log.info("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
 
-    def _create_xref(self, instances_class_name, queue_classes):
-        while not queue_classes.empty():
-            current_class = queue_classes.get()
-            log.debug("Creating XREF/DREF for %s" % current_class.get_name())
-            for current_method in current_class.get_methods():
-                log.debug("Creating XREF for %s" % current_method)
+    def _create_xref(self, current_class):
+        """
+        Create the xref for `current_class`
+        """
+        cur_cls_name = current_class.get_name()
 
-                code = current_method.get_code()
-                if code is None:
-                    continue
+        log.debug("Creating XREF/DREF for %s" % cur_cls_name)
+        for current_method in current_class.get_methods():
+            log.debug("Creating XREF for %s" % current_method)
 
-                off = 0
-                bc = code.get_bc()
-                try:
-                    for instruction in bc.get_instructions():
-                        op_value = instruction.get_op_value()
-                        if op_value in [0x1c, 0x22]:
-                            idx_type = instruction.get_ref_kind()
-                            type_info = instruction.cm.vm.get_cm_type(idx_type)
+            code = current_method.get_code()
+            if code is None:
+                continue
 
-                            # Internal xref related to class manipulation
-                            if type_info in instances_class_name and type_info != current_class.get_name(
-                            ):
-                                # new instance
-                                if op_value == 0x22:
+            off = 0
+            for instruction in code.get_bc().get_instructions():
+                op_value = instruction.get_op_value()
 
-                                    self.classes[current_class.get_name(
-                                    )].AddXrefTo(REF_NEW_INSTANCE,
-                                                 self.classes[type_info],
-                                                 current_method, off)
-                                    self.classes[type_info].AddXrefFrom(
-                                        REF_NEW_INSTANCE,
-                                        self.classes[current_class.get_name()],
-                                        current_method, off)
-                                # class reference
-                                else:
-                                    self.classes[current_class.get_name(
-                                    )].AddXrefTo(REF_CLASS_USAGE,
-                                                 self.classes[type_info],
-                                                 current_method, off)
-                                    self.classes[type_info].AddXrefFrom(
-                                        REF_CLASS_USAGE,
-                                        self.classes[current_class.get_name()],
-                                        current_method, off)
+                if op_value in [0x1c, 0x22]:
+                    idx_type = instruction.get_ref_kind()
+                    type_info = instruction.cm.vm.get_cm_type(idx_type)
 
-                        elif ((0x6e <= op_value <= 0x72) or
-                                  (0x74 <= op_value <= 0x78)):
-                            idx_meth = instruction.get_ref_kind()
-                            method_info = instruction.cm.vm.get_cm_method(idx_meth)
-                            if method_info:
-                                class_info = method_info[0]
+                    # Internal xref related to class manipulation
+                    if type_info in self.classes and type_info != cur_cls_name:
+                        if op_value == 0x22:
+                            # new instance
+                            self.classes[cur_cls_name].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method, off)
+                            self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[cur_cls_name], current_method, off)
+                        else:
+                            # class reference
+                            self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method, off)
+                            self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
 
-                                method_item = instruction.cm.vm.get_method_descriptor(
-                                    method_info[0], method_info[1],
-                                    ''.join(method_info[2]))
+                elif ((0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78)):
+                    idx_meth = instruction.get_ref_kind()
+                    method_info = instruction.cm.vm.get_cm_method(idx_meth)
+                    if method_info:
+                        class_info = method_info[0]
 
-                                # Seems to be an external classes
-                                if not method_item:
-                                    if method_info[0] not in self.classes:
-                                        self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]),
-                                                                                     False)
-                                    method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1],
-                                                                                             method_info[2])
+                        method_item = instruction.cm.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
 
-                                if method_item:
-                                    self.classes[current_class.get_name(
-                                    )].AddMXrefTo(current_method,
-                                                  self.classes[class_info],
-                                                  method_item,
-                                                  off)
-                                    self.classes[class_info].AddMXrefFrom(
-                                        method_item,
-                                        self.classes[current_class.get_name()],
-                                        current_method,
-                                        off)
+                        if not method_item:
+                            # Seems to be an external classes, create it first
+                            if method_info[0] not in self.classes:
+                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]), False)
+                            method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1], method_info[2])
 
-                                    # Internal xref related to class manipulation
-                                    if class_info in instances_class_name and class_info != current_class.get_name(
-                                    ):
-                                        self.classes[current_class.get_name(
-                                        )].AddXrefTo(REF_CLASS_USAGE,
-                                                     self.classes[class_info],
-                                                     method_item, off)
-                                        self.classes[class_info].AddXrefFrom(
-                                            REF_CLASS_USAGE,
-                                            self.classes[current_class.get_name()],
-                                            current_method, off)
+                        self.classes[cur_cls_name].AddMXrefTo(current_method, self.classes[class_info], method_item, off)
+                        self.classes[class_info].AddMXrefFrom(method_item, self.classes[cur_cls_name], current_method, off)
 
-                        elif 0x1a <= op_value <= 0x1b:
-                            string_value = instruction.cm.vm.get_cm_string(
-                                instruction.get_ref_kind())
-                            if string_value not in self.strings:
-                                self.strings[string_value] = StringAnalysis(
-                                    string_value)
-                            self.strings[string_value].AddXrefFrom(
-                                self.classes[current_class.get_name()],
-                                current_method)
+                        # Internal xref related to class manipulation
+                        if class_info in self.classes and class_info != cur_cls_name:
+                            self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item, off)
+                            self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
 
-                        elif 0x52 <= op_value <= 0x6d:
-                            idx_field = instruction.get_ref_kind()
-                            field_info = instruction.cm.vm.get_cm_field(idx_field)
-                            field_item = instruction.cm.vm.get_field_descriptor(
-                                field_info[0], field_info[2], field_info[1])
-                            if field_item:
-                                # read access to a field
-                                if (0x52 <= op_value <= 0x58) or (
-                                                0x60 <= op_value <= 0x66):
-                                    self.classes[current_class.get_name(
-                                    )].AddFXrefRead(
-                                        current_method,
-                                        self.classes[current_class.get_name()],
-                                        field_item)
-                                # write access to a field
-                                else:
-                                    self.classes[current_class.get_name(
-                                    )].AddFXrefWrite(
-                                        current_method,
-                                        self.classes[current_class.get_name()],
-                                        field_item)
+                elif 0x1a <= op_value <= 0x1b:
+                    string_value = instruction.cm.vm.get_cm_string(instruction.get_ref_kind())
+                    if string_value not in self.strings:
+                        self.strings[string_value] = StringAnalysis(string_value)
 
-                        off += instruction.get_length()
-                except dvm.InvalidInstruction as e:
-                    log.warning("Invalid instruction %s" % str(e))
-            queue_classes.task_done()
+                    self.strings[string_value].AddXrefFrom(self.classes[cur_cls_name], current_method)
+
+                elif 0x52 <= op_value <= 0x6d:
+                    idx_field = instruction.get_ref_kind()
+                    field_info = instruction.cm.vm.get_cm_field(idx_field)
+                    field_item = instruction.cm.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                    if field_item:
+                        if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
+                            # read access to a field
+                            self.classes[cur_cls_name].AddFXrefRead(current_method, self.classes[cur_cls_name], field_item)
+                        else:
+                            # write access to a field
+                            self.classes[cur_cls_name].AddFXrefWrite(current_method, self.classes[cur_cls_name], field_item)
+
+                off += instruction.get_length()
 
     def get_method(self, method):
         """
@@ -974,12 +1003,130 @@ class Analysis(object):
         return self.classes.get(class_name)
 
     def get_external_classes(self):
+        """
+        Returns all external classes, that means all classes that are not
+        defined in the given set of `DalvikVMObjects`.
+
+        :rtype: generator of `ClassAnalysis`
+        """
         for i in self.classes:
             if not self.classes[i].internal:
                 yield self.classes[i]
 
     def get_strings_analysis(self):
         return self.strings
+
+    def get_strings(self):
+        """
+        Returns a list of `StringAnalysis` objects
+
+        :rtype: list of `StringAnalysis`
+        """
+        return self.strings.values()
+
+    def get_classes(self):
+        """
+        Returns a list of `ClassAnalysis` objects
+
+        :rtype: list of `ClassAnalysis`
+        """
+        return self.classes.values()
+
+    def get_methods(self):
+        """
+        Returns a list of `MethodClassAnalysis` objects
+
+        """
+        for c in self.classes.values():
+            for m in c.get_methods():
+                yield m
+
+    def get_fields(self):
+        """
+        Returns a list of `FieldClassAnalysis` objects
+
+        """
+        for c in self.classes.values():
+            for f in c.get_fields():
+                yield f
+
+    def find_classes(self, name=".*", no_external=False):
+        """
+        Find classes by name, using regular expression
+        This method will return all ClassAnalysis Object that match the name of
+        the class.
+
+        :param name: regular expression for class name (default ".*")
+        :param no_external: Remove external classes from the output (default False)
+        :rtype: generator of `ClassAnalysis`
+        """
+        for cname, c in self.classes.items():
+            if no_external and isinstance(c.get_vm_class(), ExternalClass):
+                continue
+            if re.match(name, cname):
+                yield c
+
+    def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
+            accessflags=".*", no_external=False):
+        """
+        Find a method by name using regular expression.
+        This method will return all MethodClassAnalysis objects, which match the
+        classname, methodname, descriptor and accessflags of the method.
+
+        :param classname: regular expression for the classname
+        :param methodname: regular expression for the method name
+        :param descriptor: regular expression for the descriptor
+        :param accessflags: regular expression for the accessflags
+        :param no_external: Remove external method from the output (default False)
+        :rtype: generator of `MethodClassAnalysis`
+        """
+        for cname, c in self.classes.items():
+            if re.match(classname, cname):
+                for m in c.get_methods():
+                    z = m.get_method()
+                    # TODO is it even possible that an internal class has
+                    # external methods? Maybe we should check for ExternalClass
+                    # instead...
+                    if no_external and isinstance(z, ExternalMethod):
+                        continue
+                    if re.match(methodname, z.get_name()) and \
+                       re.match(descriptor, z.get_descriptor()) and \
+                       re.match(accessflags, z.get_access_flags_string()):
+                        yield m
+
+    def find_strings(self, string=".*"):
+        """
+        Find strings by regex
+
+        :param string: regular expression for the string to search for
+        :rtype: generator of `StringAnalysis`
+        """
+        for s, sa in self.strings.items():
+            if re.match(string, s):
+                yield sa
+
+    def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*",
+            accessflags=".*"):
+        """
+        find fields by regex
+
+        :param classname: regular expression of the classname
+        :param fieldname: regular expression of the fieldname
+        :param fieldtype: regular expression of the fieldtype
+        :param accessflags: regular expression of the access flags
+        :rtype: generator of `FieldClassAnalysis`
+        """
+        for cname, c in self.classes.items():
+            if re.match(classname, cname):
+                for f in c.get_fields():
+                    z = f.get_field()
+                    if re.match(fieldname, z.get_name()) and \
+                       re.match(fieldtype, z.get_descriptor()) and \
+                       re.match(accessflags, z.get_access_flags_string()):
+                           yield f
+
+    def __repr__(self):
+        return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
 
 
 def is_ascii_obfuscation(vm):
