@@ -671,7 +671,7 @@ class DecompilerJADX:
                         # Need to convert back to the "full" classname
                         self.classes["L{};".format(path)] = fp.read().decode("UTF-8")
                 else:
-                    log.warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
+                    log.warning("Found a class called {}, which is not found by androguard!".format(path))
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
@@ -685,7 +685,7 @@ class DecompilerJADX:
                     # Class was already found...
                     pass
             else:
-                log.warning("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+                log.warning("Found a class called {} which is not decompiled by jadx".format(cl))
 
         # check if we have good matching
         if len(self.classes) == len(andr_class_names):
