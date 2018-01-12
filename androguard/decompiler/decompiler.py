@@ -669,7 +669,7 @@ class DecompilerJADX:
                 if path in andr_class_names:
                     with open(os.path.join(root, f), "rb") as fp:
                         # Need to convert back to the "full" classname
-                        self.classes["L{};".format(path)] = fp.read()
+                        self.classes["L{};".format(path)] = fp.read().decode("UTF-8")
                 else:
                     log.warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
 
@@ -680,7 +680,7 @@ class DecompilerJADX:
                 if "L{};".format(cl) not in self.classes:
                     with open(fname, "rb") as fp:
                         # TODO need to snip inner class from file
-                        self.classes["L{};".format(cl)] = fp.read()
+                        self.classes["L{};".format(cl)] = fp.read().decode("UTF-8")
                 else:
                     # Class was already found...
                     pass
