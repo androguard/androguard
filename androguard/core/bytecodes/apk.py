@@ -497,7 +497,7 @@ class APK(object):
         """
 
         dexre = re.compile("classes(\d*).dex")
-        return filter(lambda file : dexre.match(file) for file in self.get_files())
+        return filter(lambda file : file if dexre.match(file) for file in self.get_files())
 
     def get_all_dex(self):
         """
