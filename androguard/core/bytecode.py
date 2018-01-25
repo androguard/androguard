@@ -695,7 +695,7 @@ class BuffHandle(object):
         return buff
 
     def end(self):
-        return self.__idx == len(self.__buff)
+        return self.__idx >= len(self.__buff)
 
 
 class Buff(object):

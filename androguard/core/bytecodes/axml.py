@@ -879,18 +879,21 @@ class ARSCParser(object):
 
                 self.packages[package_name] = []
 
+                # After the Header, we have the resource type symbol table
                 self.buff.set_idx(current_package.header.start + current_package.typeStrings)
                 type_sp_header = ARSCHeader(self.buff)
                 assert type_sp_header.type == RES_STRING_POOL_TYPE, \
                     "Expected String Pool header, got %x" % type_sp_header.type
                 mTableStrings = StringBlock(self.buff, type_sp_header)
 
+                # Next, we should have the resource key symbol table
                 self.buff.set_idx(current_package.header.start + current_package.keyStrings)
                 key_sp_header = ARSCHeader(self.buff)
                 assert key_sp_header.type == RES_STRING_POOL_TYPE, \
                     "Expected String Pool header, got %x" % key_sp_header.type
                 mKeyStrings = StringBlock(self.buff, key_sp_header)
 
+                # Add them to the dict of read packages
                 self.packages[package_name].append(current_package)
                 self.packages[package_name].append(mTableStrings)
                 self.packages[package_name].append(mKeyStrings)
@@ -899,11 +902,15 @@ class ARSCParser(object):
                                     mTableStrings, mKeyStrings)
 
                 # skip to the first header in this table package chunk
-                self.buff.set_idx(res_header.start + res_header.header_size)
+                # FIXME is this correct? We have already read the first two sections!
+                # self.buff.set_idx(res_header.start + res_header.header_size)
+                # this looks more like we want: (???)
+                self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
 
+                # Read all other headers
                 while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
-
                     pkg_chunk_header = ARSCHeader(self.buff)
+                    log.debug("Found a header: {}".format(pkg_chunk_header))
                     if pkg_chunk_header.start + pkg_chunk_header.size > package_data_end:
                         # we are way off the package chunk; bail out
                         break
@@ -911,20 +918,17 @@ class ARSCParser(object):
                     self.packages[package_name].append(pkg_chunk_header)
 
                     if pkg_chunk_header.type == RES_TABLE_TYPE_SPEC_TYPE:
-                        self.packages[package_name].append(ARSCResTypeSpec(
-                            self.buff, pc))
+                        self.packages[package_name].append(ARSCResTypeSpec(self.buff, pc))
 
                     elif pkg_chunk_header.type == RES_TABLE_TYPE_TYPE:
                         a_res_type = ARSCResType(self.buff, pc)
                         self.packages[package_name].append(a_res_type)
-                        self.resource_configs[package_name][a_res_type].add(
-                            a_res_type.config)
+                        self.resource_configs[package_name][a_res_type].add(a_res_type.config)
 
                         entries = []
                         for i in range(0, a_res_type.entryCount):
                             current_package.mResId = current_package.mResId & 0xffff0000 | i
-                            entries.append((unpack('<i', self.buff.read(4))[0],
-                                            current_package.mResId))
+                            entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
 
                         self.packages[package_name].append(entries)
 
@@ -935,6 +939,11 @@ class ARSCParser(object):
                             if entry != -1:
                                 ate = ARSCResTableEntry(self.buff, res_id, pc)
                                 self.packages[package_name].append(ate)
+                                if not ate.is_complex() and (ate.flags & 0x40) == 0x40:
+                                    # FIXME we think this flag means something like replicate the item for all in this list?!
+                                    # actually we have no clue... therefore we stop reading here!
+                                    log.warning("ARSCResTableEntry with flag 0x4 found. Stopped reading further!")
+                                    break
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
                         log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
@@ -1395,6 +1404,9 @@ class ARSCHeader(object):
         self.header_size = unpack('<h', buff.read(2))[0]
         self.size = unpack('<I', buff.read(4))[0]
 
+    def __repr__(self):
+        return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start, self.type, self.header_size, self.size)
+
 
 class ARSCResTablePackage(object):
     def __init__(self, buff, header):
@@ -1579,6 +1591,7 @@ class ARSCResTableEntry(object):
         if self.flags & 1:
             self.item = ARSCComplex(buff, parent)
         else:
+            # FIXME looks like here is the problem! There are other flags as well... or the padding is the problem inside ARSCResStringPoolRef?!
             self.key = ARSCResStringPoolRef(buff, self.parent)
 
     def get_index(self):
@@ -1597,7 +1610,7 @@ class ARSCResTableEntry(object):
         return (self.flags & 1) == 1
 
     def __repr__(self):
-        return "ARSCResTableEntry(%x, %x, %x, %x, %x, %r)" % (
+        return "<ARSCResTableEntry idx='0x{:08x}' mResId='0x{:08x}' size='{}' flags='0x{:02x}' index='0x{:x}' holding={}>".format(
             self.start,
             self.mResId,
             self.size,
@@ -1620,7 +1633,7 @@ class ARSCComplex(object):
                                ARSCResStringPoolRef(buff, self.parent)))
 
     def __repr__(self):
-        return "ARSCComplex(%x, %d, %d)" % (self.start, self.id_parent, self.count)
+        return "<ARSCComplex idx='0x{:08x}' parent='{}' count='{}'>".format(self.start, self.id_parent, self.count)
 
 
 class ARSCResStringPoolRef(object):
@@ -1628,7 +1641,8 @@ class ARSCResStringPoolRef(object):
         self.start = buff.get_idx()
         self.parent = parent
 
-        self.skip_bytes = buff.read(3)
+        self.size, = unpack("<H", buff.read(2))
+        self.res0, = unpack("<B", buff.read(1))  # might be always 0? Not sure
         self.data_type = unpack('<B', buff.read(1))[0]
         self.data = unpack('<I', buff.read(4))[0]
 
@@ -1655,8 +1669,9 @@ class ARSCResStringPoolRef(object):
         return self.data_type == TYPE_REFERENCE
 
     def __repr__(self):
-        return "ARSCResStringPoolRef(%x, %s, %x)" % (
+        return "<ARSCResStringPoolRef idx='0x{:08x}' size='{}' type='{}' data='0x{:08x}'>".format(
             self.start,
+            self.size,
             TYPE_TABLE.get(self.data_type, "0x%x" % self.data_type),
             self.data)
 
