@@ -903,9 +903,10 @@ class ARSCParser(object):
 
                 # skip to the first header in this table package chunk
                 # FIXME is this correct? We have already read the first two sections!
-                # self.buff.set_idx(res_header.start + res_header.header_size)
+                self.buff.set_idx(res_header.start + res_header.header_size)
                 # this looks more like we want: (???)
-                self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
+                #self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
+                # But at the moment, only the line above works! Otherwise the parser crashes afterwards...
 
                 # Read all other headers
                 while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
