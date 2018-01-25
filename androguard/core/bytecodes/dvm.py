@@ -1879,7 +1879,7 @@ class StringDataItem:
         """
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
-        log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
+        # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
         return mutf8.patch_string(s)
 
     def show(self):
