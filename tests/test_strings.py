@@ -42,10 +42,10 @@ class StringTest(unittest.TestCase):
 
         # Test the patching of strings
 
-        self.assertEqual("hello world", mutf8.patch_string(mutf8.decode(b"\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64")))
-        self.assertEqual("\U00024f5c", mutf8.patch_string(mutf8.decode(b"\xed\xa1\x93\xed\xbd\x9c")))
-        self.assertEqual("\U0001f64f", mutf8.patch_string(mutf8.decode(b"\xed\xa0\xbd\xed\xb9\x8f")))
-        self.assertEqual("\\ud853", mutf8.patch_string(mutf8.decode(b"\xed\xa1\x93")))
+        self.assertEqual(u"hello world", mutf8.patch_string(mutf8.decode(b"\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64")))
+        self.assertEqual(u"\U00024f5c", mutf8.patch_string(mutf8.decode(b"\xed\xa1\x93\xed\xbd\x9c")))
+        self.assertEqual(u"\U0001f64f", mutf8.patch_string(mutf8.decode(b"\xed\xa0\xbd\xed\xb9\x8f")))
+        self.assertEqual(u"\\ud853", mutf8.patch_string(mutf8.decode(b"\xed\xa1\x93")))
 
         b = b"\xed\xa1\x93\xed\xbd\x9c" + \
             b"\xed\xa0\xbd\xed\xb9\x8f" + \
@@ -54,7 +54,7 @@ class StringTest(unittest.TestCase):
             b"\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64" + \
             b"\xc0\x80"
 
-        self.assertEqual("\U00024f5c\U0001f64f\\ud83d\uacf0hello world\x00", mutf8.patch_string(mutf8.decode(b)))
+        self.assertEqual(u"\U00024f5c\U0001f64f\\ud83d\uacf0hello world\x00", mutf8.patch_string(mutf8.decode(b)))
 
 
 
