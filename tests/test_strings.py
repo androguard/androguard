@@ -20,7 +20,7 @@ class StringTest(unittest.TestCase):
                       u"オンラインツールを使用して文字列を日本語に翻訳",
                       u"This is \U0001f64f, an emoji.",  # complete surrogate
                       u"\u2713 check this string",
-                      u"\\uffff \u0000 \\uff00",  # lonely surrogates
+                      u"\uffff \u0000 \uff00",
                       u"\u0420\u043e\u0441\u0441\u0438\u044f"]
 
             for s in stests:

@@ -74,11 +74,11 @@ def patch_string(s):
     res = u''
     it = PeekIterator(s)
     for c in it:
-        if (ord(c) & 0xd800) == 0xd800:
+        if (ord(c) >> 10) == 0b110110:
             # High surrogate
             # Check for the next
             n = it.peek()
-            if n and (ord(n) & 0xdc00) == 0xdc00:
+            if n and (ord(n) >> 10) == 0b110111:
                 # Next is a low surrogate! Merge them together
                 res += chr(((ord(c) & 0x3ff) << 10 | (ord(n) & 0x3ff)) + 0x10000)
                 # Skip next char, as we already consumed it
@@ -86,7 +86,7 @@ def patch_string(s):
             else:
                 # Lonely high surrogate
                 res += u"\\u{:04x}".format(ord(c))
-        elif (ord(c) & 0xdc00) == 0xdc00:
+        elif (ord(c) >> 10) == 0b110111:
             # Lonely low surrogate
             res += u"\\u{:04x}".format(ord(c))
         else:
