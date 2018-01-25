@@ -903,10 +903,9 @@ class ARSCParser(object):
 
                 # skip to the first header in this table package chunk
                 # FIXME is this correct? We have already read the first two sections!
-                self.buff.set_idx(res_header.start + res_header.header_size)
+                # self.buff.set_idx(res_header.start + res_header.header_size)
                 # this looks more like we want: (???)
-                #self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
-                # But at the moment, only the line above works! Otherwise the parser crashes afterwards...
+                self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
 
                 # Read all other headers
                 while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
@@ -926,6 +925,8 @@ class ARSCParser(object):
                         self.packages[package_name].append(a_res_type)
                         self.resource_configs[package_name][a_res_type].add(a_res_type.config)
 
+                        log.debug("Config: {}".format(a_res_type.config))
+
                         entries = []
                         for i in range(0, a_res_type.entryCount):
                             current_package.mResId = current_package.mResId & 0xffff0000 | i
@@ -940,11 +941,15 @@ class ARSCParser(object):
                             if entry != -1:
                                 ate = ARSCResTableEntry(self.buff, res_id, pc)
                                 self.packages[package_name].append(ate)
-                                if not ate.is_complex() and (ate.flags & 0x40) == 0x40:
-                                    # FIXME we think this flag means something like replicate the item for all in this list?!
-                                    # actually we have no clue... therefore we stop reading here!
-                                    log.warning("ARSCResTableEntry with flag 0x4 found. Stopped reading further!")
-                                    break
+                                if ate.is_weak():
+                                    # FIXME we are not sure how to implement the FLAG_WEAk!
+                                    # We saw the following: There is just a single Res_value after the ARSCResTableEntry
+                                    # and then comes the next ARSCHeader.
+                                    # Therefore we think this means all entries are somehow replicated?
+                                    # So we do some kind of hack here. We set the idx to the entry again...
+                                    # Now we will read all entries!
+                                    # Not sure if this is a good solution though
+                                    self.buff.set_idx(ate.start)
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
                         log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
@@ -1577,10 +1582,17 @@ class ARSCResTableConfig(object):
         return self._get_tuple() == other._get_tuple()
 
     def __repr__(self):
-        return repr(self._get_tuple())
+        return "<ARSCResTableConfig '{}'>".format(repr(self._get_tuple()))
 
 
 class ARSCResTableEntry(object):
+    """
+    See https://github.com/LineageOS/android_frameworks_base/blob/df2898d9ce306bb2fe922d3beaa34a9cf6873d27/include/androidfw/ResourceTypes.h#L1370
+    """
+    FLAG_COMPLEX = 1
+    FLAG_PUBLIC = 2
+    FLAG_WEAK = 4
+
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
@@ -1589,10 +1601,10 @@ class ARSCResTableEntry(object):
         self.flags = unpack('<H', buff.read(2))[0]
         self.index = unpack('<I', buff.read(4))[0]
 
-        if self.flags & 1:
+        if self.is_complex():
             self.item = ARSCComplex(buff, parent)
         else:
-            # FIXME looks like here is the problem! There are other flags as well... or the padding is the problem inside ARSCResStringPoolRef?!
+            # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
 
     def get_index(self):
@@ -1605,10 +1617,13 @@ class ARSCResTableEntry(object):
         return self.key.get_data_value()
 
     def is_public(self):
-        return self.flags == 0 or self.flags == 2
+        return (self.flags & self.FLAG.PUBLIC) != 0
 
     def is_complex(self):
-        return (self.flags & 1) == 1
+        return (self.flags & self.FLAG_COMPLEX) != 0
+
+    def is_weak(self):
+        return (self.flags & self.FLAG_WEAK) != 0
 
     def __repr__(self):
         return "<ARSCResTableEntry idx='0x{:08x}' mResId='0x{:08x}' size='{}' flags='0x{:02x}' index='0x{:x}' holding={}>".format(
@@ -1643,7 +1658,8 @@ class ARSCResStringPoolRef(object):
         self.parent = parent
 
         self.size, = unpack("<H", buff.read(2))
-        self.res0, = unpack("<B", buff.read(1))  # might be always 0? Not sure
+        self.res0, = unpack("<B", buff.read(1))
+        assert self.res0 == 0, "res0 must be always zero!"
         self.data_type = unpack('<B', buff.read(1))[0]
         self.data = unpack('<I', buff.read(4))[0]
 
