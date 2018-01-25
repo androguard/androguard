@@ -1851,12 +1851,30 @@ class StringDataItem:
     def reload(self):
         pass
 
-    def get(self):
+    def get_unicode(self):
+        """
+        Returns an Unicode String
+        This is the actual string. Beware that some strings might be not
+        decodeable with usual UTF-16 decoder, as they use surrogates that are
+        not supported by python.
+        """
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
-        # We need to escape surrogates and other stuff that might not be
-        # printable...
-        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
+
+        # Return a UTF16 String
+        return s
+
+    def get(self):
+        """
+        Returns a printable string.
+        In this case, all lonely surrogates are escaped, thus are represented in the
+        string as 6 characters: \\ud853
+        Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
+        """
+        s = mutf8.decode(self.data)
+        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
+        return mutf8.patch_string(s)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -7986,9 +8004,33 @@ class DalvikVMFormat(bytecode._Bytecode):
 
         return self.__cache_fields.get(key)
 
+    def get_strings_unicode(self):
+        """
+        Return all strings
+
+        This method will return pure UTF-16 strings. This is the "exact" same string as used in Java.
+        Those strings can be problematic for python, as they can contain surrogates as well as "broken"
+        surrogate pairs, ie single high or low surrogates.
+        Such a string can for example not be printed.
+        To avoid such problems, there is an escape mechanism to detect such lonely surrogates
+        and escape them in the string. Of course, this results in a different string than in the Java Source!
+
+        Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
+        from the Java Source.
+        You can always escape the string from `get_strings_unicode()` using the function
+        `androguard.core.bytecodes.mutf8.patch_string(s)`.
+
+        :rtype: a list with all strings used in the format (types, names ...)
+        """
+        for i in self.strings:
+            yield i.get_unicode()
+
     def get_strings(self):
         """
         Return all strings
+
+        The strings will have escaped surrogates, if only a single high or low surrogate is found.
+        Complete surrogates are put together into the representing 32bit character.
 
         :rtype: a list with all strings used in the format (types, names ...)
         """
