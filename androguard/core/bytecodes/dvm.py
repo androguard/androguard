@@ -8074,6 +8074,18 @@ class DalvikVMFormat(bytecode._Bytecode):
         """
         Return all strings
 
+        This method will return pure UTF-16 strings. This is the "exact" same string as used in Java.
+        Those strings can be problematic for python, as they can contain surrogates as well as "broken"
+        surrogate pairs, ie single high or low surrogates.
+        Such a string can for example not be printed.
+        To avoid such problems, there is an escape mechanism to detect such lonely surrogates
+        and escape them in the string. Of course, this results in a different string than in the Java Source!
+
+        Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
+        from the Java Source.
+        You can always escape the string from `get_strings_unicode()` using the function
+        `androguard.core.bytecodes.mutf8.patch_string(s)`.
+
         :rtype: a list with all strings used in the format (types, names ...)
         """
         for i in self.strings:
@@ -8082,6 +8094,9 @@ class DalvikVMFormat(bytecode._Bytecode):
     def get_strings(self):
         """
         Return all strings
+
+        The strings will have escaped surrogates, if only a single high or low surrogate is found.
+        Complete surrogates are put together into the representing 32bit character.
 
         :rtype: a list with all strings used in the format (types, names ...)
         """
