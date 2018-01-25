@@ -57,6 +57,10 @@ class PeekIterator:
         self.idx = self.idx + 1
         return self.s[self.idx - 1]
 
+    def next(self):
+        # py2 compliance
+        return self.__next__()
+
     def peek(self):
         if self.idx == len(self.s):
             return None
