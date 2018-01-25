@@ -1868,19 +1868,19 @@ class StringDataItem:
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
 
         # Return a UTF16 String
-        return s.encode("UTF-16", "surrogatepass").decode("UTF-16")
+        return s
 
     def get(self):
         """
-        Returns an ASCII String
-        unicode characters are displayed as escaped characters: i.e. \\u1337
+        Returns a printable string.
+        In this case, all lonely surrogates are escaped, thus are represented in the
+        string as 6 characters: \\ud853
+        Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
         """
         s = mutf8.decode(self.data)
         assert len(s) == self.utf16_size, "UTF16 Length does not match!"
         log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        # unicode_escape produces a string which is printable
-        # Then we decode that one as UTF-16
-        return s.encode("unicode_escape").decode("ascii")
+        return mutf8.patch_string(s)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
