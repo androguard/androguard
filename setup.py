@@ -6,6 +6,8 @@ from androguard import __version__
 
 from setuptools import setup, find_packages
 
+from axplorer_to_androguard import generate_mappings
+
 # We do not support python versions <2.7 and python <3.3
 if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_info.major == 2 and sys.version_info.minor < 7):
     print("Unfortunatly, your python version is not supported!\n"
@@ -51,6 +53,9 @@ if sys.version_info.major == 3 and sys.version_info.minor == 3:
 else:
     install_requires.append('cryptography>=1.0')
     sphinxprogram = "sphinxcontrib-programoutput>0.8"
+
+# TODO add the permission mapping generation at a better place!
+generate_mappings()
 
 setup(
     name='androguard',

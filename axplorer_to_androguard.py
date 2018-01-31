@@ -71,11 +71,14 @@ def convert_name(s):
         raise ValueError("what?")
 
 
-def main(axplorerdir="libraries/axplorer", outfolder="androguard/core/api_specific_resources/api_permission_mappings"):
-    if not os.path.isfile(os.path.join(axplorerdir, "README.md")):
-        print("It does not look like the axplorer repo is checked out!", file=sys.stderr)
-        sys.exit(1)
+def generate_mappings(axplorerdir="libraries/axplorer", outfolder="androguard/core/api_specific_resources/api_permission_mappings"):
+    """
+    Generate the permission mappings from a axplorer root dir into a given folder.
+    For each API Level, separate json file will be created.
 
+    :param axplorerdir: path to the axplorer dir
+    :param outfolder: path to the folder where the resulting json files are put
+    """
     res = dict()
     for root, dirs, files in os.walk(os.path.join(axplorerdir, "permissions")):
         for fi in files:
@@ -101,4 +104,8 @@ def main(axplorerdir="libraries/axplorer", outfolder="androguard/core/api_specif
             json.dump(v, fp)
 
 if __name__ == "__main__":
-    main()
+    if not os.path.isfile(os.path.join("libraries/axplorer", "README.md")):
+        print("It does not look like the axplorer repo is checked out!", file=sys.stderr)
+        sys.exit(1)
+
+    generate_mappings()

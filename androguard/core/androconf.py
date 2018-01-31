@@ -316,12 +316,12 @@ def load_api_specific_resource_module(resource_name, api):
     # Those two imports are quite slow.
     # Therefor we put them directly into this method
     from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-    from androguard.core.api_specific_resources.api_permission_mappings.api_permission_mappings import AOSP_PERMISSIONS_MAPPINGS
+    from androguard.core.api_specific_resources import load_permission_mapping
 
     if resource_name == "aosp_permissions":
         mod = AOSP_PERMISSIONS
     elif resource_name == "api_permission_mappings":
-        mod = AOSP_PERMISSIONS_MAPPINGS
+        mod = load_permission_mapping
     else:
         raise InvalidResourceError("Invalid Resource {}".format(resource_name))
 
@@ -330,4 +330,4 @@ def load_api_specific_resource_module(resource_name, api):
     value = mod.get(api)
     if value:
         return value
-    return mod.get('9')
+    return mod(9)
