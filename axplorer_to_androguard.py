@@ -71,7 +71,7 @@ def convert_name(s):
         raise ValueError("what?")
 
 
-def main(axplorerdir="libraries/axplorer"):
+def main(axplorerdir="libraries/axplorer", outfolder="androguard/core/api_specific_resources/api_permission_mappings"):
     if not os.path.isfile(os.path.join(axplorerdir, "README.md")):
         print("It does not look like the axplorer repo is checked out!", file=sys.stderr)
         sys.exit(1)
@@ -93,11 +93,12 @@ def main(axplorerdir="libraries/axplorer"):
                         meth, perm = convert_name(line)
                         res[sdk_version][meth].append(perm)
 
-    with open("permissions.json", "w") as fp:
-        fp.write("# API Permission mappings, generated from axplorer data\n")
-        fp.write("# at {}\n".format(datetime.datetime.today()))
-        fp.write("\n")
-        json.dump(res, fp)
+    for api, v in res.items():
+        with open(os.path.join(outfolder, "permissions_{}.json".format(api)), "w") as fp:
+            fp.write("# API Permission mappings for API Version {}, generated from axplorer data\n".format(api))
+            fp.write("# at {}\n".format(datetime.datetime.today()))
+            fp.write("\n")
+            json.dump(v, fp)
 
 if __name__ == "__main__":
     main()
