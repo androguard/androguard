@@ -669,9 +669,9 @@ class DecompilerJADX:
                 if path in andr_class_names:
                     with open(os.path.join(root, f), "rb") as fp:
                         # Need to convert back to the "full" classname
-                        self.classes["L{};".format(path)] = fp.read()
+                        self.classes["L{};".format(path)] = fp.read().decode("UTF-8")
                 else:
-                    log.warning("Found a class called {}, which is not found by androguard!".format(path), file=sys.stderr)
+                    log.warning("Found a class called {}, which is not found by androguard!".format(path))
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
@@ -680,12 +680,12 @@ class DecompilerJADX:
                 if "L{};".format(cl) not in self.classes:
                     with open(fname, "rb") as fp:
                         # TODO need to snip inner class from file
-                        self.classes["L{};".format(cl)] = fp.read()
+                        self.classes["L{};".format(cl)] = fp.read().decode("UTF-8")
                 else:
                     # Class was already found...
                     pass
             else:
-                log.warning("Found a class called {} which is not decompiled by jadx".format(cl), file=sys.stderr)
+                log.warning("Found a class called {} which is not decompiled by jadx".format(cl))
 
         # check if we have good matching
         if len(self.classes) == len(andr_class_names):

@@ -18,7 +18,7 @@ install:
   - "pip install .[tests,docs]"
 # command to run tests
 script:
-  - nosetests --with-coverage
+  - nosetests --with-coverage --with-timer --timer-top-n 50
   - python setup.py build_sphinx
 
 notifications:

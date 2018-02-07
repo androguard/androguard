@@ -98,7 +98,7 @@ def _PrintDRef(tag, items):
 
 def _PrintDefault(msg):
     print_fct = CONF["PRINT_FCT"]
-    print_fct(msg.encode('unicode_escape').decode("ASCII"))
+    print_fct(msg)
 
 
 def PrettyShow(m_a, basic_blocks, notes={}):
@@ -695,7 +695,7 @@ class BuffHandle(object):
         return buff
 
     def end(self):
-        return self.__idx == len(self.__buff)
+        return self.__idx >= len(self.__buff)
 
 
 class Buff(object):

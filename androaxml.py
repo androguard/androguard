@@ -20,6 +20,7 @@
 
 from __future__ import print_function
 import sys
+from lxml import etree
 from optparse import OptionParser
 from xml.dom import minidom
 import codecs
@@ -53,7 +54,8 @@ def main(options, arguments):
         ret_type = androconf.is_android(options.input)
         if ret_type == "APK":
             a = apk.APK(options.input)
-            buff = a.get_android_manifest_xml().toprettyxml(encoding="utf-8")
+            xml = a.get_android_manifest_xml()
+            buff = etree.tostring(xml, pretty_print=True)
         elif ".xml" in options.input:
             ap = apk.AXMLPrinter(read(options.input))
             buff = minidom.parseString(ap.get_buff()).toprettyxml(

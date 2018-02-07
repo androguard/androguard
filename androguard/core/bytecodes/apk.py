@@ -489,22 +489,23 @@ class APK(object):
         except FileNotPresent:
             return ""
 
+    def get_dex_names(self):
+        """
+            Return the name of all classes dex files
+
+            :rtype: a list of string 
+        """
+        dexre = re.compile("classes(\d*).dex")
+        return filter(lambda x : dexre.match(x), self.get_files())
+
     def get_all_dex(self):
         """
             Return the raw data of all classes dex files
 
             :rtype: a generator
         """
-        try:
-            yield self.get_file("classes.dex")
-
-            # Multidex support
-            dexre = re.compile("^classes(\d+).dex$")
-            for file in self.get_files():
-                if dexre.search(file):
-                    yield self.get_file(file)
-        except FileNotPresent:
-            pass
+        for dex_name in self.get_dex_names():
+            yield self.get_file(dex_name)
 
     def is_multidex(self):
         """
@@ -921,8 +922,7 @@ class APK(object):
                 # There is a rare case, that no resource file is supplied.
                 # Maybe it was added manually, thus we check here
                 return None
-            self.arsc["resources.arsc"] = ARSCParser(self.zip.read(
-                "resources.arsc"))
+            self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
             return self.arsc["resources.arsc"]
 
     def get_signature_name(self):
