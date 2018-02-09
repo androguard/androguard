@@ -13,6 +13,7 @@ import time
 from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
+from androguard.core import bytecode
 
 log = logging.getLogger("androguard.analysis")
 
@@ -482,6 +483,9 @@ class MethodAnalysis(object):
             print("\t", i)
             i.show()
             print("")
+
+    def pretty_show(self):
+        bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
 
     def show_methods(self):
         print("\t #METHODS :")

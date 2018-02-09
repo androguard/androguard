@@ -2986,6 +2986,7 @@ class EncodedMethod(object):
         self.show_notes()
         if self.code:
             self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
+            self.code.show()
 
     def show_notes(self):
         """
@@ -3585,6 +3586,9 @@ class ClassDefItem(object):
             % (self.class_idx, self.superclass_idx, self.interfaces_off,
                self.source_file_idx, self.annotations_off, self.class_data_off,
                self.static_values_off))
+
+        for method in self.get_methods():
+            method.show()
 
     def source(self):
         """
@@ -6545,8 +6549,10 @@ class DCode(object):
         """
         Display (with a pretty print) this object
         """
-        # TODO
-        return "FIXME"
+        off = 0
+        for n, i in enumerate(self.get_instructions()):
+            print("{:8d} (0x{:08x}) {:30} {}".format(n, off, i.get_name(), i.get_output(self.idx)))
+            off += i.get_length()
 
     def get_raw(self):
         """
@@ -6763,8 +6769,7 @@ class DalvikCode(object):
 
     def show(self):
         self._begin_show()
-        # FIXME
-        # self.code.show(m_a)
+        self.code.show()
         self._end_show()
 
     def _end_show(self):
