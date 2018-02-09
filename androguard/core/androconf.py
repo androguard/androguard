@@ -330,4 +330,4 @@ def load_api_specific_resource_module(resource_name, api):
     value = mod.get(api)
     if value:
         return value
-    return mod(9)
+    return None
