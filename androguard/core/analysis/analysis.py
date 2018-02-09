@@ -13,6 +13,7 @@ import time
 from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
+from androguard.core import bytecode
 
 log = logging.getLogger("androguard.analysis")
 
@@ -475,31 +476,28 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
-        print("METHOD", self.method.get_class_name(), self.method.get_name(
-        ), self.method.get_descriptor())
-
-        for i in self.basic_blocks.get():
-            print("\t", i)
-            i.show()
-            print("")
-
-    def show_methods(self):
-        print("\t #METHODS :")
-        for i in self.__bb:
-            methods = i.get_methods()
-            for method in methods:
-                print("\t\t-->", method.get_class_name(), method.get_name(
-                ), method.get_descriptor())
-                for context in methods[method]:
-                    print("\t\t\t |---|", context.details)
-
-    def get_tags(self):
         """
-          Return the tags of the method
+        Prints the content of this method to stdout.
 
-          :rtype: a :class:`Tags` object
-      """
-        return self.tags
+        This will print the method signature and the decompiled code.
+        """
+        args, ret = self.method.get_descriptor()[1:].split(")")
+        if self.code:
+            # We patch the descriptor here and add the registers, if code is available
+            args = args.split(" ")
+
+            reg_len = self.code.get_registers_size()
+            nb_args = len(args)
+
+            start_reg = reg_len - nb_args
+            args = ["{} v{}".format(a, start_reg + i) for i, a in enumerate(args)]
+
+        print("METHOD {} {} {} ({}){}".format(
+              self.method.get_class_name(),
+              self.method.get_access_flags_string(),
+              self.method.get_name(),
+              ", ".join(args), ret))
+        bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
 
     def __repr__(self):
         return "<analysis.MethodAnalysis {}>".format(self.method)

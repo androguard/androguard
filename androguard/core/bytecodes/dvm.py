@@ -2905,6 +2905,11 @@ class EncodedMethod(object):
 
     def reload(self):
         v = self.CM.get_method(self.method_idx)
+        # TODO this can probably be more elegant:
+        # get_method returns an array with the already resolved types.
+        # But for example to count the number of parameters, we need to split the string now.
+        # This is quite tedious and could be avoided if we would return the type IDs
+        # instead and resolve them here.
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
@@ -2947,6 +2952,19 @@ class EncodedMethod(object):
         return info
 
     def each_params_by_register(self, nb, proto):
+        """
+        From the Dalvik Bytecode documentation:
+
+        > The N arguments to a method land in the last N registers
+        > of the method's invocation frame, in order.
+        > Wide arguments consume two registers.
+        > Instance methods are passed a this reference as their first argument.
+
+        This method will print a description of the register usage to stdout.
+
+        :param nb: number of registers
+        :param proto: descriptor of method
+        """
         bytecode._PrintSubBanner("Params")
 
         ret = proto.split(')')
@@ -2986,6 +3004,7 @@ class EncodedMethod(object):
         self.show_notes()
         if self.code:
             self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
+            self.code.show()
 
     def show_notes(self):
         """
@@ -3585,6 +3604,9 @@ class ClassDefItem(object):
             % (self.class_idx, self.superclass_idx, self.interfaces_off,
                self.source_file_idx, self.annotations_off, self.class_data_off,
                self.static_values_off))
+
+        for method in self.get_methods():
+            method.show()
 
     def source(self):
         """
@@ -6545,8 +6567,10 @@ class DCode(object):
         """
         Display (with a pretty print) this object
         """
-        # TODO
-        return "FIXME"
+        off = 0
+        for n, i in enumerate(self.get_instructions()):
+            print("{:8d} (0x{:08x}) {:30} {}".format(n, off, i.get_name(), i.get_output(self.idx)))
+            off += i.get_length()
 
     def get_raw(self):
         """
@@ -6763,8 +6787,7 @@ class DalvikCode(object):
 
     def show(self):
         self._begin_show()
-        # FIXME
-        # self.code.show(m_a)
+        self.code.show()
         self._end_show()
 
     def _end_show(self):
