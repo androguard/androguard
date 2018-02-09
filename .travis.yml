@@ -13,6 +13,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7-dev"
+  - "pypy2-5.9.0"
 # command to install dependencies
 install:
   - "pip install .[tests,docs]"
