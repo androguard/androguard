@@ -476,8 +476,10 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
-        print("METHOD", self.method.get_class_name(), self.method.get_name(
-        ), self.method.get_descriptor())
+        print("METHOD",
+              self.method.get_class_name(),
+              self.method.get_name(),
+              self.method.get_descriptor())
 
         for i in self.basic_blocks.get():
             print("\t", i)
@@ -486,24 +488,6 @@ class MethodAnalysis(object):
 
     def pretty_show(self):
         bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
-
-    def show_methods(self):
-        print("\t #METHODS :")
-        for i in self.__bb:
-            methods = i.get_methods()
-            for method in methods:
-                print("\t\t-->", method.get_class_name(), method.get_name(
-                ), method.get_descriptor())
-                for context in methods[method]:
-                    print("\t\t\t |---|", context.details)
-
-    def get_tags(self):
-        """
-          Return the tags of the method
-
-          :rtype: a :class:`Tags` object
-      """
-        return self.tags
 
     def __repr__(self):
         return "<analysis.MethodAnalysis {}>".format(self.method)
