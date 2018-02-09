@@ -481,10 +481,22 @@ class MethodAnalysis(object):
 
         This will print the method signature and the decompiled code.
         """
-        print("METHOD",
+        args, ret = self.method.get_descriptor()[1:].split(")")
+        if self.code:
+            # We patch the descriptor here and add the registers, if code is available
+            args = args.split(" ")
+
+            reg_len = self.code.get_registers_size()
+            nb_args = len(args)
+
+            start_reg = reg_len - nb_args
+            args = ["{} v{}".format(a, start_reg + i) for i, a in enumerate(args)]
+
+        print("METHOD {} {} {} ({}){}".format(
               self.method.get_class_name(),
+              self.method.get_access_flags_string(),
               self.method.get_name(),
-              self.method.get_descriptor())
+              ", ".join(args), ret))
         bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
 
     def __repr__(self):
