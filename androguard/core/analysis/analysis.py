@@ -476,17 +476,15 @@ class MethodAnalysis(object):
         return self.method
 
     def show(self):
+        """
+        Prints the content of this method to stdout.
+
+        This will print the method signature and the decompiled code.
+        """
         print("METHOD",
               self.method.get_class_name(),
               self.method.get_name(),
               self.method.get_descriptor())
-
-        for i in self.basic_blocks.get():
-            print("\t", i)
-            i.show()
-            print("")
-
-    def pretty_show(self):
         bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
 
     def __repr__(self):
