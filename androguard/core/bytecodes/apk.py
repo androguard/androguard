@@ -528,9 +528,14 @@ class APK(object):
         l = []
         for i in self.xml:
             for item in self.xml[i].findall('.//' + tag_name):
-                value = item.get(NS_ANDROID + attribute)
-                value = self.format_value(value)
+                keys = item.keys()
+                default_key = NS_ANDROID + attribute
+                if default_key in keys:
+                    value = item.get(default_key)
+                elif attribute in keys:
+                    value = item.get(attribute)
 
+                value = self.format_value(value)
                 l.append(value)
         return l
 
