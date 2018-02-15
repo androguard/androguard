@@ -624,7 +624,7 @@ class APK(object):
 
         :rtype: a list of string
         """
-        return self.get_elements("activity", "name")
+        return list(self.get_elements("activity", "name"))
 
     def get_services(self):
         """
@@ -632,7 +632,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("service", "name")
+        return list(self.get_elements("service", "name"))
 
     def get_receivers(self):
         """
@@ -640,7 +640,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("receiver", "name")
+        return list(self.get_elements("receiver", "name"))
 
     def get_providers(self):
         """
@@ -648,7 +648,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("provider", "name")
+        return list(self.get_elements("provider", "name"))
 
     def get_intent_filters(self, category, name):
         d = {"action": [], "category": []}
