@@ -1,11 +1,9 @@
 from __future__ import division
 from __future__ import print_function
-
 from future import standard_library
 
 standard_library.install_aliases()
 from builtins import str
-from builtins import range
 from builtins import object
 from androguard.core import androconf
 from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
@@ -16,14 +14,12 @@ from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTable
 import io
 from zlib import crc32
 import re
-import sys
 import binascii
 import zipfile
 import logging
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
-from lxml import etree
 
 # Used for reading Certificates
 from pyasn1.codec.der.decoder import decode
@@ -422,6 +418,8 @@ class APK(object):
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
+                # FIXME why not use the crc from the zipfile?
+                #crc = self.zip.getinfo(i).CRC
                 self.files[i] = self._get_file_magic_name(buffer)
 
         return self.files
@@ -514,27 +512,32 @@ class APK(object):
         :return: True if multiple dex found, otherwise False
         """
         dexre = re.compile("^classes(\d+)?.dex$")
-        return len(
-            [instance for instance in self.get_files() if dexre.search(instance)]
-        ) > 1
+        return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    def get_elements(self, tag_name, attribute):
+    def get_elements(self, tag_name, attribute, with_namespace=True):
         """
-            Return elements in xml files which match with the tag name and the specific attribute
+        Return elements in xml files which match with the tag name and the specific attribute
 
-            :param tag_name: a string which specify the tag name
-            :param attribute: a string which specify the attribute
+        :param tag_name: a string which specify the tag name
+        :param attribute: a string which specify the attribute
         """
-        l = []
         for i in self.xml:
             for item in self.xml[i].findall('.//' + tag_name):
-                value = item.get(NS_ANDROID + attribute)
-                value = self.format_value(value)
-
-                l.append(value)
-        return l
+                if with_namespace:
+                    value = item.get(NS_ANDROID + attribute)
+                else:
+                    value = item.get(attribute)
+                # There might be an attribute without the namespace
+                if value:
+                    yield self.format_value(value)
 
     def format_value(self, value):
+        """
+        Format a value with packagename, if not already set
+
+        :param value:
+        :return:
+        """
         if len(value) > 0:
             if value[0] == ".":
                 value = self.package + value
@@ -548,14 +551,14 @@ class APK(object):
 
     def get_element(self, tag_name, attribute, **attribute_filter):
         """
-            Return element in xml files which match with the tag name and the specific attribute
+        Return element in xml files which match with the tag name and the specific attribute
 
-            :param tag_name: specify the tag name
-            :type tag_name: string
-            :param attribute: specify the attribute
-            :type attribute: string
+        :param tag_name: specify the tag name
+        :type tag_name: string
+        :param attribute: specify the attribute
+        :type attribute: string
 
-            :rtype: string
+        :rtype: string
         """
         for i in self.xml:
             if self.xml[i] is None:
@@ -617,11 +620,11 @@ class APK(object):
 
     def get_activities(self):
         """
-            Return the android:name attribute of all activities
+        Return the android:name attribute of all activities
 
-            :rtype: a list of string
+        :rtype: a list of string
         """
-        return self.get_elements("activity", "name")
+        return list(self.get_elements("activity", "name"))
 
     def get_services(self):
         """
@@ -629,7 +632,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("service", "name")
+        return list(self.get_elements("service", "name"))
 
     def get_receivers(self):
         """
@@ -637,7 +640,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("receiver", "name")
+        return list(self.get_elements("receiver", "name"))
 
     def get_providers(self):
         """
@@ -645,7 +648,7 @@ class APK(object):
 
             :rtype: a list of string
         """
-        return self.get_elements("provider", "name")
+        return list(self.get_elements("provider", "name"))
 
     def get_intent_filters(self, category, name):
         d = {"action": [], "category": []}

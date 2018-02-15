@@ -7,12 +7,14 @@ before_script:
   - export PATH=$PATH:$PWD/jadx-0.6.1/bin
 
 python:
+  - "3.6"
+  - "3.5"
   - "2.7"
   - "3.3"
   - "3.4"
-  - "3.5"
-  - "3.6"
   - "3.7-dev"
+  - "3.8-dev"
+  - "nightly"
 # command to install dependencies
 install:
   - "pip install .[tests,docs]"
