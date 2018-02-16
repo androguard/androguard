@@ -22,8 +22,6 @@ from __future__ import print_function
 import sys
 from lxml import etree
 from optparse import OptionParser
-from xml.dom import minidom
-import codecs
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
@@ -49,27 +47,22 @@ options = [option_0, option_1, option_2]
 
 def main(options, arguments):
     if options.input is not None:
-        buff = ""
-
         ret_type = androconf.is_android(options.input)
         if ret_type == "APK":
             a = apk.APK(options.input)
-            xml = a.get_android_manifest_xml()
-            buff = etree.tostring(xml, pretty_print=True)
+            axml = a.get_android_manifest_xml()
         elif ".xml" in options.input:
-            ap = apk.AXMLPrinter(read(options.input))
-            buff = minidom.parseString(ap.get_buff()).toprettyxml(
-                encoding="utf-8")
+            axml = apk.AXMLPrinter(read(options.input))
         else:
             print("Unknown file type")
             return
 
-        if options.output is not None:
-            fd = codecs.open(options.output, "w", "utf-8")
-            fd.write(buff)
-            fd.close()
+        buff = etree.tostring(axml.get_xml_obj(), pretty_print=True)
+        if options.output:
+            with open(options.output, "wb") as fd:
+                fd.write(buff)
         else:
-            print(buff)
+            print(buff.decode("UTF-8"))
 
     elif options.version is not None:
         print("Androaxml version %s" % androconf.ANDROGUARD_VERSION)
