@@ -1,5 +1,5 @@
-androlyze
-=========
+androlyze - Androguard Shell
+============================
 
 androlyze is a tool that spawns an IPython shell.
 

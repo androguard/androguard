@@ -3,10 +3,10 @@ Tools
 
 .. toctree::
 
-   androarsc
-   androauto
+   androlyze
+   androgui
    androaxml
+   androarsc
    androdd
    androdis
-   androgui
-   androlyze
+   androauto
