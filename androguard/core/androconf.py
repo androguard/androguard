@@ -4,6 +4,7 @@ import logging
 import tempfile
 
 from androguard import __version__
+from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
 ANDROGUARD_VERSION = __version__
 
 log = logging.getLogger("androguard.default")
@@ -91,7 +92,7 @@ CONF = {
     "PRINT_FCT": sys.stdout.write,
     "LAZY_ANALYSIS": False,
     "MAGIC_PATH_FILE": None,
-    "DEFAULT_API": 19,
+    "DEFAULT_API": 16,  # this is the minimal API version we have
     "SESSION": None,
 }
 
@@ -312,22 +313,25 @@ def color_range(startcolor, goalcolor, steps):
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name, api):
-    # Those two imports are quite slow.
-    # Therefor we put them directly into this method
-    from androguard.core.api_specific_resources.aosp_permissions.aosp_permissions import AOSP_PERMISSIONS
-    from androguard.core.api_specific_resources import load_permission_mapping
+def load_api_specific_resource_module(resource_name, api=None):
+    """
+    Load the module from the JSON files and return a dict or None,
+    if the resource could not be loaded.
 
-    if resource_name == "aosp_permissions":
-        mod = AOSP_PERMISSIONS
-    elif resource_name == "api_permission_mappings":
-        mod = load_permission_mapping
-    else:
-        raise InvalidResourceError("Invalid Resource {}".format(resource_name))
+    If no api version is given, the default one from the CONF dict is used.
+
+    :param resource_name: Name of the resource to load
+    :param api: API version
+    :return: dict
+    """
+    loader = dict(aosp_permissions=load_permissions,
+                  api_permission_mappings=load_permission_mappings)
+
+    if resource_name not in loader:
+        raise InvalidResourceError("Invalid Resource '{}', not in [{}]".format(resource_name, ", ".join(loader.keys())))
 
     if not api:
         api = CONF["DEFAULT_API"]
-    value = mod.get(api)
-    if value:
-        return value
-    return None
+
+    return loader[resource_name](api)
+
