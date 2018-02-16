@@ -6,7 +6,6 @@ from androguard import __version__
 
 from setuptools import setup, find_packages
 
-from axplorer_to_androguard import generate_mappings
 
 # We do not support python versions <2.7 and python <3.3
 if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_info.major == 2 and sys.version_info.minor < 7):
@@ -47,7 +46,8 @@ else:
     sphinxprogram = "sphinxcontrib-programoutput>0.8"
 
 # TODO add the permission mapping generation at a better place!
-generate_mappings()
+# from axplorer_to_androguard import generate_mappings
+# generate_mappings()
 
 setup(
     name='androguard',
