@@ -407,20 +407,29 @@ class APK(object):
         else:
             return self._patch_magic(buffer, ftype)
 
+    @property
+    def files(self):
+        """
+        Wrapper for the files object
+
+        :return: dictionary of files and their mime type
+        """
+        return self.get_files_types()
+
     def get_files_types(self):
         """
             Return the files inside the APK with their associated types (by using python-magic)
 
             :rtype: a dictionnary
         """
-        if self.files == {}:
+        if self._files == {}:
             # Generate File Types / CRC List
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
-                self.files[i] = self._get_file_magic_name(buffer)
+                self._files[i] = self._get_file_magic_name(buffer)
 
-        return self.files
+        return self._files
 
     def _patch_magic(self, buffer, orig):
         if ("Zip" in orig) or ("DBase" in orig):
@@ -968,7 +977,7 @@ class APK(object):
         print("FILES: ")
         for i in self.get_files():
             try:
-                print("\t", i, self.files[i], "%x" % self.files_crc32[i])
+                print("\t", i, self._files[i], "%x" % self.files_crc32[i])
             except KeyError:
                 print("\t", i, "%x" % self.files_crc32[i])
 
