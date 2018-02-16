@@ -687,23 +687,18 @@ class APK(object):
         """
             Return permissions with details
 
-            :rtype: list of string
+            :rtype: dict of {permission: [protectionLevel, label, description]}
         """
         l = {}
 
         for i in self.permissions:
-            perm = i
-            pos = i.rfind(".")
-
-            if pos != -1:
-                perm = i[pos + 1:]
-
-            try:
-                l[i] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm]
-            except KeyError:
+            if i in self.permission_module:
+                x = self.permission_module[i]
+                l[i] = [x["protectionLevel"], x["label"], x["description"]]
+            else:
+                # FIXME: the permission might be signature, if it is defined by the app itself!
                 l[i] = ["normal", "Unknown permission from android reference",
                         "Unknown permission from android reference"]
-
         return l
 
     @DeprecationWarning
