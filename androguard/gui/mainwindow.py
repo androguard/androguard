@@ -13,6 +13,7 @@ from androguard.gui.resourceswindow import ResourcesWindow
 from androguard.gui.sourcewindow import SourceWindow
 from androguard.gui.stringswindow import StringsWindow
 from androguard.gui.treewindow import TreeWindow
+import os
 
 import logging
 log = logging.getLogger("androguard.gui")
@@ -120,6 +121,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if input_file:
             self._openFile(input_file)
+
+        root = os.path.dirname(os.path.realpath(__file__))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(root, "androguard.ico")))
 
     def eventFilter(self, watched, event):
         for bin_window in list(self.bin_windows.values()):

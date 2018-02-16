@@ -6,6 +6,7 @@ from androguard import __version__
 
 from setuptools import setup, find_packages
 
+
 # We do not support python versions <2.7 and python <3.3
 if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_info.major == 2 and sys.version_info.minor < 7):
     print("Unfortunatly, your python version is not supported!\n"
@@ -15,14 +16,6 @@ if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_
 # PyQT5 is only available for python 3.5 and 3.6
 if sys.version_info <= (3, 4) or sys.version_info >= (3, 7):
     print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
-
-# workaround issue on OSX, where sys.prefix is not an installable location
-if sys.platform == 'darwin' and sys.prefix.startswith('/System'):
-    data_prefix = os.path.join('.', 'share', 'androguard')
-elif sys.platform == 'win32':
-    data_prefix = os.path.join(sys.prefix, 'Scripts', 'androguard')
-else:
-    data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
 
 # There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
 install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.4.1',
@@ -52,22 +45,30 @@ else:
     install_requires.append('cryptography>=1.0')
     sphinxprogram = "sphinxcontrib-programoutput>0.8"
 
+# TODO add the permission mapping generation at a better place!
+# from axplorer_to_androguard import generate_mappings
+# generate_mappings()
+
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
     version=__version__,
     packages=find_packages(),
-    data_files=[(data_prefix,
-                 ['androguard/gui/annotation.ui',
-                  'androguard/gui/search.ui',
-                  'androguard/gui/androguard.ico'])],
+    package_data={
+        # add the json files, residing in the api_specific_resources package
+        "androguard.core.api_specific_resources": ["aosp_permissions/*.json",
+                                                   "api_permission_mappings/*.json"],
+        # Collect also the GUI files this way
+        "androguard.gui": ["annotation.ui", "search.ui", "androguard.ico"],
+    },
     scripts=['androaxml.py',
              'androarsc.py',
              'androauto.py',
              'androdis.py',
              'androlyze.py',
              'androdd.py',
-             'androgui.py',],
+             'androgui.py',
+             ],
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
