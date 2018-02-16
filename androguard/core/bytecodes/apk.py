@@ -92,7 +92,7 @@ class APK(object):
         self.declared_permissions = {}
         self.valid_apk = False
 
-        self.files = {}
+        self._files = {}
         self.files_crc32 = {}
 
         self.magic_file = magic_file
