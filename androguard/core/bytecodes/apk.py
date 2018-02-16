@@ -5,10 +5,8 @@ from future import standard_library
 
 standard_library.install_aliases()
 from builtins import str
-from builtins import range
 from builtins import object
 from androguard.core import androconf
-from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.util import read, get_certificate_name_string
 
 from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig
@@ -16,14 +14,12 @@ from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTable
 import io
 from zlib import crc32
 import re
-import sys
 import binascii
 import zipfile
 import logging
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
-from lxml import etree
 
 # Used for reading Certificates
 from pyasn1.codec.der.decoder import decode
