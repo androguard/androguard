@@ -6,7 +6,6 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import object
 from androguard.core import androconf
-from androguard.core.bytecodes.dvm_permissions import DVM_PERMISSIONS
 from androguard.util import read, get_certificate_name_string
 
 from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig
@@ -92,7 +91,7 @@ class APK(object):
         self.declared_permissions = {}
         self.valid_apk = False
 
-        self.files = {}
+        self._files = {}
         self.files_crc32 = {}
 
         self.magic_file = magic_file
@@ -407,22 +406,31 @@ class APK(object):
         else:
             return self._patch_magic(buffer, ftype)
 
+    @property
+    def files(self):
+        """
+        Wrapper for the files object
+
+        :return: dictionary of files and their mime type
+        """
+        return self.get_files_types()
+
     def get_files_types(self):
         """
             Return the files inside the APK with their associated types (by using python-magic)
 
             :rtype: a dictionnary
         """
-        if self.files == {}:
+        if self._files == {}:
             # Generate File Types / CRC List
             for i in self.get_files():
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
                 # FIXME why not use the crc from the zipfile?
                 #crc = self.zip.getinfo(i).CRC
-                self.files[i] = self._get_file_magic_name(buffer)
+                self._files[i] = self._get_file_magic_name(buffer)
 
-        return self.files
+        return self._files
 
     def _patch_magic(self, buffer, orig):
         if ("Zip" in orig) or ("DBase" in orig):
@@ -690,23 +698,18 @@ class APK(object):
         """
             Return permissions with details
 
-            :rtype: list of string
+            :rtype: dict of {permission: [protectionLevel, label, description]}
         """
         l = {}
 
         for i in self.permissions:
-            perm = i
-            pos = i.rfind(".")
-
-            if pos != -1:
-                perm = i[pos + 1:]
-
-            try:
-                l[i] = DVM_PERMISSIONS["MANIFEST_PERMISSION"][perm]
-            except KeyError:
+            if i in self.permission_module:
+                x = self.permission_module[i]
+                l[i] = [x["protectionLevel"], x["label"], x["description"]]
+            else:
+                # FIXME: the permission might be signature, if it is defined by the app itself!
                 l[i] = ["normal", "Unknown permission from android reference",
                         "Unknown permission from android reference"]
-
         return l
 
     @DeprecationWarning
@@ -979,7 +982,7 @@ class APK(object):
         print("FILES: ")
         for i in self.get_files():
             try:
-                print("\t", i, self.files[i], "%x" % self.files_crc32[i])
+                print("\t", i, self._files[i], "%x" % self.files_crc32[i])
             except KeyError:
                 print("\t", i, "%x" % self.files_crc32[i])
 

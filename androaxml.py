@@ -55,7 +55,7 @@ def main(options, arguments):
         if ret_type == "APK":
             a = apk.APK(options.input)
             xml = a.get_android_manifest_xml()
-            buff = etree.tostring(xml, pretty_print=True)
+            buff = etree.tostring(xml, pretty_print=True).decode("UTF-8")
         elif ".xml" in options.input:
             ap = apk.AXMLPrinter(read(options.input))
             buff = minidom.parseString(ap.get_buff()).toprettyxml(

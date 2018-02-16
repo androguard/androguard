@@ -38,6 +38,12 @@ There are some (probably broken/outdated) examples and demos in the folders [dem
 
 ## 4. Building and Requirements
 
+To get the source code, use:
+
+```
+git clone --recursive https://github.com/androguard/androguard.git
+```
+
 ### Using Debian based Distributions
 Assuming you are using Debian, most of the packages are available from standard repos.
 
