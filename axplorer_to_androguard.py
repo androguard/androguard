@@ -97,7 +97,8 @@ def generate_mappings(axplorerdir="libraries/axplorer", outfolder="androguard/co
                 with open(os.path.join(root, fi), "r") as f:
                     for line in f.read().splitlines():
                         meth, perm = convert_name(line)
-                        res[sdk_version][meth].append(perm)
+                        for p in perm:
+                            res[sdk_version][meth].append(p)
 
     for api, v in res.items():
         with open(os.path.join(outfolder, "api_permission_mappings", "permissions_{}.json".format(api)), "w") as fp:
