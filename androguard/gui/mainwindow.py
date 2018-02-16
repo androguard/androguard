@@ -122,7 +122,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if input_file:
             self._openFile(input_file)
 
-        root = os.path.realpath(__file__)
+        root = os.path.dirname(os.path.realpath(__file__))
         self.setWindowIcon(QtGui.QIcon(os.path.join(root, "androguard.ico")))
 
     def eventFilter(self, watched, event):

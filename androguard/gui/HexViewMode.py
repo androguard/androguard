@@ -999,7 +999,7 @@ class Annotation(QtWidgets.QDialog):
         self.view = view
         self.oshow = super(Annotation, self).show
 
-        root = os.path.realpath(__file__)
+        root = os.path.dirname(os.path.realpath(__file__))
         self.ui = loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
 
         #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)

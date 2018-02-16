@@ -16,7 +16,7 @@ class SearchWindow(QtWidgets.QDialog):
         self.plugin = plugin
         self.oshow = super(SearchWindow, self).show
 
-        root = os.path.realpath(__file__)
+        root = os.path.dirname(os.path.realpath(__file__))
         self.ui = loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
         self.ui.setWindowTitle('Search')
         self._lastText = ''

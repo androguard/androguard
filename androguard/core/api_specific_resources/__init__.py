@@ -13,7 +13,8 @@ def load_permissions(apilevel):
     :param apilevel:  integer value of the API level
     :return: a dictionary of {Permission Name: {Permission info}
     """
-    permissions_file = os.path.join("aosp_permissions", "permissions_{}.json".format(apilevel))
+    root = os.path.dirname(os.path.realpath(__file__))
+    permissions_file = os.path.join(root, "aosp_permissions", "permissions_{}.json".format(apilevel))
 
     if not os.path.isfile(permissions_file):
         return {}
@@ -30,7 +31,8 @@ def load_permission_mappings(apilevel):
     :param apilevel: integer value of the API level, i.e. 24 for Android 7.0
     :return: a dictionary of {MethodSignature: [List of Permissions]}
     """
-    permissions_file = os.path.join("api_permission_mappings", "permissions_{}.json".format(apilevel))
+    root = os.path.dirname(os.path.realpath(__file__))
+    permissions_file = os.path.join(root, "api_permission_mappings", "permissions_{}.json".format(apilevel))
 
     if not os.path.isfile(permissions_file):
         return {}
