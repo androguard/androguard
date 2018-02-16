@@ -23,7 +23,7 @@ script:
   - nosetests --with-coverage --with-timer --timer-top-n 50
   # Testing the scripts - crude ;)
   - for f in `find -name \*.apk`; do
-      echo "testing $f"
+      echo "testing $f";
       time ./androaxml.py -i $f > /dev/null;
       time ./androaxml.py -i $f -o /dev/null;
       time ./androarsc.py -i $f > /dev/null;
