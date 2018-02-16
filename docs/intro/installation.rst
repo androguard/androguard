@@ -1,13 +1,16 @@
-# Installation
+Installation
+============
 
 There are several ways how to install androguard.
 
-## Debian / Ubuntu
+Debian / Ubuntu
+---------------
 
 Debian has androguard in its repository. You can just install it using :code:`apt install androguard`.
 All required dependencies are automatically installed.
 
-## Install from Source
+Install from Source
+-------------------
 
 Use git to fetch the sources, then install it.
 Please install git and python on your own.
