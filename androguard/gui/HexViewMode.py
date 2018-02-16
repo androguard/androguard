@@ -14,6 +14,7 @@ from .TextDecorators import *
 from .ViewMode import *
 from .cemu import *
 from . import TextSelection
+import os
 
 class HexViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
@@ -998,8 +999,7 @@ class Annotation(QtWidgets.QDialog):
         self.view = view
         self.oshow = super(Annotation, self).show
 
-        import os
-        root = os.path.dirname(sys.argv[0])
+        root = os.path.realpath(__file__)
         self.ui = loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
 
         #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)

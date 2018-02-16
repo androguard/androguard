@@ -64,7 +64,8 @@ setup(
     scripts=['androaxml.py',
              'androlyze.py',
              'androdd.py',
-             'androgui.py',],
+             'androgui.py',
+             ],
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],

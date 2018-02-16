@@ -34,8 +34,6 @@ if __name__ == '__main__':
     sys.setrecursionlimit(50000)
 
     app = QtWidgets.QApplication(sys.argv)
-    # FIXME correct the path to the icon
-    app.setWindowIcon(QtGui.QIcon("androguard.ico"))
 
     window = MainWindow(input_file=args.input_file,
                         input_plugin=args.input_plugin)
