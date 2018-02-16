@@ -62,6 +62,11 @@ setup(
     description='Androguard is a full python tool to play with Android files.',
     version=__version__,
     packages=find_packages(),
+    package_data={
+        # add the json files, residing in the api_specific_resources package
+        "androguard.core.api_specific_resources": ["aosp_permissions/*.json",
+                                                   "api_permission_mappings/*.json"]
+    },
     data_files=[(data_prefix,
                  ['androguard/gui/annotation.ui',
                   'androguard/gui/search.ui',
