@@ -52,12 +52,12 @@ def main(options, arguments):
             a = apk.APK(options.input)
             axml = a.get_android_manifest_xml()
         elif ".xml" in options.input:
-            axml = apk.AXMLPrinter(read(options.input))
+            axml = apk.AXMLPrinter(read(options.input)).get_xml_obj()
         else:
             print("Unknown file type")
             return
 
-        buff = etree.tostring(axml.get_xml_obj(), pretty_print=True)
+        buff = etree.tostring(axml, pretty_print=True)
         if options.output:
             with open(options.output, "wb") as fd:
                 fd.write(buff)
