@@ -1000,7 +1000,7 @@ class Annotation(QtWidgets.QDialog):
 
         import os
         root = os.path.dirname(sys.argv[0])
-        self.ui = loadUi(os.path.join(CONF['data_prefix'], 'annotation.ui'), baseinstance=self)
+        self.ui = loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
 
         #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
 

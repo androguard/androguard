@@ -18,14 +18,6 @@ if (sys.version_info.major == 3 and sys.version_info.minor < 3) or (sys.version_
 if sys.version_info <= (3, 4) or sys.version_info >= (3, 7):
     print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
 
-# workaround issue on OSX, where sys.prefix is not an installable location
-if sys.platform == 'darwin' and sys.prefix.startswith('/System'):
-    data_prefix = os.path.join('.', 'share', 'androguard')
-elif sys.platform == 'win32':
-    data_prefix = os.path.join(sys.prefix, 'Scripts', 'androguard')
-else:
-    data_prefix = os.path.join(sys.prefix, 'share', 'androguard')
-
 # There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
 install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.4.1',
                     'future',
@@ -65,12 +57,10 @@ setup(
     package_data={
         # add the json files, residing in the api_specific_resources package
         "androguard.core.api_specific_resources": ["aosp_permissions/*.json",
-                                                   "api_permission_mappings/*.json"]
+                                                   "api_permission_mappings/*.json"],
+        # Collect also the GUI files this way
+        "androguard.gui": ["annotation.ui", "search.ui", "androguard.ico"],
     },
-    data_files=[(data_prefix,
-                 ['androguard/gui/annotation.ui',
-                  'androguard/gui/search.ui',
-                  'androguard/gui/androguard.ico'])],
     scripts=['androaxml.py',
              'androlyze.py',
              'androdd.py',

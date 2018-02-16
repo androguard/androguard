@@ -18,7 +18,7 @@ class SearchWindow(QtWidgets.QDialog):
 
         root = os.path.dirname(sys.argv[0])
 
-        self.ui = loadUi(os.path.join(CONF['data_prefix'], 'search.ui'), baseinstance=self)
+        self.ui = loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
         self.ui.setWindowTitle('Search')
         self._lastText = ''
 
