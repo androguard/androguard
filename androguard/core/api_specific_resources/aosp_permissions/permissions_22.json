@@ -1,0 +1,1814 @@
+{
+    "android.permission.SEND_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_sendSms",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_sendSms"
+    },
+    "android.permission.SEND_RESPOND_VIA_MESSAGE": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_sendRespondViaMessageRequest",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_sendRespondViaMessageRequest"
+    },
+    "android.permission.RECEIVE_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_receiveSms",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_receiveSms"
+    },
+    "android.permission.RECEIVE_MMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_receiveMms",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_receiveMms"
+    },
+    "android.permission.CARRIER_FILTER_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.RECEIVE_EMERGENCY_BROADCAST": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_receiveEmergencyBroadcast",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_receiveEmergencyBroadcast"
+    },
+    "android.permission.READ_CELL_BROADCASTS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_readCellBroadcasts",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readCellBroadcasts"
+    },
+    "android.permission.READ_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_readSms",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readSms"
+    },
+    "android.permission.WRITE_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_writeSms",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeSms"
+    },
+    "android.permission.RECEIVE_WAP_PUSH": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_receiveWapPush",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_receiveWapPush"
+    },
+    "android.permission.RECEIVE_BLUETOOTH_MAP": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_receiveBluetoothMap",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_receiveBluetoothMap"
+    },
+    "android.permission.READ_CONTACTS": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_readContacts",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readContacts"
+    },
+    "android.permission.WRITE_CONTACTS": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_writeContacts",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeContacts"
+    },
+    "android.permission.BIND_DIRECTORY_SEARCH": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.READ_CALL_LOG": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_readCallLog",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readCallLog"
+    },
+    "android.permission.WRITE_CALL_LOG": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_writeCallLog",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeCallLog"
+    },
+    "android.permission.READ_SOCIAL_STREAM": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_readSocialStream",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readSocialStream"
+    },
+    "android.permission.WRITE_SOCIAL_STREAM": {
+        "permissionGroup": "android.permission-group.SOCIAL_INFO",
+        "description": "@string/permdesc_writeSocialStream",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeSocialStream"
+    },
+    "android.permission.READ_PROFILE": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_readProfile",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readProfile"
+    },
+    "android.permission.WRITE_PROFILE": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_writeProfile",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeProfile"
+    },
+    "android.permission.BODY_SENSORS": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_bodySensors",
+        "protectionLevel": "",
+        "label": "@string/permlab_bodySensors"
+    },
+    "android.permission.READ_CALENDAR": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_readCalendar",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readCalendar"
+    },
+    "android.permission.WRITE_CALENDAR": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_writeCalendar",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeCalendar"
+    },
+    "android.permission.READ_USER_DICTIONARY": {
+        "permissionGroup": "android.permission-group.USER_DICTIONARY",
+        "description": "@string/permdesc_readDictionary",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readDictionary"
+    },
+    "android.permission.WRITE_USER_DICTIONARY": {
+        "permissionGroup": "android.permission-group.WRITE_USER_DICTIONARY",
+        "description": "@string/permdesc_writeDictionary",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_writeDictionary"
+    },
+    "com.android.browser.permission.READ_HISTORY_BOOKMARKS": {
+        "permissionGroup": "android.permission-group.BOOKMARKS",
+        "description": "@string/permdesc_readHistoryBookmarks",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readHistoryBookmarks"
+    },
+    "com.android.browser.permission.WRITE_HISTORY_BOOKMARKS": {
+        "permissionGroup": "android.permission-group.BOOKMARKS",
+        "description": "@string/permdesc_writeHistoryBookmarks",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeHistoryBookmarks"
+    },
+    "com.android.alarm.permission.SET_ALARM": {
+        "permissionGroup": "android.permission-group.DEVICE_ALARMS",
+        "description": "@string/permdesc_setAlarm",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_setAlarm"
+    },
+    "com.android.voicemail.permission.ADD_VOICEMAIL": {
+        "permissionGroup": "android.permission-group.VOICEMAIL",
+        "description": "@string/permdesc_addVoicemail",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_addVoicemail"
+    },
+    "com.android.voicemail.permission.WRITE_VOICEMAIL": {
+        "permissionGroup": "android.permission-group.VOICEMAIL",
+        "description": "@string/permdesc_writeVoicemail",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_writeVoicemail"
+    },
+    "com.android.voicemail.permission.READ_VOICEMAIL": {
+        "permissionGroup": "android.permission-group.VOICEMAIL",
+        "description": "@string/permdesc_readVoicemail",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_readVoicemail"
+    },
+    "android.permission.ACCESS_FINE_LOCATION": {
+        "permissionGroup": "android.permission-group.LOCATION",
+        "description": "@string/permdesc_accessFineLocation",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_accessFineLocation"
+    },
+    "android.permission.ACCESS_COARSE_LOCATION": {
+        "permissionGroup": "android.permission-group.LOCATION",
+        "description": "@string/permdesc_accessCoarseLocation",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_accessCoarseLocation"
+    },
+    "android.permission.ACCESS_MOCK_LOCATION": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_accessMockLocation",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_accessMockLocation"
+    },
+    "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_accessLocationExtraCommands",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_accessLocationExtraCommands"
+    },
+    "android.permission.INSTALL_LOCATION_PROVIDER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_installLocationProvider",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_installLocationProvider"
+    },
+    "android.permission.HDMI_CEC": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "android.permission.LOCATION_HARDWARE": {
+        "permissionGroup": "android.permission-group.LOCATION",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.INTERNET": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_createNetworkSockets",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_createNetworkSockets"
+    },
+    "android.permission.ACCESS_NETWORK_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_accessNetworkState",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_accessNetworkState"
+    },
+    "android.permission.ACCESS_WIFI_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_accessWifiState",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_accessWifiState"
+    },
+    "android.permission.CHANGE_WIFI_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_changeWifiState",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_changeWifiState"
+    },
+    "android.permission.READ_WIFI_CREDENTIAL": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.ACCESS_WIMAX_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_accessWimaxState",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_accessWimaxState"
+    },
+    "android.permission.CHANGE_WIMAX_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_changeWimaxState",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_changeWimaxState"
+    },
+    "android.permission.SCORE_NETWORKS": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_scoreNetworks",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_scoreNetworks"
+    },
+    "android.permission.BLUETOOTH": {
+        "permissionGroup": "android.permission-group.BLUETOOTH_NETWORK",
+        "description": "@string/permdesc_bluetooth",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_bluetooth"
+    },
+    "android.permission.BLUETOOTH_ADMIN": {
+        "permissionGroup": "android.permission-group.BLUETOOTH_NETWORK",
+        "description": "@string/permdesc_bluetoothAdmin",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_bluetoothAdmin"
+    },
+    "android.permission.BLUETOOTH_PRIVILEGED": {
+        "permissionGroup": "android.permission-group.BLUETOOTH_NETWORK",
+        "description": "@string/permdesc_bluetoothPriv",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_bluetoothPriv"
+    },
+    "android.permission.BLUETOOTH_MAP": {
+        "permissionGroup": "android.permission-group.BLUETOOTH_NETWORK",
+        "description": "@string/permdesc_bluetoothMap",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bluetoothMap"
+    },
+    "android.permission.BLUETOOTH_STACK": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.NFC": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_nfc",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_nfc"
+    },
+    "android.permission.CONNECTIVITY_INTERNAL": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.RECEIVE_DATA_ACTIVITY_CHANGE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.LOOP_RADIO": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.NFC_HANDOVER_STATUS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_handoverStatus",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_handoverStatus"
+    },
+    "android.permission.GET_ACCOUNTS": {
+        "permissionGroup": "android.permission-group.ACCOUNTS",
+        "description": "@string/permdesc_getAccounts",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_getAccounts"
+    },
+    "android.permission.AUTHENTICATE_ACCOUNTS": {
+        "permissionGroup": "android.permission-group.ACCOUNTS",
+        "description": "@string/permdesc_authenticateAccounts",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_authenticateAccounts"
+    },
+    "android.permission.USE_CREDENTIALS": {
+        "permissionGroup": "android.permission-group.ACCOUNTS",
+        "description": "@string/permdesc_useCredentials",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_useCredentials"
+    },
+    "android.permission.MANAGE_ACCOUNTS": {
+        "permissionGroup": "android.permission-group.ACCOUNTS",
+        "description": "@string/permdesc_manageAccounts",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_manageAccounts"
+    },
+    "android.permission.ACCOUNT_MANAGER": {
+        "permissionGroup": "android.permission-group.ACCOUNTS",
+        "description": "@string/permdesc_accountManagerService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_accountManagerService"
+    },
+    "android.permission.CHANGE_WIFI_MULTICAST_STATE": {
+        "permissionGroup": "android.permission-group.AFFECTS_BATTERY",
+        "description": "@string/permdesc_changeWifiMulticastState",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_changeWifiMulticastState"
+    },
+    "android.permission.VIBRATE": {
+        "permissionGroup": "android.permission-group.AFFECTS_BATTERY",
+        "description": "@string/permdesc_vibrate",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_vibrate"
+    },
+    "android.permission.FLASHLIGHT": {
+        "permissionGroup": "android.permission-group.AFFECTS_BATTERY",
+        "description": "@string/permdesc_flashlight",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_flashlight"
+    },
+    "android.permission.WAKE_LOCK": {
+        "permissionGroup": "android.permission-group.AFFECTS_BATTERY",
+        "description": "@string/permdesc_wakeLock",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_wakeLock"
+    },
+    "android.permission.TRANSMIT_IR": {
+        "permissionGroup": "android.permission-group.AFFECTS_BATTERY",
+        "description": "@string/permdesc_transmitIr",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_transmitIr"
+    },
+    "android.permission.MODIFY_AUDIO_SETTINGS": {
+        "permissionGroup": "android.permission-group.AUDIO_SETTINGS",
+        "description": "@string/permdesc_modifyAudioSettings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_modifyAudioSettings"
+    },
+    "android.permission.MANAGE_USB": {
+        "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+        "description": "@string/permdesc_manageUsb",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageUsb"
+    },
+    "android.permission.ACCESS_MTP": {
+        "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+        "description": "@string/permdesc_accessMtp",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_accessMtp"
+    },
+    "android.permission.HARDWARE_TEST": {
+        "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+        "description": "@string/permdesc_hardware_test",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_hardware_test"
+    },
+    "android.permission.ACCESS_FM_RADIO": {
+        "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+        "description": "@string/permdesc_fm",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_fm"
+    },
+    "android.permission.NET_ADMIN": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.REMOTE_AUDIO_PLAYBACK": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.TV_INPUT_HARDWARE": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "android.permission.CAPTURE_TV_INPUT": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "android.permission.OEM_UNLOCK_STATE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.ACCESS_PDB_STATE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.RECORD_AUDIO": {
+        "permissionGroup": "android.permission-group.MICROPHONE",
+        "description": "@string/permdesc_recordAudio",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_recordAudio"
+    },
+    "android.permission.CAMERA": {
+        "permissionGroup": "android.permission-group.CAMERA",
+        "description": "@string/permdesc_camera",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_camera"
+    },
+    "android.permission.CAMERA_DISABLE_TRANSMIT_LED": {
+        "permissionGroup": "android.permission-group.CAMERA",
+        "description": "@string/permdesc_cameraDisableTransmitLed",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_cameraDisableTransmitLed"
+    },
+    "android.permission.PROCESS_OUTGOING_CALLS": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_processOutgoingCalls",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_processOutgoingCalls"
+    },
+    "android.permission.MODIFY_PHONE_STATE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_modifyPhoneState",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_modifyPhoneState"
+    },
+    "android.permission.READ_PHONE_STATE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_readPhoneState",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readPhoneState"
+    },
+    "android.permission.READ_PRECISE_PHONE_STATE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_readPrecisePhoneState",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_readPrecisePhoneState"
+    },
+    "android.permission.READ_PRIVILEGED_PHONE_STATE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.CALL_PHONE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_callPhone",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_callPhone"
+    },
+    "android.permission.USE_SIP": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_use_sip",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_use_sip"
+    },
+    "android.permission.REGISTER_SIM_SUBSCRIPTION": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_register_sim_subscription",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_register_sim_subscription"
+    },
+    "android.permission.REGISTER_CALL_PROVIDER": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_register_call_provider",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_register_call_provider"
+    },
+    "android.permission.REGISTER_CONNECTION_MANAGER": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_connection_manager",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_connection_manager"
+    },
+    "android.permission.BIND_INCALL_SERVICE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_bind_incall_service",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_bind_incall_service"
+    },
+    "android.permission.BIND_CONNECTION_SERVICE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_bind_connection_service",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_bind_connection_service"
+    },
+    "android.permission.CONTROL_INCALL_EXPERIENCE": {
+        "permissionGroup": "android.permission-group.PHONE_CALLS",
+        "description": "@string/permdesc_control_incall_experience",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_control_incall_experience"
+    },
+    "android.permission.READ_EXTERNAL_STORAGE": {
+        "permissionGroup": "android.permission-group.STORAGE",
+        "description": "@string/permdesc_sdcardRead",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_sdcardRead"
+    },
+    "android.permission.WRITE_EXTERNAL_STORAGE": {
+        "permissionGroup": "android.permission-group.STORAGE",
+        "description": "@string/permdesc_sdcardWrite",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_sdcardWrite"
+    },
+    "android.permission.WRITE_MEDIA_STORAGE": {
+        "permissionGroup": "android.permission-group.STORAGE",
+        "description": "@string/permdesc_mediaStorageWrite",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_mediaStorageWrite"
+    },
+    "android.permission.MANAGE_DOCUMENTS": {
+        "permissionGroup": "android.permission-group.STORAGE",
+        "description": "@string/permdesc_manageDocs",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_manageDocs"
+    },
+    "android.permission.DISABLE_KEYGUARD": {
+        "permissionGroup": "android.permission-group.SCREENLOCK",
+        "description": "@string/permdesc_disableKeyguard",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_disableKeyguard"
+    },
+    "android.permission.GET_TASKS": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_getTasks",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_getTasks"
+    },
+    "android.permission.REAL_GET_TASKS": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_getTasks",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_getTasks"
+    },
+    "android.permission.START_TASKS_FROM_RECENTS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_startTasksFromRecents",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_startTasksFromRecents"
+    },
+    "android.permission.INTERACT_ACROSS_USERS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_interactAcrossUsers",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_interactAcrossUsers"
+    },
+    "android.permission.INTERACT_ACROSS_USERS_FULL": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_interactAcrossUsersFull",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_interactAcrossUsersFull"
+    },
+    "android.permission.MANAGE_USERS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_manageUsers",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageUsers"
+    },
+    "android.permission.GET_DETAILED_TASKS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_getDetailedTasks",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_getDetailedTasks"
+    },
+    "android.permission.REORDER_TASKS": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_reorderTasks",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_reorderTasks"
+    },
+    "android.permission.REMOVE_TASKS": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_removeTasks",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_removeTasks"
+    },
+    "android.permission.MANAGE_ACTIVITY_STACKS": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_manageActivityStacks",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageActivityStacks"
+    },
+    "android.permission.START_ANY_ACTIVITY": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_startAnyActivity",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_startAnyActivity"
+    },
+    "android.permission.RESTART_PACKAGES": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_killBackgroundProcesses",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_killBackgroundProcesses"
+    },
+    "android.permission.KILL_BACKGROUND_PROCESSES": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_killBackgroundProcesses",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_killBackgroundProcesses"
+    },
+    "android.permission.SYSTEM_ALERT_WINDOW": {
+        "permissionGroup": "android.permission-group.DISPLAY",
+        "description": "@string/permdesc_systemAlertWindow",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_systemAlertWindow"
+    },
+    "android.permission.SET_WALLPAPER": {
+        "permissionGroup": "android.permission-group.WALLPAPER",
+        "description": "@string/permdesc_setWallpaper",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_setWallpaper"
+    },
+    "android.permission.SET_WALLPAPER_HINTS": {
+        "permissionGroup": "android.permission-group.WALLPAPER",
+        "description": "@string/permdesc_setWallpaperHints",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_setWallpaperHints"
+    },
+    "android.permission.SET_TIME": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_setTime",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_setTime"
+    },
+    "android.permission.SET_TIME_ZONE": {
+        "permissionGroup": "android.permission-group.SYSTEM_CLOCK",
+        "description": "@string/permdesc_setTimeZone",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_setTimeZone"
+    },
+    "android.permission.EXPAND_STATUS_BAR": {
+        "permissionGroup": "android.permission-group.STATUS_BAR",
+        "description": "@string/permdesc_expandStatusBar",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_expandStatusBar"
+    },
+    "com.android.launcher.permission.INSTALL_SHORTCUT": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_install_shortcut",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_install_shortcut"
+    },
+    "com.android.launcher.permission.UNINSTALL_SHORTCUT": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_uninstall_shortcut",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_uninstall_shortcut"
+    },
+    "android.permission.READ_SYNC_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYNC_SETTINGS",
+        "description": "@string/permdesc_readSyncSettings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_readSyncSettings"
+    },
+    "android.permission.WRITE_SYNC_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYNC_SETTINGS",
+        "description": "@string/permdesc_writeSyncSettings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_writeSyncSettings"
+    },
+    "android.permission.READ_SYNC_STATS": {
+        "permissionGroup": "android.permission-group.SYNC_SETTINGS",
+        "description": "@string/permdesc_readSyncStats",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_readSyncStats"
+    },
+    "android.permission.SET_SCREEN_COMPATIBILITY": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_setScreenCompatibility",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setScreenCompatibility"
+    },
+    "android.permission.ACCESS_ALL_EXTERNAL_STORAGE": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_sdcardAccessAll",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_sdcardAccessAll"
+    },
+    "android.permission.CHANGE_CONFIGURATION": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_changeConfiguration",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_changeConfiguration"
+    },
+    "android.permission.WRITE_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_writeSettings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_writeSettings"
+    },
+    "android.permission.WRITE_GSERVICES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_writeGservices",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_writeGservices"
+    },
+    "android.permission.FORCE_STOP_PACKAGES": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_forceStopPackages",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_forceStopPackages"
+    },
+    "android.permission.RETRIEVE_WINDOW_CONTENT": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_retrieve_window_content",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_retrieve_window_content"
+    },
+    "android.permission.SET_ANIMATION_SCALE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_setAnimationScale",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_setAnimationScale"
+    },
+    "android.permission.PERSISTENT_ACTIVITY": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_persistentActivity",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_persistentActivity"
+    },
+    "android.permission.GET_PACKAGE_SIZE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_getPackageSize",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_getPackageSize"
+    },
+    "android.permission.SET_PREFERRED_APPLICATIONS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_setPreferredApplications",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setPreferredApplications"
+    },
+    "android.permission.RECEIVE_BOOT_COMPLETED": {
+        "permissionGroup": "android.permission-group.APP_INFO",
+        "description": "@string/permdesc_receiveBootCompleted",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_receiveBootCompleted"
+    },
+    "android.permission.BROADCAST_STICKY": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_broadcastSticky",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_broadcastSticky"
+    },
+    "android.permission.MOUNT_UNMOUNT_FILESYSTEMS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_mount_unmount_filesystems",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_mount_unmount_filesystems"
+    },
+    "android.permission.MOUNT_FORMAT_FILESYSTEMS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_mount_format_filesystems",
+        "protectionLevel": "system|signature",
+        "label": "@string/permlab_mount_format_filesystems"
+    },
+    "android.permission.ASEC_ACCESS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_asec_access",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_asec_access"
+    },
+    "android.permission.ASEC_CREATE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_asec_create",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_asec_create"
+    },
+    "android.permission.ASEC_DESTROY": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_asec_destroy",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_asec_destroy"
+    },
+    "android.permission.ASEC_MOUNT_UNMOUNT": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_asec_mount_unmount",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_asec_mount_unmount"
+    },
+    "android.permission.ASEC_RENAME": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_asec_rename",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_asec_rename"
+    },
+    "android.permission.WRITE_APN_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_writeApnSettings",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_writeApnSettings"
+    },
+    "android.permission.SUBSCRIBED_FEEDS_READ": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_subscribedFeedsRead",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_subscribedFeedsRead"
+    },
+    "android.permission.SUBSCRIBED_FEEDS_WRITE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_subscribedFeedsWrite",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_subscribedFeedsWrite"
+    },
+    "android.permission.CHANGE_NETWORK_STATE": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_changeNetworkState",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_changeNetworkState"
+    },
+    "android.permission.CLEAR_APP_CACHE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_clearAppCache",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_clearAppCache"
+    },
+    "android.permission.ALLOW_ANY_CODEC_FOR_PLAYBACK": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_anyCodecForPlayback",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_anyCodecForPlayback"
+    },
+    "android.permission.MANAGE_CA_CERTIFICATES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageCaCertificates",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageCaCertificates"
+    },
+    "android.permission.RECOVERY": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_recovery",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_recovery"
+    },
+    "android.permission.BIND_JOB_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindJobService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindJobService"
+    },
+    "android.permission.WRITE_SECURE_SETTINGS": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_writeSecureSettings",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_writeSecureSettings"
+    },
+    "android.permission.DUMP": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_dump",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_dump"
+    },
+    "android.permission.READ_LOGS": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_readLogs",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_readLogs"
+    },
+    "android.permission.SET_DEBUG_APP": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_setDebugApp",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_setDebugApp"
+    },
+    "android.permission.SET_PROCESS_LIMIT": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_setProcessLimit",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_setProcessLimit"
+    },
+    "android.permission.SET_ALWAYS_FINISH": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_setAlwaysFinish",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_setAlwaysFinish"
+    },
+    "android.permission.SIGNAL_PERSISTENT_PROCESSES": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "@string/permdesc_signalPersistentProcesses",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_signalPersistentProcesses"
+    },
+    "android.permission.DIAGNOSTIC": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_diagnostic",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_diagnostic"
+    },
+    "android.permission.STATUS_BAR": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_statusBar",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_statusBar"
+    },
+    "android.permission.STATUS_BAR_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_statusBarService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_statusBarService"
+    },
+    "android.permission.FORCE_BACK": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_forceBack",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_forceBack"
+    },
+    "android.permission.UPDATE_DEVICE_STATS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_updateBatteryStats",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_updateBatteryStats"
+    },
+    "android.permission.GET_APP_OPS_STATS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_getAppOpsStats",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_getAppOpsStats"
+    },
+    "android.permission.UPDATE_APP_OPS_STATS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_updateAppOpsStats",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_updateAppOpsStats"
+    },
+    "android.permission.INTERNAL_SYSTEM_WINDOW": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_internalSystemWindow",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_internalSystemWindow"
+    },
+    "android.permission.MANAGE_APP_TOKENS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageAppTokens",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_manageAppTokens"
+    },
+    "android.permission.FREEZE_SCREEN": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_freezeScreen",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_freezeScreen"
+    },
+    "android.permission.INJECT_EVENTS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_injectEvents",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_injectEvents"
+    },
+    "android.permission.FILTER_EVENTS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_filter_events",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_filter_events"
+    },
+    "android.permission.RETRIEVE_WINDOW_TOKEN": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_retrieveWindowToken",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_retrieveWindowToken"
+    },
+    "android.permission.FRAME_STATS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_frameStats",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_frameStats"
+    },
+    "android.permission.TEMPORARY_ENABLE_ACCESSIBILITY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_temporary_enable_accessibility",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_temporary_enable_accessibility"
+    },
+    "android.permission.SET_ACTIVITY_WATCHER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_runSetActivityWatcher",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_runSetActivityWatcher"
+    },
+    "android.permission.SHUTDOWN": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_shutdown",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_shutdown"
+    },
+    "android.permission.STOP_APP_SWITCHES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_stopAppSwitches",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_stopAppSwitches"
+    },
+    "android.permission.GET_TOP_ACTIVITY_INFO": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_getTopActivityInfo",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_getTopActivityInfo"
+    },
+    "android.permission.READ_INPUT_STATE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_readInputState",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_readInputState"
+    },
+    "android.permission.BIND_INPUT_METHOD": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindInputMethod",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindInputMethod"
+    },
+    "android.permission.BIND_ACCESSIBILITY_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindAccessibilityService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindAccessibilityService"
+    },
+    "android.permission.BIND_PRINT_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindPrintService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindPrintService"
+    },
+    "android.permission.BIND_NFC_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindNfcService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindNfcService"
+    },
+    "android.permission.BIND_PRINT_SPOOLER_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindPrintSpoolerService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindPrintSpoolerService"
+    },
+    "android.permission.BIND_TEXT_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindTextService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindTextService"
+    },
+    "android.permission.BIND_VPN_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindVpnService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindVpnService"
+    },
+    "android.permission.BIND_WALLPAPER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindWallpaper",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_bindWallpaper"
+    },
+    "android.permission.BIND_VOICE_INTERACTION": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindVoiceInteraction",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindVoiceInteraction"
+    },
+    "android.permission.MANAGE_VOICE_KEYPHRASES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageVoiceKeyphrases",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageVoiceKeyphrases"
+    },
+    "android.permission.BIND_REMOTE_DISPLAY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindRemoteDisplay",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindRemoteDisplay"
+    },
+    "android.permission.BIND_TV_INPUT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindTvInput",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_bindTvInput"
+    },
+    "android.permission.MODIFY_PARENTAL_CONTROLS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_modifyParentalControls",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_modifyParentalControls"
+    },
+    "android.permission.BIND_DEVICE_ADMIN": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindDeviceAdmin",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindDeviceAdmin"
+    },
+    "android.permission.MANAGE_DEVICE_ADMINS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageDeviceAdmins",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_manageDeviceAdmins"
+    },
+    "android.permission.SET_ORIENTATION": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_setOrientation",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setOrientation"
+    },
+    "android.permission.SET_POINTER_SPEED": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_setPointerSpeed",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setPointerSpeed"
+    },
+    "android.permission.SET_INPUT_CALIBRATION": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_setInputCalibration",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setInputCalibration"
+    },
+    "android.permission.SET_KEYBOARD_LAYOUT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_setKeyboardLayout",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_setKeyboardLayout"
+    },
+    "android.permission.INSTALL_PACKAGES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_installPackages",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_installPackages"
+    },
+    "android.permission.CLEAR_APP_USER_DATA": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_clearAppUserData",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_clearAppUserData"
+    },
+    "android.permission.DELETE_CACHE_FILES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_deleteCacheFiles",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_deleteCacheFiles"
+    },
+    "android.permission.DELETE_PACKAGES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_deletePackages",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_deletePackages"
+    },
+    "android.permission.MOVE_PACKAGE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_movePackage",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_movePackage"
+    },
+    "android.permission.CHANGE_COMPONENT_ENABLED_STATE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_changeComponentState",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_changeComponentState"
+    },
+    "android.permission.GRANT_REVOKE_PERMISSIONS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_grantRevokePermissions",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_grantRevokePermissions"
+    },
+    "android.permission.ACCESS_SURFACE_FLINGER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessSurfaceFlinger",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_accessSurfaceFlinger"
+    },
+    "android.permission.READ_FRAME_BUFFER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_readFrameBuffer",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_readFrameBuffer"
+    },
+    "android.permission.ACCESS_INPUT_FLINGER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessInputFlinger",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_accessInputFlinger"
+    },
+    "android.permission.CONFIGURE_WIFI_DISPLAY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_configureWifiDisplay",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_configureWifiDisplay"
+    },
+    "android.permission.CONTROL_WIFI_DISPLAY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_controlWifiDisplay",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_controlWifiDisplay"
+    },
+    "android.permission.CONTROL_VPN": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_controlVpn",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_controlVpn"
+    },
+    "android.permission.CAPTURE_AUDIO_OUTPUT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_captureAudioOutput",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_captureAudioOutput"
+    },
+    "android.permission.CAPTURE_AUDIO_HOTWORD": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_captureAudioHotword",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_captureAudioHotword"
+    },
+    "android.permission.MODIFY_AUDIO_ROUTING": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_modifyAudioRouting",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_modifyAudioRouting"
+    },
+    "android.permission.CAPTURE_VIDEO_OUTPUT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_captureVideoOutput",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_captureVideoOutput"
+    },
+    "android.permission.CAPTURE_SECURE_VIDEO_OUTPUT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_captureSecureVideoOutput",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_captureSecureVideoOutput"
+    },
+    "android.permission.MEDIA_CONTENT_CONTROL": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_mediaContentControl",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_mediaContentControl"
+    },
+    "android.permission.BRICK": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_brick",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_brick"
+    },
+    "android.permission.REBOOT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_reboot",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_reboot"
+    },
+    "android.permission.DEVICE_POWER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_devicePower",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_devicePower"
+    },
+    "android.permission.USER_ACTIVITY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_userActivity",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_userActivity"
+    },
+    "android.permission.NET_TUNNELING": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.FACTORY_TEST": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_factoryTest",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_factoryTest"
+    },
+    "android.permission.BROADCAST_PACKAGE_REMOVED": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_broadcastPackageRemoved",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_broadcastPackageRemoved"
+    },
+    "android.permission.BROADCAST_SMS": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_broadcastSmsReceived",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_broadcastSmsReceived"
+    },
+    "android.permission.BROADCAST_WAP_PUSH": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permdesc_broadcastWapPush",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_broadcastWapPush"
+    },
+    "android.permission.BROADCAST_NETWORK_PRIVILEGED": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_broadcastNetworkPrivileged",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_broadcastNetworkPrivileged"
+    },
+    "android.permission.MASTER_CLEAR": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_masterClear",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_masterClear"
+    },
+    "android.permission.CALL_PRIVILEGED": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_callPrivileged",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_callPrivileged"
+    },
+    "android.permission.PERFORM_CDMA_PROVISIONING": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_performCdmaProvisioning",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_performCdmaProvisioning"
+    },
+    "android.permission.CONTROL_LOCATION_UPDATES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_locationUpdates",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_locationUpdates"
+    },
+    "android.permission.ACCESS_CHECKIN_PROPERTIES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_checkinProperties",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_checkinProperties"
+    },
+    "android.permission.PACKAGE_USAGE_STATS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_pkgUsageStats",
+        "protectionLevel": "signature|development|appop",
+        "label": "@string/permlab_pkgUsageStats"
+    },
+    "android.permission.BATTERY_STATS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_batteryStats",
+        "protectionLevel": "signature|system|development",
+        "label": "@string/permlab_batteryStats"
+    },
+    "android.permission.BACKUP": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_backup",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_backup"
+    },
+    "android.permission.CONFIRM_FULL_BACKUP": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_confirm_full_backup",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_confirm_full_backup"
+    },
+    "android.permission.BIND_REMOTEVIEWS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindRemoteViews",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_bindRemoteViews"
+    },
+    "android.permission.BIND_APPWIDGET": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "@string/permdesc_bindGadget",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_bindGadget"
+    },
+    "android.permission.BIND_KEYGUARD_APPWIDGET": {
+        "permissionGroup": "android.permission-group.PERSONAL_INFO",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.MODIFY_APPWIDGET_BIND_PERMISSIONS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.CHANGE_BACKGROUND_DATA_SETTING": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_changeBackgroundDataSetting",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_changeBackgroundDataSetting"
+    },
+    "android.permission.GLOBAL_SEARCH": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.GLOBAL_SEARCH_CONTROL": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.READ_SEARCH_INDEXABLES": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.SET_WALLPAPER_COMPONENT": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.READ_DREAM_STATE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.WRITE_DREAM_STATE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.ACCESS_CACHE_FILESYSTEM": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_cache_filesystem",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_cache_filesystem"
+    },
+    "android.permission.COPY_PROTECTED_DATA": {
+        "permissionGroup": "",
+        "description": "@string/permlab_copyProtectedData",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_copyProtectedData"
+    },
+    "android.permission.CRYPT_KEEPER": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signature|system",
+        "label": ""
+    },
+    "android.permission.READ_NETWORK_USAGE_HISTORY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_readNetworkUsageHistory",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_readNetworkUsageHistory"
+    },
+    "android.permission.MANAGE_NETWORK_POLICY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageNetworkPolicy",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_manageNetworkPolicy"
+    },
+    "android.permission.MODIFY_NETWORK_ACCOUNTING": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_modifyNetworkAccounting",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_modifyNetworkAccounting"
+    },
+    "android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "android.permission.PACKAGE_VERIFICATION_AGENT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_packageVerificationAgent",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_packageVerificationAgent"
+    },
+    "android.permission.BIND_PACKAGE_VERIFIER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindPackageVerifier",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindPackageVerifier"
+    },
+    "android.permission.SERIAL_PORT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_serialPort",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_serialPort"
+    },
+    "android.permission.ACCESS_CONTENT_PROVIDERS_EXTERNALLY": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessContentProvidersExternally",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_accessContentProvidersExternally"
+    },
+    "android.permission.UPDATE_LOCK": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_updateLock",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_updateLock"
+    },
+    "android.permission.ACCESS_NOTIFICATIONS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessNotifications",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_accessNotifications"
+    },
+    "android.permission.ACCESS_KEYGUARD_SECURE_STORAGE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_access_keyguard_secure_storage",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_access_keyguard_secure_storage"
+    },
+    "android.permission.CONTROL_KEYGUARD": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_control_keyguard",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_control_keyguard"
+    },
+    "android.permission.TRUST_LISTENER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_trust_listener",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_trust_listener"
+    },
+    "android.permission.PROVIDE_TRUST_AGENT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_provide_trust_agent",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_provide_trust_agent"
+    },
+    "android.permission.LAUNCH_TRUST_AGENT_SETTINGS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_launch_trust_agent_settings",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_launch_trust_agent_settings"
+    },
+    "android.permission.BIND_TRUST_AGENT": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bind_trust_agent_service",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bind_trust_agent_service"
+    },
+    "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindNotificationListenerService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindNotificationListenerService"
+    },
+    "android.permission.BIND_CONDITION_PROVIDER_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindConditionProviderService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindConditionProviderService"
+    },
+    "android.permission.BIND_DREAM_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindDreamService",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bindDreamService"
+    },
+    "android.permission.INVOKE_CARRIER_SETUP": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_invokeCarrierSetup",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_invokeCarrierSetup"
+    },
+    "android.permission.ACCESS_NETWORK_CONDITIONS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessNetworkConditions",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_accessNetworkConditions"
+    },
+    "android.permission.ACCESS_DRM_CERTIFICATES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessDrmCertificates",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_accessDrmCertificates"
+    },
+    "android.permission.MANAGE_MEDIA_PROJECTION": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_manageMediaProjection",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_manageMediaProjection"
+    },
+    "android.permission.READ_INSTALL_SESSIONS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_readInstallSessions",
+        "protectionLevel": "",
+        "label": "@string/permlab_readInstallSessions"
+    },
+    "android.permission.REMOVE_DRM_CERTIFICATES": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_removeDrmCertificates",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_removeDrmCertificates"
+    },
+    "android.permission.BIND_CARRIER_MESSAGING_SERVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bindCarrierMessagingService",
+        "protectionLevel": "signature|system",
+        "label": "@string/permlab_bindCarrierMessagingService"
+    },
+    "org.chromium.chrome.shell.permission.SANDBOX": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "org.chromium.chrome.shell.permission.C2D_MESSAGE": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "org.chromium.chrome.shell.permission.DEBUG": {
+        "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": "Debug web pages in Chrome Shell"
+    },
+    "android.permission.ACCESS_BLUETOOTH_SHARE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bluetoothShareManager",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bluetoothShareManager"
+    },
+    "com.android.permission.WHITELIST_BLUETOOTH_DEVICE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_bluetoothWhitelist",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_bluetoothWhitelist"
+    },
+    "com.android.browser.permission.PRELOAD": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permission_preload_label"
+    },
+    "com.android.email.permission.READ_ATTACHMENT": {
+        "permissionGroup": "android.permission-group.MESSAGES",
+        "description": "@string/permission_read_attachment_desc",
+        "protectionLevel": "dangerous",
+        "label": "@string/permission_read_attachment_label"
+    },
+    "com.android.email.permission.ACCESS_PROVIDER": {
+        "permissionGroup": "",
+        "description": "@string/permission_access_provider_desc",
+        "protectionLevel": "signature",
+        "label": "@string/permission_access_provider_label"
+    },
+    "com.android.gallery3d.permission.GALLERY_PROVIDER": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "com.android.launcher.permission.PRELOAD_WORKSPACE": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "com.android.launcher.permission.READ_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_read_settings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_read_settings"
+    },
+    "com.android.launcher.permission.WRITE_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_write_settings",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_write_settings"
+    },
+    "com.android.launcher3.permission.READ_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_read_settings",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_read_settings"
+    },
+    "com.android.launcher3.permission.WRITE_SETTINGS": {
+        "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+        "description": "@string/permdesc_write_settings",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_write_settings"
+    },
+    "com.android.launcher3.permission.RECEIVE_LAUNCH_BROADCASTS": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signature",
+        "label": ""
+    },
+    "com.android.launcher3.permission.RECEIVE_FIRST_LOAD_BROADCAST": {
+        "permissionGroup": "",
+        "description": "",
+        "protectionLevel": "signatureOrSystem",
+        "label": ""
+    },
+    "android.permission.MMS_SEND_OUTBOX_MSG": {
+        "permissionGroup": "",
+        "description": "@string/desc_mms_send_outbox_msg",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/label_mms_send_outbox_msg"
+    },
+    "android.permission.ACCESS_DOWNLOAD_MANAGER": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_downloadManager",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_downloadManager"
+    },
+    "android.permission.ACCESS_DOWNLOAD_MANAGER_ADVANCED": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_downloadManagerAdvanced",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_downloadManagerAdvanced"
+    },
+    "android.permission.SEND_DOWNLOAD_COMPLETED_INTENTS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_downloadCompletedIntent",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_downloadCompletedIntent"
+    },
+    "android.permission.DOWNLOAD_CACHE_NON_PURGEABLE": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_downloadCacheNonPurgeable",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_downloadCacheNonPurgeable"
+    },
+    "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION": {
+        "permissionGroup": "android.permission-group.NETWORK",
+        "description": "@string/permdesc_downloadWithoutNotification",
+        "protectionLevel": "normal",
+        "label": "@string/permlab_downloadWithoutNotification"
+    },
+    "android.permission.ACCESS_ALL_DOWNLOADS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessAllDownloads",
+        "protectionLevel": "signature",
+        "label": "@string/permlab_accessAllDownloads"
+    },
+    "com.android.providers.tv.permission.READ_EPG_DATA": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_readEpgData",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_readEpgData"
+    },
+    "com.android.providers.tv.permission.WRITE_EPG_DATA": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_writeEpgData",
+        "protectionLevel": "dangerous",
+        "label": "@string/permlab_writeEpgData"
+    },
+    "com.android.providers.tv.permission.ACCESS_ALL_EPG_DATA": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessAllEpgData",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_accessAllEpgData"
+    },
+    "com.android.providers.tv.permission.ACCESS_WATCHED_PROGRAMS": {
+        "permissionGroup": "",
+        "description": "@string/permdesc_accessWatchedPrograms",
+        "protectionLevel": "signatureOrSystem",
+        "label": "@string/permlab_accessWatchedPrograms"
+    }
+}
