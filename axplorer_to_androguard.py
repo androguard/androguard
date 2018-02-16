@@ -1,5 +1,6 @@
 # Convert the Mappings from axplorer to JSON and convert to the format androguard uses.
 
+# FIXME, we need to remove that from here, so we can generate them on install time
 from androguard.core.bytecodes.dvm import TYPE_DESCRIPTOR
 import os
 import sys
