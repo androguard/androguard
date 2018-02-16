@@ -21,6 +21,16 @@ install:
 # command to run tests
 script:
   - nosetests --with-coverage --with-timer --timer-top-n 50
+  # Testing the scripts - crude ;)
+  - for f in `find -name \*.apk`; do
+      echo "testing $f";
+      time ./androaxml.py -i $f > /dev/null;
+      time ./androaxml.py -i $f -o /dev/null;
+      time ./androarsc.py -i $f > /dev/null;
+      time ./androarsc.py -i $f -o /dev/null;
+      time ./androarsc.py -i $f -t string > /dev/null;
+      time ./androarsc.py -i $f -t string -o /dev/null;
+      done
   - python setup.py build_sphinx
 
 notifications:

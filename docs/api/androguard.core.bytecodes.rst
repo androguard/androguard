@@ -1,16 +1,16 @@
 androguard.core.bytecodes package
 =================================
 
+The bytecodes modules are one very important core feature of Androguard.
+They contain parsers for APK, AXML, DEX, ODEX and DEY files as well for formats used
+inside these formats. These might be MUTF-8 for string encoding in DEX files as well
+as the widely used LEB128 encoding for numbers.
+
+The most important modules might be :class:`androguard.core.bytecodes.apk.APK` and
+:class:`androguard.core.bytecodes.dvm.DalvikVMFormat`.
+
 Submodules
 ----------
-
-androguard.core.bytecodes.api_permissions module
-------------------------------------------------
-
-.. automodule:: androguard.core.bytecodes.api_permissions
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 androguard.core.bytecodes.apk module
 ------------------------------------
@@ -28,14 +28,21 @@ androguard.core.bytecodes.dvm module
     :undoc-members:
     :show-inheritance:
 
-androguard.core.bytecodes.dvm_permissions module
-------------------------------------------------
+androguard.core.bytecodes.axml module
+------------------------------------
 
-.. automodule:: androguard.core.bytecodes.dvm_permissions
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: androguard.core.bytecodes.dvm
+:members:
+        :undoc-members:
+        :show-inheritance:
 
+androguard.core.bytecodes.mutf8 module
+------------------------------------
+
+.. automodule:: androguard.core.bytecodes.dvm
+:members:
+        :undoc-members:
+            :show-inheritance:
 
 Module contents
 ---------------
