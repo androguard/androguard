@@ -68,7 +68,8 @@ def convert_name(s):
         clname = name_to_androguard(clname)
         ret = name_to_androguard(ret)
 
-        return "{}-{}-({}){}".format(clname, methodname, args, ret), perm
+        # perm is actually a comma separated list of permissions
+        return "{}-{}-({}){}".format(clname, methodname, args, ret), perm.split(", ")
     else:
         raise ValueError("what?")
 
