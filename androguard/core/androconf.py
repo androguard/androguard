@@ -315,7 +315,7 @@ def color_range(startcolor, goalcolor, steps):
 
 def load_api_specific_resource_module(resource_name, api=None):
     """
-    Load the module from the JSON files and return a dict or None,
+    Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.
 
     If no api version is given, the default one from the CONF dict is used.

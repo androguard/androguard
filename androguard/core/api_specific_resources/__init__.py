@@ -16,7 +16,7 @@ def load_permissions(apilevel):
     permissions_file = os.path.join("aosp_permissions", "permissions_{}.json".format(apilevel))
 
     if not os.path.isfile(permissions_file):
-        return None
+        return {}
 
     with open(permissions_file, "r") as fp:
         return json.load(fp)
@@ -33,7 +33,7 @@ def load_permission_mappings(apilevel):
     permissions_file = os.path.join("api_permission_mappings", "permissions_{}.json".format(apilevel))
 
     if not os.path.isfile(permissions_file):
-        return None
+        return {}
 
     with open(permissions_file, "r") as fp:
         return json.load(fp)
