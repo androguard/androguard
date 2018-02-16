@@ -35,6 +35,7 @@ def name_to_androguard(n):
     if n == "":
         return ""
     is_array = ""
+    # FIXME what about n-dimensional arrays?
     if n.startswith("["):
         is_array = "["
         n = n[1:]

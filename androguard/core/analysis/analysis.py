@@ -576,6 +576,10 @@ class MethodClassAnalysis(object):
         return self.xrefto
 
     def get_method(self):
+        """
+        Return the `EncodedMethod` object that relates to this object
+        :return: `dvm.EncodedMethod`
+        """
         return self.method
 
     def __str__(self):
