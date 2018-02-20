@@ -1,0 +1,34 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="21">
+            <item index="0" class="java.lang.String" itemvalue="gammaray" />
+            <item index="1" class="java.lang.String" itemvalue="pycurl" />
+            <item index="2" class="java.lang.String" itemvalue="BeautifulSoup4" />
+            <item index="3" class="java.lang.String" itemvalue="static-scan-common" />
+            <item index="4" class="java.lang.String" itemvalue="ago" />
+            <item index="5" class="java.lang.String" itemvalue="biplist" />
+            <item index="6" class="java.lang.String" itemvalue="apkdownloader" />
+            <item index="7" class="java.lang.String" itemvalue="bluelet" />
+            <item index="8" class="java.lang.String" itemvalue="ipa-downloader" />
+            <item index="9" class="java.lang.String" itemvalue="aster-android" />
+            <item index="10" class="java.lang.String" itemvalue="androguard" />
+            <item index="11" class="java.lang.String" itemvalue="dt-endpoints-client" />
+            <item index="12" class="java.lang.String" itemvalue="watchdog" />
+            <item index="13" class="java.lang.String" itemvalue="apk-downloader-android" />
+            <item index="14" class="java.lang.String" itemvalue="appstore-client" />
+            <item index="15" class="java.lang.String" itemvalue="mock" />
+            <item index="16" class="java.lang.String" itemvalue="HTTPretty" />
+            <item index="17" class="java.lang.String" itemvalue="gevent" />
+            <item index="18" class="java.lang.String" itemvalue="retry" />
+            <item index="19" class="java.lang.String" itemvalue="lxml" />
+            <item index="20" class="java.lang.String" itemvalue="requests" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
