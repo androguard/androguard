@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 import inspect
 import os
 import sys
+import glob
 
 # ensure that androguard is loaded from this source code
 localmodule = os.path.realpath(
@@ -15,10 +18,11 @@ print('loaded from', apk.__file__)
 
 class APKTest(unittest.TestCase):
     def testAPK(self):
-        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
-                  "rb") as fd:
-            a = apk.APK(fd.read(), True)
-            self.assertTrue(a)
+        for f in ["examples/android/TestsAndroguard/bin/TestActivity.apk"] \
+            + glob.glob('examples/tests/*.apk'):
+            with open(f, "rb") as fd:
+                a = apk.APK(fd.read(), True)
+                self.assertTrue(a)
 
     def testAPKWrapper(self):
         from androguard.misc import AnalyzeAPK
