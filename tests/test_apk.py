@@ -128,6 +128,26 @@ class APKTest(unittest.TestCase):
             self.assertEqual(hash_x509.lower(), hash_hashlib.lower())
             self.assertEqual(hash_x509.lower(), keytool.replace(":", "").lower())
 
+    def testAPKv2Signature(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK("examples/signing/TestActivity_signed_both.apk")
+
+        self.assertTrue(a.is_signed_v1())
+        self.assertTrue(a.is_signed_v2())
+        self.assertTrue(a.is_signed())
+
+        # Signing name is maximal 8 chars...
+        self.assertEqual(a.get_signature_name(), "META-INF/ANDROGUA.RSA")
+        self.assertEqual(len(a.get_certificates_der_v2()), 1)
+        # As we signed with the same certificate, both methods should return the
+        # same content
+        self.assertEqual(a.get_certificate_der(a.get_signature_name()),
+                a.get_certificates_der_v2()[0])
+
+        from cryptography.x509 import Certificate
+        self.assertIsInstance(a.get_certificates_v2()[0], Certificate)
+
     def testAPKWrapperUnsigned(self):
         from androguard.misc import AnalyzeAPK
         from androguard.core.bytecodes.apk import APK
