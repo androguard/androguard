@@ -91,6 +91,7 @@ class APK(object):
         self.declared_permissions = {}
         self.valid_apk = False
         self._is_signed_v2 = None
+        self._v2_blocks = {}
 
         self._files = {}
         self.files_crc32 = {}
@@ -968,6 +969,9 @@ class APK(object):
 
             PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
             APK_SIG_MAGIC = b"APK Sig Block 42"
+            APK_SIG_KEY_SIGNATURE = 0x7109871a
+
+            APK_SIG_KNOWN_KEYS = [APK_SIG_KEY_SIGNATURE]
 
             size_central = None
             offset_central = None
@@ -1000,12 +1004,24 @@ class APK(object):
                 assert r == b"\x50\x4b\x01\x02", "No Central Dir at specified offset"
 
                 # Go back and check if we have a magic
-                f.seek(-16, io.SEEK_CUR)
-                magic, = unpack('<16s', f.read(16))
+                end_offset = f.tell()
+                f.seek(-24, io.SEEK_CUR)
+                size_of_block, magic = unpack('<Q16s', f.read(24))
+                self._is_signed_v2 = False
                 if magic == APK_SIG_MAGIC:
-                    self._is_signed_v2 = True
-                else:
-                    self._is_signed_v2 = False
+                    # go back size_of_blocks + 8 and read size_of_block again
+                    f.seek(-(size_of_block + 8), io.SEEK_CUR)
+                    size_of_block_start, = unpack("<Q", f.read(8))
+                    assert size_of_block_start == size_of_block, "Sizes at beginning and and does not match!"
+
+                    # Store all blocks
+                    while f.tell() < end_offset - 24:
+                        size, key = unpack('<QI', f.read(12))
+                        value = f.read(size - 4)
+                        self._v2_blocks[key] = value
+
+                    if APK_SIG_KEY_SIGNATURE in self._v2_blocks:
+                        self._is_signed_v2 = True
 
         return self._is_signed_v2
 
