@@ -205,6 +205,45 @@ class APKTest(unittest.TestCase):
                                                          {'action': ['android.appwidget.action.APPWIDGET_UPDATE']}])
         self.assertTrue(any(x != y for x, y in pairs))
 
+    def testEffectiveTargetSdkVersion(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK('examples/android/abcore/app-prod-debug.apk')
+        self.assertEqual(27, a.get_effective_target_sdk_version())
+
+        a = APK('examples/android/Invalid/Invalid.apk')
+        self.assertEqual(15, a.get_effective_target_sdk_version())
+
+        a = APK('examples/android/TC/bin/TC-debug.apk')
+        self.assertEqual(1, a.get_effective_target_sdk_version())
+
+        a = APK('examples/android/TCDiff/bin/TCDiff-debug.apk')
+        self.assertEqual(1, a.get_effective_target_sdk_version())
+
+        a = APK('examples/android/TestsAndroguard/bin/TestActivity.apk')
+        self.assertEqual(16, a.get_effective_target_sdk_version())
+
+        a = APK('examples/android/TestsAndroguard/bin/TestActivity_unsigned.apk')
+        self.assertEqual(16, a.get_effective_target_sdk_version())
+
+        a = APK('examples/dalvik/test/bin/Test-debug.apk')
+        self.assertEqual(1, a.get_effective_target_sdk_version())
+
+        a = APK('examples/dalvik/test/bin/Test-debug-unaligned.apk')
+        self.assertEqual(1, a.get_effective_target_sdk_version())
+
+        a = APK('examples/tests/a2dp.Vol_137.apk')
+        self.assertEqual(25, a.get_effective_target_sdk_version())
+
+        a = APK('examples/tests/hello-world.apk')
+        self.assertEqual(25, a.get_effective_target_sdk_version())
+
+        a = APK('examples/tests/duplicate.permisssions_9999999.apk')
+        self.assertEqual(27, a.get_effective_target_sdk_version())
+
+        a = APK('examples/tests/com.politedroid_4.apk')
+        self.assertEqual(3, a.get_effective_target_sdk_version())
+
     def testNewZipWithoutModification(self):
         from androguard.core.bytecodes.apk import APK
         try:

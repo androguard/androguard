@@ -709,18 +709,9 @@ class APK(object):
         """
             Return all permissions implied by the target SDK or other permissions.
 
-            targetSdkVersion is set based on defaults as defined in:
-            https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
-
             :rtype: list of string
         """
-        implied = []
-        target_sdk_version = self.get_target_sdk_version()
-        if not target_sdk_version:
-            target_sdk_version = self.get_min_sdk_version()
-        if not target_sdk_version:
-            target_sdk_version = 1
-        target_sdk_version = int(target_sdk_version)
+        target_sdk_version = self.get_effective_target_sdk_version()
 
         READ_CALL_LOG = 'android.permission.READ_CALL_LOG'
         READ_CONTACTS = 'android.permission.READ_CONTACTS'
@@ -729,6 +720,8 @@ class APK(object):
         WRITE_CALL_LOG = 'android.permission.WRITE_CALL_LOG'
         WRITE_CONTACTS = 'android.permission.WRITE_CONTACTS'
         WRITE_EXTERNAL_STORAGE = 'android.permission.WRITE_EXTERNAL_STORAGE'
+
+        implied = []
 
         if target_sdk_version < 4:
             if WRITE_EXTERNAL_STORAGE not in self.permissions:
@@ -862,6 +855,24 @@ class APK(object):
             :rtype: string
         """
         return self.get_element("uses-sdk", "targetSdkVersion")
+
+    def get_effective_target_sdk_version(self):
+        """
+            Return the effective targetSdkVersion, always returns int > 0.
+
+            If the targetSdkVersion is not set, it defaults to 1.  This is
+            set based on defaults as defined in:
+            https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
+
+            :rtype: int
+        """
+        target_sdk_version = self.get_target_sdk_version()
+        if not target_sdk_version:
+            target_sdk_version = self.get_min_sdk_version()
+        try:
+            return int(target_sdk_version)
+        except (ValueError, TypeError):
+            return 1
 
     def get_libraries(self):
         """
