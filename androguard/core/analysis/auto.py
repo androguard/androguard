@@ -144,8 +144,7 @@ class DefaultAndroAnalysis(object):
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw app (a string)
         :rtype: a set with 2 elements, the return value (boolean) if it is necessary to
-        continue the analysis and the file type
-
+                continue the analysis and the file type
         """
         file_type = androconf.is_android_raw(fileraw)
         if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":

@@ -1069,7 +1069,7 @@ class APK(object):
 
     def get_certificates_v2(self):
         """
-        Return a list of :class:`cryptography.x509.Certificate`s which are found
+        Return a list of :class:`cryptography.x509.Certificate` which are found
         in the v2 signing block.
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
