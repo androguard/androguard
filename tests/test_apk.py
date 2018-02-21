@@ -1,8 +1,16 @@
 import unittest
-
+import inspect
+import os
 import sys
 
+# ensure that androguard is loaded from this source code
+localmodule = os.path.realpath(
+    os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..'))
+if localmodule not in sys.path:
+    sys.path.insert(0, localmodule)
+
 from androguard.core.bytecodes import apk
+print('loaded from', apk.__file__)
 
 
 class APKTest(unittest.TestCase):
