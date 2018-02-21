@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import glob
+import hashlib
 
 # ensure that androguard is loaded from this source code
 localmodule = os.path.realpath(
@@ -111,7 +112,15 @@ class APKTest(unittest.TestCase):
         from hashlib import md5, sha1, sha256
         a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk", skip_analysis=True)
 
+        # this one is not signed v2, it is v1 only
+        self.assertTrue(a.is_signed_v1())
+        self.assertFalse(a.is_signed_v2())
+        self.assertTrue(a.is_signed())
+        self.assertEqual(a.get_certificates_der_v2(), [])
+        self.assertEqual(a.get_certificates_v2(), [])
+
         self.assertEqual(a.get_signature_name(), "META-INF/CERT.RSA")
+        self.assertEqual(a.get_signature_names(), ["META-INF/CERT.RSA"])
 
         cert = a.get_certificate(a.get_signature_name())
         cert_der = a.get_certificate_der(a.get_signature_name())
@@ -127,6 +136,42 @@ class APKTest(unittest.TestCase):
 
             self.assertEqual(hash_x509.lower(), hash_hashlib.lower())
             self.assertEqual(hash_x509.lower(), keytool.replace(":", "").lower())
+
+    def testAPKv2Signature(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK("examples/signing/TestActivity_signed_both.apk")
+
+        self.assertTrue(a.is_signed_v1())
+        self.assertTrue(a.is_signed_v2())
+        self.assertTrue(a.is_signed())
+
+        # Signing name is maximal 8 chars...
+        self.assertEqual(a.get_signature_name(), "META-INF/ANDROGUA.RSA")
+        self.assertEqual(len(a.get_certificates_der_v2()), 1)
+        # As we signed with the same certificate, both methods should return the
+        # same content
+        self.assertEqual(a.get_certificate_der(a.get_signature_name()),
+                a.get_certificates_der_v2()[0])
+
+        from cryptography.x509 import Certificate
+        self.assertIsInstance(a.get_certificates_v2()[0], Certificate)
+
+        # Test if the certificate is also the same as on disk
+        with open("examples/signing/certificate.der", "rb") as f:
+            cert = f.read()
+        cert_der_v1 = a.get_certificate_der(a.get_signature_name())
+        cert_der_v2 = a.get_certificates_der_v2()[0]
+
+        for fun in [hashlib.md5, hashlib.sha1, hashlib.sha256, hashlib.sha512]:
+            h1 = fun(cert).hexdigest()
+            h2 = fun(cert_der_v1).hexdigest()
+            h3 = fun(cert_der_v2).hexdigest()
+
+            self.assertEqual(h1, h2)
+            self.assertEqual(h1, h3)
+            self.assertEqual(h2, h3)
+
 
     def testAPKWrapperUnsigned(self):
         from androguard.misc import AnalyzeAPK

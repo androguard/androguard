@@ -16,6 +16,7 @@ import re
 import binascii
 import zipfile
 import logging
+from struct import unpack
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
@@ -52,8 +53,15 @@ class BrokenAPKError(Error):
     pass
 
 
-######################################################## APK FORMAT ########################################################
 class APK(object):
+    # Constants in ZipFile
+    PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
+    PK_CENTRAL_DIR = b"\x50\x4b\x01\x02"
+
+    # Constants in the APK Signature Block
+    APK_SIG_MAGIC = b"APK Sig Block 42"
+    APK_SIG_KEY_SIGNATURE = 0x7109871a
+
     def __init__(self,
                  filename,
                  raw=False,
@@ -91,6 +99,8 @@ class APK(object):
         self.uses_permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
+        self._is_signed_v2 = None
+        self._v2_blocks = {}
 
         self._files = {}
         self.files_crc32 = {}
@@ -1005,6 +1015,145 @@ class APK(object):
             self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
             return self.arsc["resources.arsc"]
 
+    def is_signed(self):
+        """
+        Returns true if either a v1 or v2 (or both) signature was found.
+        """
+        return self.is_signed_v1() or self.is_signed_v2()
+
+    def is_signed_v1(self):
+        """
+        Returns true if a v1 / JAR signature was found.
+        Returning `True` does not mean that the file is properly signed!
+        It just says that there is a signature file which needs to be validated.
+        """
+        return self.get_signature_name() is not None
+
+    def is_signed_v2(self):
+        """
+        Returns true of a v2 / APK signature was found.
+        Returning `True` does not mean that the file is properly signed!
+        It just says that there is a signature file which needs to be validated.
+        """
+        if not self._is_signed_v2:
+            # Need to find an v2 Block in the APK.
+            # The Google Docs gives you the following rule:
+            # * go to the end of the ZIP File
+            # * search for the End of Central directory
+            # * then jump to the beginning of the central directory
+            # * Read now the magic of the signing block
+            # * before the magic there is the size_of_block, so we can jump to
+            # the beginning.
+            # * There should be again the size_of_block
+            # * Now we can read the Key-Values
+            # * IDs with an unknown value should be ignored.
+            f = io.BytesIO(self.__raw)
+
+            size_central = None
+            offset_central = None
+
+            # Go to the end
+            f.seek(-1, io.SEEK_END)
+            # we know the minimal length for the central dir is 16+4+2
+            f.seek(-20, io.SEEK_CUR)
+            while f.tell() > 0:
+                f.seek(-1, io.SEEK_CUR)
+                r, = unpack('<4s', f.read(4))
+                if r == self.PK_END_OF_CENTRAL_DIR:
+                    # Read central dir
+                    this_disk, disk_central, this_entries, total_entries, \
+                    size_central, offset_central = unpack('<HHHHII', f.read(16))
+                    # TODO according to the standard we need to check if the
+                    # end of central directory is the last item in the zip file
+                    # TODO We also need to check if the central dir is exactly
+                    # before the end of central dir...
+
+                    # These things should not happen for APKs
+                    assert this_disk == 0, "Not sure what to do with multi disk ZIP!"
+                    assert disk_central == 0, "Not sure what to do with multi disk ZIP!"
+                    break
+                f.seek(-4, io.SEEK_CUR)
+            if offset_central:
+                f.seek(offset_central)
+                r, = unpack('<4s', f.read(4))
+                f.seek(-4, io.SEEK_CUR)
+                assert r == self.PK_CENTRAL_DIR, "No Central Dir at specified offset"
+
+                # Go back and check if we have a magic
+                end_offset = f.tell()
+                f.seek(-24, io.SEEK_CUR)
+                size_of_block, magic = unpack('<Q16s', f.read(24))
+                self._is_signed_v2 = False
+                if magic == self.APK_SIG_MAGIC:
+                    # go back size_of_blocks + 8 and read size_of_block again
+                    f.seek(-(size_of_block + 8), io.SEEK_CUR)
+                    size_of_block_start, = unpack("<Q", f.read(8))
+                    assert size_of_block_start == size_of_block, "Sizes at beginning and and does not match!"
+
+                    # Store all blocks
+                    while f.tell() < end_offset - 24:
+                        size, key = unpack('<QI', f.read(12))
+                        value = f.read(size - 4)
+                        self._v2_blocks[key] = value
+
+                    # Test if a signature is found
+                    if self.APK_SIG_KEY_SIGNATURE in self._v2_blocks:
+                        self._is_signed_v2 = True
+
+        return self._is_signed_v2
+
+    def get_certificates_der_v2(self):
+        """
+        Return a list of DER coded X.509 certificates from the v2 signature
+        """
+        # calling is_signed_v2 should also load the signature, if any
+        if not self.is_signed_v2():
+            return []
+
+        certificates = []
+        block_bytes = self._v2_blocks[self.APK_SIG_KEY_SIGNATURE]
+        block = io.BytesIO(block_bytes)
+
+        size_sequence, = unpack('<I', block.read(4))
+        assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+        while block.tell() < len(block_bytes):
+            size_signer, = unpack('<I', block.read(4))
+
+            len_signed_data, = unpack('<I', block.read(4))
+            len_digests, = unpack('<I', block.read(4))
+            # Skip it for now
+            block.seek(len_digests, io.SEEK_CUR)
+
+            len_certs, = unpack('<I', block.read(4))
+            start_certs = block.tell()
+            while block.tell() < start_certs + len_certs:
+                len_cert, = unpack('<I', block.read(4))
+                certificates.append(block.read(len_cert))
+
+            # Now we have the signatures and the public key...
+            # we need to read it (or at least skip it)
+            len_attr, = unpack('<I', block.read(4))
+            block.seek(len_attr, io.SEEK_CUR)
+            len_sigs, = unpack('<I', block.read(4))
+            block.seek(len_sigs, io.SEEK_CUR)
+            len_publickey, = unpack('<I', block.read(4))
+            block.seek(len_publickey, io.SEEK_CUR)
+
+        return certificates
+
+    def get_certificates_v2(self):
+        """
+        Return a list of :class:`cryptography.x509.Certificate` which are found
+        in the v2 signing block.
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
+        """
+        certs = []
+        for cert in self.get_certificates_der_v2():
+            certs.append(x509.load_der_x509_certificate(cert, default_backend()))
+
+        return certs
+
     def get_signature_name(self):
         """
             Return the name of the first signature file found.
@@ -1017,7 +1166,10 @@ class APK(object):
 
     def get_signature_names(self):
         """
-             Return a list of the signature file names.
+        Return a list of the signature file names (v1 Signature / JAR
+        Signature)
+
+        :rtype: List of filenames matching a Signature
         """
         signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
         signatures = []
@@ -1030,7 +1182,10 @@ class APK(object):
 
     def get_signature(self):
         """
-            Return the data of the first signature file found.
+        Return the data of the first signature file found (v1 Signature / JAR
+        Signature)
+
+        :rtype: First signature name or None if not signed
         """
         if self.get_signatures():
             return self.get_signatures()[0]
@@ -1039,7 +1194,10 @@ class APK(object):
 
     def get_signatures(self):
         """
-            Return a list of the data of the signature files.
+        Return a list of the data of the signature files.
+        Only v1 / JAR Signing.
+
+        :rtype: list of bytes
         """
         signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
         signature_datas = []
@@ -1097,8 +1255,6 @@ class APK(object):
             show_Certificate(self.get_certificate(c))
 
 
-
-
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -1114,3 +1270,4 @@ def show_Certificate(cert, short=False):
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer, short=short)))
     print("Subject: {}".format(get_certificate_name_string(cert.subject, short=short)))
+
