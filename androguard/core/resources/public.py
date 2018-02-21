@@ -1,3 +1,5 @@
+# This is basically generated from https://github.com/aosp-mirror/platform_frameworks_base/blob/d18ed49f9dba09b85782c83999a9103dec015bf2/core/res/res/values/public.xml
+
 resources = {
     'style': {
         'Animation': 16973824,
