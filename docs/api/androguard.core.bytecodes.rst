@@ -29,7 +29,7 @@ androguard.core.bytecodes.dvm module
     :show-inheritance:
 
 androguard.core.bytecodes.axml module
-------------------------------------
+-------------------------------------
 
 .. automodule:: androguard.core.bytecodes.dvm
 :members:
@@ -37,7 +37,7 @@ androguard.core.bytecodes.axml module
         :show-inheritance:
 
 androguard.core.bytecodes.mutf8 module
-------------------------------------
+--------------------------------------
 
 .. automodule:: androguard.core.bytecodes.dvm
 :members:
