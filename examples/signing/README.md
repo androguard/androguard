@@ -5,9 +5,11 @@ How to create a new signing key and sign APKs in different ways:
 $ openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 36500 -out certificate.pem
 ```
 
-2) convert key to PKCS#8 in DER encoding:
+2) convert key to PKCS#8 in DER encoding and convert the certificate to DER as
+well, for further testing:
 ```
 $ openssl pkcs8 -topk8 -inform PEM -outform DER -in key.pem -out priv.key -nocrypt
+$ openssl x509 -inform pem -outform der -in certificate.pem -out certificate.der
 ```
 
 3) delete unused file
