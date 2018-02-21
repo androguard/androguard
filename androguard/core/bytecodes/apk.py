@@ -1065,12 +1065,14 @@ class APK(object):
             len_publickey, = unpack('<I', block.read(4))
             block.seek(len_publickey, io.SEEK_CUR)
 
-
         return certificates
 
     def get_certificates_v2(self):
         """
-        Return a list of :class:`cryptography.x509.Certificate`s
+        Return a list of :class:`cryptography.x509.Certificate`s which are found
+        in the v2 signing block.
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
         """
         certs = []
         for cert in self.get_certificates_der_v2():
