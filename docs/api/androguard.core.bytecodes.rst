@@ -31,18 +31,18 @@ androguard.core.bytecodes.dvm module
 androguard.core.bytecodes.axml module
 -------------------------------------
 
-.. automodule:: androguard.core.bytecodes.dvm
-:members:
-        :undoc-members:
-        :show-inheritance:
+.. automodule:: androguard.core.bytecodes.axml
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 androguard.core.bytecodes.mutf8 module
 --------------------------------------
 
-.. automodule:: androguard.core.bytecodes.dvm
-:members:
-        :undoc-members:
-            :show-inheritance:
+.. automodule:: androguard.core.bytecodes.mutf8
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------
