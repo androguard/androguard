@@ -266,12 +266,14 @@ class APKTest(unittest.TestCase):
         self.assertEqual([],
                          a.get_uses_implied_permission_list())
         a = APK('examples/android/TC/bin/TC-debug.apk')
-        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                          ['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/android/TCDiff/bin/TCDiff-debug.apk')
-        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                          ['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/android/TestsAndroguard/bin/TestActivity.apk')
         self.assertEqual([],
@@ -280,19 +282,22 @@ class APKTest(unittest.TestCase):
         self.assertEqual([],
                          a.get_uses_implied_permission_list())
         a = APK('examples/dalvik/test/bin/Test-debug.apk')
-        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                          ['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/dalvik/test/bin/Test-debug-unaligned.apk')
-        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                          ['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/tests/a2dp.Vol_137.apk')
         self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/tests/com.politedroid_4.apk')
-        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                          ['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.READ_EXTERNAL_STORAGE', None],],
                          a.get_uses_implied_permission_list())
         a = APK('examples/tests/duplicate.permisssions_9999999.apk')
         self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', 18],],

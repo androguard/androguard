@@ -723,13 +723,15 @@ class APK(object):
 
         implied = []
 
+        implied_WRITE_EXTERNAL_STORAGE = False
         if target_sdk_version < 4:
             if WRITE_EXTERNAL_STORAGE not in self.permissions:
                 implied.append([WRITE_EXTERNAL_STORAGE, None])
+                implied_WRITE_EXTERNAL_STORAGE = True
             if READ_PHONE_STATE not in self.permissions:
                 implied.append([READ_PHONE_STATE, None])
 
-        if WRITE_EXTERNAL_STORAGE in self.permissions \
+        if (WRITE_EXTERNAL_STORAGE in self.permissions or implied_WRITE_EXTERNAL_STORAGE) \
            and READ_EXTERNAL_STORAGE not in self.permissions:
             maxSdkVersion = None
             for name, version in self.uses_permissions:
