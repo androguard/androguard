@@ -5,6 +5,7 @@ Tools
 
    androlyze
    androgui
+   androsign
    androaxml
    androarsc
    androdd

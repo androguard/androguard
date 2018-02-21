@@ -78,7 +78,7 @@ setup(
         # * python-magic from https://pypi.python.org/pypi/python-magic
         # If you are installing on debian you can use python3-magic instead, which fulfills the dependency to file-magic
         'magic': ['file-magic'],
-        'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme'],
+        'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme', 'sphinx-argparse'],
         'graphing': ['pydot'],
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
