@@ -256,6 +256,54 @@ class APKTest(unittest.TestCase):
         a = APK('examples/tests/com.politedroid_4.apk')
         self.assertEqual(3, a.get_effective_target_sdk_version())
 
+    def testUsesImpliedPermissions(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK('examples/android/abcore/app-prod-debug.apk')
+        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/android/Invalid/Invalid.apk')
+        self.assertEqual([],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/android/TC/bin/TC-debug.apk')
+        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/android/TCDiff/bin/TCDiff-debug.apk')
+        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/android/TestsAndroguard/bin/TestActivity.apk')
+        self.assertEqual([],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/android/TestsAndroguard/bin/TestActivity_unsigned.apk')
+        self.assertEqual([],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/dalvik/test/bin/Test-debug.apk')
+        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/dalvik/test/bin/Test-debug-unaligned.apk')
+        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/tests/a2dp.Vol_137.apk')
+        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/tests/com.politedroid_4.apk')
+        self.assertEqual([['android.permission.READ_PHONE_STATE', None],
+                          ['android.permission.WRITE_EXTERNAL_STORAGE', None],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/tests/duplicate.permisssions_9999999.apk')
+        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', 18],],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/tests/hello-world.apk')
+        self.assertEqual([],
+                         a.get_uses_implied_permission_list())
+        a = APK('examples/tests/urzip-πÇÇπÇÇ现代汉语通用字-български-عربي1234.apk')
+        self.assertEqual([],
+                         a.get_uses_implied_permission_list())
+
     def testNewZipWithoutModification(self):
         from androguard.core.bytecodes.apk import APK
         try:
@@ -300,4 +348,4 @@ class APKTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(failfast=True)
