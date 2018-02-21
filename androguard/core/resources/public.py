@@ -4,7 +4,7 @@ _resources = None
 
 if _resources is None:
     root = os.path.dirname(os.path.realpath(__file__))
-    resfile = os.path.join(root, "aosp_permissions", "permissions_{}.json".format(apilevel))
+    resfile = os.path.join(root, "public.json")
 
     if not os.path.isfile(resfile):
         # TODO raise error instead?
