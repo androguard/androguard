@@ -967,10 +967,13 @@ class APK(object):
             # * IDs with an unknown value should be ignored.
             f = io.BytesIO(self.__raw)
 
+            # Constants in ZipFile
             PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
+            PK_CENTRAL_DIR = b"\x50\x4b\x01\x02"
+
+            # Constants in the APK Signature Block
             APK_SIG_MAGIC = b"APK Sig Block 42"
             APK_SIG_KEY_SIGNATURE = 0x7109871a
-
             APK_SIG_KNOWN_KEYS = [APK_SIG_KEY_SIGNATURE]
 
             size_central = None
@@ -1001,7 +1004,7 @@ class APK(object):
                 f.seek(offset_central)
                 r, = unpack('<4s', f.read(4))
                 f.seek(-4, io.SEEK_CUR)
-                assert r == b"\x50\x4b\x01\x02", "No Central Dir at specified offset"
+                assert r == PK_CENTRAL_DIR, "No Central Dir at specified offset"
 
                 # Go back and check if we have a magic
                 end_offset = f.tell()
@@ -1020,6 +1023,7 @@ class APK(object):
                         value = f.read(size - 4)
                         self._v2_blocks[key] = value
 
+                    # Test if a signature is found
                     if APK_SIG_KEY_SIGNATURE in self._v2_blocks:
                         self._is_signed_v2 = True
 
