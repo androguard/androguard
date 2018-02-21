@@ -54,6 +54,14 @@ class BrokenAPKError(Error):
 
 
 class APK(object):
+    # Constants in ZipFile
+    PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
+    PK_CENTRAL_DIR = b"\x50\x4b\x01\x02"
+
+    # Constants in the APK Signature Block
+    APK_SIG_MAGIC = b"APK Sig Block 42"
+    APK_SIG_KEY_SIGNATURE = 0x7109871a
+
     def __init__(self,
                  filename,
                  raw=False,
@@ -967,15 +975,6 @@ class APK(object):
             # * IDs with an unknown value should be ignored.
             f = io.BytesIO(self.__raw)
 
-            # Constants in ZipFile
-            PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
-            PK_CENTRAL_DIR = b"\x50\x4b\x01\x02"
-
-            # Constants in the APK Signature Block
-            APK_SIG_MAGIC = b"APK Sig Block 42"
-            APK_SIG_KEY_SIGNATURE = 0x7109871a
-            APK_SIG_KNOWN_KEYS = [APK_SIG_KEY_SIGNATURE]
-
             size_central = None
             offset_central = None
 
@@ -986,7 +985,7 @@ class APK(object):
             while f.tell() > 0:
                 f.seek(-1, io.SEEK_CUR)
                 r, = unpack('<4s', f.read(4))
-                if r == PK_END_OF_CENTRAL_DIR:
+                if r == self.PK_END_OF_CENTRAL_DIR:
                     # Read central dir
                     this_disk, disk_central, this_entries, total_entries, \
                     size_central, offset_central = unpack('<HHHHII', f.read(16))
@@ -1004,14 +1003,14 @@ class APK(object):
                 f.seek(offset_central)
                 r, = unpack('<4s', f.read(4))
                 f.seek(-4, io.SEEK_CUR)
-                assert r == PK_CENTRAL_DIR, "No Central Dir at specified offset"
+                assert r == self.PK_CENTRAL_DIR, "No Central Dir at specified offset"
 
                 # Go back and check if we have a magic
                 end_offset = f.tell()
                 f.seek(-24, io.SEEK_CUR)
                 size_of_block, magic = unpack('<Q16s', f.read(24))
                 self._is_signed_v2 = False
-                if magic == APK_SIG_MAGIC:
+                if magic == self.APK_SIG_MAGIC:
                     # go back size_of_blocks + 8 and read size_of_block again
                     f.seek(-(size_of_block + 8), io.SEEK_CUR)
                     size_of_block_start, = unpack("<Q", f.read(8))
@@ -1024,10 +1023,60 @@ class APK(object):
                         self._v2_blocks[key] = value
 
                     # Test if a signature is found
-                    if APK_SIG_KEY_SIGNATURE in self._v2_blocks:
+                    if self.APK_SIG_KEY_SIGNATURE in self._v2_blocks:
                         self._is_signed_v2 = True
 
         return self._is_signed_v2
+
+    def get_certificates_der_v2(self):
+        """
+        Return a list of DER coded X.509 certificates from the v2 signature
+        """
+        # calling is_signed_v2 should also load the signature, if any
+        if not self.is_signed_v2():
+            return []
+
+        certificates = []
+        block_bytes = self._v2_blocks[self.APK_SIG_KEY_SIGNATURE]
+        block = io.BytesIO(block_bytes)
+
+        size_sequence, = unpack('<I', block.read(4))
+        assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+        while block.tell() < len(block_bytes):
+            size_signer, = unpack('<I', block.read(4))
+
+            len_signed_data, = unpack('<I', block.read(4))
+            len_digests, = unpack('<I', block.read(4))
+            # Skip it for now
+            block.seek(len_digests, io.SEEK_CUR)
+
+            len_certs, = unpack('<I', block.read(4))
+            start_certs = block.tell()
+            while block.tell() < start_certs + len_certs:
+                len_cert, = unpack('<I', block.read(4))
+                certificates.append(block.read(len_cert))
+
+            # Now we have the signatures and the public key...
+            # we need to read it (or at least skip it)
+            len_attr, = unpack('<I', block.read(4))
+            block.seek(len_attr, io.SEEK_CUR)
+            len_sigs, = unpack('<I', block.read(4))
+            block.seek(len_sigs, io.SEEK_CUR)
+            len_publickey, = unpack('<I', block.read(4))
+            block.seek(len_publickey, io.SEEK_CUR)
+
+
+        return certificates
+
+    def get_certificates_v2(self):
+        """
+        Return a list of :class:`cryptography.x509.Certificate`s
+        """
+        certs = []
+        for cert in self.get_certificates_der_v2():
+            certs.append(x509.load_der_x509_certificate(cert, default_backend()))
+
+        return certs
 
     def get_signature_name(self):
         """
@@ -1130,8 +1179,6 @@ class APK(object):
             show_Certificate(self.get_certificate(c))
 
 
-
-
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -1147,3 +1194,4 @@ def show_Certificate(cert, short=False):
         print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer, short=short)))
     print("Subject: {}".format(get_certificate_name_string(cert.subject, short=short)))
+
