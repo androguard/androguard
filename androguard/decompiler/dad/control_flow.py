@@ -30,8 +30,8 @@ def intervals(graph):
     """
     Compute the intervals of the graph
     Returns
-        interval_graph: a graph of the intervals of G
-        interv_heads: a dict of (header node, interval)
+    interval_graph: a graph of the intervals of G
+    interv_heads: a dict of (header node, interval)
     """
     interval_graph = Graph()  # graph of intervals
     heads = [graph.entry]  # list of header nodes
