@@ -3109,11 +3109,13 @@ class EncodedMethod(object):
         and class types will be named like a classname, e.g. Ljava/lang/String;.
 
         Typical descriptors will look like this:
+        ```
         (I)I   // one integer argument, integer return
         (C)Z   // one char argument, boolean as return
         (Ljava/lang/CharSequence; I)I   // CharSequence and integer as
-            argyument, integer as return
+        argyument, integer as return
         (C)Ljava/lang/String;  // char as argument, String as return.
+        ```
 
         More information about type descriptors are found here:
         https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
