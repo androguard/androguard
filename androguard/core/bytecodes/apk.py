@@ -88,6 +88,7 @@ class APK(object):
         self.package = ""
         self.androidversion = {}
         self.permissions = []
+        self.uses_permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
 
@@ -152,7 +153,17 @@ class APK(object):
                         NS_ANDROID + "versionName")
 
                     for item in self.xml[i].findall('uses-permission'):
-                        self.permissions.append(item.get(NS_ANDROID + "name"))
+                        name = item.get(NS_ANDROID + "name")
+                        self.permissions.append(name)
+                        maxSdkVersion = None
+                        try:
+                            maxSdkVersion = int(item.get(NS_ANDROID + 'maxSdkVersion'))
+                        except ValueError:
+                            log.warning(item.get(NS_ANDROID + 'maxSdkVersion')
+                                        + 'is not a valid value for <uses-permission> maxSdkVersion')
+                        except TypeError:
+                            pass
+                        self.uses_permissions.append([name, maxSdkVersion])
 
                     # getting details of the declared permissions
                     for d_perm_item in self.xml[i].findall('permission'):
@@ -693,6 +704,56 @@ class APK(object):
             :rtype: list of string
         """
         return self.permissions
+
+    def get_uses_implied_permission_list(self):
+        """
+            Return all permissions implied by the target SDK or other permissions.
+
+            targetSdkVersion is set based on defaults as defined in:
+            https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
+
+            :rtype: list of string
+        """
+        implied = []
+        target_sdk_version = self.get_target_sdk_version()
+        if not target_sdk_version:
+            target_sdk_version = self.get_min_sdk_version()
+        if not target_sdk_version:
+            target_sdk_version = 1
+        target_sdk_version = int(target_sdk_version)
+
+        READ_CALL_LOG = 'android.permission.READ_CALL_LOG'
+        READ_CONTACTS = 'android.permission.READ_CONTACTS'
+        READ_EXTERNAL_STORAGE = 'android.permission.READ_EXTERNAL_STORAGE'
+        READ_PHONE_STATE = 'android.permission.READ_PHONE_STATE'
+        WRITE_CALL_LOG = 'android.permission.WRITE_CALL_LOG'
+        WRITE_CONTACTS = 'android.permission.WRITE_CONTACTS'
+        WRITE_EXTERNAL_STORAGE = 'android.permission.WRITE_EXTERNAL_STORAGE'
+
+        if target_sdk_version < 4:
+            if WRITE_EXTERNAL_STORAGE not in self.permissions:
+                implied.append([WRITE_EXTERNAL_STORAGE, None])
+            if READ_PHONE_STATE not in self.permissions:
+                implied.append([READ_PHONE_STATE, None])
+
+        if WRITE_EXTERNAL_STORAGE in self.permissions \
+           and READ_EXTERNAL_STORAGE not in self.permissions:
+            maxSdkVersion = None
+            for name, version in self.uses_permissions:
+                if name == WRITE_EXTERNAL_STORAGE:
+                    maxSdkVersion = version
+                    break
+            implied.append([READ_EXTERNAL_STORAGE, maxSdkVersion])
+
+        if target_sdk_version < 16:
+            if READ_CONTACTS in self.permissions \
+               and READ_CALL_LOG not in self.permissions:
+                implied.append([READ_CALL_LOG, None])
+            if WRITE_CONTACTS in self.permissions \
+               and WRITE_CALL_LOG not in self.permissions:
+                implied.append([WRITE_CALL_LOG, None])
+
+        return implied
 
     def get_details_permissions(self):
         """
