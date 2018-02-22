@@ -59,6 +59,7 @@ setup(
         # add the json files, residing in the api_specific_resources package
         "androguard.core.api_specific_resources": ["aosp_permissions/*.json",
                                                    "api_permission_mappings/*.json"],
+        "androguard.core.resources": ["public.json"],
         # Collect also the GUI files this way
         "androguard.gui": ["annotation.ui", "search.ui", "androguard.ico"],
     },
