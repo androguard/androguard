@@ -20,7 +20,7 @@
 
 from __future__ import print_function
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from IPython.terminal.embed import InteractiveShellEmbed
 from traitlets.config import Config
@@ -28,51 +28,58 @@ from traitlets.config import Config
 from androguard.core.androconf import *
 from androguard.misc import *
 from androguard.session import Session
+import os
+import logging
+# Import commonly used classes
+from androguard.core.bytecodes.apk import APK
+from androguard.core.bytecodes.dvm import DalvikVMFormat
+from androguard.core.analysis.analysis import Analysis
 
-option_0 = {
-    'name': ('-s', '--shell'),
-    'help': 'open an interactive shell to play more easily with objects',
-    'action': 'count'
-}
-option_1 = {
-    'name': ('-v', '--version'),
-    'help': 'version of Androguard',
-    'action': 'count'
-}
-option_2 = {
-    'name': ('-d', '--debug'),
-    'help': 'verbose mode',
-    'action': 'count'
-}
-
-options = [option_0, option_1, option_2]
+_version_string = "Androguard version {}".format(ANDROGUARD_VERSION)
 
 
-def interact():
-    CONF["SESSION"] = Session(True)
+def interact(session=False, apk=None):
+    """
+    Start an interactive shell
+    :param session:
+    :param apk:
+    :return:
+    """
+    if session:
+        CONF["SESSION"] = Session(True)
+
+    if apk:
+        print("Loading apk {}...".format(os.path.basename(apk)))
+        print("Please be patient, this might take a while.")
+        # TODO we can export fancy aliases for those as well...
+        a, d, dx = AnalyzeAPK(apk)
+
     cfg = Config()
-    ipshell = InteractiveShellEmbed(
-        config=cfg,
-        banner1="Androguard version %s" % ANDROGUARD_VERSION)
+    ipshell = InteractiveShellEmbed(config=cfg, banner1="{} started".format(_version_string))
     init_print_colors()
     ipshell()
 
 
-def main(options, arguments):
-    if options.shell is not None:
-        interact()
-
-    elif options.version is not None:
-        print("Androguard version %s" % androconf.ANDROGUARD_VERSION)
-
-
 if __name__ == "__main__":
-    parser = OptionParser()
-    for option in options:
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
+    parser = ArgumentParser(description="Open a IPython Shell and start reverse engineering")
 
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)
+    parser.add_argument("--shell", "-s", default=False, action="store_true", help="Will do nothing, this argument is just here for your convenience")
+    parser.add_argument("--debug", "-d", "--verbose", default=False, action="store_true", help="Print log messages")
+    parser.add_argument("--ddebug", "-dd", "--very-verbose", default=False, action="store_true", help="Print log messages (higher verbosity)")
+    parser.add_argument("--session", default=False, action="store_true", help="Start a Androguard session")
+    parser.add_argument("--version", "-v", default=False, action="store_true", help="Print the Androguard Version and exit")
+    parser.add_argument("apk", default=None, nargs="?", help="Start the shell with the given APK. a, d, dx are available then. Loading might be slower in this case!")
+
+    args = parser.parse_args()
+
+    if args.version:
+        print(_version_string)
+        sys.exit()
+
+    if args.debug:
+        androconf.show_logging(logging.INFO)
+    if args.ddebug:
+        androconf.show_logging(logging.DEBUG)
+
+    # Go interactive!
+    interact(session=args.session, apk=args.apk)
