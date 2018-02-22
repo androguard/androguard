@@ -172,6 +172,118 @@ class APKTest(unittest.TestCase):
             self.assertEqual(h1, h3)
             self.assertEqual(h2, h3)
 
+    def testApksignAPKs(self):
+        # These APKs are from the apksign testcases and cover
+        # all different signature algorithms as well as some error cases
+        from androguard.core.bytecodes.apk import APK
+        import zipfile
+        import cryptography
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes, serialization
+        import binascii
+        root = "examples/signing/apksig"
+        
+        keys = ["060d0a24fea9b60d857225873f78838e081795f7ef2d1ea401262bbd75a58234",  # got that
+                "06c4d2e23dfb5a0c879bccca0bf31c2a94e0a80710480c8533a0837bbcba6c48",
+                "430e9a6924db43f31a2efe0c8c3c4a4e48b061a84fb3f3337f2eca257bd4d720",
+                "483934461229a780010bc07cd6eeb0b67025fc4fe255757abbf5c3f2ed249e89",  # got that
+                "5e7777ada7ee7ce8f9c4d1b07094876e5604617b7988b4c5d5b764a23431afbe",  # got that
+                "69b50381d98bebcd27df6d7df8af8c8b38d0e51e9168a95ab992d1a9da6082da",  # got that
+                "6a46158f87753395a807edcc7640ac99c9125f6b6e025bdbf461ff281e64e685",  # got that
+                "6a8b96e278e58f62cfe3584022cec1d0527fcb85a9e5d2e1694eb0405be5b599",  # got that
+                "6cecc50e34ae31bfb5678986d6d6d3736c571ded2f2459527793e1f054eb0c9b",
+                "855ac0f96f6e83c1311388fa2b79cb899b2e5c85e20a960a83aa86728a2e3a40",
+                "966a4537058d24098ea213f12d4b24e37ff5a1d8f68deb8a753374881f23e474",  # got that
+                "97cce0bab292c2d5afb9de90e1810b41a5d25c006a10d10982896aa12ab35a9e",  # got that
+                "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8",  # got that
+                "c5d4535a7e1c8111687a8374b2198da6f5ff8d811a7a25aa99ef060669342fa9",
+                "da3da398de674541313deed77218ce94798531ea5131bb9b1bb4063ba4548cfb",
+                "f3c6b37909f6df310652fbd7c55ec27d3079dcf695dc6e75e22ba7c4e1c95601",  # got that
+                "fb5dbd3c669af9fc236c6991e6387b7f11ff0590997f22d0f5c74ff40e04fca8",  # got that
+                "fee7c19ff9bfb4197b3727b9fd92d95406b1bd96db99ea642f5faac019a389d7",  # got that
+                ]
+
+        # Correct values generated with openssl:
+        certfp = {
+            "dsa-1024.x509.pem": "fee7c19ff9bfb4197b3727b9fd92d95406b1bd96db99ea642f5faac019a389d7",
+            "dsa-2048.x509.pem": "97cce0bab292c2d5afb9de90e1810b41a5d25c006a10d10982896aa12ab35a9e",
+            "dsa-3072.x509.pem": "966a4537058d24098ea213f12d4b24e37ff5a1d8f68deb8a753374881f23e474",
+            "ec-p256.x509.pem": "6a8b96e278e58f62cfe3584022cec1d0527fcb85a9e5d2e1694eb0405be5b599",
+            "ec-p384.x509.pem": "5e7777ada7ee7ce8f9c4d1b07094876e5604617b7988b4c5d5b764a23431afbe",
+            "ec-p521.x509.pem": "69b50381d98bebcd27df6d7df8af8c8b38d0e51e9168a95ab992d1a9da6082da",
+            "rsa-1024.x509.pem": "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8",
+            "rsa-16384.x509.pem": "f3c6b37909f6df310652fbd7c55ec27d3079dcf695dc6e75e22ba7c4e1c95601",
+            "rsa-2048.x509.pem": "fb5dbd3c669af9fc236c6991e6387b7f11ff0590997f22d0f5c74ff40e04fca8",
+            "rsa-3072.x509.pem": "483934461229a780010bc07cd6eeb0b67025fc4fe255757abbf5c3f2ed249e89",
+            "rsa-4096.x509.pem": "6a46158f87753395a807edcc7640ac99c9125f6b6e025bdbf461ff281e64e685",
+            "rsa-8192.x509.pem": "060d0a24fea9b60d857225873f78838e081795f7ef2d1ea401262bbd75a58234",
+        }
+
+        # Collect possible hashes for certificates
+        # Unfortunately, not all certificates are supplied...
+        for apath in os.listdir(root):
+            if apath in certfp:
+                with open(os.path.join(root, apath), "rb") as fp:
+                    cert = cryptography.x509.load_pem_x509_certificate(fp.read(), default_backend())
+                    h = binascii.hexlify(cert.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                    self.assertEqual(h, certfp[apath])
+                    self.assertIn(h, keys)
+
+        for apath in os.listdir(root):
+            if apath.endswith(".apk"):
+                if apath == "v2-only-garbage-between-cd-and-eocd.apk" or \
+                   apath == "v2-only-truncated-cd.apk":
+                    # Can not load as APK
+                    with self.assertRaises(zipfile.BadZipFile):
+                        APK(os.path.join(root, apath))
+                    continue
+
+                a = APK(os.path.join(root, apath))
+
+                self.assertIsInstance(a, APK)
+
+                # Special error cases
+                if apath == "v2-only-apk-sig-block-size-mismatch.apk":
+                    with self.assertRaises(AssertionError):
+                        a.is_signed_v2()
+                    continue
+                elif apath == "v2-only-empty.apk":
+                    with self.assertRaises(AssertionError):
+                        a.is_signed_v2()
+                    continue
+
+                if a.is_signed_v1():
+                    if apath == "weird-compression-method.apk":
+                        with self.assertRaises(NotImplementedError):
+                            for c in a.get_signature_names():
+                                a.get_certificate(c)
+
+                    else:
+                        for sig in a.get_signature_names():
+                            c = a.get_certificate(sig)
+                            h = binascii.hexlify(c.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                            self.assertIn(h, keys)
+
+                            # Check that we get the same signature if we take the DER
+                            der = a.get_certificate_der(sig)
+                            self.assertEqual(hashlib.sha256(der).hexdigest(), h)
+
+                if a.is_signed_v2():
+                    if apath == "weird-compression-method.apk":
+                        with self.assertRaises(NotImplementedError):
+                            a.get_certificates_der_v2()
+                    elif apath == "v2-only-with-rsa-pkcs1-sha256-1024-cert-not-der.apk":
+                        # FIXME
+                        # Not sure what this one should do... but the certificate fingerprint is weird
+                        # as the hash over the DER is not the same when using the certificate
+                        continue
+                    else:
+                        for c in a.get_certificates_der_v2():
+                            cert = cryptography.x509.load_der_x509_certificate(c, default_backend())
+                            h = binascii.hexlify(cert.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                            self.assertIn(h, keys)
+                            # Check that we get the same signature if we take the DER
+                            self.assertEqual(hashlib.sha256(c).hexdigest(), h)
 
     def testAPKWrapperUnsigned(self):
         from androguard.misc import AnalyzeAPK
