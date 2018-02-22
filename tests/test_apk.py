@@ -234,8 +234,13 @@ class APKTest(unittest.TestCase):
                 if apath == "v2-only-garbage-between-cd-and-eocd.apk" or \
                    apath == "v2-only-truncated-cd.apk":
                     # Can not load as APK
-                    with self.assertRaises(zipfile.BadZipFile):
-                        APK(os.path.join(root, apath))
+                    if sys.version_info.major == 2:
+                        # Different name in python2...
+                        with self.assertRaises(zipfile.BadZipfile):
+                            APK(os.path.join(root, apath))
+                    else:
+                        with self.assertRaises(zipfile.BadZipFile):
+                            APK(os.path.join(root, apath))
                     continue
 
                 a = APK(os.path.join(root, apath))
