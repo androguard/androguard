@@ -23,6 +23,7 @@ install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.4.1',
                     'networkx',
                     'pygments',
                     'lxml',
+		    'colorama',
                     ]
 
 # python version specific library versions:
@@ -79,7 +80,7 @@ setup(
         # * python-magic from https://pypi.python.org/pypi/python-magic
         # If you are installing on debian you can use python3-magic instead, which fulfills the dependency to file-magic
         'magic': ['file-magic'],
-        'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme', 'sphinx-argparse'],
+        'docs': ['sphinx', sphinxprogram, 'sphinx_rtd_theme'],
         'graphing': ['pydot'],
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
