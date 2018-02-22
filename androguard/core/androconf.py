@@ -25,9 +25,9 @@ def is_ascii_problem(s):
     :return: True if string contains other chars than ASCII, False otherwise
     """
     try:
-        s.decode("ascii")
+        s.encode("ascii")
         return False
-    except UnicodeDecodeError:
+    except (UnicodeEncodeError, UnicodeDecodeError):
         return True
 
 
