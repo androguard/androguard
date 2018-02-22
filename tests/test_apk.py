@@ -196,7 +196,6 @@ class APKTest(unittest.TestCase):
                 "966a4537058d24098ea213f12d4b24e37ff5a1d8f68deb8a753374881f23e474",  # got that
                 "97cce0bab292c2d5afb9de90e1810b41a5d25c006a10d10982896aa12ab35a9e",  # got that
                 "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8",  # got that
-                "c5d4535a7e1c8111687a8374b2198da6f5ff8d811a7a25aa99ef060669342fa9",
                 "da3da398de674541313deed77218ce94798531ea5131bb9b1bb4063ba4548cfb",
                 "f3c6b37909f6df310652fbd7c55ec27d3079dcf695dc6e75e22ba7c4e1c95601",  # got that
                 "fb5dbd3c669af9fc236c6991e6387b7f11ff0590997f22d0f5c74ff40e04fca8",  # got that
