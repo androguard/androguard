@@ -24,6 +24,7 @@ script:
   # Testing the scripts - crude ;)
   - for f in `find -name \*.apk`; do
       echo "testing $f";
+      time ./androsign.py $f > /dev/null;
       time ./androaxml.py -i $f > /dev/null;
       time ./androaxml.py -i $f -o /dev/null;
       time ./androarsc.py -i $f > /dev/null;

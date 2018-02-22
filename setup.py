@@ -18,11 +18,13 @@ if sys.version_info <= (3, 4) or sys.version_info >= (3, 7):
     print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
 
 # There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
-install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.4.1',
+# Version 0.3.4 produces wrong certificates in some cases!
+install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.4.1',
                     'future',
                     'networkx',
                     'pygments',
                     'lxml',
+                    'colorama',
                     ]
 
 # python version specific library versions:
@@ -64,6 +66,7 @@ setup(
     },
     scripts=['androaxml.py',
              'androarsc.py',
+             'androsign.py',
              'androauto.py',
              'androdis.py',
              'androlyze.py',

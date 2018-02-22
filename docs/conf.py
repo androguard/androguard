@@ -35,7 +35,7 @@ from androguard import __version__ as androguardversion
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.githubpages',
-    'sphinxcontrib.programoutput'
+    'sphinxcontrib.programoutput',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
