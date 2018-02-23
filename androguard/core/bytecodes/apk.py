@@ -1250,9 +1250,16 @@ class APK(object):
 
         print("PROVIDERS: ", self.get_providers())
 
-        print("CERTIFICATES:")
-        for c in self.get_signature_names():
-            show_Certificate(self.get_certificate(c))
+        if self.is_signed_v1():
+            print("CERTIFICATES v1:")
+            for c in self.get_signature_names():
+                show_Certificate(self.get_certificate(c))
+
+        if self.is_signed_v2():
+            print("CERTIFICATES v2:")
+            for c in self.get_certificates_v2():
+                show_Certificate(c)
+
 
 
 def show_Certificate(cert, short=False):
