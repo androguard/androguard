@@ -29,26 +29,31 @@ def Save(session, filename):
 
 def Load(filename):
     """
-      load your session!
+    load your session!
 
-      :param filename: the filename where the session has been saved
-      :type filename: string
+    :param filename: the filename where the session has been saved
+    :type filename: string
 
-      :rtype: the elements of your session :)
+    :rtype: the elements of your session :)
 
-      :Example:
-          s = session.Load("mysession.p")
+    :Example:
+        s = session.Load("mysession.p")
     """
     with open(filename, "rb") as fd:
         return pickle.load(fd)
 
 
 class Session(object):
+    """
+    The Session module can be used to save the state of your analysis.
+
+    A Session can handle multiple APK or DEX files and you are able to save or load session.
+    """
     def __init__(self, export_ipython=False):
-        self._setupObjects()
+        self._setup_objects()
         self.export_ipython = export_ipython
 
-    def _setupObjects(self):
+    def _setup_objects(self):
         self.analyzed_files = collections.OrderedDict()
         self.analyzed_digest = {}
         self.analyzed_apk = {}
@@ -56,7 +61,7 @@ class Session(object):
         self.analyzed_vms = collections.OrderedDict()
 
     def reset(self):
-        self._setupObjects()
+        self._setup_objects()
 
     def isOpen(self):
         """
@@ -113,6 +118,7 @@ class Session(object):
         dx.create_xref()
 
         for d in dx.vms:
+            # FIXME maybe you want to use another decompiler
             d.set_decompiler(DecompilerDAD(d, dx))
             d.set_vmanalysis(dx)
         self.analyzed_dex[digest] = dx
@@ -124,6 +130,14 @@ class Session(object):
         return digest, d, dx
 
     def addDEY(self, filename, data, dx=None):
+        """
+        Add a DEY file to the session
+
+        :param filename: (file)name of the DEY
+        :param data: raw data of the DEY file
+        :param dx: optional, existing Analysis object
+        :return: digest (sha256), DalvikVMFormt, Analysis
+        """
         digest = hashlib.sha256(data).hexdigest()
         log.debug("add DEY:%s" % digest)
         d = DalvikOdexVMFormat(data)
@@ -145,6 +159,7 @@ class Session(object):
         dx.create_xref()
 
         for d in dx.vms:
+            # FIXME maybe you want to use another decompiler
             d.set_decompiler(DecompilerDAD(d, dx))
             d.set_vmanalysis(dx)
 
@@ -153,8 +168,15 @@ class Session(object):
         return digest, d, dx
 
     def add(self, filename, raw_data, dx=None):
+        """
+        Add a file to the session and automatically decide what it is
+
+        :param filename: (file)name of your data
+        :param raw_data: raw data of the file
+        :param dx: optional, existing Analysis object
+        :return: sha256 digest of the file
+        """
         ret = androconf.is_android_raw(raw_data)
-        digest = None
         if not ret:
             return None
         self.analyzed_files[filename] = []
@@ -167,25 +189,34 @@ class Session(object):
         elif ret == "DEX":
             digest, d, _ = self.addDEX(filename, raw_data)
             dx = self.analyzed_dex.get(digest)
+            self.analyzed_vms[digest] = dx
         elif ret == "DEY":
             digest, d, _ = self.addDEY(filename, raw_data, dx)
             dx = self.analyzed_dex.get(digest)
+            self.analyzed_vms[digest] = dx
         else:
             return None
 
         return digest
 
     def get_classes(self):
-        # NOTE: verify idx for this api.
-        idx = 0
-        for digest in self.analyzed_vms:
+        """
+        Generator for all classes in all VMs stored so far
+
+        :return: enumeration id, filename of class, digest of outer object, list of classes
+        """
+        for idx, digest in enumerate(self.analyzed_vms):
             dx = self.analyzed_vms[digest]
             for vm in dx.vms:
                 filename = self.analyzed_digest[digest]
                 yield idx, filename, digest, vm.get_classes()
-            idx += 1
 
     def get_analysis(self, current_class):
+        """
+        Return the Analysis object for a given class
+        :param current_class: name of the class to search for
+        :return: :class:`Analysis`
+        """
         for digest in self.analyzed_vms:
             dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
@@ -193,9 +224,22 @@ class Session(object):
         return None
 
     def get_format(self, current_class):
+        # TODO where is this ever used?
+        """
+        Returns the :class:`DalvikVMFormat` for a given class object
+
+        :param current_class:  :class:`ClassDefItem`
+        :return: :class:`DalvikVMFormat`
+        """
         return current_class.CM.vm
 
     def get_filename_by_class(self, current_class):
+        """
+        Return the associated name for a class
+
+        :param current_class:
+        :return:
+        """
         for digest in self.analyzed_vms:
             dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
@@ -203,6 +247,12 @@ class Session(object):
         return None
 
     def get_digest_by_class(self, current_class):
+        """
+        Return the digest of the file containing the class
+
+        :param current_class:
+        :return:
+        """
         for digest in self.analyzed_vms:
             dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):
@@ -210,19 +260,29 @@ class Session(object):
         return None
 
     def get_strings(self):
+        """
+        Generator to get all strings in all Analysis objects
+        :return: digest of the file, (file)name of the file, list of strings
+        """
         for digest in self.analyzed_vms:
             dx = self.analyzed_vms[digest]
-            yield digest, self.analyzed_digest[digest], dx.get_strings_analysis(
-            )
+            yield digest, self.analyzed_digest[digest], dx.get_strings_analysis()
 
     def get_nb_strings(self):
+        """
+        Return the total number of strings in all Analysis objects
+        :return:
+        """
         nb = 0
-        for digest in self.analyzed_vms:
-            dx = self.analyzed_vms[digest]
+        for digest, dx in self.analyzed_vms.items():
             nb += len(dx.get_strings_analysis())
         return nb
 
     def get_all_apks(self):
+        """
+        Generator to get all APK objects with their digest
+        :return: digest, :class:`APK`
+        """
         for digest in self.analyzed_apk:
             yield digest, self.analyzed_apk[digest]
 
