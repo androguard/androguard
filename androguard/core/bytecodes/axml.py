@@ -772,7 +772,7 @@ class AXMLPrinter(object):
 
         :return: str
         """
-        return etree.tostring(self.get_xml(), encoding="utf-8", pretty_print=True)
+        return etree.tostring(self.get_xml_obj(), encoding="utf-8", pretty_print=True)
 
     def get_xml_obj(self):
         """
