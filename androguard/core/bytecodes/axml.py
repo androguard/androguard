@@ -767,11 +767,19 @@ class AXMLPrinter(object):
         return self.buff.encode('utf-8')
 
     def get_xml(self):
-        parser = etree.XMLParser(recover=True, resolve_entities=False)
-        tree = etree.fromstring(self.get_buff(), parser=parser)
-        return etree.tostring(tree, encoding="utf-8", pretty_print=True)
+        """
+        Get the XML as an UTF-8 string
+
+        :return: str
+        """
+        return etree.tostring(self.get_xml_obj(), encoding="utf-8", pretty_print=True)
 
     def get_xml_obj(self):
+        """
+        Get the XML as an ElementTree object
+
+        :return: :class:`~lxml.etree.Element`
+        """
         parser = etree.XMLParser(recover=True, resolve_entities=False)
         tree = etree.fromstring(self.get_buff(), parser=parser)
         return tree
