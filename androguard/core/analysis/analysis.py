@@ -900,6 +900,7 @@ class Analysis(object):
             for instruction in code.get_bc().get_instructions():
                 op_value = instruction.get_op_value()
 
+                # 1) check for class calls: const-class (0x1c), new-instance (0x22)
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     type_info = instruction.cm.vm.get_cm_type(idx_type)
@@ -915,7 +916,8 @@ class Analysis(object):
                             self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method, off)
                             self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
 
-                elif ((0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78)):
+                # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
+                elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if method_info:
@@ -937,6 +939,7 @@ class Analysis(object):
                             self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item, off)
                             self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
 
+                # 3) check for string usage: const-string (0x1a), const-string/jumbo (0x1b)
                 elif 0x1a <= op_value <= 0x1b:
                     string_value = instruction.cm.vm.get_cm_string(instruction.get_ref_kind())
                     if string_value not in self.strings:
@@ -944,6 +947,7 @@ class Analysis(object):
 
                     self.strings[string_value].AddXrefFrom(self.classes[cur_cls_name], current_method)
 
+                # 4) check for field usage: i*op (0x52 ... 0x5f), s*op (0x60 ... 0x6d)
                 elif 0x52 <= op_value <= 0x6d:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
