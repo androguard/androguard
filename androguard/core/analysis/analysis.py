@@ -4,6 +4,7 @@ from builtins import str
 import re
 import collections
 import time
+import warnings
 from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
@@ -550,6 +551,18 @@ class ExternalClass:
         return self.methods.values()
 
     def GetMethod(self, name, descriptor):
+        warnings.warn("deprecated, use get_method instead. This function might be removed in a later releass!", DeprecationWarning)
+        return self.get_method(name, descriptor)
+
+    def get_method(self, name, descriptor):
+        """
+        Get the method by name and descriptor,
+        or create a new one if the requested method does not exists.
+
+        :param name: method name
+        :param descriptor: method descriptor, for example `'(I)V'`
+        :return: :class:`ExternalMethod`
+        """
         key = name + str(descriptor)
         if key not in self.methods:
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
@@ -595,22 +608,34 @@ class ExternalMethod:
 
 
 class ClassAnalysis:
-    def __init__(self, classobj, internal=False):
+    def __init__(self, classobj):
         """
         ClassAnalysis contains the XREFs from a given Class.
 
         Also external classes will generate xrefs, obviously only XREF_FROM are
         shown for external classes.
+
+        :param classobj: class:`~androguard.core.bytecode.dvm.ClassDefItem` or :class:`ExternalClass`
         """
+
+        # Automaticallt decide if the class is external or not
+        self.external = isinstance(classobj, ExternalClass)
 
         self.orig_class = classobj
         self._inherits_methods = {}
         self._methods = {}
         self._fields = {}
-        self.internal = internal
 
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
+
+    def is_external(self):
+        """
+        Tests wheather this class is an external class
+
+        :return: True if the Class is external, False otherwise
+        """
+        return self.external
 
     def get_methods(self):
         """
@@ -631,14 +656,29 @@ class ClassAnalysis:
         return len(self._methods)
 
     def get_method_analysis(self, method):
+        """
+        Return the MethodClassAnalysis object for a given EncodedMethod
+
+        :param method: :class:`EncodedMethod`
+        :return: :class:`MethodClassAnalysis`
+        """
         return self._methods.get(method)
 
     def get_field_analysis(self, field):
         return self._fields.get(field)
 
-    def GetFakeMethod(self, name, descriptor):
-        if not self.internal:
-            return self.orig_class.GetMethod(name, descriptor)
+    def get_fake_method(self, name, descriptor):
+        """
+        Search for the given method name and descriptor
+        and return a fake (ExternalMethod) if required.
+
+        :param name: name of the method
+        :param descriptor: descriptor of the method, for example `'(I I I)V'`
+        :return: :class:`ExternalMethod`
+        """
+        if self.external:
+            # An external class can only generate the methods on demand
+            return self.orig_class.get_method(name, descriptor)
 
         # We are searching an unknown method in this class
         # It could be something that the class herits
@@ -786,7 +826,7 @@ class Analysis:
         """
         self.vms.append(vm)
         for current_class in vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(current_class, True)
+            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
 
         for method in vm.get_methods():
             self.methods[method] = MethodAnalysis(vm, method)
@@ -881,10 +921,12 @@ class Analysis:
                         method_item = instruction.cm.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
 
                         if not method_item:
-                            # Seems to be an external classes, create it first
                             if method_info[0] not in self.classes:
-                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]), False)
-                            method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1], method_info[2])
+                                # Seems to be an external class, create it first
+                                # Beware: if not all DEX files are loaded at the time create_xref runs
+                                # you will run into problems!
+                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]))
+                            method_item = self.classes[method_info[0]].get_fake_method(method_info[1], method_info[2])
 
                         self.classes[cur_cls_name].AddMXrefTo(current_method, self.classes[class_info], method_item, off)
                         self.classes[class_info].AddMXrefFrom(method_item, self.classes[cur_cls_name], current_method, off)
@@ -1021,9 +1063,9 @@ class Analysis:
 
         :rtype: generator of `ClassAnalysis`
         """
-        for i in self.classes:
-            if not self.classes[i].internal:
-                yield self.classes[i]
+        for cls in self.classes.values():
+            if cls.is_external():
+                yield cls
 
     def get_strings_analysis(self):
         """
