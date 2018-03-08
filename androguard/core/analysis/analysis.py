@@ -860,7 +860,8 @@ class Analysis:
         for c in self._get_all_classes():
             self._create_xref(c)
 
-        log.info("End of creating Crossreferences (XREF), took {:0d}min {:02d}s".format(*divmod(time.time() - tic, 60)))
+        log.info("End of creating cross references (XREF)")
+        log.info("run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def _create_xref(self, current_class):
         """
