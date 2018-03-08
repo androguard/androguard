@@ -3,12 +3,8 @@ from future import standard_library
 
 standard_library.install_aliases()
 from builtins import str
-from builtins import range
-from builtins import object
 import re
 import collections
-import multiprocessing
-import queue
 import time
 from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
@@ -18,7 +14,7 @@ from androguard.core import bytecode
 log = logging.getLogger("androguard.analysis")
 
 
-class DVMBasicBlock(object):
+class DVMBasicBlock:
     """
         A simple basic block of a dalvik method
     """
@@ -165,7 +161,7 @@ class DVMBasicBlock(object):
         print(self.get_name(), self.get_start(), self.get_end())
 
 
-class Enum(object):
+class Enum:
     def __init__(self, names):
         self.names = names
         for value, name in enumerate(self.names):
@@ -231,7 +227,7 @@ TAGS_ANDROID = {
 }
 
 
-class Tags(object):
+class Tags:
     """
       Handle specific tags
 
@@ -273,7 +269,7 @@ class Tags(object):
         return self.tags == set()
 
 
-class BasicBlocks(object):
+class BasicBlocks:
     """
         This class represents all basic blocks of a method
     """
@@ -311,7 +307,7 @@ class BasicBlocks(object):
         return self.bb[idx]
 
 
-class ExceptionAnalysis(object):
+class ExceptionAnalysis:
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -341,7 +337,7 @@ class ExceptionAnalysis(object):
         return d
 
 
-class Exceptions(object):
+class Exceptions:
     def __init__(self, _vm):
         self.__vm = _vm
         self.exceptions = []
@@ -373,7 +369,7 @@ for i in dvm.BRANCH_DVM_OPCODES:
     BasicOPCODES.append(re.compile(i))
 
 
-class MethodAnalysis(object):
+class MethodAnalysis:
 
     def __init__(self, vm, method):
         """
@@ -505,7 +501,7 @@ class MethodAnalysis(object):
         return "<analysis.MethodAnalysis {}>".format(self.method)
 
 
-class StringAnalysis(object):
+class StringAnalysis:
     def __init__(self, value):
         """
         StringAnalysis contains the XREFs of a string.
@@ -549,7 +545,7 @@ class StringAnalysis(object):
         return "<analysis.StringAnalysis {}>".format(s)
 
 
-class MethodClassAnalysis(object):
+class MethodClassAnalysis:
     def __init__(self, method):
         """
         MethodClassAnalysis contains the XREFs for a given method.
@@ -600,7 +596,7 @@ class MethodClassAnalysis(object):
                 " EXTERNAL" if isinstance(self.method, ExternalMethod) else "")
 
 
-class FieldClassAnalysis(object):
+class FieldClassAnalysis:
     def __init__(self, field):
         """
         FieldClassAnalysis contains the XREFs for a class field.
@@ -682,7 +678,7 @@ class ExternalClass:
         return "<analysis.ExternalClass {}>".format(self.name)
 
 
-class ExternalMethod(object):
+class ExternalMethod:
     def __init__(self, class_name, name, descriptor):
         self.class_name = class_name
         self.name = name
@@ -710,7 +706,7 @@ class ExternalMethod(object):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
 
 
-class ClassAnalysis(object):
+class ClassAnalysis:
     def __init__(self, classobj, internal=False):
         """
         ClassAnalysis contains the XREFs from a given Class.
@@ -863,7 +859,7 @@ class ClassAnalysis(object):
         return data
 
 
-class Analysis(object):
+class Analysis:
     def __init__(self, vm=None):
         """
         Analysis Object
