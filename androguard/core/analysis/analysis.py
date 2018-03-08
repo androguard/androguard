@@ -900,6 +900,8 @@ class Analysis:
 
                     # Internal xref related to class manipulation
                     # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
+                    # See https://github.com/androguard/androguard/blob/d720ebf2a9c8e2a28484f1c81fdddbc57e04c157/androguard/core/analysis/analysis.py#L806
+                    # Before the check would go for internal classes only!
                     if type_info in self.classes and type_info != cur_cls_name:
                         if op_value == 0x22:
                             # new instance
