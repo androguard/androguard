@@ -4,7 +4,7 @@ import sys
 
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
-from androguard.misc import AnalyzeAPK
+from androguard.misc import AnalyzeAPK, AnalyzeDex
 
 
 class AnalysisTest(unittest.TestCase):
@@ -39,6 +39,22 @@ class AnalysisTest(unittest.TestCase):
 
         # find String fields
         self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype="Ljava\/lang\/String;"))), 63)
+
+    def testAnalysis(self):
+        h, d, dx = AnalyzeDex("examples/tests/AnalysisTest.dex")
+
+        self.assertEqual(h, "4595fc25104f3fcd709163eb70ca476edf116753607ec18f09548968c71910dc")
+        self.assertIsInstance(d, dvm.DalvikVMFormat)
+        self.assertIsInstance(dx, analysis.Analysis)
+
+        cls = ["Ljava/io/PrintStream;", "Ljava/lang/Object;",
+                "Ljava/math/BigDecimal;", "Ljava/math/BigInteger;"]
+
+        for c in cls:
+            self.assertIn(c, map(lambda x: x.orig_class.get_name(),
+                dx.get_external_classes()))
+
+
 
 if __name__ == '__main__':
     unittest.main()
