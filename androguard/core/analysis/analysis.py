@@ -378,6 +378,8 @@ class MethodAnalysis(object):
     def __init__(self, vm, method):
         """
         This class analyses in details a method of a class/dex file
+        It is a wrapper around a :class:`EncodedMethod` and enhances it
+        by using multiple :class:`BasicBlock`.
 
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
@@ -646,6 +648,7 @@ class FieldClassAnalysis(object):
         return "<analysis.FieldClassAnalysis {}->{}>".format(self.field.class_name, self.field.name)
 
 
+# Flags used in :class:`ClassAnalysis`.
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
@@ -761,11 +764,27 @@ class ClassAnalysis(object):
         return self._inherits_methods[key]
 
     def AddFXrefRead(self, method, classobj, field):
+        """
+        Add a Field Read to this class
+
+        :param method:
+        :param classobj:
+        :param field:
+        :return:
+        """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
         self._fields[field].AddXrefRead(classobj, method)
 
     def AddFXrefWrite(self, method, classobj, field):
+        """
+        Add a Field Write to this class
+
+        :param method:
+        :param classobj:
+        :param field:
+        :return:
+        """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
         self._fields[field].AddXrefWrite(classobj, method)
@@ -781,9 +800,30 @@ class ClassAnalysis(object):
         self._methods[method1].AddXrefFrom(classobj, method2, offset)
 
     def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
+        """
+        Creates a crossreference to another class.
+        XrefTo means, that the current class calls another class.
+        The current class should also be contained in the another class' XrefFrom list.
+
+        :param ref_kind:
+        :param classobj: :class:`ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the Methods Bytecode, where the call happens
+        :return:
+        """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
     def AddXrefFrom(self, ref_kind, classobj, methodobj, offset):
+        """
+        Creates a crossreference from this class.
+        XrefFrom means, that the current class is called by another class.
+
+        :param ref_kind:
+        :param classobj: :class:`ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the methods bytecode, where the call happens
+        :return:
+        """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
     def get_xref_from(self):
@@ -841,9 +881,14 @@ class Analysis(object):
 
         :param vm: inital DalvikVMFormat object (default None)
         """
+
+        # Contains DalvikVMFormat objects
         self.vms = []
+        # A dict of {classname: ClassAnalysis}, populated on add(vm)
         self.classes = {}
+        # A dict of {string: StringAnalysis}, populated on create_xref()
         self.strings = {}
+        # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
         self.methods = {}
 
         if vm:
@@ -853,7 +898,7 @@ class Analysis(object):
         """
         Add a DalvikVMFormat to this Analysis
 
-        :param vm:
+        :param vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
         """
         self.vms.append(vm)
         for current_class in vm.get_classes():
@@ -872,11 +917,23 @@ class Analysis(object):
                 yield current_class
 
     def create_xref(self):
+        """
+        Create Class, Method, String and Field crossreferences
+        for all classes in the Analysis.
+
+        If you are using multiple DEX files, this function must
+        be called when all DEX files are added.
+        If you call the function after every DEX file, the
+        crossreferences might be wrong!
+        """
         log.debug("Creating XREF/DREF")
         started_at = time.time()
 
+        # TODO on concurrent runs, we probably need to clean up first,
+        # or check that we do not write garbage.
+
         # TODO multiprocessing
-        for c in  self._get_all_classes():
+        for c in self._get_all_classes():
             self._create_xref(c)
 
         diff = time.time() - started_at
@@ -885,6 +942,18 @@ class Analysis(object):
     def _create_xref(self, current_class):
         """
         Create the xref for `current_class`
+
+        There are four steps involved in getting the xrefs:
+        * Xrefs for classes
+        *       for method calls
+        *       for string usage
+        *       for field manipulation
+
+        All these information are stored in the *Analysis Objects.
+
+        Note that this might be quite slow, as all instructions are parsed.
+
+        :param current_class: :class:`dvm.ClassDefItem`
         """
         cur_cls_name = current_class.get_name()
 
@@ -903,9 +972,11 @@ class Analysis(object):
                 # 1) check for class calls: const-class (0x1c), new-instance (0x22)
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
+                    # type_info is the string like 'Ljava/lang/Object;'
                     type_info = instruction.cm.vm.get_cm_type(idx_type)
 
                     # Internal xref related to class manipulation
+                    # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
                     if type_info in self.classes and type_info != cur_cls_name:
                         if op_value == 0x22:
                             # new instance
@@ -945,13 +1016,18 @@ class Analysis(object):
                     if string_value not in self.strings:
                         self.strings[string_value] = StringAnalysis(string_value)
 
+                    # TODO: The bytecode offset is stored everywhere but not here?
+                    # TODO there is no XrefTo in the method for a string
                     self.strings[string_value].AddXrefFrom(self.classes[cur_cls_name], current_method)
+
+                # TODO maybe we should add a step 3a here and check for all const fields. You can then xref for integers etc!
 
                 # 4) check for field usage: i*op (0x52 ... 0x5f), s*op (0x60 ... 0x6d)
                 elif 0x52 <= op_value <= 0x6d:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
                     field_item = instruction.cm.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                    # TODO: The bytecode offset is stored everywhere but not here?
                     if field_item:
                         if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
                             # read access to a field
@@ -964,8 +1040,11 @@ class Analysis(object):
 
     def get_method(self, method):
         """
-        :param method:
-        :return: `MethodAnalysis` object for the given method
+        Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
+        This Analysis object is used to enhance EncodedMethods.
+
+        :param method: :class:`EncodedMethod` to search for
+        :return: :class:`MethodAnalysis` object for the given method, or None if method was not found
         """
         if method in self.methods:
             return self.methods[method]
@@ -973,17 +1052,31 @@ class Analysis(object):
             return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
+        """
+        Search for a :class:`EncodedMethod` in all classes in this analysis
+
+        :param class_name: name of the class, for example 'Ljava/lang/Object;'
+        :param method_name: name of the method, for example 'onCreate'
+        :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
+        :return: :class:`EncodedMethod` or None if method was not found
+        """
         if class_name in self.classes:
             for method in self.classes[class_name].get_vm_class().get_methods():
-                if method.get_name() == method_name and method.get_descriptor(
-                ) == method_descriptor:
+                if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
                     return method
         return None
 
     def get_method_analysis(self, method):
         """
-        :param method:
-        :return: `MethodClassAnalysis` for the given method
+        Returns the crossreferencing object for a given Method.
+
+        Beware: the similar named function :meth:`~get_method()` will return
+        a :class:`MethodAnalysis` object, while this function returns a :class:`MethodClassAnalysis` object!
+
+        This Method will only work after a run of :meth:`~create_xref()`
+
+        :param method: :class:`EncodedMethod`
+        :return: :class:`MethodClassAnalysis` for the given method or None, if method was not found
         """
         class_analysis = self.get_class_analysis(method.get_class_name())
         if class_analysis:
@@ -991,21 +1084,50 @@ class Analysis(object):
         return None
 
     def get_method_analysis_by_name(self, class_name, method_name, method_descriptor):
+        """
+        Returns the crossreferencing object for a given method.
+
+        This function is similar to :meth:`~get_method_analysis`, with the difference
+        that you can look up the Method by name
+
+        :param class_name: name of the class, for example `'Ljava/lang/Object;'`
+        :param method_name: name of the method, for example `'onCreate'`
+        :param method_descriptor: method descriptor, for example `'(I I)V'`
+        :return: :class:`MethodClassAnalysis`
+        """
         method = self.get_method_by_name(class_name, method_name, method_descriptor)
         if method:
             return self.get_method_analysis(method)
         return None
 
     def get_field_analysis(self, field):
+        """
+        Get the FieldAnalysis for a given fieldname
+
+        :param field: TODO
+        :return: :class:`FieldClassAnalysis`
+        """
         class_analysis = self.get_class_analysis(field.get_class_name())
         if class_analysis:
             return class_analysis.get_field_analysis(field)
         return None
 
     def is_class_present(self, class_name):
+        """
+        Checks if a given class name is part of this Analysis.
+
+        :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
+        :return: True if class was found, False otherwise
+        """
         return class_name in self.classes
 
     def get_class_analysis(self, class_name):
+        """
+        Returns the :class:`ClassAnalysis` object for a given classname.
+
+        :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
+        :return: :class:`ClassAnalysis`
+        """
         return self.classes.get(class_name)
 
     def get_external_classes(self):
@@ -1020,13 +1142,18 @@ class Analysis(object):
                 yield self.classes[i]
 
     def get_strings_analysis(self):
+        """
+        Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
+
+        :return: a dictionary
+        """
         return self.strings
 
     def get_strings(self):
         """
-        Returns a list of `StringAnalysis` objects
+        Returns a list of :class:`StringAnalysis` objects
 
-        :rtype: list of `StringAnalysis`
+        :rtype: list of :class:`StringAnalysis`
         """
         return self.strings.values()
 
