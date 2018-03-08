@@ -850,8 +850,8 @@ class Analysis:
         If you call the function after every DEX file, the
         crossreferences might be wrong!
         """
-        log.debug("Creating XREF/DREF")
-        started_at = time.time()
+        log.debug("Creating Crossreferences (XREF)")
+        tic = time.time()
 
         # TODO on concurrent runs, we probably need to clean up first,
         # or check that we do not write garbage.
@@ -860,8 +860,7 @@ class Analysis:
         for c in self._get_all_classes():
             self._create_xref(c)
 
-        diff = time.time() - started_at
-        log.info("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
+        log.info("End of creating Crossreferences (XREF), took {:0d}min {:02d}s".format(*divmod(time.time() - tic, 60)))
 
     def _create_xref(self, current_class):
         """
