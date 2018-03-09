@@ -54,7 +54,22 @@ else:
 setup(
     name='androguard',
     description='Androguard is a full python tool to play with Android files.',
+    long_description="""Androguard is a tool and python library to interact with Android Files.
+    
+    Usually they come in the form of Android Packages (APK) or Dalvik Executeable (DEX) files.
+    Androguard has tools to read Android's binary format for XML files (AXML) and is also suited with a decompiler for DEX.
+    
+    Androguard might not only be used as a tool for reverse engineering single applications, but features a lot of functions
+    for automated analysis. It provides a pure python framework to build your own analysis tools.
+    
+    If you encounter bugs while using androguard, please feel free to report them in our bugtracker_.
+    
+    .. _bugtracker: https://github.com/androguard/androguard/issues
+    """,
     version=__version__,
+    licence="Apache Licence, Version 2.0",
+    url="https://github.com/androguard/androguard",
+    download_url="https://github.com/androguard/androguard/releases",
     packages=find_packages(),
     package_data={
         # add the json files, residing in the api_specific_resources package
