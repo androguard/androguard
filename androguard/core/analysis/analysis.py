@@ -21,6 +21,8 @@ for i in dvm.BRANCH_DVM_OPCODES:
 REF_NEW_INSTANCE = 0
 REF_CLASS_USAGE = 1
 
+ref_type = {0x22: REF_NEW_INSTANCE, 0x1c: REF_CLASS_USAGE}
+
 
 class DVMBasicBlock:
     """
@@ -543,15 +545,21 @@ class ExternalClass:
         """
         The ExternalClass is used for all classes that are not defined in the
         DEX file, thus are external classes.
+
+        :param name: Name of the external class
         """
         self.name = name
         self.methods = {}
 
     def get_methods(self):
+        """
+        Return the stored methods for this external class
+        :return:
+        """
         return self.methods.values()
 
     def GetMethod(self, name, descriptor):
-        warnings.warn("deprecated, use get_method instead. This function might be removed in a later releass!", DeprecationWarning)
+        warnings.warn("deprecated, use get_method instead. This function might be removed in a later release!", DeprecationWarning)
         return self.get_method(name, descriptor)
 
     def get_method(self, name, descriptor):
@@ -903,15 +911,16 @@ class Analysis:
                     # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
                     # See https://github.com/androguard/androguard/blob/d720ebf2a9c8e2a28484f1c81fdddbc57e04c157/androguard/core/analysis/analysis.py#L806
                     # Before the check would go for internal classes only!
-                    if type_info in self.classes and type_info != cur_cls_name:
-                        if op_value == 0x22:
-                            # new instance
-                            self.classes[cur_cls_name].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method, off)
-                            self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[cur_cls_name], current_method, off)
-                        else:
-                            # class reference
-                            self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method, off)
-                            self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
+                    if type_info != cur_cls_name:
+                        if type_info not in self.classes:
+                            # Create new external class
+                            self.classes[type_info] = ClassAnalysis(ExternalClass(type_info))
+
+                        cur_cls = self.classes[cur_cls_name]
+                        oth_cls = self.classes[type_info]
+
+                        cur_cls.AddXrefTo(ref_type[op_value], oth_cls, current_method, off)
+                        oth_cls.AddXrefFrom(ref_type[op_value], cur_cls, current_method, off)
 
                 # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
                 elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
