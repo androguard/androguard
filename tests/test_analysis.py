@@ -20,14 +20,14 @@ class AnalysisTest(unittest.TestCase):
 
         dx.create_xref()
 
-        self.assertEqual(len(dx.get_classes()), 1745)
+        self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
         self.assertEqual(len(list(dx.get_methods())), 11694)
         self.assertEqual(len(list(dx.get_fields())), 3033)
-        self.assertEqual(len(list(dx.get_external_classes())), 392)
+        self.assertEqual(len(list(dx.get_external_classes())), 394)
 
         # Filter all support libraries
-        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$"))), 514)
+        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$"))), 516)
         self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$", no_external=True))), 124)
 
         # Find all constructors by method name

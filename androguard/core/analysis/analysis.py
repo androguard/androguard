@@ -1078,6 +1078,17 @@ class Analysis:
             if cls.is_external():
                 yield cls
 
+    def get_internal_classes(self):
+        """
+        Returns all external classes, that means all classes that are
+        defined in the given set of `DalvikVMObject`s.
+
+        :rtype: generator of `ClassAnalysis`
+        """
+        for cls in self.classes.values():
+            if not cls.is_external():
+                yield cls
+
     def get_strings_analysis(self):
         """
         Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
@@ -1098,7 +1109,9 @@ class Analysis:
         """
         Returns a list of `ClassAnalysis` objects
 
-        :rtype: list of `ClassAnalysis`
+        Returns both internal and external classes (if any)
+
+        :rtype: list of :class:`ClassAnalysis`
         """
         return self.classes.values()
 
