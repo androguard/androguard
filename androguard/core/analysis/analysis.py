@@ -1,24 +1,30 @@
 from __future__ import print_function
 from future import standard_library
-
-standard_library.install_aliases()
 from builtins import str
-from builtins import range
-from builtins import object
 import re
 import collections
-import multiprocessing
-import queue
 import time
+import warnings
 from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
 from androguard.core import bytecode
+standard_library.install_aliases()
 
 log = logging.getLogger("androguard.analysis")
 
+BasicOPCODES = []
+for i in dvm.BRANCH_DVM_OPCODES:
+    BasicOPCODES.append(re.compile(i))
 
-class DVMBasicBlock(object):
+# Flags used in :class:`ClassAnalysis`.
+REF_NEW_INSTANCE = 0
+REF_CLASS_USAGE = 1
+
+ref_type = {0x22: REF_NEW_INSTANCE, 0x1c: REF_CLASS_USAGE}
+
+
+class DVMBasicBlock:
     """
         A simple basic block of a dalvik method
     """
@@ -165,115 +171,7 @@ class DVMBasicBlock(object):
         print(self.get_name(), self.get_start(), self.get_end())
 
 
-class Enum(object):
-    def __init__(self, names):
-        self.names = names
-        for value, name in enumerate(self.names):
-            setattr(self, name.upper(), value)
-
-    def tuples(self):
-        return tuple(enumerate(self.names))
-
-
-TAG_ANDROID = Enum(
-    ['ANDROID', 'TELEPHONY', 'SMS', 'SMSMESSAGE', 'ACCESSIBILITYSERVICE',
-     'ACCOUNTS', 'ANIMATION', 'APP', 'BLUETOOTH', 'CONTENT', 'DATABASE',
-     'DEBUG', 'DRM', 'GESTURE', 'GRAPHICS', 'HARDWARE', 'INPUTMETHODSERVICE',
-     'LOCATION', 'MEDIA', 'MTP', 'NET', 'NFC', 'OPENGL', 'OS', 'PREFERENCE',
-     'PROVIDER', 'RENDERSCRIPT', 'SAX', 'SECURITY', 'SERVICE', 'SPEECH',
-     'SUPPORT', 'TEST', 'TEXT', 'UTIL', 'VIEW', 'WEBKIT', 'WIDGET',
-     'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
-
-TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
-
-TAGS_ANDROID = {
-    TAG_ANDROID.ANDROID: [0, "Landroid"],
-    TAG_ANDROID.TELEPHONY: [0, "Landroid/telephony"],
-    TAG_ANDROID.SMS: [0, "Landroid/telephony/SmsManager"],
-    TAG_ANDROID.SMSMESSAGE: [0, "Landroid/telephony/SmsMessage"],
-    TAG_ANDROID.DEBUG: [0, "Landroid/os/Debug"],
-    TAG_ANDROID.ACCESSIBILITYSERVICE: [0, "Landroid/accessibilityservice"],
-    TAG_ANDROID.ACCOUNTS: [0, "Landroid/accounts"],
-    TAG_ANDROID.ANIMATION: [0, "Landroid/animation"],
-    TAG_ANDROID.APP: [0, "Landroid/app"],
-    TAG_ANDROID.BLUETOOTH: [0, "Landroid/bluetooth"],
-    TAG_ANDROID.CONTENT: [0, "Landroid/content"],
-    TAG_ANDROID.DATABASE: [0, "Landroid/database"],
-    TAG_ANDROID.DRM: [0, "Landroid/drm"],
-    TAG_ANDROID.GESTURE: [0, "Landroid/gesture"],
-    TAG_ANDROID.GRAPHICS: [0, "Landroid/graphics"],
-    TAG_ANDROID.HARDWARE: [0, "Landroid/hardware"],
-    TAG_ANDROID.INPUTMETHODSERVICE: [0, "Landroid/inputmethodservice"],
-    TAG_ANDROID.LOCATION: [0, "Landroid/location"],
-    TAG_ANDROID.MEDIA: [0, "Landroid/media"],
-    TAG_ANDROID.MTP: [0, "Landroid/mtp"],
-    TAG_ANDROID.NET: [0, "Landroid/net"],
-    TAG_ANDROID.NFC: [0, "Landroid/nfc"],
-    TAG_ANDROID.OPENGL: [0, "Landroid/opengl"],
-    TAG_ANDROID.OS: [0, "Landroid/os"],
-    TAG_ANDROID.PREFERENCE: [0, "Landroid/preference"],
-    TAG_ANDROID.PROVIDER: [0, "Landroid/provider"],
-    TAG_ANDROID.RENDERSCRIPT: [0, "Landroid/renderscript"],
-    TAG_ANDROID.SAX: [0, "Landroid/sax"],
-    TAG_ANDROID.SECURITY: [0, "Landroid/security"],
-    TAG_ANDROID.SERVICE: [0, "Landroid/service"],
-    TAG_ANDROID.SPEECH: [0, "Landroid/speech"],
-    TAG_ANDROID.SUPPORT: [0, "Landroid/support"],
-    TAG_ANDROID.TEST: [0, "Landroid/test"],
-    TAG_ANDROID.TEXT: [0, "Landroid/text"],
-    TAG_ANDROID.UTIL: [0, "Landroid/util"],
-    TAG_ANDROID.VIEW: [0, "Landroid/view"],
-    TAG_ANDROID.WEBKIT: [0, "Landroid/webkit"],
-    TAG_ANDROID.WIDGET: [0, "Landroid/widget"],
-    TAG_ANDROID.DALVIK_BYTECODE: [0, "Ldalvik/bytecode"],
-    TAG_ANDROID.DALVIK_SYSTEM: [0, "Ldalvik/system"],
-    TAG_ANDROID.JAVA_REFLECTION: [0, "Ljava/lang/reflect"],
-}
-
-
-class Tags(object):
-    """
-      Handle specific tags
-
-      :param patterns:
-      :params reverse:
-  """
-
-    def __init__(self, patterns=TAGS_ANDROID, reverse=TAG_REVERSE_ANDROID):
-        self.tags = set()
-
-        self.patterns = patterns
-        self.reverse = TAG_REVERSE_ANDROID
-
-        for i in self.patterns:
-            self.patterns[i][1] = re.compile(self.patterns[i][1])
-
-    def emit(self, method):
-        for i in self.patterns:
-            if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(method.get_class()) is not None:
-                    self.tags.add(i)
-
-    def emit_by_classname(self, classname):
-        for i in self.patterns:
-            if self.patterns[i][0] == 0:
-                if self.patterns[i][1].search(classname) is not None:
-                    self.tags.add(i)
-
-    def get_list(self):
-        return [self.reverse[i] for i in self.tags]
-
-    def __contains__(self, key):
-        return key in self.tags
-
-    def __str__(self):
-        return str([self.reverse[i] for i in self.tags])
-
-    def empty(self):
-        return self.tags == set()
-
-
-class BasicBlocks(object):
+class BasicBlocks:
     """
         This class represents all basic blocks of a method
     """
@@ -311,7 +209,7 @@ class BasicBlocks(object):
         return self.bb[idx]
 
 
-class ExceptionAnalysis(object):
+class ExceptionAnalysis:
     def __init__(self, exception, bb):
         self.start = exception[0]
         self.end = exception[1]
@@ -341,7 +239,7 @@ class ExceptionAnalysis(object):
         return d
 
 
-class Exceptions(object):
+class Exceptions:
     def __init__(self, _vm):
         self.__vm = _vm
         self.exceptions = []
@@ -368,16 +266,12 @@ class Exceptions(object):
             yield i
 
 
-BasicOPCODES = []
-for i in dvm.BRANCH_DVM_OPCODES:
-    BasicOPCODES.append(re.compile(i))
-
-
-class MethodAnalysis(object):
-
+class MethodAnalysis:
     def __init__(self, vm, method):
         """
         This class analyses in details a method of a class/dex file
+        It is a wrapper around a :class:`EncodedMethod` and enhances it
+        by using multiple :class:`BasicBlock`.
 
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
@@ -503,7 +397,7 @@ class MethodAnalysis(object):
         return "<analysis.MethodAnalysis {}>".format(self.method)
 
 
-class StringAnalysis(object):
+class StringAnalysis:
     def __init__(self, value):
         """
         StringAnalysis contains the XREFs of a string.
@@ -547,7 +441,7 @@ class StringAnalysis(object):
         return "<analysis.StringAnalysis {}>".format(s)
 
 
-class MethodClassAnalysis(object):
+class MethodClassAnalysis:
     def __init__(self, method):
         """
         MethodClassAnalysis contains the XREFs for a given method.
@@ -598,7 +492,7 @@ class MethodClassAnalysis(object):
                 " EXTERNAL" if isinstance(self.method, ExternalMethod) else "")
 
 
-class FieldClassAnalysis(object):
+class FieldClassAnalysis:
     def __init__(self, field):
         """
         FieldClassAnalysis contains the XREFs for a class field.
@@ -646,23 +540,37 @@ class FieldClassAnalysis(object):
         return "<analysis.FieldClassAnalysis {}->{}>".format(self.field.class_name, self.field.name)
 
 
-REF_NEW_INSTANCE = 0
-REF_CLASS_USAGE = 1
-
-
 class ExternalClass:
     def __init__(self, name):
         """
         The ExternalClass is used for all classes that are not defined in the
         DEX file, thus are external classes.
+
+        :param name: Name of the external class
         """
         self.name = name
         self.methods = {}
 
     def get_methods(self):
+        """
+        Return the stored methods for this external class
+        :return:
+        """
         return self.methods.values()
 
     def GetMethod(self, name, descriptor):
+        warnings.warn("deprecated, use get_method instead. This function might be removed in a later release!", DeprecationWarning)
+        return self.get_method(name, descriptor)
+
+    def get_method(self, name, descriptor):
+        """
+        Get the method by name and descriptor,
+        or create a new one if the requested method does not exists.
+
+        :param name: method name
+        :param descriptor: method descriptor, for example `'(I)V'`
+        :return: :class:`ExternalMethod`
+        """
         key = name + str(descriptor)
         if key not in self.methods:
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
@@ -679,7 +587,7 @@ class ExternalClass:
         return "<analysis.ExternalClass {}>".format(self.name)
 
 
-class ExternalMethod(object):
+class ExternalMethod:
     def __init__(self, class_name, name, descriptor):
         self.class_name = class_name
         self.name = name
@@ -707,23 +615,35 @@ class ExternalMethod(object):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
 
 
-class ClassAnalysis(object):
-    def __init__(self, classobj, internal=False):
+class ClassAnalysis:
+    def __init__(self, classobj):
         """
         ClassAnalysis contains the XREFs from a given Class.
 
         Also external classes will generate xrefs, obviously only XREF_FROM are
         shown for external classes.
+
+        :param classobj: class:`~androguard.core.bytecode.dvm.ClassDefItem` or :class:`ExternalClass`
         """
+
+        # Automaticallt decide if the class is external or not
+        self.external = isinstance(classobj, ExternalClass)
 
         self.orig_class = classobj
         self._inherits_methods = {}
         self._methods = {}
         self._fields = {}
-        self.internal = internal
 
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
+
+    def is_external(self):
+        """
+        Tests wheather this class is an external class
+
+        :return: True if the Class is external, False otherwise
+        """
+        return self.external
 
     def get_methods(self):
         """
@@ -744,14 +664,29 @@ class ClassAnalysis(object):
         return len(self._methods)
 
     def get_method_analysis(self, method):
+        """
+        Return the MethodClassAnalysis object for a given EncodedMethod
+
+        :param method: :class:`EncodedMethod`
+        :return: :class:`MethodClassAnalysis`
+        """
         return self._methods.get(method)
 
     def get_field_analysis(self, field):
         return self._fields.get(field)
 
-    def GetFakeMethod(self, name, descriptor):
-        if not self.internal:
-            return self.orig_class.GetMethod(name, descriptor)
+    def get_fake_method(self, name, descriptor):
+        """
+        Search for the given method name and descriptor
+        and return a fake (ExternalMethod) if required.
+
+        :param name: name of the method
+        :param descriptor: descriptor of the method, for example `'(I I I)V'`
+        :return: :class:`ExternalMethod`
+        """
+        if self.external:
+            # An external class can only generate the methods on demand
+            return self.orig_class.get_method(name, descriptor)
 
         # We are searching an unknown method in this class
         # It could be something that the class herits
@@ -761,11 +696,27 @@ class ClassAnalysis(object):
         return self._inherits_methods[key]
 
     def AddFXrefRead(self, method, classobj, field):
+        """
+        Add a Field Read to this class
+
+        :param method:
+        :param classobj:
+        :param field:
+        :return:
+        """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
         self._fields[field].AddXrefRead(classobj, method)
 
     def AddFXrefWrite(self, method, classobj, field):
+        """
+        Add a Field Write to this class
+
+        :param method:
+        :param classobj:
+        :param field:
+        :return:
+        """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
         self._fields[field].AddXrefWrite(classobj, method)
@@ -781,9 +732,30 @@ class ClassAnalysis(object):
         self._methods[method1].AddXrefFrom(classobj, method2, offset)
 
     def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
+        """
+        Creates a crossreference to another class.
+        XrefTo means, that the current class calls another class.
+        The current class should also be contained in the another class' XrefFrom list.
+
+        :param ref_kind:
+        :param classobj: :class:`ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the Methods Bytecode, where the call happens
+        :return:
+        """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
     def AddXrefFrom(self, ref_kind, classobj, methodobj, offset):
+        """
+        Creates a crossreference from this class.
+        XrefFrom means, that the current class is called by another class.
+
+        :param ref_kind:
+        :param classobj: :class:`ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the methods bytecode, where the call happens
+        :return:
+        """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
     def get_xref_from(self):
@@ -823,7 +795,7 @@ class ClassAnalysis(object):
         return data
 
 
-class Analysis(object):
+class Analysis:
     def __init__(self, vm=None):
         """
         Analysis Object
@@ -841,9 +813,14 @@ class Analysis(object):
 
         :param vm: inital DalvikVMFormat object (default None)
         """
+
+        # Contains DalvikVMFormat objects
         self.vms = []
+        # A dict of {classname: ClassAnalysis}, populated on add(vm)
         self.classes = {}
+        # A dict of {string: StringAnalysis}, populated on create_xref()
         self.strings = {}
+        # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
         self.methods = {}
 
         if vm:
@@ -853,11 +830,11 @@ class Analysis(object):
         """
         Add a DalvikVMFormat to this Analysis
 
-        :param vm:
+        :param vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
         """
         self.vms.append(vm)
         for current_class in vm.get_classes():
-            self.classes[current_class.get_name()] = ClassAnalysis(current_class, True)
+            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
 
         for method in vm.get_methods():
             self.methods[method] = MethodAnalysis(vm, method)
@@ -872,19 +849,43 @@ class Analysis(object):
                 yield current_class
 
     def create_xref(self):
-        log.debug("Creating XREF/DREF")
-        started_at = time.time()
+        """
+        Create Class, Method, String and Field crossreferences
+        for all classes in the Analysis.
+
+        If you are using multiple DEX files, this function must
+        be called when all DEX files are added.
+        If you call the function after every DEX file, the
+        crossreferences might be wrong!
+        """
+        log.debug("Creating Crossreferences (XREF)")
+        tic = time.time()
+
+        # TODO on concurrent runs, we probably need to clean up first,
+        # or check that we do not write garbage.
 
         # TODO multiprocessing
-        for c in  self._get_all_classes():
+        for c in self._get_all_classes():
             self._create_xref(c)
 
-        diff = time.time() - started_at
-        log.info("End of creating XREF/DREF {:.0f}:{:.2f}".format(*divmod(diff, 60)))
+        log.info("End of creating cross references (XREF)")
+        log.info("run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def _create_xref(self, current_class):
         """
         Create the xref for `current_class`
+
+        There are four steps involved in getting the xrefs:
+        * Xrefs for classes
+        *       for method calls
+        *       for string usage
+        *       for field manipulation
+
+        All these information are stored in the *Analysis Objects.
+
+        Note that this might be quite slow, as all instructions are parsed.
+
+        :param current_class: :class:`dvm.ClassDefItem`
         """
         cur_cls_name = current_class.get_name()
 
@@ -900,22 +901,29 @@ class Analysis(object):
             for instruction in code.get_bc().get_instructions():
                 op_value = instruction.get_op_value()
 
+                # 1) check for class calls: const-class (0x1c), new-instance (0x22)
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
+                    # type_info is the string like 'Ljava/lang/Object;'
                     type_info = instruction.cm.vm.get_cm_type(idx_type)
 
                     # Internal xref related to class manipulation
-                    if type_info in self.classes and type_info != cur_cls_name:
-                        if op_value == 0x22:
-                            # new instance
-                            self.classes[cur_cls_name].AddXrefTo(REF_NEW_INSTANCE, self.classes[type_info], current_method, off)
-                            self.classes[type_info].AddXrefFrom(REF_NEW_INSTANCE, self.classes[cur_cls_name], current_method, off)
-                        else:
-                            # class reference
-                            self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[type_info], current_method, off)
-                            self.classes[type_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
+                    # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
+                    # See https://github.com/androguard/androguard/blob/d720ebf2a9c8e2a28484f1c81fdddbc57e04c157/androguard/core/analysis/analysis.py#L806
+                    # Before the check would go for internal classes only!
+                    if type_info != cur_cls_name:
+                        if type_info not in self.classes:
+                            # Create new external class
+                            self.classes[type_info] = ClassAnalysis(ExternalClass(type_info))
 
-                elif ((0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78)):
+                        cur_cls = self.classes[cur_cls_name]
+                        oth_cls = self.classes[type_info]
+
+                        cur_cls.AddXrefTo(ref_type[op_value], oth_cls, current_method, off)
+                        oth_cls.AddXrefFrom(ref_type[op_value], cur_cls, current_method, off)
+
+                # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
+                elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if method_info:
@@ -924,10 +932,12 @@ class Analysis(object):
                         method_item = instruction.cm.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
 
                         if not method_item:
-                            # Seems to be an external classes, create it first
                             if method_info[0] not in self.classes:
-                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]), False)
-                            method_item = self.classes[method_info[0]].GetFakeMethod(method_info[1], method_info[2])
+                                # Seems to be an external class, create it first
+                                # Beware: if not all DEX files are loaded at the time create_xref runs
+                                # you will run into problems!
+                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]))
+                            method_item = self.classes[method_info[0]].get_fake_method(method_info[1], method_info[2])
 
                         self.classes[cur_cls_name].AddMXrefTo(current_method, self.classes[class_info], method_item, off)
                         self.classes[class_info].AddMXrefFrom(method_item, self.classes[cur_cls_name], current_method, off)
@@ -937,17 +947,24 @@ class Analysis(object):
                             self.classes[cur_cls_name].AddXrefTo(REF_CLASS_USAGE, self.classes[class_info], method_item, off)
                             self.classes[class_info].AddXrefFrom(REF_CLASS_USAGE, self.classes[cur_cls_name], current_method, off)
 
+                # 3) check for string usage: const-string (0x1a), const-string/jumbo (0x1b)
                 elif 0x1a <= op_value <= 0x1b:
                     string_value = instruction.cm.vm.get_cm_string(instruction.get_ref_kind())
                     if string_value not in self.strings:
                         self.strings[string_value] = StringAnalysis(string_value)
 
+                    # TODO: The bytecode offset is stored everywhere but not here?
+                    # TODO there is no XrefTo in the method for a string
                     self.strings[string_value].AddXrefFrom(self.classes[cur_cls_name], current_method)
 
+                # TODO maybe we should add a step 3a here and check for all const fields. You can then xref for integers etc!
+
+                # 4) check for field usage: i*op (0x52 ... 0x5f), s*op (0x60 ... 0x6d)
                 elif 0x52 <= op_value <= 0x6d:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
                     field_item = instruction.cm.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                    # TODO: The bytecode offset is stored everywhere but not here?
                     if field_item:
                         if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
                             # read access to a field
@@ -960,8 +977,11 @@ class Analysis(object):
 
     def get_method(self, method):
         """
-        :param method:
-        :return: `MethodAnalysis` object for the given method
+        Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
+        This Analysis object is used to enhance EncodedMethods.
+
+        :param method: :class:`EncodedMethod` to search for
+        :return: :class:`MethodAnalysis` object for the given method, or None if method was not found
         """
         if method in self.methods:
             return self.methods[method]
@@ -969,17 +989,31 @@ class Analysis(object):
             return None
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
+        """
+        Search for a :class:`EncodedMethod` in all classes in this analysis
+
+        :param class_name: name of the class, for example 'Ljava/lang/Object;'
+        :param method_name: name of the method, for example 'onCreate'
+        :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
+        :return: :class:`EncodedMethod` or None if method was not found
+        """
         if class_name in self.classes:
             for method in self.classes[class_name].get_vm_class().get_methods():
-                if method.get_name() == method_name and method.get_descriptor(
-                ) == method_descriptor:
+                if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
                     return method
         return None
 
     def get_method_analysis(self, method):
         """
-        :param method:
-        :return: `MethodClassAnalysis` for the given method
+        Returns the crossreferencing object for a given Method.
+
+        Beware: the similar named function :meth:`~get_method()` will return
+        a :class:`MethodAnalysis` object, while this function returns a :class:`MethodClassAnalysis` object!
+
+        This Method will only work after a run of :meth:`~create_xref()`
+
+        :param method: :class:`EncodedMethod`
+        :return: :class:`MethodClassAnalysis` for the given method or None, if method was not found
         """
         class_analysis = self.get_class_analysis(method.get_class_name())
         if class_analysis:
@@ -987,21 +1021,50 @@ class Analysis(object):
         return None
 
     def get_method_analysis_by_name(self, class_name, method_name, method_descriptor):
+        """
+        Returns the crossreferencing object for a given method.
+
+        This function is similar to :meth:`~get_method_analysis`, with the difference
+        that you can look up the Method by name
+
+        :param class_name: name of the class, for example `'Ljava/lang/Object;'`
+        :param method_name: name of the method, for example `'onCreate'`
+        :param method_descriptor: method descriptor, for example `'(I I)V'`
+        :return: :class:`MethodClassAnalysis`
+        """
         method = self.get_method_by_name(class_name, method_name, method_descriptor)
         if method:
             return self.get_method_analysis(method)
         return None
 
     def get_field_analysis(self, field):
+        """
+        Get the FieldAnalysis for a given fieldname
+
+        :param field: TODO
+        :return: :class:`FieldClassAnalysis`
+        """
         class_analysis = self.get_class_analysis(field.get_class_name())
         if class_analysis:
             return class_analysis.get_field_analysis(field)
         return None
 
     def is_class_present(self, class_name):
+        """
+        Checks if a given class name is part of this Analysis.
+
+        :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
+        :return: True if class was found, False otherwise
+        """
         return class_name in self.classes
 
     def get_class_analysis(self, class_name):
+        """
+        Returns the :class:`ClassAnalysis` object for a given classname.
+
+        :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
+        :return: :class:`ClassAnalysis`
+        """
         return self.classes.get(class_name)
 
     def get_external_classes(self):
@@ -1011,18 +1074,34 @@ class Analysis(object):
 
         :rtype: generator of `ClassAnalysis`
         """
-        for i in self.classes:
-            if not self.classes[i].internal:
-                yield self.classes[i]
+        for cls in self.classes.values():
+            if cls.is_external():
+                yield cls
+
+    def get_internal_classes(self):
+        """
+        Returns all external classes, that means all classes that are
+        defined in the given set of `DalvikVMObject`s.
+
+        :rtype: generator of `ClassAnalysis`
+        """
+        for cls in self.classes.values():
+            if not cls.is_external():
+                yield cls
 
     def get_strings_analysis(self):
+        """
+        Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
+
+        :return: a dictionary
+        """
         return self.strings
 
     def get_strings(self):
         """
-        Returns a list of `StringAnalysis` objects
+        Returns a list of :class:`StringAnalysis` objects
 
-        :rtype: list of `StringAnalysis`
+        :rtype: list of :class:`StringAnalysis`
         """
         return self.strings.values()
 
@@ -1030,7 +1109,9 @@ class Analysis(object):
         """
         Returns a list of `ClassAnalysis` objects
 
-        :rtype: list of `ClassAnalysis`
+        Returns both internal and external classes (if any)
+
+        :rtype: list of :class:`ClassAnalysis`
         """
         return self.classes.values()
 
