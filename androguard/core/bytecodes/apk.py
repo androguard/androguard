@@ -943,7 +943,7 @@ class APK(object):
 
         :return: list
         """
-        return self.get_element("uses-feature", "name")
+        return self.get_elements("uses-feature", "name")
 
     def is_wearable(self):
         """

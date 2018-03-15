@@ -508,6 +508,19 @@ class APKTest(unittest.TestCase):
             self.assertTrue(mockZip.writestr.call_count == 48)
             self.assertTrue(mockZip.close.called)
 
+    def testFeatures(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK("examples/tests/com.example.android.tvleanback.apk")
+
+        self.assertListEqual(list(a.get_features()), ["android.hardware.microphone",
+                                                      "android.hardware.touchscreen",
+                                                      "android.software.leanback"])
+
+        self.assertTrue(a.is_androidtv())
+        self.assertFalse(a.is_wearable())
+        self.assertTrue(a.is_leanback())
+
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
