@@ -67,7 +67,7 @@ setup(
     .. _bugtracker: https://github.com/androguard/androguard/issues
     """,
     version=__version__,
-    licence="Apache Licence, Version 2.0",
+    license="Apache Licence, Version 2.0",
     url="https://github.com/androguard/androguard",
     download_url="https://github.com/androguard/androguard/releases",
     packages=find_packages(),

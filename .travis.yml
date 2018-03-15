@@ -22,15 +22,15 @@ install:
 script:
   - nosetests --with-coverage --with-timer --timer-top-n 50
   # Testing the scripts - crude ;)
-  - for f in `find -name \*.apk`; do
+  - for f in $(find ./ -! -path \*signing\* -name \*.apk); do
       echo "testing $f";
-      time ./androsign.py $f > /dev/null;
-      time ./androaxml.py -i $f > /dev/null;
-      time ./androaxml.py -i $f -o /dev/null;
-      time ./androarsc.py -i $f > /dev/null;
-      time ./androarsc.py -i $f -o /dev/null;
-      time ./androarsc.py -i $f -t string > /dev/null;
-      time ./androarsc.py -i $f -t string -o /dev/null;
+      androsign.py $f > /dev/null || true;
+      androaxml.py -i $f > /dev/null || true;
+      androaxml.py -i $f -o /dev/null || true;
+      androarsc.py -i $f > /dev/null || true;
+      androarsc.py -i $f -o /dev/null || true;
+      androarsc.py -i $f -t string> /dev/null || true;
+      androarsc.py -i $f -t string -o /dev/null || true;
       done
   - python setup.py build_sphinx
 
