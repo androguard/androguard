@@ -936,6 +936,46 @@ class APK(object):
         """
         return self.get_elements("uses-library", "name")
 
+    def get_features(self):
+        """
+        Return a list of all android:names found for the tag uses-feature
+        in the AndroidManifest.xml
+
+        :return: list
+        """
+        return self.get_element("uses-feature", "name")
+
+    def is_wearable(self):
+        """
+        Checks if this application is build for wearables by
+        checking if it uses the feature 'android.hardware.type.watch'
+        See: https://developer.android.com/training/wearables/apps/creating.html for more information.
+
+        Not every app is setting this feature (not even the example Google provides),
+        so it might be wise to not 100% rely on this feature.
+
+        :return: True if wearable, False otherwise
+        """
+        return 'android.hardware.type.watch' in self.get_features()
+
+    def is_leanback(self):
+        """
+        Checks if this application is build for TV (Leanback support)
+        by checkin if it uses the feature 'android.software.leanback'
+
+        :return: True if leanback feature is used, false otherwise
+        """
+        return 'android.software.leanback' in self.get_features()
+
+    def is_androidtv(self):
+        """
+        Checks if this application does not require a touchscreen,
+        as this is the rule to get into the TV section of the Play Store
+        See: https://developer.android.com/training/tv/start/start.html for more information.
+
+        :return: True if 'android.hardware.touchscreen' is not required, False otherwise
+        """
+        return self.get_element('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
     def get_certificate_der(self, filename):
         """

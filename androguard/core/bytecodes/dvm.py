@@ -7988,7 +7988,7 @@ class DalvikVMFormat(bytecode._Bytecode):
         Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
         from the Java Source.
         You can always escape the string from `get_strings_unicode()` using the function
-        `androguard.core.bytecodes.mutf8.patch_string(s)`.
+        :meth:`androguard.core.bytecodes.mutf8.patch_string`
 
         :rtype: a list with all strings used in the format (types, names ...)
         """
