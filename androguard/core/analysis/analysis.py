@@ -1,5 +1,4 @@
 from __future__ import print_function
-from future import standard_library
 from builtins import str
 import re
 import collections
@@ -9,7 +8,6 @@ from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
 from androguard.core import bytecode
-standard_library.install_aliases()
 
 log = logging.getLogger("androguard.analysis")
 

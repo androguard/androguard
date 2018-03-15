@@ -1,6 +1,3 @@
-from future import standard_library
-
-standard_library.install_aliases()
 from androguard import session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
