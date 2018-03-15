@@ -1,4 +1,25 @@
-from builtins import chr, str
+import builtins
+from builtins import str
+import struct
+
+
+def chr(val):
+    """
+    Patched Version of builtins.chr, to work with narrow python builds
+    In those versions, the function unichr does not work with inputs >0x10000
+
+    This seems to be a problem usually on older windows builds.
+
+    :param val: integer value of character
+    :return: character
+    """
+    try:
+        return builtins.chr(val)
+    except ValueError as e:
+        if "(narrow Python build)" in str(e):
+            return struct.pack('i', val).decode('utf-32')
+        else:
+            raise e
 
 
 def decode(b):
