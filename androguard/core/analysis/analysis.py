@@ -456,9 +456,25 @@ class MethodClassAnalysis:
         self.xreffrom = set()
 
     def AddXrefTo(self, classobj, methodobj, offset):
+        """
+        Add a crossreference to another method
+        (this method calls another method)
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param offset: integer where in the method the call happens
+        """
         self.xrefto.add((classobj, methodobj, offset))
 
     def AddXrefFrom(self, classobj, methodobj, offset):
+        """
+        Add a crossrefernece from another method
+        (this method is called by another method)
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param offset: integer where in the method the call happens
+        """
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
