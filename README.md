@@ -2,6 +2,12 @@
 
 [![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)
 [![Documentation Status](https://readthedocs.org/projects/androguard/badge/?version=latest)](http://androguard.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/androguard.svg)](https://badge.fury.io/py/androguard)
+
+```
+pip install -U androguard
+```
+... let's start reversing!
 
 ## Features
 
