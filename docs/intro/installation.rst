@@ -3,10 +3,14 @@ Installation
 
 There are several ways how to install androguard.
 
+Before you start, make sure you are using a supported python version!
+Although androguard should run with python 2.7.x, we highly recommend a newer version like python 3.6!
+For Windows, we recommend using the Anaconda python 3.6.x package.
+
 PIP
 ---
 
-The usual way to install python packages, is by using pypi.python.org.
+The usual way to install a python packages is by using pypi.python.org and it's package installer `pip`.
 Just use
 
 .. code-block:: bash
@@ -15,7 +19,7 @@ Just use
     
 to  install androguard.
 
-You can also make use of an `virtualenv`, to separate the installation from your system wide installation:
+You can also make use of an `virtualenv`, to separate the installation from your system wide packages:
 
 .. code-block:: bash
 
