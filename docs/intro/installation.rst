@@ -3,6 +3,28 @@ Installation
 
 There are several ways how to install androguard.
 
+PIP
+---
+
+The usual way to install python packages, is by using pypi.python.org.
+Just use
+
+.. code-block:: bash
+
+    $ pip install -U androguard
+    
+to  install androguard.
+
+You can also make use of an `virtualenv`, to separate the installation from your system wide installation:
+
+.. code-block:: bash
+
+    $ virtualenv venv-androguard
+    $ . venv-androguard/bin/activate
+    $ pip install -U androguard
+    
+pip should install all required packages too.
+
 Debian / Ubuntu
 ---------------
 
@@ -21,15 +43,15 @@ Usually the Anaconda suite works fine!
 
 .. code-block:: bash
 
-    git clone --recursive https://github.com/androguard/androguard.git
-    cd androguard
-    pip install .[magic]
+    $ git clone --recursive https://github.com/androguard/androguard.git
+    $ cd androguard
+    $ pip install .[magic]
 
 if you like to install the GUI as well, use
 
 .. code-block:: bash
 
-    pip install .[magic,GUI,graphing]
+    $ pip install .[magic,GUI,graphing]
 
 The dependencies, defined in :code:`setup.py` will be automatically installed.
 
