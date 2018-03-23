@@ -1337,23 +1337,48 @@ class ARSCParser(object):
         self._resolved_strings = r
         return r
 
-    def get_res_configs(self, rid, config=None):
+    def get_res_configs(self, rid, config=None, fallback=True):
+        """
+        Return the resources found with the ID `rid` and select
+        the right one based on the configuration, or return all if no configuration was set.
+
+        But we try to be generous here and at least try to resolve something:
+        This method uses a fallback to return at least one resource (the first one in the list)
+        if more than one items are found and the default config is used and no default entry could be found.
+
+        This is usually a bad sign (i.e. the developer did not follow the android documentation:
+        https://developer.android.com/guide/topics/resources/localization.html#failing2)
+        In practise an app might just be designed to run on a single locale and thus only has those locales set.
+
+        You can disable this fallback behaviour, to just return exactly the given result.
+
+        :param rid: resource id as int
+        :param config: a config to resolve from, or None to get all results
+        :param fallback: Enable the fallback for resolving default configuration (default: True)
+        :return: a list of ARSCResTableConfig: ARSCResTableEntry
+        """
         self._analyse()
 
         if not rid:
             raise ValueError("'rid' should be set")
+        if not isinstance(rid, int):
+            raise ValueError("'rid' must be an int")
 
-        try:
-            res_options = self.resource_values[rid]
-            if len(res_options) > 1 and config:
-                return [(
-                    config,
-                    res_options[config])]
-            else:
-                return list(res_options.items())
-
-        except KeyError:
+        if rid not in self.resource_values:
+            log.info("The requested rid could not be found in the resources.")
             return []
+
+        res_options = self.resource_values[rid]
+        if len(res_options) > 1 and config:
+            if config in res_options:
+                return [(config, res_options[config])]
+            elif fallback and config == ARSCResTableConfig.default_config():
+                log.warning("No default resource config could be found for the given rid, using fallback!")
+                return [list(self.resource_values[rid].items())[0]]
+            else:
+                return []
+        else:
+            return list(res_options.items())
 
     def get_string(self, package_name, name, locale='\x00\x00'):
         self._analyse()
@@ -1492,6 +1517,14 @@ class ARSCResTableConfig(object):
         return cls.DEFAULT
 
     def __init__(self, buff=None, **kwargs):
+        """
+        ARSCResTableConfig contains the configuration for specific resource selection.
+        This is used on the device to determine which resources should be loaded
+        based on different properties of the device like locale or displaysize.
+
+        :param buff:
+        :param kwargs:
+        """
         if buff is not None:
             self.start = buff.get_idx()
             self.size = unpack('<I', buff.read(4))[0]
@@ -1699,6 +1732,12 @@ class ARSCResStringPoolRef(object):
 
 
 def get_arsc_info(arscobj):
+    """
+    Return a string containing all resources packages ordered by packagename, locale and type.
+
+    :param arscobj: :class:`~ARSCParser`
+    :return: a string
+    """
     buff = ""
     for package in arscobj.get_packages_names():
         buff += package + ":\n"
