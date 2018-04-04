@@ -347,7 +347,7 @@ class APK(object):
             try:
                 for config, file_name in candidates:
                     dpi = config.get_density()
-                    if current_dpi < dpi <= max_dpi:
+                    if current_dpi < dpi <= max_dpi and not file_name.endswith("xml"):
                         app_icon = file_name
                         current_dpi = dpi
             except Exception as e:
