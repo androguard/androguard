@@ -528,6 +528,32 @@ class APKTest(unittest.TestCase):
         self.assertFalse(a.is_androidtv())
         self.assertListEqual(list(a.get_libraries()), ["com.google.android.wearable"])
 
+    def testAdaptiveIcon(self):
+        # See https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive.html
+        from androguard.core.bytecodes.apk import APK
+        from androguard.core.bytecodes.axml import AXMLPrinter
+
+        a = APK("examples/tests/com.android.example.text.styling.apk")
+
+        self.assertEqual(a.get_app_icon(), "res/mipmap-anydpi-v26/ic_launcher.xml")
+        x = AXMLPrinter(a.get_file(a.get_app_icon())).get_xml().decode("UTF-8")
+        self.assertIn("adaptive-icon", x)
+
+        # * ldpi (low) ~120dpi
+        # * mdpi (medium) ~160dpi
+        # * hdpi (high) ~240dpi
+        # * xhdpi (extra-high) ~320dpi
+        # * xxhdpi (extra-extra-high) ~480dpi
+        # * xxxhdpi (extra-extra-extra-high) ~640dpi
+        self.assertIsNone(a.get_app_icon(max_dpi=120))  # No LDPI icon
+        self.assertIn("mdpi", a.get_app_icon(max_dpi=160))
+        self.assertIn("hdpi", a.get_app_icon(max_dpi=240))
+        self.assertIn("xhdpi", a.get_app_icon(max_dpi=320))
+        self.assertIn("xxhdpi", a.get_app_icon(max_dpi=480))
+        self.assertIn("xxxhdpi", a.get_app_icon(max_dpi=640))
+
+        self.assertIn(".png", a.get_app_icon(max_dpi=65533))
+        self.assertIn(".xml", a.get_app_icon(max_dpi=65534))
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
