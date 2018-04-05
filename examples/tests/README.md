@@ -4,6 +4,7 @@ and is released under GPLv3
 * `hello-world.apk` is from the viper-test-files: https://github.com/viper-framework/viper-test-files/blob/master/test_files/hello-world.apk
 * `com.example.android.tvleanback.apk` is build from https://github.com/googlesamples/androidtv-Leanback
 * `com.example.android.wearable.wear.weardrawers.apk` is build from https://github.com/googlesamples/android-WearDrawers
+* `com.android.example.text.styling.apk` is build from https://github.com/googlesamples/android-text
 
 The Java files are written for the purpose of testing androguard.
 You can compile them into dex files using the Makefile.
