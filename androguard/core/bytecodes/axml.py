@@ -1493,32 +1493,76 @@ class ARSCResTableConfig(object):
         This is used on the device to determine which resources should be loaded
         based on different properties of the device like locale or displaysize.
 
+        See the definiton of ResTable_config in
+        platform_frameworks_base/libs/androidfw/include/androidfw/ResourceTypes.h
+
+
         :param buff:
         :param kwargs:
         """
         if buff is not None:
             self.start = buff.get_idx()
+
+            # uint32_t
             self.size = unpack('<I', buff.read(4))[0]
+
+            # union: uint16_t mcc, uint16_t mnc
+            # 0 means any
             self.imsi = unpack('<I', buff.read(4))[0]
+
+            # uint32_t as chars \0\0 means any
+            # either two 7bit ASCII representing the ISO-639-1 language code
+            # or a single 16bit LE value representing ISO-639-2 3 letter code
             self.locale = unpack('<I', buff.read(4))[0]
+
+            # struct of:
+            # uint8_t orientation
+            # uint8_t touchscreen
+            # uint8_t density
             self.screenType = unpack('<I', buff.read(4))[0]
+
+            # struct of
+            # uint8_t keyboard
+            # uint8_t navigation
+            # uint8_t inputFlags
+            # uint8_t inputPad0
             self.input = unpack('<I', buff.read(4))[0]
+
+            # struct of
+            # uint16_t screenWidth
+            # uint16_t screenHeight
             self.screenSize = unpack('<I', buff.read(4))[0]
+
+            # struct of
+            # uint16_t sdkVersion
+            # uint16_t minorVersion  which should be always 0, as the meaning is not defined
             self.version = unpack('<I', buff.read(4))[0]
 
             self.screenConfig = 0
             self.screenSizeDp = 0
 
             if self.size >= 32:
+                # FIXME: is this really not always there?
+                # struct of
+                # uint8_t screenLayout
+                # uint8_t uiMode
+                # uint16_t smallestScreenWidthDp
                 self.screenConfig = unpack('<I', buff.read(4))[0]
 
                 if self.size >= 36:
+                    # FIXME is this really not always there?
+                    # struct of
+                    # uint16_t screenWidthDp
+                    # uint16_t screenHeightDp
                     self.screenSizeDp = unpack('<I', buff.read(4))[0]
 
             self.exceedingSize = self.size - 36
             if self.exceedingSize > 0:
                 log.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
+
+        # TODO there is screenConfig2
+
         else:
             self.start = 0
             self.size = 0
