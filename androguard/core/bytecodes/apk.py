@@ -296,6 +296,8 @@ class APK(object):
                 app_name = ""
         return app_name
 
+    DPI_ANY =
+
     def get_app_icon(self, max_dpi=65536):
         """
         Return the first icon file name, which density is not greater than max_dpi,
@@ -305,13 +307,34 @@ class APK(object):
         This information is read from the AndroidManifest.xml
 
         From https://developer.android.com/guide/practices/screens_support.html
+        and https://developer.android.com/ndk/reference/group___configuration.html
 
-        * ldpi (low) ~120dpi
-        * mdpi (medium) ~160dpi
-        * hdpi (high) ~240dpi
-        * xhdpi (extra-high) ~320dpi
-        * xxhdpi (extra-extra-high) ~480dpi
-        * xxxhdpi (extra-extra-extra-high) ~640dpi
+        * DEFAULT                             0dpi
+        * ldpi (low)                        120dpi
+        * mdpi (medium)                     160dpi
+        * TV                                213dpi
+        * hdpi (high)                       240dpi
+        * xhdpi (extra-high)                320dpi
+        * xxhdpi (extra-extra-high)         480dpi
+        * xxxhdpi (extra-extra-extra-high)  640dpi
+        * anydpi                          65534dpi (0xFFFE)
+        * nodpi                           65535dpi (0xFFFF)
+
+        There is a difference between nodpi and anydpi:
+        nodpi will be used if no other density is specified. Or the density does not match.
+        nodpi is the fallback for everything else. If there is a resource that matches the DPI,
+        this is used.
+        anydpi is also valid for all densities but in this case, anydpi will overrule all other files!
+        Therefore anydpi is usually used with vector graphics and with constraints on the API level.
+        For example adaptive icons are usually marked as anydpi.
+
+        When it comes now to selecting an icon, there is the following flow:
+        1) is there an anydpi icon?
+        2) is there an icon for the dpi of the device?
+        3) is there a nodpi icon?
+        4) (only on very old devices) is there a icon with dpi 0 (the default)
+
+        For more information read here: https://stackoverflow.com/a/34370735/446140
 
         :rtype: :class:`str`
         """
