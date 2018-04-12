@@ -46,7 +46,7 @@ def interact(session=False, apk=None):
     :return:
     """
     if session:
-        CONF["SESSION"] = Session(True)
+        CONF["SESSION"] = Session(export_ipython=True)
 
     if apk:
         print("Loading apk {}...".format(os.path.basename(apk)))
@@ -59,6 +59,8 @@ def interact(session=False, apk=None):
     init_print_colors()
     ipshell()
 
+    # TODO: on exit, save the session if requested
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Open a IPython Shell and start reverse engineering")
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--shell", "-s", default=False, action="store_true", help="Will do nothing, this argument is just here for your convenience")
     parser.add_argument("--debug", "-d", "--verbose", default=False, action="store_true", help="Print log messages")
     parser.add_argument("--ddebug", "-dd", "--very-verbose", default=False, action="store_true", help="Print log messages (higher verbosity)")
-    parser.add_argument("--session", default=False, action="store_true", help="Start a Androguard session")
+    parser.add_argument("--no-session", default=False, action="store_true", help="Do not start an Androguard session")
     parser.add_argument("--version", "-v", default=False, action="store_true", help="Print the Androguard Version and exit")
     parser.add_argument("apk", default=None, nargs="?", help="Start the shell with the given APK. a, d, dx are available then. Loading might be slower in this case!")
 
@@ -82,4 +84,4 @@ if __name__ == "__main__":
         androconf.show_logging(logging.DEBUG)
 
     # Go interactive!
-    interact(session=args.session, apk=args.apk)
+    interact(session=not args.no_session, apk=args.apk)

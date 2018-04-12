@@ -43,9 +43,8 @@ class Color(object):
     Grey = "\033[37m"
     Bold = "\033[1m"
 
-
 # TODO most of these options are duplicated, as they are also the default arguments to the functions
-CONF = {
+default_conf = {
     # Assume the binary is in $PATH, otherwise give full path
     "BIN_JADX": "jadx",
     "BIN_DED": "ded.sh",
@@ -95,6 +94,36 @@ CONF = {
     "DEFAULT_API": 16,  # this is the minimal API version we have
     "SESSION": None,
 }
+
+
+class Configuration:
+    instance = None
+
+    def __init__(self):
+        """
+        A Wrapper for the CONF object
+        This creates a singleton, which has the same attributes everywhere.
+        """
+        if not Configuration.instance:
+            Configuration.instance = default_conf
+
+    def __getattr__(self, item):
+        return getattr(self.instance, item)
+
+    def __getitem__(self, item):
+        return self.instance[item]
+
+    def __setitem__(self, key, value):
+        self.instance[key] = value
+
+    def __str__(self):
+        return str(self.instance)
+
+    def __repr__(self):
+        return repr(self.instance)
+
+
+CONF = Configuration()
 
 
 def default_colors(obj):
