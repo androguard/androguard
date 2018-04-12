@@ -56,6 +56,9 @@ class Session(object):
         self.analyzed_vms = collections.OrderedDict()
 
     def reset(self):
+        """
+        Reset the current session, delete all added files.
+        """
         self._setupObjects()
 
     def isOpen(self):
