@@ -296,8 +296,6 @@ class APK(object):
                 app_name = ""
         return app_name
 
-    DPI_ANY =
-
     def get_app_icon(self, max_dpi=65536):
         """
         Return the first icon file name, which density is not greater than max_dpi,
