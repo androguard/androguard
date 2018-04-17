@@ -33,6 +33,17 @@ Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs
 
 There are some (probably broken/outdated) examples and demos in the folders [demos](https://github.com/androguard/androguard/tree/master/demos) and [examples](https://github.com/androguard/androguard/tree/master/examples).
 
+## Projects using Androguard
+In alphabetical order
+
+* [AppKnox](http://appknox.com)
+* [Cuckoo Sandbox](https://cuckoosandbox.org)
+* [Koodous](https://koodous.com)
+* [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
+* [Viper Framework](https://github.com/viper-framework/viper)
+* ... and many more!
+
+You are using Androguard and are not listed here? Just create a [ticket](https://github.com/androguard/androguard/issues) or send us a [pull request](https://github.com/androguard/androguard/pulls) with your project!
 
 ## Licenses
 
