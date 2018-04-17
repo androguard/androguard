@@ -38,6 +38,8 @@ In alphabetical order
 
 * [AppKnox](http://appknox.com)
 * [Cuckoo Sandbox](https://cuckoosandbox.org)
+* [F-Droid Server](https://gitlab.com/fdroid/fdroidserver)
+* [gplaycli](https://github.com/matlink/gplaycli)
 * [Koodous](https://koodous.com)
 * [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
 * [Viper Framework](https://github.com/viper-framework/viper)
