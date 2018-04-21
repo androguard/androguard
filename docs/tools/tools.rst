@@ -7,6 +7,7 @@ An exception is `androlyze`, which spawns an IPython shell and let you use the a
 .. toctree::
 
    androlyze
+   androcfg
    androgui
    androsign
    androaxml
