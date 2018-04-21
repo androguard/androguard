@@ -105,6 +105,10 @@ def main():
             help="instead of saving the graph, print it with mathplotlib (you might not see anything!")
     parser.add_argument("--verbose", "-v", action="store_true", default=False,
             help="Print more output")
+    parser.add_argument("--classname", default=".*", help="Regex to filter by classname")
+    parser.add_argument("--methodname", default=".*", help="Regex to filter by methodname")
+    parser.add_argument("--descriptor", default=".*", help="Regex to filter by descriptor")
+    parser.add_argument("--accessflag", default=".*", help="Regex to filter by accessflags")
 
     args = parser.parse_args()
 
@@ -113,7 +117,7 @@ def main():
 
     a, d, dx = AnalyzeAPK(args.APK[0])
 
-    CFG = generate_graph(dx)
+    CFG = generate_graph(dx, args.classname, args.methodname, args.descriptor, args.accessflag)
 
     write_methods = dict(gml=_write_gml,
                          gexf=nx.write_gexf,
