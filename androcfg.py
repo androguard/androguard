@@ -34,7 +34,7 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
     for m in dx.find_methods(classname=classname, methodname=methodname,
             descriptor=descriptor, accessflags=accessflags):
         orig_method = m.get_method()
-        print("Found Method --> {}".format(orig_method))
+        log.info("Found Method --> {}".format(orig_method))
         # orig_method might be a ExternalMethod too...
         # so you can check it here also:
         if isinstance(orig_method, ExternalMethod):
@@ -111,7 +111,7 @@ def main():
     if args.verbose:
         show_logging(logging.INFO)
 
-    a, d, dx = AnalyzeAPK(args.APK)
+    a, d, dx = AnalyzeAPK(args.APK[0])
 
     CFG = generate_graph(dx)
 
