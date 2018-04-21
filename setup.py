@@ -21,7 +21,7 @@ if sys.version_info <= (3, 4) or sys.version_info >= (3, 7):
 # Version 0.3.4 produces wrong certificates in some cases!
 install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.4.1',
                     'future',
-                    'networkx',
+                    'networkx>=1.11',
                     'pygments',
                     'lxml',
                     'colorama',
@@ -87,6 +87,7 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',
+             'androcfg.py',
              ],
     install_requires=install_requires,
     extras_require={
