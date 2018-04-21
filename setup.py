@@ -87,7 +87,7 @@ setup(
              'androlyze.py',
              'androdd.py',
              'androgui.py',
-             'androcfg.py',
+             'androcg.py',
              ],
     install_requires=install_requires,
     extras_require={

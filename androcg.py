@@ -27,9 +27,9 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
     :rtype: DiGraph
     """
 
-    CFG = nx.DiGraph()
+    CG = nx.DiGraph()
 
-    # Note: If you create the CFG from many classes at the same time, the drawing
+    # Note: If you create the CG from many classes at the same time, the drawing
     # will be a total mess...
     for m in dx.find_methods(classname=classname, methodname=methodname,
             descriptor=descriptor, accessflags=accessflags):
@@ -44,7 +44,7 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
         else:
             is_this_external = False
 
-        CFG.add_node(orig_method, external=is_this_external)
+        CG.add_node(orig_method, external=is_this_external)
 
         for other_class, callee, offset in m.get_xref_to():
             if isinstance(callee, ExternalMethod):
@@ -52,38 +52,38 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
             else:
                 is_external = False
 
-            if callee not in CFG.node:
-                CFG.add_node(callee, external=is_external)
+            if callee not in CG.node:
+                CG.add_node(callee, external=is_external)
 
             # As this is a DiGraph and we are not interested in duplicate edges,
             # check if the edge is already in the edge set.
             # If you need all calls, you probably want to check out MultiDiGraph
-            if not CFG.has_edge(orig_method, callee):
-                CFG.add_edge(orig_method, callee)
+            if not CG.has_edge(orig_method, callee):
+                CG.add_edge(orig_method, callee)
 
-    return CFG
+    return CG
 
 
-def plot(CFG):
+def plot(CG):
     """
     Plot the call graph using matplotlib
     For larger graphs, this should not be used!
     """
-    pos = nx.spring_layout(CFG)
+    pos = nx.spring_layout(CG)
 
     internal = []
     external = []
 
-    for n in CFG.node:
+    for n in CG.node:
         if isinstance(n, ExternalMethod):
             external.append(n)
         else:
             internal.append(n)
 
-    nx.draw_networkx_nodes(CFG, pos=pos, node_color='r', nodelist=internal)
-    nx.draw_networkx_nodes(CFG, pos=pos, node_color='b', nodelist=external)
-    nx.draw_networkx_edges(CFG, pos, arrow=True)
-    nx.draw_networkx_labels(CFG, pos=pos, labels={x: "{} {}".format(x.get_class_name(), x.get_name()) for x in CFG.edge})
+    nx.draw_networkx_nodes(CG, pos=pos, node_color='r', nodelist=internal)
+    nx.draw_networkx_nodes(CG, pos=pos, node_color='b', nodelist=external)
+    nx.draw_networkx_edges(CG, pos, arrow=True)
+    nx.draw_networkx_labels(CG, pos=pos, labels={x: "{} {}".format(x.get_class_name(), x.get_name()) for x in CG.edge})
     plt.draw()
     plt.show()
 
@@ -95,7 +95,7 @@ def _write_gml(G, path):
 
 
 def main():
-    parser = ArgumentParser(description="Create a Call Graph based on the data"
+    parser = ArgumentParser(description="Create a call graph based on the data"
             "of Analysis and export it into a graph format.")
 
     parser.add_argument("APK", nargs=1, help="The APK to analyze")
@@ -117,7 +117,7 @@ def main():
 
     a, d, dx = AnalyzeAPK(args.APK[0])
 
-    CFG = generate_graph(dx, args.classname, args.methodname, args.descriptor, args.accessflag)
+    CG = generate_graph(dx, args.classname, args.methodname, args.descriptor, args.accessflag)
 
     write_methods = dict(gml=_write_gml,
                          gexf=nx.write_gexf,
@@ -128,7 +128,7 @@ def main():
                         )
 
     if args.show:
-        plot(CFG)
+        plot(CG)
     else:
         writer = args.output.rsplit(".", 1)[1]
         if writer in ["bz2", "gz"]:
@@ -137,7 +137,7 @@ def main():
             print("Could not find a method to export files to {}!".format(writer))
             sys.exit(1)
 
-        write_methods[writer](CFG, args.output)
+        write_methods[writer](CG, args.output)
 
 
 if __name__ == "__main__":
