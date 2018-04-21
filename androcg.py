@@ -2,6 +2,7 @@
 from androguard.misc import AnalyzeAPK
 from androguard.core.androconf import show_logging
 from androguard.core.analysis.analysis import ExternalMethod
+from androguard.core.bytecode import FormatClassToJava
 import matplotlib.pyplot as plt
 import networkx as nx
 from argparse import ArgumentParser
@@ -11,8 +12,26 @@ import logging
 log = logging.getLogger("androcfg")
 
 
+def _add_node(G, method, entry_points):
+    """
+    Wrapper to add methods to a graph
+    """
+    if method not in G.node:
+        if isinstance(method, ExternalMethod):
+            is_external = True
+        else:
+            is_external = False
+
+        if method.get_class_name() in entry_points:
+            is_entry_point = True
+        else:
+            is_entry_point = False
+
+        G.add_node(method, external=is_external, entrypoint=is_entry_point)
+
+
 def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
-        accessflags=".*"):
+        accessflags=".*", no_isolated=False, entry_points=[]):
     """
     Generate a directed graph based on the methods found by the filters applied.
     The filters are the same as in
@@ -23,6 +42,7 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
     only be a single connection.
 
     :param dx: :class:`~androguard.core.analysis.analysis.Analysis`
+    :param entry_points: A list of classes that are marked as entry point
 
     :rtype: DiGraph
     """
@@ -35,25 +55,15 @@ def generate_graph(dx, classname=".*", methodname=".*", descriptor=".*",
             descriptor=descriptor, accessflags=accessflags):
         orig_method = m.get_method()
         log.info("Found Method --> {}".format(orig_method))
-        # orig_method might be a ExternalMethod too...
-        # so you can check it here also:
-        if isinstance(orig_method, ExternalMethod):
-            is_this_external = True
-            # If this class is external, there will be very likely
-            # no xref_to stored! If there is, it is probably a bug in androguard...
-        else:
-            is_this_external = False
 
-        CG.add_node(orig_method, external=is_this_external)
+        if no_isolated and len(m.get_xref_to) == 0:
+            log.info("Skipped {}, because if has no xrefs".format(orig_method))
+            continue
+
+        _add_node(CG, orig_method, entry_points)
 
         for other_class, callee, offset in m.get_xref_to():
-            if isinstance(callee, ExternalMethod):
-                is_external = True
-            else:
-                is_external = False
-
-            if callee not in CG.node:
-                CG.add_node(callee, external=is_external)
+            _add_node(CG, callee, entry_points)
 
             # As this is a DiGraph and we are not interested in duplicate edges,
             # check if the edge is already in the edge set.
@@ -109,6 +119,8 @@ def main():
     parser.add_argument("--methodname", default=".*", help="Regex to filter by methodname")
     parser.add_argument("--descriptor", default=".*", help="Regex to filter by descriptor")
     parser.add_argument("--accessflag", default=".*", help="Regex to filter by accessflags")
+    parser.add_argument("--no-isolated", default=False, action="store_true",
+            help="Do not store methods which has no xrefs")
 
     args = parser.parse_args()
 
@@ -117,7 +129,19 @@ def main():
 
     a, d, dx = AnalyzeAPK(args.APK[0])
 
-    CG = generate_graph(dx, args.classname, args.methodname, args.descriptor, args.accessflag)
+    entry_points = map(FormatClassToJava, a.get_activities() + a.get_providers() + a.get_services() + a.get_receivers())
+    entry_points = list(entry_points)
+
+    log.info("Found The following entry points by search AndroidManifest.xml: {}".format(entry_points))
+
+    CG = generate_graph(dx,
+                        args.classname,
+                        args.methodname,
+                        args.descriptor,
+                        args.accessflag,
+                        args.no_isolated,
+                        entry_points,
+                       )
 
     write_methods = dict(gml=_write_gml,
                          gexf=nx.write_gexf,
