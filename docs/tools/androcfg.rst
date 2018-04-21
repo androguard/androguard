@@ -17,5 +17,13 @@ suggested to do that, as call graphs can get very large:
 
 Of course, you can export the call graph with androguard and filter it later.
 
+Here is an example of an already filtered graph, visualized in gephi_.
+Each node has an attribute to indicate if it is an internal (defined somewhere
+in the DEXs) or external (might be an API, but definetly not defined in the DEXs) method.
+In this case all green nodes are internal and all red ones are external.
+You can see the calls of some SMS Trojan to the API methods to write SMS.
+
+.. image:: screenshot_182951.png
+
 .. _gephi: https://gephi.org/
 
