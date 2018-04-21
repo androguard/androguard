@@ -476,10 +476,36 @@ class MethodClassAnalysis:
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
+        """
+        Returns a list of three tuples cotaining the class, method and offset of
+        the call, from where this object was called.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
+        :class:`~ExternalMethod`, int)
+        """
         return self.xreffrom
 
     def get_xref_to(self):
+        """
+        Returns a list of three tuples cotaining the class, method and offset of
+        the call, which are called by this method.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
+        :class:`~ExternalMethod`, int)
+        """
         return self.xrefto
+
+    def is_external(self):
+        """
+        Return True if the underlying methd is external
+
+        :rtype: boolean
+        """
+        return isinstance(self.method, ExternalMethod)
 
     def get_method(self):
         """
