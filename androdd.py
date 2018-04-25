@@ -27,7 +27,7 @@ option_1 = {
 }
 option_2 = {
     'name': ('-d', '--decompiler'),
-    'help': 'choose a decompiler',
+    'help': 'choose a decompiler (default: use DAD)',
     'nargs': 1
 }
 option_3 = {
@@ -38,7 +38,7 @@ option_3 = {
 
 option_4 = {
     'name': ('-f', '--format'),
-    'help': 'write the method in specific format (png, ...)',
+    'help': 'write CFG of method in specific format (png, raw, ...)',
     'nargs': 1
 }
 
