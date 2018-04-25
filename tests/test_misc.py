@@ -17,7 +17,7 @@ class MiscTest(unittest.TestCase):
             self.assertEqual("/some/path/" + "a" * 230, clean_file_name("/some/path/" + "a" * 999, unique=False, force_nt=True))
             self.assertEqual("/some/path/" + "a" * 226 + ".foo", clean_file_name("/some/path/" + "a" * 999 + ".foo", unique=False, force_nt=True))
 
-        with tempfile.TemporaryFile() as fp:
+        with tempfile.NamedTemporaryFile() as fp:
             self.assertEqual(fp.name + "_0", clean_file_name(fp.name, unique=True))
 
 
