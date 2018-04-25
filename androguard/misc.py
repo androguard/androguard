@@ -2,6 +2,8 @@ from androguard import session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
 import hashlib
+import re
+import os
 
 import logging
 log = logging.getLogger("androguard.misc")
@@ -148,3 +150,65 @@ def sign_apk(filename, keystore, storepass):
                 stdout=PIPE,
                 stderr=STDOUT)
     stdout, stderr = cmd.communicate()
+
+
+def clean_file_name(filename, unique=True, replace="_", force_nt=False):
+    """
+    Return a filename version, which has no characters in it which are forbidden.
+    On Windows these are for example <, /, ?, ...
+
+    The intention of this function is to allow distribution of files to different OSes.
+
+    :param filename: string to clean
+    :param unique: check if the filename is already taken and append an integer to be unique (default: True)
+    :param replace: replacement character. (default: '_')
+    :param force_nt: Force shortening of paths like on NT systems (default: False)
+    :return: clean string
+    """
+
+    if re.match(r'[<>:"/\\|?* .\x00-\x1f]', replace):
+        raise ValueError("replacement character is not allowed!")
+
+    path, fname = os.path.split(filename)
+    # For Windows see: https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
+    # Other operating systems seems to be more tolerant...
+
+    # Not allowed filenames, attach replace character if necessary
+    if re.match(r'(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])', fname):
+        fname += replace
+
+    # reserved characters
+    fname = re.sub(r'[<>:"/\\|?*\x00-\x1f]', replace, fname)
+    # Do not end with dot or space
+    fname = re.sub(r'[ .]$', replace, fname)
+
+    if force_nt or os.name == 'nt':
+        PATH_MAX_LENGTH = 230  # give extra space for other stuff...
+        # Check filename length limit, usually a problem on older Windows versions
+        if len(fname) > PATH_MAX_LENGTH:
+            if "." in fname:
+                f, ext = fname.rsplit(".", 1)
+                fname = "{}.{}".format(f[:PATH_MAX_LENGTH-(len(ext)+1)], ext)
+            else:
+                fname = fname[:PATH_MAX_LENGTH]
+
+        # Special behaviour... On Windows, there is also a problem with the maximum path length in explorer.exe
+        # maximum length is limited to 260 chars, so use 250 to have room for other stuff
+        if len(os.path.abspath(os.path.join(path, fname))) > 250:
+            fname = fname[:250 - (len(os.path.abspath(path)) + 1)]
+
+    if unique:
+        counter = 0
+        origname = fname
+        while os.path.isfile(os.path.join(path, fname)):
+            if "." in fname:
+                # assume extension
+                f, ext = origname.rsplit(".", 1)
+                fname = "{}_{}.{}".format(f, counter, ext)
+            else:
+                fname = "{}_{}".format(origname, counter)
+            counter += 1
+
+    return os.path.join(path, fname)
+
+

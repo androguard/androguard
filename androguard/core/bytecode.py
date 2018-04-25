@@ -377,7 +377,9 @@ def method2format(output, _format="png", mx=None, raw=None):
         data = method2dot(mx)
 
     # subgraphs cluster
-    buff += "subgraph cluster_" + hashlib.md5(bytearray(output, "UTF-8")).hexdigest() + " {\nlabel=\"%s\"\n" % data['name']
+    buff += "subgraph cluster_{} ".format(hashlib.md5(bytearray(output, "UTF-8")).hexdigest())
+    buff += "{\n"
+    buff += "label=\"{}\"\n".format(data['name'])
     buff += data['nodes']
     buff += "}\n"
 
@@ -385,9 +387,10 @@ def method2format(output, _format="png", mx=None, raw=None):
     buff += data['edges']
     buff += "}\n"
 
-    d = pydot.graph_from_dot_data(buff.encode("UTF-8"))
+    d = pydot.graph_from_dot_data(buff)
     if d:
-        getattr(d, "write_" + _format.lower())(output)
+        for g in d:
+            getattr(g, "write_" + _format.lower())(output)
 
 
 def method2png(output, mx, raw=False):

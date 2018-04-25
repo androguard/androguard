@@ -9,6 +9,7 @@ import sys
 from optparse import OptionParser
 
 from androguard import session
+from androguard.misc import clean_file_name
 from androguard.core import androconf
 from androguard.core.bytecode import method2dot, method2format
 from androguard.core.bytecodes import dvm
@@ -52,22 +53,13 @@ options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 def valid_class_name(class_name):
     if class_name[-1] == ";":
-        return class_name[1:-1]
-    return class_name
+        class_name = class_name[1:-1]
+    return os.path.join(*class_name.split("/"))
 
 
-def create_directory(class_name, output):
-    output_name = output
-    if output_name[-1] != "/":
-        output_name = output_name + "/"
-
-    pathdir = output_name + class_name
-    try:
-        if not os.path.exists(pathdir):
-            os.makedirs(pathdir)
-    except OSError:
-        # FIXME
-        pass
+def create_directory(pathdir):
+    if not os.path.exists(pathdir):
+        os.makedirs(pathdir)
 
 
 def export_apps_to_format(filename,
@@ -90,10 +82,6 @@ def export_apps_to_format(filename,
     methods_filter_expr = None
     if methods_filter:
         methods_filter_expr = re.compile(methods_filter)
-
-    output_name = output
-    if output_name[-1] != "/":
-        output_name = output_name + "/"
 
     dump_classes = []
     for _, vm, vmx in s.get_objects_dex():
@@ -128,7 +116,7 @@ def export_apps_to_format(filename,
             filenamejar = decompiler.Dex2Jar(vm,
                                              androconf.CONF["BIN_DEX2JAR"],
                                              androconf.CONF["TMP_DIRECTORY"]).get_jar()
-            shutil.move(filenamejar, output + "classes.jar")
+            shutil.move(filenamejar, os.path.join(output, "classes.jar"))
             print("End")
 
         for method in vm.get_methods():
@@ -138,16 +126,14 @@ def export_apps_to_format(filename,
                 if not methods_filter_expr.search(msig):
                     continue
 
+            # Current Folder to write to
             filename_class = valid_class_name(method.get_class_name())
-            create_directory(filename_class, output)
+            filename_class = os.path.join(output, filename_class)
+            create_directory(filename_class)
 
             print("Dump %s %s %s ..." % (method.get_class_name(),
                                          method.get_name(),
                                          method.get_descriptor()), end=' ')
-
-            filename_class = output_name + filename_class
-            if filename_class[-1] != "/":
-                filename_class = filename_class + "/"
 
             descriptor = method.get_descriptor()
             descriptor = descriptor.replace(";", "")
@@ -156,7 +142,7 @@ def export_apps_to_format(filename,
             descriptor = descriptor.replace(")", "-")
             descriptor = descriptor.replace("/", "_")
 
-            filename = filename_class + method.get_name() + descriptor
+            filename = clean_file_name(os.path.join(filename_class, method.get_name() + descriptor))
             if len(method.get_name() + descriptor) > 250:
                 all_identical_name_methods = vm.get_methods_descriptor(
                     method.get_class_name(), method.get_name())
@@ -166,25 +152,29 @@ def export_apps_to_format(filename,
                         break
                     pos += 1
 
-                filename = filename_class + method.get_name() + "_%d" % pos
+                filename = clean_file_name(os.path.join(filename_class, method.get_name() + "_%d" % pos))
+
+            print(filename)
 
             buff = method2dot(vmx.get_method(method))
 
+            # Write Graph of method
             if form:
                 print("%s ..." % form, end=' ')
                 method2format(filename + "." + form, form, None, buff)
 
+            # Write the Java file for the whole class
             if method.get_class_name() not in dump_classes:
                 print("source codes ...", end=' ')
                 current_class = vm.get_class(method.get_class_name())
-                current_filename_class = valid_class_name(
-                    current_class.get_name())
+                current_filename_class = valid_class_name(current_class.get_name())
 
-                current_filename_class = output_name + current_filename_class + ".java"
+                current_filename_class = os.path.join(output, current_filename_class + ".java")
                 with open(current_filename_class, "w") as fd:
                     fd.write(current_class.get_source())
                 dump_classes.append(method.get_class_name())
 
+            # Write SMALI like code
             print("bytecodes ...", end=' ')
             bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
             with open(filename + ".ag", "w") as fd:
