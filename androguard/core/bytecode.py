@@ -176,36 +176,37 @@ def PrettyShow(m_a, basic_blocks, notes={}):
         print_fct("\n")
 
 
-def method2dot(mx, colors={}):
+def method2dot(mx, colors=None):
     """
-        Export analysis method to dot format
+    Export analysis method to dot format
 
-        @param mx : MethodAnalysis object
-        @param colors : MethodAnalysis object
+    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
+    :param colors: dict of colors to use, if colors is None the default colors are used
 
-        @rtype : dot format buffer (it is a subgraph (dict))
+    :returns: a string which contains the dot graph
     """
 
-    colors = colors or {
-        "true_branch": "green",
-        "false_branch": "red",
-        "default_branch": "purple",
-        "jump_branch": "blue",
-        "bg_idx": "lightgray",
-        "idx": "blue",
-        "bg_start_idx": "yellow",
-        "bg_instruction": "lightgray",
-        "instruction_name": "black",
-        "instructions_operands": "yellow",
-        "raw": "red",
-        "string": "red",
-        "literal": "green",
-        "offset": "#4000FF",
-        "method": "#DF3A01",
-        "field": "#088A08",
-        "type": "#0000FF",
-        "registers_range": ("#999933", "#6666FF")
-    }
+    if not colors:
+        colors = {
+            "true_branch": "green",
+            "false_branch": "red",
+            "default_branch": "purple",
+            "jump_branch": "blue",
+            "bg_idx": "lightgray",
+            "idx": "blue",
+            "bg_start_idx": "yellow",
+            "bg_instruction": "lightgray",
+            "instruction_name": "black",
+            "instructions_operands": "yellow",
+            "raw": "red",
+            "string": "red",
+            "literal": "green",
+            "offset": "#4000FF",
+            "method": "#DF3A01",
+            "field": "#088A08",
+            "type": "#0000FF",
+            "registers_range": ("#999933", "#6666FF")
+        }
 
     node_tpl = "\nstruct_%s [label=<\n<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"3\">\n%s</TABLE>>];\n"
     label_tpl = "<TR><TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> <FONT FACE=\"Times-Bold\" color=\"%s\">%x</FONT> </TD><TD ALIGN=\"LEFT\" BGCOLOR=\"%s\"> <FONT FACE=\"Times-Bold\" color=\"%s\">%s </FONT> %s </TD></TR>\n"
@@ -243,8 +244,7 @@ def method2dot(mx, colors={}):
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         ins_idx = DVMBasicMethodBlock.start
-        block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name(
-        ), "UTF-8")).hexdigest()
+        block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name(), "UTF-8")).hexdigest()
 
         content = link_tpl % 'header'
 
@@ -252,12 +252,10 @@ def method2dot(mx, colors={}):
             if DVMBasicMethodBlockInstruction.get_op_value(
             ) == 0x2b or DVMBasicMethodBlockInstruction.get_op_value() == 0x2c:
                 new_links.append((DVMBasicMethodBlock, ins_idx,
-                                  DVMBasicMethodBlockInstruction.get_ref_off(
-                                  ) * 2 + ins_idx))
+                                  DVMBasicMethodBlockInstruction.get_ref_off() * 2 + ins_idx))
             elif DVMBasicMethodBlockInstruction.get_op_value() == 0x26:
                 new_links.append((DVMBasicMethodBlock, ins_idx,
-                                  DVMBasicMethodBlockInstruction.get_ref_off(
-                                  ) * 2 + ins_idx))
+                                  DVMBasicMethodBlockInstruction.get_ref_off() * 2 + ins_idx))
 
             operands = DVMBasicMethodBlockInstruction.get_operands(ins_idx)
             output = ", ".join(mx.get_vm().get_operand_html(
@@ -359,12 +357,12 @@ def method2dot(mx, colors={}):
 
 def method2format(output, _format="png", mx=None, raw=None):
     """
-        Export method to a specific file format
+    Export method to a specific file format
 
-        @param output : output filename
-        @param _format : format type (png, jpg ...) (default : png)
-        @param mx : specify the MethodAnalysis object
-        @param raw : use directly a dot raw buffer if None
+    @param output : output filename
+    @param _format : format type (png, jpg ...) (default : png)
+    @param mx : specify the MethodAnalysis object
+    @param raw : use directly a dot raw buffer if None
     """
     # pydot is optional!
     import pydot
@@ -379,8 +377,9 @@ def method2format(output, _format="png", mx=None, raw=None):
         data = method2dot(mx)
 
     # subgraphs cluster
-    buff += "subgraph cluster_" + hashlib.md5(bytearray(output, "UTF-8")).hexdigest(
-    ) + " {\nlabel=\"%s\"\n" % data['name']
+    buff += "subgraph cluster_{} ".format(hashlib.md5(bytearray(output, "UTF-8")).hexdigest())
+    buff += "{\n"
+    buff += "label=\"{}\"\n".format(data['name'])
     buff += data['nodes']
     buff += "}\n"
 
@@ -388,21 +387,22 @@ def method2format(output, _format="png", mx=None, raw=None):
     buff += data['edges']
     buff += "}\n"
 
-    d = pydot.graph_from_dot_data(buff.encode("UTF-8"))
+    d = pydot.graph_from_dot_data(buff)
     if d:
-        getattr(d, "write_" + _format.lower())(output)
+        for g in d:
+            getattr(g, "write_" + _format.lower())(output)
 
 
 def method2png(output, mx, raw=False):
     """
-        Export method to a png file format
+    Export method to a png file format
 
-        :param output: output filename
-        :type output: string
-        :param mx: specify the MethodAnalysis object
-        :type mx: :class:`MethodAnalysis` object
-        :param raw: use directly a dot raw buffer
-        :type raw: string
+    :param output: output filename
+    :type output: string
+    :param mx: specify the MethodAnalysis object
+    :type mx: :class:`MethodAnalysis` object
+    :param raw: use directly a dot raw buffer
+    :type raw: string
     """
     buff = raw
     if not raw:
@@ -413,14 +413,14 @@ def method2png(output, mx, raw=False):
 
 def method2jpg(output, mx, raw=False):
     """
-        Export method to a jpg file format
+    Export method to a jpg file format
 
-        :param output: output filename
-        :type output: string
-        :param mx: specify the MethodAnalysis object
-        :type mx: :class:`MethodAnalysis` object
-        :param raw: use directly a dot raw buffer (optional)
-        :type raw: string
+    :param output: output filename
+    :type output: string
+    :param mx: specify the MethodAnalysis object
+    :type mx: :class:`MethodAnalysis` object
+    :param raw: use directly a dot raw buffer (optional)
+    :type raw: string
     """
     buff = raw
     if not raw:
@@ -430,6 +430,12 @@ def method2jpg(output, mx, raw=False):
 
 
 def vm2json(vm):
+    """
+    Get a JSON representation of a DEX file
+
+    :param vm: :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`
+    :return:
+    """
     d = {"name": "root", "children": []}
 
     for _class in vm.get_classes():
@@ -455,12 +461,24 @@ class TmpBlock(object):
 
 
 def method2json(mx, directed_graph=False):
+    """
+    Create directed or undirected graph in the json format.
+
+    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
+    :param directed_graph: True if a directed graph should be created (default: False)
+    :return:
+    """
     if directed_graph:
         return method2json_direct(mx)
     return method2json_undirect(mx)
 
 
 def method2json_undirect(mx):
+    """
+
+    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
+    :return:
+    """
     d = {}
     reports = []
     d["reports"] = reports
@@ -488,6 +506,11 @@ def method2json_undirect(mx):
 
 
 def method2json_direct(mx):
+    """
+
+    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
+    :return:
+    """
     d = {}
     reports = []
     d["reports"] = reports
@@ -496,10 +519,8 @@ def method2json_direct(mx):
 
     l = []
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
-        for index, DVMBasicMethodBlockChild in enumerate(
-            DVMBasicMethodBlock.childs):
-            if DVMBasicMethodBlock.get_name(
-            ) == DVMBasicMethodBlockChild[-1].get_name():
+        for index, DVMBasicMethodBlockChild in enumerate(DVMBasicMethodBlock.childs):
+            if DVMBasicMethodBlock.get_name() == DVMBasicMethodBlockChild[-1].get_name():
 
                 preblock = TmpBlock(DVMBasicMethodBlock.get_name() + "-pre")
 
@@ -560,12 +581,9 @@ def method2json_direct(mx):
         for DVMBasicMethodBlockChild in DVMBasicMethodBlock.childs:
             ok = False
             if DVMBasicMethodBlock.get_name() in hooks:
-                if DVMBasicMethodBlockChild[-1] in hooks[
-                    DVMBasicMethodBlock.get_name()
-                ]:
+                if DVMBasicMethodBlockChild[-1] in hooks[DVMBasicMethodBlock.get_name()]:
                     ok = True
-                    cblock["Edge"].append(hooks[DVMBasicMethodBlock.get_name(
-                    )][0].get_name())
+                    cblock["Edge"].append(hooks[DVMBasicMethodBlock.get_name()][0].get_name())
 
             if not ok:
                 cblock["Edge"].append(DVMBasicMethodBlockChild[-1].get_name())

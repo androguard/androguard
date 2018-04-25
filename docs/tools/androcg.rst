@@ -1,9 +1,16 @@
 androcg - Create Call Graph from APK
 ====================================
 
+androcg can create files that can be read using graph visualization software, for example gephi_.
+
+Synopsis
+--------
+
 .. program-output:: python ../androcg.py -h
 
-androcg can create files that can be read using graph visualization software, for example gephi_.
+Examples
+--------
+
 The call graph is constructed from the
 :class:`~androguard.analysis.analysis.Analysis` object and then converted into a
 networkx `DiGraph`.
