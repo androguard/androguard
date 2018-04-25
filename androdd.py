@@ -135,29 +135,9 @@ def export_apps_to_format(filename,
                                          method.get_name(),
                                          method.get_descriptor()), end=' ')
 
-            descriptor = method.get_descriptor()
-            descriptor = descriptor.replace(";", "")
-            descriptor = descriptor.replace(" ", "")
-            descriptor = descriptor.replace("(", "-")
-            descriptor = descriptor.replace(")", "-")
-            descriptor = descriptor.replace("/", "_")
-
-            filename = clean_file_name(os.path.join(filename_class, method.get_name() + descriptor))
-            if len(method.get_name() + descriptor) > 250:
-                all_identical_name_methods = vm.get_methods_descriptor(
-                    method.get_class_name(), method.get_name())
-                pos = 0
-                for i in all_identical_name_methods:
-                    if i.get_descriptor() == method.get_descriptor():
-                        break
-                    pos += 1
-
-                filename = clean_file_name(os.path.join(filename_class, method.get_name() + "_%d" % pos))
-
-            print(filename)
+            filename = clean_file_name(os.path.join(filename_class, method.get_short_string()))
 
             buff = method2dot(vmx.get_method(method))
-
             # Write Graph of method
             if form:
                 print("%s ..." % form, end=' ')

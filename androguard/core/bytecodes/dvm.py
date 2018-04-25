@@ -2932,6 +2932,43 @@ class EncodedMethod(object):
             self.get_class_name(), self.get_name(), self.get_descriptor(),
             self.get_access_flags_string(), self.get_code_off())
 
+    def get_short_string(self):
+        """
+        Return a shorter formatted String which encodes this method.
+        The returned name has the form:
+        <classname> <methodname> ([arguments ...])<returntype>
+
+        * All Class names are condensed to the actual name (no package).
+        * Access flags are not returned.
+        * <init> and <clinit> are NOT replaced by the classname!
+
+        This name might not be unique!
+
+        :return: str
+        """
+        def _fmt_classname(cls):
+            arr = ""
+            # Test for arrays
+            while cls.startswith("["):
+                arr += "["
+                cls = cls[1:]
+
+            # is a object type
+            if cls.startswith("L"):
+                cls = cls[1:-1]
+            # only return last element
+            if "/" in cls:
+                cls = cls.rsplit("/", 1)[1]
+            return arr + cls
+
+        clsname = _fmt_classname(self.get_class_name())
+
+        param, ret = self.get_descriptor()[1:].split(")")
+        params = map(_fmt_classname, param.split(" "))
+        desc = "({}){}".format(" ".join(params), _fmt_classname(ret))
+
+        return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
+
     def show_info(self):
         """
         Display the basic information about the method
