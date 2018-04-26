@@ -8,6 +8,7 @@ from androguard.core.androconf import is_ascii_problem
 from androguard.core.bytecodes import dvm
 import logging
 from androguard.core import bytecode
+import networkx as nx
 
 log = logging.getLogger("androguard.analysis")
 
@@ -1312,6 +1313,70 @@ class Analysis:
 
     def __repr__(self):
         return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
+
+    def get_call_graph(self, classname=".*", methodname=".*", descriptor=".*",
+                       accessflags=".*", no_isolated=False, entry_points=[]):
+        """
+        Generate a directed graph based on the methods found by the filters applied.
+        The filters are the same as in
+        :meth:`~androguard.core.analaysis.analaysis.Analysis.find_methods`
+
+        A networkx.DiGraph is returned, containing all edges only once!
+        that means, if a method calls some method twice or more often, there will
+        only be a single connection.
+
+        :param classname: regular expression of the classname (default: ".*")
+        :param fieldname: regular expression of the fieldname (default: ".*")
+        :param fieldtype: regular expression of the fieldtype (default: ".*")
+        :param accessflags: regular expression of the access flags (default: ".*")
+        :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
+        :param entry_points: A list of classes that are marked as entry point
+
+        :rtype: DiGraph
+        """
+
+        def _add_node(G, method, _entry_points):
+            """
+            Wrapper to add methods to a graph
+            """
+            if method not in G.node:
+                if isinstance(method, ExternalMethod):
+                    is_external = True
+                else:
+                    is_external = False
+
+                if method.get_class_name() in _entry_points:
+                    is_entry_point = True
+                else:
+                    is_entry_point = False
+
+                G.add_node(method, external=is_external, entrypoint=is_entry_point)
+
+        CG = nx.DiGraph()
+
+        # Note: If you create the CG from many classes at the same time, the drawing
+        # will be a total mess...
+        for m in self.find_methods(classname=classname, methodname=methodname,
+                                   descriptor=descriptor, accessflags=accessflags):
+            orig_method = m.get_method()
+            log.info("Found Method --> {}".format(orig_method))
+
+            if no_isolated and len(m.get_xref_to) == 0:
+                log.info("Skipped {}, because if has no xrefs".format(orig_method))
+                continue
+
+            _add_node(CG, orig_method, entry_points)
+
+            for other_class, callee, offset in m.get_xref_to():
+                _add_node(CG, callee, entry_points)
+
+                # As this is a DiGraph and we are not interested in duplicate edges,
+                # check if the edge is already in the edge set.
+                # If you need all calls, you probably want to check out MultiDiGraph
+                if not CG.has_edge(orig_method, callee):
+                    CG.add_edge(orig_method, callee)
+
+        return CG
 
 
 def is_ascii_obfuscation(vm):
