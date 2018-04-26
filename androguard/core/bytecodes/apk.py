@@ -61,30 +61,25 @@ class APK(object):
     _APK_SIG_MAGIC = b"APK Sig Block 42"
     _APK_SIG_KEY_SIGNATURE = 0x7109871a
 
-    def __init__(self,
-                 filename,
-                 raw=False,
-                 magic_file=None,
-                 skip_analysis=False,
-                 testzip=False):
+    def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
         """
-            This class can access to all elements in an APK file
+        This class can access to all elements in an APK file
 
-            :param filename: specify the path of the file, or raw data
-            :param raw: specify if the filename is a path or raw data (optional)
-            :param magic_file: specify the magic file (optional)
-            :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
-            :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
+        :param filename: specify the path of the file, or raw data
+        :param raw: specify if the filename is a path or raw data (optional)
+        :param magic_file: specify the magic file (optional)
+        :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
+        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
 
-            :type filename: string
-            :type raw: boolean
-            :type magic_file: string
-            :type skip_analysis: boolean
-            :type testzip: boolean
+        :type filename: string
+        :type raw: boolean
+        :type magic_file: string
+        :type skip_analysis: boolean
+        :type testzip: boolean
 
-            :Example:
-              APK("myfile.apk")
-              APK(read("myfile.apk"), raw=True)
+        :Example:
+            APK("myfile.apk")
+            APK(read("myfile.apk"), raw=True)
         """
         self.filename = filename
 
