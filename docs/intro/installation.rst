@@ -5,6 +5,7 @@ There are several ways how to install androguard.
 
 Before you start, make sure you are using a supported python version!
 Although androguard should run with python 2.7.x, we highly recommend a newer version like python 3.6!
+The python 2.x support might be dropped in the future.
 For Windows, we recommend using the Anaconda python 3.6.x package.
 
 PIP
@@ -15,7 +16,7 @@ Just use
 
 .. code-block:: bash
 
-    $ pip install -U androguard
+    $ pip install -U androguard[magic,graphing,GUI]
     
 to  install androguard.
 
@@ -25,7 +26,7 @@ You can also make use of an `virtualenv`, to separate the installation from your
 
     $ virtualenv venv-androguard
     $ . venv-androguard/bin/activate
-    $ pip install -U androguard
+    $ pip install -U androguard[magic,graphing,GUI]
     
 pip should install all required packages too.
 
@@ -40,7 +41,7 @@ Install from Source
 
 Use git to fetch the sources, then install it.
 Please install git and python on your own.
-Beware, that androguard requires python 2.7 or at least 3.3 to work.
+Beware, that androguard requires python 2.7 or at least 3.4 to work.
 Pypy >= 5.9.0 should work as well but is not tested.
 On Windows, there might be some issues with the magic library.
 Usually the Anaconda suite works fine!
