@@ -4,6 +4,9 @@ from androguard.core import androconf
 import hashlib
 import re
 import os
+from androguard.core.bytecodes.apk import APK
+from androguard.core.bytecodes.dvm import DalvikVMFormat
+from androguard.core.analysis.analysis import Analysis
 
 import logging
 log = logging.getLogger("androguard.misc")
@@ -17,8 +20,8 @@ def init_print_colors():
 
 def get_default_session():
     """
-        Return the default Session from the configuration
-        or create a new one, if the session is None.
+    Return the default Session from the configuration
+    or create a new one, if the session in the configuration is None.
     """
     if androconf.CONF["SESSION"] is None:
         androconf.CONF["SESSION"] = session.Session()
@@ -27,40 +30,63 @@ def get_default_session():
 
 def AnalyzeAPK(_file, session=None, raw=False):
     """
-        Analyze an android application and setup all stuff for a more quickly analysis !
+    Analyze an android application and setup all stuff for a more quickly
+    analysis!
+    If session is None, no session is used at all. This is the default
+    behaviour.
+    If you like to continue your work later, it might be a good idea to use a
+    session.
+    A default session can be created by using :meth:`~get_default_session`.
 
-        :param session: A session (default None)
-        :param _file: the filename of the android application or a buffer which represents the application
-        :type _file: string or bytes
-
-        :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
+    :param _file: the filename of the android application or a buffer which represents the application
+    :type _file: string (for filename) or bytes (for raw)
+    :param session: A session (default: None)
+    :param raw: boolean if raw bytes are supplied instead of a filename
+    :rtype: return the :class:`~androguard.core.bytecodes.apk.APK`, list of :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
     """
     log.debug("AnalyzeAPK")
 
-    if not session:
-        session = get_default_session()
 
-    if raw:
-        data = _file
-        filename = hashlib.md5(_file).hexdigest()
+    if session:
+        log.debug("Using existing session {}".format(session))
+        if raw:
+            data = _file
+            filename = hashlib.md5(_file).hexdigest()
+        else:
+            with open(_file, "rb") as fd:
+                data = fd.read()
+                filename = _file
+
+        digest = session.add(filename, data)
+        return session.get_objects_apk(filename, digest)
     else:
-        with open(_file, "rb") as fd:
-            data = fd.read()
-            filename = _file
+        log.debug("Analysing without session")
+        a = APK(_file, raw=raw)
+        # FIXME: probably it is not necessary to keep all DalvikVMFormats, as
+        # they are already part of Analysis. But when using sessions, it works
+        # this way...
+        d = []
+        dx = Analysis()
+        for dex in a.get_all_dex():
+            df = DalvikVMFormat(dex, using_api=a.get_target_sdk_version())
+            dx.add(df)
+            d.append(df)
+            df.set_decompiler(decompiler.DecompilerDAD(d, dx))
 
-    digest = session.add(filename, data)
-    return session.get_objects_apk(filename, digest)
+        dx.create_xref()
+
+        return a, d, dx
 
 
 def AnalyzeDex(filename, session=None):
     """
-        Analyze an android dex file and setup all stuff for a more quickly analysis !
+    Analyze an android dex file and setup all stuff for a more quickly analysis !
 
-        :param session: A session (Default None)
-        :param filename: the filename of the android dex file or a buffer which represents the dex file
-        :type filename: string
+    :param session: A session (Default None)
+    :param filename: the filename of the android dex file or a buffer which represents the dex file
+    :type filename: string
 
-        :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
+    :rtype: return the :class:`DalvikVMFormat`, and :class:`Analysis` objects
     """
     log.debug("AnalyzeDex")
 
@@ -75,13 +101,13 @@ def AnalyzeDex(filename, session=None):
 
 def AnalyzeODex(filename, session=None):
     """
-        Analyze an android odex file and setup all stuff for a more quickly analysis !
+    Analyze an android odex file and setup all stuff for a more quickly analysis !
 
-        :param filename: the filename of the android dex file or a buffer which represents the dex file
-        :type filename: string
-        :param session: The Androguard Session to add the ODex to (default: None)
+    :param filename: the filename of the android dex file or a buffer which represents the dex file
+    :type filename: string
+    :param session: The Androguard Session to add the ODex to (default: None)
 
-        :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`VMAnalysis` objects
+    :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`Analysis` objects
     """
     log.debug("AnalyzeODex")
 
@@ -96,14 +122,14 @@ def AnalyzeODex(filename, session=None):
 
 def RunDecompiler(d, dx, decompiler_name):
     """
-        Run the decompiler on a specific analysis
+    Run the decompiler on a specific analysis
 
-        :param d: the DalvikVMFormat object
-        :type d: :class:`DalvikVMFormat` object
-        :param dx: the analysis of the format
-        :type dx: :class:`VMAnalysis` object
-        :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
-        :type decompiler: string
+    :param d: the DalvikVMFormat object
+    :type d: :class:`DalvikVMFormat` object
+    :param dx: the analysis of the format
+    :type dx: :class:`VMAnalysis` object
+    :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
+    :type decompiler: string
     """
     if decompiler_name is not None:
         log.debug("Decompiler ...")

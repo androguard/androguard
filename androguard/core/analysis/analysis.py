@@ -1184,9 +1184,9 @@ class Analysis:
     def get_internal_classes(self):
         """
         Returns all external classes, that means all classes that are
-        defined in the given set of `DalvikVMObject`s.
+        defined in the given set of :class:`~DalvikVMFormat`.
 
-        :rtype: generator of `ClassAnalysis`
+        :rtype: generator of :class:`~ClassAnalysis`
         """
         for cls in self.classes.values():
             if not cls.is_external():

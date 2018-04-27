@@ -69,6 +69,20 @@ class Session(object):
         """
         return self.analyzed_digest != {}
 
+    def show(self):
+        """
+        Print information about the current session
+        """
+        print("APKs in Session: {}".format(len(self.analyzed_apk)))
+        for d, a in self.analyzed_apk.items():
+            print("\t{}: {}".format(d, a))
+        print("DEXs in Session: {}".format(len(self.analyzed_dex)))
+        for d, dex in self.analyzed_dex.items():
+            print("\t{}: {}".format(d, dex))
+        print("Analysis in Session: {}".format(len(self.analyzed_vms)))
+        for d, a in self.analyzed_vms.items():
+            print("\t{}: {}".format(d, a))
+
     def addAPK(self, filename, data):
         """
         Add an APK file to the Session and run analysis on it.

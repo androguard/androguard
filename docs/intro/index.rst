@@ -6,3 +6,4 @@ Introduction
 
    installation.rst
    gettingstarted.rst
+   sessions.rst
