@@ -8,6 +8,9 @@ Although androguard should run with python 2.7.x, we highly recommend a newer ve
 The python 2.x support might be dropped in the future.
 For Windows, we recommend using the Anaconda python 3.6.x package.
 
+Note that there is no PyQT5 for python 2.x! If you like to use the GUI, please
+use a newer version of python!
+
 PIP
 ---
 
