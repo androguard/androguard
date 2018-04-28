@@ -11,8 +11,6 @@ python:
   - "3.5"
   - "2.7"
   - "3.4"
-  - "3.7-dev"
-  # - "3.8-dev"
   - "nightly"
 # command to install dependencies
 install:
