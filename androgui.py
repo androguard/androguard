@@ -24,6 +24,11 @@ if __name__ == '__main__':
     except ImportError:
         print("No PyQT5 found! Exiting...", file=sys.stderr)
         sys.exit(1)
+    try:
+        import pyperclip
+    except ImportError:
+        print("No pyperclip found! Exiting...", file=sys.stderr)
+        sys.exit(1)
 
     from androguard.gui.mainwindow import MainWindow
 
