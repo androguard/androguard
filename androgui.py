@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Androguard Gui"""
 from __future__ import print_function
 
@@ -21,10 +21,11 @@ if __name__ == '__main__':
     # on a system without PyQT5.
     try:
         from PyQt5 import QtWidgets, QtGui
-        from androguard.gui.mainwindow import MainWindow
-    except ModuleNotFoundError:
+    except ImportError:
         print("No PyQT5 found! Exiting...", file=sys.stderr)
         sys.exit(1)
+
+    from androguard.gui.mainwindow import MainWindow
 
     # We need that to save huge sessions when leaving and avoid
     # RuntimeError: maximum recursion depth exceeded while pickling an object
