@@ -9,7 +9,6 @@ Subpackages
     androguard.core.analysis
     androguard.core.api_specific_resources
     androguard.core.bytecodes
-    androguard.core.data
     androguard.core.resources
 
 Submodules
