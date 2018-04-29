@@ -36,12 +36,16 @@ There are some (probably broken/outdated) examples and demos in the folders [dem
 ## Projects using Androguard
 In alphabetical order
 
+* [AndroPyTool](https://github.com/alexMyG/AndroPyTool)
 * [AppKnox](http://appknox.com)
 * [Cuckoo Sandbox](https://cuckoosandbox.org)
+* [Droidbot](https://github.com/honeynet/droidbot)
+* [εxodus](https://github.com/Exodus-Privacy/exodus)
 * [F-Droid Server](https://gitlab.com/fdroid/fdroidserver)
 * [gplaycli](https://github.com/matlink/gplaycli)
 * [Koodous](https://koodous.com)
 * [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
+* [qiew](https://github.com/mtivadar/qiew)
 * [Viper Framework](https://github.com/viper-framework/viper)
 * ... and many more!
 
