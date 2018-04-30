@@ -17,16 +17,13 @@ if (sys.version_info.major == 3 and sys.version_info.minor < 4) or (sys.version_
 if sys.version_info <= (3, 4):
     print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
 
-# There is a bug in pyasn1 0.3.1, 0.3.2 and 0.3.3, so do not use them!
-# Version 0.3.4 produces wrong certificates in some cases!
-install_requires = ['pyasn1!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.4.1',
-                    'future',
+install_requires = ['future',
                     'networkx>=1.11',
                     'pygments',
                     'lxml',
                     'colorama',
                     'matplotlib',
-                    'cryptography>=2.0',
+                    'asn1crypto',
                     ]
 
 # python version specific library versions:

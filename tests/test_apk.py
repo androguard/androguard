@@ -108,7 +108,6 @@ class APKTest(unittest.TestCase):
         """
         from androguard.core.bytecodes.apk import APK
         import binascii
-        from cryptography.hazmat.primitives import hashes
         from hashlib import md5, sha1, sha256
         a = APK("examples/android/TestsAndroguard/bin/TestActivity.apk", skip_analysis=True)
 
@@ -126,16 +125,14 @@ class APKTest(unittest.TestCase):
         cert_der = a.get_certificate_der(a.get_signature_name())
 
         # Keytool are the hashes collected by keytool -printcert -file CERT.RSA
-        for h, h2, keytool in [(hashes.MD5, md5, "99:FF:FC:37:D3:64:87:DD:BA:AB:F1:7F:94:59:89:B5"),
-                               (hashes.SHA1, sha1, "1E:0B:E4:01:F9:34:60:E0:8D:89:A3:EF:6E:27:25:55:6B:E1:D1:6B"),
-                               (hashes.SHA256, sha256, "6F:5C:31:60:8F:1F:9E:28:5E:B6:34:3C:7C:8A:F0:7D:E8:1C:1F:B2:14:8B:53:49:BE:C9:06:44:41:44:57:6D")]:
-            hash_x509 = binascii.hexlify(cert.fingerprint(h())).decode("ascii")
+        for h2, keytool in [(md5, "99:FF:FC:37:D3:64:87:DD:BA:AB:F1:7F:94:59:89:B5"),
+                               (sha1, "1E:0B:E4:01:F9:34:60:E0:8D:89:A3:EF:6E:27:25:55:6B:E1:D1:6B"),
+                               (sha256, "6F:5C:31:60:8F:1F:9E:28:5E:B6:34:3C:7C:8A:F0:7D:E8:1C:1F:B2:14:8B:53:49:BE:C9:06:44:41:44:57:6D")]:
             x = h2()
             x.update(cert_der)
             hash_hashlib = x.hexdigest()
 
-            self.assertEqual(hash_x509.lower(), hash_hashlib.lower())
-            self.assertEqual(hash_x509.lower(), keytool.replace(":", "").lower())
+            self.assertEqual(hash_hashlib.lower(), keytool.replace(":", "").lower())
 
     def testAPKv2Signature(self):
         from androguard.core.bytecodes.apk import APK
@@ -154,8 +151,8 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_certificate_der(a.get_signature_name()),
                 a.get_certificates_der_v2()[0])
 
-        from cryptography.x509 import Certificate
-        self.assertIsInstance(a.get_certificates_v2()[0], Certificate)
+        from asn1crypto import x509
+        self.assertIsInstance(a.get_certificates_v2()[0], x509.Certificate)
 
         # Test if the certificate is also the same as on disk
         with open("examples/signing/certificate.der", "rb") as f:
@@ -177,9 +174,7 @@ class APKTest(unittest.TestCase):
         # all different signature algorithms as well as some error cases
         from androguard.core.bytecodes.apk import APK
         import zipfile
-        import cryptography
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives import hashes
+        from asn1crypto import x509, pem
         import binascii
         root = "examples/signing/apksig"
         
@@ -215,8 +210,8 @@ class APKTest(unittest.TestCase):
         for apath in os.listdir(root):
             if apath in certfp:
                 with open(os.path.join(root, apath), "rb") as fp:
-                    cert = cryptography.x509.load_pem_x509_certificate(fp.read(), default_backend())
-                    h = binascii.hexlify(cert.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                    cert = x509.Certificate.load(pem.unarmor(fp.read())[2])
+                    h = cert.sha256_fingerprint.replace(" ","").lower()
                     self.assertEqual(h, certfp[apath])
                     self.assertIn(h, certfp.values())
 
@@ -258,10 +253,21 @@ class APKTest(unittest.TestCase):
                             for c in a.get_signature_names():
                                 a.get_certificate(c)
 
+                    elif apath == "v1-only-with-rsa-1024-cert-not-der.apk":
+                        for sig in a.get_signature_names():
+                            c = a.get_certificate(sig)
+                            h = c.sha256_fingerprint.replace(" ","").lower()
+                            self.assertNotIn(h, certfp.values())
+                            # print([apath, h]) # I do not know, why put this file?
+                            der = a.get_certificate_der(sig)
+                            apk.show_Certificate(c, True)
+                            apk.show_Certificate(c, False)
+                            self.assertEqual(hashlib.sha256(der).hexdigest(), h)
+                        pass
                     else:
                         for sig in a.get_signature_names():
                             c = a.get_certificate(sig)
-                            h = binascii.hexlify(c.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                            h = c.sha256_fingerprint.replace(" ","").lower()
                             self.assertIn(h, certfp.values())
 
                             # Check that we get the same signature if we take the DER
@@ -279,8 +285,8 @@ class APKTest(unittest.TestCase):
                         continue
                     else:
                         for c in a.get_certificates_der_v2():
-                            cert = cryptography.x509.load_der_x509_certificate(c, default_backend())
-                            h = binascii.hexlify(cert.fingerprint(hashes.SHA256())).decode("ASCII").lower()
+                            cert = x509.Certificate.load(c)
+                            h = cert.sha256_fingerprint.replace(" ","").lower()
                             self.assertIn(h, certfp.values())
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
