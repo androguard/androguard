@@ -53,6 +53,7 @@ class ARSCTest(unittest.TestCase):
             self.assertIn(res_type, configs,
                           "resource type %s was not found" % res_type)
             for config in configs[res_type]:
+                print(config.get_config_name_friendly())
                 self.assertIn(config, config_set,
                               "config %r was not expected" % config)
                 config_set.remove(config)
