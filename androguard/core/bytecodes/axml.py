@@ -809,6 +809,61 @@ ACONFIGURATION_SCREEN_SIZE = 0x0200
 ACONFIGURATION_VERSION = 0x0400
 ACONFIGURATION_SCREEN_LAYOUT = 0x0800
 ACONFIGURATION_UI_MODE = 0x1000
+ACONFIGURATION_LAYOUTDIR_ANY = 0x00
+ACONFIGURATION_LAYOUTDIR_LTR = 0x01
+ACONFIGURATION_LAYOUTDIR_RTL = 0x02
+ACONFIGURATION_SCREENSIZE_ANY = 0x00
+ACONFIGURATION_SCREENSIZE_SMALL = 0x01
+ACONFIGURATION_SCREENSIZE_NORMAL = 0x02
+ACONFIGURATION_SCREENSIZE_LARGE = 0x03
+ACONFIGURATION_SCREENSIZE_XLARGE = 0x04
+ACONFIGURATION_SCREENLONG_ANY = 0x00
+ACONFIGURATION_SCREENLONG_NO = 0x1
+ACONFIGURATION_SCREENLONG_YES = 0x2
+ACONFIGURATION_TOUCHSCREEN_ANY = 0x0000
+ACONFIGURATION_TOUCHSCREEN_NOTOUCH = 0x0001
+ACONFIGURATION_TOUCHSCREEN_STYLUS = 0x0002
+ACONFIGURATION_TOUCHSCREEN_FINGER = 0x0003
+ACONFIGURATION_DENSITY_DEFAULT = 0
+ACONFIGURATION_DENSITY_LOW = 120
+ACONFIGURATION_DENSITY_MEDIUM = 160
+ACONFIGURATION_DENSITY_TV = 213
+ACONFIGURATION_DENSITY_HIGH = 240
+ACONFIGURATION_DENSITY_XHIGH = 320
+ACONFIGURATION_DENSITY_XXHIGH = 480
+ACONFIGURATION_DENSITY_XXXHIGH = 640
+ACONFIGURATION_DENSITY_ANY = 0xfffe
+ACONFIGURATION_DENSITY_NONE = 0xffff
+MASK_LAYOUTDIR = 0xC0
+MASK_SCREENSIZE = 0x0f
+MASK_SCREENLONG = 0x30
+SHIFT_LAYOUTDIR = 6
+SHIFT_SCREENLONG = 4
+LAYOUTDIR_ANY = ACONFIGURATION_LAYOUTDIR_ANY << SHIFT_LAYOUTDIR
+LAYOUTDIR_LTR = ACONFIGURATION_LAYOUTDIR_LTR << SHIFT_LAYOUTDIR
+LAYOUTDIR_RTL = ACONFIGURATION_LAYOUTDIR_RTL << SHIFT_LAYOUTDIR
+SCREENSIZE_ANY = ACONFIGURATION_SCREENSIZE_ANY
+SCREENSIZE_SMALL = ACONFIGURATION_SCREENSIZE_SMALL
+SCREENSIZE_NORMAL = ACONFIGURATION_SCREENSIZE_NORMAL
+SCREENSIZE_LARGE = ACONFIGURATION_SCREENSIZE_LARGE
+SCREENSIZE_XLARGE = ACONFIGURATION_SCREENSIZE_XLARGE
+SCREENLONG_ANY = ACONFIGURATION_SCREENLONG_ANY << SHIFT_SCREENLONG
+SCREENLONG_NO = ACONFIGURATION_SCREENLONG_NO << SHIFT_SCREENLONG
+SCREENLONG_YES = ACONFIGURATION_SCREENLONG_YES << SHIFT_SCREENLONG
+DENSITY_DEFAULT = ACONFIGURATION_DENSITY_DEFAULT
+DENSITY_LOW = ACONFIGURATION_DENSITY_LOW
+DENSITY_MEDIUM = ACONFIGURATION_DENSITY_MEDIUM
+DENSITY_TV = ACONFIGURATION_DENSITY_TV
+DENSITY_HIGH = ACONFIGURATION_DENSITY_HIGH
+DENSITY_XHIGH = ACONFIGURATION_DENSITY_XHIGH
+DENSITY_XXHIGH = ACONFIGURATION_DENSITY_XXHIGH
+DENSITY_XXXHIGH = ACONFIGURATION_DENSITY_XXXHIGH
+DENSITY_ANY = ACONFIGURATION_DENSITY_ANY
+DENSITY_NONE = ACONFIGURATION_DENSITY_NONE
+TOUCHSCREEN_ANY = ACONFIGURATION_TOUCHSCREEN_ANY
+TOUCHSCREEN_NOTOUCH = ACONFIGURATION_TOUCHSCREEN_NOTOUCH
+TOUCHSCREEN_STYLUS = ACONFIGURATION_TOUCHSCREEN_STYLUS
+TOUCHSCREEN_FINGER = ACONFIGURATION_TOUCHSCREEN_FINGER
 
 
 class ARSCParser(object):
@@ -1603,6 +1658,134 @@ class ARSCResTableConfig(object):
                 ((kwargs.pop('screenHeightDp', 0) & 0xffff) << 16)
 
             self.exceedingSize = 0
+
+    def _unpack_language_or_region(self, char_in, char_base):
+        char_out = ""
+        if char_in[0] & 0x80:
+            first = char_in[1] & 0x1f
+            second = ((char_in[1] & 0xe0) >> 5) + ((char_in[0] & 0x03) << 3)
+            third = (char_in[0] & 0x7c) >> 2
+            char_out += chr(first + char_base)
+            char_out += chr(second + char_base)
+            char_out += chr(third + char_base)
+        else:
+            if char_in[0]:
+                char_out += chr(char_in[0])
+            if char_in[1]:
+                char_out += chr(char_in[1])
+        return char_out
+
+    def get_language_and_region(self):
+        if self.locale != 0:
+            _language = self._unpack_language_or_region([self.locale & 0xff,(self.locale & 0xff00)>>8,],ord('a'))
+            _region = self._unpack_language_or_region([(self.locale & 0xff0000)>>16,(self.locale & 0xff000000)>>24,],ord('0'))
+            return (_language + "-r" + _region) if _region else _language
+        return ""
+
+    def get_config_name_friendly(self):
+        res = []
+
+        mcc = self.imsi & 0xFFFF
+        mnc = (self.imsi & 0xFFFF0000) >> 16
+        if mcc != 0:
+            res.append("mcc%d"% mcc)
+        if mnc != 0:
+            res.append("mnc%d"% mnc)
+
+        if self.locale != 0:
+            res.append(self.get_language_and_region())
+
+
+        screenLayout = self.screenConfig  & 0xff
+        if (screenLayout&MASK_LAYOUTDIR) != 0:
+            if screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_LTR:
+                res.append("ldltr")
+            elif screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_RTL:
+                res.append("ldrtl")
+            else:
+                res.append("layoutDir_%d" % (screenLayout&MASK_LAYOUTDIR))
+
+        smallestScreenWidthDp = (self.screenConfig & 0xFFFF0000) >> 16
+        if smallestScreenWidthDp != 0:
+            res.append("sw%ddp"%smallestScreenWidthDp)
+
+        screenWidthDp = self.screenSizeDp & 0xFFFF
+        screenHeightDp = (self.screenSizeDp & 0xFFFF0000) >> 16
+        if screenWidthDp != 0:
+            res.append("w%ddp"%screenWidthDp)
+        if screenHeightDp != 0:
+            res.append("h%ddp"%screenHeightDp)
+
+
+        if (screenLayout&MASK_SCREENSIZE) != SCREENSIZE_ANY:
+            if screenLayout&MASK_SCREENSIZE == SCREENSIZE_SMALL:
+                res.append("small")
+            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_NORMAL:
+                res.append("normal")
+            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_LARGE:
+                res.append("large")
+            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_XLARGE:
+                res.append("xlarge")
+            else:
+                res.append("screenLayoutSize_%d"%(screenLayout&MASK_SCREENSIZE))
+        if (screenLayout&MASK_SCREENLONG) != 0:
+            if screenLayout&MASK_SCREENLONG == SCREENLONG_NO:
+                res.append("notlong")
+            elif screenLayout&MASK_SCREENLONG == SCREENLONG_YES:
+                res.append("long")
+            else:
+                res.append("screenLayoutLong_%d"%(screenLayout&MASK_SCREENLONG))
+
+
+        density = (self.screenType  & 0xffff0000) >> 16
+        if density != DENSITY_DEFAULT:
+            if density == DENSITY_LOW:
+                res.append("ldpi")
+            elif density == DENSITY_MEDIUM:
+                res.append("mdpi")
+            elif density == DENSITY_TV:
+                res.append("tvdpi")
+            elif density == DENSITY_HIGH:
+                res.append("hdpi")
+            elif density == DENSITY_XHIGH:
+                res.append("xhdpi")
+            elif density == DENSITY_XXHIGH:
+                res.append("xxhdpi")
+            elif density == DENSITY_XXXHIGH:
+                res.append("xxxhdpi")
+            elif density == DENSITY_NONE:
+                res.append("nodpi")
+            elif density == DENSITY_ANY:
+                res.append("anydpi")
+            else:
+                res.append("%ddpi"%(density))
+
+        touchscreen = (self.screenType  & 0xff00) >> 8
+        if touchscreen != TOUCHSCREEN_ANY:
+            if touchscreen == TOUCHSCREEN_NOTOUCH:
+                res.append("notouch")
+            elif touchscreen == TOUCHSCREEN_FINGER:
+                res.append("finger")
+            elif touchscreen == TOUCHSCREEN_STYLUS:
+                res.append("stylus")
+            else:
+                res.append("touchscreen_%d" % touchscreen)
+
+        screenSize = self.screenSize
+        if screenSize != 0:
+            screenWidth = self.screenSize  & 0xffff
+            screenHeight = (self.screenSize  & 0xffff0000) >> 16
+            res.append("%dx%d"%( screenWidth,screenHeight))
+
+        version = self.version
+        if version != 0:
+            sdkVersion = self.version  & 0xffff
+            minorVersion = (self.version  & 0xffff0000) >> 16
+            res.append("v%d"%sdkVersion)
+            if minorVersion != 0:
+                res.append(".%d"%minorVersion)
+
+        return "-".join(res)
 
     def get_language(self):
         x = self.locale & 0x0000ffff
