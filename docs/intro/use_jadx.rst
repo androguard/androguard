@@ -3,6 +3,11 @@ Use JADX as a Decompiler
 
 Instead of using the internal decompiler DAD, you can also use JADX_.
 
+Install JADX as described at it's website.
+Make sure that the :code:`jadx` executable is in :code:`$PATH`.
+Otherwise you might set the argument when calling
+:meth:`~androguard.decompiler.decompiler.DecompilerJADX`.
+
 Here is a short demo code, how JADX can be used:
 
 .. code-block:: python
