@@ -41,16 +41,18 @@ def main(inp, outp=None):
 
     buff = etree.tostring(axml, pretty_print=True, encoding="utf-8")
     if outp:
-        with open(outp, "w") as fd:
+        with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff)
+        print(buff.decode("UTF-8"))
 
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Parses the AndroidManifest.xml either"
             "direct or from a given APK and prints in XML format or saves to"
-            "file.")
+            "file."
+            "This tool can also be used to process any AXML encoded file, for"
+            "example from the layout directory.")
 
     parser.add_argument("--output", "-o",
             help="filename to save the decoded AndroidManifest.xml to")
