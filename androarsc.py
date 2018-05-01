@@ -22,7 +22,6 @@ from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 import lxml.etree as etree
-import codecs
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.file and args.input:
-        print("Can not give --input and positional argument! Please use only one of them!")
+        print("Can not give --input and positional argument! Please use only one of them!", file=sys.stderr)
         sys.exit(1)
 
     if args.version:
@@ -90,7 +89,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if not args.input and not args.file:
-        print("Give one file to decode!")
+        print("Give one file to decode!", file=sys.stderr)
         sys.exit(1)
 
     if args.input:
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     elif ret_type == "ARSC":
         arscobj = apk.ARSCParser(read(fname))
     else:
-        print("Unknown file type")
+        print("Unknown file type!", file=sys.stderr)
         sys.exit(1)
 
     if args.list_packages:
