@@ -1116,17 +1116,42 @@ class ARSCParser(object):
         return ["", ""]
 
     def get_packages_names(self):
+        """
+        Retrieve a list of all package names, which are available
+        in the given resources.arsc.
+        """
         return list(self.packages.keys())
 
     def get_locales(self, package_name):
+        """
+        Retrieve a list of all available locales in a given packagename.
+
+        :param package_name: the package name to get locales of
+        """
         self._analyse()
         return list(self.values[package_name].keys())
 
-    def get_types(self, package_name, locale):
+    def get_types(self, package_name, locale='\x00\x00'):
+        """
+        Retrieve a list of all types which are available in the given
+        package and locale.
+
+        :param package_name: the package name to get types of
+        :param locale: the locale to get types of (default: '\x00\x00')
+        """
         self._analyse()
         return list(self.values[package_name][locale].keys())
 
     def get_public_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'public'.
+
+        The public resources table contains the IDs for each item.
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
+
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1144,6 +1169,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_string_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'string'.
+
+        Read more about string resources:
+        https://developer.android.com/guide/topics/resources/string-resource.html
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1164,6 +1198,11 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_strings_resources(self):
+        """
+        Get the XML (as string) of all resources of type 'string'.
+        This is a combined variant, which has all locales and all package names
+        stored.
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1192,6 +1231,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_id_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'id'.
+
+        Read more about ID resources:
+        https://developer.android.com/guide/topics/resources/more-resources.html#Id
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1212,6 +1260,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_bool_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'bool'.
+
+        Read more about bool resources:
+        https://developer.android.com/guide/topics/resources/more-resources.html#Bool
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1228,6 +1285,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_integer_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'integer'.
+
+        Read more about integer resources:
+        https://developer.android.com/guide/topics/resources/more-resources.html#Integer
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1244,6 +1310,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_color_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'color'.
+
+        Read more about color resources:
+        https://developer.android.com/guide/topics/resources/more-resources.html#Color
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -1260,6 +1335,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_dimen_resources(self, package_name, locale='\x00\x00'):
+        """
+        Get the XML (as string) of all resources of type 'dimen'.
+
+        Read more about Dimension resources:
+        https://developer.android.com/guide/topics/resources/more-resources.html#Dimension
+
+        :param package_name: the package name to get the resources for
+        :param locale: the locale to get the resources for (default: '\x00\x00')
+        """
         self._analyse()
 
         buff = '<?xml version="1.0" encoding="utf-8"?>\n'
