@@ -35,13 +35,18 @@ def main(arscobj, outp=None, package=None, typ=None, locale=None):
     locale = locale or '\x00\x00'
 
     # TODO: be able to dump all locales of a specific type
-    # TODO: be able to recreate the structure of files when developing
+    # TODO: be able to recreate the structure of files when developing, eg a res
+    # folder with all the XML files
+
+    if not hasattr(arscobj, "get_{}_resources".format(ttype)):
+        print("No decoder found for type: '{}'! Please open a bug report.".format(ttype), file=sys.stderr)
+        sys.exit(1)
 
     x = getattr(arscobj, "get_" + ttype + "_resources")(package, locale)
 
     buff = etree.tostring(etree.fromstring(x), pretty_print=True, encoding="UTF-8")
 
-    if outp is not None:
+    if outp:
         with open(outp, "w") as fd:
             fd.write(buff)
     else:
@@ -61,11 +66,11 @@ if __name__ == "__main__":
     parser.add_argument("--output", "-o",
             help="filename to save the decoded resources to")
     parser.add_argument("--package", "-p",
-            help="Show only resources for the given package name")
+            help="Show only resources for the given package name (default: the first package name found)")
     parser.add_argument("--locale", "-l",
-            help="Show only resources for the given locale")
+            help="Show only resources for the given locale (default: '\\x00\\x00')")
     parser.add_argument("--type", "-t",
-            help="Show only resources of the given type (string, integer, public, ...")
+            help="Show only resources of the given type (default: public)")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--list-packages", action="store_true", default=False,
             help="List all package names and exit")
