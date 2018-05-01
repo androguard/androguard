@@ -46,10 +46,10 @@ def main(arscobj, outp=None, package=None, typ=None, locale=None):
     buff = etree.tostring(etree.fromstring(x), pretty_print=True, encoding="UTF-8")
 
     if outp:
-        with open(outp, "w") as fd:
+        with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff)
+        print(buff.decode("UTF-8"))
 
 
 if __name__ == "__main__":
@@ -129,4 +129,4 @@ if __name__ == "__main__":
         sys.exit(0)
 
 
-    main(arscobj, package=args.package, typ=args.type, locale=args.locale)
+    main(arscobj, outp=args.output, package=args.package, typ=args.type, locale=args.locale)
