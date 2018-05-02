@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 from androguard.core.bytecodes.apk import APK
+from androguard.util import get_certificate_name_string
 from argparse import ArgumentParser
 import sys
 import os
@@ -53,8 +54,8 @@ def main():
             for cert in certs:
                 if args.show:
                     x509_cert = x509.Certificate.load(cert)
-                    print("Issuer:", x509_cert.issuer.human_friendly)
-                    print("Subject:", x509_cert.subject.human_friendly)
+                    print("Issuer:", get_certificate_name_string(x509_cert.issuer, short=True))
+                    print("Subject:", get_certificate_name_string(x509_cert.subject, short=True))
                     print("Serial Number:", hex(x509_cert.serial_number))
                     print("Hash Algorithm:", x509_cert.hash_algo)
                     print("Signature Algorithm:", x509_cert.signature_algo)
