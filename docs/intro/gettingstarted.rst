@@ -136,3 +136,106 @@ There are many more methods to explore, just take a look at the API for
 :class:`~androguard.core.bytecodes.apk.APK`.
 
 
+Using the Analysis object
+-------------------------
+
+The :code:`~androguard.core.analysis.analysis.Analysis` object has all
+information about the classes, methods, fields and strings inside one or
+multiple DEX files.
+
+Additionally it enables you to get call graphs and crossreferences (XREFs) for
+each method, class, field and string.
+
+This means you can investigate the application for certain API calls or create
+graphs to see the dependencies of different classes.
+
+As a first example, we will get all classes from the Analysis:
+
+.. code-block:: python
+
+    In [2]: dx.get_classes()
+    Out[2]:
+    [<analysis.ClassAnalysis Ljava/io/FileNotFoundException; EXTERNAL>,
+     <analysis.ClassAnalysis Landroid/content/SharedPreferences; EXTERNAL>,
+     <analysis.ClassAnalysis Landroid/support/v4/widget/FocusStrategy$BoundsAdapter;>,
+     <analysis.ClassAnalysis Landroid/support/v4/media/MediaBrowserCompat$MediaBrowserServiceCallbackImpl;>,
+     <analysis.ClassAnalysis Landroid/support/transition/WindowIdImpl;>,
+     <analysis.ClassAnalysis Landroid/media/MediaMetadataEditor; EXTERNAL>,
+     <analysis.ClassAnalysis Landroid/support/v4/app/BundleCompat$BundleCompatBaseImpl;>,
+     <analysis.ClassAnalysis Landroid/support/transition/MatrixUtils$1;>,
+     <analysis.ClassAnalysis Landroid/support/v7/widget/ShareActionProvider;>,
+     ...
+
+As you can see, :meth:`~androguard.core.analysis.analysis.Analysis.get_classes` returns a list of
+:class:`~androguard.core.analysis.analysis.ClassAnalysis` objects.
+Some of them are marked as `EXTERNAL`, which means that the source code of this
+class is not defined within the DEX files that are loaded inside the Analysis.
+For example the first class :code:`java.io.FileNotFoundException` is an API
+class.
+
+A :class:`~androguard.core.analysis.analysis.ClassAnalysis` does not contain the
+actual code but the :class:`~androguard.core.bytecodes.dvm.ClassDefItem` can be
+loaded using the
+:meth:`~androguard.core.analysis.analysis.ClassAnalysis.get_vm_class`:
+
+.. code-block:: python
+
+    In [5]: dx.get_classes()[2].get_vm_class()
+    Out[5]: <dvm.ClassDefItem Ljava/lang/Object;->Landroid/support/v4/widget/FocusStrategy$BoundsAdapter;>
+
+If the class is `EXTERNAL`, a
+:class:`~androguard.core.analysis.analysis.ExternalClass` is returned instead.
+
+The :class:`~androguard.core.analysis.analysis.ClassAnalysis` also contains all the
+information about XREFs, which are explained in more detail in the next section.
+
+XREFs
+-----
+
+Consider the following Java source code:
+
+.. code-block:: java
+
+    class Foobar {
+        public int afield = 23;
+
+        public void somemethod() {
+            String astring = "hello world";
+        }
+    }
+
+    class Barfoo {
+        public void othermethod() {
+            Foobar x = new Foobar();
+
+            x.somemethod();
+
+            System.out.println(x.afield);
+        }
+    }
+
+
+There are two classes and the class :code:`Barfoo` instanciates the other class
+:code:`Foobar` as well as calling methods and reading fields.
+
+XREFs are generated for four things:
+
+* Classes
+* Methods
+* Fields
+* Strings
+
+XREFs work in two directions: xref_from and xref_to.
+`To` means, that the current object is calling another object.
+`From` means, that the current object is called by another object.
+
+All XREFs can be visualized as an directed graph and if some object :code:`A` is contained
+in the :code:`xref_to`, the called object will contain :code:`A` in their
+:code:`xref_from`.
+
+In the case of our Java example, the string :code:`astring` is called in :code:`Foobar.somethod`,
+therefore it will be contained in the :code:`xref_to` of
+:code:`Foobar.somethod`.
+
+The Field :code:`afield` will be contained in the :code:`xref_to` of
+:code:`Barfoo.othermethod` as well as the call to :code:`Foobar.somethod`.

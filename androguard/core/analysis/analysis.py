@@ -1361,7 +1361,7 @@ class Analysis:
             orig_method = m.get_method()
             log.info("Found Method --> {}".format(orig_method))
 
-            if no_isolated and len(m.get_xref_to) == 0:
+            if no_isolated and len(m.get_xref_to()) == 0:
                 log.info("Skipped {}, because if has no xrefs".format(orig_method))
                 continue
 

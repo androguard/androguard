@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 from androguard.core.bytecodes.apk import APK
+from androguard.util import get_certificate_name_string
 from argparse import ArgumentParser
 import sys
 import os
 import hashlib
 import traceback
 from colorama import Fore, Back, Style
+from asn1crypto import x509
 
 
 def get_parser():
@@ -15,6 +17,8 @@ def get_parser():
     parser.add_argument("apk", nargs="+", help="APK(s) to extract the Fingerprint of Certificates from")
     parser.add_argument("--hash", default="sha1", help="Fingerprint Hash algorithm, default SHA1")
     parser.add_argument("--all", "-a", default=False, action="store_true", help="Print all supported hashes")
+    parser.add_argument("--show", "-s", default=False, action="store_true",
+            help="Additionally of printing the fingerprints, show more certificate information")
 
     return parser
 
@@ -48,12 +52,22 @@ def main():
                 print("Found {} unique certificates".format(len(certs)))
 
             for cert in certs:
+                if args.show:
+                    x509_cert = x509.Certificate.load(cert)
+                    print("Issuer:", get_certificate_name_string(x509_cert.issuer, short=True))
+                    print("Subject:", get_certificate_name_string(x509_cert.subject, short=True))
+                    print("Serial Number:", hex(x509_cert.serial_number))
+                    print("Hash Algorithm:", x509_cert.hash_algo)
+                    print("Signature Algorithm:", x509_cert.signature_algo)
+                    print("Valid not before:", x509_cert['tbs_certificate']['validity']['not_before'].native)
+                    print("Valid not after:", x509_cert['tbs_certificate']['validity']['not_after'].native)
 
                 if not args.all:
                     print("{} {}".format(args.hash.lower(), hashfunctions[args.hash.lower()](cert).hexdigest()))
                 else:
                     for k, v in hashfunctions.items():
                         print("{} {}".format(k, v(cert).hexdigest()))
+                print()
         except:
             print(Fore.RED + "Error in {}".format(os.path.basename(path)) + Style.RESET_ALL, file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
