@@ -261,14 +261,18 @@ class APK(object):
         Return the appname of the APK
 
         This name is read from the AndroidManifest.xml
+        using the application android:label.
+        If no label exists, the android:label of the main activity is used.
+
+        If there is also no main activity label, an empty string is returned.
 
         :rtype: :class:`str`
         """
-        main_activity_name = self.get_main_activity()
 
-        app_name = self.get_element('activity', 'label', name=main_activity_name)
+        app_name = self.get_element('application', 'label')
         if not app_name:
-            app_name = self.get_element('application', 'label')
+            main_activity_name = self.get_main_activity()
+            app_name = self.get_element('activity', 'label', name=main_activity_name)
 
         if app_name is None:
             # No App name set
