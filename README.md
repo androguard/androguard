@@ -1,4 +1,4 @@
-![banner - 600 x 300](https://user-images.githubusercontent.com/37318022/39875153-65ab5374-54a2-11e8-97c6-42a36cd0d368.png)
+![banner](https://user-images.githubusercontent.com/37318022/39884327-1d7c5476-54bc-11e8-9ae2-eec8ffd87c04.png)
 
 # Androguard
 
