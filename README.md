@@ -1,3 +1,5 @@
+![banner - 600 x 300](https://user-images.githubusercontent.com/37318022/39875153-65ab5374-54a2-11e8-97c6-42a36cd0d368.png)
+
 # Androguard
 
 [![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)

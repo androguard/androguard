@@ -21,11 +21,7 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 
 # Used for reading Certificates
-from pyasn1.codec.der.decoder import decode
-from pyasn1.codec.der.encoder import encode
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from asn1crypto import cms, x509
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{http://schemas.android.com/apk/res/android}'
@@ -265,14 +261,18 @@ class APK(object):
         Return the appname of the APK
 
         This name is read from the AndroidManifest.xml
+        using the application android:label.
+        If no label exists, the android:label of the main activity is used.
+
+        If there is also no main activity label, an empty string is returned.
 
         :rtype: :class:`str`
         """
-        main_activity_name = self.get_main_activity()
 
-        app_name = self.get_element('activity', 'label', name=main_activity_name)
+        app_name = self.get_element('application', 'label')
         if not app_name:
-            app_name = self.get_element('application', 'label')
+            main_activity_name = self.get_main_activity()
+            app_name = self.get_element('activity', 'label', name=main_activity_name)
 
         if app_name is None:
             # No App name set
@@ -1000,24 +1000,8 @@ class APK(object):
         """
         pkcs7message = self.get_file(filename)
 
-        # TODO for correct parsing, we would need to write our own ASN1Spec for the SignatureBlock format
-        message, _ = decode(pkcs7message)
-        cert = encode(message[1][3])
-        # Remove the first identifier
-        # byte 0 == identifier, skip
-        # byte 1 == length. If byte1 & 0x80 > 1, we have long format
-        #                   The length of to read bytes is then coded
-        #                   in byte1 & 0x7F
-        # Check if the first byte is 0xA0 (Sequence Tag)
-        tag = cert[0]
-        l = cert[1]
-        # Python2 compliance
-        if not isinstance(l, int):
-            l = ord(l)
-            tag = ord(tag)
-        if tag == 0xA0:
-            cert = cert[2 + (l & 0x7F) if l & 0x80 > 1 else 2:]
-
+        pkcs7obj = cms.ContentInfo.load(pkcs7message)
+        cert = pkcs7obj['content']['certificates'][0].chosen.dump()
         return cert
 
     def get_certificate(self, filename):
@@ -1028,7 +1012,7 @@ class APK(object):
         :return: a :class:`Certificate` certificate
         """
         cert = self.get_certificate_der(filename)
-        certificate = x509.load_der_x509_certificate(cert, default_backend())
+        certificate = x509.Certificate.load(cert)
 
         return certificate
 
@@ -1241,14 +1225,14 @@ class APK(object):
 
     def get_certificates_v2(self):
         """
-        Return a list of :class:`cryptography.x509.Certificate` which are found
+        Return a list of :class:`asn1crypto.x509.Certificate` which are found
         in the v2 signing block.
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
         """
         certs = []
         for cert in self.get_certificates_der_v2():
-            certs.append(x509.load_der_x509_certificate(cert, default_backend()))
+            certs.append(x509.Certificate.load(cert))
 
         return certs
 
@@ -1367,12 +1351,13 @@ def show_Certificate(cert, short=False):
         :param cert: X509 Certificate to print
         :param short: Print in shortform for DN (Default: False)
 
-        :type cert: :class:`cryptography.x509.Certificate`
+        :type cert: :class:`asn1crypto.x509.Certificate`
         :type short: Boolean
     """
 
-    for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
-        print("{}: {}".format(h.name, binascii.hexlify(cert.fingerprint(h())).decode("ascii")))
-    print("Issuer: {}".format(get_certificate_name_string(cert.issuer, short=short)))
-    print("Subject: {}".format(get_certificate_name_string(cert.subject, short=short)))
+
+    print("SHA1 Fingerprint: {}".format(cert.sha1_fingerprint))
+    print("SHA256 Fingerprint: {}".format(cert.sha256_fingerprint))
+    print("Issuer: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
+    print("Subject: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
 

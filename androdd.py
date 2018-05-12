@@ -6,7 +6,7 @@ import os
 import re
 import shutil
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from androguard import session
 from androguard.misc import clean_file_name
@@ -14,41 +14,6 @@ from androguard.core import androconf
 from androguard.core.bytecode import method2dot, method2format
 from androguard.core.bytecodes import dvm
 from androguard.decompiler import decompiler
-
-option_0 = {
-    'name': ('-i', '--input'),
-    'help': 'file : use this filename',
-    'nargs': 1
-}
-option_1 = {
-    'name': ('-o', '--output'),
-    'help': 'base directory to output all files',
-    'nargs': 1
-}
-option_2 = {
-    'name': ('-d', '--decompiler'),
-    'help': 'choose a decompiler (default: use DAD)',
-    'nargs': 1
-}
-option_3 = {
-    'name': ('-j', '--jar'),
-    'help': 'output jar file',
-    'action': 'count'
-}
-
-option_4 = {
-    'name': ('-f', '--format'),
-    'help': 'write CFG of method in specific format (png, raw, ...)',
-    'nargs': 1
-}
-
-option_5 = {
-    'name': ('-l', '--limit'),
-    'help': 'limit analysis to specific methods/classes by using a regexp',
-    'nargs': 1
-}
-
-options = [option_0, option_1, option_2, option_3, option_4, option_5]
 
 
 def valid_class_name(class_name):
@@ -111,7 +76,7 @@ def export_apps_to_format(filename,
 
         print("End")
 
-        if options.jar:
+        if jar:
             print("jar ...", end=' ')
             filenamejar = decompiler.Dex2Jar(vm,
                                              androconf.CONF["BIN_DEX2JAR"],
@@ -162,24 +127,49 @@ def export_apps_to_format(filename,
             print()
 
 
-def main(options, arguments):
-    if options.input is not None and options.output is not None:
-        s = session.Session()
-        with open(options.input, "rb") as fd:
-            s.add(options.input, fd.read())
-            export_apps_to_format(options.input, s, options.output, options.limit,
-                                  options.jar, options.decompiler, options.format)
-    else:
-        print("Please, specify an input file and an output directory")
-
-
 if __name__ == "__main__":
-    parser = OptionParser()
-    for option in options:
-        param = option['name']
-        del option['name']
-        parser.add_option(*param, **option)
+    parser = ArgumentParser(description="Decompile an APK and create Control Flow Graphs")
 
-    options, arguments = parser.parse_args()
-    sys.argv[:] = arguments
-    main(options, arguments)
+    parser.add_argument("--version", "-v", action="store_true", default=False,
+            help="Print androguard version and exit")
+    parser.add_argument("--input", "-i",
+            help="resources.arsc or APK to parse (legacy option)")
+    parser.add_argument("file", nargs="?",
+            help="resources.arsc or APK to parse")
+    parser.add_argument("--output", "-o", required=True,
+            help="output directory. If the output folder already exsist, it will"
+            "be overwritten!")
+    parser.add_argument("--format", "-f",
+            help="Additionally write control flow graphs for each method,"
+            "specify the format for example png, jpg, raw (write dot file), ...")
+    parser.add_argument("--jar", "-j", action="store_true", default=False,
+            help="Use DEX2JAR to create a JAR file")
+    parser.add_argument("--limit", "-l",
+            help="Limit to certain methods only by regex (default: '.*')")
+    parser.add_argument("--decompiler", "-d",
+            help="Use a different decompiler (default: DAD)")
+
+    args = parser.parse_args()
+
+    if args.file and args.input:
+        print("Can not give --input and positional argument! Please use only one of them!", file=sys.stderr)
+        sys.exit(1)
+
+    if args.version:
+        print("Androaxml version %s" % androconf.ANDROGUARD_VERSION)
+        sys.exit(0)
+
+    if not args.input and not args.file:
+        print("Give one file to decode!", file=sys.stderr)
+        sys.exit(1)
+
+    if args.input:
+        fname = args.input
+    else:
+        fname = args.file
+
+    s = session.Session()
+    with open(fname, "rb") as fd:
+        s.add(fname, fd.read())
+    export_apps_to_format(fname, s, args.output, args.limit,
+                              args.jar, args.decompiler, args.format)
