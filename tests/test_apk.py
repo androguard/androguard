@@ -113,8 +113,11 @@ class APKTest(unittest.TestCase):
 
         # this one is not signed v2, it is v1 only
         self.assertTrue(a.is_signed_v1())
+        self.assertTrue(a.is_sign_verified_v1())
         self.assertFalse(a.is_signed_v2())
+        self.assertFalse(a.is_sign_verified_v2())
         self.assertTrue(a.is_signed())
+        self.assertTrue(a.is_sign_verified())
         self.assertEqual(a.get_certificates_der_v2(), [])
         self.assertEqual(a.get_certificates_v2(), [])
 
@@ -140,8 +143,11 @@ class APKTest(unittest.TestCase):
         a = APK("examples/signing/TestActivity_signed_both.apk")
 
         self.assertTrue(a.is_signed_v1())
+        self.assertTrue(a.is_sign_verified_v1())
         self.assertTrue(a.is_signed_v2())
+        self.assertTrue(a.is_sign_verified_v2())
         self.assertTrue(a.is_signed())
+        self.assertTrue(a.is_sign_verified())
 
         # Signing name is maximal 8 chars...
         self.assertEqual(a.get_signature_name(), "META-INF/ANDROGUA.RSA")

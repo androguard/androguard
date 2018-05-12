@@ -22,6 +22,7 @@ from xml.dom.pulldom import SAX2DOM
 
 # Used for reading Certificates
 from asn1crypto import cms, x509
+from apkverify import ApkSignature
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{http://schemas.android.com/apk/res/android}'
@@ -106,6 +107,7 @@ class APK(object):
             self.__raw = bytearray(read(filename))
 
         self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+        self.apksig = ApkSignature("",fd=io.BytesIO(self.__raw))
 
         if testzip:
             # Test the zipfile for integrity before continuing.
@@ -1094,6 +1096,18 @@ class APK(object):
                 return None
             self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
             return self.arsc["resources.arsc"]
+
+    def is_sign_verified(self):
+        """
+        Returns true if either a v1 or v2 (or both) signature was found.
+        """
+        return self.is_sign_verified_v1() or self.is_sign_verified_v2()
+
+    def is_sign_verified_v1(self):
+        return self.apksig.verify(1)
+
+    def is_sign_verified_v2(self):
+        return self.apksig.verify(2)
 
     def is_signed(self):
         """

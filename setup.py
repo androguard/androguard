@@ -24,6 +24,7 @@ install_requires = ['future',
                     'colorama',
                     'matplotlib',
                     'asn1crypto>=0.24.0',
+                    'apkverify',
                     ]
 
 # python version specific library versions:
