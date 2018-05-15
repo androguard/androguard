@@ -1359,5 +1359,5 @@ def show_Certificate(cert, short=False):
     print("SHA1 Fingerprint: {}".format(cert.sha1_fingerprint))
     print("SHA256 Fingerprint: {}".format(cert.sha256_fingerprint))
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
-    print("Subject: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
+    print("Subject: {}".format(get_certificate_name_string(cert.subject.native, short=short)))
 
