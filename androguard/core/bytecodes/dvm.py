@@ -85,6 +85,7 @@ DBG_Special_Opcodes_END = 0xff
 DBG_LINE_BASE = -4
 DBG_LINE_RANGE = 15
 
+
 class Error(Exception):
     """
     Base class for exceptions in this module.
@@ -204,6 +205,12 @@ def get_byte(buff):
 
 
 def readuleb128(buff):
+    """
+    Read an unsigned LEB128 at the current position of the buffer
+
+    :param buff: a file like object
+    :return: decoded unsigned LEB128
+    """
     result = get_byte(buff)
     if result > 0x7f:
         cur = get_byte(buff)
@@ -223,29 +230,24 @@ def readuleb128(buff):
     return result
 
 
-def readusleb128(buff):
-    result = get_byte(buff)
-    if result > 0x7f:
-        cur = get_byte(buff)
-        result = (result & 0x7f) | ((cur & 0x7f) << 7)
-        if cur > 0x7f:
-            cur = get_byte(buff)
-            result |= (cur & 0x7f) << 14
-            if cur > 0x7f:
-                cur = get_byte(buff)
-                result |= (cur & 0x7f) << 21
-                if cur > 0x7f:
-                    cur = get_byte(buff)
-                    result |= cur << 28
-
-    return result
-
-
 def readuleb128p1(buff):
+    """
+    Read an unsigned LEB128p1 at the current position of the buffer.
+    This format is the same as uLEB128 but has the ability to store the value -1.
+
+    :param buff: a file like object
+    :return: decoded uLEB128p1
+    """
     return readuleb128(buff) - 1
 
 
 def readsleb128(buff):
+    """
+    Read a signed LEB128 at the current position of the buffer.
+
+    :param buff: a file like object
+    :return: decoded sLEB128
+    """
     result = 0
     shift = 0
 
@@ -266,6 +268,17 @@ def readsleb128(buff):
 
 
 def writeuleb128(value):
+    """
+    Convert an integer value to the corresponding unsigned LEB128.
+
+    Raises a value error, if the given value is negative.
+
+    :param value: non-negative integer
+    :return: bytes
+    """
+    if value < 0:
+        raise ValueError("value must be non-negative!")
+
     remaining = value >> 7
 
     buff = bytearray()
@@ -280,9 +293,14 @@ def writeuleb128(value):
 
 
 def writesleb128(value):
+    """
+    Convert an integer value to the corresponding signed LEB128
+
+    :param value: integer value
+    :return: bytes
+    """
     remaining = value >> 7
     hasMore = True
-    end = 0
     buff = bytearray()
 
     if (value & (-sys.maxsize - 1)) == 0:
@@ -1251,18 +1269,18 @@ class DebugInfoItem(object):
             elif bcode_value == DBG_ADVANCE_LINE:
                 bcode.add(readsleb128(buff), "s")
             elif bcode_value == DBG_START_LOCAL:
-                bcode.add(readusleb128(buff), "u")
+                bcode.add(readuleb128(buff), "u")
                 bcode.add(readuleb128p1(buff), "u1")
                 bcode.add(readuleb128p1(buff), "u1")
             elif bcode_value == DBG_START_LOCAL_EXTENDED:
-                bcode.add(readusleb128(buff), "u")
+                bcode.add(readuleb128(buff), "u")
                 bcode.add(readuleb128p1(buff), "u1")
                 bcode.add(readuleb128p1(buff), "u1")
                 bcode.add(readuleb128p1(buff), "u1")
             elif bcode_value == DBG_END_LOCAL:
-                bcode.add(readusleb128(buff), "u")
+                bcode.add(readuleb128(buff), "u")
             elif bcode_value == DBG_RESTART_LOCAL:
-                bcode.add(readusleb128(buff), "u")
+                bcode.add(readuleb128(buff), "u")
             elif bcode_value == DBG_SET_PROLOGUE_END:
                 pass
             elif bcode_value == DBG_SET_EPILOGUE_BEGIN:
