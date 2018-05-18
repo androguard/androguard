@@ -261,14 +261,18 @@ class APK(object):
         Return the appname of the APK
 
         This name is read from the AndroidManifest.xml
+        using the application android:label.
+        If no label exists, the android:label of the main activity is used.
+
+        If there is also no main activity label, an empty string is returned.
 
         :rtype: :class:`str`
         """
-        main_activity_name = self.get_main_activity()
 
-        app_name = self.get_element('activity', 'label', name=main_activity_name)
+        app_name = self.get_element('application', 'label')
         if not app_name:
-            app_name = self.get_element('application', 'label')
+            main_activity_name = self.get_main_activity()
+            app_name = self.get_element('activity', 'label', name=main_activity_name)
 
         if app_name is None:
             # No App name set
@@ -1352,8 +1356,8 @@ def show_Certificate(cert, short=False):
     """
 
 
-    print("SHA1: {}".format(cert.sha1_fingerprint))
-    print("SHA512: {}".format(cert.sha256_fingerprint))
+    print("SHA1 Fingerprint: {}".format(cert.sha1_fingerprint))
+    print("SHA256 Fingerprint: {}".format(cert.sha256_fingerprint))
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
-    print("Subject: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
+    print("Subject: {}".format(get_certificate_name_string(cert.subject.native, short=short)))
 

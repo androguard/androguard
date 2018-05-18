@@ -23,7 +23,7 @@ install_requires = ['future',
                     'lxml',
                     'colorama',
                     'matplotlib',
-                    'asn1crypto',
+                    'asn1crypto>=0.24.0',
                     ]
 
 # python version specific library versions:

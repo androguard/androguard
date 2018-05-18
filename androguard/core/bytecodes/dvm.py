@@ -581,6 +581,9 @@ class AnnotationOffItem(object):
         self.CM = cm
         self.annotation_off = unpack("=I", buff.read(4))[0]
 
+    def get_annotation_off(self):
+        return self.annotation_off
+
     def show(self):
         bytecode._PrintSubBanner("Annotation Off Item")
         bytecode._PrintDefault("annotation_off=0x%x\n" % self.annotation_off)
@@ -827,7 +830,7 @@ class MethodAnnotation(object):
 
         :rtype: int
         """
-        return self.get_method_idx
+        return self.method_idx
 
     def get_annotations_off(self):
         """
