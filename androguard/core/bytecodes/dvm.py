@@ -2127,7 +2127,7 @@ class ProtoIdItem(object):
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = '({})'.format(' '.join(params))
+            self.parameters_off_value = u'({})'.format(' '.join(params))
         return self.parameters_off_value
 
     def show(self):
