@@ -6811,7 +6811,6 @@ class DalvikCode(object):
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        # buff += self.int_padding
         buff += pack("=H", self.registers_size) + \
                 pack("=H", self.ins_size) + \
                 pack("=H", self.outs_size) + \
@@ -6819,7 +6818,6 @@ class DalvikCode(object):
                 pack("=I", self.debug_info_off) + \
                 pack("=I", self.insns_size) + \
                 code_raw
-
 
         if self.tries_size > 0:
             if (self.insns_size % 2 == 1):
@@ -6850,8 +6848,7 @@ class DalvikCode(object):
             return self.code.get_instruction(idx, off)
 
     def get_size(self):
-        length = len(self.int_padding)
-
+        length = 0
         length += len(pack("=H", self.registers_size) + \
                       pack("=H", self.ins_size) + \
                       pack("=H", self.outs_size) + \
