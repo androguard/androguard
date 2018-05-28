@@ -4022,10 +4022,8 @@ class Instruction(object):
 
         :rtype: int
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
+        if self.OP >= 0xf2ff:
+            return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
         return DALVIK_OPCODES_FORMAT[self.OP][1][1]
 
     def get_name(self):
@@ -4034,10 +4032,8 @@ class Instruction(object):
 
         :rtype: string
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
+        if self.OP >= 0xf2ff:
+            return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
         return DALVIK_OPCODES_FORMAT[self.OP][1][0]
 
     def get_op_value(self):
@@ -6240,47 +6236,6 @@ INLINE_METHODS = [
     ["Ljava/lang/Double;", "longBitsToDouble", "(J)D"],
 ]
 
-DALVIK_OPCODES_EXTENDED_WIDTH = {
-    0x00ff: [Instruction41c, ["const-class/jumbo", KIND_TYPE]],
-    0x01ff: [Instruction41c, ["check-cast/jumbo", KIND_TYPE]],
-    0x02ff: [Instruction52c, ["instance-of/jumbo", KIND_TYPE]],
-    0x03ff: [Instruction41c, ["new-instance/jumbo", KIND_TYPE]],
-    0x04ff: [Instruction52c, ["new-array/jumbo", KIND_TYPE]],
-    0x05ff: [Instruction5rc, ["filled-new-array/jumbo", KIND_TYPE]],
-    0x06ff: [Instruction52c, ["iget/jumbo", KIND_FIELD]],
-    0x07ff: [Instruction52c, ["iget-wide/jumbo", KIND_FIELD]],
-    0x08ff: [Instruction52c, ["iget-object/jumbo", KIND_FIELD]],
-    0x09ff: [Instruction52c, ["iget-boolean/jumbo", KIND_FIELD]],
-    0x0aff: [Instruction52c, ["iget-byte/jumbo", KIND_FIELD]],
-    0x0bff: [Instruction52c, ["iget-char/jumbo", KIND_FIELD]],
-    0x0cff: [Instruction52c, ["iget-short/jumbo", KIND_FIELD]],
-    0x0dff: [Instruction52c, ["iput/jumbo", KIND_FIELD]],
-    0x0eff: [Instruction52c, ["iput-wide/jumbo", KIND_FIELD]],
-    0x0fff: [Instruction52c, ["iput-object/jumbo", KIND_FIELD]],
-    0x10ff: [Instruction52c, ["iput-boolean/jumbo", KIND_FIELD]],
-    0x11ff: [Instruction52c, ["iput-byte/jumbo", KIND_FIELD]],
-    0x12ff: [Instruction52c, ["iput-char/jumbo", KIND_FIELD]],
-    0x13ff: [Instruction52c, ["iput-short/jumbo", KIND_FIELD]],
-    0x14ff: [Instruction41c, ["sget/jumbo", KIND_FIELD]],
-    0x15ff: [Instruction41c, ["sget-wide/jumbo", KIND_FIELD]],
-    0x16ff: [Instruction41c, ["sget-object/jumbo", KIND_FIELD]],
-    0x17ff: [Instruction41c, ["sget-boolean/jumbo", KIND_FIELD]],
-    0x18ff: [Instruction41c, ["sget-byte/jumbo", KIND_FIELD]],
-    0x19ff: [Instruction41c, ["sget-char/jumbo", KIND_FIELD]],
-    0x1aff: [Instruction41c, ["sget-short/jumbo", KIND_FIELD]],
-    0x1bff: [Instruction41c, ["sput/jumbo", KIND_FIELD]],
-    0x1cff: [Instruction41c, ["sput-wide/jumbo", KIND_FIELD]],
-    0x1dff: [Instruction41c, ["sput-object/jumbo", KIND_FIELD]],
-    0x1eff: [Instruction41c, ["sput-boolean/jumbo", KIND_FIELD]],
-    0x1fff: [Instruction41c, ["sput-byte/jumbo", KIND_FIELD]],
-    0x20ff: [Instruction41c, ["sput-char/jumbo", KIND_FIELD]],
-    0x21ff: [Instruction41c, ["sput-short/jumbo", KIND_FIELD]],
-    0x22ff: [Instruction5rc, ["invoke-virtual/jumbo", KIND_METH]],
-    0x23ff: [Instruction5rc, ["invoke-super/jumbo", KIND_METH]],
-    0x24ff: [Instruction5rc, ["invoke-direct/jumbo", KIND_METH]],
-    0x25ff: [Instruction5rc, ["invoke-static/jumbo", KIND_METH]],
-    0x26ff: [Instruction5rc, ["invoke-interface/jumbo", KIND_METH]],
-}
 
 DALVIK_OPCODES_OPTIMIZED = {
     0xf2ff: [Instruction5rc, ["invoke-object-init/jumbo", KIND_METH]],
@@ -6327,22 +6282,9 @@ class Unresolved(Instruction):
 
 def get_instruction(cm, op_value, buff, odex=False):
     try:
-        if not odex and (0xe3 <= op_value <= 0xfe):
-            return InstructionInvalid(cm, buff)
-        try:
-            return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
-        except KeyError:
-            return InstructionInvalid(cm, buff)
-    except Exception as e:
-        # FIXME too broad exception
-        return Unresolved(cm, buff)
-
-
-def get_extented_instruction(cm, op_value, buff):
-    try:
-        return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0](cm, buff)
-    except struct.error:
-        raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
+        return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
+    except KeyError:
+        return InstructionInvalid(cm, buff)
 
 
 def get_optimized_instruction(cm, op_value, buff):
@@ -6359,7 +6301,7 @@ def get_instruction_payload(op_value, buff):
         raise InvalidInstruction("Invalid Instruction for 0x%x:%s" % (op_value, repr(buff)))
 
 
-class LinearSweepAlgorithm(object):
+class LinearSweepAlgorithm:
     """
     This class is used to disassemble a method. The algorithm used by this class is linear sweep.
     """
@@ -6393,7 +6335,7 @@ class LinearSweepAlgorithm(object):
             # print "%x %x" % (op_value, idx)
 
             # payload instructions or extented/optimized instructions
-            if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx):
+            if op_value == 0x00 and ((idx + 2) < max_idx):
                 op_value = unpack('=H', insn[idx:idx + 2])[0]
 
                 # payload instructions ?
@@ -6403,14 +6345,6 @@ class LinearSweepAlgorithm(object):
                         classic_instruction = False
                     except struct.error:
                         log.warning("error while decoding instruction ...")
-
-                elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH:
-                    try:
-                        obj = get_extented_instruction(cm, op_value, insn[idx:])
-                        classic_instruction = False
-                    except struct.error as why:
-                        log.warning("error while decoding instruction ..." +
-                                why.__str__())
 
                 # optimized instructions ?
                 elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
