@@ -6190,22 +6190,22 @@ DALVIK_OPCODES_FORMAT = {
 
     # FIXME: New instruction: invoke-polymorphic
     # DEX038
-    0xfa: [Instruction35ms, ["invoke-super-quick", VTABLE_OFFSET]],
+    #0xfa: [Instruction45cc, ["invoke-polymorphic"]],
     # FIXME: new instruciton: invoke-polymorphic/range
     # DEX038
-    0xfb: [Instruction3rms, ["invoke-super-quick/range", VTABLE_OFFSET]],
+    #0xfb: [Instruction4rcc, ["invoke-polymorphic/range"]],
     # FIXME: new instruction: invoke-custom
     # DEX038
-    0xfc: [Instruction22c, ["iput-object-volatile", KIND_FIELD]],
+    #0xfc: [Instruction35c, ["invoke-custom"]],
     # FIXME: new instruction: invoke-custom/range
     # DEX038
-    0xfd: [Instruction21c, ["sget-object-volatile", KIND_FIELD]],
+    #0xfd: [Instruction3rc, ["invoke-custom/range"]],
     # FIXME: new instruction: const-method-handle
     # DEX039
-    0xfe: [Instruction21c, ["sput-object-volatile", KIND_FIELD]],
+    #0xfe: [Instruction21c, ["const-method-handle"]],
     # FIXME: new instruction: const-method-type
     # DEX039
-    0xff: [Instruction21c, ["const-method-type"]],
+    #0xff: [Instruction21c, ["const-method-type"]],
 }
 
 DALVIK_OPCODES_PAYLOAD = {
