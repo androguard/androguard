@@ -5995,7 +5995,7 @@ DALVIK_OPCODES_FORMAT = {
     0x3b: [Instruction21t, ["if-gez"]],
     0x3c: [Instruction21t, ["if-gtz"]],
     0x3d: [Instruction21t, ["if-lez"]],
-    # unused
+    # unused: 0x3e ... 0x43
     0x3e: [Instruction10x, ["nop"]],
     0x3f: [Instruction10x, ["nop"]],
     0x40: [Instruction10x, ["nop"]],
@@ -6049,14 +6049,14 @@ DALVIK_OPCODES_FORMAT = {
     0x70: [Instruction35c, ["invoke-direct", KIND_METH]],
     0x71: [Instruction35c, ["invoke-static", KIND_METH]],
     0x72: [Instruction35c, ["invoke-interface", KIND_METH]],
-    # unused
+    # unused: 0x73
     0x73: [Instruction10x, ["nop"]],
     0x74: [Instruction3rc, ["invoke-virtual/range", KIND_METH]],
     0x75: [Instruction3rc, ["invoke-super/range", KIND_METH]],
     0x76: [Instruction3rc, ["invoke-direct/range", KIND_METH]],
     0x77: [Instruction3rc, ["invoke-static/range", KIND_METH]],
     0x78: [Instruction3rc, ["invoke-interface/range", KIND_METH]],
-    # unused
+    # unused: 0x79 ... 0x7a
     0x79: [Instruction10x, ["nop"]],
     0x7a: [Instruction10x, ["nop"]],
     0x7b: [Instruction12x, ["neg-int"]],
@@ -6163,35 +6163,49 @@ DALVIK_OPCODES_FORMAT = {
     0xe0: [Instruction22b, ["shl-int/lit8"]],
     0xe1: [Instruction22b, ["shr-int/lit8"]],
     0xe2: [Instruction22b, ["ushr-int/lit8"]],
-    # expanded opcodes
-    0xe3: [Instruction22c, ["iget-volatile", KIND_FIELD]],
-    0xe4: [Instruction22c, ["iput-volatile", KIND_FIELD]],
-    0xe5: [Instruction21c, ["sget-volatile", KIND_FIELD]],
-    0xe6: [Instruction21c, ["sput-volatile", KIND_FIELD]],
-    0xe7: [Instruction22c, ["iget-object-volatile", KIND_FIELD]],
-    0xe8: [Instruction22c, ["iget-wide-volatile", KIND_FIELD]],
-    0xe9: [Instruction22c, ["iput-wide-volatile", KIND_FIELD]],
-    0xea: [Instruction21c, ["sget-wide-volatile", KIND_FIELD]],
-    0xeb: [Instruction21c, ["sput-wide-volatile", KIND_FIELD]],
-    0xec: [Instruction10x, ["breakpoint"]],
-    0xed: [Instruction20bc, ["throw-verification-error", VARIES]],
-    0xee: [Instruction35mi, ["execute-inline", INLINE_METHOD]],
-    0xef: [Instruction3rmi, ["execute-inline/range", INLINE_METHOD]],
-    0xf0: [Instruction35c, ["invoke-object-init/range", KIND_METH]],
-    0xf1: [Instruction10x, ["return-void-barrier"]],
-    0xf2: [Instruction22cs, ["iget-quick", FIELD_OFFSET]],
-    0xf3: [Instruction22cs, ["iget-wide-quick", FIELD_OFFSET]],
-    0xf4: [Instruction22cs, ["iget-object-quick", FIELD_OFFSET]],
-    0xf5: [Instruction22cs, ["iput-quick", FIELD_OFFSET]],
-    0xf6: [Instruction22cs, ["iput-wide-quick", FIELD_OFFSET]],
-    0xf7: [Instruction22cs, ["iput-object-quick", FIELD_OFFSET]],
-    0xf8: [Instruction35ms, ["invoke-virtual-quick", VTABLE_OFFSET]],
-    0xf9: [Instruction3rms, ["invoke-virtual-quick/range", VTABLE_OFFSET]],
+    # unused: 0xe3 ... 0xf9
+    0xe3: [Instruction10x, ['nop']],
+    0xe4: [Instruction10x, ['nop']],
+    0xe5: [Instruction10x, ['nop']],
+    0xe6: [Instruction10x, ['nop']],
+    0xe7: [Instruction10x, ['nop']],
+    0xe8: [Instruction10x, ['nop']],
+    0xe9: [Instruction10x, ['nop']],
+    0xea: [Instruction10x, ['nop']],
+    0xeb: [Instruction10x, ['nop']],
+    0xec: [Instruction10x, ['nop']],
+    0xed: [Instruction10x, ['nop']],
+    0xee: [Instruction10x, ['nop']],
+    0xef: [Instruction10x, ['nop']],
+    0xf0: [Instruction10x, ['nop']],
+    0xf1: [Instruction10x, ['nop']],
+    0xf2: [Instruction10x, ['nop']],
+    0xf3: [Instruction10x, ['nop']],
+    0xf4: [Instruction10x, ['nop']],
+    0xf5: [Instruction10x, ['nop']],
+    0xf6: [Instruction10x, ['nop']],
+    0xf7: [Instruction10x, ['nop']],
+    0xf8: [Instruction10x, ['nop']],
+    0xf9: [Instruction10x, ['nop']],
+
+    # FIXME: New instruction: invoke-polymorphic
+    # DEX038
     0xfa: [Instruction35ms, ["invoke-super-quick", VTABLE_OFFSET]],
+    # FIXME: new instruciton: invoke-polymorphic/range
+    # DEX038
     0xfb: [Instruction3rms, ["invoke-super-quick/range", VTABLE_OFFSET]],
+    # FIXME: new instruction: invoke-custom
+    # DEX038
     0xfc: [Instruction22c, ["iput-object-volatile", KIND_FIELD]],
+    # FIXME: new instruction: invoke-custom/range
+    # DEX038
     0xfd: [Instruction21c, ["sget-object-volatile", KIND_FIELD]],
+    # FIXME: new instruction: const-method-handle
+    # DEX039
     0xfe: [Instruction21c, ["sput-object-volatile", KIND_FIELD]],
+    # FIXME: new instruction: const-method-type
+    # DEX039
+    0xff: [Instruction21c, ["const-method-type"]],
 }
 
 DALVIK_OPCODES_PAYLOAD = {
