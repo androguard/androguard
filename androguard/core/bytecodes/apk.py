@@ -133,63 +133,67 @@ class APK(object):
         It will then parse the AndroidManifest.xml and set all fields in the APK class which can be
         extracted from the Manifest.
         """
-        for i in self.zip.namelist():
-            if i == "AndroidManifest.xml":
-                self.axml[i] = AXMLPrinter(self.zip.read(i))
-                self.xml[i] = None
-                raw_xml = self.axml[i].get_buff()
-                if len(raw_xml) == 0:
-                    log.warning("AXML parsing failed, file is empty")
-                else:
+        i = "AndroidManifest.xml"
+        try:
+            manifest_data = self.zip.read(i)
+        except KeyError:
+            log.warning("Missing AndroidManifest.xml")
+        else:
+            self.axml[i] = AXMLPrinter(manifest_data)
+            self.xml[i] = None
+            raw_xml = self.axml[i].get_buff()
+            if len(raw_xml) == 0:
+                log.warning("AXML parsing failed, file is empty")
+            else:
+                try:
+                    if self.axml[i].is_packed():
+                        log.warning("XML Seems to be packed, parsing is very likely to fail.")
+                    self.xml[i] = self.axml[i].get_xml_obj()
+                except Exception as e:
+                    log.warning("reading AXML as XML failed: " + str(e))
+
+            if self.xml[i] is not None:
+                self.package = self.xml[i].get("package")
+                self.androidversion["Code"] = self.xml[i].get(
+                    NS_ANDROID + "versionCode")
+                self.androidversion["Name"] = self.xml[i].get(
+                    NS_ANDROID + "versionName")
+
+                for item in self.xml[i].findall('uses-permission'):
+                    name = item.get(NS_ANDROID + "name")
+                    self.permissions.append(name)
+                    maxSdkVersion = None
                     try:
-                        if self.axml[i].is_packed():
-                            log.warning("XML Seems to be packed, parsing is very likely to fail.")
-                        self.xml[i] = self.axml[i].get_xml_obj()
-                    except Exception as e:
-                        log.warning("reading AXML as XML failed: " + str(e))
+                        maxSdkVersion = int(item.get(NS_ANDROID + 'maxSdkVersion'))
+                    except ValueError:
+                        log.warning(item.get(NS_ANDROID + 'maxSdkVersion')
+                                    + 'is not a valid value for <uses-permission> maxSdkVersion')
+                    except TypeError:
+                        pass
+                    self.uses_permissions.append([name, maxSdkVersion])
 
-                if self.xml[i] is not None:
-                    self.package = self.xml[i].get("package")
-                    self.androidversion["Code"] = self.xml[i].get(
-                        NS_ANDROID + "versionCode")
-                    self.androidversion["Name"] = self.xml[i].get(
-                        NS_ANDROID + "versionName")
+                # getting details of the declared permissions
+                for d_perm_item in self.xml[i].findall('permission'):
+                    d_perm_name = self._get_res_string_value(str(
+                        d_perm_item.get(NS_ANDROID + "name")))
+                    d_perm_label = self._get_res_string_value(str(
+                        d_perm_item.get(NS_ANDROID + "label")))
+                    d_perm_description = self._get_res_string_value(str(
+                        d_perm_item.get(NS_ANDROID + "description")))
+                    d_perm_permissionGroup = self._get_res_string_value(str(
+                        d_perm_item.get(NS_ANDROID + "permissionGroup")))
+                    d_perm_protectionLevel = self._get_res_string_value(str(
+                        d_perm_item.get(NS_ANDROID + "protectionLevel")))
 
-                    for item in self.xml[i].findall('uses-permission'):
-                        name = item.get(NS_ANDROID + "name")
-                        self.permissions.append(name)
-                        maxSdkVersion = None
-                        try:
-                            maxSdkVersion = int(item.get(NS_ANDROID + 'maxSdkVersion'))
-                        except ValueError:
-                            log.warning(item.get(NS_ANDROID + 'maxSdkVersion')
-                                        + 'is not a valid value for <uses-permission> maxSdkVersion')
-                        except TypeError:
-                            pass
-                        self.uses_permissions.append([name, maxSdkVersion])
+                    d_perm_details = {
+                        "label": d_perm_label,
+                        "description": d_perm_description,
+                        "permissionGroup": d_perm_permissionGroup,
+                        "protectionLevel": d_perm_protectionLevel,
+                    }
+                    self.declared_permissions[d_perm_name] = d_perm_details
 
-                    # getting details of the declared permissions
-                    for d_perm_item in self.xml[i].findall('permission'):
-                        d_perm_name = self._get_res_string_value(str(
-                            d_perm_item.get(NS_ANDROID + "name")))
-                        d_perm_label = self._get_res_string_value(str(
-                            d_perm_item.get(NS_ANDROID + "label")))
-                        d_perm_description = self._get_res_string_value(str(
-                            d_perm_item.get(NS_ANDROID + "description")))
-                        d_perm_permissionGroup = self._get_res_string_value(str(
-                            d_perm_item.get(NS_ANDROID + "permissionGroup")))
-                        d_perm_protectionLevel = self._get_res_string_value(str(
-                            d_perm_item.get(NS_ANDROID + "protectionLevel")))
-
-                        d_perm_details = {
-                            "label": d_perm_label,
-                            "description": d_perm_description,
-                            "permissionGroup": d_perm_permissionGroup,
-                            "protectionLevel": d_perm_protectionLevel,
-                        }
-                        self.declared_permissions[d_perm_name] = d_perm_details
-
-                    self.valid_apk = True
+                self.valid_apk = True
 
         self.permission_module = androconf.load_api_specific_resource_module(
             "aosp_permissions", self.get_target_sdk_version())
