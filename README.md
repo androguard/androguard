@@ -1,4 +1,4 @@
-![banner](https://user-images.githubusercontent.com/37318022/40586592-cea4fbb2-61f6-11e8-901a-ec6d8a70079f.png)
+![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/CI/banner.png)
 
 # Androguard
 
