@@ -1,1 +1,1 @@
-com.foobar.foo.Foobar
+com/foobar/foo/Foobar.class
