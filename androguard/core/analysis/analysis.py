@@ -1032,7 +1032,10 @@ class Analysis:
                     if method_info:
                         class_info = method_info[0]
 
-                        method_item = instruction.cm.vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                        for vm in self.vms:
+                            method_item = vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                            if method_item:
+                                break
 
                         if not method_item:
                             if method_info[0] not in self.classes:
