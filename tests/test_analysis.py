@@ -55,6 +55,14 @@ class AnalysisTest(unittest.TestCase):
                 dx.get_external_classes()))
 
 
+    def testMultidex(self):
+        a, d, dx = AnalyzeAPK("examples/tests/multidex/multidex.apk")
+
+        cls = list(map(lambda x: x.get_vm_class().get_name(), dx.get_classes()))
+        self.assertIn('Lcom/foobar/foo/Foobar;', cls)
+        self.assertIn('Lcom/blafoo/bar/Blafoo;', cls)
+        # TODO
+
 
 if __name__ == '__main__':
     unittest.main()
