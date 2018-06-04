@@ -1,4 +1,4 @@
-all: mutltidex.apk
+all: multidex.apk
 
 %.class: %.java
 	javac -source 1.7 -target 1.7 $^
