@@ -674,6 +674,8 @@ class APK(object):
         y = set()
 
         for i in self.xml:
+            if self.xml[i] is None:
+                continue
             activities_and_aliases = self.xml[i].findall(".//activity") + \
                                      self.xml[i].findall(".//activity-alias")
 
