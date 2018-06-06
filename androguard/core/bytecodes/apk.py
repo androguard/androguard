@@ -599,6 +599,8 @@ class APK(object):
         :param attribute: a string which specify the attribute
         """
         for i in self.xml:
+            if self.xml[i] is None:
+                continue
             for item in self.xml[i].findall('.//' + tag_name):
                 if with_namespace:
                     value = item.get(NS_ANDROID + attribute)
