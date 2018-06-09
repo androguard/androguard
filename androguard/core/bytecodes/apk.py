@@ -683,7 +683,7 @@ class APK(object):
                 # Some applications have more than one MAIN activity.
                 # For example: paid and free content
                 activityEnabled = item.get(NS_ANDROID + "enabled")
-                if activityEnabled is not None and activityEnabled != "" and activityEnabled == "false":
+                if activityEnabled == "false":
                     continue
 
                 for sitem in item.findall(".//action"):
