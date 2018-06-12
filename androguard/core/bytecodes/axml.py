@@ -1937,7 +1937,7 @@ class ARSCResTableEntry(object):
         return self.key.get_data_value()
 
     def is_public(self):
-        return (self.flags & self.FLAG.PUBLIC) != 0
+        return (self.flags & self.FLAG_PUBLIC) != 0
 
     def is_complex(self):
         return (self.flags & self.FLAG_COMPLEX) != 0
