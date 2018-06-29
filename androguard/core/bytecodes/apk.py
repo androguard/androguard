@@ -1254,6 +1254,34 @@ class APK(object):
 
         return certs
 
+    def get_certificates_v1(self):
+        """
+        Return a list of :class:`asn1crypto.x509.Certificate` which are found
+        in the META-INF folder (v1 signing).
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
+        """
+        certs = []
+        for x in self.get_signature_names():
+            certs.append(x509.Certificate.load(self.get_certificate_der(x)))
+
+        return certs
+
+    def get_certificates(self):
+        """
+        Return a list of unique :class:`asn1crypto.x509.Certificate` which are found
+        in v1 and v2 signing
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
+        """
+        fps = []
+        certs = []
+        for x in self.get_certificates_v1() + self.get_certificates_v2():
+            if x.sha256 not in fps:
+                fps.append(x.sha256)
+                certs.append(x)
+        return certs
+
     def get_signature_name(self):
         """
             Return the name of the first signature file found.
