@@ -42,6 +42,7 @@ In alphabetical order
 * [AppKnox](http://appknox.com)
 * [Cuckoo Sandbox](https://cuckoosandbox.org)
 * [Droidbot](https://github.com/honeynet/droidbot)
+* [Droidstatx](https://github.com/integrity-sa/droidstatx)
 * [εxodus](https://github.com/Exodus-Privacy/exodus)
 * [F-Droid Server](https://gitlab.com/fdroid/fdroidserver)
 * [gplaycli](https://github.com/matlink/gplaycli)
