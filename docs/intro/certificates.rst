@@ -111,7 +111,7 @@ class to iterate over the certificates found there.
         cert.hash_algo  # hash algorithm
         cert.signature_algo  # Signature algorithm
         cert.serial_number  # Serial number
-        cert.content  # The DER coded bytes of the certificate itself
+        cert.contents  # The DER coded bytes of the certificate itself
         # ...
 
 
