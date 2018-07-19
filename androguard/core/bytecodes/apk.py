@@ -1304,7 +1304,10 @@ class APK(object):
 
         for i in self.get_files():
             if signature_expr.search(i):
-                signatures.append(i)
+                if "{}.SF".format(i.rsplit(".", 1)[0]) in self.get_files():
+                    signatures.append(i)
+                else:
+                    log.warning("v1 signature file {} missing .SF file - Partial signature!".format(i))
 
         return signatures
 

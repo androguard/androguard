@@ -561,5 +561,16 @@ class APKTest(unittest.TestCase):
         self.assertIn(".png", a.get_app_icon(max_dpi=65533))
         self.assertIn(".xml", a.get_app_icon(max_dpi=65534))
 
+    def testPartialSignature(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK("examples/tests/partialsignature.apk", skip_analysis=True)
+
+        self.assertIn("META-INF/CERT.RSA", a.get_files())
+        self.assertIn("META-INF/6AD89F48.RSA", a.get_files())
+
+        self.assertNotIn("META-INF/CERT.RSA", a.get_signature_names())
+        self.assertIn("META-INF/6AD89F48.RSA", a.get_signature_names())
+
 if __name__ == '__main__':
     unittest.main(failfast=True)
