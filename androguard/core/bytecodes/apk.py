@@ -689,12 +689,20 @@ class APK(object):
                 for sitem in item.findall(".//action"):
                     val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.action.MAIN":
-                        x.add(item.get(NS_ANDROID + "name"))
+                        activity = item.get(NS_ANDROID + "name")
+                        if activity is not None:
+                            x.add(item.get(NS_ANDROID + "name"))
+                        else:
+                            log.warning('Main activity without name')
 
                 for sitem in item.findall(".//category"):
                     val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.category.LAUNCHER":
-                        y.add(item.get(NS_ANDROID + "name"))
+                        activity = item.get(NS_ANDROID + "name")
+                        if activity is not None:
+                            y.add(item.get(NS_ANDROID + "name"))
+                        else:
+                            log.warning('Launcher activity without name')
 
         return x.intersection(y)
 
