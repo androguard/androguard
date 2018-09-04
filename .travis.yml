@@ -2,9 +2,9 @@ language: python
 
 # Download jadx decompiler
 before_script:
-  - wget https://github.com/skylot/jadx/releases/download/v0.7.1/jadx-0.7.1.zip -O /tmp/jadx-0.7.1.zip
-  - unzip /tmp/jadx-0.7.1.zip -d jadx-0.7.1
-  - export PATH=$PATH:$PWD/jadx-0.7.1/bin
+  - wget https://github.com/skylot/jadx/releases/download/v0.8.0/jadx-0.8.0.zip -O /tmp/jadx-0.8.0.zip
+  - unzip /tmp/jadx-0.8.0.zip -d jadx-0.8.0
+  - export PATH=$PATH:$PWD/jadx-0.8.0/bin
 
 python:
   - "3.6"
