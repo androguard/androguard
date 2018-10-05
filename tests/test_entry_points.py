@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # core modules
+from pkg_resources import resource_filename
+from tempfile import mkstemp
+import os
 import unittest
 
 # 3rd party modules
@@ -21,6 +24,17 @@ class EntryPointsTest(unittest.TestCase):
         result = runner.invoke(entry_points.entry_point,
                                ['axml', '--help'])
         assert result.exit_code == 0
+
+    def test_axml_basic_call(self):
+        axml_path = resource_filename('androguard',
+                                      '../examples/axml/AndroidManifest.xml')
+        _, output_path = mkstemp(prefix='androguard_', suffix='decoded.txt')
+        runner = CliRunner()
+        arguments = ['axml', axml_path, '-o', output_path]
+        result = runner.invoke(entry_points.entry_point,
+                               arguments)
+        assert result.exit_code == 0, arguments
+        os.remove(output_path)
 
     def test_arsc_help(self):
         runner = CliRunner()
