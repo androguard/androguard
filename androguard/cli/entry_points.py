@@ -12,7 +12,6 @@ import click
 # local modules
 import androguard
 from androguard.cli import (androarsc_main,
-                            androauto_main,
                             androaxml_main,
                             androcg_main,
                             export_apps_to_format,
@@ -191,24 +190,6 @@ def arsc(input_,
                    package=package,
                    typ=type_,
                    locale=locale)
-
-
-class AutoOptions(object):
-    """Represent options of auto script (legacy support reasons)."""
-
-    def __init__(self, directory):
-        self.directory = directory
-
-
-@entry_point.command()
-@click.option(
-    '--directory', '-d',
-    help='directory input',
-)
-def auto(directory):
-    """TODO: What is this good for?."""
-    options = AutoOptions(directory)
-    androauto_main(options, arguments={})
 
 
 @entry_point.command()

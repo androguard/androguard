@@ -62,24 +62,6 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
         print(buff.decode("UTF-8"))
 
 
-class AndroLog(object):
-    def __init__(self, id_file, filename):
-        self.id_file = id_file
-        self.filename = filename
-
-
-def androauto_main(options, arguments):
-    if options.directory:
-        settings = {
-            "my": AndroTest(options.directory),
-            "log": AndroLog,
-            "max_fetcher": 3,
-        }
-
-        aa = auto.AndroAuto(settings)
-        aa.go()
-
-
 def androcg_main(verbose,
                  APK,
                  classname,
