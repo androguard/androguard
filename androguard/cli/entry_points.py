@@ -105,17 +105,17 @@ def axml(input_, output, file_):
     help='Show only resources of the given type (default: public)',
 )
 @click.option(
-    '--list-packages', '-t',
+    '--list-packages', '-t', is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-locales', '-t',
+    '--list-locales', '-t', is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-types', '-t',
+    '--list-types', '-t', is_flag=True,
     default=False,
     help='List all types and exit',
 )
