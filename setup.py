@@ -24,6 +24,7 @@ install_requires = ['future',
                     'colorama',
                     'matplotlib',
                     'asn1crypto>=0.24.0',
+                    'click',
                     ]
 
 # python version specific library versions:
@@ -70,13 +71,15 @@ setup(
     scripts=['androaxml.py',
              'androarsc.py',
              'androsign.py',
-             'androauto.py',
              'androdis.py',
              'androlyze.py',
              'androdd.py',
              'androgui.py',
              'androcg.py',
              ],
+    entry_points={
+        'console_scripts': ['androguard=androguard.cli.entry_points:entry_point']
+    },
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
