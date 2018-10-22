@@ -6,10 +6,11 @@ from builtins import object
 from androguard.core import androconf
 from androguard.util import read, get_certificate_name_string
 
-from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig
+from androguard.core.bytecodes.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig, AXMLParser, format_value, START_TAG, END_TAG, TEXT, END_DOCUMENT
 
 import io
 from zlib import crc32
+import os
 import re
 import binascii
 import zipfile
@@ -1418,3 +1419,78 @@ def show_Certificate(cert, short=False):
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
     print("Subject: {}".format(get_certificate_name_string(cert.subject.native, short=short)))
 
+
+def ensure_final_value(packageName, arsc, value):
+    """Ensure incoming value is always the value, not the resid
+
+    androguard will sometimes return the Android "resId" aka
+    Resource ID instead of the actual value.  This checks whether
+    the value is actually a resId, then performs the Android
+    Resource lookup as needed.
+
+    """
+    if value:
+        returnValue = value
+        if value[0] == '@':
+            try:  # can be a literal value or a resId
+                res_id = int('0x' + value[1:], 16)
+                res_id = arsc.get_id(packageName, res_id)[1]
+                returnValue = arsc.get_string(packageName, res_id)[1]
+            except (ValueError, TypeError):
+                pass
+        return returnValue
+    return ''
+
+
+def get_apkid(apkfile):
+    """Read (appid, versionCode, versionName) from an APK
+
+    This first tries to do quick binary XML parsing to just get the
+    values that are needed.  It will fallback to full androguard
+    parsing, which is slow, if it can't find the versionName value or
+    versionName is set to a Android String Resource (e.g. an integer
+    hex value that starts with @).
+
+    """
+    if not os.path.exists(apkfile):
+        log.error("'{apkfile}' does not exist!".format(apkfile=apkfile))
+
+    appid = None
+    versionCode = None
+    versionName = None
+    with zipfile.ZipFile(apkfile) as apk:
+        with apk.open('AndroidManifest.xml') as manifest:
+            axml = AXMLParser(manifest.read())
+            count = 0
+            while axml.is_valid():
+                _type = next(axml)
+                count += 1
+                if _type == START_TAG:
+                    for i in range(0, axml.getAttributeCount()):
+                        name = axml.getAttributeName(i)
+                        _type = axml.getAttributeValueType(i)
+                        _data = axml.getAttributeValueData(i)
+                        value = format_value(_type, _data, lambda _: axml.getAttributeValue(i))
+                        if appid is None and name == 'package':
+                            appid = value
+                        elif versionCode is None and name == 'versionCode':
+                            if value.startswith('0x'):
+                                versionCode = str(int(value, 16))
+                            else:
+                                versionCode = value
+                        elif versionName is None and name == 'versionName':
+                            versionName = value
+
+                    if axml.getName() == 'manifest':
+                        break
+                elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
+                    raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
+                                       .format(path=apkfile))
+
+    if not versionName or versionName[0] == '@':
+        a = APK(apkfile)
+        versionName = ensure_final_value(a.package, a.get_android_resources(), a.get_androidversion_name())
+    if not versionName:
+        versionName = ''  # versionName is expected to always be a str
+
+    return appid, versionCode, versionName.strip('\0')
