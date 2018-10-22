@@ -371,6 +371,23 @@ def sign(hash_, print_all_hashes, show, apk):
     """Return the fingerprint(s) of all certificates inside an APK."""
     androsign_main(apk, hash_, print_all_hashes, show)
 
+@entry_point.command()
+@click.argument(
+    'apks',
+    nargs=-1,
+    required=False,
+    type=click.Path(exists=True),
+)
+def apkid(apks):
+    """Return the packageName/versionCode/versionName per APK as JSON."""
+    import json
+    import logging
+    logging.getLogger("androguard.axml").setLevel(logging.ERROR)
+    results = dict()
+    for apk in apks:
+        results[apk] = androguard.core.bytecodes.apk.get_apkid(apk)
+    print(json.dumps(results, indent=2))
+
 
 @entry_point.command()
 @click.option(
