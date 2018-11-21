@@ -19,7 +19,9 @@ from androguard.cli import (androarsc_main,
                             export_apps_to_format,
                             androsign_main,
                             androlyze_main,
-                            androgui_main)
+                            androgui_main,
+                            androdis_main
+                           )
 
 
 @click.group(help=__doc__)
@@ -158,11 +160,18 @@ def arsc(input_,
     if ret_type == "APK":
         a = apk.APK(fname)
         arscobj = a.get_android_resources()
+        if not arscobj:
+            print("The APK does not contain a resources file!", file=sys.stderr)
+            sys.exit(0)
     elif ret_type == "ARSC":
         arscobj = apk.ARSCParser(read(fname))
+        if not arscobj:
+            print("The resources file seems to be invalid!", file=sys.stderr)
+            sys.exit(1)
     else:
         print("Unknown file type!", file=sys.stderr)
         sys.exit(1)
+
 
     if list_packages:
         print("\n".join(arscobj.get_packages_names()))
@@ -432,6 +441,23 @@ def gui(input_file, input_plugin):
 def analyze(debug, ddebug, no_session, apk):
     """Open a IPython Shell and start reverse engineering."""
     androlyze_main(debug, ddebug, no_session, apk)
+
+
+@entry_point.command()
+@click.option("-o", "--offset",
+        default=0,
+        type=int,
+        help="Offset to start dissassembly inside the file")
+@click.option("-s", "--size",
+        default=0,
+        type=int,
+        help="Number of bytes from offset to disassemble, 0 for whole file")
+@click.argument("DEX")
+def disassemble(offset, size, dex):
+    """
+    Disassemble Dalvik Code with size SIZE starting from an offset
+    """
+    androdis_main(offset, size, dex)
 
 
 if __name__ == '__main__':

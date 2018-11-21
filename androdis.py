@@ -20,11 +20,11 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+import sys
 
 from optparse import OptionParser
 
-from androguard.core.bytecodes import dvm
-from androguard.core.bytecodes.apk import *
+from androguard.cli import androdis_main
 
 option_0 = {
     'name': ('-i', '--input'),
@@ -41,26 +41,11 @@ option_2 = {'name': ('-s', '--size'), 'help': 'size', 'nargs': 1}
 options = [option_0, option_1, option_2]
 
 
-def disassemble(dex, offset, size):
-    # FIXME where is auto gone?
-    d = dvm.auto(dex)
-    if d is not None:
-        nb = 0
-        idx = offset
-        for i in d.disassemble(offset, size):
-            print("%-8d(%08x)" % (nb, idx), end=' ')
-            i.show(idx)
-            print()
-
-            idx += i.get_length()
-            nb += 1
-
-
 def main(options, arguments):
     if options.input and options.offset and options.size:
         offset = int(options.offset, 0)
         size = int(options.size, 0)
-        disassemble(options.input, offset, size)
+        androdis_main(offset, size, options.input)
 
 
 if __name__ == "__main__":

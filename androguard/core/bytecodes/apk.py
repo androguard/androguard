@@ -234,6 +234,8 @@ class APK(object):
         string_key = string[9:]
 
         res_parser = self.get_android_resources()
+        if not res_parser:
+            return ''
         string_value = ''
         for package_name in res_parser.get_packages_names():
             extracted_values = res_parser.get_string(package_name, string_key)
@@ -286,6 +288,10 @@ class APK(object):
         if app_name.startswith("@"):
             res_id = int(app_name[1:], 16)
             res_parser = self.get_android_resources()
+
+            if not res_parser:
+                # TODO: What should be the correct return value here?
+                return ""
 
             try:
                 app_name = res_parser.get_resolved_res_configs(
@@ -343,13 +349,18 @@ class APK(object):
         if not app_icon:
             app_icon = self.get_element('application', 'icon')
 
+        res_parser = self.get_android_resources()
+        if not res_parser:
+            # Can not do anything below this point to resolve...
+            return None
+
         if not app_icon:
-            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
+            res_id = res_parser.get_res_id_by_key(self.package, 'mipmap', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
 
         if not app_icon:
-            res_id = self.get_android_resources().get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
+            res_id = res_parser.get_res_id_by_key(self.package, 'drawable', 'ic_launcher')
             if res_id:
                 app_icon = "@%x" % res_id
 
@@ -359,7 +370,6 @@ class APK(object):
 
         if app_icon.startswith("@"):
             res_id = int(app_icon[1:], 16)
-            res_parser = self.get_android_resources()
             candidates = res_parser.get_resolved_res_configs(res_id)
 
             app_icon = None
@@ -443,21 +453,21 @@ class APK(object):
                 # Here, we load the file-magic package
                 ms = magic.open(magic.MAGIC_NONE)
                 ms.load()
-                ftype = ms.buffer(buffer)
+                ftype = ms.buffer(buffer[:1024 * 1024])
             else:
                 # This is now the filemagic package
                 if self.magic_file is not None:
                     m = magic.Magic(paths=[self.magic_file])
                 else:
                     m = magic.Magic()
-                ftype = m.id_buffer(buffer)
+                ftype = m.id_buffer(buffer[:1024 * 1024])
         else:
             # This is the code for python-magic
             if self.magic_file is not None:
                 m = magic.Magic(magic_file=self.magic_file)
             else:
                 m = magic.Magic()
-            ftype = m.from_buffer(buffer)
+            ftype = m.from_buffer(buffer[:1024 * 1024])
 
         if ftype is None:
             return default
