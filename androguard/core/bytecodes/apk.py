@@ -443,21 +443,21 @@ class APK(object):
                 # Here, we load the file-magic package
                 ms = magic.open(magic.MAGIC_NONE)
                 ms.load()
-                ftype = ms.buffer(buffer)
+                ftype = ms.buffer(buffer[:1024 * 1024])
             else:
                 # This is now the filemagic package
                 if self.magic_file is not None:
                     m = magic.Magic(paths=[self.magic_file])
                 else:
                     m = magic.Magic()
-                ftype = m.id_buffer(buffer)
+                ftype = m.id_buffer(buffer[:1024 * 1024])
         else:
             # This is the code for python-magic
             if self.magic_file is not None:
                 m = magic.Magic(magic_file=self.magic_file)
             else:
                 m = magic.Magic()
-            ftype = m.from_buffer(buffer)
+            ftype = m.from_buffer(buffer[:1024 * 1024])
 
         if ftype is None:
             return default
