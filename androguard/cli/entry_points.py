@@ -160,11 +160,18 @@ def arsc(input_,
     if ret_type == "APK":
         a = apk.APK(fname)
         arscobj = a.get_android_resources()
+        if not arscobj:
+            print("The APK does not contain a resources file!", file=sys.stderr)
+            sys.exit(0)
     elif ret_type == "ARSC":
         arscobj = apk.ARSCParser(read(fname))
+        if not arscobj:
+            print("The resources file seems to be invalid!", file=sys.stderr)
+            sys.exit(1)
     else:
         print("Unknown file type!", file=sys.stderr)
         sys.exit(1)
+
 
     if list_packages:
         print("\n".join(arscobj.get_packages_names()))
