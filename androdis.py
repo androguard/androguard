@@ -20,6 +20,7 @@
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+import sys
 
 from optparse import OptionParser
 
@@ -42,9 +43,10 @@ options = [option_0, option_1, option_2]
 
 
 def disassemble(dex, offset, size):
-    # FIXME where is auto gone?
-    d = dvm.auto(dex)
-    if d is not None:
+    with open(dex, "rb") as fp:
+        d = dvm.DalvikVMFormat(fp.read())
+
+    if d:
         nb = 0
         idx = offset
         for i in d.disassemble(offset, size):
@@ -54,6 +56,8 @@ def disassemble(dex, offset, size):
 
             idx += i.get_length()
             nb += 1
+    else:
+        print("Dex could not be loaded!", file=sys.stderr)
 
 
 def main(options, arguments):
