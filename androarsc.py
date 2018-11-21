@@ -27,6 +27,13 @@ from androguard.core.bytecodes import apk
 from androguard.util import read
 from androguard.cli import androarsc_main as main
 
+if sys.version_info.major == 2:
+    # Patch sys.stdout to avoid problems with unicode when piping
+    # See also https://wiki.python.org/moin/PrintFails for more information
+    import codecs
+    import locale
+    sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout);
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Decode resources.arsc either directly"
