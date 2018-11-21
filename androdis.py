@@ -24,8 +24,7 @@ import sys
 
 from optparse import OptionParser
 
-from androguard.core.bytecodes import dvm
-from androguard.core.bytecodes.apk import *
+from androguard.cli import androdis_main
 
 option_0 = {
     'name': ('-i', '--input'),
@@ -42,29 +41,11 @@ option_2 = {'name': ('-s', '--size'), 'help': 'size', 'nargs': 1}
 options = [option_0, option_1, option_2]
 
 
-def disassemble(dex, offset, size):
-    with open(dex, "rb") as fp:
-        d = dvm.DalvikVMFormat(fp.read())
-
-    if d:
-        nb = 0
-        idx = offset
-        for i in d.disassemble(offset, size):
-            print("%-8d(%08x)" % (nb, idx), end=' ')
-            i.show(idx)
-            print()
-
-            idx += i.get_length()
-            nb += 1
-    else:
-        print("Dex could not be loaded!", file=sys.stderr)
-
-
 def main(options, arguments):
     if options.input and options.offset and options.size:
         offset = int(options.offset, 0)
         size = int(options.size, 0)
-        disassemble(options.input, offset, size)
+        androdis_main(offset, size, options.input)
 
 
 if __name__ == "__main__":

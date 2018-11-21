@@ -416,3 +416,25 @@ def androsign_main(args_apk, args_hash, args_all, show):
 
         if len(args_apk) > 1:
             print()
+
+
+def androdis_main(offset, size, dex):
+    from androguard.core.bytecodes import dvm
+
+    with open(dex, "rb") as fp:
+        buf = fp.read()
+    d = dvm.DalvikVMFormat(buf)
+
+    if size == 0:
+        size = len(buf)
+
+    if d:
+        idx = offset
+        for nb, i in enumerate(d.disassemble(offset, size)):
+            print("%-8d(%08x)" % (nb, idx), end=' ')
+            i.show(idx)
+            print()
+
+            idx += i.get_length()
+    else:
+        print("Dex could not be loaded!", file=sys.stderr)
