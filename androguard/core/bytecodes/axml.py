@@ -1012,8 +1012,9 @@ class ARSCParser(object):
                         language = a_res_type.config.get_language()
                         region = a_res_type.config.get_country()
                         if region == "\x00\x00":
-                            locale = language
+                            locale = language.encode("utf-8")
                         else:
+                            language, region = language.encode("utf-8"), region.encode("utf-8")
                             locale = "{}-r{}".format(language, region)
 
                         c_value = self.values[package_name].setdefault(locale, {"public":[]})
