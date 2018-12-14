@@ -52,6 +52,40 @@ class BrokenAPKError(Error):
 
 
 
+def _dump_additional_attributes(additional_attributes):
+    """ try to parse additional attributes, but ends up to hexdump if the scheme is unknown """
+
+    attributes_raw = io.BytesIO(additional_attributes)
+    attributes_hex = binascii.hexlify(additional_attributes)
+
+    if not len(additional_attributes):
+        return attributes_hex
+
+    len_attribute, = unpack('<I', attributes_raw.read(4))
+    if len_attribute != 8:
+        return attributes_hex
+
+    attr_id, = unpack('<I', attributes_raw.read(4))
+    if attr_id != APK._APK_SIG_ATTR_V2_STRIPPING_PROTECTION:
+        return attributes_hex
+        
+    scheme_id, = unpack('<I', attributes_raw.read(4))
+
+    return "stripping protection set, scheme %d" % scheme_id
+
+def _dump_digests_or_signatures(digests_or_sigs):
+
+    infos = ""
+    for i,dos in enumerate(digests_or_sigs):
+
+        infos += "\n"
+        infos += " [%d]\n" % i
+        infos += "  - Signature Id : %s\n" % APK._APK_SIG_ALGO_IDS.get(dos[0], hex(dos[0]))
+        infos += "  - Digest: %s" % binascii.hexlify(dos[1])
+
+    return infos
+
+
 class APKV2SignedData(object):
     """ 
     This class holds all data associated with an APK V3 SigningBlock signed data.
@@ -64,26 +98,6 @@ class APKV2SignedData(object):
         self.certificates =  None
         self.additional_attributes = None
 
-    def _dump_additional_attributes(self):
-        """ try to parse additional attributes, but ends up to hexdump if the scheme is unknown """
-
-        attributes_raw = io.BytesIO(self.additional_attributes)
-        attributes_hex = binascii.hexlify(self.additional_attributes)
-
-        # import pdb
-        # pdb.set_trace()
-
-        len_attribute, = unpack('<I', attributes_raw.read(4))
-        if len_attribute != 8:
-            return attributes_hex
-
-        attr_id, = unpack('<I', attributes_raw.read(4))
-        if attr_id != APK._APK_SIG_ATTR_V2_STRIPPING_PROTECTION:
-            return attributes_hex
-            
-        scheme_id, = unpack('<I', attributes_raw.read(4))
-
-        return "stripping protection set, scheme %d" % scheme_id
 
     def __str__(self):
 
@@ -100,11 +114,13 @@ class APKV2SignedData(object):
             certs_infos += "  - Hash Algorithm: %s\n" % x509_cert.hash_algo
             certs_infos += "  - Signature Algorithm: %s\n" % x509_cert.signature_algo
             certs_infos += "  - Valid not before: %s\n" % x509_cert['tbs_certificate']['validity']['not_before'].native
-            certs_infos += "  - Valid not after: %s\n" % x509_cert['tbs_certificate']['validity']['not_after'].native
+            certs_infos += "  - Valid not after: %s" % x509_cert['tbs_certificate']['validity']['not_after'].native
+
+
 
         return "\n".join([
-            'additional_attributes : {}'.format(self._dump_additional_attributes()),
-            'digests : {}'.format(binascii.hexlify(self.digests)),
+            'additional_attributes : {}'.format(_dump_additional_attributes(self.additional_attributes)),
+            'digests : {}'.format(_dump_digests_or_signatures(self.digests)),
             'certificates : {}'.format(certs_infos),
         ])
 
@@ -122,10 +138,16 @@ class APKV3SignedData(APKV2SignedData):
     def __str__(self):
 
         base_str = super().__str__()
+
+        # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
+        max_sdk_str = "%d" % self.maxSDK
+        if self.maxSDK >= 0x7fffffff:
+            max_sdk_str = "0x%x" % self.maxSDK
+
         return "\n".join([
-            'minSDK : {0:d}'.format(self.minSDK),
-            'maxSDK : {0:d}'.format(self.maxSDK),
-            base_str
+            'signer minSDK : {0:d}'.format(self.minSDK),
+            'signer maxSDK : {0:s}'.format(max_sdk_str),
+            base_str    
         ])
 
 class APKV2Signer(object):
@@ -143,7 +165,7 @@ class APKV2Signer(object):
     def __str__(self):
         return "\n".join([
             '{0:s}'.format(str(self.signed_data)),
-            'signatures : {0}'.format(binascii.hexlify(self.signatures)),
+            'signatures : {0}'.format(_dump_digests_or_signatures(self.signatures)),
             'public key : {0}'.format(binascii.hexlify(self.public_key)),
         ])
 
@@ -162,9 +184,15 @@ class APKV3Signer(APKV2Signer):
     def __str__(self):
         
         base_str = super().__str__()
+
+        # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
+        max_sdk_str = "%d" % self.maxSDK
+        if self.maxSDK >= 0x7fffffff:
+            max_sdk_str = "0x%x" % self.maxSDK
+
         return "\n".join([
             'signer minSDK : {0:d}'.format(self.minSDK),
-            'signer maxSDK : {0:d}'.format(self.maxSDK),
+            'signer maxSDK : {0:s}'.format(max_sdk_str),
             base_str    
         ])
 
@@ -178,6 +206,16 @@ class APK(object):
     _APK_SIG_KEY_V2_SIGNATURE = 0x7109871a
     _APK_SIG_KEY_V3_SIGNATURE = 0xf05368c0
     _APK_SIG_ATTR_V2_STRIPPING_PROTECTION = 0xbeeff00d
+
+    _APK_SIG_ALGO_IDS = {
+        0x0101 : "RSASSA-PSS with SHA2-256 digest, SHA2-256 MGF1, 32 bytes of salt, trailer: 0xbc",
+        0x0102 : "RSASSA-PSS with SHA2-512 digest, SHA2-512 MGF1, 64 bytes of salt, trailer: 0xbc",
+        0x0103 : "RSASSA-PKCS1-v1_5 with SHA2-256 digest.", # This is for build systems which require deterministic signatures.
+        0x0104 : "RSASSA-PKCS1-v1_5 with SHA2-512 digest.", # This is for build systems which require deterministic signatures.
+        0x0201 : "ECDSA with SHA2-256 digest",
+        0x0202 : "ECDSA with SHA2-512 digest",
+        0x0301 : "DSA with SHA2-256 digest",
+    }
 
     def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
         """
@@ -1296,6 +1334,27 @@ class APK(object):
 
         return self._is_signed_v3
 
+    def read_uint32_le(self, io_stream):
+        value, = unpack('<I', io_stream.read(4))
+        return value
+
+    def parse_signatures_or_digests(self, digest_bytes):
+        """ Parse digests """
+
+        digests = []
+        block = io.BytesIO(digest_bytes)
+
+        data_len = self.read_uint32_le(block)
+        while block.tell() < data_len:
+
+            algorithm_id = self.read_uint32_le(block)
+            digest_len = self.read_uint32_le(block)
+            digest = block.read(digest_len)
+
+            digests.append((algorithm_id, digest))
+
+        return digests
+
     def parse_v2_v3_signature(self):
         # Need to find an v2 Block in the APK.
         # The Google Docs gives you the following rule:
@@ -1421,7 +1480,8 @@ class APK(object):
 
             # Digests
             len_digests, = unpack('<I', signed_data.read(4))
-            digests = signed_data.read(len_digests)
+            raw_digests = signed_data.read(len_digests)
+            digests = self.parse_signatures_or_digests(raw_digests)
 
 
             # Certs
@@ -1456,7 +1516,8 @@ class APK(object):
 
             # Signatures
             len_sigs, = unpack('<I', block.read(4))
-            sigs = block.read(len_sigs)
+            raw_sigs = block.read(len_sigs)
+            sigs = self.parse_signatures_or_digests(raw_sigs)
 
             # PublicKey
             len_publickey, = unpack('<I', block.read(4))
@@ -1520,7 +1581,8 @@ class APK(object):
                 
             # Digests
             len_digests, = unpack('<I', signed_data.read(4))
-            digests = signed_data.read(len_digests)
+            raw_digests = signed_data.read(len_digests)
+            digests = self.parse_signatures_or_digests(raw_digests)
 
             # Certs
             certs = []
@@ -1543,7 +1605,8 @@ class APK(object):
 
             # Signatures
             len_sigs, = unpack('<I', block.read(4))
-            sigs = block.read(len_sigs)
+            raw_sigs = block.read(len_sigs)
+            sigs = self.parse_signatures_or_digests(raw_sigs)
 
             # PublicKey
             len_publickey, = unpack('<I', block.read(4))
