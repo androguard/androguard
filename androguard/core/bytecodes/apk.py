@@ -1438,9 +1438,11 @@ class APK(object):
         Parse the V2 signing block and extract all features
         """
 
+        self._v3_signing_data = []
+
         # calling is_signed_v3 should also load the signature, if any
         if not self.is_signed_v3():
-            return []
+            return
 
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
@@ -1466,7 +1468,6 @@ class APK(object):
         size_sequence = self.read_uint32_le(block)
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
         
-        self._v3_signing_data = []
         while block.tell() < len(block_bytes):
 
             off_signer = block.tell()
@@ -1540,10 +1541,11 @@ class APK(object):
         Parse the V2 signing block and extract all features
         """
 
+        self._v2_signing_data = []
 
         # calling is_signed_v2 should also load the signature
         if not self.is_signed_v2():
-            return []
+            return
 
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
@@ -1565,7 +1567,6 @@ class APK(object):
         size_sequence = self.read_uint32_le(block)
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
 
-        self._v2_signing_data = []
         while block.tell() < len(block_bytes):
 
             off_signer = block.tell()
