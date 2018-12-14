@@ -49,6 +49,55 @@ class BrokenAPKError(Error):
     pass
 
 
+class APKV2SignedData(object):
+    """ 
+    This class holds all data associated with an APK V3 SigningBlock signed data.
+    source : https://source.android.com/security/apksigning/v2.html
+    """
+
+    def __init__(self):
+        self._bytes = None
+        self.digests = None
+        self.certificates =  None
+        self.additional_attributes = None
+
+class APKV3SignedData(APKV2SignedData):
+    """ 
+    This class holds all data associated with an APK V3 SigningBlock signed data.
+    source : https://source.android.com/security/apksigning/v3.html
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.minSDK = None
+        self.maxSDK = None
+
+class APKV2Signer(object):
+    """ 
+    This class holds all data associated with an APK V2 SigningBlock signer.
+    source : https://source.android.com/security/apksigning/v2.html
+    """
+
+    def __init__(self):
+        self._bytes = None
+        self.signed_data = None
+        self.signatures = None
+        self.public_key = None
+
+
+class APKV3Signer(APKV2Signer):
+    """ 
+    This class holds all data associated with an APK V3 SigningBlock signer.
+    source : https://source.android.com/security/apksigning/v3.html
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.minSDK = None
+        self.maxSDK = None
+
+
+
 class APK(object):
     # Constants in ZipFile
     _PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
@@ -91,9 +140,12 @@ class APK(object):
         self.uses_permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
+        
         self._is_signed_v2 = None
         self._is_signed_v3 = None
         self._v2_blocks = {}
+        self._v2_signing_data = None
+        self._v3_signing_data = None
 
         self._files = {}
         self.files_crc32 = {}
@@ -1250,9 +1302,10 @@ class APK(object):
         if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
             self._is_signed_v3 = True
 
-    def get_certificates_der_v3(self):
+    
+    def parse_v3_signing_block(self):
         """
-        Return a list of DER coded X.509 certificates from the v3 signature
+        Parse the V2 signing block and extract all features
         """
 
         # calling is_signed_v3 should also load the signature, if any
@@ -1262,6 +1315,7 @@ class APK(object):
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
         block = io.BytesIO(block_bytes)
+        view = block.getbuffer()
 
         # V3 signature Block data format:
         #
@@ -1281,52 +1335,76 @@ class APK(object):
         
         size_sequence, = unpack('<I', block.read(4))
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+        
+        self._v3_signing_data = []
         while block.tell() < len(block_bytes):
-            size_signer, = unpack('<I', block.read(4))
-            len_signed_data, = unpack('<I', block.read(4))
 
+            off_signer = block.tell()
+            size_signer, = unpack('<I', block.read(4))
+            
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
+            len_signed_data, = unpack('<I', block.read(4))
             signed_data_bytes = block.read(len_signed_data)
             signed_data = io.BytesIO(signed_data_bytes)
 
-            
-            # Skip it for now
+            # Digests
             len_digests, = unpack('<I', signed_data.read(4))
-            signed_data.seek(len_digests, io.SEEK_CUR)
+            digests = signed_data.read(len_digests)
 
 
             # Certs
+            certs = []
             len_certs, = unpack('<I', signed_data.read(4))
             start_certs = signed_data.tell()
             while signed_data.tell() < start_certs + len_certs:
+
                 len_cert, = unpack('<I', signed_data.read(4))
-                certificates.append(signed_data.read(len_cert))
+                cert = signed_data.read(len_cert)
+                certs.append(cert)
 
             # versions
             signed_data_min_sdk, = unpack('<I', signed_data.read(4))
             signed_data_max_sdk, = unpack('<I', signed_data.read(4))
 
-            # Now we have the signatures and the public key...
-            # we need to read it (or at least skip it)
+            # Addionnal attributes
             len_attr, = unpack('<I', signed_data.read(4))
-            signed_data.seek(len_attr, io.SEEK_CUR)
+            attr = signed_data.read(len_attr)
 
-            # versions
+            signed_data_object = APKV3SignedData()
+            signed_data_object._bytes = signed_data_bytes
+            signed_data_object.digests = digests
+            signed_data_object.certificates = certs
+            signed_data_object.additional_attributes = attr
+            signed_data_object.minSDK = signed_data_min_sdk
+            signed_data_object.maxSDK = signed_data_max_sdk
+
+            # versions (should be the same as signed data's versions)
             signer_min_sdk, = unpack('<I', block.read(4))
             signer_max_sdk, = unpack('<I', block.read(4))
 
+            # Signatures
             len_sigs, = unpack('<I', block.read(4))
-            block.seek(len_sigs, io.SEEK_CUR)
+            sigs = block.read(len_sigs)
 
+            # PublicKey
             len_publickey, = unpack('<I', block.read(4))
-            block.seek(len_publickey, io.SEEK_CUR)
+            publickey = block.read(len_publickey)
 
-        return certificates
+            signer = APKV3Signer()
+            signer._bytes = view[off_signer:off_signer+size_signer]
+            signer.signed_data = signed_data_object
+            signer.signatures = sigs
+            signer.public_key = publickey
+            signed_data_object.minSDK = signer_min_sdk
+            signed_data_object.maxSDK = signer_max_sdk
 
-    def get_certificates_der_v2(self):
+            self._v3_signing_data.append(signer)
+
+
+    def parse_v2_signing_block(self):
         """
-        Return a list of DER coded X.509 certificates from the v2 signature
+        Parse the V2 signing block and extract all features
         """
 
 
@@ -1337,6 +1415,7 @@ class APK(object):
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
+        view = block.getbuffer()
         
         # V2 signature Block data format:
         #
@@ -1352,52 +1431,98 @@ class APK(object):
 
         size_sequence, = unpack('<I', block.read(4))
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+
+        self._v2_signing_data = []
         while block.tell() < len(block_bytes):
+
+            off_signer = block.tell()
             size_signer, = unpack('<I', block.read(4))
-            len_signed_data, = unpack('<I', block.read(4))
+            
 
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
+            len_signed_data, = unpack('<I', block.read(4))
             signed_data_bytes = block.read(len_signed_data)
             signed_data = io.BytesIO(signed_data_bytes)
 
-            
-            # Skip it for now
+                
+            # Digests
             len_digests, = unpack('<I', signed_data.read(4))
-            signed_data.seek(len_digests, io.SEEK_CUR)
+            digests = signed_data.read(len_digests)
 
             # Certs
+            certs = []
             len_certs, = unpack('<I', signed_data.read(4))
             start_certs = signed_data.tell()
             while signed_data.tell() < start_certs + len_certs:
                 len_cert, = unpack('<I', signed_data.read(4))
-                certificates.append(signed_data.read(len_cert))
+                cert = signed_data.read(len_cert)
+                certs.append(cert)
 
-            # Now we have the signatures and the public key...
-            # we need to read it (or at least skip it)
+            # Additionnal attributes
             len_attr, = unpack('<I', signed_data.read(4))
-            signed_data.seek(len_attr, io.SEEK_CUR)
+            attributes = signed_data.read(len_attr)
 
+            signed_data_object = APKV2SignedData()
+            signed_data_object._bytes = signed_data_bytes
+            signed_data_object.digests = digests
+            signed_data_object.certificates = certs
+            signed_data_object.additional_attributes = attributes
+
+            # Signatures
             len_sigs, = unpack('<I', block.read(4))
-            block.seek(len_sigs, io.SEEK_CUR)
+            sigs = block.read(len_sigs)
 
+            # PublicKey
             len_publickey, = unpack('<I', block.read(4))
-            block.seek(len_publickey, io.SEEK_CUR)
+            publickey = block.read(len_publickey)
 
-        return certificates
+            signer = APKV2Signer()
+            signer._bytes = view[off_signer:off_signer+size_signer]
+            signer.signed_data = signed_data_object
+            signer.signatures = sigs
+            signer.public_key = publickey
 
-    def get_certificates_v2(self):
+            self._v2_signing_data.append(signer)
+
+    def get_certificates_der_v3(self):
+        """
+        Return a list of DER coded X.509 certificates from the v3 signature block
+        """
+
+        if self._v3_signing_data == None:
+            self.parse_v3_signing_block()
+
+        certs = []
+        for signed_data in [signer.signed_data for signer in self._v3_signing_data]:
+            for cert in signed_data.certificates:
+                certs.append(cert)
+
+        return certs
+
+    def get_certificates_der_v2(self):
+        """
+        Return a list of DER coded X.509 certificates from the v3 signature block
+        """
+
+        if self._v2_signing_data == None:
+            self.parse_v2_signing_block()
+
+        certs = []
+        for signed_data in [signer.signed_data for signer in self._v2_signing_data]:
+            for cert in signed_data.certificates:
+                certs.append(cert)
+
+        return certs
+
+    def get_certificates_v3(self):
         """
         Return a list of :class:`asn1crypto.x509.Certificate` which are found
         in the v3 signing block.
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
         """
-        certs = []
-        for cert in self.get_certificates_der_v3():
-            certs.append(x509.Certificate.load(cert))
-
-        return certs
+        return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v3()]
 
     def get_certificates_v2(self):
         """
@@ -1406,11 +1531,8 @@ class APK(object):
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
         """
-        certs = []
-        for cert in self.get_certificates_der_v2():
-            certs.append(x509.Certificate.load(cert))
-
-        return certs
+        return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v2()]
+        
 
     def get_certificates_v1(self):
         """
@@ -1434,7 +1556,7 @@ class APK(object):
         """
         fps = []
         certs = []
-        for x in self.get_certificates_v1() + self.get_certificates_v2():
+        for x in self.get_certificates_v1() + self.get_certificates_v2() + self.get_certificates_v3():
             if x.sha256 not in fps:
                 fps.append(x.sha256)
                 certs.append(x)
