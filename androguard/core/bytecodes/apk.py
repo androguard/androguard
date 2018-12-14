@@ -17,9 +17,11 @@ import zipfile
 import logging
 from struct import unpack
 import hashlib
+import binascii
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
+from enum import Enum
 
 # Used for reading Certificates
 from asn1crypto import cms, x509
@@ -49,6 +51,7 @@ class BrokenAPKError(Error):
     pass
 
 
+
 class APKV2SignedData(object):
     """ 
     This class holds all data associated with an APK V3 SigningBlock signed data.
@@ -61,6 +64,50 @@ class APKV2SignedData(object):
         self.certificates =  None
         self.additional_attributes = None
 
+    def _dump_additional_attributes(self):
+        """ try to parse additional attributes, but ends up to hexdump if the scheme is unknown """
+
+        attributes_raw = io.BytesIO(self.additional_attributes)
+        attributes_hex = binascii.hexlify(self.additional_attributes)
+
+        # import pdb
+        # pdb.set_trace()
+
+        len_attribute, = unpack('<I', attributes_raw.read(4))
+        if len_attribute != 8:
+            return attributes_hex
+
+        attr_id, = unpack('<I', attributes_raw.read(4))
+        if attr_id != APK._APK_SIG_ATTR_V2_STRIPPING_PROTECTION:
+            return attributes_hex
+            
+        scheme_id, = unpack('<I', attributes_raw.read(4))
+
+        return "stripping protection set, scheme %d" % scheme_id
+
+    def __str__(self):
+
+        certs_infos = ""
+
+        for i,cert in enumerate(self.certificates):
+            x509_cert = x509.Certificate.load(cert)
+
+            certs_infos += "\n"
+            certs_infos += " [%d]\n" % i
+            certs_infos += "  - Issuer: %s\n" % get_certificate_name_string(x509_cert.issuer, short=True)
+            certs_infos += "  - Subject: %s\n" % get_certificate_name_string(x509_cert.subject, short=True)
+            certs_infos += "  - Serial Number: %s\n" % hex(x509_cert.serial_number)
+            certs_infos += "  - Hash Algorithm: %s\n" % x509_cert.hash_algo
+            certs_infos += "  - Signature Algorithm: %s\n" % x509_cert.signature_algo
+            certs_infos += "  - Valid not before: %s\n" % x509_cert['tbs_certificate']['validity']['not_before'].native
+            certs_infos += "  - Valid not after: %s\n" % x509_cert['tbs_certificate']['validity']['not_after'].native
+
+        return "\n".join([
+            'additional_attributes : {}'.format(self._dump_additional_attributes()),
+            'digests : {}'.format(binascii.hexlify(self.digests)),
+            'certificates : {}'.format(certs_infos),
+        ])
+
 class APKV3SignedData(APKV2SignedData):
     """ 
     This class holds all data associated with an APK V3 SigningBlock signed data.
@@ -71,6 +118,15 @@ class APKV3SignedData(APKV2SignedData):
         super().__init__()
         self.minSDK = None
         self.maxSDK = None
+    
+    def __str__(self):
+
+        base_str = super().__str__()
+        return "\n".join([
+            'minSDK : {0:d}'.format(self.minSDK),
+            'maxSDK : {0:d}'.format(self.maxSDK),
+            base_str
+        ])
 
 class APKV2Signer(object):
     """ 
@@ -84,6 +140,13 @@ class APKV2Signer(object):
         self.signatures = None
         self.public_key = None
 
+    def __str__(self):
+        return "\n".join([
+            '{0:s}'.format(str(self.signed_data)),
+            'signatures : {0}'.format(binascii.hexlify(self.signatures)),
+            'public key : {0}'.format(binascii.hexlify(self.public_key)),
+        ])
+
 
 class APKV3Signer(APKV2Signer):
     """ 
@@ -96,7 +159,14 @@ class APKV3Signer(APKV2Signer):
         self.minSDK = None
         self.maxSDK = None
 
-
+    def __str__(self):
+        
+        base_str = super().__str__()
+        return "\n".join([
+            'signer minSDK : {0:d}'.format(self.minSDK),
+            'signer maxSDK : {0:d}'.format(self.maxSDK),
+            base_str    
+        ])
 
 class APK(object):
     # Constants in ZipFile
@@ -107,6 +177,7 @@ class APK(object):
     _APK_SIG_MAGIC = b"APK Sig Block 42"
     _APK_SIG_KEY_V2_SIGNATURE = 0x7109871a
     _APK_SIG_KEY_V3_SIGNATURE = 0xf05368c0
+    _APK_SIG_ATTR_V2_STRIPPING_PROTECTION = 0xbeeff00d
 
     def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
         """
@@ -1367,7 +1438,7 @@ class APK(object):
             signed_data_min_sdk, = unpack('<I', signed_data.read(4))
             signed_data_max_sdk, = unpack('<I', signed_data.read(4))
 
-            # Addionnal attributes
+            # Addional attributes
             len_attr, = unpack('<I', signed_data.read(4))
             attr = signed_data.read(len_attr)
 
@@ -1396,10 +1467,11 @@ class APK(object):
             signer.signed_data = signed_data_object
             signer.signatures = sigs
             signer.public_key = publickey
-            signed_data_object.minSDK = signer_min_sdk
-            signed_data_object.maxSDK = signer_max_sdk
+            signer.minSDK = signer_min_sdk
+            signer.maxSDK = signer_max_sdk
 
             self._v3_signing_data.append(signer)
+
 
 
     def parse_v2_signing_block(self):
@@ -1459,7 +1531,7 @@ class APK(object):
                 cert = signed_data.read(len_cert)
                 certs.append(cert)
 
-            # Additionnal attributes
+            # Additional attributes
             len_attr, = unpack('<I', signed_data.read(4))
             attributes = signed_data.read(len_attr)
 
