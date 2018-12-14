@@ -362,9 +362,10 @@ def androsign_main(args_apk, args_hash, args_all, show):
     from androguard.util import get_certificate_name_string
 
     import hashlib
+    import binascii
     import traceback
     from colorama import Fore, Style
-    from asn1crypto import x509
+    from asn1crypto import x509, keys
 
     # Keep the list of hash functions in sync with cli/entry_points.py:sign
     hashfunctions = dict(md5=hashlib.md5,
@@ -390,6 +391,7 @@ def androsign_main(args_apk, args_hash, args_all, show):
             print("Is signed v3: {}".format(a.is_signed_v3()))
 
             certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in a.get_signature_names()])
+            pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
 
             if len(certs) > 0:
                 print("Found {} unique certificates".format(len(certs)))
@@ -411,6 +413,25 @@ def androsign_main(args_apk, args_hash, args_all, show):
                     for k, v in hashfunctions.items():
                         print("{} {}".format(k, v(cert).hexdigest()))
                 print()
+
+            if len(certs) > 0:
+                print("Found {} unique public keys associated with the certs".format(len(pkeys)))
+
+            for public_key in pkeys:
+                if show:
+                    x509_public_key = keys.PublicKeyInfo.load(public_key)
+                    print("PublicKey Algorithm:", x509_public_key.algorithm)
+                    print("Bit Size:", x509_public_key.bit_size)
+                    print("Fingerprint:", binascii.hexlify(x509_public_key.fingerprint))
+                    try:
+                        print("Hash Algorithm:", x509_public_key.hash_algo)
+                    except ValueError as ve:
+                        # RSA pkey does not have an hash algorithm
+                        pass
+                
+                print()
+
+
         except:
             print(Fore.RED + "Error in {}".format(os.path.basename(path)) + Style.RESET_ALL, file=sys.stderr)
             traceback.print_exc(file=sys.stderr)

@@ -24,7 +24,7 @@ from xml.dom.pulldom import SAX2DOM
 from enum import Enum
 
 # Used for reading Certificates
-from asn1crypto import cms, x509
+from asn1crypto import cms, x509, keys
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{http://schemas.android.com/apk/res/android}'
@@ -1620,6 +1620,36 @@ class APK(object):
 
             self._v2_signing_data.append(signer)
 
+    def get_public_keys_der_v3(self):
+        """
+        Return a list of DER coded X.509 public keys from the v3 signature block
+        """
+
+        if self._v3_signing_data == None:
+            self.parse_v3_signing_block()
+
+        public_keys = []
+
+        for signer in self._v3_signing_data:
+            public_keys.append(signer.public_key)
+
+        return public_keys
+
+    def get_public_keys_der_v2(self):
+        """
+        Return a list of DER coded X.509 public keys from the v3 signature block
+        """
+
+        if self._v2_signing_data == None:
+            self.parse_v2_signing_block()
+
+        public_keys = []
+
+        for signer in self._v2_signing_data:
+            public_keys.append(signer.public_key)
+
+        return public_keys
+
     def get_certificates_der_v3(self):
         """
         Return a list of DER coded X.509 certificates from the v3 signature block
@@ -1649,6 +1679,20 @@ class APK(object):
                 certs.append(cert)
 
         return certs
+
+    def get_public_keys_v3(self):
+        """
+        Return a list of :class:`asn1crypto.keys.PublicKeyInfo` which are found
+        in the v3 signing block.
+        """
+        return [ keys.PublicKeyInfo.load(pkey) for pkey in self.get_public_keys_der_v3()]
+
+    def get_public_keys_v2(self):
+        """
+        Return a list of :class:`asn1crypto.keys.PublicKeyInfo` which are found
+        in the v2 signing block.
+        """
+        return [ keys.PublicKeyInfo.load(pkey) for pkey in self.get_public_keys_der_v2()]
 
     def get_certificates_v3(self):
         """
@@ -1685,7 +1729,7 @@ class APK(object):
     def get_certificates(self):
         """
         Return a list of unique :class:`asn1crypto.x509.Certificate` which are found
-        in v1 and v2 signing
+        in v1, v2 and v3 signing
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
         """
