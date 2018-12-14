@@ -1463,43 +1463,43 @@ class APK(object):
         #    * signatures
         #    * publickey
         
-        size_sequence, = unpack('<I', block.read(4))
+        size_sequence = self.read_uint32_le(block)
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
         
         self._v3_signing_data = []
         while block.tell() < len(block_bytes):
 
             off_signer = block.tell()
-            size_signer, = unpack('<I', block.read(4))
+            size_signer = self.read_uint32_le(block)
             
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
-            len_signed_data, = unpack('<I', block.read(4))
+            len_signed_data = self.read_uint32_le(block)
             signed_data_bytes = block.read(len_signed_data)
             signed_data = io.BytesIO(signed_data_bytes)
 
             # Digests
-            len_digests, = unpack('<I', signed_data.read(4))
+            len_digests = self.read_uint32_le(signed_data)
             raw_digests = signed_data.read(len_digests)
             digests = self.parse_signatures_or_digests(raw_digests)
 
 
             # Certs
             certs = []
-            len_certs, = unpack('<I', signed_data.read(4))
+            len_certs = self.read_uint32_le(signed_data)
             start_certs = signed_data.tell()
             while signed_data.tell() < start_certs + len_certs:
 
-                len_cert, = unpack('<I', signed_data.read(4))
+                len_cert = self.read_uint32_le(signed_data)
                 cert = signed_data.read(len_cert)
                 certs.append(cert)
 
             # versions
-            signed_data_min_sdk, = unpack('<I', signed_data.read(4))
-            signed_data_max_sdk, = unpack('<I', signed_data.read(4))
+            signed_data_min_sdk = self.read_uint32_le(signed_data)
+            signed_data_max_sdk = self.read_uint32_le(signed_data)
 
             # Addional attributes
-            len_attr, = unpack('<I', signed_data.read(4))
+            len_attr = self.read_uint32_le(signed_data)
             attr = signed_data.read(len_attr)
 
             signed_data_object = APKV3SignedData()
@@ -1511,16 +1511,16 @@ class APK(object):
             signed_data_object.maxSDK = signed_data_max_sdk
 
             # versions (should be the same as signed data's versions)
-            signer_min_sdk, = unpack('<I', block.read(4))
-            signer_max_sdk, = unpack('<I', block.read(4))
+            signer_min_sdk = self.read_uint32_le(block)
+            signer_max_sdk = self.read_uint32_le(block)
 
             # Signatures
-            len_sigs, = unpack('<I', block.read(4))
+            len_sigs = self.read_uint32_le(block)
             raw_sigs = block.read(len_sigs)
             sigs = self.parse_signatures_or_digests(raw_sigs)
 
             # PublicKey
-            len_publickey, = unpack('<I', block.read(4))
+            len_publickey = self.read_uint32_le(block)
             publickey = block.read(len_publickey)
 
             signer = APKV3Signer()
@@ -1562,39 +1562,39 @@ class APK(object):
         #    * signatures
         #    * publickey
 
-        size_sequence, = unpack('<I', block.read(4))
+        size_sequence = self.read_uint32_le(block)
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
 
         self._v2_signing_data = []
         while block.tell() < len(block_bytes):
 
             off_signer = block.tell()
-            size_signer, = unpack('<I', block.read(4))
+            size_signer = self.read_uint32_le(block)
             
 
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
-            len_signed_data, = unpack('<I', block.read(4))
+            len_signed_data = self.read_uint32_le(block)
             signed_data_bytes = block.read(len_signed_data)
             signed_data = io.BytesIO(signed_data_bytes)
 
                 
             # Digests
-            len_digests, = unpack('<I', signed_data.read(4))
+            len_digests = self.read_uint32_le(signed_data)
             raw_digests = signed_data.read(len_digests)
             digests = self.parse_signatures_or_digests(raw_digests)
 
             # Certs
             certs = []
-            len_certs, = unpack('<I', signed_data.read(4))
+            len_certs = self.read_uint32_le(signed_data)
             start_certs = signed_data.tell()
             while signed_data.tell() < start_certs + len_certs:
-                len_cert, = unpack('<I', signed_data.read(4))
+                len_cert = self.read_uint32_le(signed_data)
                 cert = signed_data.read(len_cert)
                 certs.append(cert)
 
             # Additional attributes
-            len_attr, = unpack('<I', signed_data.read(4))
+            len_attr = self.read_uint32_le(signed_data)
             attributes = signed_data.read(len_attr)
 
             signed_data_object = APKV2SignedData()
@@ -1604,12 +1604,12 @@ class APK(object):
             signed_data_object.additional_attributes = attributes
 
             # Signatures
-            len_sigs, = unpack('<I', block.read(4))
+            len_sigs = self.read_uint32_le(block)
             raw_sigs = block.read(len_sigs)
             sigs = self.parse_signatures_or_digests(raw_sigs)
 
             # PublicKey
-            len_publickey, = unpack('<I', block.read(4))
+            len_publickey = self.read_uint32_le(block)
             publickey = block.read(len_publickey)
 
             signer = APKV2Signer()
