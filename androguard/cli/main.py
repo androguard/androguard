@@ -387,8 +387,9 @@ def androsign_main(args_apk, args_hash, args_all, show):
             print("{}, package: '{}'".format(os.path.basename(path), a.get_package()))
             print("Is signed v1: {}".format(a.is_signed_v1()))
             print("Is signed v2: {}".format(a.is_signed_v2()))
+            print("Is signed v3: {}".format(a.is_signed_v3()))
 
-            certs = set(a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in a.get_signature_names()])
+            certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in a.get_signature_names()])
 
             if len(certs) > 0:
                 print("Found {} unique certificates".format(len(certs)))

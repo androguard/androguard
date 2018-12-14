@@ -56,7 +56,8 @@ class APK(object):
 
     # Constants in the APK Signature Block
     _APK_SIG_MAGIC = b"APK Sig Block 42"
-    _APK_SIG_KEY_SIGNATURE = 0x7109871a
+    _APK_SIG_KEY_V2_SIGNATURE = 0x7109871a
+    _APK_SIG_KEY_V3_SIGNATURE = 0xf05368c0
 
     def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
         """
@@ -91,6 +92,7 @@ class APK(object):
         self.declared_permissions = {}
         self.valid_apk = False
         self._is_signed_v2 = None
+        self._is_signed_v3 = None
         self._v2_blocks = {}
 
         self._files = {}
@@ -1154,111 +1156,248 @@ class APK(object):
         Returning `True` does not mean that the file is properly signed!
         It just says that there is a signature file which needs to be validated.
         """
-        if not self._is_signed_v2:
-            # Need to find an v2 Block in the APK.
-            # The Google Docs gives you the following rule:
-            # * go to the end of the ZIP File
-            # * search for the End of Central directory
-            # * then jump to the beginning of the central directory
-            # * Read now the magic of the signing block
-            # * before the magic there is the size_of_block, so we can jump to
-            # the beginning.
-            # * There should be again the size_of_block
-            # * Now we can read the Key-Values
-            # * IDs with an unknown value should be ignored.
-            f = io.BytesIO(self.__raw)
-
-            size_central = None
-            offset_central = None
-
-            # Go to the end
-            f.seek(-1, io.SEEK_END)
-            # we know the minimal length for the central dir is 16+4+2
-            f.seek(-20, io.SEEK_CUR)
-            while f.tell() > 0:
-                f.seek(-1, io.SEEK_CUR)
-                r, = unpack('<4s', f.read(4))
-                if r == self._PK_END_OF_CENTRAL_DIR:
-                    # Read central dir
-                    this_disk, disk_central, this_entries, total_entries, \
-                    size_central, offset_central = unpack('<HHHHII', f.read(16))
-                    # TODO according to the standard we need to check if the
-                    # end of central directory is the last item in the zip file
-                    # TODO We also need to check if the central dir is exactly
-                    # before the end of central dir...
-
-                    # These things should not happen for APKs
-                    assert this_disk == 0, "Not sure what to do with multi disk ZIP!"
-                    assert disk_central == 0, "Not sure what to do with multi disk ZIP!"
-                    break
-                f.seek(-4, io.SEEK_CUR)
-            if offset_central:
-                f.seek(offset_central)
-                r, = unpack('<4s', f.read(4))
-                f.seek(-4, io.SEEK_CUR)
-                assert r == self._PK_CENTRAL_DIR, "No Central Dir at specified offset"
-
-                # Go back and check if we have a magic
-                end_offset = f.tell()
-                f.seek(-24, io.SEEK_CUR)
-                size_of_block, magic = unpack('<Q16s', f.read(24))
-                self._is_signed_v2 = False
-                if magic == self._APK_SIG_MAGIC:
-                    # go back size_of_blocks + 8 and read size_of_block again
-                    f.seek(-(size_of_block + 8), io.SEEK_CUR)
-                    size_of_block_start, = unpack("<Q", f.read(8))
-                    assert size_of_block_start == size_of_block, "Sizes at beginning and and does not match!"
-
-                    # Store all blocks
-                    while f.tell() < end_offset - 24:
-                        size, key = unpack('<QI', f.read(12))
-                        value = f.read(size - 4)
-                        self._v2_blocks[key] = value
-
-                    # Test if a signature is found
-                    if self._APK_SIG_KEY_SIGNATURE in self._v2_blocks:
-                        self._is_signed_v2 = True
+        if self._is_signed_v2 is None:
+            self.parse_v2_v3_signature()
 
         return self._is_signed_v2
+
+    def is_signed_v3(self):
+        """
+        Returns true of a v3 / APK signature was found.
+
+        Returning `True` does not mean that the file is properly signed!
+        It just says that there is a signature file which needs to be validated.
+        """
+        if self._is_signed_v3 is None:
+            self.parse_v2_v3_signature()
+
+        return self._is_signed_v3
+
+    def parse_v2_v3_signature(self):
+        # Need to find an v2 Block in the APK.
+        # The Google Docs gives you the following rule:
+        # * go to the end of the ZIP File
+        # * search for the End of Central directory
+        # * then jump to the beginning of the central directory
+        # * Read now the magic of the signing block
+        # * before the magic there is the size_of_block, so we can jump to
+        # the beginning.
+        # * There should be again the size_of_block
+        # * Now we can read the Key-Values
+        # * IDs with an unknown value should be ignored.
+        f = io.BytesIO(self.__raw)
+
+        size_central = None
+        offset_central = None
+
+        # Go to the end
+        f.seek(-1, io.SEEK_END)
+        # we know the minimal length for the central dir is 16+4+2
+        f.seek(-20, io.SEEK_CUR)
+
+        while f.tell() > 0:
+            f.seek(-1, io.SEEK_CUR)
+            r, = unpack('<4s', f.read(4))
+            if r == self._PK_END_OF_CENTRAL_DIR:
+                # Read central dir
+                this_disk, disk_central, this_entries, total_entries, \
+                size_central, offset_central = unpack('<HHHHII', f.read(16))
+                # TODO according to the standard we need to check if the
+                # end of central directory is the last item in the zip file
+                # TODO We also need to check if the central dir is exactly
+                # before the end of central dir...
+
+                # These things should not happen for APKs
+                assert this_disk == 0, "Not sure what to do with multi disk ZIP!"
+                assert disk_central == 0, "Not sure what to do with multi disk ZIP!"
+                break
+            f.seek(-4, io.SEEK_CUR)
+
+        if not offset_central:
+            return
+        
+        f.seek(offset_central)
+        r, = unpack('<4s', f.read(4))
+        f.seek(-4, io.SEEK_CUR)
+        assert r == self._PK_CENTRAL_DIR, "No Central Dir at specified offset"
+
+        # Go back and check if we have a magic
+        end_offset = f.tell()
+        f.seek(-24, io.SEEK_CUR)
+        size_of_block, magic = unpack('<Q16s', f.read(24))
+        
+        self._is_signed_v2 = False
+        self._is_signed_v3 = False
+
+        if magic != self._APK_SIG_MAGIC:
+            return
+
+        # go back size_of_blocks + 8 and read size_of_block again
+        f.seek(-(size_of_block + 8), io.SEEK_CUR)
+        size_of_block_start, = unpack("<Q", f.read(8))
+        assert size_of_block_start == size_of_block, "Sizes at beginning and and does not match!"
+
+        # Store all blocks
+        while f.tell() < end_offset - 24:
+            size, key = unpack('<QI', f.read(12))
+            value = f.read(size - 4)
+            self._v2_blocks[key] = value
+
+        # Test if a signature is found
+        if self._APK_SIG_KEY_V2_SIGNATURE in self._v2_blocks:
+            self._is_signed_v2 = True
+
+        if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
+            self._is_signed_v3 = True
+
+    def get_certificates_der_v3(self):
+        """
+        Return a list of DER coded X.509 certificates from the v3 signature
+        """
+
+        # calling is_signed_v3 should also load the signature, if any
+        if not self.is_signed_v3():
+            return []
+
+        certificates = []
+        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
+        block = io.BytesIO(block_bytes)
+
+        # V3 signature Block data format:
+        #
+        # * signer:
+        #    * signed data:
+        #        * digests:
+        #            * signature algorithm ID (uint32)
+        #            * digest (length-prefixed) 
+        #        * certificates
+        #        * minSDK
+        #        * maxSDK
+        #        * additional attributes
+        #    * minSDK
+        #    * maxSDK
+        #    * signatures
+        #    * publickey
+        
+        size_sequence, = unpack('<I', block.read(4))
+        assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+        while block.tell() < len(block_bytes):
+            size_signer, = unpack('<I', block.read(4))
+            len_signed_data, = unpack('<I', block.read(4))
+
+            # read whole signed data, since we might to parse
+            # content within the signed data, and mess up offset
+            signed_data_bytes = block.read(len_signed_data)
+            signed_data = io.BytesIO(signed_data_bytes)
+
+            
+            # Skip it for now
+            len_digests, = unpack('<I', signed_data.read(4))
+            signed_data.seek(len_digests, io.SEEK_CUR)
+
+
+            # Certs
+            len_certs, = unpack('<I', signed_data.read(4))
+            start_certs = signed_data.tell()
+            while signed_data.tell() < start_certs + len_certs:
+                len_cert, = unpack('<I', signed_data.read(4))
+                certificates.append(signed_data.read(len_cert))
+
+            # versions
+            signed_data_min_sdk, = unpack('<I', signed_data.read(4))
+            signed_data_max_sdk, = unpack('<I', signed_data.read(4))
+
+            # Now we have the signatures and the public key...
+            # we need to read it (or at least skip it)
+            len_attr, = unpack('<I', signed_data.read(4))
+            signed_data.seek(len_attr, io.SEEK_CUR)
+
+            # versions
+            signer_min_sdk, = unpack('<I', block.read(4))
+            signer_max_sdk, = unpack('<I', block.read(4))
+
+            len_sigs, = unpack('<I', block.read(4))
+            block.seek(len_sigs, io.SEEK_CUR)
+
+            len_publickey, = unpack('<I', block.read(4))
+            block.seek(len_publickey, io.SEEK_CUR)
+
+        return certificates
 
     def get_certificates_der_v2(self):
         """
         Return a list of DER coded X.509 certificates from the v2 signature
         """
-        # calling is_signed_v2 should also load the signature, if any
+
+
+        # calling is_signed_v2 should also load the signature
         if not self.is_signed_v2():
             return []
 
         certificates = []
-        block_bytes = self._v2_blocks[self._APK_SIG_KEY_SIGNATURE]
+        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
+        
+        # V2 signature Block data format:
+        #
+        # * signer:
+        #    * signed data:
+        #        * digests:
+        #            * signature algorithm ID (uint32)
+        #            * digest (length-prefixed) 
+        #        * certificates
+        #        * additional attributes
+        #    * signatures
+        #    * publickey
 
         size_sequence, = unpack('<I', block.read(4))
         assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
         while block.tell() < len(block_bytes):
             size_signer, = unpack('<I', block.read(4))
-
             len_signed_data, = unpack('<I', block.read(4))
-            len_digests, = unpack('<I', block.read(4))
-            # Skip it for now
-            block.seek(len_digests, io.SEEK_CUR)
 
-            len_certs, = unpack('<I', block.read(4))
-            start_certs = block.tell()
-            while block.tell() < start_certs + len_certs:
-                len_cert, = unpack('<I', block.read(4))
-                certificates.append(block.read(len_cert))
+            # read whole signed data, since we might to parse
+            # content within the signed data, and mess up offset
+            signed_data_bytes = block.read(len_signed_data)
+            signed_data = io.BytesIO(signed_data_bytes)
+
+            
+            # Skip it for now
+            len_digests, = unpack('<I', signed_data.read(4))
+            signed_data.seek(len_digests, io.SEEK_CUR)
+
+            # Certs
+            len_certs, = unpack('<I', signed_data.read(4))
+            start_certs = signed_data.tell()
+            while signed_data.tell() < start_certs + len_certs:
+                len_cert, = unpack('<I', signed_data.read(4))
+                certificates.append(signed_data.read(len_cert))
 
             # Now we have the signatures and the public key...
             # we need to read it (or at least skip it)
-            len_attr, = unpack('<I', block.read(4))
-            block.seek(len_attr, io.SEEK_CUR)
+            len_attr, = unpack('<I', signed_data.read(4))
+            signed_data.seek(len_attr, io.SEEK_CUR)
+
             len_sigs, = unpack('<I', block.read(4))
             block.seek(len_sigs, io.SEEK_CUR)
+
             len_publickey, = unpack('<I', block.read(4))
             block.seek(len_publickey, io.SEEK_CUR)
 
         return certificates
+
+    def get_certificates_v2(self):
+        """
+        Return a list of :class:`asn1crypto.x509.Certificate` which are found
+        in the v3 signing block.
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
+        """
+        certs = []
+        for cert in self.get_certificates_der_v3():
+            certs.append(x509.Certificate.load(cert))
+
+        return certs
 
     def get_certificates_v2(self):
         """
