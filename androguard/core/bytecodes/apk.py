@@ -1341,6 +1341,9 @@ class APK(object):
     def parse_signatures_or_digests(self, digest_bytes):
         """ Parse digests """
 
+        if not len(digest_bytes):
+            return []
+        
         digests = []
         block = io.BytesIO(digest_bytes)
 
