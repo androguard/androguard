@@ -1450,7 +1450,7 @@ class APK(object):
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
         block = io.BytesIO(block_bytes)
-        view = block.getbuffer()
+        view = block.getvalue()
 
         # V3 signature Block data format:
         #
@@ -1553,7 +1553,7 @@ class APK(object):
         certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
-        view = block.getbuffer()
+        view = block.getvalue()
         
         # V2 signature Block data format:
         #
