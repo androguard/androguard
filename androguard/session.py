@@ -45,10 +45,10 @@ def Load(filename):
 
 class Session(object):
     def __init__(self, export_ipython=False):
-        self._setupObjects()
+        self._setup_objects()
         self.export_ipython = export_ipython
 
-    def _setupObjects(self):
+    def _setup_objects(self):
         self.analyzed_files = collections.OrderedDict()
         self.analyzed_digest = {}
         self.analyzed_apk = {}
@@ -59,7 +59,7 @@ class Session(object):
         """
         Reset the current session, delete all added files.
         """
-        self._setupObjects()
+        self._setup_objects()
 
     def isOpen(self):
         """
@@ -170,16 +170,23 @@ class Session(object):
         return digest, d, dx
 
     def add(self, filename, raw_data, dx=None):
+        """
+        Generic method to add a file to the session.
+        It guesses the filetype and calls the correct method.
+
+        :param filename: filename to load
+        :param raw_data: bytes of the file
+        :param dx: An already exiting :class:`~androguard.core.analysis.analysis.Analysis` object
+        :return: the sha256 of the file or None on failure
+        """
         ret = androconf.is_android_raw(raw_data)
-        digest = None
         if not ret:
             return None
         self.analyzed_files[filename] = []
         if ret == "APK":
             digest, apk = self.addAPK(filename, raw_data)
-            dex_files = list(apk.get_all_dex())
             dx = self.analyzed_vms.get(digest)
-            for dex in dex_files:
+            for dex in apk.get_all_dex():
                 _, d, dx = self.addDEX(filename, dex, dx)
         elif ret == "DEX":
             digest, d, _ = self.addDEX(filename, raw_data)
