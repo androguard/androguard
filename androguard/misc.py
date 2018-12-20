@@ -1,4 +1,4 @@
-from androguard import session
+from androguard.session import Session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
 import hashlib
@@ -24,7 +24,7 @@ def get_default_session():
     or create a new one, if the session in the configuration is None.
     """
     if androconf.CONF["SESSION"] is None:
-        androconf.CONF["SESSION"] = session.Session()
+        androconf.CONF["SESSION"] = Session()
     return androconf.CONF["SESSION"]
 
 
@@ -45,7 +45,6 @@ def AnalyzeAPK(_file, session=None, raw=False):
     :rtype: return the :class:`~androguard.core.bytecodes.apk.APK`, list of :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
     """
     log.debug("AnalyzeAPK")
-
 
     if session:
         log.debug("Using existing session {}".format(session))
@@ -82,11 +81,11 @@ def AnalyzeDex(filename, session=None):
     """
     Analyze an android dex file and setup all stuff for a more quickly analysis !
 
-    :param session: A session (Default None)
     :param filename: the filename of the android dex file or a buffer which represents the dex file
     :type filename: string
+    :param session: A session (Default None)
 
-    :rtype: return the :class:`DalvikVMFormat`, and :class:`Analysis` objects
+    :rtype: return a tuple of (sha256hash, :class:`DalvikVMFormat`, :class:`Analysis`)
     """
     log.debug("AnalyzeDex")
 
@@ -107,7 +106,7 @@ def AnalyzeODex(filename, session=None):
     :type filename: string
     :param session: The Androguard Session to add the ODex to (default: None)
 
-    :rtype: return the :class:`DalvikOdexVMFormat`, and :class:`Analysis` objects
+    :rtype: return a tuple of (sha256hash, :class:`DalvikOdexVMFormat`, :class:`Analysis`)
     """
     log.debug("AnalyzeODex")
 
