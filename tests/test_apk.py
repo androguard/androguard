@@ -179,19 +179,24 @@ class APKTest(unittest.TestCase):
         root = "examples/signing/apksig"
         
         # Correct values generated with openssl:
+        # In the apksig repo:src/test/resources/com/android/apksig
+        # for f in *.pem; do openssl x509 -in $f -noout -sha256 -fingerprint; done
         certfp = {
-            "dsa-1024.x509.pem": "fee7c19ff9bfb4197b3727b9fd92d95406b1bd96db99ea642f5faac019a389d7",
-            "dsa-2048.x509.pem": "97cce0bab292c2d5afb9de90e1810b41a5d25c006a10d10982896aa12ab35a9e",
-            "dsa-3072.x509.pem": "966a4537058d24098ea213f12d4b24e37ff5a1d8f68deb8a753374881f23e474",
-            "ec-p256.x509.pem": "6a8b96e278e58f62cfe3584022cec1d0527fcb85a9e5d2e1694eb0405be5b599",
-            "ec-p384.x509.pem": "5e7777ada7ee7ce8f9c4d1b07094876e5604617b7988b4c5d5b764a23431afbe",
-            "ec-p521.x509.pem": "69b50381d98bebcd27df6d7df8af8c8b38d0e51e9168a95ab992d1a9da6082da",
-            "rsa-1024.x509.pem": "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8",
-            "rsa-16384.x509.pem": "f3c6b37909f6df310652fbd7c55ec27d3079dcf695dc6e75e22ba7c4e1c95601",
-            "rsa-2048.x509.pem": "fb5dbd3c669af9fc236c6991e6387b7f11ff0590997f22d0f5c74ff40e04fca8",
-            "rsa-3072.x509.pem": "483934461229a780010bc07cd6eeb0b67025fc4fe255757abbf5c3f2ed249e89",
-            "rsa-4096.x509.pem": "6a46158f87753395a807edcc7640ac99c9125f6b6e025bdbf461ff281e64e685",
-            "rsa-8192.x509.pem": "060d0a24fea9b60d857225873f78838e081795f7ef2d1ea401262bbd75a58234",
+            'dsa-1024.x509.pem': 'fee7c19ff9bfb4197b3727b9fd92d95406b1bd96db99ea642f5faac019a389d7',
+            'dsa-2048.x509.pem': '97cce0bab292c2d5afb9de90e1810b41a5d25c006a10d10982896aa12ab35a9e',
+            'dsa-3072.x509.pem': '966a4537058d24098ea213f12d4b24e37ff5a1d8f68deb8a753374881f23e474',
+            'ec-p256.x509.pem': '6a8b96e278e58f62cfe3584022cec1d0527fcb85a9e5d2e1694eb0405be5b599',
+            'ec-p384.x509.pem': '5e7777ada7ee7ce8f9c4d1b07094876e5604617b7988b4c5d5b764a23431afbe',
+            'ec-p521.x509.pem': '69b50381d98bebcd27df6d7df8af8c8b38d0e51e9168a95ab992d1a9da6082da',
+            'rsa-1024_2.x509.pem': 'eba3685e799f59804684abebf0363e14ccb1c213e2b954a22669714ed97f61e9',
+            'rsa-1024.x509.pem': 'bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8',
+            'rsa-16384.x509.pem': 'f3c6b37909f6df310652fbd7c55ec27d3079dcf695dc6e75e22ba7c4e1c95601',
+            'rsa-2048_2.x509.pem': '681b0e56a796350c08647352a4db800cc44b2adc8f4c72fa350bd05d4d50264d',
+            'rsa-2048_3.x509.pem': 'bb77a72efc60e66501ab75953af735874f82cfe52a70d035186a01b3482180f3',
+            'rsa-2048.x509.pem': 'fb5dbd3c669af9fc236c6991e6387b7f11ff0590997f22d0f5c74ff40e04fca8',
+            'rsa-3072.x509.pem': '483934461229a780010bc07cd6eeb0b67025fc4fe255757abbf5c3f2ed249e89',
+            'rsa-4096.x509.pem': '6a46158f87753395a807edcc7640ac99c9125f6b6e025bdbf461ff281e64e685',
+            'rsa-8192.x509.pem': '060d0a24fea9b60d857225873f78838e081795f7ef2d1ea401262bbd75a58234',
         }
 
         will_not_validate_correctly = [
@@ -203,6 +208,8 @@ class APKTest(unittest.TestCase):
             "v1-only-with-rsa-1024-cert-not-der2.apk",
             "v2-only-cert-and-public-key-mismatch.apk",
             "v2-only-with-dsa-sha256-1024-sig-does-not-verify.apk",
+            "debuggable-boolean.apk",
+            "debuggable-resource.apk",
         ]
 
         # Collect possible hashes for certificates
@@ -218,7 +225,8 @@ class APKTest(unittest.TestCase):
         for apath in os.listdir(root):
             if apath.endswith(".apk"):
                 if apath == "v2-only-garbage-between-cd-and-eocd.apk" or \
-                   apath == "v2-only-truncated-cd.apk":
+                   apath == "v2-only-truncated-cd.apk" or \
+                   apath == "v1v2v3-with-rsa-2048-lineage-3-signers-invalid-zip.apk":
                     # Can not load as APK
                     if sys.version_info.major == 2:
                         # Different name in python2...
@@ -237,6 +245,34 @@ class APKTest(unittest.TestCase):
 
                 self.assertIsInstance(a, APK)
 
+                # Test if the correct method returns True, while others return
+                # False
+                m_tests = {'1': a.is_signed_v1,
+                           '2': a.is_signed_v2,
+                           '3': a.is_signed_v3}
+
+                # These APKs will raise an error
+                excluded = [
+                            "v1v2v3-with-rsa-2048-lineage-3-signers-no-sig-block.apk",
+                            "v2-only-apk-sig-block-size-mismatch.apk",
+                            "v2-only-empty.apk",
+                            "v2-only-wrong-apk-sig-block-magic.apk",
+                            "v2-stripped.apk",
+                            "v2-stripped-with-ignorable-signing-schemes.apk",
+                            "v2v3-signed-v3-block-stripped.apk",
+                            "v3-only-empty.apk",
+                            "v3-only-with-ecdsa-sha512-p384-wrong-apk-sig-block-magic.apk",
+                            "v3-only-with-rsa-pkcs1-sha512-4096-apk-sig-block-size-mismatch.apk",
+                            "v3-stripped.apk",
+                           ]
+                if apath[0] == "v" and apath not in excluded:
+                    methods = apath.split("-", 1)[0].split("v")[1:]
+                    for m, f in m_tests.items():
+                        if m in methods:
+                            self.assertEqual(f(), True)
+                        else:
+                            self.assertEqual(f(), False)
+
                 # Special error cases
                 if apath == "v2-only-apk-sig-block-size-mismatch.apk":
                     with self.assertRaises(AssertionError):
@@ -245,6 +281,10 @@ class APKTest(unittest.TestCase):
                 elif apath == "v2-only-empty.apk":
                     with self.assertRaises(AssertionError):
                         a.is_signed_v2()
+                    continue
+                elif apath == "v3-only-with-rsa-pkcs1-sha512-4096-apk-sig-block-size-mismatch.apk":
+                    with self.assertRaises(AssertionError):
+                        a.is_signed_v3()
                     continue
 
                 if a.is_signed_v1():
@@ -290,6 +330,25 @@ class APKTest(unittest.TestCase):
                             self.assertIn(h, certfp.values())
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
+
+                if a.is_signed_v3():
+                    print(apath)
+                    if apath == "weird-compression-method.apk":
+                        with self.assertRaises(NotImplementedError):
+                            a.get_certificates_der_v3()
+                    elif apath == "v3-only-with-rsa-pkcs1-sha256-3072-sig-does-not-verify.apk" or \
+                         apath == "v3-only-cert-and-public-key-mismatch.apk":
+                        cert = x509.Certificate.load(a.get_certificates_der_v3()[0])
+                        h = cert.sha256_fingerprint.replace(" ","").lower()
+                        self.assertNotIn(h, certfp.values())
+                    else:
+                        for c in a.get_certificates_der_v3():
+                            cert = x509.Certificate.load(c)
+                            h = cert.sha256_fingerprint.replace(" ","").lower()
+                            self.assertIn(h, certfp.values())
+                            # Check that we get the same signature if we take the DER
+                            self.assertEqual(hashlib.sha256(c).hexdigest(), h)
+
 
     def testAPKWrapperUnsigned(self):
         from androguard.misc import AnalyzeAPK

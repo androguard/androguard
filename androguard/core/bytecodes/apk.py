@@ -131,13 +131,13 @@ class APKV3SignedData(APKV2SignedData):
     """
 
     def __init__(self):
-        super().__init__()
+        super(APKV3SignedData, self).__init__()
         self.minSDK = None
         self.maxSDK = None
     
     def __str__(self):
 
-        base_str = super().__str__()
+        base_str = super(APKV3SignedData, self).__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
         max_sdk_str = "%d" % self.maxSDK
@@ -177,13 +177,13 @@ class APKV3Signer(APKV2Signer):
     """
 
     def __init__(self):
-        super().__init__()
+        super(APKV3Signer, self).__init__()
         self.minSDK = None
         self.maxSDK = None
 
     def __str__(self):
         
-        base_str = super().__str__()
+        base_str = super(APKV3Signer, self).__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
         max_sdk_str = "%d" % self.maxSDK
