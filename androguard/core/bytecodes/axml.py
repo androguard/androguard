@@ -1009,12 +1009,7 @@ class ARSCParser(object):
                     if header.type == RES_TABLE_TYPE_TYPE:
                         a_res_type = self.packages[package_name][nb + 1]
 
-                        language = a_res_type.config.get_language()
-                        region = a_res_type.config.get_country()
-                        if region == "\x00\x00":
-                            locale = language
-                        else:
-                            locale = "{}-r{}".format(language, region)
+                        locale = a_res_type.config.get_language_and_region()
 
                         c_value = self.values[package_name].setdefault(locale, {"public":[]})
 
