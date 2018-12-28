@@ -194,6 +194,7 @@ CHUNK_XML_END_TAG = 0x00100103
 CHUNK_XML_TEXT = 0x00100104
 CHUNK_XML_LAST = 0x00100104
 
+# Internally used state variables
 START_DOCUMENT = 0
 END_DOCUMENT = 1
 START_TAG = 2
@@ -531,9 +532,14 @@ class AXMLParser(object):
 
         return len(self.m_attributes) // ATTRIBUTE_LENGHT
 
-    def getAttributePrefix(self, index):
+    def getAttributeUri(self, index):
         offset = self.getAttributeOffset(index)
         uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
+
+        return uri
+
+    def getAttributePrefix(self, index):
+        uri = self.getAttributeUri(index)
 
         prefix = self.getPrefixByUri(uri)
 
@@ -684,6 +690,89 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
     return "<0x%X, type 0x%02X>" % (_data, _type)
 
 
+class AXMLETreePrinter:
+    def __init__(self, raw_buff):
+        self.axml = AXMLParser(raw_buff)
+
+        self.root = None
+        cur = []
+        depth = 0
+
+        while self.axml.is_valid():
+            _type = next(self.axml)
+
+            if _type == START_DOCUMENT:
+                pass
+            if _type == START_TAG:
+                depth += 1
+
+                name = self.axml.getName()
+                uri = self.axml.sb.getString(self.axml.m_namespaceUri)
+                if uri != "":
+                    uri = "{{{}}}".format(uri)
+                tag = "{}{}".format(uri, name)
+
+                log.debug("START_TAG: {}".format(tag))
+                elem = etree.Element(tag)
+
+                for i in range(self.axml.getAttributeCount()):
+                    uri = self.axml.sb.getString(self.axml.getAttributeUri(i))
+                    if uri != "":
+                        uri = "{{{}}}".format(uri)
+                    name = self.axml.getAttributeName(i)
+                    value = self.getAttributeValue(i)
+
+                    log.debug("{} -- {} -- {}".format(uri, name, value))
+                    elem.set("{}{}".format(uri, name), value)
+
+                if self.root is None:
+                    self.root = elem
+                else:
+                    cur[-1].append(elem)
+                cur.append(elem)
+
+            if _type == END_TAG:
+                depth -= 1
+                if depth < 0:
+                    log.warning("Too many END_TAG! depth is less than zero! depth={}".format(depth))
+                cur.pop()
+            if _type == TEXT:
+                cur[-1].text = self.axml.getText()
+            if _type == END_DOCUMENT:
+                break
+
+    def get_buff(self):
+        return ""
+
+    def get_xml(self):
+        """
+        Get the XML as an UTF-8 string
+
+        :return: str
+        """
+        return etree.tostring(self.root, encoding="utf-8", pretty_print=True)
+
+    def get_xml_obj(self):
+        """
+        Get the XML as an ElementTree object
+
+        :return: :class:`~lxml.etree.Element`
+        """
+        return self.root
+
+    def getAttributeValue(self, index):
+        """
+        Wrapper function for format_value
+        to resolve the actual value of an attribute in a tag
+        :param index:
+        :return:
+        """
+        _type = self.axml.getAttributeValueType(index)
+        _data = self.axml.getAttributeValueData(index)
+
+        return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
+
+
 class AXMLPrinter(object):
     """
     Converter for AXML Files into a XML string
@@ -698,7 +787,7 @@ class AXMLPrinter(object):
 
         depth = 0
 
-        while True and self.axml.is_valid():
+        while self.axml.is_valid():
             _type = next(self.axml)
 
             if _type == START_DOCUMENT:
