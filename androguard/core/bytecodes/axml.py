@@ -729,6 +729,8 @@ class AXMLPrinter:
                     value = self._get_attribute_value(i)
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value))
+                    if "{}{}".format(uri, name) in elem.attrib:
+                        log.warning("Duplicate attribute '{}{}'! Will overwrite!".format(uri, name))
                     elem.set("{}{}".format(uri, name), value)
 
                 if self.root is None:
@@ -811,7 +813,6 @@ class AXMLPrinter:
             log.warning("Attribute name '{}' contains invalid characters!".format(name))
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
-        # TODO make sure this name is not already taken
         return name
 
 # Constants for ARSC Files
