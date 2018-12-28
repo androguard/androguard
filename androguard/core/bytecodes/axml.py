@@ -15,6 +15,7 @@ from collections import defaultdict
 
 from lxml import etree
 import logging
+import re
 
 log = logging.getLogger("androguard.axml")
 
@@ -723,7 +724,7 @@ class AXMLPrinter:
                     uri = self.axml.sb.getString(self.axml.getAttributeUri(i))
                     if uri != "":
                         uri = "{{{}}}".format(uri)
-                    name = self.axml.getAttributeName(i)
+                    name = self._fix_attrib_name(self.axml.getAttributeName(i))
                     value = self._get_attribute_value(i)
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value))
@@ -791,6 +792,26 @@ class AXMLPrinter:
 
         return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
 
+    def _fix_attrib_name(self, name):
+        """
+        Apply some fixes to fake names.
+        Try to get conform to:
+        > Like element names, attribute names are case-sensitive and must start with a letter or underscore.
+        > The rest of the name can contain letters, digits, hyphens, underscores, and periods.
+        See: https://msdn.microsoft.com/en-us/library/ms256152(v=vs.110).aspx
+
+        :param name: Name of the attribute
+        :return: a fixed version of the name
+        """
+        if not name[0].isalpha() or not name[0] == "_":
+            log.warning("Invalid start for attribute name '{}'".format(name))
+            name = "_{}".format(name)
+        if re.match(r"[a-zA-Z0-9._-]", name):
+            log.warning("Attribute name '{}' contains invalid characters!".format(name))
+            name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
+
+        # TODO make sure this name is not already taken
+        return name
 
 # Constants for ARSC Files
 RES_NULL_TYPE = 0x0000
