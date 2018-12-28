@@ -103,8 +103,7 @@ class StringBlock(object):
         if idx in self._cache:
             return self._cache[idx]
 
-        if idx < 0 or not self.m_stringOffsets or idx >= len(
-                self.m_stringOffsets):
+        if idx < 0 or not self.m_stringOffsets or idx >= len(self.m_stringOffsets):
             return ""
 
         offset = self.m_stringOffsets[idx]
@@ -230,7 +229,7 @@ class AXMLParser(object):
         assert self.filesize <= self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
 
         # Now we parse the STRING POOL
-        header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
+        header = ARSCHeader(self.buff)  # read 8 byte = String header + chunk_size
         assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
 
         self.sb = StringBlock(self.buff, header)
@@ -313,58 +312,65 @@ class AXMLParser(object):
             # Chunk Size (we do not need it)
             # TODO for sanity checks, we should use it and check if the chunks are correct in size
             self.buff.read(4)
+
             # Line Number
-            self.m_lineNumber = unpack('<L', self.buff.read(4))[0]
-            # Comment_Index (usually 0xFFFFFFFF, we do not need it)
-            self.buff.read(4)
+            self.m_lineNumber, = unpack('<L', self.buff.read(4))
+
+            # Comment_Index (usually 0xFFFFFFFF)
+            # TODO: parse the comment
+            comment_index, = unpack('<L', self.buff.read(4))
+            if comment_index != 0xFFFFFFFF:
+                log.warning("comment_index is set but we will not parse it! comment_index={}, offset={}".format(comment_index, self.buff.tell() - 16))
 
             # Now start to parse the field
 
             # There are five (maybe more) types of Chunks:
+            # See: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#696
             # * START_NAMESPACE
             # * END_NAMESPACE
             # * START_TAG
             # * END_TAG
             # * TEXT
-            if chunkType == CHUNK_XML_START_NAMESPACE or chunkType == CHUNK_XML_END_NAMESPACE:
-                if chunkType == CHUNK_XML_START_NAMESPACE:
-                    prefix = unpack('<L', self.buff.read(4))[0]
-                    uri = unpack('<L', self.buff.read(4))[0]
+            if chunkType == CHUNK_XML_START_NAMESPACE:
+                prefix = unpack('<L', self.buff.read(4))[0]
+                uri = unpack('<L', self.buff.read(4))[0]
 
-                    # FIXME We will get a problem here, if the same uri is used with different prefixes!
-                    # prefix --> uri is a 1:1 mapping
-                    self.m_prefixuri[prefix] = uri
-                    # but uri --> prefix is a 1:n mapping!
-                    self.m_uriprefix[uri].append(prefix)
-                    self.m_prefixuriL.append((prefix, uri))
-                    self.ns = uri
+                # FIXME We will get a problem here, if the same uri is used with different prefixes!
+                # prefix --> uri is a 1:1 mapping
+                self.m_prefixuri[prefix] = uri
+                # but uri --> prefix is a 1:n mapping!
+                self.m_uriprefix[uri].append(prefix)
+                self.m_prefixuriL.append((prefix, uri))
+                self.ns = uri
 
-                    # Workaround for closing tags
-                    if (uri, prefix) in self.visited_ns:
-                        self.visited_ns.remove((uri, prefix))
+                # Workaround for closing tags
+                if (uri, prefix) in self.visited_ns:
+                    self.visited_ns.remove((uri, prefix))
+
+                continue
+
+            if chunkType == CHUNK_XML_END_NAMESPACE:
+                self.ns = -1
+                # END_PREFIX contains again prefix and uri field
+                prefix, = unpack('<L', self.buff.read(4))
+                uri, = unpack('<L', self.buff.read(4))
+
+                # We can then remove those from the prefixuriL
+                if (prefix, uri) in self.m_prefixuriL:
+                    self.m_prefixuriL.remove((prefix, uri))
+
+                # We also remove the entry from prefixuri and uriprefix:
+                if prefix in self.m_prefixuri:
+                    del self.m_prefixuri[prefix]
+                if uri in self.m_uriprefix:
+                    self.m_uriprefix[uri].remove(prefix)
+                # Need to remove them from visisted namespaces as well, as it might pop up later
+                # FIXME we need to remove it also if we leave a tag which closes it namespace
+                # Workaround for now: remove it on a START_NAMESPACE tag
+                if (uri, prefix) in self.visited_ns:
+                    self.visited_ns.remove((uri, prefix))
                 else:
-                    self.ns = -1
-                    # END_PREFIX contains again prefix and uri field
-                    prefix, = unpack('<L', self.buff.read(4))
-                    uri, = unpack('<L', self.buff.read(4))
-
-                    # We can then remove those from the prefixuriL
-                    if (prefix, uri) in self.m_prefixuriL:
-                        self.m_prefixuriL.remove((prefix, uri))
-
-                    # We also remove the entry from prefixuri and uriprefix:
-                    if prefix in self.m_prefixuri:
-                        del self.m_prefixuri[prefix]
-                    if uri in self.m_uriprefix:
-                        self.m_uriprefix[uri].remove(prefix)
-                    # Need to remove them from visisted namespaces as well, as it might pop up later
-                    # FIXME we need to remove it also if we leave a tag which closes it namespace
-                    # Workaround for now: remove it on a START_NAMESPACE tag
-                    if (uri, prefix) in self.visited_ns:
-                        self.visited_ns.remove((uri, prefix))
-
-                    else:
-                        log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
+                    log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
                 continue
 
@@ -427,11 +433,23 @@ class AXMLParser(object):
                 break
 
     def getPrefixByUri(self, uri):
-        # As uri --> prefix is 1:n mapping,
-        # We will just return the first one we match.
+        if uri == 0xFFFFFFFF:
+            # No Namespace set
+            return -1
+
         if uri not in self.m_uriprefix:
+            # FIXME: If this is the case, aapt simply returns the URI as prefix
+            #        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp#425
+            #        But we can not do this, as it would not give us a correct XML file.
+            log.warning("Namespace uri set but not in uriprefix! Was there a START_NAMESPACE chunk? "
+                        "uri={uri}(0x{uri:08x})->'{str}', "
+                        "m_uriprefix='{prefix}'".format(uri=uri,
+                                                        prefix=list(self.m_uriprefix.items()),
+                                                        str=self.sb.getString(uri)))
             return -1
         else:
+            # As uri --> prefix is 1:n mapping,
+            # We will just return the first one we match.
             if len(self.m_uriprefix[uri]) == 0:
                 return -1
             return self.m_uriprefix[uri][0]
@@ -669,6 +687,8 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 class AXMLPrinter(object):
     """
     Converter for AXML Files into a XML string
+
+    A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
     """
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
@@ -676,12 +696,15 @@ class AXMLPrinter(object):
 
         self.buff = u''
 
+        depth = 0
+
         while True and self.axml.is_valid():
             _type = next(self.axml)
 
             if _type == START_DOCUMENT:
                 self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
             elif _type == START_TAG:
+                depth += 1
                 self.buff += u'<' + self.getPrefix(self.axml.getPrefix()) + self.axml.getName() + u'\n'
                 self.buff += self.axml.getXMLNS()
 
@@ -700,6 +723,9 @@ class AXMLPrinter(object):
                 self.buff += u'>\n'
 
             elif _type == END_TAG:
+                depth -= 1
+                if depth < 0:
+                    log.warning("Too many END_TAG! Depth is less than zero! depth={}".format(depth))
                 self.buff += u"</%s%s>\n" % (
                     self.getPrefix(self.axml.getPrefix()), self.axml.getName())
 
