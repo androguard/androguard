@@ -772,6 +772,13 @@ class AXMLPrinter:
         """
         return self.root
 
+    def is_packed(self):
+        """
+        Returns True if the AXML is likely to be packed
+        :return: True if packed, False otherwise
+        """
+        return self.axml.packerwarning
+
     def _get_attribute_value(self, index):
         """
         Wrapper function for format_value
