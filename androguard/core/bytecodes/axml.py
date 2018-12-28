@@ -657,6 +657,7 @@ def getPackage(i):
 
 def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
     if _type == TYPE_STRING:
+        # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
         return lookup_string(_data)
 
     elif _type == TYPE_ATTRIBUTE:
@@ -803,10 +804,10 @@ class AXMLPrinter:
         :param name: Name of the attribute
         :return: a fixed version of the name
         """
-        if not name[0].isalpha() or not name[0] == "_":
+        if not name[0].isalpha() and name[0] != "_":
             log.warning("Invalid start for attribute name '{}'".format(name))
             name = "_{}".format(name)
-        if re.match(r"[a-zA-Z0-9._-]", name):
+        if not re.match(r"[a-zA-Z0-9._-]", name):
             log.warning("Attribute name '{}' contains invalid characters!".format(name))
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
