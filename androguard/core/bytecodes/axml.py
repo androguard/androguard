@@ -16,7 +16,6 @@ from collections import defaultdict
 from lxml import etree
 import logging
 import re
-import binascii
 
 log = logging.getLogger("androguard.axml")
 
@@ -737,7 +736,7 @@ class AXMLPrinter:
                                     "Attribute: '{}', Value(hex): '{}'".format(
                                         value.find("\x00"),
                                         name,
-                                        binascii.hexlify(value)))
+                                        value.encode("hex")))
                         value = value[:value.find("\x00")]
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value))
