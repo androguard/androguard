@@ -694,7 +694,7 @@ class AXMLPrinter:
                                         binascii.hexlify(value.encode("utf-8"))))
                         value = value[:value.find("\x00")]
 
-                    log.debug("found an attribute: {}{}='{}'".format(uri, name, value))
+                    log.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
                     if "{}{}".format(uri, name) in elem.attrib:
                         log.warning("Duplicate attribute '{}{}'! Will overwrite!".format(uri, name))
                     elem.set("{}{}".format(uri, name), value)
