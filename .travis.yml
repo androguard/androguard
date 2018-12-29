@@ -17,7 +17,7 @@ install:
   - "pip install .[tests,docs]"
 # command to run tests
 script:
-  - nosetests --with-coverage --with-timer --timer-top-n 50
+  - nosetests --with-coverage --with-timer --timer-top-n 50 --logging-level INFO
   # Testing the scripts - crude ;)
   - for f in $(find ./ -! -path \*signing\* -name \*.apk); do
       echo "testing $f";
