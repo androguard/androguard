@@ -493,25 +493,6 @@ class AXMLParser(object):
         uri = self.m_prefixuriL[pos][1]
         return self.sb.getString(uri)
 
-    def getXMLNS(self):
-        buff = ""
-        for prefix, uri in self.m_prefixuri.items():
-            if (uri, prefix) not in self.visited_ns:
-                prefix_str = self.sb.getString(prefix)
-                prefix_uri = self.sb.getString(self.m_prefixuri[prefix])
-                # FIXME Packers like Liapp use empty uri to fool XML Parser
-                # FIXME they also mess around with the Manifest, thus it can not be parsed easily
-                if prefix_uri == '':
-                    log.warning("Empty Namespace URI for Namespace {}.".format(prefix_str))
-                    self.packerwarning = True
-
-                # if prefix is (null), which is indicated by an empty str, then do not print :
-                if prefix_str != '':
-                    prefix_str = ":" + prefix_str
-                buff += 'xmlns{}="{}"\n'.format(prefix_str, prefix_uri)
-                self.visited_ns.append((uri, prefix))
-        return buff
-
     def getNamespaceCount(self, pos):
         pass
 
