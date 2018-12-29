@@ -67,12 +67,12 @@ class StringBlock(object):
 
         # Next, there is a list of string following
         # This is only a list of offsets (4 byte each)
-        for i in range(0, self.stringCount):
+        for i in range(self.stringCount):
             self.m_stringOffsets.append(unpack('<i', buff.read(4))[0])
 
         # And a list of styles
         # again, a list of offsets
-        for i in range(0, self.styleOffsetCount):
+        for i in range(self.styleOffsetCount):
             self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
 
 
@@ -205,7 +205,7 @@ TEXT = 4
 
 class AXMLParser(object):
     def __init__(self, raw_buff):
-        self.reset()
+        self._reset()
 
         self.valid_axml = True
         self.axml_tampered = False
@@ -236,17 +236,13 @@ class AXMLParser(object):
         self.sb = StringBlock(self.buff, header)
 
         self.m_resourceIDs = []
-        self.m_prefixuri = {}
-        self.m_uriprefix = defaultdict(list)
-        # Contains a list of current prefix/uri pairs
-        self.m_prefixuriL = []
-        # Store which namespaces are already printed
-        self.visited_ns = []
+        # Store a list of prefix/uri mappings encountered
+        self.namespaces = []
 
     def is_valid(self):
         return self.valid_axml
 
-    def reset(self):
+    def _reset(self):
         self.m_event = -1
         self.m_lineNumber = -1
         self.m_name = -1
@@ -257,24 +253,20 @@ class AXMLParser(object):
         self.m_styleAttribute = -1
 
     def __next__(self):
-        self.doNext()
+        self._do_next()
         return self.m_event
 
-    def doNext(self):
+    def _do_next(self):
         if self.m_event == END_DOCUMENT:
             return
 
         event = self.m_event
 
-        self.reset()
+        self._reset()
         while True:
             chunkType = -1
             # General notes:
             # * chunkSize is from start of chunk, including the tag type
-
-            # Fake END_DOCUMENT event.
-            if event == END_TAG:
-                pass
 
             # START_DOCUMENT
             if event == START_DOCUMENT:
@@ -284,11 +276,11 @@ class AXMLParser(object):
                 if self.buff.end() or self.buff.get_idx() == self.filesize:
                     self.m_event = END_DOCUMENT
                     break
-                chunkType = unpack('<L', self.buff.read(4))[0]
+                chunkType, = unpack('<L', self.buff.read(4))
 
             # Parse ResourceIDs. This chunk is after the String section
             if chunkType == CHUNK_RESOURCEIDS:
-                chunkSize = unpack('<L', self.buff.read(4))[0]
+                chunkSize, = unpack('<L', self.buff.read(4))
 
                 # Check size: < 8 bytes mean that the chunk is not complete
                 # Should be aligned to 4 bytes.
@@ -312,7 +304,7 @@ class AXMLParser(object):
             # After the chunk_type, there are always 3 fields for the remaining tags we need to parse:
             # Chunk Size (we do not need it)
             # TODO for sanity checks, we should use it and check if the chunks are correct in size
-            self.buff.read(4)
+            _, = unpack('<L', self.buff.read(4))
 
             # Line Number
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
@@ -333,46 +325,39 @@ class AXMLParser(object):
             # * END_TAG
             # * TEXT
             if chunkType == CHUNK_XML_START_NAMESPACE:
-                prefix = unpack('<L', self.buff.read(4))[0]
-                uri = unpack('<L', self.buff.read(4))[0]
+                # FIXME: We do not care about namespaces right now
+                prefix, = unpack('<L', self.buff.read(4))
+                uri, = unpack('<L', self.buff.read(4))
 
-                # FIXME We will get a problem here, if the same uri is used with different prefixes!
-                # prefix --> uri is a 1:1 mapping
-                self.m_prefixuri[prefix] = uri
-                # but uri --> prefix is a 1:n mapping!
-                self.m_uriprefix[uri].append(prefix)
-                self.m_prefixuriL.append((prefix, uri))
-                self.ns = uri
+                s_prefix = self.sb.getString(prefix)
+                s_uri = self.sb.getString(uri)
 
-                # Workaround for closing tags
-                if (uri, prefix) in self.visited_ns:
-                    self.visited_ns.remove((uri, prefix))
+                log.debug("Start of Namespace mapping: prefix {}: '{}' --> uri {}: '{}'".format(prefix, s_prefix, uri, s_uri))
 
+                if s_uri == '':
+                    log.warning("Namespace '{}' resolves to empty URI. "
+                                "This might be a packer.".format(s_prefix))
+
+                if (prefix, uri) in self.namespaces:
+                    log.warning("Namespace mapping ({}, {}) already seen!".format(prefix, uri))
+                else:
+                    self.namespaces.append((prefix, uri))
+
+                # TODO break here and set m_event
                 continue
 
             if chunkType == CHUNK_XML_END_NAMESPACE:
-                self.ns = -1
                 # END_PREFIX contains again prefix and uri field
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
 
                 # We can then remove those from the prefixuriL
-                if (prefix, uri) in self.m_prefixuriL:
-                    self.m_prefixuriL.remove((prefix, uri))
-
-                # We also remove the entry from prefixuri and uriprefix:
-                if prefix in self.m_prefixuri:
-                    del self.m_prefixuri[prefix]
-                if uri in self.m_uriprefix:
-                    self.m_uriprefix[uri].remove(prefix)
-                # Need to remove them from visisted namespaces as well, as it might pop up later
-                # FIXME we need to remove it also if we leave a tag which closes it namespace
-                # Workaround for now: remove it on a START_NAMESPACE tag
-                if (uri, prefix) in self.visited_ns:
-                    self.visited_ns.remove((uri, prefix))
+                if (prefix, uri) in self.namespaces:
+                    self.namespaces.remove((prefix, uri))
                 else:
                     log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
+                # TODO break here and set m_event
                 continue
 
             # START_TAG is the start of a new tag.
@@ -386,45 +371,53 @@ class AXMLParser(object):
                 # * class_attribute
                 # After that, there are two lists of attributes, 20 bytes each
 
-                self.m_namespaceUri = unpack('<L', self.buff.read(4))[0]
-                self.m_name = unpack('<L', self.buff.read(4))[0]
+                # Namespace URI (String ID)
+                self.m_namespaceUri, = unpack('<L', self.buff.read(4))
+                # Name of the Tag (String ID)
+                self.m_name, = unpack('<L', self.buff.read(4))
+                # FIXME: Flags
+                _ = self.buff.read(4)
+                # Attribute Count
+                attributeCount, = unpack('<L', self.buff.read(4))
+                # Class Attribute
+                self.m_classAttribute, = unpack('<L', self.buff.read(4))
 
-                # FIXME
-                self.buff.read(4)  # flags
-
-                attributeCount = unpack('<L', self.buff.read(4))[0]
                 self.m_idAttribute = (attributeCount >> 16) - 1
-                attributeCount = attributeCount & 0xFFFF
-                self.m_classAttribute = unpack('<L', self.buff.read(4))[0]
+                self.m_attribute_count = attributeCount & 0xFFFF
                 self.m_styleAttribute = (self.m_classAttribute >> 16) - 1
-
                 self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
 
                 # Now, we parse the attributes.
                 # Each attribute has 5 fields of 4 byte
-                for i in range(0, attributeCount * ATTRIBUTE_LENGHT):
+                for i in range(0, self.m_attribute_count * ATTRIBUTE_LENGHT):
                     # Each field is linearly parsed into the array
+                    # Each Attribute contains:
+                    # * Namespace URI (String ID)
+                    # * Name (String ID)
+                    # * Value
+                    # * Type
+                    # * Data
                     self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
 
                 # Then there are class_attributes
-                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes),
-                               ATTRIBUTE_LENGHT):
+                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
                     self.m_attributes[i] = self.m_attributes[i] >> 24
 
                 self.m_event = START_TAG
                 break
 
             if chunkType == CHUNK_XML_END_TAG:
-                self.m_namespaceUri = unpack('<L', self.buff.read(4))[0]
-                self.m_name = unpack('<L', self.buff.read(4))[0]
+                self.m_namespaceUri, = unpack('<L', self.buff.read(4))
+                self.m_name, = unpack('<L', self.buff.read(4))
+
                 self.m_event = END_TAG
                 break
 
             if chunkType == CHUNK_XML_TEXT:
                 # TODO we do not know what the TEXT field does...
-                self.m_name = unpack('<L', self.buff.read(4))[0]
+                self.m_name, = unpack('<L', self.buff.read(4))
 
-                # FIXME
+                # FIXME: is this the same as for the attributes?
                 # Raw_value
                 self.buff.read(4)
                 # typed_value, is an enum
@@ -433,117 +426,101 @@ class AXMLParser(object):
                 self.m_event = TEXT
                 break
 
-    def getPrefixByUri(self, uri):
-        if uri == 0xFFFFFFFF:
-            # No Namespace set
-            return -1
-
-        if uri not in self.m_uriprefix:
-            # FIXME: If this is the case, aapt simply returns the URI as prefix
-            #        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp#425
-            #        But we can not do this, as it would not give us a correct XML file.
-            log.warning("Namespace uri set but not in uriprefix! Was there a START_NAMESPACE chunk? "
-                        "uri={uri}(0x{uri:08x})->'{str}', "
-                        "m_uriprefix='{prefix}'".format(uri=uri,
-                                                        prefix=list(self.m_uriprefix.items()),
-                                                        str=self.sb.getString(uri)))
-            return -1
-        else:
-            # As uri --> prefix is 1:n mapping,
-            # We will just return the first one we match.
-            if len(self.m_uriprefix[uri]) == 0:
-                return -1
-            return self.m_uriprefix[uri][0]
-
-    def getPrefix(self):
-        # The default is, that the namespaceUri is 0xFFFFFFFF
-        # Then we know, there is none
-        if self.m_namespaceUri == 0xFFFFFFFF:
-            return u''
-
-        # FIXME this could be problematic. Need to find the correct namespace prefix
-        if self.m_namespaceUri in self.m_uriprefix:
-            candidate = self.m_uriprefix[self.m_namespaceUri][0]
-            try:
-                return self.sb.getString(candidate)
-            except KeyError:
-                return u''
-        else:
-            return u''
-
-    def getName(self):
-        if self.m_name == -1 or (self.m_event != START_TAG and
-                                         self.m_event != END_TAG):
+    @property
+    def name(self):
+        """
+        Return the String assosciated with the tag name
+        """
+        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
             return u''
 
         return self.sb.getString(self.m_name)
 
-    def getText(self):
+    @property
+    def namespace(self):
+        """
+        Return the Namespace URI (if any) as a String for the current tag
+        """
+        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
+            return u''
+
+        # No Namespace
+        if self.m_namespaceUri == 0xFFFFFFFF:
+            return u''
+
+        return self.sb.getString(self.m_namespaceUri)
+
+    @property
+    def text(self):
+        """
+        Return the String assosicated with the current text
+        """
         if self.m_name == -1 or self.m_event != TEXT:
             return u''
 
         return self.sb.getString(self.m_name)
 
-    def getNamespacePrefix(self, pos):
-        prefix = self.m_prefixuriL[pos][0]
-        return self.sb.getString(prefix)
-
-    def getNamespaceUri(self, pos):
-        uri = self.m_prefixuriL[pos][1]
-        return self.sb.getString(uri)
-
-    def getNamespaceCount(self, pos):
-        pass
-
-    def getAttributeOffset(self, index):
-        # FIXME
+    def _get_attribute_offset(self, index):
+        """
+        Return the start inside the m_attributes array for a given attribute
+        """
         if self.m_event != START_TAG:
             log.warning("Current event is not START_TAG.")
 
-        offset = index * 5
-        # FIXME
+        offset = index * ATTRIBUTE_LENGHT
         if offset >= len(self.m_attributes):
             log.warning("Invalid attribute index")
 
         return offset
 
     def getAttributeCount(self):
+        """
+        Return the number of Attributes for a Tag
+        or -1 if not in a tag
+        """
         if self.m_event != START_TAG:
             return -1
 
-        return len(self.m_attributes) // ATTRIBUTE_LENGHT
+        return self.m_attribute_count
 
     def getAttributeUri(self, index):
-        offset = self.getAttributeOffset(index)
+        """
+        Returns the numeric ID for the namespace URI of an attribute
+        """
+        offset = self._get_attribute_offset(index)
         uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
 
         return uri
 
-    def getAttributePrefix(self, index):
+    def getAttributeNamespace(self, index):
+        """
+        Return the Namespace URI (if any) for the attribute
+        """
         uri = self.getAttributeUri(index)
 
-        prefix = self.getPrefixByUri(uri)
+        # No Namespace
+        if uri == 0xFFFFFFFF:
+            return u''
 
-        if prefix == -1:
-            return ""
-
-        return self.sb.getString(prefix)
+        return self.sb.getString(uri)
 
     def getAttributeName(self, index):
-        offset = self.getAttributeOffset(index)
+        """
+        Returns the String which represents the attribute name
+        """
+        offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
 
+        # FIXME: Is this even possible? We unpack unsigned integers here!
         if name == -1:
-            return ""
+            return u''
 
         res = self.sb.getString(name)
         # If the result is a (null) string, we need to look it up.
         if not res:
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][
-                    attr
-                ]
+                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
             else:
                 # Attach the HEX Number, so for multiple missing attributes we do not run
                 # into problems.
@@ -552,11 +529,11 @@ class AXMLParser(object):
         return res
 
     def getAttributeValueType(self, index):
-        offset = self.getAttributeOffset(index)
+        offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
 
     def getAttributeValueData(self, index):
-        offset = self.getAttributeOffset(index)
+        offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
     def getAttributeValue(self, index):
@@ -567,12 +544,12 @@ class AXMLParser(object):
         :param index:
         :return:
         """
-        offset = self.getAttributeOffset(index)
+        offset = self._get_attribute_offset(index)
         valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
         if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
             return self.sb.getString(valueString)
-        return ""
+        return u''
 
 
 # FIXME there are duplicates and missing values...
@@ -693,25 +670,21 @@ class AXMLPrinter:
             if _type == START_DOCUMENT:
                 continue
             if _type == START_TAG:
-                name = self.axml.getName()
-                uri = self.axml.sb.getString(self.axml.m_namespaceUri)
-                if uri != "":
-                    uri = "{{{}}}".format(uri)
+                # TODO: check if name is parsable in XML
+                name = self.axml.name
+                uri = self._print_namespace(self.axml.namespace)
                 tag = "{}{}".format(uri, name)
 
                 log.debug("START_TAG: {}".format(tag))
                 elem = etree.Element(tag)
 
                 for i in range(self.axml.getAttributeCount()):
-                    uri = self.axml.sb.getString(self.axml.getAttributeUri(i))
-                    if uri != "":
-                        uri = "{{{}}}".format(uri)
+                    uri = self._print_namespace(self.axml.getAttributeNamespace(i))
                     name = self._fix_attrib_name(self.axml.getAttributeName(i))
                     value = self._get_attribute_value(i)
 
                     # TODO: these checks should probably go into the AXML parser
-                    # TODO: there are probably other value checks required as
-                    # well
+                    # TODO: there are probably other value checks required as well
                     if "\x00" in value:
                         log.warning("Null byte found in attribute value at position {}: "
                                     "Attribute: '{}', Value(hex): '{}'".format(
@@ -738,10 +711,11 @@ class AXMLPrinter:
             if _type == END_TAG:
                 if not cur:
                     log.warning("Too many END_TAG! No more elements available to attach to!")
+                # FIXME I think we need to check which tag it is?
                 cur.pop()
             if _type == TEXT:
                 log.debug("TEXT for {}".format(cur[-1]))
-                cur[-1].text = self.axml.getText()
+                cur[-1].text = self.axml.text
             if _type == END_DOCUMENT:
                 break
 
@@ -808,6 +782,11 @@ class AXMLPrinter:
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
         return name
+
+    def _print_namespace(self, uri):
+        if uri != "":
+            uri = "{{{}}}".format(uri)
+        return uri
 
 # Constants for ARSC Files
 RES_NULL_TYPE = 0x0000
