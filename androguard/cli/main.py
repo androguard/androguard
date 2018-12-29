@@ -15,6 +15,10 @@ from androguard.core.bytecodes import apk
 from androguard.util import read
 
 
+# If something out of this module is imported, activate console logging
+androconf.show_logging()
+
+
 def androaxml_main(inp, outp=None):
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":

@@ -238,7 +238,7 @@ def show_logging(level=logging.INFO):
     """
     logger = logging.getLogger()
 
-    h = logging.StreamHandler(stream=sys.stdout)
+    h = logging.StreamHandler(stream=sys.stderr)
     h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-8s] %(name)s (%(filename)s): %(message)s"))
 
     logger.addHandler(h)

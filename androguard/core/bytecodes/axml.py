@@ -16,6 +16,7 @@ from collections import defaultdict
 from lxml import etree
 import logging
 import re
+import binascii
 
 log = logging.getLogger("androguard.axml")
 
@@ -727,6 +728,17 @@ class AXMLPrinter:
                         uri = "{{{}}}".format(uri)
                     name = self._fix_attrib_name(self.axml.getAttributeName(i))
                     value = self._get_attribute_value(i)
+
+                    # TODO: these checks should probably go into the AXML parser
+                    # TODO: there are probably other value checks required as
+                    # well
+                    if "\x00" in value:
+                        log.warning("Null byte found in attribute value at position {}: "
+                                    "Attribute: '{}', Value(hex): '{}'".format(
+                                        value.find("\x00"),
+                                        name,
+                                        binascii.hexlify(value)))
+                        value = value[:value.find("\x00")]
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value))
                     if "{}{}".format(uri, name) in elem.attrib:
