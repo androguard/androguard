@@ -209,7 +209,6 @@ class AXMLParser(object):
 
         self.valid_axml = True
         self.axml_tampered = False
-        self.packerwarning = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
         axml_file, = unpack('<L', self.buff.read(4))
@@ -685,6 +684,7 @@ class AXMLPrinter:
         self.axml = AXMLParser(raw_buff)
 
         self.root = None
+        self.packerwarning = False
         cur = []
 
         while self.axml.is_valid():
@@ -773,7 +773,7 @@ class AXMLPrinter:
         Returns True if the AXML is likely to be packed
         :return: True if packed, False otherwise
         """
-        return self.axml.packerwarning
+        return self.packerwarning
 
     def _get_attribute_value(self, index):
         """
@@ -800,9 +800,11 @@ class AXMLPrinter:
         """
         if not name[0].isalpha() and name[0] != "_":
             log.warning("Invalid start for attribute name '{}'".format(name))
+            self.packerwarning = True
             name = "_{}".format(name)
         if not re.match(r"[a-zA-Z0-9._-]", name):
             log.warning("Attribute name '{}' contains invalid characters!".format(name))
+            self.packerwarning = True
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
         return name
