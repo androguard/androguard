@@ -7,6 +7,7 @@ from builtins import object
 from androguard.core import bytecode
 
 from androguard.core.resources import public
+from androguard.core.bytecodes.axml.types import *
 
 from struct import pack, unpack
 from xml.sax.saxutils import escape
@@ -21,23 +22,79 @@ import binascii
 log = logging.getLogger("androguard.axml")
 
 
-################################## AXML FORMAT ########################################
-# Translated from
-# http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
+# Chunk Headers
+CHUNK_AXML_FILE = 0x00080003
+CHUNK_STRING = 0x001C0001
+CHUNK_RESOURCEIDS = 0x00080180
+CHUNK_XML_FIRST = 0x00100100
+CHUNK_XML_START_NAMESPACE = 0x00100100
+CHUNK_XML_END_NAMESPACE = 0x00100101
+CHUNK_XML_START_TAG = 0x00100102
+CHUNK_XML_END_TAG = 0x00100103
+CHUNK_XML_TEXT = 0x00100104
+CHUNK_XML_LAST = 0x00100104
 
 # Flags in the STRING Section
 SORTED_FLAG = 1 << 0
 UTF8_FLAG = 1 << 8
 
+# Position of the fields inside an attribute
+ATTRIBUTE_IX_NAMESPACE_URI = 0
+ATTRIBUTE_IX_NAME = 1
+ATTRIBUTE_IX_VALUE_STRING = 2
+ATTRIBUTE_IX_VALUE_TYPE = 3
+ATTRIBUTE_IX_VALUE_DATA = 4
+ATTRIBUTE_LENGHT = 5
+
+# Internally used state variables for AXMLParser
+START_DOCUMENT = 0
+END_DOCUMENT = 1
+START_TAG = 2
+END_TAG = 3
+TEXT = 4
+
+# Table used to lookup functions to determine the value representation in ARSCParser
+TYPE_TABLE = {
+    TYPE_ATTRIBUTE: "attribute",
+    TYPE_DIMENSION: "dimension",
+    TYPE_FLOAT: "float",
+    TYPE_FRACTION: "fraction",
+    TYPE_INT_BOOLEAN: "int_boolean",
+    TYPE_INT_COLOR_ARGB4: "int_color_argb4",
+    TYPE_INT_COLOR_ARGB8: "int_color_argb8",
+    TYPE_INT_COLOR_RGB4: "int_color_rgb4",
+    TYPE_INT_COLOR_RGB8: "int_color_rgb8",
+    TYPE_INT_DEC: "int_dec",
+    TYPE_INT_HEX: "int_hex",
+    TYPE_NULL: "null",
+    TYPE_REFERENCE: "reference",
+    TYPE_STRING: "string",
+}
+
+RADIX_MULTS = [0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010]
+DIMENSION_UNITS = ["px", "dip", "sp", "pt", "in", "mm"]
+FRACTION_UNITS = ["%", "%p"]
+
+COMPLEX_UNIT_MASK = 0x0F
+
+
+def complexToFloat(xcomplex):
+    """
+    Convert a complex unit into float
+    """
+    return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
+
 
 class StringBlock(object):
-    """
-    StringBlock is a CHUNK inside an AXML File
-    It contains all strings, which are used by referecing to ID's
-
-    TODO might migrate this block into the ARSCParser, as it it not a "special" block but a normal tag.
-    """
+    # TODO might migrate this block into the ARSCParser, as it it not a "special" block but a normal tag.
     def __init__(self, buff, header):
+        """
+        StringBlock is a CHUNK inside an AXML File
+        It contains all strings, which are used by referecing to ID's
+
+        :param buff: buffer which holds the string block
+        :param header: a instance of :class:`~ARSCHeader`
+        """
         self._cache = {}
         self.header = header
         # We already read the header (which was chunk_type and chunk_size
@@ -85,7 +142,6 @@ class StringBlock(object):
         if self.stylesOffset != 0 and self.styleOffsetCount != 0:
             size = self.stylesOffset - self.stringsOffset
 
-        # FIXME unaligned
         if (size % 4) != 0:
             log.warning("Size of strings is not aligned by four bytes.")
 
@@ -94,7 +150,6 @@ class StringBlock(object):
         if self.stylesOffset != 0 and self.styleOffsetCount != 0:
             size = self.header.size - self.stylesOffset
 
-            # FIXME unaligned
             if (size % 4) != 0:
                 log.warning("Size of styles is not aligned by four bytes.")
 
@@ -176,34 +231,6 @@ class StringBlock(object):
             print(i, repr(self.getString(i)))
 
 
-# Position of the fields inside an attribute
-ATTRIBUTE_IX_NAMESPACE_URI = 0
-ATTRIBUTE_IX_NAME = 1
-ATTRIBUTE_IX_VALUE_STRING = 2
-ATTRIBUTE_IX_VALUE_TYPE = 3
-ATTRIBUTE_IX_VALUE_DATA = 4
-ATTRIBUTE_LENGHT = 5
-
-# Chunk Headers
-CHUNK_AXML_FILE = 0x00080003
-CHUNK_STRING = 0x001C0001
-CHUNK_RESOURCEIDS = 0x00080180
-CHUNK_XML_FIRST = 0x00100100
-CHUNK_XML_START_NAMESPACE = 0x00100100
-CHUNK_XML_END_NAMESPACE = 0x00100101
-CHUNK_XML_START_TAG = 0x00100102
-CHUNK_XML_END_TAG = 0x00100103
-CHUNK_XML_TEXT = 0x00100104
-CHUNK_XML_LAST = 0x00100104
-
-# Internally used state variables
-START_DOCUMENT = 0
-END_DOCUMENT = 1
-START_TAG = 2
-END_TAG = 3
-TEXT = 4
-
-
 class AXMLParser(object):
     def __init__(self, raw_buff):
         """
@@ -238,6 +265,9 @@ class AXMLParser(object):
         assert self.filesize <= self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
 
         # Now we parse the STRING POOL
+        # TODO: It is clear why the header needs to be parsed like this
+        # (reusage) but it would make much more sense to put the whole chunk
+        # into the StringBlock and not create a header first
         header = ARSCHeader(self.buff)  # read 8 byte = String header + chunk_size
         assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
 
@@ -321,7 +351,7 @@ class AXMLParser(object):
             # TODO: parse the comment
             self.m_comment_index, = unpack('<L', self.buff.read(4))
             if self.m_comment_index != 0xFFFFFFFF:
-                log.warning("comment_index is set but we will not parse it!  comment_index={}, offset={}".format(self.m_comment_index, self.buff.tell() - 16))
+                log.info("comment_index is set but we will not parse it!  comment_index={}, offset={}".format(self.m_comment_index, self.buff.tell() - 16))
 
             # Now start to parse the field
 
@@ -346,7 +376,7 @@ class AXMLParser(object):
                                 "This might be a packer.".format(s_prefix))
 
                 if (prefix, uri) in self.namespaces:
-                    log.warning("Namespace mapping ({}, {}) already seen! This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
+                    log.info("Namespace mapping ({}, {}) already seen! This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
                 self.namespaces.append((prefix, uri))
 
                 # We can continue with the next chunk, as we store the namespace
@@ -585,76 +615,34 @@ class AXMLParser(object):
         return u''
 
 
-# FIXME there are duplicates and missing values...
-TYPE_NULL = 0
-TYPE_REFERENCE = 1
-TYPE_ATTRIBUTE = 2
-TYPE_STRING = 3
-TYPE_FLOAT = 4
-TYPE_DIMENSION = 5
-TYPE_FRACTION = 6
-TYPE_FIRST_INT = 16
-TYPE_INT_DEC = 16
-TYPE_INT_HEX = 17
-TYPE_INT_BOOLEAN = 18
-TYPE_FIRST_COLOR_INT = 28
-TYPE_INT_COLOR_ARGB8 = 28
-TYPE_INT_COLOR_RGB8 = 29
-TYPE_INT_COLOR_ARGB4 = 30
-TYPE_INT_COLOR_RGB4 = 31
-TYPE_LAST_COLOR_INT = 31
-TYPE_LAST_INT = 31
-
-TYPE_TABLE = {
-    TYPE_ATTRIBUTE: "attribute",
-    TYPE_DIMENSION: "dimension",
-    TYPE_FLOAT: "float",
-    TYPE_FRACTION: "fraction",
-    TYPE_INT_BOOLEAN: "int_boolean",
-    TYPE_INT_COLOR_ARGB4: "int_color_argb4",
-    TYPE_INT_COLOR_ARGB8: "int_color_argb8",
-    TYPE_INT_COLOR_RGB4: "int_color_rgb4",
-    TYPE_INT_COLOR_RGB8: "int_color_rgb8",
-    TYPE_INT_DEC: "int_dec",
-    TYPE_INT_HEX: "int_hex",
-    TYPE_NULL: "null",
-    TYPE_REFERENCE: "reference",
-    TYPE_STRING: "string",
-}
-
-RADIX_MULTS = [0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010]
-DIMENSION_UNITS = ["px", "dip", "sp", "pt", "in", "mm"]
-FRACTION_UNITS = ["%", "%p"]
-
-COMPLEX_UNIT_MASK = 15
-
-
-def complexToFloat(xcomplex):
-    return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
-
-
-def long2int(l):
-    if l > 0x7fffffff:
-        l = (0x7fffffff & l) - 0x80000000
-    return l
-
-
-def getPackage(i):
-    if i >> 24 == 1:
-        return "android:"
-    return ""
-
-
 def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
+    """
+    Format a value based on type and data.
+    By default, no strings are looked up and "<string>" is returned.
+    You need to define `lookup_string` in order to actually lookup strings from
+    the string table.
+
+    :param _type: The numeric type of the value
+    :param _data: The numeric data of the value
+    :param lookup_string: A function how to resolve strings from integer IDs
+    """
+
+    # Function to prepend android prefix for attributes/references from the
+    # android library
+    fmt_package = lambda x: "android:" if x >> 24 == 1 else ""
+
+    # Function to represent integers
+    fmt_int = lambda x: (0x7FFFFFFF & x) - 0x80000000 if x > 0x7FFFFFFF else x
+
     if _type == TYPE_STRING:
         # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
         return lookup_string(_data)
 
     elif _type == TYPE_ATTRIBUTE:
-        return "?%s%08X" % (getPackage(_data), _data)
+        return "?%s%08X" % (fmt_package(_data), _data)
 
     elif _type == TYPE_REFERENCE:
-        return "@%s%08X" % (getPackage(_data), _data)
+        return "@%s%08X" % (fmt_package(_data), _data)
 
     elif _type == TYPE_FLOAT:
         return "%f" % unpack("=f", pack("=L", _data))[0]
@@ -677,7 +665,7 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
         return "#%08X" % _data
 
     elif TYPE_FIRST_INT <= _type <= TYPE_LAST_INT:
-        return "%d" % long2int(_data)
+        return "%d" % fmt_int(_data)
 
     return "<0x%X, type 0x%02X>" % (_data, _type)
 
@@ -844,6 +832,7 @@ class AXMLPrinter:
         if uri != "":
             uri = "{{{}}}".format(uri)
         return uri
+
 
 # Constants for ARSC Files
 RES_NULL_TYPE = 0x0000
