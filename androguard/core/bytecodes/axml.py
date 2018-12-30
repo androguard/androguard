@@ -326,7 +326,6 @@ class AXMLParser(object):
             # * END_TAG
             # * TEXT
             if chunkType == CHUNK_XML_START_NAMESPACE:
-                # FIXME: We do not care about namespaces right now
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
 
@@ -336,15 +335,15 @@ class AXMLParser(object):
                 log.debug("Start of Namespace mapping: prefix {}: '{}' --> uri {}: '{}'".format(prefix, s_prefix, uri, s_uri))
 
                 if s_uri == '':
-                    log.warning("Namespace '{}' resolves to empty URI. "
+                    log.warning("Namespace prefix '{}' resolves to empty URI. "
                                 "This might be a packer.".format(s_prefix))
 
                 if (prefix, uri) in self.namespaces:
                     log.warning("Namespace mapping ({}, {}) already seen!".format(prefix, uri))
-                else:
-                    self.namespaces.append((prefix, uri))
+                self.namespaces.append((prefix, uri))
 
-                # TODO break here and set m_event
+                # We can continue with the next chunk, as we store the namespace
+                # mappings for each tag
                 continue
 
             if chunkType == CHUNK_XML_END_NAMESPACE:
@@ -352,13 +351,14 @@ class AXMLParser(object):
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
 
-                # We can then remove those from the prefixuriL
+                # We remove the last namespace mapping matching
                 if (prefix, uri) in self.namespaces:
                     self.namespaces.remove((prefix, uri))
                 else:
                     log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
-                # TODO break here and set m_event
+                # We can continue with the next chunk, as we store the namespace
+                # mappings for each tag
                 continue
 
             # START_TAG is the start of a new tag.
@@ -450,6 +450,31 @@ class AXMLParser(object):
             return u''
 
         return self.sb.getString(self.m_namespaceUri)
+
+    @property
+    def nsmap(self):
+        """
+        Returns the current namespace mapping as a dictionary
+        """
+        # there are several problems with the map and we try to guess a few
+        # things here:
+        # 1) a URI can be mapped by many prefixes, so it is to decide which one
+        #    to take
+        # 2) a prefix might map to an empty string (some packers)
+        # 3) uri+prefix mappings might be included several times
+        # 4) prefix might be empty
+
+        NSMAP = dict()
+        # solve 3) by using a set
+        for k, v in set(self.namespaces):
+            s_prefix = self.sb.getString(k)
+            s_uri = self.sb.getString(v)
+            # Solve 2) & 4) by not including
+            if s_uri != "" and s_prefix != "":
+                # solve 1) by using the last one in the list
+                NSMAP[s_prefix] = s_uri
+
+        return NSMAP
 
     @property
     def text(self):
@@ -653,7 +678,8 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 class AXMLPrinter:
     def __init__(self, raw_buff):
         """
-        Converter for AXML Files into a XML string
+        Converter for AXML Files into a lxml ElementTree, which can easily be
+        converted into XML.
 
         A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
 
@@ -676,8 +702,8 @@ class AXMLPrinter:
                 uri = self._print_namespace(self.axml.namespace)
                 tag = "{}{}".format(uri, name)
 
-                log.debug("START_TAG: {}".format(tag))
-                elem = etree.Element(tag)
+                log.debug("START_TAG: {} (line={})".format(tag, self.axml.m_lineNumber))
+                elem = etree.Element(tag, nsmap=self.axml.nsmap)
 
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
@@ -712,12 +738,20 @@ class AXMLPrinter:
             if _type == END_TAG:
                 if not cur:
                     log.warning("Too many END_TAG! No more elements available to attach to!")
-                # FIXME I think we need to check which tag it is?
+
+                name = self.axml.name
+                uri = self._print_namespace(self.axml.namespace)
+                tag = "{}{}".format(uri, name)
+                if cur[-1].tag != tag:
+                    log.warning("Closing tag '{}' does not match current stack! At line number: {}. Is the XML malformed?".format(self.axml.name, self.axml.m_lineNumber))
                 cur.pop()
             if _type == TEXT:
                 log.debug("TEXT for {}".format(cur[-1]))
                 cur[-1].text = self.axml.text
             if _type == END_DOCUMENT:
+                # Check if all namespace mappings are closed
+                if len(self.axml.namespaces) > 0:
+                    log.warning("Not all namespace mappings were closed! Malformed AXML?")
                 break
 
     def get_buff(self):
@@ -746,6 +780,11 @@ class AXMLPrinter:
     def is_packed(self):
         """
         Returns True if the AXML is likely to be packed
+
+        Packers do some weird stuff and we try to detect it.
+        Sometimes the files are not packed but simply broken or compiled with
+        some broken version of a tool.
+
         :return: True if packed, False otherwise
         """
         return self.packerwarning
@@ -777,7 +816,17 @@ class AXMLPrinter:
             log.warning("Invalid start for attribute name '{}'".format(name))
             self.packerwarning = True
             name = "_{}".format(name)
-        if not re.match(r"[a-zA-Z0-9._-]", name):
+        if name.startswith("android:"):
+            # Seems be a common thing...
+            # Actually this means that the Manifest is likely to be broken, as
+            # usually no namespace URI is set in this case.
+            log.warning("Attribute name '{}' starts with 'android:' prefix! The Manifest seems to be broken? Removing prefix.".format(name))
+            self.packerwarning = True
+            name = name[len("android:"):]
+        if ":" in name:
+            # Print out an extra warning
+            log.warning("Attribute seems to contain a namespace prefix: '{}'".format(name))
+        if not re.match(r"^[a-zA-Z0-9._-]*$", name):
             log.warning("Attribute name '{}' contains invalid characters!".format(name))
             self.packerwarning = True
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
