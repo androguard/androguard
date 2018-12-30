@@ -22,10 +22,13 @@ import binascii
 log = logging.getLogger("androguard.axml")
 
 
-# Chunk Headers
+# Chunk Headers in the AXML file
+# These are not really headers but define length of header + Resource type
+# See the variables with RES_ below.
 CHUNK_AXML_FILE = 0x00080003
 CHUNK_STRING = 0x001C0001
 CHUNK_RESOURCEIDS = 0x00080180
+
 CHUNK_XML_FIRST = 0x00100100
 CHUNK_XML_START_NAMESPACE = 0x00100100
 CHUNK_XML_END_NAMESPACE = 0x00100101
@@ -33,6 +36,26 @@ CHUNK_XML_START_TAG = 0x00100102
 CHUNK_XML_END_TAG = 0x00100103
 CHUNK_XML_TEXT = 0x00100104
 CHUNK_XML_LAST = 0x00100104
+
+# Constants for ARSC Files
+# see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215
+RES_NULL_TYPE = 0x0000
+RES_STRING_POOL_TYPE = 0x0001
+RES_TABLE_TYPE = 0x0002
+RES_XML_TYPE = 0x0003
+
+RES_XML_FIRST_CHUNK_TYPE    = 0x0100
+RES_XML_START_NAMESPACE_TYPE= 0x0100
+RES_XML_END_NAMESPACE_TYPE  = 0x0101
+RES_XML_START_ELEMENT_TYPE  = 0x0102
+RES_XML_END_ELEMENT_TYPE    = 0x0103
+RES_XML_CDATA_TYPE          = 0x0104
+RES_XML_LAST_CHUNK_TYPE     = 0x017f
+RES_XML_RESOURCE_MAP_TYPE   = 0x0180
+RES_TABLE_PACKAGE_TYPE      = 0x0200
+RES_TABLE_TYPE_TYPE         = 0x0201
+RES_TABLE_TYPE_SPEC_TYPE    = 0x0202
+RES_TABLE_LIBRARY_TYPE      = 0x0203
 
 # Flags in the STRING Section
 SORTED_FLAG = 1 << 0
@@ -86,11 +109,12 @@ def complexToFloat(xcomplex):
 
 
 class StringBlock(object):
-    # TODO might migrate this block into the ARSCParser, as it it not a "special" block but a normal tag.
     def __init__(self, buff, header):
         """
         StringBlock is a CHUNK inside an AXML File
         It contains all strings, which are used by referecing to ID's
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
 
         :param buff: buffer which holds the string block
         :param header: a instance of :class:`~ARSCHeader`
@@ -99,23 +123,23 @@ class StringBlock(object):
         self.header = header
         # We already read the header (which was chunk_type and chunk_size
         # Now, we read the string_count:
-        self.stringCount = unpack('<i', buff.read(4))[0]
+        self.stringCount = unpack('<I', buff.read(4))[0]
         # style_count
-        self.styleOffsetCount = unpack('<i', buff.read(4))[0]
+        self.styleCount = unpack('<I', buff.read(4))[0]
 
         # flags
-        self.flags = unpack('<i', buff.read(4))[0]
+        self.flags = unpack('<I', buff.read(4))[0]
         self.m_isUTF8 = ((self.flags & UTF8_FLAG) != 0)
 
         # string_pool_offset
         # The string offset is counted from the beginning of the string section
-        self.stringsOffset = unpack('<i', buff.read(4))[0]
+        self.stringsOffset = unpack('<I', buff.read(4))[0]
         # style_pool_offset
         # The styles offset is counted as well from the beginning of the string section
-        self.stylesOffset = unpack('<i', buff.read(4))[0]
+        self.stylesOffset = unpack('<I', buff.read(4))[0]
 
         # Check if they supplied a stylesOffset even if the count is 0:
-        if self.styleOffsetCount == 0 and self.stylesOffset > 0:
+        if self.styleCount == 0 and self.stylesOffset > 0:
             log.warning("Styles Offset given, but styleCount is zero.")
 
         self.m_stringOffsets = []
@@ -123,23 +147,22 @@ class StringBlock(object):
         self.m_charbuff = ""
         self.m_styles = []
 
-        # Next, there is a list of string following
+        # Next, there is a list of string following.
         # This is only a list of offsets (4 byte each)
         for i in range(self.stringCount):
-            self.m_stringOffsets.append(unpack('<i', buff.read(4))[0])
+            self.m_stringOffsets.append(unpack('<I', buff.read(4))[0])
 
         # And a list of styles
         # again, a list of offsets
-        for i in range(self.styleOffsetCount):
-            self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
-
+        for i in range(self.styleCount):
+            self.m_styleOffsets.append(unpack('<I', buff.read(4))[0])
 
         # FIXME it is probably better to parse n strings and not calculate the size
         size = self.header.size - self.stringsOffset
 
         # if there are styles as well, we do not want to read them too.
         # Only read them, if no
-        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
+        if self.stylesOffset != 0 and self.styleCount != 0:
             size = self.stylesOffset - self.stringsOffset
 
         if (size % 4) != 0:
@@ -147,20 +170,39 @@ class StringBlock(object):
 
         self.m_charbuff = buff.read(size)
 
-        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
+        if self.stylesOffset != 0 and self.styleCount != 0:
             size = self.header.size - self.stylesOffset
 
             if (size % 4) != 0:
                 log.warning("Size of styles is not aligned by four bytes.")
 
             for i in range(0, size // 4):
-                self.m_styles.append(unpack('<i', buff.read(4))[0])
+                self.m_styles.append(unpack('<I', buff.read(4))[0])
+
+    def __getitem__(self, idx):
+        """
+        Returns the string at the index in the string table
+        """
+        return self.getString(idx)
+
+    def __len__(self):
+        """
+        Get the number of strings stored in this table
+        """
+        return self.stringCount
+
+    def __iter__(self):
+        """
+        Iterable over all strings
+        """
+        for i in range(self.stringCount):
+            yield self.getString(i)
 
     def getString(self, idx):
         if idx in self._cache:
             return self._cache[idx]
 
-        if idx < 0 or not self.m_stringOffsets or idx >= len(self.m_stringOffsets):
+        if idx < 0 or not self.m_stringOffsets or idx > self.stringCount:
             return ""
 
         offset = self.m_stringOffsets[idx]
@@ -173,7 +215,7 @@ class StringBlock(object):
         return self._cache[idx]
 
     def getStyle(self, idx):
-        # FIXME
+        # FIXME How does the style work?
         return self.m_styles[idx]
 
     def decode8(self, offset):
@@ -220,12 +262,31 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print("StringBlock(stringsCount=0x%x, stringsOffset=0x%x, flags=0x%x)" % (
-            self.stringCount,
-            self.stringsOffset,
-            self.flags))
-        for i in range(self.stringCount):
-            print("{:08d} {}".format(i, repr(self.getString(i))))
+        """
+        Print some information on stdout about the string table
+        """
+        print("StringBlock(stringsCount=0x%x, "
+              "stringsOffset=0x%x, "
+              "stylesCount=0x%x, "
+              "stylesOffset=0x%x, "
+              "flags=0x%x"
+              ")" % (self.stringCount,
+                     self.stringsOffset,
+                     self.styleCount,
+                     self.stylesOffset,
+                     self.flags))
+
+        if self.stringCount > 0:
+            print()
+            print("String Table: ")
+            for i, s in enumerate(self):
+                print("{:08d} {}".format(i, repr(s)))
+
+        if self.styleCount > 0:
+            print()
+            print("Styles Table: ")
+            for i in range(self.styleCount):
+                print("{:08d} {}".format(i, repr(self.getStyle(i))))
 
 
 class AXMLParser(object):
@@ -235,6 +296,16 @@ class AXMLParser(object):
         and implements a state machone to return information about
         the current chunk, which can then be read by :class:`~AXMLPrinter`.
 
+        An AXML file is a file which contains multiple chunks of data, defined
+        by the `ResChunk_header`.
+        There is no real file magic but as the size of the first header is fixed
+        and the `type` of the `ResChunk_header` is set to `RES_XML_TYPE`, a file
+        will usually start with `0x03000800`.
+        But there are several examples where the `type` is set to something
+        else, probably in order to fool parsers.
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
+
         :param raw_buff: bytes of the AXML file
         """
         self._reset()
@@ -243,38 +314,51 @@ class AXMLParser(object):
         self.axml_tampered = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        axml_file, = unpack('<L', self.buff.read(4))
+        axml_header = ARSCHeader(self.buff)
+        self.filesize = axml_header.size
 
-        if axml_file != CHUNK_AXML_FILE:
-            # It looks like the header is wrong.
-            # need some other checks.
-            # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
-            if axml_file >> 16 == 0x0008:
-                self.axml_tampered = True
-                log.warning("AXML file has an unusual header, most malwares like doing such stuff to anti androguard! But we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
-            else:
-                self.valid_axml = False
-                log.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
-                return
-
-        # Next is the filesize
-        self.filesize, = unpack('<L', self.buff.read(4))
-        assert self.filesize <= self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+        if axml_header.header_size != 8:
+            log.error("This does not look like an AXML file, header size does not equal 8! header size = {}".format(axml_header.header_size))
+            self.valid_axml = False
+            return
+        if self.filesize != self.buff.size():
+            log.error("This does not look like an AXML file, declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size()))
+            self.valid_axml = False
+            return
+        if axml_header.type != RES_XML_TYPE:
+            self.axml_tampered = True
+            log.warning("AXML file has an unusual resource type! "
+                        "Malware likes to to such stuff to anti androguard! "
+                        "But we try to parse it anyways. Resource Type: 0x{:04x}".format(chunk_type))
 
         # Now we parse the STRING POOL
         # TODO: It is clear why the header needs to be parsed like this
         # (reusage) but it would make much more sense to put the whole chunk
         # into the StringBlock and not create a header first
         header = ARSCHeader(self.buff)  # read 8 byte = String header + chunk_size
-        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
+
+        if header.header_size != 0x1C:
+            log.error("This does not look like an AXML file, string chunk header size does not equal 28! header size = {}".format(header.header_size))
+            self.valid_axml = False
+            return
+        if header.type != RES_STRING_POOL_TYPE:
+            log.error("Expected String Pool header, got resource type 0x%04x" % header.type)
+            self.valid_axml = False
+            return
 
         self.sb = StringBlock(self.buff, header)
 
         self.m_resourceIDs = []
+
         # Store a list of prefix/uri mappings encountered
         self.namespaces = []
 
     def is_valid(self):
+        """
+        Checks if the current XML is in a valid state
+
+        :return: True if valid, False otherwise
+        """
         return self.valid_axml
 
     def _reset(self):
@@ -363,8 +447,8 @@ class AXMLParser(object):
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
 
-                s_prefix = self.sb.getString(prefix)
-                s_uri = self.sb.getString(uri)
+                s_prefix = self.sb[prefix]
+                s_uri = self.sb[uri]
 
                 log.debug("Start of Namespace mapping: prefix {}: '{}' --> uri {}: '{}'".format(prefix, s_prefix, uri, s_uri))
 
@@ -469,7 +553,7 @@ class AXMLParser(object):
         if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
             return u''
 
-        return self.sb.getString(self.m_name)
+        return self.sb[self.m_name]
 
     @property
     def namespace(self):
@@ -483,7 +567,7 @@ class AXMLParser(object):
         if self.m_namespaceUri == 0xFFFFFFFF:
             return u''
 
-        return self.sb.getString(self.m_namespaceUri)
+        return self.sb[self.m_namespaceUri]
 
     @property
     def nsmap(self):
@@ -501,8 +585,8 @@ class AXMLParser(object):
         NSMAP = dict()
         # solve 3) by using a set
         for k, v in set(self.namespaces):
-            s_prefix = self.sb.getString(k)
-            s_uri = self.sb.getString(v)
+            s_prefix = self.sb[k]
+            s_uri = self.sb[v]
             # Solve 2) & 4) by not including
             if s_uri != "" and s_prefix != "":
                 # solve 1) by using the last one in the list
@@ -518,7 +602,7 @@ class AXMLParser(object):
         if self.m_name == -1 or self.m_event != TEXT:
             return u''
 
-        return self.sb.getString(self.m_name)
+        return self.sb[self.m_name]
 
     def _get_attribute_offset(self, index):
         """
@@ -562,7 +646,7 @@ class AXMLParser(object):
         if uri == 0xFFFFFFFF:
             return u''
 
-        return self.sb.getString(uri)
+        return self.sb[uri]
 
     def getAttributeName(self, index):
         """
@@ -575,7 +659,7 @@ class AXMLParser(object):
         if name == -1:
             return u''
 
-        res = self.sb.getString(name)
+        res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
         if not res:
             attr = self.m_resourceIDs[name]
@@ -608,7 +692,7 @@ class AXMLParser(object):
         valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
         if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
-            return self.sb.getString(valueString)
+            return self.sb[valueString]
         return u''
 
 
@@ -831,11 +915,6 @@ class AXMLPrinter:
         return uri
 
 
-# Constants for ARSC Files
-RES_NULL_TYPE = 0x0000
-RES_STRING_POOL_TYPE = 0x0001
-RES_TABLE_TYPE = 0x0002
-RES_XML_TYPE = 0x0003
 
 # Chunk types in RES_XML_TYPE
 RES_XML_FIRST_CHUNK_TYPE = 0x0100
@@ -1600,10 +1679,41 @@ class ARSCHeader(object):
     SIZE = 2 + 2 + 4
 
     def __init__(self, buff):
+        """
+        Object which contains a Resource Chunk.
+        This is an implementation of the `ResChunk_header`.
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
+        """
         self.start = buff.get_idx()
-        self.type = unpack('<h', buff.read(2))[0]
-        self.header_size = unpack('<h', buff.read(2))[0]
-        self.size = unpack('<I', buff.read(4))[0]
+        self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+    @property
+    def type(self):
+        """
+        Type identifier for this chunk
+        """
+        return self._type
+
+    @property
+    def header_size(self):
+        """
+        Size of the chunk header (in bytes).  Adding this value to
+        the address of the chunk allows you to find its associated data
+        (if any).
+        """
+        return self._header_size
+
+    @property
+    def size(self):
+        """
+        Total size of this chunk (in bytes).  This is the chunkSize plus
+        the size of any data associated with the chunk.  Adding this value
+        to the chunk allows you to completely skip its contents (including
+        any child chunks).  If this value is the same as chunkSize, there is
+        no data associated with the chunk.
+        """
+        return self._size
 
     def __repr__(self):
         return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start, self.type, self.header_size, self.size)
