@@ -335,7 +335,7 @@ class AXMLParser(object):
         # TODO: It is clear why the header needs to be parsed like this
         # (reusage) but it would make much more sense to put the whole chunk
         # into the StringBlock and not create a header first
-        header = ARSCHeader(self.buff)  # read 8 byte = String header + chunk_size
+        header = ARSCHeader(self.buff)
 
         if header.header_size != 0x1C:
             log.error("This does not look like an AXML file, string chunk header size does not equal 28! header size = {}".format(header.header_size))
@@ -395,6 +395,7 @@ class AXMLParser(object):
                 if self.buff.end() or self.buff.get_idx() == self.filesize:
                     self.m_event = END_DOCUMENT
                     break
+                # FIXME: this is actually chunk type + header size!
                 chunkType, = unpack('<L', self.buff.read(4))
 
             # Parse ResourceIDs. This chunk is after the String section
@@ -411,7 +412,7 @@ class AXMLParser(object):
 
                 continue
 
-            # FIXME, unknown chunk types might cause problems
+            # FIXME: unknown chunk types might cause problems, but we can skip them!
             if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
                 log.warning("invalid chunk type 0x{:08x}".format(chunkType))
 
