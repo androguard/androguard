@@ -206,6 +206,13 @@ TEXT = 4
 
 class AXMLParser(object):
     def __init__(self, raw_buff):
+        """
+        AXMLParser reads through all chunks in the AXML file
+        and implements a state machone to return information about
+        the current chunk, which can then be read by :class:`~AXMLPrinter`.
+
+        :param raw_buff: bytes of the AXML file
+        """
         self._reset()
 
         self.valid_axml = True
@@ -339,7 +346,7 @@ class AXMLParser(object):
                                 "This might be a packer.".format(s_prefix))
 
                 if (prefix, uri) in self.namespaces:
-                    log.warning("Namespace mapping ({}, {}) already seen!".format(prefix, uri))
+                    log.warning("Namespace mapping ({}, {}) already seen! This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
                 self.namespaces.append((prefix, uri))
 
                 # We can continue with the next chunk, as we store the namespace
