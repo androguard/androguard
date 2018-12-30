@@ -304,17 +304,10 @@ class APK(object):
             log.warning("Missing AndroidManifest.xml")
         else:
             self.axml[i] = AXMLPrinter(manifest_data)
-            self.xml[i] = None
-            raw_xml = self.axml[i].get_buff()
-            if len(raw_xml) == 0:
-                log.warning("AXML parsing failed, file is empty")
-            else:
-                try:
-                    if self.axml[i].is_packed():
-                        log.warning("XML Seems to be packed, parsing is very likely to fail.")
-                    self.xml[i] = self.axml[i].get_xml_obj()
-                except Exception as e:
-                    log.warning("reading AXML as XML failed: " + str(e))
+            self.xml[i] = self.axml[i].get_xml_obj()
+
+            if self.axml[i].is_packed():
+                log.warning("XML Seems to be packed, operations on the AndroidManifest.xml might fail.")
 
             if self.xml[i] is not None:
                 self.package = self.xml[i].get("package")
