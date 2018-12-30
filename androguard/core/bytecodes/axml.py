@@ -319,9 +319,9 @@ class AXMLParser(object):
 
             # Comment_Index (usually 0xFFFFFFFF)
             # TODO: parse the comment
-            comment_index, = unpack('<L', self.buff.read(4))
-            if comment_index != 0xFFFFFFFF:
-                log.warning("comment_index is set but we will not parse it! comment_index={}, offset={}".format(comment_index, self.buff.tell() - 16))
+            self.m_comment_index, = unpack('<L', self.buff.read(4))
+            if self.m_comment_index != 0xFFFFFFFF:
+                log.warning("comment_index is set but we will not parse it!  comment_index={}, offset={}".format(self.m_comment_index, self.buff.tell() - 16))
 
             # Now start to parse the field
 
