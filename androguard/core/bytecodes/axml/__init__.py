@@ -220,15 +220,12 @@ class StringBlock(object):
             return length1, sizeof_char
 
     def show(self):
-        print("StringBlock(%x, %x, %x, %x, %x, %x" % (
-            self.start,
-            self.header,
-            self.header_size,
-            self.chunkSize,
+        print("StringBlock(stringsCount=0x%x, stringsOffset=0x%x, flags=0x%x)" % (
+            self.stringCount,
             self.stringsOffset,
             self.flags))
-        for i in range(0, len(self.m_stringOffsets)):
-            print(i, repr(self.getString(i)))
+        for i in range(self.stringCount):
+            print("{:08d} {}".format(i, repr(self.getString(i))))
 
 
 class AXMLParser(object):
@@ -351,7 +348,7 @@ class AXMLParser(object):
             # TODO: parse the comment
             self.m_comment_index, = unpack('<L', self.buff.read(4))
             if self.m_comment_index != 0xFFFFFFFF:
-                log.info("comment_index is set but we will not parse it!  comment_index={}, offset={}".format(self.m_comment_index, self.buff.tell() - 16))
+                log.info("comment_index is set but we will not parse it!  comment_index={}, line={}".format(self.m_comment_index, self.m_lineNumber))
 
             # Now start to parse the field
 
@@ -635,7 +632,6 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
     fmt_int = lambda x: (0x7FFFFFFF & x) - 0x80000000 if x > 0x7FFFFFFF else x
 
     if _type == TYPE_STRING:
-        # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
         return lookup_string(_data)
 
     elif _type == TYPE_ATTRIBUTE:
@@ -707,6 +703,7 @@ class AXMLPrinter:
 
                     # TODO: these checks should probably go into the AXML parser
                     # TODO: there are probably other value checks required as well
+                    # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
                     if "\x00" in value:
                         log.warning("Null byte found in attribute value at position {}: "
                                     "Attribute: '{}', Value(hex): '{}'".format(
