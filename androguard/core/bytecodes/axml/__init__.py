@@ -317,14 +317,11 @@ class AXMLParser(object):
         axml_header = ARSCHeader(self.buff)
         self.filesize = axml_header.size
 
-        if axml_header.header_size != 8:
-            log.error("This does not look like an AXML file, header size does not equal 8! header size = {}".format(axml_header.header_size))
-            self.valid_axml = False
-            return
-        if self.filesize != self.buff.size():
-            log.error("This does not look like an AXML file, declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size()))
-            self.valid_axml = False
-            return
+        assert axml_header.header_size == 8, "This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size)
+        assert self.filesize == self.buff.size(), "This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+
+        # Not that severe of an error, we have plenty files where this is not
+        # set correctly
         if axml_header.type != RES_XML_TYPE:
             self.axml_tampered = True
             log.warning("AXML file has an unusual resource type! "
@@ -337,14 +334,8 @@ class AXMLParser(object):
         # into the StringBlock and not create a header first
         header = ARSCHeader(self.buff)
 
-        if header.header_size != 0x1C:
-            log.error("This does not look like an AXML file, string chunk header size does not equal 28! header size = {}".format(header.header_size))
-            self.valid_axml = False
-            return
-        if header.type != RES_STRING_POOL_TYPE:
-            log.error("Expected String Pool header, got resource type 0x%04x" % header.type)
-            self.valid_axml = False
-            return
+        assert header.header_size == 0x1C, "This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size)
+        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got resource type 0x%04x" % header.type
 
         self.sb = StringBlock(self.buff, header)
 
