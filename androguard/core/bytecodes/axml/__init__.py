@@ -51,7 +51,9 @@ RES_XML_START_ELEMENT_TYPE  = 0x0102
 RES_XML_END_ELEMENT_TYPE    = 0x0103
 RES_XML_CDATA_TYPE          = 0x0104
 RES_XML_LAST_CHUNK_TYPE     = 0x017f
+
 RES_XML_RESOURCE_MAP_TYPE   = 0x0180
+
 RES_TABLE_PACKAGE_TYPE      = 0x0200
 RES_TABLE_TYPE_TYPE         = 0x0201
 RES_TABLE_TYPE_SPEC_TYPE    = 0x0202
@@ -374,68 +376,51 @@ class AXMLParser(object):
 
         self._reset()
         while True:
-            chunkType = -1
-            # General notes:
-            # * chunkSize is from start of chunk, including the tag type
+            # Stop at the declared filesize or at the end of the file
+            if self.buff.end() or self.buff.get_idx() == self.filesize:
+                self.m_event = END_DOCUMENT
+                break
 
-            # START_DOCUMENT
-            if event == START_DOCUMENT:
-                chunkType = CHUNK_XML_START_TAG
-            else:
-                # Stop at the declared filesize or at the end of the file
-                if self.buff.end() or self.buff.get_idx() == self.filesize:
-                    self.m_event = END_DOCUMENT
-                    break
-                # FIXME: this is actually chunk type + header size!
-                chunkType, = unpack('<L', self.buff.read(4))
+            # Again, we read a ARSCHeader
+            h = ARSCHeader(self.buff)
 
-            # Parse ResourceIDs. This chunk is after the String section
-            if chunkType == CHUNK_RESOURCEIDS:
-                chunkSize, = unpack('<L', self.buff.read(4))
-
+            # Special chunk: Resource Map. This chunk might be contained inside
+            # the file, after the string pool.
+            if h.type == RES_XML_RESOURCE_MAP_TYPE:
+                log.debug("AXML contains a RESOURCE MAP")
                 # Check size: < 8 bytes mean that the chunk is not complete
                 # Should be aligned to 4 bytes.
-                if chunkSize < 8 or chunkSize % 4 != 0:
+                if h.size < 8 or h.size % 4 != 0:
                     log.warning("Invalid chunk size in chunk RESOURCEIDS")
 
-                for i in range(0, (chunkSize // 4) - 2):
+                for i in range((h.size - h.header_size) // 4):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
 
                 continue
 
-            # FIXME: unknown chunk types might cause problems, but we can skip them!
-            if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
-                log.warning("invalid chunk type 0x{:08x}".format(chunkType))
+            # Parse now the XML chunks.
+            # unknown chunk types might cause problems, but we can skip them!
+            if h.type < RES_XML_FIRST_CHUNK_TYPE or h.type > RES_XML_LAST_CHUNK_TYPE:
+                # h.size is the size of the whole chunk including the header.
+                # We read already 8 bytes of the header, thus we need to
+                # subtract them.
+                log.error("Not a XML resource chunk type: 0x{:04x}. Skipping {} bytes".format(h.type, h.size - 8))
+                self.buff.read(h.size - 8)
+                continue
 
-            # Fake START_DOCUMENT event.
-            if chunkType == CHUNK_XML_START_TAG and event == -1:
-                self.m_event = START_DOCUMENT
-                break
+            # Check that we read a correct header
+            assert h.header_size == 0x10, "XML Resource Type Chunk header size does not match 16!  At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size)
 
-            # After the chunk_type, there are always 3 fields for the remaining tags we need to parse:
-            # Chunk Size (we do not need it)
-            # TODO for sanity checks, we should use it and check if the chunks are correct in size
-            _, = unpack('<L', self.buff.read(4))
-
-            # Line Number
+            # Line Number of the source file, only used as meta information
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
 
             # Comment_Index (usually 0xFFFFFFFF)
             # TODO: parse the comment
             self.m_comment_index, = unpack('<L', self.buff.read(4))
             if self.m_comment_index != 0xFFFFFFFF:
-                log.info("comment_index is set but we will not parse it!  comment_index={}, line={}".format(self.m_comment_index, self.m_lineNumber))
+                log.info("comment_index is set but we will not parse it! comment_index={}, line={}".format(self.m_comment_index, self.m_lineNumber))
 
-            # Now start to parse the field
-
-            # There are five (maybe more) types of Chunks:
-            # See: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#696
-            # * START_NAMESPACE
-            # * END_NAMESPACE
-            # * START_TAG
-            # * END_TAG
-            # * TEXT
-            if chunkType == CHUNK_XML_START_NAMESPACE:
+            if h.type == RES_XML_START_NAMESPACE_TYPE:
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
 
@@ -456,7 +441,7 @@ class AXMLParser(object):
                 # mappings for each tag
                 continue
 
-            if chunkType == CHUNK_XML_END_NAMESPACE:
+            if h.type == RES_XML_END_NAMESPACE_TYPE:
                 # END_PREFIX contains again prefix and uri field
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
@@ -472,7 +457,7 @@ class AXMLParser(object):
                 continue
 
             # START_TAG is the start of a new tag.
-            if chunkType == CHUNK_XML_START_TAG:
+            if h.type == RES_XML_START_ELEMENT_TYPE:
                 # The TAG consists of some fields:
                 # * (chunk_size, line_number, comment_index - we read before)
                 # * namespace_uri
@@ -517,14 +502,14 @@ class AXMLParser(object):
                 self.m_event = START_TAG
                 break
 
-            if chunkType == CHUNK_XML_END_TAG:
+            if h.type == RES_XML_END_ELEMENT_TYPE:
                 self.m_namespaceUri, = unpack('<L', self.buff.read(4))
                 self.m_name, = unpack('<L', self.buff.read(4))
 
                 self.m_event = END_TAG
                 break
 
-            if chunkType == CHUNK_XML_TEXT:
+            if h.type == RES_XML_CDATA_TYPE:
                 # TODO we do not know what the TEXT field does...
                 self.m_name, = unpack('<L', self.buff.read(4))
 
@@ -761,8 +746,6 @@ class AXMLPrinter:
         while self.axml.is_valid():
             _type = next(self.axml)
 
-            if _type == START_DOCUMENT:
-                continue
             if _type == START_TAG:
                 # TODO: check if name is parsable in XML
                 name = self.axml.name
@@ -1679,6 +1662,9 @@ class ARSCHeader(object):
         """
         self.start = buff.get_idx()
         self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+        assert self._header_size > 0, "declared header size is zero! Offset={}".format(self.buff.tell())
+        assert self._size > 0, "declared chunk size is zero! Offset={}".format(self.buff.tell())
 
     @property
     def type(self):
