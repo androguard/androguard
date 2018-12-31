@@ -22,21 +22,6 @@ import binascii
 log = logging.getLogger("androguard.axml")
 
 
-# Chunk Headers in the AXML file
-# These are not really headers but define length of header + Resource type
-# See the variables with RES_ below.
-CHUNK_AXML_FILE = 0x00080003
-CHUNK_STRING = 0x001C0001
-CHUNK_RESOURCEIDS = 0x00080180
-
-CHUNK_XML_FIRST = 0x00100100
-CHUNK_XML_START_NAMESPACE = 0x00100100
-CHUNK_XML_END_NAMESPACE = 0x00100101
-CHUNK_XML_START_TAG = 0x00100102
-CHUNK_XML_END_TAG = 0x00100103
-CHUNK_XML_TEXT = 0x00100104
-CHUNK_XML_LAST = 0x00100104
-
 # Constants for ARSC Files
 # see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215
 RES_NULL_TYPE = 0x0000
