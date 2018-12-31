@@ -313,7 +313,7 @@ class AXMLParser(object):
             self.axml_tampered = True
             log.warning("AXML file has an unusual resource type! "
                         "Malware likes to to such stuff to anti androguard! "
-                        "But we try to parse it anyways. Resource Type: 0x{:04x}".format(chunk_type))
+                        "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
 
         # Now we parse the STRING POOL
         # TODO: It is clear why the header needs to be parsed like this
