@@ -12,7 +12,6 @@ from androguard.core.bytecodes.axml.types import *
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 import collections
-from collections import defaultdict
 
 from lxml import etree
 import logging
@@ -908,12 +907,12 @@ class AXMLPrinter:
             value = value[:value.find("\x00")]
 
         val = ""
-        for i, c in enumerate(value.encode("utf-8")):
+        for i, c in enumerate(bytearray(value.encode("utf-8"))):
             if not (c in (0xc9, 0x0A, 0x0D) or
                     0x20 <= c <= 0xD7FF or
                     0xE000 <= c <= 0xFFFD or
                     0x10000 <= c <= 0x10FFFF):
-                log.warning("Invalid character at pos {}: 0x{:x}".format(i, c))
+                log.warning("Invalid character at pos {}: 0x{:x}. Replaced.".format(i, c))
                 val += "_"
                 self.packerwarning = True
             else:
