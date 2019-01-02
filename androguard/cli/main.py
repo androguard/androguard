@@ -14,6 +14,10 @@ from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.util import read
 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.terminal import TerminalFormatter
+
 
 # If something out of this module is imported, activate console logging
 androconf.show_logging()
@@ -35,7 +39,7 @@ def androaxml_main(inp, outp=None):
         with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff.decode("UTF-8"))
+        sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
 def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):

@@ -38,8 +38,7 @@ def entry_point():
 )
 @click.option(
     '--output', '-o',
-    required=True,
-    help='filename to save the decoded AndroidManifest.xml to',
+    help='filename to save the decoded AndroidManifest.xml to, default stdout',
 )
 @click.argument(
     'file_',
