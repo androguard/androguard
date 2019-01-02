@@ -307,7 +307,7 @@ class APK(object):
         try:
             manifest_data = self.zip.read(i)
         except KeyError:
-            log.warning("Missing AndroidManifest.xml")
+            log.warning("Missing AndroidManifest.xml. Is this an APK file?")
         else:
             self.axml[i] = AXMLPrinter(manifest_data)
             self.xml[i] = self.axml[i].get_xml_obj()

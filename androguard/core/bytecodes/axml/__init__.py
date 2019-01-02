@@ -773,17 +773,7 @@ class AXMLPrinter:
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
                     name = self._fix_name(self.axml.getAttributeName(i))
-                    value = self._get_attribute_value(i)
-
-                    # TODO: there are probably other value checks required as well
-                    # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
-                    if "\x00" in value:
-                        log.warning("Null byte found in attribute value at position {}: "
-                                    "Attribute: '{}', Value(hex): '{}'".format(
-                                        value.find("\x00"),
-                                        name,
-                                        binascii.hexlify(value.encode("utf-8"))))
-                        value = value[:value.find("\x00")]
+                    value = self._fix_value(self._get_attribute_value(i))
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
                     if "{}{}".format(uri, name) in elem.attrib:
@@ -897,6 +887,39 @@ class AXMLPrinter:
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
         return name
+
+    def _fix_value(self, value):
+        """
+        Return a cleaned version of a value
+        according to the specification:
+        > Char	   ::=   	#x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+
+        See https://www.w3.org/TR/xml/#charsets
+
+        :param value: a value to clean
+        :return: the cleaned value
+        """
+        if "\x00" in value:
+            self.packerwarning = True
+            log.warning("Null byte found in attribute value at position {}: "
+                        "Value(hex): '{}'".format(
+                value.find("\x00"),
+                binascii.hexlify(value.encode("utf-8"))))
+            value = value[:value.find("\x00")]
+
+        val = ""
+        for i, c in enumerate(value.encode("utf-8")):
+            if not (c in (0xc9, 0x0A, 0x0D) or
+                    0x20 <= c <= 0xD7FF or
+                    0xE000 <= c <= 0xFFFD or
+                    0x10000 <= c <= 0x10FFFF):
+                log.warning("Invalid character at pos {}: 0x{:x}".format(i, c))
+                val += "_"
+                self.packerwarning = True
+            else:
+                val += chr(c)
+
+        return val
 
     def _print_namespace(self, uri):
         if uri != "":
