@@ -54,13 +54,16 @@ def entry_point(verbosity):
     '--output', '-o',
     help='filename to save the decoded AndroidManifest.xml to, default stdout',
 )
+@click.option("--resource", "-r",
+        help="Resource inside the APK to parse instead of AndroidManifest.xml"
+)
 @click.argument(
     'file_',
     type=click.Path(exists=True),
     # help='AndroidManifest.xml or APK to parse',
     required=False,
 )
-def axml(input_, output, file_):
+def axml(input_, output, file_, resource):
     """
     Parse the AndroidManifest.xml.
 
@@ -85,9 +88,9 @@ def axml(input_, output, file_):
         sys.exit(1)
 
     if file_ is not None:
-        androaxml_main(file_, output)
+        androaxml_main(file_, output, resource)
     elif input_ is not None:
-        androaxml_main(input_, output)
+        androaxml_main(input_, output, resource)
 
 
 @entry_point.command()
