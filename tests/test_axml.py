@@ -5,15 +5,31 @@ from xml.dom import minidom
 
 from androguard.core.bytecodes import axml
 
+def is_valid_manifest(tree):
+    # We can not really check much more...
+    print(tree.tag, tree.attrib)
+    if tree.tag == "manifest" and "package" in tree.attrib:
+        return True
+    return False
+
 
 class AXMLTest(unittest.TestCase):
-    def testAXML(self):
+    def testAndroidManifest(self):
         filenames = [
             "examples/axml/AndroidManifest-Chinese.xml",
+            "examples/axml/AndroidManifestDoubleNamespace.xml",
+            "examples/axml/AndroidManifestExtraNamespace.xml",
+            "examples/axml/AndroidManifest_InvalidCharsInAttribute.xml",
+            "examples/axml/AndroidManifestLiapp.xml",
+            "examples/axml/AndroidManifestMaskingNamespace.xml",
+            "examples/axml/AndroidManifest_NamespaceInAttributeName.xml",
+            "examples/axml/AndroidManifestNonZeroStyle.xml",
+            "examples/axml/AndroidManifestNullbytes.xml",
+            "examples/axml/AndroidManifestTextChunksXML.xml",
+            "examples/axml/AndroidManifestUTF8Strings.xml",
+            "examples/axml/AndroidManifestWithComment.xml",
+            "examples/axml/AndroidManifest_WrongChunkStart.xml",
             "examples/axml/AndroidManifest-xmlns.xml",
-            "examples/axml/AndroidManifest.xml", "examples/axml/test.xml",
-            "examples/axml/test1.xml", "examples/axml/test2.xml",
-            "examples/axml/test3.xml"
         ]
 
         for filename in filenames:
@@ -21,8 +37,27 @@ class AXMLTest(unittest.TestCase):
                 ap = axml.AXMLPrinter(fd.read())
                 self.assertIsNotNone(ap)
 
+                self.assertTrue(is_valid_manifest(ap.get_xml_obj()))
+
                 e = minidom.parseString(ap.get_buff())
                 self.assertIsNotNone(e)
+
+    def testNonManifest(self):
+        filenames = [
+            "examples/axml/test.xml",
+            "examples/axml/test1.xml",
+            "examples/axml/test2.xml",
+            "examples/axml/test3.xml",
+        ]
+
+        for filename in filenames:
+            with open(filename, "rb") as fp:
+                ap = axml.AXMLPrinter(fp.read())
+
+            self.assertEqual(ap.get_xml_obj().tag, "LinearLayout")
+
+            e = minidom.parseString(ap.get_buff())
+            self.assertIsNotNone(e)
 
     def testNonZeroStyleOffset(self):
         """
@@ -37,6 +72,18 @@ class AXMLTest(unittest.TestCase):
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
+
+    def testNonTerminatedString(self):
+        """
+        Test if non-null terminated strings are detected.
+        This sample even segfaults aapt...
+        """
+        filename = "examples/axml/AndroidManifest_StringNotTerminated.xml"
+
+        with self.assertRaises(AssertionError) as cnx:
+            with open(filename, "rb") as f:
+                ap = axml.AXMLPrinter(f.read())
+        self.assertTrue("not null terminated" in str(cnx.exception))
 
     def testExtraNamespace(self):
         """
