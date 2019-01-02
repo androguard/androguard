@@ -30,7 +30,8 @@ from androguard.cli import (androarsc_main,
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", 'verbosity', flag_value='verbose', help="Print more")
 @click.option("--debug", 'verbosity', flag_value='debug', help="Print even debug messages")
-@click.option("--quiet", "--silent" 'verbosity', flag_value='quiet', help="Print less (only warnings and above)")
+@click.option("--quiet", 'verbosity', flag_value='quiet', help="Print less (only warnings and above)")
+@click.option("--silent", 'verbosity', flag_value='silent', help="Print only critical messages")
 def entry_point(verbosity):
     level = logging.INFO
     if verbosity == 'debug':
@@ -39,6 +40,8 @@ def entry_point(verbosity):
         level = logging.DEBUG
     if verbosity == 'quiet':
         level = logging.WARNING
+    if verbosity == 'silent':
+        level = logging.CRITICAL
 
     # If something out of this module is imported, activate console logging
     show_logging(level=level)
