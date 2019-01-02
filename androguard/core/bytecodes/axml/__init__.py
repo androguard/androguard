@@ -402,15 +402,15 @@ class AXMLParser(object):
                 continue
 
             # Check that we read a correct header
-            assert h.header_size == 0x10, "XML Resource Type Chunk header size does not match 16!  At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size)
+            assert h.header_size == 0x10, \
+                "XML Resource Type Chunk header size does not match 16! " \
+                "At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size)
 
             # Line Number of the source file, only used as meta information
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
 
             # Comment_Index (usually 0xFFFFFFFF)
             self.m_comment_index, = unpack('<L', self.buff.read(4))
-            # if self.m_comment_index != 0xFFFFFFFF:
-            #    log.info("comment_index is set but we will not parse it! comment_index={}, line={}, chunk offset={}".format(self.m_comment_index, self.m_lineNumber, h.start))
 
             if h.type == RES_XML_START_NAMESPACE_TYPE:
                 prefix, = unpack('<L', self.buff.read(4))
@@ -426,7 +426,8 @@ class AXMLParser(object):
                                 "This might be a packer.".format(s_prefix))
 
                 if (prefix, uri) in self.namespaces:
-                    log.info("Namespace mapping ({}, {}) already seen! This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
+                    log.info("Namespace mapping ({}, {}) already seen! "
+                             "This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
                 self.namespaces.append((prefix, uri))
 
                 # We can continue with the next chunk, as we store the namespace
@@ -442,7 +443,8 @@ class AXMLParser(object):
                 if (prefix, uri) in self.namespaces:
                     self.namespaces.remove((prefix, uri))
                 else:
-                    log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
+                    log.warning("Reached a NAMESPACE_END without having the namespace stored before? "
+                                "Prefix ID: {}, URI ID: {}".format(prefix, uri))
 
                 # We can continue with the next chunk, as we store the namespace
                 # mappings for each tag
@@ -502,14 +504,28 @@ class AXMLParser(object):
                 break
 
             if h.type == RES_XML_CDATA_TYPE:
-                # TODO we do not know what the TEXT field does...
+                # The CDATA field is like an attribute.
+                # It contains an index into the String pool
+                # as well as a typed value.
+                # usually, this typed value is set to UNDEFINED
+
+                # ResStringPool_ref data --> uint32_t index
                 self.m_name, = unpack('<L', self.buff.read(4))
 
-                # FIXME: is this the same as for the attributes?
-                # Raw_value
-                self.buff.read(4)
-                # typed_value, is an enum
-                self.buff.read(4)
+                # Res_value typedData:
+                # uint16_t size
+                # uint8_t res0 -> always zero
+                # uint8_t dataType
+                # uint32_t data
+                # For now, we ingore these values
+                size, res0, dataType, data = unpack("<HBBL", self.buff.read(8))
+
+                log.debug("found a CDATA Chunk: "
+                          "index={: 6d}, size={: 4d}, res0={: 4d}, dataType={: 4d}, data={: 4d}".format(self.m_name,
+                                                                                                        size,
+                                                                                                        res0,
+                                                                                                        dataType,
+                                                                                                        data))
 
                 self.m_event = TEXT
                 break
