@@ -1930,7 +1930,7 @@ def get_apkid(apkfile):
                         elif versionName is None and name == 'versionName':
                             versionName = value
 
-                    if axml.getName() == 'manifest':
+                    if axml.name == 'manifest':
                         break
                 elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
                     raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
