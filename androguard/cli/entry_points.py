@@ -7,12 +7,14 @@ from __future__ import print_function
 
 # core modules
 import sys
+import logging
 
 # 3rd party modules
 import click
 
 # local modules
 import androguard
+from androguard.core.androconf import show_logging
 from androguard.cli import (androarsc_main,
                             androaxml_main,
                             androcg_main,
@@ -21,13 +23,25 @@ from androguard.cli import (androarsc_main,
                             androlyze_main,
                             androgui_main,
                             androdis_main
-                           )
+                            )
 
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
-def entry_point():
-    pass
+@click.option("--verbose", 'verbosity', flag_value='verbose', help="Print more")
+@click.option("--debug", 'verbosity', flag_value='debug', help="Print even debug messages")
+@click.option("--quiet", "--silent" 'verbosity', flag_value='quiet', help="Print less (only warnings and above)")
+def entry_point(verbosity):
+    level = logging.INFO
+    if verbosity == 'debug':
+        level = logging.DEBUG
+    if verbosity == 'verbose':
+        level = logging.DEBUG
+    if verbosity == 'quiet':
+        level = logging.WARNING
+
+    # If something out of this module is imported, activate console logging
+    show_logging(level=level)
 
 
 @entry_point.command()

@@ -19,10 +19,6 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
 
 
-# If something out of this module is imported, activate console logging
-androconf.show_logging()
-
-
 def androaxml_main(inp, outp=None):
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
