@@ -205,23 +205,31 @@ class StringBlock(object):
         return self.m_styles[idx]
 
     def decode8(self, offset):
-        str_len, skip = self.decodeLength(offset, 1)
+        # UTF-8 Strings contain two lengths:
+        # 1) the UTF-16 length
+        str_len, skip = self._decode_length(offset, 1)
         offset += skip
 
-        encoded_bytes, skip = self.decodeLength(offset, 1)
+        # 2) the utf-8 string length
+        encoded_bytes, skip = self._decode_length(offset, 1)
         offset += skip
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
+
+        assert self.m_charbuff[offset + encoded_bytes] == 0, "UTF-8 String is not null terminated! At offset={}".format(offset)
 
         return self.decode_bytes(data, 'utf-8', str_len)
 
     def decode16(self, offset):
-        str_len, skip = self.decodeLength(offset, 2)
+        str_len, skip = self._decode_length(offset, 2)
         offset += skip
 
+        # The len is the string len in utf-16 units
         encoded_bytes = str_len * 2
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
+
+        assert self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] == b"\x00\x00", "UTF-16 String is not null terminated! At offset={}".format(offset)
 
         return self.decode_bytes(data, 'utf-16', str_len)
 
@@ -231,21 +239,41 @@ class StringBlock(object):
             log.warning("invalid decoded string length")
         return string
 
-    def decodeLength(self, offset, sizeof_char):
-        length = self.m_charbuff[offset]
+    def _decode_length(self, offset, sizeof_char):
+        """
+        Generic Length Decoding at offset of string
 
+        The method works for both 8 and 16 bit Strings.
+        Length checks are enforced:
+        * 8 bit strings: maximum of 0x7FFF bytes (See
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#692)
+        * 16 bit strings: maximum of 0x7FFFFFF bytes (See
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#670)
+
+        :param offset: offset into the string data section of the beginning of
+        the string
+        :param sizeof_char: number of bytes per char (1 = 8bit, 2 = 16bit)
+        :returns: tuple of (length, read bytes)
+        """
         sizeof_2chars = sizeof_char << 1
-        fmt_chr = 'B' if sizeof_char == 1 else 'H'
-        fmt = "<2" + fmt_chr
+        fmt = "<2{}".format('B' if sizeof_char == 1 else 'H')
+        highbit = 0x80 << (8 * (sizeof_char - 1))
 
         length1, length2 = unpack(fmt, self.m_charbuff[offset:(offset + sizeof_2chars)])
 
-        highbit = 0x80 << (8 * (sizeof_char - 1))
-
-        if (length & highbit) != 0:
-            return ((length1 & ~highbit) << (8 * sizeof_char)) | length2, sizeof_2chars
+        if (length1 & highbit) != 0:
+            length = ((length1 & ~highbit) << (8 * sizeof_char)) | length2
+            size = sizeof_2chars
         else:
-            return length1, sizeof_char
+            length = length1
+            size = sizeof_char
+
+        if sizeof_char == 1:
+            assert length <= 0x7FFF, "length of UTF-8 string is too large! At offset={}".format(offset)
+        else:
+            assert length <= 0x7FFFFFFF, "length of UTF-16 string is too large!  At offset={}".format(offset)
+
+        return length, size
 
     def show(self):
         """
