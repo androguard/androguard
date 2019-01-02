@@ -412,6 +412,9 @@ class AXMLParser(object):
             # Comment_Index (usually 0xFFFFFFFF)
             self.m_comment_index, = unpack('<L', self.buff.read(4))
 
+            if self.m_comment_index != 0xFFFFFFFF and h.type in [RES_XML_START_NAMESPACE_TYPE, RES_XML_END_NAMESPACE_TYPE]:
+                log.warning("Unhandled Comment at namespace chunk: '{}'".format(self.sb[self.m_comment_index]))
+
             if h.type == RES_XML_START_NAMESPACE_TYPE:
                 prefix, = unpack('<L', self.buff.read(4))
                 uri, = unpack('<L', self.buff.read(4))
@@ -778,9 +781,10 @@ class AXMLPrinter:
 
                 comment = self.axml.comment
                 if comment:
-                    # FIXME: add the comment to the tree. What if the root element has a comment?
-                    etree.Comment(comment)
-                    log.warning("Unhandled comment: '{}' for tag '{}'".format(comment, tag))
+                    if self.root is None:
+                        log.warning("Can not attach comment with content '{}' without root!".format(comment))
+                    else:
+                        cur[-1].append(etree.Comment(comment))
 
                 log.debug("START_TAG: {} (line={})".format(tag, self.axml.m_lineNumber))
                 elem = etree.Element(tag, nsmap=self.axml.nsmap)
