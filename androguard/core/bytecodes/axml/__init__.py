@@ -838,8 +838,9 @@ class AXMLPrinter:
         Packers do some weird stuff and we try to detect it.
         Sometimes the files are not packed but simply broken or compiled with
         some broken version of a tool.
+        Some file corruption might also be appear to be a packed file.
 
-        :return: True if packed, False otherwise
+        :return: True if packer detected, False otherwise
         """
         return self.packerwarning
 
@@ -898,6 +899,7 @@ class AXMLPrinter:
         :param value: a value to clean
         :return: the cleaned value
         """
+        # Reading string until \x00. This is the same as aapt does.
         if "\x00" in value:
             self.packerwarning = True
             log.warning("Null byte found in attribute value at position {}: "
@@ -906,19 +908,11 @@ class AXMLPrinter:
                 binascii.hexlify(value.encode("utf-8"))))
             value = value[:value.find("\x00")]
 
-        val = ""
-        for i, c in enumerate(bytearray(value.encode("utf-8"))):
-            if not (c in (0xc9, 0x0A, 0x0D) or
-                    0x20 <= c <= 0xD7FF or
-                    0xE000 <= c <= 0xFFFD or
-                    0x10000 <= c <= 0x10FFFF):
-                log.warning("Invalid character at pos {}: 0x{:x}. Replaced.".format(i, c))
-                val += "_"
-                self.packerwarning = True
-            else:
-                val += chr(c)
-
-        return val
+        if not re.match(u'^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$', value):
+            log.warning("Invalid character in value found. Replacing with '_'.")
+            self.packerwarning = True
+            value = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]', '_', value)
+        return value
 
     def _print_namespace(self, uri):
         if uri != "":
