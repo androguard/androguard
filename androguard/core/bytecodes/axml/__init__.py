@@ -297,15 +297,30 @@ class AXMLParser(object):
         """
         self._reset()
 
+        # TODO: can we remove valid_axml?
         self.valid_axml = True
         self.axml_tampered = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
+        assert self.buff.size() > 8, "Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size())
+
         axml_header = ARSCHeader(self.buff)
         self.filesize = axml_header.size
 
-        assert axml_header.header_size == 8, "This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size)
-        assert self.filesize == self.buff.size(), "This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+        if axml_header.header_size == 28024:
+            # Can be a common error: the file is not an AXML but a plain XML
+            # The file will then usually start with '<?xm' / '3C 3F 78 6D'
+            log.warning("Header size is 28024! Are you trying to parse a plain XML file?")
+
+        assert axml_header.header_size == 8, \
+            "This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size)
+        assert self.filesize <= self.buff.size(), \
+            "This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+        if self.filesize < self.buff.size():
+            # The file can still be parsed up to the point where the chunk should end.
+            self.axml_tampered = True
+            log.warning("Declared filesize ({}) is smaller than total file size ({}). "
+                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff.size()))
 
         # Not that severe of an error, we have plenty files where this is not
         # set correctly
@@ -316,16 +331,13 @@ class AXMLParser(object):
                         "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
 
         # Now we parse the STRING POOL
-        # TODO: It is clear why the header needs to be parsed like this
-        # (reusage) but it would make much more sense to put the whole chunk
-        # into the StringBlock and not create a header first
         header = ARSCHeader(self.buff)
-
         assert header.header_size == 0x1C, "This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size)
         assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got resource type 0x%04x" % header.type
 
         self.sb = StringBlock(self.buff, header)
 
+        # Stores resource ID mappings, if any
         self.m_resourceIDs = []
 
         # Store a list of prefix/uri mappings encountered
@@ -357,8 +369,6 @@ class AXMLParser(object):
         if self.m_event == END_DOCUMENT:
             return
 
-        event = self.m_event
-
         self._reset()
         while True:
             # Stop at the declared filesize or at the end of the file
@@ -366,7 +376,7 @@ class AXMLParser(object):
                 self.m_event = END_DOCUMENT
                 break
 
-            # Again, we read a ARSCHeader
+            # Again, we read an ARSCHeader
             h = ARSCHeader(self.buff)
 
             # Special chunk: Resource Map. This chunk might be contained inside
@@ -375,8 +385,7 @@ class AXMLParser(object):
                 log.debug("AXML contains a RESOURCE MAP")
                 # Check size: < 8 bytes mean that the chunk is not complete
                 # Should be aligned to 4 bytes.
-                if h.size < 8 or h.size % 4 != 0:
-                    log.warning("Invalid chunk size in chunk RESOURCEIDS")
+                assert h.size >= 8 and (h.size % 4) == 0, "Invalid chunk size in chunk XML_RESOURCE_MAP"
 
                 for i in range((h.size - h.header_size) // 4):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
@@ -389,8 +398,8 @@ class AXMLParser(object):
                 # h.size is the size of the whole chunk including the header.
                 # We read already 8 bytes of the header, thus we need to
                 # subtract them.
-                log.error("Not a XML resource chunk type: 0x{:04x}. Skipping {} bytes".format(h.type, h.size - 8))
-                self.buff.read(h.size - 8)
+                log.error("Not a XML resource chunk type: 0x{:04x}. Skipping {} bytes".format(h.type, h.size))
+                self.buff.set_idx(h.end)
                 continue
 
             # Check that we read a correct header
@@ -400,10 +409,9 @@ class AXMLParser(object):
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
 
             # Comment_Index (usually 0xFFFFFFFF)
-            # TODO: parse the comment
             self.m_comment_index, = unpack('<L', self.buff.read(4))
-            if self.m_comment_index != 0xFFFFFFFF:
-                log.info("comment_index is set but we will not parse it! comment_index={}, line={}".format(self.m_comment_index, self.m_lineNumber))
+            # if self.m_comment_index != 0xFFFFFFFF:
+            #    log.info("comment_index is set but we will not parse it! comment_index={}, line={}, chunk offset={}".format(self.m_comment_index, self.m_lineNumber, h.start))
 
             if h.type == RES_XML_START_NAMESPACE_TYPE:
                 prefix, = unpack('<L', self.buff.read(4))
@@ -507,6 +515,10 @@ class AXMLParser(object):
                 self.m_event = TEXT
                 break
 
+            # Still here? Looks like we read an unknown XML header, try to skip it...
+            log.warning("Unknown XML Chunk: 0x{:04x}, skipping {} bytes.".format(h.type, h.size))
+            self.buff.set_idx(h.end)
+
     @property
     def name(self):
         """
@@ -516,6 +528,19 @@ class AXMLParser(object):
             return u''
 
         return self.sb[self.m_name]
+
+    @property
+    def comment(self):
+        """
+        Return the comment at the current position or None if no comment is given
+
+        This works only for Tags, as the comments of Namespaces are silently dropped.
+        Currently, there is no way of retrieving comments of namespaces.
+        """
+        if self.m_comment_index == 0xFFFFFFFF:
+            return None
+        else:
+            return self.sb[self.m_comment_index]
 
     @property
     def namespace(self):
@@ -732,20 +757,24 @@ class AXMLPrinter:
             _type = next(self.axml)
 
             if _type == START_TAG:
-                # TODO: check if name is parsable in XML
-                name = self.axml.name
+                name = self._fix_name(self.axml.name)
                 uri = self._print_namespace(self.axml.namespace)
                 tag = "{}{}".format(uri, name)
+
+                comment = self.axml.comment
+                if comment:
+                    # FIXME: add the comment to the tree. What if the root element has a comment?
+                    etree.Comment(comment)
+                    log.warning("Unhandled comment: '{}' for tag '{}'".format(comment, tag))
 
                 log.debug("START_TAG: {} (line={})".format(tag, self.axml.m_lineNumber))
                 elem = etree.Element(tag, nsmap=self.axml.nsmap)
 
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
-                    name = self._fix_attrib_name(self.axml.getAttributeName(i))
+                    name = self._fix_name(self.axml.getAttributeName(i))
                     value = self._get_attribute_value(i)
 
-                    # TODO: these checks should probably go into the AXML parser
                     # TODO: there are probably other value checks required as well
                     # FIXME: normalize string for output: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#7270
                     if "\x00" in value:
@@ -837,9 +866,9 @@ class AXMLPrinter:
 
         return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
 
-    def _fix_attrib_name(self, name):
+    def _fix_name(self, name):
         """
-        Apply some fixes to fake names.
+        Apply some fixes to element named and attribute names.
         Try to get conform to:
         > Like element names, attribute names are case-sensitive and must start with a letter or underscore.
         > The rest of the name can contain letters, digits, hyphens, underscores, and periods.
@@ -849,21 +878,21 @@ class AXMLPrinter:
         :return: a fixed version of the name
         """
         if not name[0].isalpha() and name[0] != "_":
-            log.warning("Invalid start for attribute name '{}'".format(name))
+            log.warning("Invalid start for name '{}'".format(name))
             self.packerwarning = True
             name = "_{}".format(name)
         if name.startswith("android:"):
             # Seems be a common thing...
             # Actually this means that the Manifest is likely to be broken, as
             # usually no namespace URI is set in this case.
-            log.warning("Attribute name '{}' starts with 'android:' prefix! The Manifest seems to be broken? Removing prefix.".format(name))
+            log.warning("Name '{}' starts with 'android:' prefix! The Manifest seems to be broken? Removing prefix.".format(name))
             self.packerwarning = True
             name = name[len("android:"):]
         if ":" in name:
             # Print out an extra warning
-            log.warning("Attribute seems to contain a namespace prefix: '{}'".format(name))
+            log.warning("Name seems to contain a namespace prefix: '{}'".format(name))
         if not re.match(r"^[a-zA-Z0-9._-]*$", name):
-            log.warning("Attribute name '{}' contains invalid characters!".format(name))
+            log.warning("Name '{}' contains invalid characters!".format(name))
             self.packerwarning = True
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
@@ -874,26 +903,6 @@ class AXMLPrinter:
             uri = "{{{}}}".format(uri)
         return uri
 
-
-
-# Chunk types in RES_XML_TYPE
-RES_XML_FIRST_CHUNK_TYPE = 0x0100
-RES_XML_START_NAMESPACE_TYPE = 0x0100
-RES_XML_END_NAMESPACE_TYPE = 0x0101
-RES_XML_START_ELEMENT_TYPE = 0x0102
-RES_XML_END_ELEMENT_TYPE = 0x0103
-RES_XML_CDATA_TYPE = 0x0104
-RES_XML_LAST_CHUNK_TYPE = 0x017f
-
-# This contains a uint32_t array mapping strings in the string
-# pool back to resource identifiers.  It is optional.
-RES_XML_RESOURCE_MAP_TYPE = 0x0180
-
-# Chunk types in RES_TABLE_TYPE
-RES_TABLE_PACKAGE_TYPE = 0x0200
-RES_TABLE_TYPE_TYPE = 0x0201
-RES_TABLE_TYPE_SPEC_TYPE = 0x0202
-RES_TABLE_LIBRARY_TYPE = 0x0203
 
 ACONFIGURATION_MCC = 0x0001
 ACONFIGURATION_MNC = 0x0002
@@ -1643,13 +1652,25 @@ class ARSCHeader(object):
         Object which contains a Resource Chunk.
         This is an implementation of the `ResChunk_header`.
 
+        It will throw an AssertionError if the header could not be read successfully.
+
         See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
         """
         self.start = buff.get_idx()
+        # Make sure we do not read over the buffer:
+        assert buff.size() >= self.start + self.SIZE, "Can not read over the buffer size! Offset={}".format(self.start)
         self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
 
-        assert self._header_size > 0, "declared header size is zero! Offset={}".format(self.buff.tell())
-        assert self._size > 0, "declared chunk size is zero! Offset={}".format(self.buff.tell())
+        # Assert that the read data will fit into the chunk.
+        # The total size must be equal or larger than the header size
+        assert self._header_size >= self.SIZE, \
+            "declared header size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
+        assert self._size >= self.SIZE, \
+            "declared chunk size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
+        assert self._size >= self._header_size, \
+            "declared chunk size ({}) is smaller than header size ({})! Offset={}".format(self._size,
+                                                                                          self._header_size,
+                                                                                          self.start)
 
     @property
     def type(self):
@@ -1678,8 +1699,19 @@ class ARSCHeader(object):
         """
         return self._size
 
+    @property
+    def end(self):
+        """
+        Get the absolute offset inside the file, where the chunk ends.
+        This is equal to `ARSCHeader.start + ARSCHeader.size`.
+        """
+        return self.start + self.size
+
     def __repr__(self):
-        return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start, self.type, self.header_size, self.size)
+        return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start,
+                                                                                         self.type,
+                                                                                         self.header_size,
+                                                                                         self.size)
 
 
 class ARSCResTablePackage(object):
