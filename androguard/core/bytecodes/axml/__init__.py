@@ -1729,6 +1729,42 @@ class ARSCParser(object):
 
         return result
 
+    def get_resource_xml_name(self, r_id, package=None):
+        """
+        Returns the XML name for a resource, including the package name if package is None.
+        A full name might look like `@com.example:string/foobar`
+        Otherwise the name is only looked up in the specified package and is returned without
+        the package name.
+        The same example from about without the package name will read as `@string/foobar`.
+
+        If the ID could not be found, `None` is returned.
+
+        A description of the XML name can be found here:
+        https://developer.android.com/guide/topics/resources/providing-resources#ResourcesFromXml
+
+        :param r_id: numerical ID if the resource
+        :param package: package name
+        :return: XML name identifier
+        """
+        if package:
+            resource, name, i_id = self.get_id(package, r_id)
+            if not i_id:
+                return None
+            return "@{}/{}".format(resource, name)
+        else:
+            for p in self.get_packages_names():
+                r, n, i_id = self.get_id(p, r_id)
+                if r_id:
+                    # found the resource in this package
+                    package = p
+                    resource = r
+                    name = n
+                    break
+            if not package:
+                return None
+            else:
+                return "@{}:{}/{}".format(package, resource, name)
+
 
 class PackageContext(object):
     def __init__(self, current_package, stringpool_main, mTableStrings,
@@ -2034,6 +2070,9 @@ class ARSCResTableConfig(object):
             self.screenSizeDp = \
                 ((kwargs.pop('screenWidthDp', 0) & 0xffff) << 0) + \
                 ((kwargs.pop('screenHeightDp', 0) & 0xffff) << 16)
+
+            # TODO add this some day...
+            self.screenConfig2 = 0
 
             self.exceedingSize = 0
 

@@ -56,6 +56,18 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(e.find("string[@name='hello']").text, 'Hello World, TestActivity! kikoololmodif')
         self.assertEqual(e.find("string[@name='app_name']").text, 'TestsAndroguardApplication')
 
+    def testResourceNames(self):
+        """
+        Test if the resource name translation works
+        """
+        arsc = self.apk.get_android_resources()
+
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001), "@tests.androguard:string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000), "@tests.androguard:drawable/icon")
+
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001, 'tests.androguard'), "@string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000, 'tests.androguard'), "@drawable/icon")
+
     def testDifferentStringLocales(self):
         """
         Test if the resolving of different string locales works

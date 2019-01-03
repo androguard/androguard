@@ -204,22 +204,12 @@ def arsc(input_,
             print("ID '{}' could not be parsed! have you supplied the correct hex ID?".format(id_))
             sys.exit(1)
 
-        package = None
-        resource = None
-        name = None
-        for p in arscobj.get_packages_names():
-            r, n, r_id = arscobj.get_id(p, i_id)
-            if r_id:
-                # found the resource in this package
-                package = p
-                resource = r
-                name = n
-                break
-        if not package:
+        name = arscobj.get_resource_xml_name(i_id)
+        if not name:
             print("Specified resource was not found!")
             sys.exit(1)
 
-        print("@{:08x} resolves to '@{}:{}/{}'".format(i_id, package, resource, name))
+        print("@{:08x} resolves to '{}'".format(i_id, name))
         print()
 
         # All the information is in the config.
