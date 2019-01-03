@@ -1558,6 +1558,15 @@ class ARSCParser(object):
         return buff.encode('utf-8')
 
     def get_id(self, package_name, rid, locale='\x00\x00'):
+        """
+        Returns the tuple (resource_type, resource_name, resource_id)
+        for the given resource_id.
+
+        :param package_name: package name to query
+        :param rid: the resource_id
+        :param locale: specific locale
+        :return: tuple of (resource_type, resource_name, resource_id)
+        """
         self._analyse()
 
         try:
@@ -1565,7 +1574,8 @@ class ARSCParser(object):
                 if i[2] == rid:
                     return i
         except KeyError:
-            return None
+            pass
+        return None, None, None
 
     class ResourceResolver(object):
         def __init__(self, android_resources, config=None):
@@ -1719,6 +1729,42 @@ class ARSCParser(object):
                 result[res_type.get_type()].extend(configs)
 
         return result
+
+    def get_resource_xml_name(self, r_id, package=None):
+        """
+        Returns the XML name for a resource, including the package name if package is None.
+        A full name might look like `@com.example:string/foobar`
+        Otherwise the name is only looked up in the specified package and is returned without
+        the package name.
+        The same example from about without the package name will read as `@string/foobar`.
+
+        If the ID could not be found, `None` is returned.
+
+        A description of the XML name can be found here:
+        https://developer.android.com/guide/topics/resources/providing-resources#ResourcesFromXml
+
+        :param r_id: numerical ID if the resource
+        :param package: package name
+        :return: XML name identifier
+        """
+        if package:
+            resource, name, i_id = self.get_id(package, r_id)
+            if not i_id:
+                return None
+            return "@{}/{}".format(resource, name)
+        else:
+            for p in self.get_packages_names():
+                r, n, i_id = self.get_id(p, r_id)
+                if i_id:
+                    # found the resource in this package
+                    package = p
+                    resource = r
+                    name = n
+                    break
+            if not package:
+                return None
+            else:
+                return "@{}:{}/{}".format(package, resource, name)
 
 
 class PackageContext(object):
@@ -2026,6 +2072,9 @@ class ARSCResTableConfig(object):
                 ((kwargs.pop('screenWidthDp', 0) & 0xffff) << 0) + \
                 ((kwargs.pop('screenHeightDp', 0) & 0xffff) << 16)
 
+            # TODO add this some day...
+            self.screenConfig2 = 0
+
             self.exceedingSize = 0
 
     def _unpack_language_or_region(self, char_in, char_base):
@@ -2056,6 +2105,23 @@ class ARSCResTableConfig(object):
         return "\x00\x00"
 
     def get_config_name_friendly(self):
+        """
+        Here for legacy reasons...
+        """
+        return self.get_qualifier()
+
+    def get_qualifier(self):
+        """
+        Return resource name qualifier for the current configuration.
+        for example
+        * `ldpi-v4`
+        * `hdpi-v4`
+
+        All possible qualifiers are listed in table 2 of https://developer.android.com/guide/topics/resources/providing-resources
+
+        FIXME: This name might not have all properties set!
+        :return: str
+        """
         res = []
 
         mcc = self.imsi & 0xFFFF
@@ -2169,6 +2235,15 @@ class ARSCResTableConfig(object):
         x = ((self.screenType >> 16) & 0xffff)
         return x
 
+    def is_default(self):
+        """
+        Test if this is a default resource, which matches all
+
+        This is indicated that all fields are zero.
+        :return: True if default, False otherwise
+        """
+        return all(map(lambda x: x == 0, self._get_tuple()))
+
     def _get_tuple(self):
         return (
             self.imsi,
@@ -2179,6 +2254,7 @@ class ARSCResTableConfig(object):
             self.version,
             self.screenConfig,
             self.screenSizeDp,
+            self.screenConfig2,
         )
 
     def __hash__(self):
@@ -2188,7 +2264,7 @@ class ARSCResTableConfig(object):
         return self._get_tuple() == other._get_tuple()
 
     def __repr__(self):
-        return "<ARSCResTableConfig '{}'>".format(repr(self._get_tuple()))
+        return "<ARSCResTableConfig '{}'='{}'>".format(self.get_qualifier(), repr(self._get_tuple()))
 
 
 class ARSCResTableEntry(object):
