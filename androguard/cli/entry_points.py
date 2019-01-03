@@ -123,7 +123,7 @@ def axml(input_, output, file_, resource):
     help='Show only resources of the given type (default: public)',
 )
 @click.option(
-    '--id', '-i', 'id_',
+    '--id', 'id_',
     help="Resolve the given ID for the given locale and package. Provide the hex ID!"
 )
 @click.option(
