@@ -68,6 +68,11 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(arsc.get_resource_xml_name(0x7F040001, 'tests.androguard'), "@string/app_name")
         self.assertEqual(arsc.get_resource_xml_name(0x7F020000, 'tests.androguard'), "@drawable/icon")
 
+        # Also test non existing resources
+        self.assertIsNone(arsc.get_resource_xml_name(0xFFFFFFFF))
+        self.assertEqual(arsc.get_id('sdf', 0x7F040001), (None, None, None))
+        self.assertEqual(arsc.get_id('tests.androguard', 0xFFFFFFFF), (None, None, None))
+
     def testDifferentStringLocales(self):
         """
         Test if the resolving of different string locales works

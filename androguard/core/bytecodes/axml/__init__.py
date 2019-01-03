@@ -1574,7 +1574,8 @@ class ARSCParser(object):
                 if i[2] == rid:
                     return i
         except KeyError:
-            return None, None, None
+            pass
+        return None, None, None
 
     class ResourceResolver(object):
         def __init__(self, android_resources, config=None):
@@ -1754,7 +1755,7 @@ class ARSCParser(object):
         else:
             for p in self.get_packages_names():
                 r, n, i_id = self.get_id(p, r_id)
-                if r_id:
+                if i_id:
                     # found the resource in this package
                     package = p
                     resource = r
