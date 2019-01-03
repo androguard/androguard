@@ -71,7 +71,7 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
         with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff.decode("UTF-8"))
+        sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
 def androcg_main(verbose,
