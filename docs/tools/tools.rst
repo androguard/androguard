@@ -1,11 +1,14 @@
 Tools
 =====
 
-There are several tools, which gives you the option to do certain tasks directly from the commandline.
-An exception is `androlyze`, which spawns an IPython shell and let you use the androguard API interactively.
+The only tool you need is :ref:`androguard`. It combines all old tools
+into a single command line interface.
+
+You can still use the other tools as well, but note that they might get removed some day.
 
 .. toctree::
 
+   androguard
    androlyze
    androcg
    androgui

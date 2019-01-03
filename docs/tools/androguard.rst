@@ -1,4 +1,4 @@
-androguard - The main entry point
+androguard - The swiss army knife
 =================================
 
 `androguard` is the new tool, which combines all the other tools into
