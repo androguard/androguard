@@ -69,13 +69,13 @@ class ARSCTest(unittest.TestCase):
                          sorted(arsc.get_locales(p)))
 
         item = "SMSDelayText"
-        strings = {"\x00\x00": "Delay for reading text message",
-                   "da": "Forsinkelse for læsning af tekst besked",
-                   "de": "Verzögerung vor dem Lesen einer SMS",
-                   "el": "Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
-                   "fr": "Délai pour lire un SMS",
-                   "ja": "テキストメッセージ読み上げの遅延",
-                   "ru": "Задержка зачитывания SMS",
+        strings = {"\x00\x00": u"Delay for reading text message",
+                   "da": u"Forsinkelse for læsning af tekst besked",
+                   "de": u"Verzögerung vor dem Lesen einer SMS",
+                   "el": u"Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
+                   "fr": u"Délai pour lire un SMS",
+                   "ja": u"テキストメッセージ読み上げの遅延",
+                   "ru": u"Задержка зачитывания SMS",
                    }
         for k, v in strings.items():
             e = etree.fromstring(arsc.get_string_resources(p, k))
