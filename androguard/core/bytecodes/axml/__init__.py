@@ -1952,33 +1952,37 @@ class ARSCResTableConfig(object):
             # uint16_t minorVersion  which should be always 0, as the meaning is not defined
             self.version = unpack('<I', buff.read(4))[0]
 
-            read_size = buff.tell() - self.start
-            if self.size != 40:
-                log.warning("This file does not have screenConfig, screenSizeDp and screenConfig2!"
-                            "Declared Size: {}, already read: {}".format(self.size, read_size))
-                self.screenConfig = 0
-                self.screenSizeDp = 0
-                self.screenConfig2 = 0
-            else:
-                read_size = 40
+            # The next three fields seems to be optional
+            if self.size >= 32:
                 # struct of
                 # uint8_t screenLayout
                 # uint8_t uiMode
                 # uint16_t smallestScreenWidthDp
-                self.screenConfig = unpack('<I', buff.read(4))[0]
+                self.screenConfig, = unpack('<I', buff.read(4))
+            else:
+                log.debug("This file does not have a screenConfig! size={}".format(self.size))
+                self.screenConfig = 0
 
+            if self.size >= 36:
                 # struct of
                 # uint16_t screenWidthDp
                 # uint16_t screenHeightDp
-                self.screenSizeDp = unpack('<I', buff.read(4))[0]
+                self.screenSizeDp, = unpack('<I', buff.read(4))
+            else:
+                log.debug("This file does not have a screenSizeDp! size={}".format(self.size))
+                self.screenSizeDp = 0
 
+            if self.size >= 40:
                 # struct of
                 # uint8_t screenLayout2
                 # uint8_t colorMode
                 # uint16_t screenConfigPad2
                 self.screenConfig2, = unpack("<I", buff.read(4))
+            else:
+                log.debug("This file does not have a screenConfig2! size={}".format(self.size))
+                self.screenConfig2 = 0
 
-            self.exceedingSize = self.size - read_size
+            self.exceedingSize = self.size - (buff.tell() - self.start)
             if self.exceedingSize > 0:
                 log.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
