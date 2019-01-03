@@ -79,7 +79,7 @@ class ARSCTest(unittest.TestCase):
                    }
         for k, v in strings.items():
             e = etree.fromstring(arsc.get_string_resources(p, k))
-            self.assertEqual(e.find("string[@name='{}']".format(item)), v)
+            self.assertEqual(e.find("string[@name='{}']".format(item)).text, v)
 
     def testTypeConfigs(self):
         arsc = self.apk.get_android_resources()
