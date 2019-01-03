@@ -1214,7 +1214,7 @@ class ARSCParser(object):
 
                         locale = a_res_type.config.get_language_and_region()
 
-                        c_value = self.values[package_name].setdefault(locale, {"public":[]})
+                        c_value = self.values[package_name].setdefault(locale, {"public": []})
 
                         entries = self.packages[package_name][nb + 2]
                         nb_i = 0
@@ -2045,11 +2045,15 @@ class ARSCResTableConfig(object):
         return char_out
 
     def get_language_and_region(self):
+        """
+        Returns the combined language+region string or \x00\x00 for the default locale
+        :return:
+        """
         if self.locale != 0:
             _language = self._unpack_language_or_region([self.locale & 0xff, (self.locale & 0xff00) >> 8, ], ord('a'))
             _region = self._unpack_language_or_region([(self.locale & 0xff0000) >> 16, (self.locale & 0xff000000) >> 24, ], ord('0'))
             return (_language + "-r" + _region) if _region else _language
-        return ""
+        return "\x00\x00"
 
     def get_config_name_friendly(self):
         res = []
