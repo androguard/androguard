@@ -133,6 +133,33 @@ class EntryPointsTest(unittest.TestCase):
         result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 1, arguments
 
+    def test_arsc_basic_id_resolve(self):
+        runner = CliRunner()
+        apk_path = resource_filename('androguard',
+                                     '../examples/dalvik/test/bin/'
+                                     'Test-debug.apk')
+        arguments = ['arsc', apk_path, '--id', '7F030000']
+        result = runner.invoke(entry_points.entry_point, arguments)
+        assert result.exit_code == 0, arguments
+
+    def test_arsc_error_id_resolve(self):
+        runner = CliRunner()
+        apk_path = resource_filename('androguard',
+                                     '../examples/dalvik/test/bin/'
+                                     'Test-debug.apk')
+        arguments = ['arsc', apk_path, '--id', 'sdlkfjsdlkf']
+        result = runner.invoke(entry_points.entry_point, arguments)
+        assert result.exit_code == 1, arguments
+
+    def test_arsc_error_id_not_resolve(self):
+        runner = CliRunner()
+        apk_path = resource_filename('androguard',
+                                     '../examples/dalvik/test/bin/'
+                                     'Test-debug.apk')
+        arguments = ['arsc', apk_path, '--id', '12345678']
+        result = runner.invoke(entry_points.entry_point, arguments)
+        assert result.exit_code == 1, arguments
+
     def test_arsc_error_no_arguments(self):
         runner = CliRunner()
         arguments = ['arsc']
