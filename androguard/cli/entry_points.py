@@ -123,6 +123,10 @@ def axml(input_, output, file_, resource):
     help='Show only resources of the given type (default: public)',
 )
 @click.option(
+    '--id', '-i', 'id_',
+    help="Resolve the given ID for the given locale and package. Provide the hex ID!"
+)
+@click.option(
     '--list-packages', '-t', is_flag=True,
     default=False,
     help='List all package names and exit',
@@ -143,6 +147,7 @@ def arsc(input_,
          package,
          locale,
          type_,
+         id_,
          list_packages,
          list_locales,
          list_types):
@@ -180,14 +185,49 @@ def arsc(input_,
             print("The APK does not contain a resources file!", file=sys.stderr)
             sys.exit(0)
     elif ret_type == "ARSC":
-        arscobj = apk.ARSCParser(read(fname))
-        if not arscobj:
-            print("The resources file seems to be invalid!", file=sys.stderr)
-            sys.exit(1)
+        with open(fname, 'rb') as fp:
+            arscobj = apk.ARSCParser(fp.read())
+            if not arscobj:
+                print("The resources file seems to be invalid!", file=sys.stderr)
+                sys.exit(1)
     else:
         print("Unknown file type!", file=sys.stderr)
         sys.exit(1)
 
+    if id_:
+        # Strip the @, if any
+        if id_[0] == "@":
+            id_ = id_[1:]
+        try:
+            i_id = int(id_, 16)
+        except ValueError:
+            print("ID '{}' could not be parsed! have you supplied the correct hex ID?".format(id_))
+            sys.exit(1)
+
+        package = None
+        resource = None
+        name = None
+        for p in arscobj.get_packages_names():
+            r, n, r_id = arscobj.get_id(p, i_id)
+            if r_id:
+                # found the resource in this package
+                package = p
+                resource = r
+                name = n
+                break
+        if not package:
+            print("Specified resource was not found!")
+            sys.exit(1)
+
+        print("@{:08x} resolves to '@{}:{}/{}'".format(i_id, package, resource, name))
+        print()
+
+        # All the information is in the config.
+        # we simply need to get the actual value of the entry
+        for config, entry in arscobj.get_res_configs(i_id):
+            print("{} = '{}'".format(config.get_config_name_friendly() if not config.is_default() else "<default>", entry.get_key_data()))
+
+        sys.exit(0)
 
     if list_packages:
         print("\n".join(arscobj.get_packages_names()))
