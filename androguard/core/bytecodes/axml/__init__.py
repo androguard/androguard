@@ -95,13 +95,14 @@ def complexToFloat(xcomplex):
 
 
 class StringBlock(object):
+    """
+    StringBlock is a CHUNK inside an AXML File
+    It contains all strings, which are used by referecing to ID's
+
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
+    """
     def __init__(self, buff, header):
         """
-        StringBlock is a CHUNK inside an AXML File
-        It contains all strings, which are used by referecing to ID's
-
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
-
         :param buff: buffer which holds the string block
         :param header: a instance of :class:`~ARSCHeader`
         """
@@ -342,30 +343,28 @@ class StringBlock(object):
 
 
 class AXMLParser(object):
+    """
+    AXMLParser reads through all chunks in the AXML file
+    and implements a state machone to return information about
+    the current chunk, which can then be read by :class:`~AXMLPrinter`.
+
+    An AXML file is a file which contains multiple chunks of data, defined
+    by the `ResChunk_header`.
+    There is no real file magic but as the size of the first header is fixed
+    and the `type` of the `ResChunk_header` is set to `RES_XML_TYPE`, a file
+    will usually start with `0x03000800`.
+    But there are several examples where the `type` is set to something
+    else, probably in order to fool parsers.
+
+    Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
+    You can use the `next()` function to get the next chunk.
+    Note that not all chunk types are yielded from the iterator! Some chunks are processed in
+    the AXMLParser only.
+    The parser will throw an :class:`AssertionError` if it parses something not valid.
+
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
+    """
     def __init__(self, raw_buff):
-        """
-        AXMLParser reads through all chunks in the AXML file
-        and implements a state machone to return information about
-        the current chunk, which can then be read by :class:`~AXMLPrinter`.
-
-        An AXML file is a file which contains multiple chunks of data, defined
-        by the `ResChunk_header`.
-        There is no real file magic but as the size of the first header is fixed
-        and the `type` of the `ResChunk_header` is set to `RES_XML_TYPE`, a file
-        will usually start with `0x03000800`.
-        But there are several examples where the `type` is set to something
-        else, probably in order to fool parsers.
-
-        Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
-        You can use the `next()` function to get the next chunk.
-        Note that not all chunk types are yielded from the iterator! Some chunks are processed in
-        the AXMLParser only.
-        The parser will throw an :class:`AssertionError` if it parses something not valid.
-
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
-
-        :param raw_buff: bytes of the AXML file
-        """
         self._reset()
 
         self.axml_tampered = False
@@ -815,15 +814,13 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
 
 
 class AXMLPrinter:
+    """
+    Converter for AXML Files into a lxml ElementTree, which can easily be
+    converted into XML.
+
+    A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
+    """
     def __init__(self, raw_buff):
-        """
-        Converter for AXML Files into a lxml ElementTree, which can easily be
-        converted into XML.
-
-        A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
-
-        :param raw_buff: bytes of the raw AXML file
-        """
         self.axml = AXMLParser(raw_buff)
 
         self.root = None
@@ -1786,17 +1783,17 @@ class PackageContext(object):
 
 
 class ARSCHeader(object):
+    """
+    Object which contains a Resource Chunk.
+    This is an implementation of the `ResChunk_header`.
+
+    It will throw an AssertionError if the header could not be read successfully.
+
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
+    """
     SIZE = 2 + 2 + 4
 
     def __init__(self, buff):
-        """
-        Object which contains a Resource Chunk.
-        This is an implementation of the `ResChunk_header`.
-
-        It will throw an AssertionError if the header could not be read successfully.
-
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
-        """
         self.start = buff.get_idx()
         # Make sure we do not read over the buffer:
         assert buff.size() >= self.start + self.SIZE, "Can not read over the buffer size! Offset={}".format(self.start)
@@ -1856,12 +1853,10 @@ class ARSCHeader(object):
 
 
 class ARSCResTablePackage(object):
+    """
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
+    """
     def __init__(self, buff, header):
-        """
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
-        :param buff:
-        :param header:
-        """
         self.header = header
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
@@ -1879,13 +1874,10 @@ class ARSCResTablePackage(object):
 
 
 class ARSCResTypeSpec(object):
+    """
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
+    """
     def __init__(self, buff, parent=None):
-        """
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
-
-        :param buff:
-        :param parent:
-        """
         self.start = buff.get_idx()
         self.parent = parent
         self.id = unpack('<B', buff.read(1))[0]
@@ -1901,12 +1893,10 @@ class ARSCResTypeSpec(object):
 
 
 class ARSCResType(object):
+    """
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
+    """
     def __init__(self, buff, parent=None):
-        """
-        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
-        :param buff:
-        :param parent:
-        """
         self.start = buff.get_idx()
         self.parent = parent
 
@@ -1942,6 +1932,14 @@ class ARSCResType(object):
 
 
 class ARSCResTableConfig(object):
+    """
+    ARSCResTableConfig contains the configuration for specific resource selection.
+    This is used on the device to determine which resources should be loaded
+    based on different properties of the device like locale or displaysize.
+
+    See the definition of ResTable_config in
+    http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#911
+    """
     @classmethod
     def default_config(cls):
         if not hasattr(cls, 'DEFAULT'):
@@ -1949,17 +1947,6 @@ class ARSCResTableConfig(object):
         return cls.DEFAULT
 
     def __init__(self, buff=None, **kwargs):
-        """
-        ARSCResTableConfig contains the configuration for specific resource selection.
-        This is used on the device to determine which resources should be loaded
-        based on different properties of the device like locale or displaysize.
-
-        See the definition of ResTable_config in
-        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#911
-
-        :param buff:
-        :param kwargs:
-        """
         if buff is not None:
             self.start = buff.get_idx()
 
