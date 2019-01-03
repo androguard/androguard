@@ -186,13 +186,12 @@ def save_colors():
     return c
 
 
-
-
 def is_android(filename):
-    """Return the type of the file
+    """
+    Return the type of the file
 
-        @param filename : the filename
-        @rtype : "APK", "DEX", None
+    :param filename : the filename
+    :returns: "APK", "DEX", None
     """
     if not filename:
         return None
@@ -204,8 +203,8 @@ def is_android(filename):
 
 def is_android_raw(raw):
     """
-        Returns a string that describes the type of file, for common Android
-        specific formats
+    Returns a string that describes the type of file, for common Android
+    specific formats
     """
     val = None
 
@@ -222,10 +221,10 @@ def is_android_raw(raw):
         val = "DEX"
     elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:4] == b"\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00" or raw[0:4] == b"\x00\x00\x08\x00":
         val = "AXML"
     elif raw[0:4] == b"\x02\x00\x0C\x00":
-        val = b"ARSC"
+        val = "ARSC"
 
     return val
 
