@@ -1911,7 +1911,7 @@ def get_apkid(apkfile):
         with apk.open('AndroidManifest.xml') as manifest:
             axml = AXMLParser(manifest.read())
             count = 0
-            while axml.is_valid():
+            while True:
                 _type = next(axml)
                 count += 1
                 if _type == START_TAG:

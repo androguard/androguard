@@ -126,7 +126,8 @@ class StringBlock(object):
 
         # Check if they supplied a stylesOffset even if the count is 0:
         if self.styleCount == 0 and self.stylesOffset > 0:
-            log.warning("Styles Offset given, but styleCount is zero.")
+            log.info("Styles Offset given, but styleCount is zero. "
+                     "This is not a problem but could indicate packers.")
 
         self.m_stringOffsets = []
         self.m_styleOffsets = []
@@ -185,6 +186,12 @@ class StringBlock(object):
             yield self.getString(i)
 
     def getString(self, idx):
+        """
+        Return the string at the index in the string table
+
+        :param idx: index in the string table
+        :return: str
+        """
         if idx in self._cache:
             return self._cache[idx]
 
@@ -194,18 +201,29 @@ class StringBlock(object):
         offset = self.m_stringOffsets[idx]
 
         if self.m_isUTF8:
-            self._cache[idx] = self.decode8(offset)
+            self._cache[idx] = self._decode8(offset)
         else:
-            self._cache[idx] = self.decode16(offset)
+            self._cache[idx] = self._decode16(offset)
 
         return self._cache[idx]
 
     def getStyle(self, idx):
-        # FIXME How does the style work?
+        """
+        Return the style associated with the index
+
+        :param idx: index of the style
+        :return:
+        """
         return self.m_styles[idx]
 
-    def decode8(self, offset):
-        # UTF-8 Strings contain two lengths:
+    def _decode8(self, offset):
+        """
+        Decode an UTF-8 String at the given offset
+
+        :param offset: offset of the string inside the data
+        :return: str
+        """
+        # UTF-8 Strings contain two lengths, as they might differ:
         # 1) the UTF-16 length
         str_len, skip = self._decode_length(offset, 1)
         offset += skip
@@ -216,11 +234,18 @@ class StringBlock(object):
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        assert self.m_charbuff[offset + encoded_bytes] == 0, "UTF-8 String is not null terminated! At offset={}".format(offset)
+        assert self.m_charbuff[offset + encoded_bytes] == 0, \
+            "UTF-8 String is not null terminated! At offset={}".format(offset)
 
-        return self.decode_bytes(data, 'utf-8', str_len)
+        return self._decode_bytes(data, 'utf-8', str_len)
 
-    def decode16(self, offset):
+    def _decode16(self, offset):
+        """
+        Decode an UTF-16 String at the given offset
+
+        :param offset: offset of the string inside the data
+        :return: str
+        """
         str_len, skip = self._decode_length(offset, 2)
         offset += skip
 
@@ -229,11 +254,24 @@ class StringBlock(object):
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        assert self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] == b"\x00\x00", "UTF-16 String is not null terminated! At offset={}".format(offset)
+        assert self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] == b"\x00\x00", \
+            "UTF-16 String is not null terminated! At offset={}".format(offset)
 
-        return self.decode_bytes(data, 'utf-16', str_len)
+        return self._decode_bytes(data, 'utf-16', str_len)
 
-    def decode_bytes(self, data, encoding, str_len):
+    @staticmethod
+    def _decode_bytes(data, encoding, str_len):
+        """
+        Generic decoding with length check.
+        The string is decoded from bytes with the given encoding, then the length
+        of the string is checked.
+        The string is decoded using the "replace" method.
+
+        :param data: bytes
+        :param encoding: encoding name ("utf-8" or "utf-16")
+        :param str_len: length of the decoded string
+        :return: str
+        """
         string = data.decode(encoding, 'replace')
         if len(string) != str_len:
             log.warning("invalid decoded string length")
@@ -318,14 +356,18 @@ class AXMLParser(object):
         But there are several examples where the `type` is set to something
         else, probably in order to fool parsers.
 
+        Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
+        You can use the `next()` function to get the next chunk.
+        Note that not all chunk types are yielded from the iterator! Some chunks are processed in
+        the AXMLParser only.
+        The parser will throw an :class:`AssertionError` if it parses something not valid.
+
         See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
 
         :param raw_buff: bytes of the AXML file
         """
         self._reset()
 
-        # TODO: can we remove valid_axml?
-        self.valid_axml = True
         self.axml_tampered = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
@@ -369,14 +411,6 @@ class AXMLParser(object):
 
         # Store a list of prefix/uri mappings encountered
         self.namespaces = []
-
-    def is_valid(self):
-        """
-        Checks if the current XML is in a valid state
-
-        :return: True if valid, False otherwise
-        """
-        return self.valid_axml
 
     def _reset(self):
         self.m_event = -1
@@ -585,8 +619,8 @@ class AXMLParser(object):
         """
         if self.m_comment_index == 0xFFFFFFFF:
             return None
-        else:
-            return self.sb[self.m_comment_index]
+
+        return self.sb[self.m_comment_index]
 
     @property
     def namespace(self):
@@ -606,14 +640,15 @@ class AXMLParser(object):
     def nsmap(self):
         """
         Returns the current namespace mapping as a dictionary
+
+        there are several problems with the map and we try to guess a few
+        things here:
+        1) a URI can be mapped by many prefixes, so it is to decide which one
+           to take
+        2) a prefix might map to an empty string (some packers)
+        3) uri+prefix mappings might be included several times
+        4) prefix might be empty
         """
-        # there are several problems with the map and we try to guess a few
-        # things here:
-        # 1) a URI can be mapped by many prefixes, so it is to decide which one
-        #    to take
-        # 2) a prefix might map to an empty string (some packers)
-        # 3) uri+prefix mappings might be included several times
-        # 4) prefix might be empty
 
         NSMAP = dict()
         # solve 3) by using a set
@@ -687,10 +722,6 @@ class AXMLParser(object):
         """
         offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
-
-        # FIXME: Is this even possible? We unpack unsigned integers here!
-        if name == -1:
-            return u''
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
@@ -799,7 +830,7 @@ class AXMLPrinter:
         self.packerwarning = False
         cur = []
 
-        while self.axml.is_valid():
+        while True:
             _type = next(self.axml)
 
             if _type == START_TAG:
@@ -1048,7 +1079,7 @@ class ARSCParser(object):
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
-        self.packageCount = unpack('<i', self.buff.read(4))[0]
+        self.packageCount = unpack('<I', self.buff.read(4))[0]
 
         self.packages = {}
         self.values = {}
@@ -1780,6 +1811,11 @@ class ARSCHeader(object):
 
 class ARSCResTablePackage(object):
     def __init__(self, buff, header):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
+        :param buff:
+        :param header:
+        """
         self.header = header
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
@@ -1798,11 +1834,19 @@ class ARSCResTablePackage(object):
 
 class ARSCResTypeSpec(object):
     def __init__(self, buff, parent=None):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
+
+        :param buff:
+        :param parent:
+        """
         self.start = buff.get_idx()
         self.parent = parent
-        self.id = unpack('<b', buff.read(1))[0]
-        self.res0 = unpack('<b', buff.read(1))[0]
-        self.res1 = unpack('<h', buff.read(2))[0]
+        self.id = unpack('<B', buff.read(1))[0]
+        self.res0 = unpack('<B', buff.read(1))[0]
+        self.res1 = unpack('<H', buff.read(2))[0]
+        assert self.res0 == 0, "res0 must be zero!"
+        assert self.res1 == 0, "res1 must be zero!"
         self.entryCount = unpack('<I', buff.read(4))[0]
 
         self.typespec_entries = []
@@ -1812,13 +1856,21 @@ class ARSCResTypeSpec(object):
 
 class ARSCResType(object):
     def __init__(self, buff, parent=None):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
+        :param buff:
+        :param parent:
+        """
         self.start = buff.get_idx()
         self.parent = parent
-        self.id = unpack('<b', buff.read(1))[0]
-        self.res0 = unpack('<b', buff.read(1))[0]
-        self.res1 = unpack('<h', buff.read(2))[0]
-        self.entryCount = unpack('<i', buff.read(4))[0]
-        self.entriesStart = unpack('<i', buff.read(4))[0]
+
+        self.id = unpack('<B', buff.read(1))[0]
+        self.flags, = unpack('<B', buff.read(1))
+        self.reserved = unpack('<H', buff.read(2))[0]
+        assert self.reserved == 0, "reserved must be zero!"
+        self.entryCount = unpack('<I', buff.read(4))[0]
+        self.entriesStart = unpack('<I', buff.read(4))[0]
+
         self.mResId = (0xff000000 & self.parent.get_mResId()) | self.id << 16
         self.parent.set_mResId(self.mResId)
 
@@ -1834,8 +1886,8 @@ class ARSCResType(object):
         return "ARSCResType(%x, %x, %x, %x, %x, %x, %x, %s)" % (
             self.start,
             self.id,
-            self.res0,
-            self.res1,
+            self.flags,
+            self.reserved,
             self.entryCount,
             self.entriesStart,
             self.mResId,
@@ -1856,9 +1908,8 @@ class ARSCResTableConfig(object):
         This is used on the device to determine which resources should be loaded
         based on different properties of the device like locale or displaysize.
 
-        See the definiton of ResTable_config in
-        platform_frameworks_base/libs/androidfw/include/androidfw/ResourceTypes.h
-
+        See the definition of ResTable_config in
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#911
 
         :param buff:
         :param kwargs:
@@ -1901,30 +1952,36 @@ class ARSCResTableConfig(object):
             # uint16_t minorVersion  which should be always 0, as the meaning is not defined
             self.version = unpack('<I', buff.read(4))[0]
 
-            self.screenConfig = 0
-            self.screenSizeDp = 0
-
-            if self.size >= 32:
-                # FIXME: is this really not always there?
+            read_size = buff.tell() - self.start
+            if self.size != 40:
+                log.warning("This file does not have screenConfig, screenSizeDp and screenConfig2!"
+                            "Declared Size: {}, already read: {}".format(self.size, read_size))
+                self.screenConfig = 0
+                self.screenSizeDp = 0
+                self.screenConfig2 = 0
+            else:
+                read_size = 40
                 # struct of
                 # uint8_t screenLayout
                 # uint8_t uiMode
                 # uint16_t smallestScreenWidthDp
                 self.screenConfig = unpack('<I', buff.read(4))[0]
 
-                if self.size >= 36:
-                    # FIXME is this really not always there?
-                    # struct of
-                    # uint16_t screenWidthDp
-                    # uint16_t screenHeightDp
-                    self.screenSizeDp = unpack('<I', buff.read(4))[0]
+                # struct of
+                # uint16_t screenWidthDp
+                # uint16_t screenHeightDp
+                self.screenSizeDp = unpack('<I', buff.read(4))[0]
 
-            self.exceedingSize = self.size - 36
+                # struct of
+                # uint8_t screenLayout2
+                # uint8_t colorMode
+                # uint16_t screenConfigPad2
+                self.screenConfig2, = unpack("<I", buff.read(4))
+
+            self.exceedingSize = self.size - read_size
             if self.exceedingSize > 0:
                 log.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
-
-        # TODO there is screenConfig2
 
         else:
             self.start = 0
@@ -1985,8 +2042,8 @@ class ARSCResTableConfig(object):
 
     def get_language_and_region(self):
         if self.locale != 0:
-            _language = self._unpack_language_or_region([self.locale & 0xff,(self.locale & 0xff00)>>8,],ord('a'))
-            _region = self._unpack_language_or_region([(self.locale & 0xff0000)>>16,(self.locale & 0xff000000)>>24,],ord('0'))
+            _language = self._unpack_language_or_region([self.locale & 0xff, (self.locale & 0xff00) >> 8, ], ord('a'))
+            _region = self._unpack_language_or_region([(self.locale & 0xff0000) >> 16, (self.locale & 0xff000000) >> 24, ], ord('0'))
             return (_language + "-r" + _region) if _region else _language
         return ""
 
@@ -1996,56 +2053,53 @@ class ARSCResTableConfig(object):
         mcc = self.imsi & 0xFFFF
         mnc = (self.imsi & 0xFFFF0000) >> 16
         if mcc != 0:
-            res.append("mcc%d"% mcc)
+            res.append("mcc%d" % mcc)
         if mnc != 0:
-            res.append("mnc%d"% mnc)
+            res.append("mnc%d" % mnc)
 
         if self.locale != 0:
             res.append(self.get_language_and_region())
 
-
-        screenLayout = self.screenConfig  & 0xff
-        if (screenLayout&MASK_LAYOUTDIR) != 0:
-            if screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_LTR:
+        screenLayout = self.screenConfig & 0xff
+        if (screenLayout & MASK_LAYOUTDIR) != 0:
+            if screenLayout & MASK_LAYOUTDIR == LAYOUTDIR_LTR:
                 res.append("ldltr")
-            elif screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_RTL:
+            elif screenLayout & MASK_LAYOUTDIR == LAYOUTDIR_RTL:
                 res.append("ldrtl")
             else:
-                res.append("layoutDir_%d" % (screenLayout&MASK_LAYOUTDIR))
+                res.append("layoutDir_%d" % (screenLayout & MASK_LAYOUTDIR))
 
         smallestScreenWidthDp = (self.screenConfig & 0xFFFF0000) >> 16
         if smallestScreenWidthDp != 0:
-            res.append("sw%ddp"%smallestScreenWidthDp)
+            res.append("sw%ddp" % smallestScreenWidthDp)
 
         screenWidthDp = self.screenSizeDp & 0xFFFF
         screenHeightDp = (self.screenSizeDp & 0xFFFF0000) >> 16
         if screenWidthDp != 0:
-            res.append("w%ddp"%screenWidthDp)
+            res.append("w%ddp" % screenWidthDp)
         if screenHeightDp != 0:
-            res.append("h%ddp"%screenHeightDp)
+            res.append("h%ddp" % screenHeightDp)
 
-
-        if (screenLayout&MASK_SCREENSIZE) != SCREENSIZE_ANY:
-            if screenLayout&MASK_SCREENSIZE == SCREENSIZE_SMALL:
+        if (screenLayout & MASK_SCREENSIZE) != SCREENSIZE_ANY:
+            if screenLayout & MASK_SCREENSIZE == SCREENSIZE_SMALL:
                 res.append("small")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_NORMAL:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_NORMAL:
                 res.append("normal")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_LARGE:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_LARGE:
                 res.append("large")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_XLARGE:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_XLARGE:
                 res.append("xlarge")
             else:
-                res.append("screenLayoutSize_%d"%(screenLayout&MASK_SCREENSIZE))
-        if (screenLayout&MASK_SCREENLONG) != 0:
-            if screenLayout&MASK_SCREENLONG == SCREENLONG_NO:
+                res.append("screenLayoutSize_%d" % (screenLayout & MASK_SCREENSIZE))
+        if (screenLayout & MASK_SCREENLONG) != 0:
+            if screenLayout & MASK_SCREENLONG == SCREENLONG_NO:
                 res.append("notlong")
-            elif screenLayout&MASK_SCREENLONG == SCREENLONG_YES:
+            elif screenLayout & MASK_SCREENLONG == SCREENLONG_YES:
                 res.append("long")
             else:
-                res.append("screenLayoutLong_%d"%(screenLayout&MASK_SCREENLONG))
+                res.append("screenLayoutLong_%d" % (screenLayout & MASK_SCREENLONG))
 
-
-        density = (self.screenType  & 0xffff0000) >> 16
+        density = (self.screenType & 0xffff0000) >> 16
         if density != DENSITY_DEFAULT:
             if density == DENSITY_LOW:
                 res.append("ldpi")
@@ -2066,9 +2120,9 @@ class ARSCResTableConfig(object):
             elif density == DENSITY_ANY:
                 res.append("anydpi")
             else:
-                res.append("%ddpi"%(density))
+                res.append("%ddpi" % (density))
 
-        touchscreen = (self.screenType  & 0xff00) >> 8
+        touchscreen = (self.screenType & 0xff00) >> 8
         if touchscreen != TOUCHSCREEN_ANY:
             if touchscreen == TOUCHSCREEN_NOTOUCH:
                 res.append("notouch")
@@ -2081,17 +2135,17 @@ class ARSCResTableConfig(object):
 
         screenSize = self.screenSize
         if screenSize != 0:
-            screenWidth = self.screenSize  & 0xffff
-            screenHeight = (self.screenSize  & 0xffff0000) >> 16
-            res.append("%dx%d"%( screenWidth,screenHeight))
+            screenWidth = self.screenSize & 0xffff
+            screenHeight = (self.screenSize & 0xffff0000) >> 16
+            res.append("%dx%d" % (screenWidth, screenHeight))
 
         version = self.version
         if version != 0:
-            sdkVersion = self.version  & 0xffff
-            minorVersion = (self.version  & 0xffff0000) >> 16
-            res.append("v%d"%sdkVersion)
+            sdkVersion = self.version & 0xffff
+            minorVersion = (self.version & 0xffff0000) >> 16
+            res.append("v%d" % sdkVersion)
             if minorVersion != 0:
-                res.append(".%d"%minorVersion)
+                res.append(".%d" % minorVersion)
 
         return "-".join(res)
 
