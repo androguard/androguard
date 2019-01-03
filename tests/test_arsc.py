@@ -77,7 +77,7 @@ class ARSCTest(unittest.TestCase):
                    "ja": "テキストメッセージ読み上げの遅延",
                    "ru": "Задержка зачитывания SMS",
                    }
-        for k, v in strings:
+        for k, v in strings.items():
             e = etree.fromstring(arsc.get_string_resources(p, k))
             self.assertEqual(e.find("string[@name='{}']".format(item)), v)
 
