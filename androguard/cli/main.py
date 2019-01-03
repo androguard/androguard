@@ -12,26 +12,38 @@ from lxml import etree
 # internal modules
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
+from androguard.core.bytecodes.axml import AXMLPrinter
 from androguard.util import read
 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.terminal import TerminalFormatter
 
-def androaxml_main(inp, outp=None):
+
+def androaxml_main(inp, outp=None, resource=None):
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
         a = apk.APK(inp)
-        axml = a.get_android_manifest_xml()
+        if resource:
+            if resource not in a.files:
+                print("The APK does not contain a file called '{}'".format(resource), file=sys.stderr)
+                sys.exit(1)
+
+            axml = AXMLPrinter(a.get_file(resource)).get_xml_obj()
+        else:
+            axml = a.get_android_manifest_xml()
     elif ".xml" in inp:
-        axml = apk.AXMLPrinter(read(inp)).get_xml_obj()
+        axml = AXMLPrinter(read(inp)).get_xml_obj()
     else:
         print("Unknown file type")
-        return
+        sys.exit(1)
 
     buff = etree.tostring(axml, pretty_print=True, encoding="utf-8")
     if outp:
         with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff.decode("UTF-8"))
+        sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
 def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
@@ -59,7 +71,7 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
         with open(outp, "wb") as fd:
             fd.write(buff)
     else:
-        print(buff.decode("UTF-8"))
+        sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
 def androcg_main(verbose,

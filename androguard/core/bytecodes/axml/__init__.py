@@ -7,173 +7,45 @@ from builtins import object
 from androguard.core import bytecode
 
 from androguard.core.resources import public
+from androguard.core.bytecodes.axml.types import *
 
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 import collections
-from collections import defaultdict
 
 from lxml import etree
 import logging
+import re
+import binascii
 
 log = logging.getLogger("androguard.axml")
 
 
-################################## AXML FORMAT ########################################
-# Translated from
-# http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
+# Constants for ARSC Files
+# see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215
+RES_NULL_TYPE = 0x0000
+RES_STRING_POOL_TYPE = 0x0001
+RES_TABLE_TYPE = 0x0002
+RES_XML_TYPE = 0x0003
+
+RES_XML_FIRST_CHUNK_TYPE    = 0x0100
+RES_XML_START_NAMESPACE_TYPE= 0x0100
+RES_XML_END_NAMESPACE_TYPE  = 0x0101
+RES_XML_START_ELEMENT_TYPE  = 0x0102
+RES_XML_END_ELEMENT_TYPE    = 0x0103
+RES_XML_CDATA_TYPE          = 0x0104
+RES_XML_LAST_CHUNK_TYPE     = 0x017f
+
+RES_XML_RESOURCE_MAP_TYPE   = 0x0180
+
+RES_TABLE_PACKAGE_TYPE      = 0x0200
+RES_TABLE_TYPE_TYPE         = 0x0201
+RES_TABLE_TYPE_SPEC_TYPE    = 0x0202
+RES_TABLE_LIBRARY_TYPE      = 0x0203
 
 # Flags in the STRING Section
 SORTED_FLAG = 1 << 0
 UTF8_FLAG = 1 << 8
-
-
-class StringBlock(object):
-    """
-    StringBlock is a CHUNK inside an AXML File
-    It contains all strings, which are used by referecing to ID's
-
-    TODO might migrate this block into the ARSCParser, as it it not a "special" block but a normal tag.
-    """
-    def __init__(self, buff, header):
-        self._cache = {}
-        self.header = header
-        # We already read the header (which was chunk_type and chunk_size
-        # Now, we read the string_count:
-        self.stringCount = unpack('<i', buff.read(4))[0]
-        # style_count
-        self.styleOffsetCount = unpack('<i', buff.read(4))[0]
-
-        # flags
-        self.flags = unpack('<i', buff.read(4))[0]
-        self.m_isUTF8 = ((self.flags & UTF8_FLAG) != 0)
-
-        # string_pool_offset
-        # The string offset is counted from the beginning of the string section
-        self.stringsOffset = unpack('<i', buff.read(4))[0]
-        # style_pool_offset
-        # The styles offset is counted as well from the beginning of the string section
-        self.stylesOffset = unpack('<i', buff.read(4))[0]
-
-        # Check if they supplied a stylesOffset even if the count is 0:
-        if self.styleOffsetCount == 0 and self.stylesOffset > 0:
-            log.warning("Styles Offset given, but styleCount is zero.")
-
-        self.m_stringOffsets = []
-        self.m_styleOffsets = []
-        self.m_charbuff = ""
-        self.m_styles = []
-
-        # Next, there is a list of string following
-        # This is only a list of offsets (4 byte each)
-        for i in range(0, self.stringCount):
-            self.m_stringOffsets.append(unpack('<i', buff.read(4))[0])
-
-        # And a list of styles
-        # again, a list of offsets
-        for i in range(0, self.styleOffsetCount):
-            self.m_styleOffsets.append(unpack('<i', buff.read(4))[0])
-
-
-        # FIXME it is probably better to parse n strings and not calculate the size
-        size = self.header.size - self.stringsOffset
-
-        # if there are styles as well, we do not want to read them too.
-        # Only read them, if no
-        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
-            size = self.stylesOffset - self.stringsOffset
-
-        # FIXME unaligned
-        if (size % 4) != 0:
-            log.warning("Size of strings is not aligned by four bytes.")
-
-        self.m_charbuff = buff.read(size)
-
-        if self.stylesOffset != 0 and self.styleOffsetCount != 0:
-            size = self.header.size - self.stylesOffset
-
-            # FIXME unaligned
-            if (size % 4) != 0:
-                log.warning("Size of styles is not aligned by four bytes.")
-
-            for i in range(0, size // 4):
-                self.m_styles.append(unpack('<i', buff.read(4))[0])
-
-    def getString(self, idx):
-        if idx in self._cache:
-            return self._cache[idx]
-
-        if idx < 0 or not self.m_stringOffsets or idx >= len(
-                self.m_stringOffsets):
-            return ""
-
-        offset = self.m_stringOffsets[idx]
-
-        if self.m_isUTF8:
-            self._cache[idx] = self.decode8(offset)
-        else:
-            self._cache[idx] = self.decode16(offset)
-
-        return self._cache[idx]
-
-    def getStyle(self, idx):
-        # FIXME
-        return self.m_styles[idx]
-
-    def decode8(self, offset):
-        str_len, skip = self.decodeLength(offset, 1)
-        offset += skip
-
-        encoded_bytes, skip = self.decodeLength(offset, 1)
-        offset += skip
-
-        data = self.m_charbuff[offset: offset + encoded_bytes]
-
-        return self.decode_bytes(data, 'utf-8', str_len)
-
-    def decode16(self, offset):
-        str_len, skip = self.decodeLength(offset, 2)
-        offset += skip
-
-        encoded_bytes = str_len * 2
-
-        data = self.m_charbuff[offset: offset + encoded_bytes]
-
-        return self.decode_bytes(data, 'utf-16', str_len)
-
-    def decode_bytes(self, data, encoding, str_len):
-        string = data.decode(encoding, 'replace')
-        if len(string) != str_len:
-            log.warning("invalid decoded string length")
-        return string
-
-    def decodeLength(self, offset, sizeof_char):
-        length = self.m_charbuff[offset]
-
-        sizeof_2chars = sizeof_char << 1
-        fmt_chr = 'B' if sizeof_char == 1 else 'H'
-        fmt = "<2" + fmt_chr
-
-        length1, length2 = unpack(fmt, self.m_charbuff[offset:(offset + sizeof_2chars)])
-
-        highbit = 0x80 << (8 * (sizeof_char - 1))
-
-        if (length & highbit) != 0:
-            return ((length1 & ~highbit) << (8 * sizeof_char)) | length2, sizeof_2chars
-        else:
-            return length1, sizeof_char
-
-    def show(self):
-        print("StringBlock(%x, %x, %x, %x, %x, %x" % (
-            self.start,
-            self.header,
-            self.header_size,
-            self.chunkSize,
-            self.stringsOffset,
-            self.flags))
-        for i in range(0, len(self.m_stringOffsets)):
-            print(i, repr(self.getString(i)))
-
 
 # Position of the fields inside an attribute
 ATTRIBUTE_IX_NAMESPACE_URI = 0
@@ -183,413 +55,14 @@ ATTRIBUTE_IX_VALUE_TYPE = 3
 ATTRIBUTE_IX_VALUE_DATA = 4
 ATTRIBUTE_LENGHT = 5
 
-# Chunk Headers
-CHUNK_AXML_FILE = 0x00080003
-CHUNK_STRING = 0x001C0001
-CHUNK_RESOURCEIDS = 0x00080180
-CHUNK_XML_FIRST = 0x00100100
-CHUNK_XML_START_NAMESPACE = 0x00100100
-CHUNK_XML_END_NAMESPACE = 0x00100101
-CHUNK_XML_START_TAG = 0x00100102
-CHUNK_XML_END_TAG = 0x00100103
-CHUNK_XML_TEXT = 0x00100104
-CHUNK_XML_LAST = 0x00100104
-
+# Internally used state variables for AXMLParser
 START_DOCUMENT = 0
 END_DOCUMENT = 1
 START_TAG = 2
 END_TAG = 3
 TEXT = 4
 
-
-class AXMLParser(object):
-    def __init__(self, raw_buff):
-        self.reset()
-
-        self.valid_axml = True
-        self.axml_tampered = False
-        self.packerwarning = False
-        self.buff = bytecode.BuffHandle(raw_buff)
-
-        axml_file, = unpack('<L', self.buff.read(4))
-
-        if axml_file != CHUNK_AXML_FILE:
-            # It looks like the header is wrong.
-            # need some other checks.
-            # We noted, that a some of files start with 0x0008NNNN, where NNNN is some random number
-            if axml_file >> 16 == 0x0008:
-                self.axml_tampered = True
-                log.warning("AXML file has an unusual header, most malwares like doing such stuff to anti androguard! But we try to parse it anyways. Header: 0x{:08x}".format(axml_file))
-            else:
-                self.valid_axml = False
-                log.error("Not a valid AXML file. Header 0x{:08x}".format(axml_file))
-                return
-
-        # Next is the filesize
-        self.filesize, = unpack('<L', self.buff.read(4))
-        assert self.filesize <= self.buff.size(), "Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
-
-        # Now we parse the STRING POOL
-        header = ARSCHeader(self.buff) # read 8 byte = String header + chunk_size
-        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got %x" % header.type
-
-        self.sb = StringBlock(self.buff, header)
-
-        self.m_resourceIDs = []
-        self.m_prefixuri = {}
-        self.m_uriprefix = defaultdict(list)
-        # Contains a list of current prefix/uri pairs
-        self.m_prefixuriL = []
-        # Store which namespaces are already printed
-        self.visited_ns = []
-
-    def is_valid(self):
-        return self.valid_axml
-
-    def reset(self):
-        self.m_event = -1
-        self.m_lineNumber = -1
-        self.m_name = -1
-        self.m_namespaceUri = -1
-        self.m_attributes = []
-        self.m_idAttribute = -1
-        self.m_classAttribute = -1
-        self.m_styleAttribute = -1
-
-    def __next__(self):
-        self.doNext()
-        return self.m_event
-
-    def doNext(self):
-        if self.m_event == END_DOCUMENT:
-            return
-
-        event = self.m_event
-
-        self.reset()
-        while True:
-            chunkType = -1
-            # General notes:
-            # * chunkSize is from start of chunk, including the tag type
-
-            # Fake END_DOCUMENT event.
-            if event == END_TAG:
-                pass
-
-            # START_DOCUMENT
-            if event == START_DOCUMENT:
-                chunkType = CHUNK_XML_START_TAG
-            else:
-                # Stop at the declared filesize or at the end of the file
-                if self.buff.end() or self.buff.get_idx() == self.filesize:
-                    self.m_event = END_DOCUMENT
-                    break
-                chunkType = unpack('<L', self.buff.read(4))[0]
-
-            # Parse ResourceIDs. This chunk is after the String section
-            if chunkType == CHUNK_RESOURCEIDS:
-                chunkSize = unpack('<L', self.buff.read(4))[0]
-
-                # Check size: < 8 bytes mean that the chunk is not complete
-                # Should be aligned to 4 bytes.
-                if chunkSize < 8 or chunkSize % 4 != 0:
-                    log.warning("Invalid chunk size in chunk RESOURCEIDS")
-
-                for i in range(0, (chunkSize // 4) - 2):
-                    self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
-
-                continue
-
-            # FIXME, unknown chunk types might cause problems
-            if chunkType < CHUNK_XML_FIRST or chunkType > CHUNK_XML_LAST:
-                log.warning("invalid chunk type 0x{:08x}".format(chunkType))
-
-            # Fake START_DOCUMENT event.
-            if chunkType == CHUNK_XML_START_TAG and event == -1:
-                self.m_event = START_DOCUMENT
-                break
-
-            # After the chunk_type, there are always 3 fields for the remaining tags we need to parse:
-            # Chunk Size (we do not need it)
-            # TODO for sanity checks, we should use it and check if the chunks are correct in size
-            self.buff.read(4)
-            # Line Number
-            self.m_lineNumber = unpack('<L', self.buff.read(4))[0]
-            # Comment_Index (usually 0xFFFFFFFF, we do not need it)
-            self.buff.read(4)
-
-            # Now start to parse the field
-
-            # There are five (maybe more) types of Chunks:
-            # * START_NAMESPACE
-            # * END_NAMESPACE
-            # * START_TAG
-            # * END_TAG
-            # * TEXT
-            if chunkType == CHUNK_XML_START_NAMESPACE or chunkType == CHUNK_XML_END_NAMESPACE:
-                if chunkType == CHUNK_XML_START_NAMESPACE:
-                    prefix = unpack('<L', self.buff.read(4))[0]
-                    uri = unpack('<L', self.buff.read(4))[0]
-
-                    # FIXME We will get a problem here, if the same uri is used with different prefixes!
-                    # prefix --> uri is a 1:1 mapping
-                    self.m_prefixuri[prefix] = uri
-                    # but uri --> prefix is a 1:n mapping!
-                    self.m_uriprefix[uri].append(prefix)
-                    self.m_prefixuriL.append((prefix, uri))
-                    self.ns = uri
-
-                    # Workaround for closing tags
-                    if (uri, prefix) in self.visited_ns:
-                        self.visited_ns.remove((uri, prefix))
-                else:
-                    self.ns = -1
-                    # END_PREFIX contains again prefix and uri field
-                    prefix, = unpack('<L', self.buff.read(4))
-                    uri, = unpack('<L', self.buff.read(4))
-
-                    # We can then remove those from the prefixuriL
-                    if (prefix, uri) in self.m_prefixuriL:
-                        self.m_prefixuriL.remove((prefix, uri))
-
-                    # We also remove the entry from prefixuri and uriprefix:
-                    if prefix in self.m_prefixuri:
-                        del self.m_prefixuri[prefix]
-                    if uri in self.m_uriprefix:
-                        self.m_uriprefix[uri].remove(prefix)
-                    # Need to remove them from visisted namespaces as well, as it might pop up later
-                    # FIXME we need to remove it also if we leave a tag which closes it namespace
-                    # Workaround for now: remove it on a START_NAMESPACE tag
-                    if (uri, prefix) in self.visited_ns:
-                        self.visited_ns.remove((uri, prefix))
-
-                    else:
-                        log.warning("Reached a NAMESPACE_END without having the namespace stored before? Prefix ID: {}, URI ID: {}".format(prefix, uri))
-
-                continue
-
-            # START_TAG is the start of a new tag.
-            if chunkType == CHUNK_XML_START_TAG:
-                # The TAG consists of some fields:
-                # * (chunk_size, line_number, comment_index - we read before)
-                # * namespace_uri
-                # * name
-                # * flags
-                # * attribute_count
-                # * class_attribute
-                # After that, there are two lists of attributes, 20 bytes each
-
-                self.m_namespaceUri = unpack('<L', self.buff.read(4))[0]
-                self.m_name = unpack('<L', self.buff.read(4))[0]
-
-                # FIXME
-                self.buff.read(4)  # flags
-
-                attributeCount = unpack('<L', self.buff.read(4))[0]
-                self.m_idAttribute = (attributeCount >> 16) - 1
-                attributeCount = attributeCount & 0xFFFF
-                self.m_classAttribute = unpack('<L', self.buff.read(4))[0]
-                self.m_styleAttribute = (self.m_classAttribute >> 16) - 1
-
-                self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
-
-                # Now, we parse the attributes.
-                # Each attribute has 5 fields of 4 byte
-                for i in range(0, attributeCount * ATTRIBUTE_LENGHT):
-                    # Each field is linearly parsed into the array
-                    self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
-
-                # Then there are class_attributes
-                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes),
-                               ATTRIBUTE_LENGHT):
-                    self.m_attributes[i] = self.m_attributes[i] >> 24
-
-                self.m_event = START_TAG
-                break
-
-            if chunkType == CHUNK_XML_END_TAG:
-                self.m_namespaceUri = unpack('<L', self.buff.read(4))[0]
-                self.m_name = unpack('<L', self.buff.read(4))[0]
-                self.m_event = END_TAG
-                break
-
-            if chunkType == CHUNK_XML_TEXT:
-                # TODO we do not know what the TEXT field does...
-                self.m_name = unpack('<L', self.buff.read(4))[0]
-
-                # FIXME
-                # Raw_value
-                self.buff.read(4)
-                # typed_value, is an enum
-                self.buff.read(4)
-
-                self.m_event = TEXT
-                break
-
-    def getPrefixByUri(self, uri):
-        # As uri --> prefix is 1:n mapping,
-        # We will just return the first one we match.
-        if uri not in self.m_uriprefix:
-            return -1
-        else:
-            if len(self.m_uriprefix[uri]) == 0:
-                return -1
-            return self.m_uriprefix[uri][0]
-
-    def getPrefix(self):
-        # The default is, that the namespaceUri is 0xFFFFFFFF
-        # Then we know, there is none
-        if self.m_namespaceUri == 0xFFFFFFFF:
-            return u''
-
-        # FIXME this could be problematic. Need to find the correct namespace prefix
-        if self.m_namespaceUri in self.m_uriprefix:
-            candidate = self.m_uriprefix[self.m_namespaceUri][0]
-            try:
-                return self.sb.getString(candidate)
-            except KeyError:
-                return u''
-        else:
-            return u''
-
-    def getName(self):
-        if self.m_name == -1 or (self.m_event != START_TAG and
-                                         self.m_event != END_TAG):
-            return u''
-
-        return self.sb.getString(self.m_name)
-
-    def getText(self):
-        if self.m_name == -1 or self.m_event != TEXT:
-            return u''
-
-        return self.sb.getString(self.m_name)
-
-    def getNamespacePrefix(self, pos):
-        prefix = self.m_prefixuriL[pos][0]
-        return self.sb.getString(prefix)
-
-    def getNamespaceUri(self, pos):
-        uri = self.m_prefixuriL[pos][1]
-        return self.sb.getString(uri)
-
-    def getXMLNS(self):
-        buff = ""
-        for prefix, uri in self.m_prefixuri.items():
-            if (uri, prefix) not in self.visited_ns:
-                prefix_str = self.sb.getString(prefix)
-                prefix_uri = self.sb.getString(self.m_prefixuri[prefix])
-                # FIXME Packers like Liapp use empty uri to fool XML Parser
-                # FIXME they also mess around with the Manifest, thus it can not be parsed easily
-                if prefix_uri == '':
-                    log.warning("Empty Namespace URI for Namespace {}.".format(prefix_str))
-                    self.packerwarning = True
-
-                # if prefix is (null), which is indicated by an empty str, then do not print :
-                if prefix_str != '':
-                    prefix_str = ":" + prefix_str
-                buff += 'xmlns{}="{}"\n'.format(prefix_str, prefix_uri)
-                self.visited_ns.append((uri, prefix))
-        return buff
-
-    def getNamespaceCount(self, pos):
-        pass
-
-    def getAttributeOffset(self, index):
-        # FIXME
-        if self.m_event != START_TAG:
-            log.warning("Current event is not START_TAG.")
-
-        offset = index * 5
-        # FIXME
-        if offset >= len(self.m_attributes):
-            log.warning("Invalid attribute index")
-
-        return offset
-
-    def getAttributeCount(self):
-        if self.m_event != START_TAG:
-            return -1
-
-        return len(self.m_attributes) // ATTRIBUTE_LENGHT
-
-    def getAttributePrefix(self, index):
-        offset = self.getAttributeOffset(index)
-        uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
-
-        prefix = self.getPrefixByUri(uri)
-
-        if prefix == -1:
-            return ""
-
-        return self.sb.getString(prefix)
-
-    def getAttributeName(self, index):
-        offset = self.getAttributeOffset(index)
-        name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
-
-        if name == -1:
-            return ""
-
-        res = self.sb.getString(name)
-        # If the result is a (null) string, we need to look it up.
-        if not res:
-            attr = self.m_resourceIDs[name]
-            if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][
-                    attr
-                ]
-            else:
-                # Attach the HEX Number, so for multiple missing attributes we do not run
-                # into problems.
-                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
-
-        return res
-
-    def getAttributeValueType(self, index):
-        offset = self.getAttributeOffset(index)
-        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
-
-    def getAttributeValueData(self, index):
-        offset = self.getAttributeOffset(index)
-        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
-
-    def getAttributeValue(self, index):
-        """
-        This function is only used to look up strings
-        All other work is made by format_value
-        # FIXME should unite those functions
-        :param index:
-        :return:
-        """
-        offset = self.getAttributeOffset(index)
-        valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
-        if valueType == TYPE_STRING:
-            valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
-            return self.sb.getString(valueString)
-        return ""
-
-
-# FIXME there are duplicates and missing values...
-TYPE_NULL = 0
-TYPE_REFERENCE = 1
-TYPE_ATTRIBUTE = 2
-TYPE_STRING = 3
-TYPE_FLOAT = 4
-TYPE_DIMENSION = 5
-TYPE_FRACTION = 6
-TYPE_FIRST_INT = 16
-TYPE_INT_DEC = 16
-TYPE_INT_HEX = 17
-TYPE_INT_BOOLEAN = 18
-TYPE_FIRST_COLOR_INT = 28
-TYPE_INT_COLOR_ARGB8 = 28
-TYPE_INT_COLOR_RGB8 = 29
-TYPE_INT_COLOR_ARGB4 = 30
-TYPE_INT_COLOR_RGB4 = 31
-TYPE_LAST_COLOR_INT = 31
-TYPE_LAST_INT = 31
-
+# Table used to lookup functions to determine the value representation in ARSCParser
 TYPE_TABLE = {
     TYPE_ATTRIBUTE: "attribute",
     TYPE_DIMENSION: "dimension",
@@ -611,34 +84,709 @@ RADIX_MULTS = [0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010]
 DIMENSION_UNITS = ["px", "dip", "sp", "pt", "in", "mm"]
 FRACTION_UNITS = ["%", "%p"]
 
-COMPLEX_UNIT_MASK = 15
+COMPLEX_UNIT_MASK = 0x0F
 
 
 def complexToFloat(xcomplex):
+    """
+    Convert a complex unit into float
+    """
     return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
-def long2int(l):
-    if l > 0x7fffffff:
-        l = (0x7fffffff & l) - 0x80000000
-    return l
+class StringBlock(object):
+    def __init__(self, buff, header):
+        """
+        StringBlock is a CHUNK inside an AXML File
+        It contains all strings, which are used by referecing to ID's
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
+
+        :param buff: buffer which holds the string block
+        :param header: a instance of :class:`~ARSCHeader`
+        """
+        self._cache = {}
+        self.header = header
+        # We already read the header (which was chunk_type and chunk_size
+        # Now, we read the string_count:
+        self.stringCount = unpack('<I', buff.read(4))[0]
+        # style_count
+        self.styleCount = unpack('<I', buff.read(4))[0]
+
+        # flags
+        self.flags = unpack('<I', buff.read(4))[0]
+        self.m_isUTF8 = ((self.flags & UTF8_FLAG) != 0)
+
+        # string_pool_offset
+        # The string offset is counted from the beginning of the string section
+        self.stringsOffset = unpack('<I', buff.read(4))[0]
+        # style_pool_offset
+        # The styles offset is counted as well from the beginning of the string section
+        self.stylesOffset = unpack('<I', buff.read(4))[0]
+
+        # Check if they supplied a stylesOffset even if the count is 0:
+        if self.styleCount == 0 and self.stylesOffset > 0:
+            log.info("Styles Offset given, but styleCount is zero. "
+                     "This is not a problem but could indicate packers.")
+
+        self.m_stringOffsets = []
+        self.m_styleOffsets = []
+        self.m_charbuff = ""
+        self.m_styles = []
+
+        # Next, there is a list of string following.
+        # This is only a list of offsets (4 byte each)
+        for i in range(self.stringCount):
+            self.m_stringOffsets.append(unpack('<I', buff.read(4))[0])
+
+        # And a list of styles
+        # again, a list of offsets
+        for i in range(self.styleCount):
+            self.m_styleOffsets.append(unpack('<I', buff.read(4))[0])
+
+        # FIXME it is probably better to parse n strings and not calculate the size
+        size = self.header.size - self.stringsOffset
+
+        # if there are styles as well, we do not want to read them too.
+        # Only read them, if no
+        if self.stylesOffset != 0 and self.styleCount != 0:
+            size = self.stylesOffset - self.stringsOffset
+
+        if (size % 4) != 0:
+            log.warning("Size of strings is not aligned by four bytes.")
+
+        self.m_charbuff = buff.read(size)
+
+        if self.stylesOffset != 0 and self.styleCount != 0:
+            size = self.header.size - self.stylesOffset
+
+            if (size % 4) != 0:
+                log.warning("Size of styles is not aligned by four bytes.")
+
+            for i in range(0, size // 4):
+                self.m_styles.append(unpack('<I', buff.read(4))[0])
+
+    def __getitem__(self, idx):
+        """
+        Returns the string at the index in the string table
+        """
+        return self.getString(idx)
+
+    def __len__(self):
+        """
+        Get the number of strings stored in this table
+        """
+        return self.stringCount
+
+    def __iter__(self):
+        """
+        Iterable over all strings
+        """
+        for i in range(self.stringCount):
+            yield self.getString(i)
+
+    def getString(self, idx):
+        """
+        Return the string at the index in the string table
+
+        :param idx: index in the string table
+        :return: str
+        """
+        if idx in self._cache:
+            return self._cache[idx]
+
+        if idx < 0 or not self.m_stringOffsets or idx > self.stringCount:
+            return ""
+
+        offset = self.m_stringOffsets[idx]
+
+        if self.m_isUTF8:
+            self._cache[idx] = self._decode8(offset)
+        else:
+            self._cache[idx] = self._decode16(offset)
+
+        return self._cache[idx]
+
+    def getStyle(self, idx):
+        """
+        Return the style associated with the index
+
+        :param idx: index of the style
+        :return:
+        """
+        return self.m_styles[idx]
+
+    def _decode8(self, offset):
+        """
+        Decode an UTF-8 String at the given offset
+
+        :param offset: offset of the string inside the data
+        :return: str
+        """
+        # UTF-8 Strings contain two lengths, as they might differ:
+        # 1) the UTF-16 length
+        str_len, skip = self._decode_length(offset, 1)
+        offset += skip
+
+        # 2) the utf-8 string length
+        encoded_bytes, skip = self._decode_length(offset, 1)
+        offset += skip
+
+        data = self.m_charbuff[offset: offset + encoded_bytes]
+
+        assert self.m_charbuff[offset + encoded_bytes] == 0, \
+            "UTF-8 String is not null terminated! At offset={}".format(offset)
+
+        return self._decode_bytes(data, 'utf-8', str_len)
+
+    def _decode16(self, offset):
+        """
+        Decode an UTF-16 String at the given offset
+
+        :param offset: offset of the string inside the data
+        :return: str
+        """
+        str_len, skip = self._decode_length(offset, 2)
+        offset += skip
+
+        # The len is the string len in utf-16 units
+        encoded_bytes = str_len * 2
+
+        data = self.m_charbuff[offset: offset + encoded_bytes]
+
+        assert self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] == b"\x00\x00", \
+            "UTF-16 String is not null terminated! At offset={}".format(offset)
+
+        return self._decode_bytes(data, 'utf-16', str_len)
+
+    @staticmethod
+    def _decode_bytes(data, encoding, str_len):
+        """
+        Generic decoding with length check.
+        The string is decoded from bytes with the given encoding, then the length
+        of the string is checked.
+        The string is decoded using the "replace" method.
+
+        :param data: bytes
+        :param encoding: encoding name ("utf-8" or "utf-16")
+        :param str_len: length of the decoded string
+        :return: str
+        """
+        string = data.decode(encoding, 'replace')
+        if len(string) != str_len:
+            log.warning("invalid decoded string length")
+        return string
+
+    def _decode_length(self, offset, sizeof_char):
+        """
+        Generic Length Decoding at offset of string
+
+        The method works for both 8 and 16 bit Strings.
+        Length checks are enforced:
+        * 8 bit strings: maximum of 0x7FFF bytes (See
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#692)
+        * 16 bit strings: maximum of 0x7FFFFFF bytes (See
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#670)
+
+        :param offset: offset into the string data section of the beginning of
+        the string
+        :param sizeof_char: number of bytes per char (1 = 8bit, 2 = 16bit)
+        :returns: tuple of (length, read bytes)
+        """
+        sizeof_2chars = sizeof_char << 1
+        fmt = "<2{}".format('B' if sizeof_char == 1 else 'H')
+        highbit = 0x80 << (8 * (sizeof_char - 1))
+
+        length1, length2 = unpack(fmt, self.m_charbuff[offset:(offset + sizeof_2chars)])
+
+        if (length1 & highbit) != 0:
+            length = ((length1 & ~highbit) << (8 * sizeof_char)) | length2
+            size = sizeof_2chars
+        else:
+            length = length1
+            size = sizeof_char
+
+        if sizeof_char == 1:
+            assert length <= 0x7FFF, "length of UTF-8 string is too large! At offset={}".format(offset)
+        else:
+            assert length <= 0x7FFFFFFF, "length of UTF-16 string is too large!  At offset={}".format(offset)
+
+        return length, size
+
+    def show(self):
+        """
+        Print some information on stdout about the string table
+        """
+        print("StringBlock(stringsCount=0x%x, "
+              "stringsOffset=0x%x, "
+              "stylesCount=0x%x, "
+              "stylesOffset=0x%x, "
+              "flags=0x%x"
+              ")" % (self.stringCount,
+                     self.stringsOffset,
+                     self.styleCount,
+                     self.stylesOffset,
+                     self.flags))
+
+        if self.stringCount > 0:
+            print()
+            print("String Table: ")
+            for i, s in enumerate(self):
+                print("{:08d} {}".format(i, repr(s)))
+
+        if self.styleCount > 0:
+            print()
+            print("Styles Table: ")
+            for i in range(self.styleCount):
+                print("{:08d} {}".format(i, repr(self.getStyle(i))))
 
 
-def getPackage(i):
-    if i >> 24 == 1:
-        return "android:"
-    return ""
+class AXMLParser(object):
+    def __init__(self, raw_buff):
+        """
+        AXMLParser reads through all chunks in the AXML file
+        and implements a state machone to return information about
+        the current chunk, which can then be read by :class:`~AXMLPrinter`.
+
+        An AXML file is a file which contains multiple chunks of data, defined
+        by the `ResChunk_header`.
+        There is no real file magic but as the size of the first header is fixed
+        and the `type` of the `ResChunk_header` is set to `RES_XML_TYPE`, a file
+        will usually start with `0x03000800`.
+        But there are several examples where the `type` is set to something
+        else, probably in order to fool parsers.
+
+        Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
+        You can use the `next()` function to get the next chunk.
+        Note that not all chunk types are yielded from the iterator! Some chunks are processed in
+        the AXMLParser only.
+        The parser will throw an :class:`AssertionError` if it parses something not valid.
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
+
+        :param raw_buff: bytes of the AXML file
+        """
+        self._reset()
+
+        self.axml_tampered = False
+        self.buff = bytecode.BuffHandle(raw_buff)
+
+        assert self.buff.size() > 8, "Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size())
+
+        axml_header = ARSCHeader(self.buff)
+        self.filesize = axml_header.size
+
+        if axml_header.header_size == 28024:
+            # Can be a common error: the file is not an AXML but a plain XML
+            # The file will then usually start with '<?xm' / '3C 3F 78 6D'
+            log.warning("Header size is 28024! Are you trying to parse a plain XML file?")
+
+        assert axml_header.header_size == 8, \
+            "This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size)
+        assert self.filesize <= self.buff.size(), \
+            "This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+        if self.filesize < self.buff.size():
+            # The file can still be parsed up to the point where the chunk should end.
+            self.axml_tampered = True
+            log.warning("Declared filesize ({}) is smaller than total file size ({}). "
+                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff.size()))
+
+        # Not that severe of an error, we have plenty files where this is not
+        # set correctly
+        if axml_header.type != RES_XML_TYPE:
+            self.axml_tampered = True
+            log.warning("AXML file has an unusual resource type! "
+                        "Malware likes to to such stuff to anti androguard! "
+                        "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
+
+        # Now we parse the STRING POOL
+        header = ARSCHeader(self.buff)
+        assert header.header_size == 0x1C, "This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size)
+        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got resource type 0x%04x" % header.type
+
+        self.sb = StringBlock(self.buff, header)
+
+        # Stores resource ID mappings, if any
+        self.m_resourceIDs = []
+
+        # Store a list of prefix/uri mappings encountered
+        self.namespaces = []
+
+    def _reset(self):
+        self.m_event = -1
+        self.m_lineNumber = -1
+        self.m_name = -1
+        self.m_namespaceUri = -1
+        self.m_attributes = []
+        self.m_idAttribute = -1
+        self.m_classAttribute = -1
+        self.m_styleAttribute = -1
+
+    def __next__(self):
+        self._do_next()
+        return self.m_event
+
+    def _do_next(self):
+        if self.m_event == END_DOCUMENT:
+            return
+
+        self._reset()
+        while True:
+            # Stop at the declared filesize or at the end of the file
+            if self.buff.end() or self.buff.get_idx() == self.filesize:
+                self.m_event = END_DOCUMENT
+                break
+
+            # Again, we read an ARSCHeader
+            h = ARSCHeader(self.buff)
+
+            # Special chunk: Resource Map. This chunk might be contained inside
+            # the file, after the string pool.
+            if h.type == RES_XML_RESOURCE_MAP_TYPE:
+                log.debug("AXML contains a RESOURCE MAP")
+                # Check size: < 8 bytes mean that the chunk is not complete
+                # Should be aligned to 4 bytes.
+                assert h.size >= 8 and (h.size % 4) == 0, "Invalid chunk size in chunk XML_RESOURCE_MAP"
+
+                for i in range((h.size - h.header_size) // 4):
+                    self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
+
+                continue
+
+            # Parse now the XML chunks.
+            # unknown chunk types might cause problems, but we can skip them!
+            if h.type < RES_XML_FIRST_CHUNK_TYPE or h.type > RES_XML_LAST_CHUNK_TYPE:
+                # h.size is the size of the whole chunk including the header.
+                # We read already 8 bytes of the header, thus we need to
+                # subtract them.
+                log.error("Not a XML resource chunk type: 0x{:04x}. Skipping {} bytes".format(h.type, h.size))
+                self.buff.set_idx(h.end)
+                continue
+
+            # Check that we read a correct header
+            assert h.header_size == 0x10, \
+                "XML Resource Type Chunk header size does not match 16! " \
+                "At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size)
+
+            # Line Number of the source file, only used as meta information
+            self.m_lineNumber, = unpack('<L', self.buff.read(4))
+
+            # Comment_Index (usually 0xFFFFFFFF)
+            self.m_comment_index, = unpack('<L', self.buff.read(4))
+
+            if self.m_comment_index != 0xFFFFFFFF and h.type in [RES_XML_START_NAMESPACE_TYPE, RES_XML_END_NAMESPACE_TYPE]:
+                log.warning("Unhandled Comment at namespace chunk: '{}'".format(self.sb[self.m_comment_index]))
+
+            if h.type == RES_XML_START_NAMESPACE_TYPE:
+                prefix, = unpack('<L', self.buff.read(4))
+                uri, = unpack('<L', self.buff.read(4))
+
+                s_prefix = self.sb[prefix]
+                s_uri = self.sb[uri]
+
+                log.debug("Start of Namespace mapping: prefix {}: '{}' --> uri {}: '{}'".format(prefix, s_prefix, uri, s_uri))
+
+                if s_uri == '':
+                    log.warning("Namespace prefix '{}' resolves to empty URI. "
+                                "This might be a packer.".format(s_prefix))
+
+                if (prefix, uri) in self.namespaces:
+                    log.info("Namespace mapping ({}, {}) already seen! "
+                             "This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
+                self.namespaces.append((prefix, uri))
+
+                # We can continue with the next chunk, as we store the namespace
+                # mappings for each tag
+                continue
+
+            if h.type == RES_XML_END_NAMESPACE_TYPE:
+                # END_PREFIX contains again prefix and uri field
+                prefix, = unpack('<L', self.buff.read(4))
+                uri, = unpack('<L', self.buff.read(4))
+
+                # We remove the last namespace mapping matching
+                if (prefix, uri) in self.namespaces:
+                    self.namespaces.remove((prefix, uri))
+                else:
+                    log.warning("Reached a NAMESPACE_END without having the namespace stored before? "
+                                "Prefix ID: {}, URI ID: {}".format(prefix, uri))
+
+                # We can continue with the next chunk, as we store the namespace
+                # mappings for each tag
+                continue
+
+            # START_TAG is the start of a new tag.
+            if h.type == RES_XML_START_ELEMENT_TYPE:
+                # The TAG consists of some fields:
+                # * (chunk_size, line_number, comment_index - we read before)
+                # * namespace_uri
+                # * name
+                # * flags
+                # * attribute_count
+                # * class_attribute
+                # After that, there are two lists of attributes, 20 bytes each
+
+                # Namespace URI (String ID)
+                self.m_namespaceUri, = unpack('<L', self.buff.read(4))
+                # Name of the Tag (String ID)
+                self.m_name, = unpack('<L', self.buff.read(4))
+                # FIXME: Flags
+                _ = self.buff.read(4)
+                # Attribute Count
+                attributeCount, = unpack('<L', self.buff.read(4))
+                # Class Attribute
+                self.m_classAttribute, = unpack('<L', self.buff.read(4))
+
+                self.m_idAttribute = (attributeCount >> 16) - 1
+                self.m_attribute_count = attributeCount & 0xFFFF
+                self.m_styleAttribute = (self.m_classAttribute >> 16) - 1
+                self.m_classAttribute = (self.m_classAttribute & 0xFFFF) - 1
+
+                # Now, we parse the attributes.
+                # Each attribute has 5 fields of 4 byte
+                for i in range(0, self.m_attribute_count * ATTRIBUTE_LENGHT):
+                    # Each field is linearly parsed into the array
+                    # Each Attribute contains:
+                    # * Namespace URI (String ID)
+                    # * Name (String ID)
+                    # * Value
+                    # * Type
+                    # * Data
+                    self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
+
+                # Then there are class_attributes
+                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
+                    self.m_attributes[i] = self.m_attributes[i] >> 24
+
+                self.m_event = START_TAG
+                break
+
+            if h.type == RES_XML_END_ELEMENT_TYPE:
+                self.m_namespaceUri, = unpack('<L', self.buff.read(4))
+                self.m_name, = unpack('<L', self.buff.read(4))
+
+                self.m_event = END_TAG
+                break
+
+            if h.type == RES_XML_CDATA_TYPE:
+                # The CDATA field is like an attribute.
+                # It contains an index into the String pool
+                # as well as a typed value.
+                # usually, this typed value is set to UNDEFINED
+
+                # ResStringPool_ref data --> uint32_t index
+                self.m_name, = unpack('<L', self.buff.read(4))
+
+                # Res_value typedData:
+                # uint16_t size
+                # uint8_t res0 -> always zero
+                # uint8_t dataType
+                # uint32_t data
+                # For now, we ingore these values
+                size, res0, dataType, data = unpack("<HBBL", self.buff.read(8))
+
+                log.debug("found a CDATA Chunk: "
+                          "index={: 6d}, size={: 4d}, res0={: 4d}, dataType={: 4d}, data={: 4d}".format(self.m_name,
+                                                                                                        size,
+                                                                                                        res0,
+                                                                                                        dataType,
+                                                                                                        data))
+
+                self.m_event = TEXT
+                break
+
+            # Still here? Looks like we read an unknown XML header, try to skip it...
+            log.warning("Unknown XML Chunk: 0x{:04x}, skipping {} bytes.".format(h.type, h.size))
+            self.buff.set_idx(h.end)
+
+    @property
+    def name(self):
+        """
+        Return the String assosciated with the tag name
+        """
+        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
+            return u''
+
+        return self.sb[self.m_name]
+
+    @property
+    def comment(self):
+        """
+        Return the comment at the current position or None if no comment is given
+
+        This works only for Tags, as the comments of Namespaces are silently dropped.
+        Currently, there is no way of retrieving comments of namespaces.
+        """
+        if self.m_comment_index == 0xFFFFFFFF:
+            return None
+
+        return self.sb[self.m_comment_index]
+
+    @property
+    def namespace(self):
+        """
+        Return the Namespace URI (if any) as a String for the current tag
+        """
+        if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
+            return u''
+
+        # No Namespace
+        if self.m_namespaceUri == 0xFFFFFFFF:
+            return u''
+
+        return self.sb[self.m_namespaceUri]
+
+    @property
+    def nsmap(self):
+        """
+        Returns the current namespace mapping as a dictionary
+
+        there are several problems with the map and we try to guess a few
+        things here:
+        1) a URI can be mapped by many prefixes, so it is to decide which one
+           to take
+        2) a prefix might map to an empty string (some packers)
+        3) uri+prefix mappings might be included several times
+        4) prefix might be empty
+        """
+
+        NSMAP = dict()
+        # solve 3) by using a set
+        for k, v in set(self.namespaces):
+            s_prefix = self.sb[k]
+            s_uri = self.sb[v]
+            # Solve 2) & 4) by not including
+            if s_uri != "" and s_prefix != "":
+                # solve 1) by using the last one in the list
+                NSMAP[s_prefix] = s_uri
+
+        return NSMAP
+
+    @property
+    def text(self):
+        """
+        Return the String assosicated with the current text
+        """
+        if self.m_name == -1 or self.m_event != TEXT:
+            return u''
+
+        return self.sb[self.m_name]
+
+    def _get_attribute_offset(self, index):
+        """
+        Return the start inside the m_attributes array for a given attribute
+        """
+        if self.m_event != START_TAG:
+            log.warning("Current event is not START_TAG.")
+
+        offset = index * ATTRIBUTE_LENGHT
+        if offset >= len(self.m_attributes):
+            log.warning("Invalid attribute index")
+
+        return offset
+
+    def getAttributeCount(self):
+        """
+        Return the number of Attributes for a Tag
+        or -1 if not in a tag
+        """
+        if self.m_event != START_TAG:
+            return -1
+
+        return self.m_attribute_count
+
+    def getAttributeUri(self, index):
+        """
+        Returns the numeric ID for the namespace URI of an attribute
+        """
+        offset = self._get_attribute_offset(index)
+        uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
+
+        return uri
+
+    def getAttributeNamespace(self, index):
+        """
+        Return the Namespace URI (if any) for the attribute
+        """
+        uri = self.getAttributeUri(index)
+
+        # No Namespace
+        if uri == 0xFFFFFFFF:
+            return u''
+
+        return self.sb[uri]
+
+    def getAttributeName(self, index):
+        """
+        Returns the String which represents the attribute name
+        """
+        offset = self._get_attribute_offset(index)
+        name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
+
+        res = self.sb[name]
+        # If the result is a (null) string, we need to look it up.
+        if not res:
+            attr = self.m_resourceIDs[name]
+            if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
+                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
+            else:
+                # Attach the HEX Number, so for multiple missing attributes we do not run
+                # into problems.
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+
+        return res
+
+    def getAttributeValueType(self, index):
+        offset = self._get_attribute_offset(index)
+        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
+
+    def getAttributeValueData(self, index):
+        offset = self._get_attribute_offset(index)
+        return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
+
+    def getAttributeValue(self, index):
+        """
+        This function is only used to look up strings
+        All other work is made by format_value
+        # FIXME should unite those functions
+        :param index:
+        :return:
+        """
+        offset = self._get_attribute_offset(index)
+        valueType = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
+        if valueType == TYPE_STRING:
+            valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
+            return self.sb[valueString]
+        return u''
 
 
 def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
+    """
+    Format a value based on type and data.
+    By default, no strings are looked up and "<string>" is returned.
+    You need to define `lookup_string` in order to actually lookup strings from
+    the string table.
+
+    :param _type: The numeric type of the value
+    :param _data: The numeric data of the value
+    :param lookup_string: A function how to resolve strings from integer IDs
+    """
+
+    # Function to prepend android prefix for attributes/references from the
+    # android library
+    fmt_package = lambda x: "android:" if x >> 24 == 1 else ""
+
+    # Function to represent integers
+    fmt_int = lambda x: (0x7FFFFFFF & x) - 0x80000000 if x > 0x7FFFFFFF else x
+
     if _type == TYPE_STRING:
         return lookup_string(_data)
 
     elif _type == TYPE_ATTRIBUTE:
-        return "?%s%08X" % (getPackage(_data), _data)
+        return "?%s%08X" % (fmt_package(_data), _data)
 
     elif _type == TYPE_REFERENCE:
-        return "@%s%08X" % (getPackage(_data), _data)
+        return "@%s%08X" % (fmt_package(_data), _data)
 
     elif _type == TYPE_FLOAT:
         return "%f" % unpack("=f", pack("=L", _data))[0]
@@ -661,86 +809,98 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
         return "#%08X" % _data
 
     elif TYPE_FIRST_INT <= _type <= TYPE_LAST_INT:
-        return "%d" % long2int(_data)
+        return "%d" % fmt_int(_data)
 
     return "<0x%X, type 0x%02X>" % (_data, _type)
 
 
-class AXMLPrinter(object):
-    """
-    Converter for AXML Files into a XML string
-    """
+class AXMLPrinter:
     def __init__(self, raw_buff):
+        """
+        Converter for AXML Files into a lxml ElementTree, which can easily be
+        converted into XML.
+
+        A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
+
+        :param raw_buff: bytes of the raw AXML file
+        """
         self.axml = AXMLParser(raw_buff)
-        self.xmlns = False
 
-        self.buff = u''
+        self.root = None
+        self.packerwarning = False
+        cur = []
 
-        while True and self.axml.is_valid():
+        while True:
             _type = next(self.axml)
 
-            if _type == START_DOCUMENT:
-                self.buff += u'<?xml version="1.0" encoding="utf-8"?>\n'
-            elif _type == START_TAG:
-                self.buff += u'<' + self.getPrefix(self.axml.getPrefix()) + self.axml.getName() + u'\n'
-                self.buff += self.axml.getXMLNS()
+            if _type == START_TAG:
+                name = self._fix_name(self.axml.name)
+                uri = self._print_namespace(self.axml.namespace)
+                tag = "{}{}".format(uri, name)
 
-                for i in range(0, self.axml.getAttributeCount()):
-                    prefix = self.getPrefix(self.axml.getAttributePrefix(i))
-                    name = self.axml.getAttributeName(i)
-                    value = self._escape(self.getAttributeValue(i))
+                comment = self.axml.comment
+                if comment:
+                    if self.root is None:
+                        log.warning("Can not attach comment with content '{}' without root!".format(comment))
+                    else:
+                        cur[-1].append(etree.Comment(comment))
 
-                    # If the name is a system name AND the prefix is set, we have a problem.
-                    # FIXME we are not sure how this happens, but a quick fix is to remove the prefix if it already in the name
-                    if name.startswith(prefix):
-                        prefix = u''
+                log.debug("START_TAG: {} (line={})".format(tag, self.axml.m_lineNumber))
+                elem = etree.Element(tag, nsmap=self.axml.nsmap)
 
-                    self.buff += u'{}{}="{}"\n'.format(prefix, name, value)
+                for i in range(self.axml.getAttributeCount()):
+                    uri = self._print_namespace(self.axml.getAttributeNamespace(i))
+                    name = self._fix_name(self.axml.getAttributeName(i))
+                    value = self._fix_value(self._get_attribute_value(i))
 
-                self.buff += u'>\n'
+                    log.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
+                    if "{}{}".format(uri, name) in elem.attrib:
+                        log.warning("Duplicate attribute '{}{}'! Will overwrite!".format(uri, name))
+                    elem.set("{}{}".format(uri, name), value)
 
-            elif _type == END_TAG:
-                self.buff += u"</%s%s>\n" % (
-                    self.getPrefix(self.axml.getPrefix()), self.axml.getName())
+                if self.root is None:
+                    self.root = elem
+                else:
+                    if not cur:
+                        # looks like we lost the root?
+                        log.error("No more elements available to attach to! Is the XML malformed?")
+                        break
+                    cur[-1].append(elem)
+                cur.append(elem)
 
-            elif _type == TEXT:
-                self.buff += u"%s\n" % self._escape(self.axml.getText())
-            elif _type == END_DOCUMENT:
+            if _type == END_TAG:
+                if not cur:
+                    log.warning("Too many END_TAG! No more elements available to attach to!")
+
+                name = self.axml.name
+                uri = self._print_namespace(self.axml.namespace)
+                tag = "{}{}".format(uri, name)
+                if cur[-1].tag != tag:
+                    log.warning("Closing tag '{}' does not match current stack! At line number: {}. Is the XML malformed?".format(self.axml.name, self.axml.m_lineNumber))
+                cur.pop()
+            if _type == TEXT:
+                log.debug("TEXT for {}".format(cur[-1]))
+                cur[-1].text = self.axml.text
+            if _type == END_DOCUMENT:
+                # Check if all namespace mappings are closed
+                if len(self.axml.namespaces) > 0:
+                    log.warning("Not all namespace mappings were closed! Malformed AXML?")
                 break
 
-    # pleed patch
-    # FIXME should this be applied for strings directly?
-    def _escape(self, s):
-        # FIXME Strings might contain null bytes. Should they be removed?
-        # We guess so, as normaly the string would terminate there...?!
-        s = s.replace("\x00", "")
-        # Other HTML Conversions
-        s = s.replace("&", "&amp;")
-        s = s.replace('"', "&quot;")
-        s = s.replace("'", "&apos;")
-        s = s.replace("<", "&lt;")
-        s = s.replace(">", "&gt;")
-        return escape(s)
-
-    def is_packed(self):
-        """
-        Return True if we believe that the AXML file is packed
-        If it is, we can not be sure that the AXML file can be read by a XML Parser
-
-        :return: boolean
-        """
-        return self.axml.packerwarning
-
     def get_buff(self):
-        return self.buff.encode('utf-8')
+        """
+        Returns the raw XML file
+        :return: bytes, encoded as UTF-8
+        """
+        return self.get_xml(pretty=False)
 
-    def get_xml(self):
+    def get_xml(self, pretty=True):
         """
         Get the XML as an UTF-8 string
 
-        :return: str
+        :return: bytes encoded as UTF-8
         """
-        return etree.tostring(self.get_xml_obj(), encoding="utf-8", pretty_print=True)
+        return etree.tostring(self.root, encoding="utf-8", pretty_print=pretty)
 
     def get_xml_obj(self):
         """
@@ -748,53 +908,96 @@ class AXMLPrinter(object):
 
         :return: :class:`~lxml.etree.Element`
         """
-        parser = etree.XMLParser(recover=True, resolve_entities=False)
-        tree = etree.fromstring(self.get_buff(), parser=parser)
-        return tree
+        return self.root
 
-    def getPrefix(self, prefix):
-        if prefix is None or len(prefix) == 0:
-            return u''
+    def is_packed(self):
+        """
+        Returns True if the AXML is likely to be packed
 
-        return prefix + u':'
+        Packers do some weird stuff and we try to detect it.
+        Sometimes the files are not packed but simply broken or compiled with
+        some broken version of a tool.
+        Some file corruption might also be appear to be a packed file.
 
-    def getAttributeValue(self, index):
+        :return: True if packer detected, False otherwise
+        """
+        return self.packerwarning
+
+    def _get_attribute_value(self, index):
         """
         Wrapper function for format_value
         to resolve the actual value of an attribute in a tag
-        :param index:
-        :return:
+        :param index: index of the current attribute
+        :return: formatted value
         """
         _type = self.axml.getAttributeValueType(index)
         _data = self.axml.getAttributeValueData(index)
 
         return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
 
+    def _fix_name(self, name):
+        """
+        Apply some fixes to element named and attribute names.
+        Try to get conform to:
+        > Like element names, attribute names are case-sensitive and must start with a letter or underscore.
+        > The rest of the name can contain letters, digits, hyphens, underscores, and periods.
+        See: https://msdn.microsoft.com/en-us/library/ms256152(v=vs.110).aspx
 
-# Constants for ARSC Files
-RES_NULL_TYPE = 0x0000
-RES_STRING_POOL_TYPE = 0x0001
-RES_TABLE_TYPE = 0x0002
-RES_XML_TYPE = 0x0003
+        :param name: Name of the attribute
+        :return: a fixed version of the name
+        """
+        if not name[0].isalpha() and name[0] != "_":
+            log.warning("Invalid start for name '{}'".format(name))
+            self.packerwarning = True
+            name = "_{}".format(name)
+        if name.startswith("android:"):
+            # Seems be a common thing...
+            # Actually this means that the Manifest is likely to be broken, as
+            # usually no namespace URI is set in this case.
+            log.warning("Name '{}' starts with 'android:' prefix! The Manifest seems to be broken? Removing prefix.".format(name))
+            self.packerwarning = True
+            name = name[len("android:"):]
+        if ":" in name:
+            # Print out an extra warning
+            log.warning("Name seems to contain a namespace prefix: '{}'".format(name))
+        if not re.match(r"^[a-zA-Z0-9._-]*$", name):
+            log.warning("Name '{}' contains invalid characters!".format(name))
+            self.packerwarning = True
+            name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
-# Chunk types in RES_XML_TYPE
-RES_XML_FIRST_CHUNK_TYPE = 0x0100
-RES_XML_START_NAMESPACE_TYPE = 0x0100
-RES_XML_END_NAMESPACE_TYPE = 0x0101
-RES_XML_START_ELEMENT_TYPE = 0x0102
-RES_XML_END_ELEMENT_TYPE = 0x0103
-RES_XML_CDATA_TYPE = 0x0104
-RES_XML_LAST_CHUNK_TYPE = 0x017f
+        return name
 
-# This contains a uint32_t array mapping strings in the string
-# pool back to resource identifiers.  It is optional.
-RES_XML_RESOURCE_MAP_TYPE = 0x0180
+    def _fix_value(self, value):
+        """
+        Return a cleaned version of a value
+        according to the specification:
+        > Char	   ::=   	#x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 
-# Chunk types in RES_TABLE_TYPE
-RES_TABLE_PACKAGE_TYPE = 0x0200
-RES_TABLE_TYPE_TYPE = 0x0201
-RES_TABLE_TYPE_SPEC_TYPE = 0x0202
-RES_TABLE_LIBRARY_TYPE = 0x0203
+        See https://www.w3.org/TR/xml/#charsets
+
+        :param value: a value to clean
+        :return: the cleaned value
+        """
+        # Reading string until \x00. This is the same as aapt does.
+        if "\x00" in value:
+            self.packerwarning = True
+            log.warning("Null byte found in attribute value at position {}: "
+                        "Value(hex): '{}'".format(
+                value.find("\x00"),
+                binascii.hexlify(value.encode("utf-8"))))
+            value = value[:value.find("\x00")]
+
+        if not re.match(u'^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$', value):
+            log.warning("Invalid character in value found. Replacing with '_'.")
+            self.packerwarning = True
+            value = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]', '_', value)
+        return value
+
+    def _print_namespace(self, uri):
+        if uri != "":
+            uri = "{{{}}}".format(uri)
+        return uri
+
 
 ACONFIGURATION_MCC = 0x0001
 ACONFIGURATION_MNC = 0x0002
@@ -876,7 +1079,7 @@ class ARSCParser(object):
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
-        self.packageCount = unpack('<i', self.buff.read(4))[0]
+        self.packageCount = unpack('<I', self.buff.read(4))[0]
 
         self.packages = {}
         self.values = {}
@@ -1011,7 +1214,7 @@ class ARSCParser(object):
 
                         locale = a_res_type.config.get_language_and_region()
 
-                        c_value = self.values[package_name].setdefault(locale, {"public":[]})
+                        c_value = self.values[package_name].setdefault(locale, {"public": []})
 
                         entries = self.packages[package_name][nb + 2]
                         nb_i = 0
@@ -1540,17 +1743,79 @@ class ARSCHeader(object):
     SIZE = 2 + 2 + 4
 
     def __init__(self, buff):
+        """
+        Object which contains a Resource Chunk.
+        This is an implementation of the `ResChunk_header`.
+
+        It will throw an AssertionError if the header could not be read successfully.
+
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
+        """
         self.start = buff.get_idx()
-        self.type = unpack('<h', buff.read(2))[0]
-        self.header_size = unpack('<h', buff.read(2))[0]
-        self.size = unpack('<I', buff.read(4))[0]
+        # Make sure we do not read over the buffer:
+        assert buff.size() >= self.start + self.SIZE, "Can not read over the buffer size! Offset={}".format(self.start)
+        self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+        # Assert that the read data will fit into the chunk.
+        # The total size must be equal or larger than the header size
+        assert self._header_size >= self.SIZE, \
+            "declared header size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
+        assert self._size >= self.SIZE, \
+            "declared chunk size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
+        assert self._size >= self._header_size, \
+            "declared chunk size ({}) is smaller than header size ({})! Offset={}".format(self._size,
+                                                                                          self._header_size,
+                                                                                          self.start)
+
+    @property
+    def type(self):
+        """
+        Type identifier for this chunk
+        """
+        return self._type
+
+    @property
+    def header_size(self):
+        """
+        Size of the chunk header (in bytes).  Adding this value to
+        the address of the chunk allows you to find its associated data
+        (if any).
+        """
+        return self._header_size
+
+    @property
+    def size(self):
+        """
+        Total size of this chunk (in bytes).  This is the chunkSize plus
+        the size of any data associated with the chunk.  Adding this value
+        to the chunk allows you to completely skip its contents (including
+        any child chunks).  If this value is the same as chunkSize, there is
+        no data associated with the chunk.
+        """
+        return self._size
+
+    @property
+    def end(self):
+        """
+        Get the absolute offset inside the file, where the chunk ends.
+        This is equal to `ARSCHeader.start + ARSCHeader.size`.
+        """
+        return self.start + self.size
 
     def __repr__(self):
-        return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start, self.type, self.header_size, self.size)
+        return "<ARSCHeader idx='0x{:08x}' type='{}' header_size='{}' size='{}'>".format(self.start,
+                                                                                         self.type,
+                                                                                         self.header_size,
+                                                                                         self.size)
 
 
 class ARSCResTablePackage(object):
     def __init__(self, buff, header):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
+        :param buff:
+        :param header:
+        """
         self.header = header
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
@@ -1569,11 +1834,19 @@ class ARSCResTablePackage(object):
 
 class ARSCResTypeSpec(object):
     def __init__(self, buff, parent=None):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
+
+        :param buff:
+        :param parent:
+        """
         self.start = buff.get_idx()
         self.parent = parent
-        self.id = unpack('<b', buff.read(1))[0]
-        self.res0 = unpack('<b', buff.read(1))[0]
-        self.res1 = unpack('<h', buff.read(2))[0]
+        self.id = unpack('<B', buff.read(1))[0]
+        self.res0 = unpack('<B', buff.read(1))[0]
+        self.res1 = unpack('<H', buff.read(2))[0]
+        assert self.res0 == 0, "res0 must be zero!"
+        assert self.res1 == 0, "res1 must be zero!"
         self.entryCount = unpack('<I', buff.read(4))[0]
 
         self.typespec_entries = []
@@ -1583,13 +1856,21 @@ class ARSCResTypeSpec(object):
 
 class ARSCResType(object):
     def __init__(self, buff, parent=None):
+        """
+        See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
+        :param buff:
+        :param parent:
+        """
         self.start = buff.get_idx()
         self.parent = parent
-        self.id = unpack('<b', buff.read(1))[0]
-        self.res0 = unpack('<b', buff.read(1))[0]
-        self.res1 = unpack('<h', buff.read(2))[0]
-        self.entryCount = unpack('<i', buff.read(4))[0]
-        self.entriesStart = unpack('<i', buff.read(4))[0]
+
+        self.id = unpack('<B', buff.read(1))[0]
+        self.flags, = unpack('<B', buff.read(1))
+        self.reserved = unpack('<H', buff.read(2))[0]
+        assert self.reserved == 0, "reserved must be zero!"
+        self.entryCount = unpack('<I', buff.read(4))[0]
+        self.entriesStart = unpack('<I', buff.read(4))[0]
+
         self.mResId = (0xff000000 & self.parent.get_mResId()) | self.id << 16
         self.parent.set_mResId(self.mResId)
 
@@ -1605,8 +1886,8 @@ class ARSCResType(object):
         return "ARSCResType(%x, %x, %x, %x, %x, %x, %x, %s)" % (
             self.start,
             self.id,
-            self.res0,
-            self.res1,
+            self.flags,
+            self.reserved,
             self.entryCount,
             self.entriesStart,
             self.mResId,
@@ -1627,9 +1908,8 @@ class ARSCResTableConfig(object):
         This is used on the device to determine which resources should be loaded
         based on different properties of the device like locale or displaysize.
 
-        See the definiton of ResTable_config in
-        platform_frameworks_base/libs/androidfw/include/androidfw/ResourceTypes.h
-
+        See the definition of ResTable_config in
+        http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#911
 
         :param buff:
         :param kwargs:
@@ -1672,30 +1952,40 @@ class ARSCResTableConfig(object):
             # uint16_t minorVersion  which should be always 0, as the meaning is not defined
             self.version = unpack('<I', buff.read(4))[0]
 
-            self.screenConfig = 0
-            self.screenSizeDp = 0
-
+            # The next three fields seems to be optional
             if self.size >= 32:
-                # FIXME: is this really not always there?
                 # struct of
                 # uint8_t screenLayout
                 # uint8_t uiMode
                 # uint16_t smallestScreenWidthDp
-                self.screenConfig = unpack('<I', buff.read(4))[0]
+                self.screenConfig, = unpack('<I', buff.read(4))
+            else:
+                log.debug("This file does not have a screenConfig! size={}".format(self.size))
+                self.screenConfig = 0
 
-                if self.size >= 36:
-                    # FIXME is this really not always there?
-                    # struct of
-                    # uint16_t screenWidthDp
-                    # uint16_t screenHeightDp
-                    self.screenSizeDp = unpack('<I', buff.read(4))[0]
+            if self.size >= 36:
+                # struct of
+                # uint16_t screenWidthDp
+                # uint16_t screenHeightDp
+                self.screenSizeDp, = unpack('<I', buff.read(4))
+            else:
+                log.debug("This file does not have a screenSizeDp! size={}".format(self.size))
+                self.screenSizeDp = 0
 
-            self.exceedingSize = self.size - 36
+            if self.size >= 40:
+                # struct of
+                # uint8_t screenLayout2
+                # uint8_t colorMode
+                # uint16_t screenConfigPad2
+                self.screenConfig2, = unpack("<I", buff.read(4))
+            else:
+                log.debug("This file does not have a screenConfig2! size={}".format(self.size))
+                self.screenConfig2 = 0
+
+            self.exceedingSize = self.size - (buff.tell() - self.start)
             if self.exceedingSize > 0:
                 log.debug("Skipping padding bytes!")
                 self.padding = buff.read(self.exceedingSize)
-
-        # TODO there is screenConfig2
 
         else:
             self.start = 0
@@ -1755,11 +2045,15 @@ class ARSCResTableConfig(object):
         return char_out
 
     def get_language_and_region(self):
+        """
+        Returns the combined language+region string or \x00\x00 for the default locale
+        :return:
+        """
         if self.locale != 0:
-            _language = self._unpack_language_or_region([self.locale & 0xff,(self.locale & 0xff00)>>8,],ord('a'))
-            _region = self._unpack_language_or_region([(self.locale & 0xff0000)>>16,(self.locale & 0xff000000)>>24,],ord('0'))
+            _language = self._unpack_language_or_region([self.locale & 0xff, (self.locale & 0xff00) >> 8, ], ord('a'))
+            _region = self._unpack_language_or_region([(self.locale & 0xff0000) >> 16, (self.locale & 0xff000000) >> 24, ], ord('0'))
             return (_language + "-r" + _region) if _region else _language
-        return ""
+        return "\x00\x00"
 
     def get_config_name_friendly(self):
         res = []
@@ -1767,56 +2061,53 @@ class ARSCResTableConfig(object):
         mcc = self.imsi & 0xFFFF
         mnc = (self.imsi & 0xFFFF0000) >> 16
         if mcc != 0:
-            res.append("mcc%d"% mcc)
+            res.append("mcc%d" % mcc)
         if mnc != 0:
-            res.append("mnc%d"% mnc)
+            res.append("mnc%d" % mnc)
 
         if self.locale != 0:
             res.append(self.get_language_and_region())
 
-
-        screenLayout = self.screenConfig  & 0xff
-        if (screenLayout&MASK_LAYOUTDIR) != 0:
-            if screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_LTR:
+        screenLayout = self.screenConfig & 0xff
+        if (screenLayout & MASK_LAYOUTDIR) != 0:
+            if screenLayout & MASK_LAYOUTDIR == LAYOUTDIR_LTR:
                 res.append("ldltr")
-            elif screenLayout&MASK_LAYOUTDIR == LAYOUTDIR_RTL:
+            elif screenLayout & MASK_LAYOUTDIR == LAYOUTDIR_RTL:
                 res.append("ldrtl")
             else:
-                res.append("layoutDir_%d" % (screenLayout&MASK_LAYOUTDIR))
+                res.append("layoutDir_%d" % (screenLayout & MASK_LAYOUTDIR))
 
         smallestScreenWidthDp = (self.screenConfig & 0xFFFF0000) >> 16
         if smallestScreenWidthDp != 0:
-            res.append("sw%ddp"%smallestScreenWidthDp)
+            res.append("sw%ddp" % smallestScreenWidthDp)
 
         screenWidthDp = self.screenSizeDp & 0xFFFF
         screenHeightDp = (self.screenSizeDp & 0xFFFF0000) >> 16
         if screenWidthDp != 0:
-            res.append("w%ddp"%screenWidthDp)
+            res.append("w%ddp" % screenWidthDp)
         if screenHeightDp != 0:
-            res.append("h%ddp"%screenHeightDp)
+            res.append("h%ddp" % screenHeightDp)
 
-
-        if (screenLayout&MASK_SCREENSIZE) != SCREENSIZE_ANY:
-            if screenLayout&MASK_SCREENSIZE == SCREENSIZE_SMALL:
+        if (screenLayout & MASK_SCREENSIZE) != SCREENSIZE_ANY:
+            if screenLayout & MASK_SCREENSIZE == SCREENSIZE_SMALL:
                 res.append("small")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_NORMAL:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_NORMAL:
                 res.append("normal")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_LARGE:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_LARGE:
                 res.append("large")
-            elif screenLayout&MASK_SCREENSIZE == SCREENSIZE_XLARGE:
+            elif screenLayout & MASK_SCREENSIZE == SCREENSIZE_XLARGE:
                 res.append("xlarge")
             else:
-                res.append("screenLayoutSize_%d"%(screenLayout&MASK_SCREENSIZE))
-        if (screenLayout&MASK_SCREENLONG) != 0:
-            if screenLayout&MASK_SCREENLONG == SCREENLONG_NO:
+                res.append("screenLayoutSize_%d" % (screenLayout & MASK_SCREENSIZE))
+        if (screenLayout & MASK_SCREENLONG) != 0:
+            if screenLayout & MASK_SCREENLONG == SCREENLONG_NO:
                 res.append("notlong")
-            elif screenLayout&MASK_SCREENLONG == SCREENLONG_YES:
+            elif screenLayout & MASK_SCREENLONG == SCREENLONG_YES:
                 res.append("long")
             else:
-                res.append("screenLayoutLong_%d"%(screenLayout&MASK_SCREENLONG))
+                res.append("screenLayoutLong_%d" % (screenLayout & MASK_SCREENLONG))
 
-
-        density = (self.screenType  & 0xffff0000) >> 16
+        density = (self.screenType & 0xffff0000) >> 16
         if density != DENSITY_DEFAULT:
             if density == DENSITY_LOW:
                 res.append("ldpi")
@@ -1837,9 +2128,9 @@ class ARSCResTableConfig(object):
             elif density == DENSITY_ANY:
                 res.append("anydpi")
             else:
-                res.append("%ddpi"%(density))
+                res.append("%ddpi" % (density))
 
-        touchscreen = (self.screenType  & 0xff00) >> 8
+        touchscreen = (self.screenType & 0xff00) >> 8
         if touchscreen != TOUCHSCREEN_ANY:
             if touchscreen == TOUCHSCREEN_NOTOUCH:
                 res.append("notouch")
@@ -1852,17 +2143,17 @@ class ARSCResTableConfig(object):
 
         screenSize = self.screenSize
         if screenSize != 0:
-            screenWidth = self.screenSize  & 0xffff
-            screenHeight = (self.screenSize  & 0xffff0000) >> 16
-            res.append("%dx%d"%( screenWidth,screenHeight))
+            screenWidth = self.screenSize & 0xffff
+            screenHeight = (self.screenSize & 0xffff0000) >> 16
+            res.append("%dx%d" % (screenWidth, screenHeight))
 
         version = self.version
         if version != 0:
-            sdkVersion = self.version  & 0xffff
-            minorVersion = (self.version  & 0xffff0000) >> 16
-            res.append("v%d"%sdkVersion)
+            sdkVersion = self.version & 0xffff
+            minorVersion = (self.version & 0xffff0000) >> 16
+            res.append("v%d" % sdkVersion)
             if minorVersion != 0:
-                res.append(".%d"%minorVersion)
+                res.append(".%d" % minorVersion)
 
         return "-".join(res)
 

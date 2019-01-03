@@ -1,5 +1,6 @@
-import sys
+# -*- coding: utf-8 -*-
 import unittest
+from lxml import etree
 
 from androguard.core.bytecodes import apk, axml
 from androguard.core.bytecodes.apk import APK
@@ -43,6 +44,42 @@ class ARSCTest(unittest.TestCase):
             app_icon_path = self.apk.get_app_icon(wanted_density)
             self.assertEqual(app_icon_path, correct_path,
                              "Incorrect icon path for requested density")
+
+    def testStrings(self):
+        arsc = self.apk.get_android_resources()
+
+        p = arsc.get_packages_names()[0]
+        l = "\x00\x00"
+
+        e = etree.fromstring(arsc.get_string_resources(p, l))
+
+        self.assertEqual(e.find("string[@name='hello']").text, 'Hello World, TestActivity! kikoololmodif')
+        self.assertEqual(e.find("string[@name='app_name']").text, 'TestsAndroguardApplication')
+
+    def testDifferentStringLocales(self):
+        """
+        Test if the resolving of different string locales works
+        """
+        a = APK("examples/tests/a2dp.Vol_137.apk")
+        arsc = a.get_android_resources()
+
+        p = arsc.get_packages_names()[0]
+
+        self.assertEqual(sorted(["\x00\x00", "da", "de", "el", "fr", "ja", "ru"]),
+                         sorted(arsc.get_locales(p)))
+
+        item = "SMSDelayText"
+        strings = {"\x00\x00": u"Delay for reading text message",
+                   "da": u"Forsinkelse for læsning af tekst besked",
+                   "de": u"Verzögerung vor dem Lesen einer SMS",
+                   "el": u"Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
+                   "fr": u"Délai pour lire un SMS",
+                   "ja": u"テキストメッセージ読み上げの遅延",
+                   "ru": u"Задержка зачитывания SMS",
+                   }
+        for k, v in strings.items():
+            e = etree.fromstring(arsc.get_string_resources(p, k))
+            self.assertEqual(e.find("string[@name='{}']".format(item)).text, v)
 
     def testTypeConfigs(self):
         arsc = self.apk.get_android_resources()

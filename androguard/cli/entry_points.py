@@ -7,12 +7,14 @@ from __future__ import print_function
 
 # core modules
 import sys
+import logging
 
 # 3rd party modules
 import click
 
 # local modules
 import androguard
+from androguard.core.androconf import show_logging
 from androguard.cli import (androarsc_main,
                             androaxml_main,
                             androcg_main,
@@ -21,13 +23,25 @@ from androguard.cli import (androarsc_main,
                             androlyze_main,
                             androgui_main,
                             androdis_main
-                           )
+                            )
 
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
-def entry_point():
-    pass
+@click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
+@click.option("--quiet", 'verbosity', flag_value='quiet', help="Print less (only warnings and above)")
+@click.option("--silent", 'verbosity', flag_value='silent', help="Print no log messages")
+def entry_point(verbosity):
+    level = logging.INFO
+
+    if verbosity == 'verbose':
+        level = logging.DEBUG
+    if verbosity == 'quiet':
+        level = logging.WARNING
+
+    # If something out of this module is imported, activate console logging
+    if verbosity != 'silent':
+        show_logging(level=level)
 
 
 @entry_point.command()
@@ -38,8 +52,10 @@ def entry_point():
 )
 @click.option(
     '--output', '-o',
-    required=True,
-    help='filename to save the decoded AndroidManifest.xml to',
+    help='filename to save the decoded AndroidManifest.xml to, default stdout',
+)
+@click.option("--resource", "-r",
+        help="Resource inside the APK to parse instead of AndroidManifest.xml"
 )
 @click.argument(
     'file_',
@@ -47,7 +63,7 @@ def entry_point():
     # help='AndroidManifest.xml or APK to parse',
     required=False,
 )
-def axml(input_, output, file_):
+def axml(input_, output, file_, resource):
     """
     Parse the AndroidManifest.xml.
 
@@ -72,9 +88,9 @@ def axml(input_, output, file_):
         sys.exit(1)
 
     if file_ is not None:
-        androaxml_main(file_, output)
+        androaxml_main(file_, output, resource)
     elif input_ is not None:
-        androaxml_main(input_, output)
+        androaxml_main(input_, output, resource)
 
 
 @entry_point.command()

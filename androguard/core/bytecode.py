@@ -693,6 +693,9 @@ class BuffHandle(object):
     def get_idx(self):
         return self.__idx
 
+    def tell(self):
+        return self.__idx
+
     def readNullString(self, size):
         data = self.read(size)
         return data

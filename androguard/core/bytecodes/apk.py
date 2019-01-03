@@ -27,7 +27,7 @@ from enum import Enum
 from asn1crypto import cms, x509, keys
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
-NS_ANDROID = '{http://schemas.android.com/apk/res/android}'
+NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree
 
 log = logging.getLogger("androguard.apk")
 
@@ -51,7 +51,6 @@ class BrokenAPKError(Error):
     pass
 
 
-
 def _dump_additional_attributes(additional_attributes):
     """ try to parse additional attributes, but ends up to hexdump if the scheme is unknown """
 
@@ -72,6 +71,7 @@ def _dump_additional_attributes(additional_attributes):
     scheme_id, = unpack('<I', attributes_raw.read(4))
 
     return "stripping protection set, scheme %d" % scheme_id
+
 
 def _dump_digests_or_signatures(digests_or_sigs):
 
@@ -98,7 +98,6 @@ class APKV2SignedData(object):
         self.certificates =  None
         self.additional_attributes = None
 
-
     def __str__(self):
 
         certs_infos = ""
@@ -116,13 +115,12 @@ class APKV2SignedData(object):
             certs_infos += "  - Valid not before: %s\n" % x509_cert['tbs_certificate']['validity']['not_before'].native
             certs_infos += "  - Valid not after: %s" % x509_cert['tbs_certificate']['validity']['not_after'].native
 
-
-
         return "\n".join([
             'additional_attributes : {}'.format(_dump_additional_attributes(self.additional_attributes)),
             'digests : {}'.format(_dump_digests_or_signatures(self.digests)),
             'certificates : {}'.format(certs_infos),
         ])
+
 
 class APKV3SignedData(APKV2SignedData):
     """ 
@@ -149,6 +147,7 @@ class APKV3SignedData(APKV2SignedData):
             'signer maxSDK : {0:s}'.format(max_sdk_str),
             base_str    
         ])
+
 
 class APKV2Signer(object):
     """ 
@@ -195,6 +194,7 @@ class APKV3Signer(APKV2Signer):
             'signer maxSDK : {0:s}'.format(max_sdk_str),
             base_str    
         ])
+
 
 class APK(object):
     # Constants in ZipFile
@@ -289,6 +289,12 @@ class APK(object):
         if not skip_analysis:
             self._apk_analysis()
 
+    def _ns(self, name):
+        """
+        return the name including the Android namespace
+        """
+        return NS_ANDROID + name
+
     def _apk_analysis(self):
         """
         Run analysis on the APK file.
@@ -301,53 +307,42 @@ class APK(object):
         try:
             manifest_data = self.zip.read(i)
         except KeyError:
-            log.warning("Missing AndroidManifest.xml")
+            log.warning("Missing AndroidManifest.xml. Is this an APK file?")
         else:
             self.axml[i] = AXMLPrinter(manifest_data)
-            self.xml[i] = None
-            raw_xml = self.axml[i].get_buff()
-            if len(raw_xml) == 0:
-                log.warning("AXML parsing failed, file is empty")
-            else:
-                try:
-                    if self.axml[i].is_packed():
-                        log.warning("XML Seems to be packed, parsing is very likely to fail.")
-                    self.xml[i] = self.axml[i].get_xml_obj()
-                except Exception as e:
-                    log.warning("reading AXML as XML failed: " + str(e))
+            self.xml[i] = self.axml[i].get_xml_obj()
+
+            if self.axml[i].is_packed():
+                log.warning("XML Seems to be packed, operations on the AndroidManifest.xml might fail.")
 
             if self.xml[i] is not None:
+                if self.xml[i].tag != "manifest":
+                    log.error("AndroidManifest.xml does not start with a <manifest> tag! Is this a valid APK?")
+                    return
+
                 self.package = self.xml[i].get("package")
-                self.androidversion["Code"] = self.xml[i].get(
-                    NS_ANDROID + "versionCode")
-                self.androidversion["Name"] = self.xml[i].get(
-                    NS_ANDROID + "versionName")
+                self.androidversion["Code"] = self.xml[i].get(self._ns("versionCode"))
+                self.androidversion["Name"] = self.xml[i].get(self._ns("versionName"))
 
                 for item in self.xml[i].findall('uses-permission'):
-                    name = item.get(NS_ANDROID + "name")
+                    name = item.get(self._ns("name"))
                     self.permissions.append(name)
                     maxSdkVersion = None
                     try:
-                        maxSdkVersion = int(item.get(NS_ANDROID + 'maxSdkVersion'))
+                        maxSdkVersion = int(item.get(self._ns('maxSdkVersion')))
                     except ValueError:
-                        log.warning(item.get(NS_ANDROID + 'maxSdkVersion')
-                                    + 'is not a valid value for <uses-permission> maxSdkVersion')
+                        log.warning(item.get(self._ns('maxSdkVersion')) + 'is not a valid value for <uses-permission> maxSdkVersion')
                     except TypeError:
                         pass
                     self.uses_permissions.append([name, maxSdkVersion])
 
                 # getting details of the declared permissions
                 for d_perm_item in self.xml[i].findall('permission'):
-                    d_perm_name = self._get_res_string_value(str(
-                        d_perm_item.get(NS_ANDROID + "name")))
-                    d_perm_label = self._get_res_string_value(str(
-                        d_perm_item.get(NS_ANDROID + "label")))
-                    d_perm_description = self._get_res_string_value(str(
-                        d_perm_item.get(NS_ANDROID + "description")))
-                    d_perm_permissionGroup = self._get_res_string_value(str(
-                        d_perm_item.get(NS_ANDROID + "permissionGroup")))
-                    d_perm_protectionLevel = self._get_res_string_value(str(
-                        d_perm_item.get(NS_ANDROID + "protectionLevel")))
+                    d_perm_name = self._get_res_string_value(str(d_perm_item.get(self._ns("name"))))
+                    d_perm_label = self._get_res_string_value(str(d_perm_item.get(self._ns("label"))))
+                    d_perm_description = self._get_res_string_value(str(d_perm_item.get(self._ns("description"))))
+                    d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.get(self._ns("permissionGroup"))))
+                    d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.get(self._ns("protectionLevel"))))
 
                     d_perm_details = {
                         "label": d_perm_label,
@@ -777,7 +772,7 @@ class APK(object):
                 continue
             for item in self.xml[i].findall('.//' + tag_name):
                 if with_namespace:
-                    value = item.get(NS_ANDROID + attribute)
+                    value = item.get(self._ns(attribute))
                 else:
                     value = item.get(attribute)
                 # There might be an attribute without the namespace
@@ -822,7 +817,7 @@ class APK(object):
             for item in tag:
                 skip_this_item = False
                 for attr, val in list(attribute_filter.items()):
-                    attr_val = item.get(NS_ANDROID + attr)
+                    attr_val = item.get(self._ns(attr))
                     if attr_val != val:
                         skip_this_item = True
                         break
@@ -830,7 +825,7 @@ class APK(object):
                 if skip_this_item:
                     continue
 
-                value = item.get(NS_ANDROID + attribute)
+                value = item.get(self._ns(attribute))
 
                 if value is not None:
                     return value
@@ -856,25 +851,25 @@ class APK(object):
             for item in activities_and_aliases:
                 # Some applications have more than one MAIN activity.
                 # For example: paid and free content
-                activityEnabled = item.get(NS_ANDROID + "enabled")
+                activityEnabled = item.get(self._ns("enabled"))
                 if activityEnabled == "false":
                     continue
 
                 for sitem in item.findall(".//action"):
-                    val = sitem.get(NS_ANDROID + "name")
+                    val = sitem.get(self._ns("name"))
                     if val == "android.intent.action.MAIN":
-                        activity = item.get(NS_ANDROID + "name")
+                        activity = item.get(self._ns("name"))
                         if activity is not None:
-                            x.add(item.get(NS_ANDROID + "name"))
+                            x.add(item.get(self._ns("name")))
                         else:
                             log.warning('Main activity without name')
 
                 for sitem in item.findall(".//category"):
-                    val = sitem.get(NS_ANDROID + "name")
+                    val = sitem.get(self._ns("name"))
                     if val == "android.intent.category.LAUNCHER":
-                        activity = item.get(NS_ANDROID + "name")
+                        activity = item.get(self._ns("name"))
                         if activity is not None:
-                            y.add(item.get(NS_ANDROID + "name"))
+                            y.add(item.get(self._ns("name")))
                         else:
                             log.warning('Launcher activity without name')
 
@@ -942,14 +937,14 @@ class APK(object):
         for i in self.xml:
             # TODO: this can probably be solved using a single xpath
             for item in self.xml[i].findall(".//" + itemtype):
-                if self._format_value(item.get(NS_ANDROID + "name")) == name:
+                if self._format_value(item.get(self._ns("name"))) == name:
                     for sitem in item.findall(".//intent-filter"):
                         for ssitem in sitem.findall("action"):
-                            if ssitem.get(NS_ANDROID + "name") not in d["action"]:
-                                d["action"].append(ssitem.get(NS_ANDROID + "name"))
+                            if ssitem.get(self._ns("name")) not in d["action"]:
+                                d["action"].append(ssitem.get(self._ns("name")))
                         for ssitem in sitem.findall("category"):
-                            if ssitem.get(NS_ANDROID + "name") not in d["category"]:
-                                d["category"].append(ssitem.get(NS_ANDROID + "name"))
+                            if ssitem.get(self._ns("name")) not in d["category"]:
+                                d["category"].append(ssitem.get(self._ns("name")))
 
         if not d["action"]:
             del d["action"]
@@ -1916,7 +1911,7 @@ def get_apkid(apkfile):
         with apk.open('AndroidManifest.xml') as manifest:
             axml = AXMLParser(manifest.read())
             count = 0
-            while axml.is_valid():
+            while True:
                 _type = next(axml)
                 count += 1
                 if _type == START_TAG:
@@ -1935,7 +1930,7 @@ def get_apkid(apkfile):
                         elif versionName is None and name == 'versionName':
                             versionName = value
 
-                    if axml.getName() == 'manifest':
+                    if axml.name == 'manifest':
                         break
                 elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
                     raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
