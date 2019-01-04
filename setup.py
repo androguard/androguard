@@ -25,6 +25,7 @@ install_requires = ['future',
                     'matplotlib',
                     'asn1crypto>=0.24.0',
                     'click',
+                    'pydot>=1.4.1',
                     ]
 
 # python version specific library versions:
@@ -90,7 +91,6 @@ setup(
         # If you are installing on debian you can use python3-magic instead, which fulfills the dependency to file-magic
         'magic': ['file-magic'],
         'docs': ['sphinx', "sphinxcontrib-programoutput>0.8", 'sphinx_rtd_theme'],
-        'graphing': ['pydot'],
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
     setup_requires=['setuptools'],
