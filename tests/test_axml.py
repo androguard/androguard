@@ -93,16 +93,16 @@ class AXMLTest(unittest.TestCase):
 
         self.assertIsNotNone(a)
 
-        self.assertEqual(a._fix_value("hello world"), "hello world")
-        self.assertEqual(a._fix_value("Foobar \u000a\u000d\u0b12"), "Foobar \u000a\u000d\u0b12")
-        self.assertEqual(a._fix_value("hello \U00011234"), "hello \U00011234")
-        self.assertEqual(a._fix_value("\uFFFF"), "_")
-        self.assertEqual(a._fix_value("hello\x00world"), "hello")
+        self.assertEqual(a._fix_value(u"hello world"), u"hello world")
+        self.assertEqual(a._fix_value(u"Foobar \u000a\u000d\u0b12"), u"Foobar \u000a\u000d\u0b12")
+        self.assertEqual(a._fix_value(u"hello \U00011234"), u"hello \U00011234")
+        self.assertEqual(a._fix_value(u"\uFFFF"), u"_")
+        self.assertEqual(a._fix_value("hello\x00world"), u"hello")
 
-        self.assertEqual(a._fix_name("foobar"), "foobar")
-        self.assertEqual(a._fix_name("5foobar"), "_5foobar")
-        self.assertEqual(a._fix_name("android:foobar"), "foobar")
-        self.assertEqual(a._fix_name("5:foobar"), "_5_foobar")
+        self.assertEqual(a._fix_name(u"foobar"), u"foobar")
+        self.assertEqual(a._fix_name(u"5foobar"), u"_5foobar")
+        self.assertEqual(a._fix_name(u"android:foobar"), u"foobar")
+        self.assertEqual(a._fix_name(u"5:foobar"), u"_5_foobar")
 
     def testAndroidManifest(self):
         filenames = [
