@@ -79,6 +79,31 @@ def xml_compare(x1, x2, reporter=None):
 
 
 class AXMLTest(unittest.TestCase):
+    def testReplacement(self):
+        """
+        Test that the replacements for attributes, names and values are working
+        :return:
+        """
+        # Fake, Empty AXML file
+        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x24\x00\x00\x00"
+                             b"\x01\x00\x1c\x00\x1c\x00\x00\x00"
+                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                             b"\x00\x00\x00\x00"
+                             b"\x00\x00\x00\x00\x00\x00\x00\x00")
+
+        self.assertIsNotNone(a)
+
+        self.assertEqual(a._fix_value("hello world"), "hello world")
+        self.assertEqual(a._fix_value("Foobar \u000a\u000d\u0b12"), "Foobar \u000a\u000d\u0b12")
+        self.assertEqual(a._fix_value("hello \U00011234"), "hello \U00011234")
+        self.assertEqual(a._fix_value("\uFFFF"), "_")
+        self.assertEqual(a._fix_value("hello\x00world"), "hello")
+
+        self.assertEqual(a._fix_name("foobar"), "foobar")
+        self.assertEqual(a._fix_name("5foobar"), "_5foobar")
+        self.assertEqual(a._fix_name("android:foobar"), "foobar")
+        self.assertEqual(a._fix_name("5:foobar"), "_5_foobar")
+
     def testAndroidManifest(self):
         filenames = [
             "examples/axml/AndroidManifest.xml",
