@@ -19,9 +19,11 @@ Just use
 
 .. code-block:: bash
 
-    $ pip install -U androguard[magic,graphing,GUI]
+    $ pip install -U androguard[magic,GUI]
     
 to  install androguard.
+In order to use features which use :code:`dot`, you need Graphviz_ installed.
+This is not a python dependency but a binary package! Please follow the installation instructions for GraphvizInstall_.
 
 You can also make use of an `virtualenv`, to separate the installation from your system wide packages:
 
@@ -29,7 +31,7 @@ You can also make use of an `virtualenv`, to separate the installation from your
 
     $ virtualenv venv-androguard
     $ . venv-androguard/bin/activate
-    $ pip install -U androguard[magic,graphing,GUI]
+    $ pip install -U androguard[magic,GUI]
     
 pip should install all required packages too.
 
@@ -59,10 +61,13 @@ if you like to install the GUI as well, use
 
 .. code-block:: bash
 
-    $ pip install .[magic,GUI,graphing]
+    $ pip install .[magic,GUI]
 
 The dependencies, defined in :code:`setup.py` will be automatically installed.
 
 If you are installing the libraries using :code:`pip`, make sure you download the correct packages.
 For example, there are a lot of implemenations of the :code:`magic` library.
 Get the one, that is shipped with the file command (See [Fine Free File Command](http://www.darwinsys.com/file/)) or use `filemagic`, which should work as well.
+
+.. _Graphviz: https://graphviz.org/
+.. _GraphvizInstall: https://graphviz.org/download/

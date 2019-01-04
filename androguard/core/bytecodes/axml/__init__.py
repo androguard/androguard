@@ -16,6 +16,7 @@ import collections
 from lxml import etree
 import logging
 import re
+import sys
 import binascii
 
 log = logging.getLogger("androguard.axml")
@@ -820,6 +821,9 @@ class AXMLPrinter:
 
     A Reference Implementation can be found at http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt/XMLNode.cpp
     """
+    __charrange = None
+    __replacement = None
+
     def __init__(self, raw_buff):
         self.axml = AXMLParser(raw_buff)
 
@@ -975,6 +979,16 @@ class AXMLPrinter:
         :param value: a value to clean
         :return: the cleaned value
         """
+        if not self.__charrange or not self.__replacement:
+            if sys.maxunicode == 0xFFFF:
+                # Fix for python 2.x, surrogate pairs does not match in regex
+                self.__charrange = re.compile(u'^([\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD]|[\uD800-\uDBFF][\uDC00-\uDFFF])*$')
+                # TODO: this regex is slightly wrong... surrogates are not matched as pairs.
+                self.__replacement = re.compile(u'[^\u0020-\uDBFF\u0009\u000A\u000D\uE000-\uFFFD\uDC00-\uDFFF]')
+            else:
+                self.__charrange = re.compile(u'^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$')
+                self.__replacement = re.compile(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
+
         # Reading string until \x00. This is the same as aapt does.
         if "\x00" in value:
             self.packerwarning = True
@@ -984,10 +998,10 @@ class AXMLPrinter:
                 binascii.hexlify(value.encode("utf-8"))))
             value = value[:value.find("\x00")]
 
-        if not re.match(u'^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$', value):
+        if not self.__charrange.match(value):
             log.warning("Invalid character in value found. Replacing with '_'.")
             self.packerwarning = True
-            value = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]', '_', value)
+            value = self.__replacement.sub('_', value)
         return value
 
     def _print_namespace(self, uri):
