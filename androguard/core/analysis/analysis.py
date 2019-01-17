@@ -691,6 +691,8 @@ class ClassAnalysis:
     def __init__(self, classobj):
         """
         ClassAnalysis contains the XREFs from a given Class.
+        It is also used to wrap :class:`~androguard.core.bytecode.dvm.ClassDefItem`, which
+        contain the actual class content like bytecode.
 
         Also external classes will generate xrefs, obviously only XREF_FROM are
         shown for external classes.
@@ -711,6 +713,41 @@ class ClassAnalysis:
 
         # Reserved for further use
         self.apilist = None
+
+    @property
+    def implements(self):
+        """
+        Get a list of interfaces which are implemented by this class
+
+        :return: a list of Interface names
+        """
+        if self.is_external():
+            return []
+
+        return self.orig_class.get_interfaces()
+
+    @property
+    def extends(self):
+        """
+        Return the parent class
+
+        For external classes, this is not sure, thus we return always Object (which is the parent of all classes)
+
+        :return: a string of the parent class name
+        """
+        if self.is_external():
+            return "Ljava/lang/Object;"
+
+        return self.orig_class.get_superclassname()
+
+    @property
+    def name(self):
+        """
+        Return the class name
+
+        :return:
+        """
+        return self.orig_class.get_name()
 
     def is_external(self):
         """
