@@ -26,9 +26,13 @@ public class ExceptionHandling {
 }
 
 class SomeException extends Exception {
+    public SomeException(String msg) {
+    }
 
 }
 
 class AnotherException extends Exception {
+    public AnotherException(String msg) {
+    }
 
 }
