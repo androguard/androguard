@@ -631,5 +631,13 @@ class APKTest(unittest.TestCase):
         self.assertNotIn("META-INF/CERT.RSA", a.get_signature_names())
         self.assertIn("META-INF/6AD89F48.RSA", a.get_signature_names())
 
+    def testFrameworkResAPK(self):
+        from androguard.core.bytecodes.apk import APK
+
+        a = APK("examples/tests/lineageos_nexus5_framework-res.apk")
+
+        self.assertEqual(a.get_app_name(), 'Android System')
+        self.assertEqual(a.get_package(), 'android')
+
 if __name__ == '__main__':
     unittest.main(failfast=True)
