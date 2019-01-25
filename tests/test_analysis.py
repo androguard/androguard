@@ -76,6 +76,13 @@ class AnalysisTest(unittest.TestCase):
         cls = dx.classes['LSomeException;']
         self.assertEquals(cls.extends, 'Ljava/lang/Exception;')
         self.assertEquals(cls.name, 'LSomeException;')
+        self.assertFalse(cls.is_external())
+
+        cls = dx.classes['Ljava/lang/Exception;']
+        self.assertEquals(cls.extends, 'Ljava/lang/Object;')
+        self.assertEquals(cls.name, 'Ljava/lang/Exception;')
+        self.assertEquals(cls.implements, [])
+        self.assertTrue(cls.is_external())
 
 
 if __name__ == '__main__':
