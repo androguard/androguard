@@ -450,12 +450,25 @@ class APK(object):
             # TODO return packagename instead?
             return ""
         if app_name.startswith("@"):
+            if ':' in app_name:
+                # We have a package name prepended, usually this is 'android'
+                package, _ = app_name[1:].split(':')
+                if package == 'android':
+                    # TODO: we can not resolve this, as we lack framework-res.apk
+                    # one exception would be when parsing framework-res.apk directly.
+                    log.warning("Resource ID with android package name encountered! "
+                                "Will not resolve, framework-res.apk would be required.")
+                else:
+                    log.warning("Resource ID with Package name '{}' encountered! Will not resolve".format(package))
+                # TODO: in any case, could look up in the resources for the specified package name
+                return app_name
+
             res_id = int(app_name[1:], 16)
             res_parser = self.get_android_resources()
 
             if not res_parser:
                 # TODO: What should be the correct return value here?
-                return ""
+                return app_name
 
             try:
                 app_name = res_parser.get_resolved_res_configs(
