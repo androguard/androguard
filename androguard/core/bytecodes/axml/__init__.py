@@ -361,19 +361,38 @@ class AXMLParser(object):
     You can use the `next()` function to get the next chunk.
     Note that not all chunk types are yielded from the iterator! Some chunks are processed in
     the AXMLParser only.
-    The parser will throw an :class:`AssertionError` if it parses something not valid.
+    The parser will set `is_valid()` to False if it parses something not valid.
+    Messages what is wrong are logged.
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
     """
     def __init__(self, raw_buff):
         self._reset()
 
+        self._valid = True
         self.axml_tampered = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        assert self.buff.size() > 8, "Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size())
+        # Minimum is a single ARSCHeader, which would be a strange edge case...
+        if self.buff.size() < 8:
+            log.error("Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size()))
+            self._valid = False
+            return
 
-        axml_header = ARSCHeader(self.buff)
+        # This would be even stranger, if an AXML file is larger than 4GB...
+        # But this is not possible as the maximum chunk size is a unsigned 4 byte int.
+        if self.buff.size() > 0xFFFFFFFF:
+            log.error("Filesize is too large to be a valid AXML file! Filesize: {}".format(self.buff.size()))
+            self._valid = False
+            return
+
+        try:
+            axml_header = ARSCHeader(self.buff)
+        except AssertionError as e:
+            log.error("Error parsing first resource header: %s", e)
+            self._valid = False
+            return
+
         self.filesize = axml_header.size
 
         if axml_header.header_size == 28024:
@@ -381,10 +400,16 @@ class AXMLParser(object):
             # The file will then usually start with '<?xm' / '3C 3F 78 6D'
             log.warning("Header size is 28024! Are you trying to parse a plain XML file?")
 
-        assert axml_header.header_size == 8, \
-            "This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size)
-        assert self.filesize <= self.buff.size(), \
-            "This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size())
+        if axml_header.header_size != 8:
+            log.error("This does not look like an AXML file. header size does not equal 8! header size = {}".format(axml_header.header_size))
+            self._valid = False
+            return
+
+        if self.filesize > self.buff.size():
+            log.error("This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size()))
+            self._valid = False
+            return
+
         if self.filesize < self.buff.size():
             # The file can still be parsed up to the point where the chunk should end.
             self.axml_tampered = True
@@ -400,9 +425,22 @@ class AXMLParser(object):
                         "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
 
         # Now we parse the STRING POOL
-        header = ARSCHeader(self.buff)
-        assert header.header_size == 0x1C, "This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size)
-        assert header.type == RES_STRING_POOL_TYPE, "Expected String Pool header, got resource type 0x%04x" % header.type
+        try:
+            header = ARSCHeader(self.buff)
+        except AssertionError as e:
+            log.error("Error parsing resource header of string pool: %s", e)
+            self._valid = False
+            return
+
+        if header.header_size != 0x1C:
+            log.error("This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size))
+            self._valid = False
+            return
+
+        if header.type != RES_STRING_POOL_TYPE:
+            log.error("Expected String Pool header, got resource type 0x{:04x} instead".format(header.type))
+            self._valid = False
+            return
 
         self.sb = StringBlock(self.buff, header)
 
@@ -411,6 +449,14 @@ class AXMLParser(object):
 
         # Store a list of prefix/uri mappings encountered
         self.namespaces = []
+
+    def is_valid(self):
+        """
+        Get the state of the AXMLPrinter.
+        if an error happend somewhere in the process of parsing the file,
+        this flag is set to False.
+        """
+        return self._valid
 
     def _reset(self):
         self.m_event = -1
@@ -431,14 +477,19 @@ class AXMLParser(object):
             return
 
         self._reset()
-        while True:
+        while self._valid:
             # Stop at the declared filesize or at the end of the file
             if self.buff.end() or self.buff.get_idx() == self.filesize:
                 self.m_event = END_DOCUMENT
                 break
 
             # Again, we read an ARSCHeader
-            h = ARSCHeader(self.buff)
+            try:
+                h = ARSCHeader(self.buff)
+            except AssertionError as e:
+                log.error("Error parsing resource header: %s", e)
+                self._valid = False
+                return
 
             # Special chunk: Resource Map. This chunk might be contained inside
             # the file, after the string pool.
@@ -446,7 +497,10 @@ class AXMLParser(object):
                 log.debug("AXML contains a RESOURCE MAP")
                 # Check size: < 8 bytes mean that the chunk is not complete
                 # Should be aligned to 4 bytes.
-                assert h.size >= 8 and (h.size % 4) == 0, "Invalid chunk size in chunk XML_RESOURCE_MAP"
+                if h.size < 8 or (h.size % 4) != 0:
+                    log.error("Invalid chunk size in chunk XML_RESOURCE_MAP")
+                    self._valid = False
+                    return
 
                 for i in range((h.size - h.header_size) // 4):
                     self.m_resourceIDs.append(unpack('<L', self.buff.read(4))[0])
@@ -464,9 +518,11 @@ class AXMLParser(object):
                 continue
 
             # Check that we read a correct header
-            assert h.header_size == 0x10, \
-                "XML Resource Type Chunk header size does not match 16! " \
-                "At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size)
+            if h.header_size != 0x10:
+                log.error("XML Resource Type Chunk header size does not match 16! " \
+                "At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size))
+                self._valid = False
+                return
 
             # Line Number of the source file, only used as meta information
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
@@ -831,7 +887,7 @@ class AXMLPrinter:
         self.packerwarning = False
         cur = []
 
-        while True:
+        while self.axml.is_valid():
             _type = next(self.axml)
 
             if _type == START_TAG:
@@ -910,6 +966,14 @@ class AXMLPrinter:
         :return: :class:`~lxml.etree.Element`
         """
         return self.root
+
+    def is_valid(self):
+        """
+        Return the state of the AXMLParser.
+        If this flag is set to False, the parsing has failed, thus
+        the resulting XML will not work or will even be empty.
+        """
+        return self.axml.is_valid()
 
     def is_packed(self):
         """
@@ -1802,6 +1866,9 @@ class ARSCHeader(object):
     This is an implementation of the `ResChunk_header`.
 
     It will throw an AssertionError if the header could not be read successfully.
+
+    It is not checked if the data is outside the buffer size nor if the current
+    chunk fits into the parent chunk (if any)!
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
     """
