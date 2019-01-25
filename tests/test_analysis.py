@@ -63,6 +63,20 @@ class AnalysisTest(unittest.TestCase):
         self.assertIn('Lcom/blafoo/bar/Blafoo;', cls)
         # TODO
 
+    def testInterfaces(self):
+        h, d, dx = AnalyzeDex('examples/tests/InterfaceCls.dex')
+
+        cls = dx.classes['LInterfaceCls;']
+        self.assertIn('Ljavax/net/ssl/X509TrustManager;', cls.implements)
+        self.assertEquals(cls.name, 'LInterfaceCls;')
+
+    def testExtends(self):
+        h, d, dx = AnalyzeDex('examples/tests/ExceptionHandling.dex')
+
+        cls = dx.classes['LSomeException;']
+        self.assertEquals(cls.extends, 'Ljava/lang/Exception;')
+        self.assertEquals(cls.name, 'LSomeException;')
+
 
 if __name__ == '__main__':
     unittest.main()
