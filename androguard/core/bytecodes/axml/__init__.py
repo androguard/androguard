@@ -1154,6 +1154,7 @@ class ARSCParser(object):
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
+        # TODO: assert header type
         self.packageCount = unpack('<I', self.buff.read(4))[0]
 
         self.packages = {}
@@ -1164,9 +1165,10 @@ class ARSCParser(object):
             lambda: collections.defaultdict(collections.defaultdict))
         self.stringpool_main = None
 
-        # skip to the start of the first chunk
+        # skip to the start of the first chunk data, skipping trailing header bytes
         self.buff.set_idx(self.header.start + self.header.header_size)
 
+        # Gives the offset inside the file of the end of this chunk
         data_end = self.header.start + self.header.size
 
         while self.buff.get_idx() <= data_end - ARSCHeader.SIZE:
@@ -1262,7 +1264,7 @@ class ARSCParser(object):
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
                         log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
-                        # silently skip other chunk types
+                        # FIXME: silently skip other chunk types
                         pass
 
                     # skip to the next chunk
@@ -1653,6 +1655,9 @@ class ARSCParser(object):
         return None, None, None
 
     class ResourceResolver(object):
+        """
+        Resolves resources by ID
+        """
         def __init__(self, android_resources, config=None):
             self.resources = android_resources
             self.wanted_config = config
@@ -1804,6 +1809,37 @@ class ARSCParser(object):
                 result[res_type.get_type()].extend(configs)
 
         return result
+
+    @staticmethod
+    def parse_id(name):
+        """
+        Resolves an id from a binary XML file in the form "@[package:]DEADBEEF"
+        and returns a tuple of package name and resource id.
+        If no package name was given, i.e. the ID has the form "@DEADBEEF",
+        the package name is set to None.
+
+        Raises a ValueError if the id is malformed.
+
+        :param name: the string of the resource, as in the binary XML file
+        :return: a tuple of (resource_id, package_name).
+        """
+
+        if not name.startswith('@'):
+            raise ValueError("Not a valid resource ID, must start with @: '{}'".format(name))
+
+        package = None
+        if ':' in name:
+            package, res_id = name.split(':', 1)
+        else:
+            res_id = name
+
+        if len(res_id) != 8:
+            raise ValueError("Numerical ID is not 8 characters long: '{}'".format(res_id))
+
+        try:
+            return int(res_id, 16), package
+        except ValueError:
+            raise ValueError("ID is not a hex ID: '{}'".format(res_id))
 
     def get_resource_xml_name(self, r_id, package=None):
         """
