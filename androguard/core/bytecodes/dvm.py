@@ -361,6 +361,13 @@ def determineNext(i, end, m):
 
 
 def determineException(vm, m):
+    """
+    Returns try-catch handler inside the method.
+
+    :param vm: a :class:`~DalvikVMFormat`
+    :param m: a :class:`~EncodedMethod`
+    :return:
+    """
     # no exceptions !
     if m.get_code().get_tries_size() <= 0:
         return []
