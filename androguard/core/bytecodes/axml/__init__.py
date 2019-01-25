@@ -1090,6 +1090,7 @@ class ARSCParser(object):
         self.buff = bytecode.BuffHandle(raw_buff)
 
         self.header = ARSCHeader(self.buff)
+        # TODO: assert header type
         self.packageCount = unpack('<I', self.buff.read(4))[0]
 
         self.packages = {}
@@ -1100,9 +1101,10 @@ class ARSCParser(object):
             lambda: collections.defaultdict(collections.defaultdict))
         self.stringpool_main = None
 
-        # skip to the start of the first chunk
+        # skip to the start of the first chunk data, skipping trailing header bytes
         self.buff.set_idx(self.header.start + self.header.header_size)
 
+        # Gives the offset inside the file of the end of this chunk
         data_end = self.header.start + self.header.size
 
         while self.buff.get_idx() <= data_end - ARSCHeader.SIZE:
@@ -1198,7 +1200,7 @@ class ARSCParser(object):
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
                         log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
-                        # silently skip other chunk types
+                        # FIXME: silently skip other chunk types
                         pass
 
                     # skip to the next chunk
@@ -1228,49 +1230,45 @@ class ARSCParser(object):
                         c_value = self.values[package_name].setdefault(locale, {"public": []})
 
                         entries = self.packages[package_name][nb + 2]
-                        nb_i = 0
-                        for entry, res_id in entries:
-                            if entry != -1:
-                                ate = self.packages[package_name][nb + 3 + nb_i]
+                        nb_i = 0  # if no entries are found...
+                        for nb_i, (entry, res_id) in enumerate(entries):
+                            if entry == -1:
+                                continue
 
-                                self.resource_values[ate.mResId][a_res_type.config] = ate
-                                self.resource_keys[package_name][a_res_type.get_type()][ate.get_value()] = ate.mResId
+                            ate = self.packages[package_name][nb + 3 + nb_i]
 
-                                if ate.get_index() != -1:
-                                    c_value["public"].append(
-                                        (a_res_type.get_type(), ate.get_value(),
-                                         ate.mResId))
+                            self.resource_values[ate.mResId][a_res_type.config] = ate
+                            self.resource_keys[package_name][a_res_type.get_type()][ate.get_value()] = ate.mResId
 
-                                if a_res_type.get_type() not in c_value:
-                                    c_value[a_res_type.get_type()] = []
+                            if ate.get_index() != -1:
+                                c_value["public"].append(
+                                    (a_res_type.get_type(), ate.get_value(), ate.mResId)
+                                )
 
-                                if a_res_type.get_type() == "string":
-                                    c_value["string"].append(
-                                        self.get_resource_string(ate))
+                            if a_res_type.get_type() not in c_value:
+                                c_value[a_res_type.get_type()] = []
 
-                                elif a_res_type.get_type() == "id":
-                                    if not ate.is_complex():
-                                        c_value["id"].append(
-                                            self.get_resource_id(ate))
+                            # TODO this logic could be simplified, also it is missing some resource types
+                            if a_res_type.get_type() == "string":
+                                c_value["string"].append(self.get_resource_string(ate))
+                            elif a_res_type.get_type() == "id":
+                                if not ate.is_complex():
+                                    c_value["id"].append(self.get_resource_id(ate))
+                                # TODO: what if complex?
+                            elif a_res_type.get_type() == "bool":
+                                if not ate.is_complex():
+                                    c_value["bool"].append(self.get_resource_bool(ate))
+                                # TODO: what if complex?
+                            elif a_res_type.get_type() == "integer":
+                                c_value["integer"].append(self.get_resource_integer(ate))
+                            elif a_res_type.get_type() == "color":
+                                c_value["color"].append(self.get_resource_color(ate))
+                            elif a_res_type.get_type() == "dimen":
+                                c_value["dimen"].append(self.get_resource_dimen(ate))
+                            else:
+                                log.warning("Not matched resource type '{}' complex:{}. "
+                                            "Do not know what do do?".format(a_res_type.get_type(), ate.is_complex()))
 
-                                elif a_res_type.get_type() == "bool":
-                                    if not ate.is_complex():
-                                        c_value["bool"].append(
-                                            self.get_resource_bool(ate))
-
-                                elif a_res_type.get_type() == "integer":
-                                    c_value["integer"].append(
-                                        self.get_resource_integer(ate))
-
-                                elif a_res_type.get_type() == "color":
-                                    c_value["color"].append(
-                                        self.get_resource_color(ate))
-
-                                elif a_res_type.get_type() == "dimen":
-                                    c_value["dimen"].append(
-                                        self.get_resource_dimen(ate))
-
-                                nb_i += 1
                         nb += 3 + nb_i - 1  # -1 to account for the nb+=1 on the next line
                 nb += 1
 
@@ -1589,6 +1587,9 @@ class ARSCParser(object):
         return None, None, None
 
     class ResourceResolver(object):
+        """
+        Resolves resources by ID
+        """
         def __init__(self, android_resources, config=None):
             self.resources = android_resources
             self.wanted_config = config
@@ -1740,6 +1741,37 @@ class ARSCParser(object):
                 result[res_type.get_type()].extend(configs)
 
         return result
+
+    @staticmethod
+    def parse_id(name):
+        """
+        Resolves an id from a binary XML file in the form "@[package:]DEADBEEF"
+        and returns a tuple of package name and resource id.
+        If no package name was given, i.e. the ID has the form "@DEADBEEF",
+        the package name is set to None.
+
+        Raises a ValueError if the id is malformed.
+
+        :param name: the string of the resource, as in the binary XML file
+        :return: a tuple of (resource_id, package_name).
+        """
+
+        if not name.startswith('@'):
+            raise ValueError("Not a valid resource ID, must start with @: '{}'".format(name))
+
+        package = None
+        if ':' in name:
+            package, res_id = name.split(':', 1)
+        else:
+            res_id = name
+
+        if len(res_id) != 8:
+            raise ValueError("Numerical ID is not 8 characters long: '{}'".format(res_id))
+
+        try:
+            return int(res_id, 16), package
+        except ValueError:
+            raise ValueError("ID is not a hex ID: '{}'".format(res_id))
 
     def get_resource_xml_name(self, r_id, package=None):
         """
