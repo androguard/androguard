@@ -373,8 +373,16 @@ class AXMLParser(object):
         self.axml_tampered = False
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        if self.buff.size() <= 8:
+        # Minimum is a single ARSCHeader, which would be a strange edge case...
+        if self.buff.size() < 8:
             log.error("Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size()))
+            self._valid = False
+            return
+
+        # This would be even stranger, if an AXML file is larger than 4GB...
+        # But this is not possible as the maximum chunk size is a unsigned 4 byte int.
+        if self.buff.size() > 0xFFFFFFFF:
+            log.error("Filesize is too large to be a valid AXML file! Filesize: {}".format(self.buff.size()))
             self._valid = False
             return
 
@@ -1858,6 +1866,9 @@ class ARSCHeader(object):
     This is an implementation of the `ResChunk_header`.
 
     It will throw an AssertionError if the header could not be read successfully.
+
+    It is not checked if the data is outside the buffer size nor if the current
+    chunk fits into the parent chunk (if any)!
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
     """
