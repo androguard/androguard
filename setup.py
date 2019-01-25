@@ -72,6 +72,7 @@ setup(
     scripts=['androaxml.py',
              'androarsc.py',
              'androsign.py',
+             'androauto.py',
              'androdis.py',
              'androlyze.py',
              'androdd.py',
