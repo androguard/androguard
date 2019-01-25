@@ -309,7 +309,13 @@ class APK(object):
         except KeyError:
             log.warning("Missing AndroidManifest.xml. Is this an APK file?")
         else:
-            self.axml[i] = AXMLPrinter(manifest_data)
+            ap = AXMLPrinter(manifest_data)
+
+            if not ap.is_valid():
+                log.error("Error while parsing AndroidManifest.xml - is the file valid?")
+                return
+
+            self.axml[i] = ap
             self.xml[i] = self.axml[i].get_xml_obj()
 
             if self.axml[i].is_packed():
@@ -1911,7 +1917,7 @@ def get_apkid(apkfile):
         with apk.open('AndroidManifest.xml') as manifest:
             axml = AXMLParser(manifest.read())
             count = 0
-            while True:
+            while axml.is_valid():
                 _type = next(axml)
                 count += 1
                 if _type == START_TAG:

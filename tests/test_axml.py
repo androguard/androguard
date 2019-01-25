@@ -126,12 +126,13 @@ class AXMLTest(unittest.TestCase):
         for filename in filenames:
             with open(filename, "rb") as fd:
                 ap = axml.AXMLPrinter(fd.read())
-                self.assertIsNotNone(ap)
+            self.assertIsNotNone(ap)
+            self.assertTrue(ap.is_valid())
 
-                self.assertTrue(is_valid_manifest(ap.get_xml_obj()))
+            self.assertTrue(is_valid_manifest(ap.get_xml_obj()))
 
-                e = minidom.parseString(ap.get_buff())
-                self.assertIsNotNone(e)
+            e = minidom.parseString(ap.get_buff())
+            self.assertIsNotNone(e)
 
     def testFileCompare(self):
         """
@@ -159,6 +160,7 @@ class AXMLTest(unittest.TestCase):
             with open(filename, "rb") as fp:
                 ap = axml.AXMLPrinter(fp.read())
 
+            self.assertTrue(ap.is_valid())
             self.assertEqual(ap.get_xml_obj().tag, "LinearLayout")
 
             e = minidom.parseString(ap.get_buff())
@@ -174,6 +176,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -199,6 +202,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -212,6 +216,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -222,10 +227,9 @@ class AXMLTest(unittest.TestCase):
         """
         filename = "examples/axml/AndroidManifestWrongFilesize.xml"
 
-        with self.assertRaises(AssertionError) as cnx:
-            with open(filename, "rb") as f:
-                axml.AXMLPrinter(f.read())
-        self.assertTrue("Declared filesize does not match" in str(cnx.exception))
+        with open(filename, "rb") as f:
+            a = axml.AXMLPrinter(f.read())
+        self.assertFalse(a.is_valid())
 
     def testNullbytes(self):
         """
@@ -236,6 +240,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -250,6 +255,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -263,6 +269,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         e = minidom.parseString(ap.get_buff())
         self.assertIsNotNone(e)
@@ -276,6 +283,7 @@ class AXMLTest(unittest.TestCase):
         with open(filename, "rb") as f:
             ap = axml.AXMLPrinter(f.read())
         self.assertIsInstance(ap, axml.AXMLPrinter)
+        self.assertTrue(ap.is_valid())
 
         self.assertTrue(ap.is_packed())
 
