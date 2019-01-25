@@ -139,5 +139,22 @@ class ARSCTest(unittest.TestCase):
         self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))), ["Jamendo", "Jamendo"])
         self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id, axml.ARSCResTableConfig.default_config()))), ["Jamendo"])
 
+    def testIDParsing(self):
+        parser = axml.ARSCParser.parse_id
+
+        self.assertEqual(parser('@DEADBEEF'), (0xDEADBEEF, None))
+        self.assertEqual(parser('@android:DEADBEEF'), (0xDEADBEEF, 'android'))
+        self.assertEqual(parser('@foobar:01020304'), (0x01020304, 'foobar'))
+
+        with self.assertRaises(ValueError):
+            parser('@whatisthis')
+        with self.assertRaises(ValueError):
+            parser('#almost')
+        with self.assertRaises(ValueError):
+            parser('@android:NONOTHEX')
+        with self.assertRaises(ValueError):
+            parser('@android:00')
+
+
 if __name__ == '__main__':
     unittest.main()
