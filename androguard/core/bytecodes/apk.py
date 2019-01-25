@@ -448,27 +448,30 @@ class APK(object):
         if app_name is None:
             # No App name set
             # TODO return packagename instead?
+            log.warning("It looks like that no app name is set for the main activity!")
             return ""
+
         if app_name.startswith("@"):
-            if ':' in app_name:
-                # We have a package name prepended, usually this is 'android'
-                package, _ = app_name[1:].split(':')
+            res_parser = self.get_android_resources()
+            if not res_parser:
+                # TODO: What should be the correct return value here?
+                return app_name
+
+            res_id, package = res_parser.parse_id(app_name)
+
+            # If the package name is the same as the APK package,
+            # we should be able to resolve the ID.
+            if package and package != self.get_package():
                 if package == 'android':
                     # TODO: we can not resolve this, as we lack framework-res.apk
                     # one exception would be when parsing framework-res.apk directly.
                     log.warning("Resource ID with android package name encountered! "
                                 "Will not resolve, framework-res.apk would be required.")
+                    return app_name
                 else:
+                    # TODO should look this up, might be in the resources
                     log.warning("Resource ID with Package name '{}' encountered! Will not resolve".format(package))
-                # TODO: in any case, could look up in the resources for the specified package name
-                return app_name
-
-            res_id = int(app_name[1:], 16)
-            res_parser = self.get_android_resources()
-
-            if not res_parser:
-                # TODO: What should be the correct return value here?
-                return app_name
+                    return app_name
 
             try:
                 app_name = res_parser.get_resolved_res_configs(
@@ -476,7 +479,6 @@ class APK(object):
                     ARSCResTableConfig.default_config())[0][1]
             except Exception as e:
                 log.warning("Exception selecting app name: %s" % e)
-                app_name = ""
         return app_name
 
     def get_app_icon(self, max_dpi=65536):

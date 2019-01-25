@@ -1827,6 +1827,9 @@ class ARSCParser(object):
         if not name.startswith('@'):
             raise ValueError("Not a valid resource ID, must start with @: '{}'".format(name))
 
+        # remove @
+        name = name[1:]
+
         package = None
         if ':' in name:
             package, res_id = name.split(':', 1)
