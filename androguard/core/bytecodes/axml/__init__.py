@@ -728,6 +728,27 @@ class AXMLParser(object):
 
         return self.sb[self.m_name]
 
+    def getName(self):
+        """
+        Legacy only!
+        use :func:`~androguard.core.bytecodes.AXMLParser.name` instead
+        """
+        return self.name
+
+    def getText(self):
+        """
+        Legacy only!
+        use :func:`~androguard.core.bytecodes.AXMLParser.text` instead
+        """
+        return self.text
+
+    def getPrefix(self):
+        """
+        Legacy only!
+        use :func:`~androguard.core.bytecodes.AXMLParser.namespace` instead
+        """
+        return self.namespace
+
     def _get_attribute_offset(self, index):
         """
         Return the start inside the m_attributes array for a given attribute
