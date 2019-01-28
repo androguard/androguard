@@ -9,7 +9,7 @@ Sessions could also be used to store the analysis on disk, for example if you do
 automated analysis and want to analyse certain files later.
 
 There are several ways to work with sessions.
-The easiest way is to use :meth:`~androguard.misc.AnalyzeAPK` with a session:
+The easiest way is to use :func:`~androguard.misc.AnalyzeAPK` with a session:
 
 .. code-block:: python
 
@@ -75,3 +75,5 @@ session, to remove all stored analysis data.
 
                 # But now reset the session for the next analysis
                 sess.reset()
+
+
