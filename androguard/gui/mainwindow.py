@@ -1,4 +1,4 @@
-import importlib
+import sys
 
 import androguard.session as session_module
 from androguard.gui.DataModel import *
@@ -15,6 +15,32 @@ import os
 
 import logging
 log = logging.getLogger("androguard.gui")
+
+
+def load_module(module_name, file_path):
+    """
+    Load a module by name and search path
+
+    This function should work with python 2.7 and 3.x
+
+    Returns None if Module could not be loaded.
+    """
+    if sys.version_info >= (3,5,):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        if not spec:
+            return
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        return module
+    else:
+        import imp
+        mod = imp.load_source(module_name, file_path)
+        return mod
+
 
 class TabsWindow(QtWidgets.QTabWidget):
     def __init__(self, bin_windows, parent=None):
@@ -214,13 +240,17 @@ class MainWindow(QtWidgets.QMainWindow):
             log.warning("Session not saved")
 
     def _runPlugin(self, filepath):
-        log.debug("RUN plugin from %s" % filepath)
         module_name = os.path.splitext(os.path.basename(filepath))[0]
-        f, filename, description = importlib.find_module(
-            module_name,
-            [os.path.dirname(filepath)])
-        log.debug("%s %s %s", f, filename, description)
-        mod = importlib.load_module(module_name, f, filename, description)
+        log.debug("RUN plugin '{}' from {}".format(module_name, filepath))
+
+        mod = load_module(module_name, filepath)
+
+        log.debug("Loaded %s", mod)
+        if not mod or not hasattr(mod, 'PluginEntry'):
+            QtWidgets.QMessageBox.warning(self, "Not a valid Plugin",
+                                    "<p>This python file does not look like a valid plugin.</p>")
+            return
+
         mod.PluginEntry(self.session)
 
     def openRunPluginWindow(self):
