@@ -977,9 +977,18 @@ class APK(object):
 
     def get_permissions(self):
         """
-        Return permissions
+        Return permissions names declared in the AndroidManifest.xml.
 
-        :rtype: list of str
+        It is possible that permissions are returned multiple times,
+        as this function does not filter the permissions, i.e. it shows you
+        exactly what was defined in the AndroidManifest.xml.
+
+        Implied permissions, which are granted automatically, are not returned
+        here. Use :meth:`get_uses_implied_permission_list` if you need a list
+        of implied permissions.
+
+        :returns: A list of permissions
+        :rtype: list
         """
         return self.permissions
 
@@ -1030,9 +1039,9 @@ class APK(object):
 
     def get_details_permissions(self):
         """
-            Return permissions with details
+        Return permissions with details
 
-            :rtype: dict of {permission: [protectionLevel, label, description]}
+        :rtype: dict of {permission: [protectionLevel, label, description]}
         """
         l = {}
 
@@ -1051,7 +1060,7 @@ class APK(object):
         """
         Returns all requested permissions.
 
-        It has the same result as :func:`~APK.get_permissions` and might be removed in the future
+        It has the same result as :meth:`get_permissions` and might be removed in the future
 
         :rtype: list of str
         """
