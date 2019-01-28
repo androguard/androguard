@@ -1,7 +1,7 @@
-androdis - Disassembler for DEX
-===============================
+androguard dissassemble - Disassembler for DEX
+==============================================
 
 androdis is a disassembler for DEX files.
 
-.. program-output:: python ../androdis.py -h
+.. program-output:: androguard disassemble --help
 

@@ -1,16 +1,19 @@
 .. _androsign:
-androsign - Print Certificate Fingerprints
-==========================================
+
+androguard sign - Print Certificate Fingerprints
+================================================
 
 Get the fingerprints of the signing certificates inside an APK.
 
-.. program-output:: python ../androsign.py -h
+.. program-output:: androguard sign --help
 
-An example:
+
+Examples
+--------
 
 .. code-block:: bash
 
-    $ androsign.py --all files/golden-aligned-v1v2-out.apk
+    $ androguard sign --all files/golden-aligned-v1v2-out.apk
     golden-aligned-v1v2-out.apk, package: 'android.appsecurity.cts.tinyapp'
     Is signed v1: True
     Is signed v2: True
