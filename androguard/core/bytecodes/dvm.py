@@ -4137,7 +4137,10 @@ class Instruction(object):
         return None
 
     def get_hex(self):
-        s = binascii.hexlify(self.get_raw()).decode("ascii")
+        """
+        Returns a HEX String, separated by spaces every byte
+        """
+        s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 
@@ -4247,7 +4250,12 @@ class FillArrayData(object):
         return buff
 
     def get_operands(self, idx=-1):
-        return [(OPERAND_RAW, repr(self.get_data()))]
+        # FIXME: not sure of binascii is the right choise here,
+        # but before it was repr(), which lead to weird outputs of bytearrays
+        if isinstance(self.get_data(), bytearray):
+            return [(OPERAND_RAW, binascii.hexlify(self.get_data()).decode('ascii'))]
+        else:
+            return [(OPERAND_RAW, repr(self.get_data()))]
 
     def get_formatted_operands(self):
         return None
@@ -4291,7 +4299,11 @@ class FillArrayData(object):
             "=I", self.size) + self.data
 
     def get_hex(self):
-        s = binascii.hexlify(self.get_raw())
+        """
+        Returns a HEX String, separated by spaces every byte
+        """
+
+        s = binascii.hexlify(self.get_raw()).decode("ascii")
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 
@@ -4419,7 +4431,10 @@ class SparseSwitch(object):
                                                     for i in self.targets)
 
     def get_hex(self):
-        s = binascii.hexlify(self.get_raw())
+        """
+        Returns a HEX String, separated by spaces every byte
+        """
+        s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 
@@ -4552,7 +4567,10 @@ class PackedSwitch(object):
             "=i", self.first_key) + b''.join(pack("=l", i) for i in self.targets)
 
     def get_hex(self):
-        s = binascii.hexlify(self.get_raw())
+        """
+        Returns a HEX String, separated by spaces every byte
+        """
+        s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 

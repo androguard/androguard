@@ -198,7 +198,7 @@ class DisasmViewMode(ViewMode):
 
         self.OPCODES = []
 
-        vm_analysis = self.dataModel.current_class.CM.get_vmanalysis()
+        vm_analysis = self.dataModel.dx
 
         methods = [i for i in self.dataModel.current_class.get_methods()]
         print(methods)

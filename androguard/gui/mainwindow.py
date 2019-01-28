@@ -143,6 +143,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                     "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
                                     "<br>Have fun !</p>")
 
+    def _no_apk_loaded(self):
+        """Show a message if no APK was loaded yet..."""
+        QtWidgets.QMessageBox.information(self, "No APK loaded yet!",
+                                    "<p>There was no APK loaded yet. Please load one using File->Open.</p>")
+
     def setupSession(self):
         log.debug("Setup Session")
         self.fileLoadingThread = FileLoadingThread(self)
@@ -179,6 +184,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addFile(self):
         if not self.session.isOpen():
+            log.debug(self.session.analyzed_digest)
+            self._no_apk_loaded()
             return
 
         filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -197,13 +204,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if filepath:
             self.showStatus("Saving %s..." % str(filepath))
             self.saveSession(filepath)
+            self.showStatus("Saved Session to %s!" % str(filepath))
 
     def saveSession(self, filepath):
         """Save androguard session."""
         try:
             session_module.Save(self.session, filepath)
         except RuntimeError as e:
-            log.error(str(e))
+            log.exception(e)
             os.remove(filepath)
             log.warning("Session not saved")
 
@@ -329,6 +337,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openApkWindow(self):
         log.debug("openApkWindow for %s" % self.session.analyzed_apk)
+
+        if not self.fileLoadingThread.file_path:
+            self._no_apk_loaded()
+            return
+
         bin_window = binWidget(self, ApkModel(self.session.get_objects_apk(self.fileLoadingThread.file_path)[0]), "APK")
         bin_window.activateWindow()
         self.central.addTab(bin_window, bin_window.title)
@@ -338,10 +351,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openBinWindow(self, current_class):
         log.debug("openBinWindow for %s" % current_class)
+        log.debug(type(current_class))
+
+        dx = self.session.get_analysis(current_class)
 
         bin_window = self.getMeOpenedWindowIfExists(current_class.current_title)
         if not bin_window:
-            bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
+            bin_window = binWidget(self, DexClassModel(current_class, dx), current_class.get_name())
             bin_window.activateWindow()
             self.central.addTab(bin_window, current_class.current_title)
             self.central.setTabToolTip(self.central.indexOf(bin_window),

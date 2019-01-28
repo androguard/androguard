@@ -10,6 +10,7 @@ from builtins import str
 from .TextDecorators import *
 from .ViewMode import *
 from .cemu import *
+from . import TextSelection
 
 
 class BinViewMode(ViewMode):
