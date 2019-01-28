@@ -103,7 +103,6 @@ class SourceViewMode(ViewMode):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
-            # print 'hit'
             self.drawAdditionals()
             return
 
@@ -151,7 +150,6 @@ class SourceViewMode(ViewMode):
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
         # ast = self.dataModel.current_class.get_ast()
-        # print ast
 
         for i in range(self.ROWS):
             if i < len(self.LINES):

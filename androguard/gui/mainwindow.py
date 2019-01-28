@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import importlib
 
 import androguard.session as session_module
@@ -221,7 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         f, filename, description = importlib.find_module(
             module_name,
             [os.path.dirname(filepath)])
-        print(f, filename, description)
+        log.debug("%s %s %s", f, filename, description)
         mod = importlib.load_module(module_name, f, filename, description)
         mod.PluginEntry(self.session)
 
@@ -351,7 +349,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openBinWindow(self, current_class):
         log.debug("openBinWindow for %s" % current_class)
-        log.debug(type(current_class))
 
         dx = self.session.get_analysis(current_class)
 

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 import os
 import mmap
@@ -30,7 +29,7 @@ class DataModel(Observer):
 
     @dataOffset.setter
     def dataOffset(self, value):
-        print("DATA OFFSET", value)
+        log.debug("DATA OFFSET %s", value)
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 

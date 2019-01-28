@@ -270,7 +270,6 @@ class HighlightWideChar(PageDecorator):
             Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? ]\x00){4,}', page)]
             for s, e in Match:
                 for i in range(e - s):
-                    # print i
                     self.penMap[pageStart + s + i] = QtGui.QPen(QtGui.QColor(255, 255, 0))
 
                 # get rid of '\x00'
