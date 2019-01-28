@@ -38,19 +38,18 @@ class ResourcesValueWindow(QtWidgets.QTreeView):
         self.proxyModel = QtCore.QSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
 
-        string_resources = None
+        string_resources = []
+        nb = 0
         for digest, apk in self.session.get_all_apks():
             a = apk[0]
             resources = a.get_android_resources()
 
             string_resources = resources.get_resolved_strings()
-            nb = 0
             for p in string_resources:
                 for l in string_resources[p]:
                     nb += len(string_resources[p][l])
 
-        self.model = QtGui.QStandardItemModel(nb, 4,
-                                              self)
+        self.model = QtGui.QStandardItemModel(nb, 4, self)
 
         self.model.setHeaderData(0, QtCore.Qt.Horizontal, "Package name")
         self.model.setHeaderData(1, QtCore.Qt.Horizontal, "Locale")

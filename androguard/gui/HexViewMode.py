@@ -1057,7 +1057,6 @@ class treeEventFilter(QtCore.QObject):
 
                 item.parent().removeChild(item)
                 # self.widget.takeTopLevelItem(self.widget.indexOfTopLevelItem(item))
-                # print item
                 # rva = self.widget.indexFromItem(item, 1).data().toString()
 
         return False

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 import os
 import mmap
@@ -30,7 +29,7 @@ class DataModel(Observer):
 
     @dataOffset.setter
     def dataOffset(self, value):
-        print("DATA OFFSET", value)
+        log.debug("DATA OFFSET %s", value)
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -306,7 +305,6 @@ class BufferDataModel(DataModel):
 
 class ApkModel(DataModel):
     def __init__(self, apkobj):
-        print(apkobj)
         self._filename = str(apkobj)
         self.raw = apkobj.get_raw()
         self.data = MyByte(self.raw)
@@ -331,9 +329,15 @@ class ApkModel(DataModel):
 
 
 class DexClassModel(DataModel):
-    def __init__(self, current_class):
+    def __init__(self, current_class, dx):
+        """
+
+        :param current_class: a ClassDefItem
+        :param dx: a Analysis object
+        """
         self.current_class = current_class
         self._filename = current_class.get_name()
+        self.dx = dx
 
         raw = self.GetRawData(current_class)
         super(DexClassModel, self).__init__(raw)

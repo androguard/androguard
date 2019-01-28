@@ -1,6 +1,4 @@
-from __future__ import print_function
-
-import importlib
+import sys
 
 import androguard.session as session_module
 from androguard.gui.DataModel import *
@@ -17,6 +15,32 @@ import os
 
 import logging
 log = logging.getLogger("androguard.gui")
+
+
+def load_module(module_name, file_path):
+    """
+    Load a module by name and search path
+
+    This function should work with python 2.7 and 3.x
+
+    Returns None if Module could not be loaded.
+    """
+    if sys.version_info >= (3,5,):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        if not spec:
+            return
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        return module
+    else:
+        import imp
+        mod = imp.load_source(module_name, file_path)
+        return mod
+
 
 class TabsWindow(QtWidgets.QTabWidget):
     def __init__(self, bin_windows, parent=None):
@@ -143,6 +167,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                     "<p><b>Androguard GUI</b> is basically a GUI for Androguard :)." \
                                     "<br>Have fun !</p>")
 
+    def _no_apk_loaded(self):
+        """Show a message if no APK was loaded yet..."""
+        QtWidgets.QMessageBox.information(self, "No APK loaded yet!",
+                                    "<p>There was no APK loaded yet. Please load one using File->Open.</p>")
+
     def setupSession(self):
         log.debug("Setup Session")
         self.fileLoadingThread = FileLoadingThread(self)
@@ -179,6 +208,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addFile(self):
         if not self.session.isOpen():
+            log.debug(self.session.analyzed_digest)
+            self._no_apk_loaded()
             return
 
         filepath, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -195,26 +226,35 @@ class MainWindow(QtWidgets.QMainWindow):
             self, "Save File", '', "Androguard Session (*.ag)")
 
         if filepath:
+            # Ensure .ag as file ending
+            if not filepath.endswith(".ag"):
+                filepath = "{}.ag".format(filepath)
+
             self.showStatus("Saving %s..." % str(filepath))
             self.saveSession(filepath)
+            self.showStatus("Saved Session to %s!" % str(filepath))
 
     def saveSession(self, filepath):
         """Save androguard session."""
         try:
             session_module.Save(self.session, filepath)
         except RuntimeError as e:
-            log.error(str(e))
+            log.exception(e)
             os.remove(filepath)
             log.warning("Session not saved")
 
     def _runPlugin(self, filepath):
-        log.debug("RUN plugin from %s" % filepath)
         module_name = os.path.splitext(os.path.basename(filepath))[0]
-        f, filename, description = importlib.find_module(
-            module_name,
-            [os.path.dirname(filepath)])
-        print(f, filename, description)
-        mod = importlib.load_module(module_name, f, filename, description)
+        log.debug("RUN plugin '{}' from {}".format(module_name, filepath))
+
+        mod = load_module(module_name, filepath)
+
+        log.debug("Loaded %s", mod)
+        if not mod or not hasattr(mod, 'PluginEntry'):
+            QtWidgets.QMessageBox.warning(self, "Not a valid Plugin",
+                                    "<p>This python file does not look like a valid plugin.</p>")
+            return
+
         mod.PluginEntry(self.session)
 
     def openRunPluginWindow(self):
@@ -329,6 +369,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openApkWindow(self):
         log.debug("openApkWindow for %s" % self.session.analyzed_apk)
+
+        if not self.fileLoadingThread.file_path:
+            self._no_apk_loaded()
+            return
+
         bin_window = binWidget(self, ApkModel(self.session.get_objects_apk(self.fileLoadingThread.file_path)[0]), "APK")
         bin_window.activateWindow()
         self.central.addTab(bin_window, bin_window.title)
@@ -339,9 +384,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def openBinWindow(self, current_class):
         log.debug("openBinWindow for %s" % current_class)
 
+        dx = self.session.get_analysis(current_class)
+
         bin_window = self.getMeOpenedWindowIfExists(current_class.current_title)
         if not bin_window:
-            bin_window = binWidget(self, DexClassModel(current_class), current_class.get_name())
+            bin_window = binWidget(self, DexClassModel(current_class, dx), current_class.get_name())
             bin_window.activateWindow()
             self.central.addTab(bin_window, current_class.current_title)
             self.central.setTabToolTip(self.central.indexOf(bin_window),

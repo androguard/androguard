@@ -67,7 +67,7 @@ class Session(object):
 
         :return: `True` if any file was analyzed, `False` otherwise
         """
-        return self.analyzed_digest != {}
+        return len(self.analyzed_digest) > 0
 
     def show(self):
         """
@@ -210,6 +210,14 @@ class Session(object):
             idx += 1
 
     def get_analysis(self, current_class):
+        """
+        Returns the :class:`~androguard.core.analysis.analysis.Analysis` object
+        which contains the `current_class`.
+
+        :param current_class: The class to search for
+        :type current_class: androguard.core.bytecodes.dvm.ClassDefItem
+        :rtype: androguard.core.analysis.analysis.Analysis
+        """
         for digest in self.analyzed_vms:
             dx = self.analyzed_vms[digest]
             if dx.is_class_present(current_class.get_name()):

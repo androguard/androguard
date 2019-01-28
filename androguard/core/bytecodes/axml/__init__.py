@@ -346,7 +346,7 @@ class StringBlock(object):
 class AXMLParser(object):
     """
     AXMLParser reads through all chunks in the AXML file
-    and implements a state machone to return information about
+    and implements a state machine to return information about
     the current chunk, which can then be read by :class:`~AXMLPrinter`.
 
     An AXML file is a file which contains multiple chunks of data, defined
@@ -699,8 +699,8 @@ class AXMLParser(object):
 
         there are several problems with the map and we try to guess a few
         things here:
-        1) a URI can be mapped by many prefixes, so it is to decide which one
-           to take
+
+        1) a URI can be mapped by many prefixes, so it is to decide which one to take
         2) a prefix might map to an empty string (some packers)
         3) uri+prefix mappings might be included several times
         4) prefix might be empty
@@ -731,21 +731,21 @@ class AXMLParser(object):
     def getName(self):
         """
         Legacy only!
-        use :func:`~androguard.core.bytecodes.AXMLParser.name` instead
+        use :py:attr:`~androguard.core.bytecodes.AXMLParser.name` instead
         """
         return self.name
 
     def getText(self):
         """
         Legacy only!
-        use :func:`~androguard.core.bytecodes.AXMLParser.text` instead
+        use :py:attr:`~androguard.core.bytecodes.AXMLParser.text` instead
         """
         return self.text
 
     def getPrefix(self):
         """
         Legacy only!
-        use :func:`~androguard.core.bytecodes.AXMLParser.namespace` instead
+        use :py:attr:`~androguard.core.bytecodes.AXMLParser.namespace` instead
         """
         return self.namespace
 
@@ -814,19 +814,30 @@ class AXMLParser(object):
         return res
 
     def getAttributeValueType(self, index):
+        """
+        Return the type of the attribute at the given index
+
+        :param index: index of the attribute
+        """
         offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
 
     def getAttributeValueData(self, index):
+        """
+        Return the data of the attribute at the given index
+
+        :param index: index of the attribute
+        """
         offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
     def getAttributeValue(self, index):
         """
         This function is only used to look up strings
-        All other work is made by format_value
+        All other work is done by
+        :func:`~androguard.core.bytecodes.axml.format_value`
         # FIXME should unite those functions
-        :param index:
+        :param index: index of the attribute
         :return:
         """
         offset = self._get_attribute_offset(index)
@@ -967,8 +978,9 @@ class AXMLPrinter:
 
     def get_buff(self):
         """
-        Returns the raw XML file
-        :return: bytes, encoded as UTF-8
+        Returns the raw XML file without prettification applied.
+
+        :returns: bytes, encoded as UTF-8
         """
         return self.get_xml(pretty=False)
 
@@ -976,7 +988,7 @@ class AXMLPrinter:
         """
         Get the XML as an UTF-8 string
 
-        :return: bytes encoded as UTF-8
+        :returns: bytes encoded as UTF-8
         """
         return etree.tostring(self.root, encoding="utf-8", pretty_print=pretty)
 
@@ -984,7 +996,7 @@ class AXMLPrinter:
         """
         Get the XML as an ElementTree object
 
-        :return: :class:`~lxml.etree.Element`
+        :returns: :class:`lxml.etree.Element`
         """
         return self.root
 
@@ -1005,7 +1017,7 @@ class AXMLPrinter:
         some broken version of a tool.
         Some file corruption might also be appear to be a packed file.
 
-        :return: True if packer detected, False otherwise
+        :returns: True if packer detected, False otherwise
         """
         return self.packerwarning
 
@@ -2234,7 +2246,9 @@ class ARSCResTableConfig(object):
 
     def get_config_name_friendly(self):
         """
-        Here for legacy reasons...
+        Here for legacy reasons.
+
+        use :meth:`~get_qualifier` instead.
         """
         return self.get_qualifier()
 

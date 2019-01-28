@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import print_function
 
 from .Banners import *
 from .DataModel import *
@@ -250,8 +249,6 @@ class binWidget(QtWidgets.QWidget, Observable):
         self.active = False
 
     def scroll_from_outside(self, i):
-        # print 'slot-signal ' + str(i)
-        # self.scroll_pdown = True
         self.update()
 
     def initUI(self):
@@ -291,10 +288,7 @@ class binWidget(QtWidgets.QWidget, Observable):
         offsetLeft = self.offsetWindow_h + self.Banners.getLeftOffset()
         offsetBottom = self.offsetWindow_v + self.Banners.getTopOffset()
 
-        # self.viewMode.draw2(qp, refresh=True)
-        # start = time()
         qp.drawPixmap(offsetLeft, offsetBottom, self.viewMode.getPixmap())
-        # print 'Draw ' + str(time() - start)
 
         self.Banners.draw(qp, self.offsetWindow_h, self.offsetWindow_v, self.size().height())
 
@@ -324,7 +318,7 @@ class binWidget(QtWidgets.QWidget, Observable):
                     self.viewMode.draw(refresh=False)
             # switch view mode
             if key == QtCore.Qt.Key_V:
-                print('SWITCH VIEW')
+                log.debug('SWITCH VIEW')
                 offs = self.viewMode.getCursorOffsetInPage()
                 base = self.viewMode.getDataModel().getOffset()
                 self.switchViewMode()
@@ -333,7 +327,7 @@ class binWidget(QtWidgets.QWidget, Observable):
                 self.update()
 
             if key == QtCore.Qt.Key_S:
-                print('OPEN SOURCE')
+                log.debug('OPEN SOURCE')
                 self.parent.openSourceWindow(self.dataModel.current_class)
 
             if event.modifiers() & QtCore.Qt.ControlModifier:
@@ -341,34 +335,26 @@ class binWidget(QtWidgets.QWidget, Observable):
                     if self.viewMode.selector.getCurrentSelection():
                         a, b = self.viewMode.selector.getCurrentSelection()
 
-                        # print a, b
                         hx = ''
                         for s in self.dataModel.getStream(a, b):
                             hx += '{:02x}'.format(s)
 
                         pyperclip.copy(hx)
                         del pyperclip
-                        # print pyperclip.paste()
-                        #   print 'coppied'
 
             if event.modifiers() & QtCore.Qt.ShiftModifier:
                 if key == QtCore.Qt.Key_Insert:
                     import re
                     hx = pyperclip.paste()
-                    # print hx
                     L = re.findall(r'.{1,2}', hx, re.DOTALL)
 
                     array = ''
                     for s in L:
                         array += chr(int(s, 16))
 
-                    # print 'write '
-                    # print 'write'
-                    # print array
                     self.dataModel.write(0, array)
                     self.viewMode.draw(True)
                     del pyperclip
-                    # print array
 
                 if key == QtCore.Qt.Key_F4:
                     self.unp = WUnpack(self, None)

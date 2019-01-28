@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 import pyperclip
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -337,13 +336,6 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         log.debug("Browsing to %s -> %s" % (self.current_class, method))
 
-        # debug
-        #        if False:
-        #            for k, v in self.doc.infoBlocks.items():
-        #                print k
-        #                print v
-        #                print "-"*10
-
     def reload_java_sources(self):
         """Reload completely the sources by asking Androguard
            to decompile it again. Useful when:
@@ -532,7 +524,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             #    return
 
     def actionCopy(self):
-        print('COPY')
+        log.debug('COPY')
         cur = self.textCursor()
         pyperclip.copy(cur.selectedText())
 
