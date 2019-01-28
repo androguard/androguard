@@ -226,6 +226,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self, "Save File", '', "Androguard Session (*.ag)")
 
         if filepath:
+            # Ensure .ag as file ending
+            if not filepath.endswith(".ag"):
+                filepath = "{}.ag".format(filepath)
+
             self.showStatus("Saving %s..." % str(filepath))
             self.saveSession(filepath)
             self.showStatus("Saved Session to %s!" % str(filepath))
