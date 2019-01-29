@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
-import os
 from androguard import __version__
 
 from setuptools import setup, find_packages
@@ -85,15 +84,24 @@ setup(
     install_requires=install_requires,
     extras_require={
         'GUI': ["pyperclip", "PyQt5"],
-        # We support the following three magic packages:
-        # * filemagic from https://pypi.python.org/pypi/filemagic
-        # * file-magic from https://pypi.python.org/pypi/file-magic  (which is the "offical" one, and also in Debian)
-        # * python-magic from https://pypi.python.org/pypi/python-magic
-        # If you are installing on debian you can use python3-magic instead, which fulfills the dependency to file-magic
-        'magic': ['file-magic'],
+        'magic': ['python-magic>=0.4.15'],
         'docs': ['sphinx', "sphinxcontrib-programoutput>0.8", 'sphinx_rtd_theme'],
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
     setup_requires=['setuptools'],
+    classifiers=[
+                 'License :: OSI Approved :: Apache Software License',
+                 'Programming Language :: Python',
+                 'Programming Language :: Python :: 2',
+                 'Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3.4',
+                 'Programming Language :: Python :: 3.5',
+                 'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7',
+                 'Programming Language :: Python :: 3.8',
+                 'Topic :: Security',
+                 'Topic :: Software Development',
+                 'Topic :: Utilities',
+                ],
 
 )
