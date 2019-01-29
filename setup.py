@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
-import os
 from androguard import __version__
 
 from setuptools import setup, find_packages
