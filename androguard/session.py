@@ -1,5 +1,4 @@
 import hashlib
-
 from androguard.core.analysis.analysis import *
 from androguard.core.bytecodes.dvm import *
 from androguard.decompiler.decompiler import *
@@ -7,26 +6,63 @@ from androguard.core import androconf
 
 import pickle
 import logging
+import datetime
 
 log = logging.getLogger("androguard.session")
 
 
-def Save(session, filename):
+def Save(session, filename=None):
     """
     save your session to use it later.
+
+    Returns the filename of the written file.
+    If not filename is given, a file named `androguard_session_<DATE>.ag` will
+    be created in the current working directory.
+    `<DATE>` is a timestamp with the following format: `%Y-%m-%d_%H%M%S`.
+
+    This function will overwrite existing files without asking.
+
+    If the file could not written, None is returned.
 
     example::
 
         s = session.Session()
-        session.Save(s, "msession.p")
+        session.Save(s, "msession.ag")
 
     :param session: A Session object to save
     :param filename: output filename to save the session
     :type filename: string
 
     """
-    with open(filename, "wb") as fd:
-        pickle.dump(session, fd)
+
+    if not filename:
+        filename = "androguard_session_{:%Y-%m-%d_%H%M%S}.ag".format(datetime.datetime.now())
+
+    if os.path.isfile(filename):
+        log.warning("{} already exists, overwriting!")
+
+    # Setting the recursion limit according to the documentation:
+    # https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
+    #
+    # Some larger APKs require a high recursion limit.
+    # Tested to be above 35000 for some files, setting to 50k to be sure.
+    # You might want to set this even higher if you encounter problems
+    reclimit = sys.getrecursionlimit()
+    sys.setrecursionlimit(50000)
+    saved = False
+    try:
+        with open(filename, "wb") as fd:
+            pickle.dump(session, fd)
+        saved = True
+    except RecursionError as e:
+        log.exception("Recursion Limit hit while saving. "
+                      "Current Recursion limit: {}. "
+                      "Please report this error!".format(sys.getrecursionlimit()))
+        # Remove partially written file
+        os.unlink(filename)
+
+    sys.setrecursionlimit(reclimit)
+    return filename if saved else None
 
 
 def Load(filename):
@@ -35,7 +71,7 @@ def Load(filename):
 
       example::
 
-          s = session.Load("mysession.p")
+          s = session.Load("mysession.ag")
 
       :param filename: the filename where the session has been saved
       :type filename: string
@@ -47,7 +83,7 @@ def Load(filename):
         return pickle.load(fd)
 
 
-class Session(object):
+class Session:
     """
     A Session is able to store multiple APK, DEX or ODEX files and can be pickled
     to disk in order to resume work later.
@@ -87,6 +123,12 @@ class Session(object):
         """
         self._setup_objects()
         self.export_ipython = export_ipython
+
+    def save(self, filename=None):
+        """
+        Save the current session, see also :func:`~androguard.session.Save`.
+        """
+        return Save(self, filename)
 
     def _setup_objects(self):
         self.analyzed_files = collections.defaultdict(list)
