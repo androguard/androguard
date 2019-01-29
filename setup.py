@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import sys
-import os
 from androguard import __version__
 
 from setuptools import setup, find_packages
@@ -90,5 +89,19 @@ setup(
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
     setup_requires=['setuptools'],
+    classifiers=[
+                 'License :: OSI Approved :: Apache Software License',
+                 'Programming Language :: Python',
+                 'Programming Language :: Python :: 2',
+                 'Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3.4',
+                 'Programming Language :: Python :: 3.5',
+                 'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7',
+                 'Programming Language :: Python :: 3.8',
+                 'Topic :: Security',
+                 'Topic :: Software Development',
+                 'Topic :: Utilities',
+                ],
 
 )
