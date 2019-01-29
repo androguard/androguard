@@ -1,4 +1,5 @@
 language: python
+dist: xenial
 
 # Download jadx decompiler
 before_script:
