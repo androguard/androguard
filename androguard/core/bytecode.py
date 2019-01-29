@@ -844,7 +844,7 @@ class BuffHandle(object):
         :param str filename: the name of the file to save to
         """
         with open(filename, "wb") as fd:
-            fd.write(buff)
+            fd.write(self.__buff)
 
 
 class Buff(object):
