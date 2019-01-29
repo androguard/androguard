@@ -82,6 +82,9 @@ class SessionTest(unittest.TestCase):
 
     def testSessionClassesDex(self):
         """Test if all classes.dex are added into the session"""
+        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.analysis.analysis import Analysis
+
         s = session.Session()
 
         # 0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951
@@ -89,9 +92,24 @@ class SessionTest(unittest.TestCase):
         self.assertEqual(x, "0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951")
         self.assertIn('0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951', s.analyzed_dex)
 
+        dexfiles = list(s.get_objects_dex())
+
+        self.assertEqual(len(dexfiles), 1)
+        df = dexfiles[0]
+        self.assertEqual(df[0], "0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951")
+        self.assertIsInstance(df[1], DalvikVMFormat)
+        self.assertIsInstance(df[2], Analysis)
+        self.assertIn(df[1], df[2].vms)
+
         x = s.add("examples/android/TestsAndroguard/bin/TestActivity.apk")
         self.assertEqual(x, '3bb32dd50129690bce850124ea120aa334e708eaa7987cf2329fd1ea0467a0eb')
         self.assertIn('2f24538b3064f1f88d3eb29ee7fbd2146779a4c9144aefa766d18965be8775c7', s.analyzed_dex)
+
+        dexfiles = list(s.get_objects_dex())
+        self.assertEqual(len(dexfiles), 2)
+        self.assertEqual(sorted(['0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951',
+            '2f24538b3064f1f88d3eb29ee7fbd2146779a4c9144aefa766d18965be8775c7']),
+            sorted(map(lambda x: x[0], dexfiles)))
 
 
 if __name__ == '__main__':

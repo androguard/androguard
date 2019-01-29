@@ -393,16 +393,8 @@ class Session(object):
         """
         Return all dex objects inclduing their Analysis objects
 
-        DalvikVMFormats might appear twice, if added to multiple Analysis
-        objects.
-
         :returns: tuple of (sha256, DalvikVMFormat, Analysis)
         """
-        seen = []
-        for digest, d in self.analyzed_vms.items():
-            if dx in seen:
-                continue
-            seen.append(dx)
-            for vm in dx.vms:
-                yield digest, vm, dx
+        for digest, d in self.analyzed_dex.items():
+            yield digest, d, self.analyzed_vms[digest]
 
