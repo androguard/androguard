@@ -19,7 +19,6 @@ import binascii
 import time
 from struct import pack, unpack, calcsize
 import logging
-import binascii
 import warnings
 
 log = logging.getLogger("androguard.dvm")

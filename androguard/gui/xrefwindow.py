@@ -204,6 +204,7 @@ class XrefDialog(QtWidgets.QDialog):
             log.warning("Bad XrefDialog creation")
             return
 
+        # FIXME: what is path???
         if not method:
             title = "Xrefs to %s" % path.split("/")[-1]
         else:

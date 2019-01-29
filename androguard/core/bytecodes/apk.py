@@ -17,7 +17,6 @@ import zipfile
 import logging
 from struct import unpack
 import hashlib
-import binascii
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
