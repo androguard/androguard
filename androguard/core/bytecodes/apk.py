@@ -221,9 +221,14 @@ class APK(object):
         """
         This class can access to all elements in an APK file
 
+        example::
+
+            APK("myfile.apk")
+            APK(read("myfile.apk"), raw=True)
+
         :param filename: specify the path of the file, or raw data
         :param raw: specify if the filename is a path or raw data (optional)
-        :param magic_file: specify the magic file (optional)
+        :param magic_file: specify the magic file (not used anymore - legacy only)
         :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
         :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
 
@@ -233,10 +238,10 @@ class APK(object):
         :type skip_analysis: boolean
         :type testzip: boolean
 
-        :Example:
-            APK("myfile.apk")
-            APK(read("myfile.apk"), raw=True)
         """
+        if magic_file:
+            log.warning("You set magic_file but this parameter is actually unused. You should remove it.")
+
         self.filename = filename
 
         self.xml = {}
@@ -249,7 +254,7 @@ class APK(object):
         self.uses_permissions = []
         self.declared_permissions = {}
         self.valid_apk = False
-        
+
         self._is_signed_v2 = None
         self._is_signed_v3 = None
         self._v2_blocks = {}
@@ -258,8 +263,6 @@ class APK(object):
 
         self._files = {}
         self.files_crc32 = {}
-
-        self.magic_file = magic_file
 
         if raw is True:
             self.__raw = bytearray(filename)
@@ -609,46 +612,31 @@ class APK(object):
         :param buffer: bytes
         :return: str of filetype
         """
-        # TODO this functions should be better in another package
         default = "Unknown"
         ftype = None
 
-        # There are several implementations of magic,
-        # unfortunately all called magic
         try:
+            # Magic is optional
             import magic
         except ImportError:
-            # no lib magic at all, return unknown
             return default
 
         try:
-            # We test for the python-magic package here
+            # There are several implementations of magic,
+            # unfortunately all called magic
+            # We use this one: https://github.com/ahupp/python-magic/
             getattr(magic, "MagicException")
         except AttributeError:
-            try:
-                # Check for filemagic package
-                getattr(magic.Magic, "id_buffer")
-            except AttributeError:
-                # Here, we load the file-magic package
-                ms = magic.open(magic.MAGIC_NONE)
-                ms.load()
-                ftype = ms.buffer(buffer[:1024 * 1024])
-            else:
-                # This is now the filemagic package
-                if self.magic_file is not None:
-                    m = magic.Magic(paths=[self.magic_file])
-                else:
-                    m = magic.Magic()
-                ftype = m.id_buffer(buffer[:1024 * 1024])
-        else:
-            # This is the code for python-magic
-            if self.magic_file is not None:
-                m = magic.Magic(magic_file=self.magic_file)
-            else:
-                m = magic.Magic()
-            ftype = m.from_buffer(buffer[:1024 * 1024])
+            # Looks like no magic was installed
+            return default
 
-        if ftype is None:
+        try:
+            ftype = magic.from_buffer(buffer[:1024])
+        except magic.MagicError as e:
+            log.exception("Error getting the magic type!")
+            return default
+
+        if not ftype:
             return default
         else:
             return self._patch_magic(buffer, ftype)
@@ -674,6 +662,7 @@ class APK(object):
                 buffer = self.zip.read(i)
                 self.files_crc32[i] = crc32(buffer)
                 # FIXME why not use the crc from the zipfile?
+                # should be validated as well.
                 #crc = self.zip.getinfo(i).CRC
                 self._files[i] = self._get_file_magic_name(buffer)
 
@@ -687,12 +676,10 @@ class APK(object):
         :param orig: guess by mime libary
         :return: corrected guess
         """
-        if ("Zip" in orig) or ("DBase" in orig):
+        if ("Zip" in orig) or ('(JAR)' in orig):
             val = androconf.is_android_raw(buffer)
             if val == "APK":
                 return "Android application package file"
-            elif val == "AXML":
-                return "Android's binary XML"
 
         return orig
 
