@@ -639,5 +639,13 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_app_name(), 'Android System')
         self.assertEqual(a.get_package(), 'android')
 
+    def testMagic(self):
+        """Test if the correct magic package is installed"""
+        import magic
+
+        self.assertTrue(hasattr(magic, 'MagicException'))
+        self.assertTrue(hasattr(magic, 'from_buffer'))
+
+
 if __name__ == '__main__':
     unittest.main(failfast=True)
