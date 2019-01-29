@@ -13,7 +13,6 @@ python:
   - "3.5"
   - "2.7"
   - "3.4"
-  - "nightly"
   - "3.8-dev"
 # command to install dependencies
 install:
@@ -33,13 +32,6 @@ script:
       androarsc.py -i $f -t string -o /dev/null || true;
       done
   - python setup.py build_sphinx
-
-notifications:
-  email:
-    recipients:
-      - desnos@t0t0.fr
-    on_success: always
-    on_failure: always
 
 after_success:
   - codecov
