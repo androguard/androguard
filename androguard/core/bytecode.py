@@ -688,6 +688,19 @@ class BuffHandle(object):
         self.__buff = bytearray(buff)
         self.__idx = 0
 
+    def __getitem__(self, item):
+        """
+        Get the byte at the position `item`
+
+        :param int item: offset in the buffer
+        :returns: byte at the position
+        :rtype: int
+        """
+        return self.__buff[item]
+
+    def __len__(self):
+        return self.size()
+
     def size(self):
         """
         Get the total size of the buffer
@@ -695,6 +708,12 @@ class BuffHandle(object):
         :rtype: int
         """
         return len(self.__buff)
+
+    def length_buff(self):
+        """
+        Alias for :meth:`size`
+        """
+        return self.size()
 
     def set_idx(self, idx):
         """
@@ -711,6 +730,14 @@ class BuffHandle(object):
         :rtype: int
         """
         return self.__idx
+
+    def add_idx(self, idx):
+        """
+        Advance the current offset by `idx`
+
+        :param int idx: number of bytes to advance
+        """
+        self.__idx += idx
 
     def tell(self):
         """
@@ -756,6 +783,18 @@ class BuffHandle(object):
         """
         return self.__buff[offset:offset + size]
 
+    def readat(self, off):
+        """
+        Read all bytes from the start of `off` until the end of the buffer
+
+        :param int off: starting offset
+        :rtype: bytearray
+        """
+        if isinstance(off, SV):
+            off = off.value
+
+        return self.__buff[off:]
+
     def read(self, size):
         """
         Read from the current offset a total number of `size` bytes
@@ -780,6 +819,33 @@ class BuffHandle(object):
         """
         return self.__idx >= len(self.__buff)
 
+    def get_buff(self):
+        """
+        Return the whole buffer
+
+        :rtype: bytearray
+        """
+        return self.__buff
+
+    def set_buff(self, buff):
+        """
+        Overwrite the current buffer with the content of `buff`
+
+        :param bytearray buff: the new buffer
+        """
+        self.__buff = buff
+
+    def save(self, filename):
+        """
+        Save the current buffer to `filename`
+
+        Exisiting files with the same name will be overwritten.
+
+        :param str filename: the name of the file to save to
+        """
+        with open(filename, "wb") as fd:
+            fd.write(buff)
+
 
 class Buff(object):
     def __init__(self, offset, buff):
@@ -789,66 +855,8 @@ class Buff(object):
         self.size = len(buff)
 
 
-class _Bytecode(object):
-    """
-    .. todo::
-
-        merge with BuffHandle
-    """
-
-    def __init__(self, buff):
-        self.__buff = bytearray(buff)
-        self.__idx = 0
-
-    def __getitem__(self, item):
-        return self.__buff[item]
-
-    def __len__(self):
-        return len(self.__buff)
-
-    def read(self, size):
-        if isinstance(size, SV):
-            size = size.value
-
-        buff = self.__buff[self.__idx:self.__idx + size]
-        self.__idx += size
-
-        return buff
-
-    def readat(self, off):
-        if isinstance(off, SV):
-            off = off.value
-
-        return self.__buff[off:]
-
-    def read_b(self, size):
-        return self.__buff[self.__idx:self.__idx + size]
-
-    def set_idx(self, idx):
-        self.__idx = idx
-
-    def get_idx(self):
-        return self.__idx
-
-    def add_idx(self, idx):
-        self.__idx += idx
-
-    def register(self, type_register, fct):
-        self.__registers[type_register].append(fct)
-
-    def get_buff(self):
-        return self.__buff
-
-    def length_buff(self):
-        return len(self.__buff)
-
-    def set_buff(self, buff):
-        self.__buff = buff
-
-    def save(self, filename):
-        buff = self._save()
-        with open(filename, "wb") as fd:
-            fd.write(buff)
+# Here for legacy reasons. Might get removed some day...
+_Bytecode = BuffHandle
 
 
 def FormatClassToJava(i):
