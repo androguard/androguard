@@ -5,9 +5,11 @@ import queue
 import threading
 import time
 import zlib
+import multiprocessing
+
 
 from androguard.core import androconf
-from androguard.core.bytecodes import apk, dvm
+from androguard.core.bytecodes import apk, dvm, axml
 from androguard.core.analysis import analysis
 from androguard.util import read
 
@@ -19,11 +21,56 @@ class AndroAuto(object):
     """
     The main class which analyse automatically android apps by calling methods
     from a specific object
+
+    Automatic analysis is highly integrated into `androconf` and requires two
+    objects to be created:
+
+    1) a Logger, found at key `log` in the settings
+    2) a Analysis Runner, found at key `my` in the settings
+
+    example::
+
+        from androguard.core.analysis import auto
+
+
+        class AndroLog(object):
+            # This is the Logger
+            def __init__(self, id_file, filename):
+                self.id_file = id_file
+                self.filename = filename
+
+
+        class AndroTest(auto.DirectoryAndroAnalysis):
+            # This is the Test Runner
+            def analysis_app(self, log, apkobj, dexobj, analysisobj):
+                print(log.id_file, log.filename, apkobj, dexobj, analysisobj)
+
+
+        settings = {
+            # The directory should contain some APK files
+            "my": AndroTest('some/directory'),
+            "log": AndroLog,
+            "max_fetcher": 3,
+        }
+
+        aa = auto.AndroAuto(settings)
+        aa.go()
+
     :param settings: the settings of the analysis
     :type settings: dict
     """
 
     def __init__(self, settings):
+        if not "my" in settings:
+            raise ValueError("'my' object not found in settings!")
+
+        if not "log" in settings:
+            raise ValueError("'log' object not found in settings!")
+
+        if not "max_fetcher" in settings:
+            settings["max_fetcher"] = multiprocessing.cpu_count()
+            l.warning("No maximum number of threads found, setting MAX_CPU: {}".format(settings["max_fetcher"]))
+
         self.settings = settings
 
     def dump(self):
@@ -45,6 +92,9 @@ class AndroAuto(object):
         myandro = self.settings["my"]
 
         def worker(idx, q):
+            """
+            Worker Thread
+            """
             l.debug("Running worker-%d" % idx)
 
             while True:
@@ -59,8 +109,8 @@ class AndroAuto(object):
 
                     is_analysis_dex, is_analysis_adex = True, True
                     l.debug("(worker-%d) filtering file %d" % (idx, id_file))
-                    filter_file_ret, filter_file_type = myandro.filter_file(
-                        logf, fileraw)
+                    filter_file_ret, filter_file_type = myandro.filter_file(logf, fileraw)
+
                     if filter_file_ret:
                         l.debug("(worker-%d) analysis %s" % (id_file, filter_file_type))
 
@@ -101,11 +151,13 @@ class AndroAuto(object):
                 q.task_done()
 
         q = queue.Queue(self.settings["max_fetcher"])
+
         for i in range(self.settings["max_fetcher"]):
             t = threading.Thread(target=worker, args=[i, q])
             t.daemon = True
             t.start()
 
+        # FIXME: Busy waiting with sleep...
         terminated = True
         while terminated:
             terminated = myandro.fetcher(q)
@@ -129,9 +181,11 @@ class DefaultAndroAnalysis(object):
         This method is called to fetch a new app in order to analyse it. The queue
         must be fill with the following format: (filename, raw)
 
+        must return False if the queue is filled.
+
         :param q: the Queue to put new app
         """
-        pass
+        return False
 
     def filter_file(self, log, fileraw):
         """
@@ -153,9 +207,9 @@ class DefaultAndroAnalysis(object):
 
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw axml (a string)
-        :rtype: an :class:`APK` object
+        :rtype: an :class:`AXMLPrinter` object
         """
-        return apk.AXMLPrinter(fileraw)
+        return axml.AXMLPrinter(fileraw)
 
     def create_arsc(self, log, fileraw):
         """
@@ -164,9 +218,9 @@ class DefaultAndroAnalysis(object):
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw arsc (a string)
 
-        :rtype: an :class:`APK` object
+        :rtype: an :class:`ARSCParser` object
         """
-        return apk.ARSCParser(fileraw)
+        return axml.ARSCParser(fileraw)
 
     def create_apk(self, log, fileraw):
         """
@@ -325,19 +379,16 @@ class DefaultAndroAnalysis(object):
 
 class DirectoryAndroAnalysis(DefaultAndroAnalysis):
     """
-    A simple class example to analyse a directory
+    A simple class example to analyse a whole directory with many APKs in it
     """
 
     def __init__(self, directory):
         self.directory = directory
 
     def fetcher(self, q):
-        for root, dirs, files in os.walk(self.directory, followlinks=True):
-            if files:
-                for f in files:
-                    real_filename = root
-                    if real_filename[-1] != "/":
-                        real_filename += "/"
-                    real_filename += f
-                    q.put((real_filename, read(real_filename)))
+        for root, _, files in os.walk(self.directory, followlinks=True):
+            for f in files:
+                real_filename = os.path.join(root, f)
+                q.put((real_filename, read(real_filename)))
         return False
+
