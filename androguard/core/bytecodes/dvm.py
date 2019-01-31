@@ -19,7 +19,6 @@ import binascii
 import time
 from struct import pack, unpack, calcsize
 import logging
-import binascii
 import warnings
 
 log = logging.getLogger("androguard.dvm")
@@ -7519,7 +7518,7 @@ class MapList(object):
         return len(self.get_raw())
 
 
-class DalvikVMFormat(bytecode._Bytecode):
+class DalvikVMFormat(bytecode.BuffHandle):
     """
     This class can parse a classes.dex file of an Android application (APK).
 
@@ -7528,8 +7527,9 @@ class DalvikVMFormat(bytecode._Bytecode):
     :type buff: string
     :type decompiler: object
 
-    :Example:
-      DalvikVMFormat( read("classes.dex") )
+    example::
+
+        d = DalvikVMFormat( read("classes.dex") )
     """
 
     def __init__(self, buff, decompiler=None, config=None, using_api=None):

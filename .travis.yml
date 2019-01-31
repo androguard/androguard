@@ -1,4 +1,5 @@
 language: python
+dist: xenial
 
 # Download jadx decompiler
 before_script:
@@ -8,13 +9,14 @@ before_script:
 
 python:
   - "3.6"
+  - "3.7"
   - "3.5"
   - "2.7"
   - "3.4"
-  - "nightly"
+  - "3.8-dev"
 # command to install dependencies
 install:
-  - "pip install .[tests,docs]"
+  - "pip install .[tests,docs,magic]"
 # command to run tests
 script:
   - nosetests --with-coverage --with-timer --timer-top-n 50 --logging-level CRITICAL
@@ -30,13 +32,6 @@ script:
       androarsc.py -i $f -t string -o /dev/null || true;
       done
   - python setup.py build_sphinx
-
-notifications:
-  email:
-    recipients:
-      - desnos@t0t0.fr
-    on_success: always
-    on_failure: always
 
 after_success:
   - codecov

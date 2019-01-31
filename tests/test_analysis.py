@@ -61,7 +61,50 @@ class AnalysisTest(unittest.TestCase):
         cls = list(map(lambda x: x.get_vm_class().get_name(), dx.get_classes()))
         self.assertIn('Lcom/foobar/foo/Foobar;', cls)
         self.assertIn('Lcom/blafoo/bar/Blafoo;', cls)
-        # TODO
+
+
+    def testMultiDexExternal(self):
+        """
+        Test if classes are noted as external if not both zips are opened
+        """
+        from zipfile import ZipFile
+
+        with ZipFile("examples/tests/multidex/multidex.apk") as myzip:
+            c1 = myzip.read("classes.dex")
+            c2 = myzip.read("classes2.dex")
+
+        d1 = dvm.DalvikVMFormat(c1)
+        d2 = dvm.DalvikVMFormat(c2)
+
+        dx = analysis.Analysis()
+
+        dx.add(d1)
+
+        # Both classes should be in the analysis, but only the fist is internal
+        self.assertIn("Lcom/foobar/foo/Foobar;", dx.classes)
+        self.assertFalse(dx.classes["Lcom/foobar/foo/Foobar;"].is_external())
+        self.assertNotIn("Lcom/blafoo/bar/Blafoo;", dx.classes)
+
+        dx = analysis.Analysis()
+        dx.add(d2)
+        self.assertIn("Lcom/blafoo/bar/Blafoo;", dx.classes)
+        self.assertFalse(dx.classes["Lcom/blafoo/bar/Blafoo;"].is_external())
+        self.assertNotIn("Lcom/foobar/foo/Foobar;", dx.classes)
+
+        # Now we "see" the reference to Foobar
+        dx.create_xref()
+        self.assertIn("Lcom/foobar/foo/Foobar;", dx.classes)
+        self.assertTrue(dx.classes["Lcom/foobar/foo/Foobar;"].is_external())
+
+        dx = analysis.Analysis()
+        dx.add(d1)
+        dx.add(d2)
+
+        self.assertIn("Lcom/blafoo/bar/Blafoo;", dx.classes)
+        self.assertFalse(dx.classes["Lcom/blafoo/bar/Blafoo;"].is_external())
+        self.assertIn("Lcom/foobar/foo/Foobar;", dx.classes)
+        self.assertFalse(dx.classes["Lcom/foobar/foo/Foobar;"].is_external())
+
 
     def testInterfaces(self):
         h, d, dx = AnalyzeDex('examples/tests/InterfaceCls.dex')

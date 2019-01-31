@@ -13,7 +13,7 @@ from androguard.util import read
 
 import logging
 
-log = logging.getLogger("androguard.auto")
+l = logging.getLogger("androguard.auto")
 
 class AndroAuto(object):
     """
@@ -45,7 +45,7 @@ class AndroAuto(object):
         myandro = self.settings["my"]
 
         def worker(idx, q):
-            log.debug("Running worker-%d" % idx)
+            l.debug("Running worker-%d" % idx)
 
             while True:
                 a, d, dx, axmlobj, arscobj = None, None, None, None, None
@@ -53,50 +53,49 @@ class AndroAuto(object):
                     filename, fileraw = q.get()
                     id_file = zlib.adler32(fileraw)
 
-                    log.debug("(worker-%d) get %s %d" % (idx, filename, id_file))
+                    l.debug("(worker-%d) get %s %d" % (idx, filename, id_file))
 
-                    log = self.settings["log"](id_file, filename)
+                    logf = self.settings["log"](id_file, filename)
 
                     is_analysis_dex, is_analysis_adex = True, True
-                    log.debug("(worker-%d) filtering file %d" % (idx, id_file))
+                    l.debug("(worker-%d) filtering file %d" % (idx, id_file))
                     filter_file_ret, filter_file_type = myandro.filter_file(
-                        log, fileraw)
+                        logf, fileraw)
                     if filter_file_ret:
-                        log.debug("(worker-%d) analysis %s" %
-                              (id_file, filter_file_type))
+                        l.debug("(worker-%d) analysis %s" % (id_file, filter_file_type))
 
                         if filter_file_type == "APK":
-                            a = myandro.create_apk(log, fileraw)
-                            is_analysis_dex = myandro.analysis_apk(log, a)
+                            a = myandro.create_apk(logf, fileraw)
+                            is_analysis_dex = myandro.analysis_apk(logf, a)
                             fileraw = a.get_dex()
                             filter_file_type = androconf.is_android_raw(fileraw)
 
                         elif filter_file_type == "AXML":
-                            axmlobj = myandro.create_axml(log, fileraw)
-                            myandro.analysis_axml(log, axmlobj)
+                            axmlobj = myandro.create_axml(logf, fileraw)
+                            myandro.analysis_axml(logf, axmlobj)
 
                         elif filter_file_type == "ARSC":
-                            arscobj = myandro.create_arsc(log, fileraw)
-                            myandro.analysis_arsc(log, arscobj)
+                            arscobj = myandro.create_arsc(logf, fileraw)
+                            myandro.analysis_arsc(logf, arscobj)
 
                         if is_analysis_dex and filter_file_type == "DEX":
-                            d = myandro.create_dex(log, fileraw)
-                            is_analysis_adex = myandro.analysis_dex(log, d)
+                            d = myandro.create_dex(logf, fileraw)
+                            is_analysis_adex = myandro.analysis_dex(logf, d)
 
                         elif is_analysis_dex and filter_file_type == "DEY":
-                            d = myandro.create_dey(log, fileraw)
-                            is_analysis_adex = myandro.analysis_dey(log, d)
+                            d = myandro.create_dey(logf, fileraw)
+                            is_analysis_adex = myandro.analysis_dey(logf, d)
 
                         if is_analysis_adex and d:
-                            dx = myandro.create_adex(log, d)
-                            myandro.analysis_adex(log, dx)
+                            dx = myandro.create_adex(logf, d)
+                            myandro.analysis_adex(logf, dx)
 
-                        myandro.analysis_app(log, a, d, dx)
+                        myandro.analysis_app(logf, a, d, dx)
 
-                    myandro.finish(log)
+                    myandro.finish(logf)
                 except Exception as why:
-                    myandro.crash(log, why)
-                    myandro.finish(log)
+                    myandro.crash(logf, why)
+                    myandro.finish(logf)
 
                 del a, d, dx, axmlobj, arscobj
                 q.task_done()
