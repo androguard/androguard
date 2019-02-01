@@ -109,9 +109,8 @@ class AndroAuto:
             """
             l.debug("Running worker-%d" % idx)
 
-            # FIXME this loop will exit through the exception of q.get(), when
-            # the Queue is empty. Posible Race condition while filling the Queue
             while True:
+                print("in the loop")
                 a, d, dx, axmlobj, arscobj = None, None, None, None, None
                 try:
                     filename, fileraw = q.get()
@@ -443,5 +442,5 @@ class DefaultAndroLog:
         self.filename = filename
 
     def __str__(self):
-        return "<auto log {:08x} ''>".format(self.id_file, self.filename)
+        return "<AutoLog {:08x} '{}'>".format(self.id_file, self.filename)
 

@@ -119,7 +119,8 @@ Next, a minimal working example is given:
         import sys
 
         class AndroTest(auto.DirectoryAndroAnalysis):
-            def __init__(self):
+            def __init__(self, path):
+               super(AndroTest, self).__init__(path)
                self.has_crashed = False
 
             def analysis_app(self, log, apkobj, dexobj, analysisobj):
