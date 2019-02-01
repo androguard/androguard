@@ -293,10 +293,10 @@ class DefaultAndroAnalysis:
 
     def create_adex(self, log, dexobj):
         """
-        This method is called in order to create a VMAnalysis object
+        This method is called in order to create an Analysis object
 
         :param log: an object which corresponds to a unique app
-        :param dexobj: a :class:`DalvikVMFormat` object
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat dexobj: a :class:`DalvikVMFormat` object
 
         :rytpe: a :class:`~androguard.core.analysis.analysis.Analysis` object
         """
@@ -321,7 +321,7 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param androguard.core.bytecodes.arsc.ARSCParser arscobj: a :class:`ARSCParser` object
+        :param androguard.core.bytecodes.axml.ARSCParser arscobj: a :class:`ARSCParser` object
 
         :returns: True if the analysis should continue afterwards
         :rtype: bool
@@ -345,7 +345,7 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param androguard.core.bytecodes.DalvikVMFormat dexobj: a :class:`DalvikVMFormat` object
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat dexobj: a :class:`DalvikVMFormat` object
 
         :returns: True if the analysis should continue with an analysis.Analysis
         :rtype: bool
@@ -357,7 +357,7 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param androguard.core.bytecodes.DalvikOdexVMFormat deyobj: a :class:`DalvikOdexVMFormat` object
+        :param androguard.core.bytecodes.dvm.DalvikOdexVMFormat deyobj: a :class:`DalvikOdexVMFormat` object
 
         :returns: True if the analysis should continue with an analysis.Analysis
         :rtype: bool
@@ -369,7 +369,7 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param adexobj: a :class:`VMAnalysis` object
+        :param androguard.core.analysis.analysis.Analysis adexobj: a :class:`Analysis` object
 
         :rtype: a boolean
         """
@@ -380,9 +380,9 @@ class DefaultAndroAnalysis:
         This method is called if you wish to analyse the final app
 
         :param log: an object which corresponds to a unique app
-        :param apkobj: a :class:`APK` object
-        :param dexobj: a :class:`DalvikVMFormat` object
-        :param adexobj: a :class:`VMAnalysis` object
+        :param androguard.core.bytecodes.apk.APK apkobj: a :class:`APK` object
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat dexobj: a :class:`DalvikVMFormat` object
+        :param androguard.core.analysis.analysis.Analysis adexobj: a :class:`Analysis` object
         """
         pass
 
