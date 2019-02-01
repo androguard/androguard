@@ -93,3 +93,69 @@ which results in much smaller files:
 
 Obviously, as the APK is already packed, there is not much to compress anymore.
 
+
+Using AndroAuto
+---------------
+
+Another method is to use the framework `AndroAuto`.
+AndroAuto allows you to write small python classes which implement some method,
+which are then called by AndroAuto at certain points in time.
+AndroAuto is capable of analysing thousands of apps, and uses threading to
+distribute the load to multiple CPUs. The results of your analysis can then be
+dumped to disk, or you could write your own method of saving them - for example,
+in a database.
+
+The two key components are a Logger, for example
+:class:`~androguard.core.analysis.auto.DefaultAndroLog` and an Analysis Runner,
+for example :class:`~androguard.core.analysis.auto.DefaultAndroAnalysis`.
+Both are passed via a settings dictionary into
+:class:`~androguard.core.analysis.auto.AndroAuto`.
+
+Next, a minimal working example is given:
+
+.. code-block:: python
+
+        from androguard.core.analysis import auto
+        import sys
+
+        class AndroTest(auto.DirectoryAndroAnalysis):
+            def __init__(self, path):
+               super(AndroTest, self).__init__(path)
+               self.has_crashed = False
+
+            def analysis_app(self, log, apkobj, dexobj, analysisobj):
+                # Just print all objects to stdout
+                print(log.id_file, log.filename, apkobj, dexobj, analysisobj)
+
+            def finish(self, log):
+               # This method can be used to save information in `log`
+               # finish is called regardless of a crash, so maybe store the
+               # information somewhere
+               if self.has_crashed:
+                  print("Analysis of {} has finished with Errors".format(log))
+               else:
+                  print("Analysis of {} has finished!".format(log))
+
+            def crash(self, log, why):
+               # If some error happens during the analysis, this method will be
+               # called
+               self.has_crashed = True
+               print("Error during analysis of {}: {}".format(log, why), file=sys.stderr)
+
+        settings = {
+            # The directory `some/directory` should contain some APK files
+            "my": AndroTest('some/directory'),
+            # Use the default Logger
+            "log": auto.DefaultAndroLog,
+            # Use maximum of 2 threads
+            "max_fetcher": 2,
+        }
+
+        aa = auto.AndroAuto(settings)
+        aa.go()
+
+
+In this example, the :meth:`~androguard.core.analysis.auto.DefaultAndroAnalysis.analysis_app` function is used to get all created objects
+of the analysis and just print them to stdout.
+
+More information can be found in the documentation of :class:`~androguard.core.analysis.auto.AndroAuto`.

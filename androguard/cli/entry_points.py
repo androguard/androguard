@@ -331,12 +331,12 @@ def cg(output,
 @click.option(
     '--input', '-i', 'input_',
     type=click.Path(exists=True),
-    help='resources.arsc or APK to parse (legacy option)',
+    help='APK to parse (legacy option)',
 )
 @click.argument(
     'file_',
     type=click.Path(exists=True),
-    # help='resources.arsc or APK to parse',
+    # help='APK to parse',
     required=False,
 )
 @click.option(

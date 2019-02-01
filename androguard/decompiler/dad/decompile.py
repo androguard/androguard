@@ -47,6 +47,9 @@ from androguard.decompiler.dad.writer import Writer
 from androguard.util import read
 
 
+logger = logging.getLogger('dad')
+
+
 def auto_vm(filename):
     ret = androconf.is_android(filename)
     if ret == 'APK':
@@ -236,12 +239,11 @@ class DvClass(object):
         self.superclass = dvclass.get_superclassname()
         self.thisclass = dvclass.get_name()
 
-        logger.info('Class : %s', self.name)
-        logger.info('Methods added :')
+        logger.debug('Class : %s', self.name)
+        logger.debug('Methods added :')
         for meth in self.methods:
-            logger.info('%s (%s, %s)', meth.get_method_idx(), self.name,
-                        meth.name)
-        logger.info('')
+            logger.debug('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
+        logger.debug('')
 
     def get_methods(self):
         return self.methods
@@ -429,7 +431,7 @@ class DvMachine(object):
 
     def process(self):
         for name, klass in self.classes.items():
-            logger.info('Processing class: %s', name)
+            logger.debug('Processing class: %s', name)
             if isinstance(klass, DvClass):
                 klass.process()
             else:
@@ -442,14 +444,13 @@ class DvMachine(object):
 
     def process_and_show(self):
         for name, klass in sorted(self.classes.items()):
-            logger.info('Processing class: %s', name)
+            logger.debug('Processing class: %s', name)
             if not isinstance(klass, DvClass):
                 klass = DvClass(klass, self.vma)
             klass.process()
             klass.show_source()
 
 
-logger = logging.getLogger('dad')
 sys.setrecursionlimit(5000)
 
 
