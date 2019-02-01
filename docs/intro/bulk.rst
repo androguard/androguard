@@ -109,7 +109,7 @@ The two key components are a Logger, for example
 :class:`~androguard.core.analysis.auto.DefaultAndroLog` and an Analysis Runner,
 for example :class:`~androguard.core.analysis.auto.DefaultAndroAnalysis`.
 Both are passed via a settings dictionary into
-:class:`~androguard.core.analysis.AndroAuto`.
+:class:`~androguard.core.analysis.auto.AndroAuto`.
 
 Next, a minimal working example is given:
 

@@ -5,14 +5,12 @@ import threading
 import time
 import zlib
 import multiprocessing
-
+import logging
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk, dvm, axml
 from androguard.core.analysis import analysis
 from androguard.util import read
-
-import logging
 
 l = logging.getLogger("androguard.auto")
 
@@ -139,10 +137,12 @@ class AndroAuto:
 
                         elif filter_file_type == "AXML":
                             axmlobj = myandro.create_axml(logf, fileraw)
+                            # TODO: the return value of analysis_axml is not checked
                             myandro.analysis_axml(logf, axmlobj)
 
                         elif filter_file_type == "ARSC":
                             arscobj = myandro.create_arsc(logf, fileraw)
+                            # TODO: the return value of analysis_arsc is not checked
                             myandro.analysis_arsc(logf, arscobj)
 
                         if is_analysis_dex and filter_file_type == "DEX":
@@ -156,6 +156,7 @@ class AndroAuto:
                         if is_analysis_adex and d:
                             # TODO: Support multidex here
                             dx = myandro.create_adex(logf, d)
+                            # TODO: The return value of analysis_adex is not checked
                             myandro.analysis_adex(logf, dx)
 
                         # TODO: this is called also if AXML or ARSC is set...
@@ -227,8 +228,8 @@ class DefaultAndroAnalysis:
         This method is called in order to filer a specific app
 
         :param log: an object which corresponds to a unique app
-        :param fileraw: the raw app (a string)
-        :rtype: a set with 2 elements, the return value (boolean) if it is necessary to
+        :param bytes fileraw: the raw file as bytes
+        :rtype: a tuple with 2 elements, the return value (boolean) if it is necessary to
                 continue the analysis and the file type
         """
         file_type = androconf.is_android_raw(fileraw)
@@ -242,7 +243,7 @@ class DefaultAndroAnalysis:
 
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw axml (a string)
-        :rtype: an :class:`AXMLPrinter` object
+        :rtype: an :class:`~androguard.core.bytecodes.axml.AXMLPrinter` object
         """
         return axml.AXMLPrinter(fileraw)
 
@@ -253,7 +254,7 @@ class DefaultAndroAnalysis:
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw arsc (a string)
 
-        :rtype: an :class:`ARSCParser` object
+        :rtype: an :class:`~androguard.core.bytecodes.axml.ARSCParser` object
         """
         return axml.ARSCParser(fileraw)
 
@@ -264,7 +265,7 @@ class DefaultAndroAnalysis:
         :param log: an object which corresponds to a unique app
         :param fileraw: the raw apk (a string)
 
-        :rtype: an :class:`APK` object
+        :rtype: an :class:`~androguard.core.bytecodes.apk.APK` object
         """
         return apk.APK(fileraw, raw=True)
 
@@ -275,7 +276,7 @@ class DefaultAndroAnalysis:
         :param log: an object which corresponds to a unique app
         :param dexraw: the raw classes.dex (a string)
 
-        :rtype: a :class:`DalvikVMFormat` object
+        :rtype: a :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` object
         """
         return dvm.DalvikVMFormat(dexraw)
 
@@ -286,7 +287,7 @@ class DefaultAndroAnalysis:
         :param log: an object which corresponds to a unique app
         :param dexraw: the raw odex file (a string)
 
-        :rtype: a :class:`DalvikOdexVMFormat` object
+        :rtype: a :class:`~androguard.core.bytecodes.dvm.DalvikOdexVMFormat` object
         """
         return dvm.DalvikOdexVMFormat(dexraw)
 
@@ -297,7 +298,7 @@ class DefaultAndroAnalysis:
         :param log: an object which corresponds to a unique app
         :param dexobj: a :class:`DalvikVMFormat` object
 
-        :rytpe: a :class:`Analysis` object
+        :rytpe: a :class:`~androguard.core.analysis.analysis.Analysis` object
         """
         vm_analysis = analysis.Analysis(dexobj)
         vm_analysis.create_xref()
@@ -308,9 +309,10 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param axmlobj: a :class:`AXMLPrinter` object
+        :param androguard.core.bytecodes.axml.AXMLPrinter axmlobj: a :class:`AXMLPrinter` object
 
-        :rtype: a boolean
+        :returns: True if the analysis should continue afterwards
+        :rtype: bool
         """
         return True
 
@@ -319,9 +321,10 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param arscobj: a :class:`ARSCParser` object
+        :param androguard.core.bytecodes.arsc.ARSCParser arscobj: a :class:`ARSCParser` object
 
-        :rtype: a boolean
+        :returns: True if the analysis should continue afterwards
+        :rtype: bool
         """
         return True
 
@@ -330,9 +333,10 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param apkobj: a :class:`APK` object
+        :param androguard.core.bytecodes.apk.APK apkobj: a :class:`APK` object
 
-        :rtype: a boolean
+        :returns: True if a DEX file should be analyzed as well
+        :rtype: bool
         """
         return True
 
@@ -341,9 +345,10 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param dexobj: a :class:`DalvikVMFormat` object
+        :param androguard.core.bytecodes.DalvikVMFormat dexobj: a :class:`DalvikVMFormat` object
 
-        :rtype: a boolean
+        :returns: True if the analysis should continue with an analysis.Analysis
+        :rtype: bool
         """
         return True
 
@@ -352,9 +357,10 @@ class DefaultAndroAnalysis:
         This method is called in order to know if the analysis must continue
 
         :param log: an object which corresponds to a unique app
-        :param deyobj: a :class:`DalvikOdexVMFormat` object
+        :param androguard.core.bytecodes.DalvikOdexVMFormat deyobj: a :class:`DalvikOdexVMFormat` object
 
-        :rtype: a boolean
+        :returns: True if the analysis should continue with an analysis.Analysis
+        :rtype: bool
         """
         return True
 
