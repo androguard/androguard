@@ -159,6 +159,7 @@ class AndroAuto:
                             dx = myandro.create_adex(logf, d)
                             myandro.analysis_adex(logf, dx)
 
+                        # TODO: this is called also if AXML or ARSC is set...
                         myandro.analysis_app(logf, a, d, dx)
                         myandro.finish(logf)
 
@@ -200,9 +201,9 @@ class DefaultAndroAnalysis:
 
     * :meth:`fetcher` is called to get files
     * :meth:`filter_file` is called to get the filetype
-    * :meth:`create_apk` or :meth:`create_axml` or :meth:`create_arsc` or
+    * :meth:`create_apk` or :meth:`create_axml` or :meth:`create_arsc` and
       :meth:`create_dex` or :meth:`create_dey` depending on the filetype
-    * :meth:`analysis_apk` or :meth:`analysis_axml` or :meth:`analysis_arsc` or
+    * :meth:`analysis_apk` or :meth:`analysis_axml` or :meth:`analysis_arsc` and
       :meth:`analysis_dex` or :meth:`analysis_dey` depending on the filetype
     * :meth:`create_adex` if at least one dex was found
     * :meth:`analysis_app` with all the gathered objects so far
@@ -384,16 +385,16 @@ class DefaultAndroAnalysis:
         """
         This method is called before the end of the analysis
 
-        :param log: an object which corresponds to a unique app
+        :param log: an object which corresponds to an unique app
         """
         pass
 
     def crash(self, log, why):
         """
-        This method is called if a crash appends
+        This method is called if a crash happens
 
-        :param log: an object which corresponds to a unique app
-        :param why: the string exception
+        :param log: an object which corresponds to an unique app
+        :param why: the exception
         """
         pass
 
