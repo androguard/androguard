@@ -108,7 +108,6 @@ class AndroAuto:
             l.debug("Running worker-%d" % idx)
 
             while True:
-                print("in the loop")
                 a, d, dx, axmlobj, arscobj = None, None, None, None, None
                 try:
                     filename, fileraw = q.get()
