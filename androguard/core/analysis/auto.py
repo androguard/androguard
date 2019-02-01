@@ -1,5 +1,4 @@
 from builtins import range
-from builtins import object
 import os
 import queue
 import threading
@@ -17,40 +16,47 @@ import logging
 
 l = logging.getLogger("androguard.auto")
 
-class AndroAuto(object):
+
+class AndroAuto:
     """
     The main class which analyse automatically android apps by calling methods
     from a specific object
 
-    Automatic analysis is highly integrated into `androconf` and requires two
-    objects to be created:
+    Automatic analysis requires two objects to be created:
 
     1) a Logger, found at key `log` in the settings
-    2) a Analysis Runner, found at key `my` in the settings
+    2) an Analysis runner, found at key `my` in the settings
+
+    Both are passed to :class:`AndroAuto` via a dictionary.
+    The setting dict understands the following keys:
+
+    * `my`: The Analysis runner (required)
+    * `log`: The Logger
+    * `max_fetcher`: Maximum number of concurrent threads
+
+    :class:`DefaultAndroLog` can be used as a baseclass for the Logger, while
+    :class:`DefaultAndroAnalysis` can be used a baseclass for the Analysis.
+    There is also :class:`DirectoryAndroAnalysis` which implements a `fetcher`
+    which recursively reads a directory for files and can be used a baseclass as
+    well.
 
     example::
 
         from androguard.core.analysis import auto
 
-
-        class AndroLog(object):
-            # This is the Logger
-            def __init__(self, id_file, filename):
-                self.id_file = id_file
-                self.filename = filename
-
-
         class AndroTest(auto.DirectoryAndroAnalysis):
             # This is the Test Runner
             def analysis_app(self, log, apkobj, dexobj, analysisobj):
+                # Just print all objects to stdout
                 print(log.id_file, log.filename, apkobj, dexobj, analysisobj)
 
-
         settings = {
-            # The directory should contain some APK files
+            # The directory `some/directory` should contain some APK files
             "my": AndroTest('some/directory'),
-            "log": AndroLog,
-            "max_fetcher": 3,
+            # Use the default Logger
+            "log": auto.DefaultAndroLog,
+            # Use maximum of 2 threads
+            "max_fetcher": 2,
         }
 
         aa = auto.AndroAuto(settings)
@@ -76,18 +82,24 @@ class AndroAuto(object):
     def dump(self):
         """
         Dump the analysis
+
+        Calls `dump()` on the Analysis object
         """
         self.settings["my"].dump()
 
     def dump_file(self, filename):
         """
-        Dump the analysis in a filename
+        Dump the analysis into a file
+
+        Calls `dump_file(filename)` on the Analysis object
         """
         self.settings["my"].dump_file(filename)
 
     def go(self):
         """
-        Launch the analysis
+        Launch the analysis.
+
+        this will start a total of `max_fetcher` threads.
         """
         myandro = self.settings["my"]
 
@@ -97,6 +109,8 @@ class AndroAuto(object):
             """
             l.debug("Running worker-%d" % idx)
 
+            # FIXME this loop will exit through the exception of q.get(), when
+            # the Queue is empty. Posible Race condition while filling the Queue
             while True:
                 a, d, dx, axmlobj, arscobj = None, None, None, None, None
                 try:
@@ -105,10 +119,13 @@ class AndroAuto(object):
 
                     l.debug("(worker-%d) get %s %d" % (idx, filename, id_file))
 
+                    # FIXME: If the try/catch crashes before this line, there
+                    # will be no logf to put into finish.
                     logf = self.settings["log"](id_file, filename)
 
                     is_analysis_dex, is_analysis_adex = True, True
                     l.debug("(worker-%d) filtering file %d" % (idx, id_file))
+                    # TODO: This information should probably also go into the logf?
                     filter_file_ret, filter_file_type = myandro.filter_file(logf, fileraw)
 
                     if filter_file_ret:
@@ -117,6 +134,7 @@ class AndroAuto(object):
                         if filter_file_type == "APK":
                             a = myandro.create_apk(logf, fileraw)
                             is_analysis_dex = myandro.analysis_apk(logf, a)
+                            # TODO: Support multidex here
                             fileraw = a.get_dex()
                             filter_file_type = androconf.is_android_raw(fileraw)
 
@@ -137,14 +155,17 @@ class AndroAuto(object):
                             is_analysis_adex = myandro.analysis_dey(logf, d)
 
                         if is_analysis_adex and d:
+                            # TODO: Support multidex here
                             dx = myandro.create_adex(logf, d)
                             myandro.analysis_adex(logf, dx)
 
                         myandro.analysis_app(logf, a, d, dx)
+                        myandro.finish(logf)
 
-                    myandro.finish(logf)
                 except Exception as why:
                     myandro.crash(logf, why)
+                    # FIXME: finish is called here in any case of an exception
+                    # but is only called if filter_file_ret is true above.
                     myandro.finish(logf)
 
                 del a, d, dx, axmlobj, arscobj
@@ -171,9 +192,23 @@ class AndroAuto(object):
         q.join()
 
 
-class DefaultAndroAnalysis(object):
+class DefaultAndroAnalysis:
     """
     This class can be used as a template in order to analyse apps
+
+    The order of methods called in this class is the following:
+
+    * :meth:`fetcher` is called to get files
+    * :meth:`filter_file` is called to get the filetype
+    * :meth:`create_apk` or :meth:`create_axml` or :meth:`create_arsc` or
+      :meth:`create_dex` or :meth:`create_dey` depending on the filetype
+    * :meth:`analysis_apk` or :meth:`analysis_axml` or :meth:`analysis_arsc` or
+      :meth:`analysis_dex` or :meth:`analysis_dey` depending on the filetype
+    * :meth:`create_adex` if at least one dex was found
+    * :meth:`analysis_app` with all the gathered objects so far
+    * :meth:`finish` is called in any case after the analysis
+
+    :meth:`crash` can be called during analysis if any Exception happens.
     """
 
     def fetcher(self, q):
@@ -181,7 +216,7 @@ class DefaultAndroAnalysis(object):
         This method is called to fetch a new app in order to analyse it. The queue
         must be fill with the following format: (filename, raw)
 
-        must return False if the queue is filled.
+        must return False if the queue is filled, thus all files are read.
 
         :param q: the Queue to put new app
         """
@@ -197,7 +232,7 @@ class DefaultAndroAnalysis(object):
                 continue the analysis and the file type
         """
         file_type = androconf.is_android_raw(fileraw)
-        if file_type == "APK" or file_type == "DEX" or file_type == "DEY" or file_type == "AXML" or file_type == "ARSC":
+        if file_type in ["APK", "DEX", "DEY", "AXML", "ARSC"]:
             return True, file_type
         return False, None
 
@@ -391,4 +426,21 @@ class DirectoryAndroAnalysis(DefaultAndroAnalysis):
                 real_filename = os.path.join(root, f)
                 q.put((real_filename, read(real_filename)))
         return False
+
+
+class DefaultAndroLog:
+    """
+    A base class for the Androguard Auto Logger.
+
+    The Logger contains two attributes of the analyzed File: :py:attr:`filename`
+    and :py:attr:`id_file`, which is the Adler32 Checksum of the file.
+
+    The Logger can be extended to contain more attributes.
+    """
+    def __init__(self, id_file, filename):
+        self.id_file = id_file
+        self.filename = filename
+
+    def __str__(self):
+        return "<auto log {:08x} ''>".format(self.id_file, self.filename)
 

@@ -17,4 +17,3 @@ You can still use the other tools as well, but note that they might get removed 
    androarsc
    androdd
    androdis
-   androauto
