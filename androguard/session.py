@@ -406,20 +406,33 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename, digest=None):
+    def get_objects_apk(self, filename=None, digest=None):
         """
         Returns APK, DalvikVMFormat and Analysis of a specified APK.
+
+        You must specify either `filename` or `digest`.
+        It is possible to use both, but in this case only `digest` is used.
 
         example::
 
             s = Session()
             digest = s.add("some.apk")
-            a, d, dx = s.get_objects_apk("some.apk", digest)
+            a, d, dx = s.get_objects_apk(digest=digest)
+
+        example::
+
+            s = Session()
+            filename = "some.apk"
+            digest = s.add(filename)
+            a, d, dx = s.get_objects_apk(filename=filename)
 
         :param filename: the filename of the APK file, only used of digest is None
         :param digest: the sha256 hash, as returned by :meth:`add` for the APK
         :returns: a tuple of (APK, [DalvikVMFormat], Analysis)
         """
+        if not filename and not digest:
+            raise ValueError("Must give at least filename or digest!")
+
         if digest is None:
             digests = self.analyzed_files.get(filename)
             # Negate to reduce tree
@@ -433,10 +446,11 @@ class Session:
 
     def get_objects_dex(self):
         """
-        Return all dex objects inclduing their Analysis objects
+        Yields all dex objects inclduing their Analysis objects
 
         :returns: tuple of (sha256, DalvikVMFormat, Analysis)
         """
+        # TODO: there is no variant like get_objects_apk
         for digest, d in self.analyzed_dex.items():
             yield digest, d, self.analyzed_vms[digest]
 

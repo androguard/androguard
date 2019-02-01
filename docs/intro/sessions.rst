@@ -28,10 +28,10 @@ The easiest way is to use :func:`~androguard.misc.AnalyzeAPK` with a session:
     # Do stuff...
 
     # Save the session to disk
-    session.Save(sess, "androguard_session.p")
+    session.Save(sess, "androguard_session.ag")
 
     # Load it again
-    sess = session.Load("androguard_session.p")
+    sess = session.Load("androguard_session.ag")
 
 The session information will look like this:
 
@@ -46,8 +46,30 @@ The session information will look like this:
         d5e26acca809e9cdfaece18afd8e63c60a26d7b6d566d70bd9f44d6934d5c433: <analysis.Analysis VMs: 2, Classes: 3092, Strings: 3293>
 
 
-Note, that the session objects store a lot of data and can get very big! It is
-recommended not to use sessions in automated environments, where hundrets or
+Similar functionality is available from the Session directly, but needs a second
+function to retrive the analyzed objects from the Session:
+
+.. code-block:: python
+
+   from androguard.session import Session
+
+   s = Session()
+   sha256 = s.add("examples/android/abcore/app-prod-debug.apk")
+
+   a, d, dx = s.get_objects_apk(digest=sha256)
+
+   s.show()
+
+   # When no filename is given, the Session will be saved at the current directory
+   saved_file = s.save()
+   # ... and return the filename of the Session file
+   print(saved_file)
+
+
+.. note::
+   Session objects store a lot of data and can get very big!
+
+It is recommended not to use sessions in automated environments, where hundrets or
 thousands of APKs are loaded.
 
 If you want to use sessions but keep the session alive only for one or multiple
