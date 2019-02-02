@@ -25,8 +25,6 @@ from builtins import object
 from builtins import range
 from builtins import str
 
-sys.path.append('./')
-
 import logging
 import struct
 from collections import defaultdict
@@ -34,7 +32,7 @@ import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
-from androguard.decompiler.dad.ast import (
+from androguard.decompiler.dad.dast import (
     JSONWriter, parse_descriptor, literal_string, literal_hex_int,
     dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
