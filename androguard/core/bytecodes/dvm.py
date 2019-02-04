@@ -1839,7 +1839,8 @@ class StringDataItem:
         not supported by python.
         """
         s = mutf8.decode(self.data)
-        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        if len(s) != self.utf16_size:
+            raise ValueError("UTF16 Length does not match!")
 
         # Return a UTF16 String
         return s
@@ -1852,7 +1853,8 @@ class StringDataItem:
         Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
         """
         s = mutf8.decode(self.data)
-        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        if len(s) != self.utf16_size:
+            raise ValueError("UTF16 Length does not match!")
         # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
         return mutf8.patch_string(s)
 
