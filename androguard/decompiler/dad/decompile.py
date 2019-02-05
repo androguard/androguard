@@ -1,7 +1,8 @@
 from __future__ import print_function
 
+import logging
+import struct
 import sys
-
 from builtins import input
 from builtins import map
 # This file is part of Androguard.
@@ -24,26 +25,31 @@ from builtins import next
 from builtins import object
 from builtins import range
 from builtins import str
-
-import logging
-import struct
 from collections import defaultdict
+
 import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
 from androguard.core.bytecodes import apk, dvm
-from androguard.decompiler.dad.dast import (
-    JSONWriter, parse_descriptor, literal_string, literal_hex_int,
-    dummy)
 from androguard.decompiler.dad.control_flow import identify_structures
+from androguard.decompiler.dad.dast import (
+    JSONWriter,
+    parse_descriptor,
+    literal_string,
+    literal_hex_int,
+    dummy
+)
 from androguard.decompiler.dad.dataflow import (
-    build_def_use, place_declarations, dead_code_elimination,
-    register_propagation, split_variables)
+    build_def_use,
+    place_declarations,
+    dead_code_elimination,
+    register_propagation,
+    split_variables
+)
 from androguard.decompiler.dad.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
 from androguard.util import read
-
 
 logger = logging.getLogger('dad')
 
@@ -267,6 +273,7 @@ class DvClass(object):
             try:
                 self.process_method(i, doAST=doAST)
             except Exception as e:
+                # FIXME: too broad exception?
                 logger.warning('Error decompiling method %s: %s', self.methods[i], e)
 
     def get_ast(self):
@@ -511,6 +518,23 @@ class DvMachine(object):
             klass.process()
             klass.show_source()
 
+    def get_ast(self):
+        """
+        Processes each class with AST enabled and returns a dictionary with all single ASTs
+        Classnames as keys.
+
+        :return: an dictionary for all classes
+        :rtype: dict
+        """
+        ret = dict()
+        for name, cls in sorted(self.classes.items()):
+            logger.debug('Processing class: %s', name)
+            if not isinstance(cls, DvClass):
+                cls = DvClass(cls, self.vma)
+            cls.process(doAST=True)
+            ret[name] = cls.get_ast()
+        return ret
+
 
 sys.setrecursionlimit(5000)
 
@@ -535,7 +559,7 @@ def main():
         logger.info(' %s', class_name)
     logger.info('========================')
 
-    cls_name = input('Choose a class: ')
+    cls_name = input('Choose a class (* for all classes): ')
     if cls_name == '*':
         machine.process_and_show()
     else:
@@ -547,7 +571,7 @@ def main():
             for i, method in enumerate(cls.get_methods()):
                 logger.info('%d: %s', i, method.name)
             logger.info('======================')
-            meth = input('Method: ')
+            meth = input('Method (* for all methods): ')
             if meth == '*':
                 logger.info('CLASS = %s', cls)
                 cls.process()
