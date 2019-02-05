@@ -199,7 +199,6 @@ class Graph(object):
                                 color='black',
                                 style='dashed'))
 
-        logger.error("dname")
         g.write(os.path.join(dname, '%s.png' % name), format='png')
 
     def immediate_dominators(self):
