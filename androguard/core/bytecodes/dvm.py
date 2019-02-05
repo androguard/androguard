@@ -3580,7 +3580,7 @@ class ClassDefItem(object):
         """
         Return the name of this class
 
-        :rtype: int
+        :rtype: str
         """
         return self.name
 
@@ -3588,7 +3588,7 @@ class ClassDefItem(object):
         """
         Return the name of the super class
 
-        :rtype: string
+        :rtype: str
         """
         return self.sname
 
@@ -3596,7 +3596,7 @@ class ClassDefItem(object):
         """
         Return the name of the interface
 
-        :rtype: string
+        :rtype: str
         """
         return self.interfaces
 
@@ -3604,7 +3604,7 @@ class ClassDefItem(object):
         """
         Return the access flags string of the class
 
-        :rtype: string
+        :rtype: str
         """
         if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
@@ -7278,6 +7278,12 @@ class ClassManager(object):
         return [type_.get_string() for type_ in i.get_list()]
 
     def get_type(self, idx):
+        """
+        Return the resolved type name based on the index
+        :param int idx:
+        :return: the type name
+        :rtype: str
+        """
         _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
         if _type == -1:
             return "AG:ITI: invalid type"

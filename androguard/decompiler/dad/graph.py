@@ -30,6 +30,7 @@ from androguard.decompiler.dad.instruction import Variable
 logger = logging.getLogger('dad.graph')
 
 
+# TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel
 class Graph(object):
     def __init__(self):
         self.entry = None

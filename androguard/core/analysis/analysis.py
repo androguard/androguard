@@ -1250,7 +1250,7 @@ class Analysis:
 
     def get_classes(self):
         """
-        Returns a list of `ClassAnalysis` objects
+        Returns a list of :class:`ClassAnalysis` objects
 
         Returns both internal and external classes (if any)
 
