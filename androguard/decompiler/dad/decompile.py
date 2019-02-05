@@ -141,6 +141,7 @@ class DvMethod(object):
                 self.writer.write_method()
             return
 
+        # Construct the CFG
         graph = construct(self.start_block, self.var_to_name, self.exceptions)
         self.graph = graph
 

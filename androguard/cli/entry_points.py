@@ -214,8 +214,8 @@ def arsc(input_,
 
         # All the information is in the config.
         # we simply need to get the actual value of the entry
-        for config, entry in arscobj.get_res_configs(i_id):
-            print("{} = '{}'".format(config.get_qualifier() if not config.is_default() else "<default>", entry.get_key_data()))
+        for config, entry in arscobj.get_resolved_res_configs(i_id):
+            print("{} = '{}'".format(config.get_qualifier() if not config.is_default() else "<default>", entry))
 
         sys.exit(0)
 

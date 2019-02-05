@@ -1698,40 +1698,73 @@ class ARSCParser(object):
 
     class ResourceResolver(object):
         """
-        Resolves resources by ID
+        Resolves resources by ID and configuration.
+        This resolver deals with complex resources as well as with references.
         """
         def __init__(self, android_resources, config=None):
+            """
+            :param ARSCParser android_resources: A resource parser
+            :param ARSCResTableConfig config: The desired configuration or None to resolve all.
+            """
             self.resources = android_resources
             self.wanted_config = config
 
         def resolve(self, res_id):
+            """
+            the given ID into the Resource and returns a list of matching resources.
+
+            :param int res_id: numerical ID of the resource
+            :return: a list of tuples of (ARSCResTableConfig, str)
+            """
             result = []
             self._resolve_into_result(result, res_id, self.wanted_config)
             return result
 
         def _resolve_into_result(self, result, res_id, config):
+            # First: Get all candidates
             configs = self.resources.get_res_configs(res_id, config)
-            if configs:
-                for config, ate in configs:
-                    self.put_ate_value(result, ate, config)
+
+            for config, ate in configs:
+                # deconstruct them and check if more candidates are generated
+                self.put_ate_value(result, ate, config)
 
         def put_ate_value(self, result, ate, config):
+            """
+            Put a ResTableEntry into the list of results
+            :param list result: results array
+            :param ARSCResTableEntry ate:
+            :param ARSCResTableConfig config:
+            :return:
+            """
             if ate.is_complex():
                 complex_array = []
                 result.append((config, complex_array))
                 for _, item in ate.item.items:
-                    self.put_item_value(complex_array, item, config, complex_=True)
+                    self.put_item_value(complex_array, item, config, ate, complex_=True)
             else:
-                self.put_item_value(result, ate.key, config, complex_=False)
+                self.put_item_value(result, ate.key, config, ate, complex_=False)
 
-        def put_item_value(self, result, item, config, complex_):
+        def put_item_value(self, result, item, config, parent, complex_):
+            """
+            Put the tuple (ARSCResTableConfig, resolved string) into the result set
+
+            :param list result: the result set
+            :param ARSCResStringPoolRef item:
+            :param ARSCResTableConfig config:
+            :param ARSCResTableEntry parent: the originating entry
+            :param bool complex_: True if the originating :class:`ARSCResTableEntry` was complex
+            :return:
+            """
             if item.is_reference():
                 res_id = item.get_data()
                 if res_id:
-                    self._resolve_into_result(
-                        result,
-                        item.get_data(),
-                        self.wanted_config)
+                    # Infinite loop detection:
+                    # TODO should this stay here or should be detect the loop much earlier?
+                    if res_id == parent.mResId:
+                        log.warning("Infinite loop detected at resource item {}. It references itself!".format(parent))
+                        return
+
+                    self._resolve_into_result(result, item.get_data(), self.wanted_config)
             else:
                 if complex_:
                     result.append(item.format_value())
@@ -1739,6 +1772,18 @@ class ARSCParser(object):
                     result.append((config, item.format_value()))
 
     def get_resolved_res_configs(self, rid, config=None):
+        """
+        Return a list of resolved resource IDs with their corresponding configuration.
+        It has a similar return type as :meth:`get_res_configs` but also handles complex entries
+        and references.
+        Also instead of returning :class:`ARSCResTableEntry` in the tuple, the actual values are resolved.
+
+        This is the preferred way of resolving resource IDs to their resources.
+
+        :param int rid: the numerical ID of the resource
+        :param ARSCTableResConfig config: the desired configuration or None to retrieve all
+        :return: A list of tuples of (ARSCResTableConfig, str)
+        """
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
 
@@ -1805,7 +1850,7 @@ class ARSCParser(object):
             raise ValueError("'rid' must be an int")
 
         if rid not in self.resource_values:
-            log.info("The requested rid could not be found in the resources.")
+            log.warning("The requested rid '0x{:08x}' could not be found in the list of resources.".format(rid))
             return []
 
         res_options = self.resource_values[rid]
@@ -1813,7 +1858,7 @@ class ARSCParser(object):
             if config in res_options:
                 return [(config, res_options[config])]
             elif fallback and config == ARSCResTableConfig.default_config():
-                log.warning("No default resource config could be found for the given rid, using fallback!")
+                log.warning("No default resource config could be found for the given rid '0x{:08x}', using fallback!".format(rid))
                 return [list(self.resource_values[rid].items())[0]]
             else:
                 return []
@@ -2424,7 +2469,7 @@ class ARSCResTableConfig(object):
         return self._get_tuple() == other._get_tuple()
 
     def __repr__(self):
-        return "<ARSCResTableConfig '{}'='{}'>".format(self.get_qualifier(), repr(self._get_tuple()))
+        return "<ARSCResTableConfig '{}'={}>".format(self.get_qualifier(), repr(self._get_tuple()))
 
 
 class ARSCResTableEntry(object):
