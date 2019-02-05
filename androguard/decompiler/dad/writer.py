@@ -32,6 +32,10 @@ logger = logging.getLogger('dad.writer')
 
 
 class Writer(object):
+    """
+    Transforms a method into Java code.
+
+    """
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -426,6 +430,7 @@ class Writer(object):
             self.end_ins()
 
     def visit_constant(self, cst):
+        # FIXME: basestring should be replaced
         if isinstance(cst, basestring):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst,

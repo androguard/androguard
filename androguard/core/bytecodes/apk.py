@@ -1404,24 +1404,27 @@ class APK(object):
                 # before the end of central dir...
 
                 # These things should not happen for APKs
-                assert this_disk == 0, "Not sure what to do with multi disk ZIP!"
-                assert disk_central == 0, "Not sure what to do with multi disk ZIP!"
+                if this_disk != 0:
+                    raise BrokenAPKError("Not sure what to do with multi disk ZIP!")
+                if disk_central != 0:
+                    raise BrokenAPKError("Not sure what to do with multi disk ZIP!")
                 break
             f.seek(-4, io.SEEK_CUR)
 
         if not offset_central:
             return
-        
+
         f.seek(offset_central)
         r, = unpack('<4s', f.read(4))
         f.seek(-4, io.SEEK_CUR)
-        assert r == self._PK_CENTRAL_DIR, "No Central Dir at specified offset"
+        if r != self._PK_CENTRAL_DIR:
+            raise BrokenAPKError("No Central Dir at specified offset")
 
         # Go back and check if we have a magic
         end_offset = f.tell()
         f.seek(-24, io.SEEK_CUR)
         size_of_block, magic = unpack('<Q16s', f.read(24))
-        
+
         self._is_signed_v2 = False
         self._is_signed_v3 = False
 
@@ -1431,7 +1434,8 @@ class APK(object):
         # go back size_of_blocks + 8 and read size_of_block again
         f.seek(-(size_of_block + 8), io.SEEK_CUR)
         size_of_block_start, = unpack("<Q", f.read(8))
-        assert size_of_block_start == size_of_block, "Sizes at beginning and and does not match!"
+        if size_of_block_start != size_of_block:
+            raise BrokenAPKError("Sizes at beginning and and does not match!")
 
         # Store all blocks
         while f.tell() < end_offset - 24:
@@ -1478,15 +1482,14 @@ class APK(object):
         #    * maxSDK
         #    * signatures
         #    * publickey
-        
         size_sequence = self.read_uint32_le(block)
-        assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
-        
-        while block.tell() < len(block_bytes):
+        if size_sequence + 4 != len(block_bytes):
+            raise BrokenAPKError("size of sequence and blocksize does not match")
 
+        while block.tell() < len(block_bytes):
             off_signer = block.tell()
             size_signer = self.read_uint32_le(block)
-            
+
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
             len_signed_data = self.read_uint32_le(block)
@@ -1565,7 +1568,7 @@ class APK(object):
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
-        
+
         # V2 signature Block data format:
         #
         # * signer:
@@ -1579,13 +1582,12 @@ class APK(object):
         #    * publickey
 
         size_sequence = self.read_uint32_le(block)
-        assert size_sequence + 4 == len(block_bytes), "size of sequence and blocksize does not match"
+        if size_sequence + 4 != len(block_bytes):
+            raise BrokenAPKError("size of sequence and blocksize does not match")
 
         while block.tell() < len(block_bytes):
-
             off_signer = block.tell()
             size_signer = self.read_uint32_le(block)
-            
 
             # read whole signed data, since we might to parse
             # content within the signed data, and mess up offset
@@ -1593,7 +1595,6 @@ class APK(object):
             signed_data_bytes = block.read(len_signed_data)
             signed_data = io.BytesIO(signed_data_bytes)
 
-                
             # Digests
             len_digests = self.read_uint32_le(signed_data)
             raw_digests = signed_data.read(len_digests)
@@ -1726,7 +1727,6 @@ class APK(object):
         Therefore this is just a list of all certificates found in all signers.
         """
         return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v2()]
-        
 
     def get_certificates_v1(self):
         """
@@ -1866,7 +1866,6 @@ class APK(object):
                 show_Certificate(c)
 
 
-
 def show_Certificate(cert, short=False):
     """
         Print Fingerprints, Issuer and Subject of an X509 Certificate.
@@ -1877,8 +1876,6 @@ def show_Certificate(cert, short=False):
         :type cert: :class:`asn1crypto.x509.Certificate`
         :type short: Boolean
     """
-
-
     print("SHA1 Fingerprint: {}".format(cert.sha1_fingerprint))
     print("SHA256 Fingerprint: {}".format(cert.sha256_fingerprint))
     print("Issuer: {}".format(get_certificate_name_string(cert.issuer.native, short=short)))
@@ -1897,6 +1894,7 @@ def ensure_final_value(packageName, arsc, value):
     if value:
         returnValue = value
         if value[0] == '@':
+            # TODO: @packagename:DEADBEEF is not supported here!
             try:  # can be a literal value or a resId
                 res_id = int('0x' + value[1:], 16)
                 res_id = arsc.get_id(packageName, res_id)[1]
@@ -1959,3 +1957,4 @@ def get_apkid(apkfile):
         versionName = ''  # versionName is expected to always be a str
 
     return appid, versionCode, versionName.strip('\0')
+

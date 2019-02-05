@@ -1839,7 +1839,8 @@ class StringDataItem:
         not supported by python.
         """
         s = mutf8.decode(self.data)
-        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        if len(s) != self.utf16_size:
+            raise ValueError("UTF16 Length does not match!")
 
         # Return a UTF16 String
         return s
@@ -1852,7 +1853,8 @@ class StringDataItem:
         Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
         """
         s = mutf8.decode(self.data)
-        assert len(s) == self.utf16_size, "UTF16 Length does not match!"
+        if len(s) != self.utf16_size:
+            raise ValueError("UTF16 Length does not match!")
         # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
         return mutf8.patch_string(s)
 
@@ -3578,7 +3580,7 @@ class ClassDefItem(object):
         """
         Return the name of this class
 
-        :rtype: int
+        :rtype: str
         """
         return self.name
 
@@ -3586,7 +3588,7 @@ class ClassDefItem(object):
         """
         Return the name of the super class
 
-        :rtype: string
+        :rtype: str
         """
         return self.sname
 
@@ -3594,7 +3596,7 @@ class ClassDefItem(object):
         """
         Return the name of the interface
 
-        :rtype: string
+        :rtype: str
         """
         return self.interfaces
 
@@ -3602,7 +3604,7 @@ class ClassDefItem(object):
         """
         Return the access flags string of the class
 
-        :rtype: string
+        :rtype: str
         """
         if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
@@ -7276,6 +7278,12 @@ class ClassManager(object):
         return [type_.get_string() for type_ in i.get_list()]
 
     def get_type(self, idx):
+        """
+        Return the resolved type name based on the index
+        :param int idx:
+        :return: the type name
+        :rtype: str
+        """
         _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
         if _type == -1:
             return "AG:ITI: invalid type"

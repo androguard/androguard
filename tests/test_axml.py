@@ -147,19 +147,19 @@ class AXMLTest(unittest.TestCase):
 
     def testArscHeader(self):
         """Test if wrong arsc headers are rejected"""
-        with self.assertRaises(AssertionError) as cnx:
+        with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01"))
         self.assertTrue("Can not read over the buffer size" in str(cnx.exception))
 
-        with self.assertRaises(AssertionError) as cnx:
+        with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\xFF\xFF\x08\x00\x00\x00"))
         self.assertTrue("smaller than header size" in str(cnx.exception))
 
-        with self.assertRaises(AssertionError) as cnx:
+        with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x01\x00\x08\x00\x00\x00"))
         self.assertTrue("declared header size is smaller than required size" in str(cnx.exception))
 
-        with self.assertRaises(AssertionError) as cnx:
+        with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x08\x00\x04\x00\x00\x00"))
         self.assertTrue("declared chunk size is smaller than required size" in str(cnx.exception))
 
@@ -257,7 +257,7 @@ class AXMLTest(unittest.TestCase):
         """
         filename = "examples/axml/AndroidManifest_StringNotTerminated.xml"
 
-        with self.assertRaises(AssertionError) as cnx:
+        with self.assertRaises(axml.ResParserError) as cnx:
             with open(filename, "rb") as f:
                 ap = axml.AXMLPrinter(f.read())
         self.assertTrue("not null terminated" in str(cnx.exception))

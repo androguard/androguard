@@ -88,6 +88,11 @@ FRACTION_UNITS = ["%", "%p"]
 COMPLEX_UNIT_MASK = 0x0F
 
 
+class ResParserError(Exception):
+    """Exception for the parsers"""
+    pass
+
+
 def complexToFloat(xcomplex):
     """
     Convert a complex unit into float
@@ -236,8 +241,8 @@ class StringBlock(object):
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        assert self.m_charbuff[offset + encoded_bytes] == 0, \
-            "UTF-8 String is not null terminated! At offset={}".format(offset)
+        if self.m_charbuff[offset + encoded_bytes] != 0:
+            raise ResParserError("UTF-8 String is not null terminated! At offset={}".format(offset))
 
         return self._decode_bytes(data, 'utf-8', str_len)
 
@@ -256,8 +261,8 @@ class StringBlock(object):
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
-        assert self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] == b"\x00\x00", \
-            "UTF-16 String is not null terminated! At offset={}".format(offset)
+        if self.m_charbuff[offset + encoded_bytes:offset + encoded_bytes + 2] != b"\x00\x00":
+            raise ResParserError("UTF-16 String is not null terminated! At offset={}".format(offset))
 
         return self._decode_bytes(data, 'utf-16', str_len)
 
@@ -308,6 +313,7 @@ class StringBlock(object):
             length = length1
             size = sizeof_char
 
+        # These are true asserts, as the size should never be less than the values
         if sizeof_char == 1:
             assert length <= 0x7FFF, "length of UTF-8 string is too large! At offset={}".format(offset)
         else:
@@ -388,7 +394,7 @@ class AXMLParser(object):
 
         try:
             axml_header = ARSCHeader(self.buff)
-        except AssertionError as e:
+        except ResParserError as e:
             log.error("Error parsing first resource header: %s", e)
             self._valid = False
             return
@@ -427,7 +433,7 @@ class AXMLParser(object):
         # Now we parse the STRING POOL
         try:
             header = ARSCHeader(self.buff)
-        except AssertionError as e:
+        except ResParserError as e:
             log.error("Error parsing resource header of string pool: %s", e)
             self._valid = False
             return
@@ -486,7 +492,7 @@ class AXMLParser(object):
             # Again, we read an ARSCHeader
             try:
                 h = ARSCHeader(self.buff)
-            except AssertionError as e:
+            except ResParserError as e:
                 log.error("Error parsing resource header: %s", e)
                 self._valid = False
                 return
@@ -1215,7 +1221,8 @@ class ARSCParser(object):
                 self.stringpool_main = StringBlock(self.buff, res_header)
 
             elif res_header.type == RES_TABLE_PACKAGE_TYPE:
-                assert len(self.packages) < self.packageCount, "Got more packages than expected"
+                if len(self.packages) > self.packageCount:
+                    raise ResParserError("Got more packages ({}) than expected ({})".format(len(self.packages), self.packageCount))
 
                 current_package = ARSCResTablePackage(self.buff, res_header)
                 package_name = current_package.get_name()
@@ -1226,15 +1233,17 @@ class ARSCParser(object):
                 # After the Header, we have the resource type symbol table
                 self.buff.set_idx(current_package.header.start + current_package.typeStrings)
                 type_sp_header = ARSCHeader(self.buff)
-                assert type_sp_header.type == RES_STRING_POOL_TYPE, \
-                    "Expected String Pool header, got %x" % type_sp_header.type
+                if type_sp_header.type != RES_STRING_POOL_TYPE:
+                    raise ResParserError("Expected String Pool header, got %x" % type_sp_header.type)
+
                 mTableStrings = StringBlock(self.buff, type_sp_header)
 
                 # Next, we should have the resource key symbol table
                 self.buff.set_idx(current_package.header.start + current_package.keyStrings)
                 key_sp_header = ARSCHeader(self.buff)
-                assert key_sp_header.type == RES_STRING_POOL_TYPE, \
-                    "Expected String Pool header, got %x" % key_sp_header.type
+                if key_sp_header.type != RES_STRING_POOL_TYPE:
+                    raise ResParserError("Expected String Pool header, got %x" % key_sp_header.type)
+
                 mKeyStrings = StringBlock(self.buff, key_sp_header)
 
                 # Add them to the dict of read packages
@@ -1689,40 +1698,73 @@ class ARSCParser(object):
 
     class ResourceResolver(object):
         """
-        Resolves resources by ID
+        Resolves resources by ID and configuration.
+        This resolver deals with complex resources as well as with references.
         """
         def __init__(self, android_resources, config=None):
+            """
+            :param ARSCParser android_resources: A resource parser
+            :param ARSCResTableConfig config: The desired configuration or None to resolve all.
+            """
             self.resources = android_resources
             self.wanted_config = config
 
         def resolve(self, res_id):
+            """
+            the given ID into the Resource and returns a list of matching resources.
+
+            :param int res_id: numerical ID of the resource
+            :return: a list of tuples of (ARSCResTableConfig, str)
+            """
             result = []
             self._resolve_into_result(result, res_id, self.wanted_config)
             return result
 
         def _resolve_into_result(self, result, res_id, config):
+            # First: Get all candidates
             configs = self.resources.get_res_configs(res_id, config)
-            if configs:
-                for config, ate in configs:
-                    self.put_ate_value(result, ate, config)
+
+            for config, ate in configs:
+                # deconstruct them and check if more candidates are generated
+                self.put_ate_value(result, ate, config)
 
         def put_ate_value(self, result, ate, config):
+            """
+            Put a ResTableEntry into the list of results
+            :param list result: results array
+            :param ARSCResTableEntry ate:
+            :param ARSCResTableConfig config:
+            :return:
+            """
             if ate.is_complex():
                 complex_array = []
                 result.append((config, complex_array))
                 for _, item in ate.item.items:
-                    self.put_item_value(complex_array, item, config, complex_=True)
+                    self.put_item_value(complex_array, item, config, ate, complex_=True)
             else:
-                self.put_item_value(result, ate.key, config, complex_=False)
+                self.put_item_value(result, ate.key, config, ate, complex_=False)
 
-        def put_item_value(self, result, item, config, complex_):
+        def put_item_value(self, result, item, config, parent, complex_):
+            """
+            Put the tuple (ARSCResTableConfig, resolved string) into the result set
+
+            :param list result: the result set
+            :param ARSCResStringPoolRef item:
+            :param ARSCResTableConfig config:
+            :param ARSCResTableEntry parent: the originating entry
+            :param bool complex_: True if the originating :class:`ARSCResTableEntry` was complex
+            :return:
+            """
             if item.is_reference():
                 res_id = item.get_data()
                 if res_id:
-                    self._resolve_into_result(
-                        result,
-                        item.get_data(),
-                        self.wanted_config)
+                    # Infinite loop detection:
+                    # TODO should this stay here or should be detect the loop much earlier?
+                    if res_id == parent.mResId:
+                        log.warning("Infinite loop detected at resource item {}. It references itself!".format(parent))
+                        return
+
+                    self._resolve_into_result(result, item.get_data(), self.wanted_config)
             else:
                 if complex_:
                     result.append(item.format_value())
@@ -1730,6 +1772,18 @@ class ARSCParser(object):
                     result.append((config, item.format_value()))
 
     def get_resolved_res_configs(self, rid, config=None):
+        """
+        Return a list of resolved resource IDs with their corresponding configuration.
+        It has a similar return type as :meth:`get_res_configs` but also handles complex entries
+        and references.
+        Also instead of returning :class:`ARSCResTableEntry` in the tuple, the actual values are resolved.
+
+        This is the preferred way of resolving resource IDs to their resources.
+
+        :param int rid: the numerical ID of the resource
+        :param ARSCTableResConfig config: the desired configuration or None to retrieve all
+        :return: A list of tuples of (ARSCResTableConfig, str)
+        """
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
 
@@ -1796,7 +1850,7 @@ class ARSCParser(object):
             raise ValueError("'rid' must be an int")
 
         if rid not in self.resource_values:
-            log.info("The requested rid could not be found in the resources.")
+            log.warning("The requested rid '0x{:08x}' could not be found in the list of resources.".format(rid))
             return []
 
         res_options = self.resource_values[rid]
@@ -1804,7 +1858,7 @@ class ARSCParser(object):
             if config in res_options:
                 return [(config, res_options[config])]
             elif fallback and config == ARSCResTableConfig.default_config():
-                log.warning("No default resource config could be found for the given rid, using fallback!")
+                log.warning("No default resource config could be found for the given rid '0x{:08x}', using fallback!".format(rid))
                 return [list(self.resource_values[rid].items())[0]]
             else:
                 return []
@@ -1937,31 +1991,37 @@ class ARSCHeader(object):
     Object which contains a Resource Chunk.
     This is an implementation of the `ResChunk_header`.
 
-    It will throw an AssertionError if the header could not be read successfully.
+    It will throw an :class:`ResParserError` if the header could not be read successfully.
 
     It is not checked if the data is outside the buffer size nor if the current
     chunk fits into the parent chunk (if any)!
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
+    :raises: ResParserError
     """
     SIZE = 2 + 2 + 4
 
     def __init__(self, buff):
         self.start = buff.get_idx()
         # Make sure we do not read over the buffer:
-        assert buff.size() >= self.start + self.SIZE, "Can not read over the buffer size! Offset={}".format(self.start)
+        if buff.size() < self.start + self.SIZE:
+            raise ResParserError("Can not read over the buffer size! Offset={}".format(self.start))
+
         self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
 
         # Assert that the read data will fit into the chunk.
         # The total size must be equal or larger than the header size
-        assert self._header_size >= self.SIZE, \
-            "declared header size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
-        assert self._size >= self.SIZE, \
-            "declared chunk size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start)
-        assert self._size >= self._header_size, \
-            "declared chunk size ({}) is smaller than header size ({})! Offset={}".format(self._size,
-                                                                                          self._header_size,
-                                                                                          self.start)
+        if self._header_size < self.SIZE:
+            raise ResParserError(
+                "declared header size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start))
+        if self._size < self.SIZE:
+            raise ResParserError(
+                "declared chunk size is smaller than required size of {}! Offset={}".format(self.SIZE, self.start))
+        if self._size < self._header_size:
+            raise ResParserError(
+                "declared chunk size ({}) is smaller than header size ({})! Offset={}".format(self._size,
+                                                                                              self._header_size,
+                                                                                              self.start))
 
     @property
     def type(self):
@@ -2036,8 +2096,10 @@ class ARSCResTypeSpec(object):
         self.id = unpack('<B', buff.read(1))[0]
         self.res0 = unpack('<B', buff.read(1))[0]
         self.res1 = unpack('<H', buff.read(2))[0]
-        assert self.res0 == 0, "res0 must be zero!"
-        assert self.res1 == 0, "res1 must be zero!"
+        if self.res0 != 0:
+            raise ResParserError("res0 must be zero!")
+        if self.res1 != 0:
+            raise ResParserError("res1 must be zero!")
         self.entryCount = unpack('<I', buff.read(4))[0]
 
         self.typespec_entries = []
@@ -2056,7 +2118,8 @@ class ARSCResType(object):
         self.id = unpack('<B', buff.read(1))[0]
         self.flags, = unpack('<B', buff.read(1))
         self.reserved = unpack('<H', buff.read(2))[0]
-        assert self.reserved == 0, "reserved must be zero!"
+        if self.reserved != 0:
+            raise ResParserError("reserved must be zero!")
         self.entryCount = unpack('<I', buff.read(4))[0]
         self.entriesStart = unpack('<I', buff.read(4))[0]
 
@@ -2406,7 +2469,7 @@ class ARSCResTableConfig(object):
         return self._get_tuple() == other._get_tuple()
 
     def __repr__(self):
-        return "<ARSCResTableConfig '{}'='{}'>".format(self.get_qualifier(), repr(self._get_tuple()))
+        return "<ARSCResTableConfig '{}'={}>".format(self.get_qualifier(), repr(self._get_tuple()))
 
 
 class ARSCResTableEntry(object):
@@ -2483,7 +2546,8 @@ class ARSCResStringPoolRef(object):
 
         self.size, = unpack("<H", buff.read(2))
         self.res0, = unpack("<B", buff.read(1))
-        assert self.res0 == 0, "res0 must be always zero!"
+        if self.res0 != 0:
+            raise ResParserError("res0 must be always zero!")
         self.data_type = unpack('<B', buff.read(1))[0]
         self.data = unpack('<I', buff.read(4))[0]
 

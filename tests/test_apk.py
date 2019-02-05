@@ -275,15 +275,15 @@ class APKTest(unittest.TestCase):
 
                 # Special error cases
                 if apath == "v2-only-apk-sig-block-size-mismatch.apk":
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaises(apk.BrokenAPKError):
                         a.is_signed_v2()
                     continue
                 elif apath == "v2-only-empty.apk":
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaises(apk.BrokenAPKError):
                         a.is_signed_v2()
                     continue
                 elif apath == "v3-only-with-rsa-pkcs1-sha512-4096-apk-sig-block-size-mismatch.apk":
-                    with self.assertRaises(AssertionError):
+                    with self.assertRaises(apk.BrokenAPKError):
                         a.is_signed_v3()
                     continue
 

@@ -32,6 +32,7 @@ def decode(b):
 
     :param b: bytes to decode
     :rtype: unicode (py2), str (py3) of 16bit chars
+    :raises: UnicodeDecodeError if string is not decodable
     """
     res = u""
 
@@ -44,14 +45,19 @@ def decode(b):
         elif x >> 5 == 0b110:
             # 2 byte Multichar
             b2 = next(b)
-            assert b2 >> 6 == 0b10, "Second byte of 2 byte sequence does not looks right."
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 2 byte sequence does not looks right.")
+
             res += chr((x & 0x1f) << 6 | b2 & 0x3f)
         elif x >> 4 == 0b1110:
             # 3 byte Multichar
             b2 = next(b)
             b3 = next(b)
-            assert b2 >> 6 == 0b10, "Second byte of 3 byte sequence does not looks right."
-            assert b3 >> 6 == 0b10, "Third byte of 3 byte sequence does not looks right."
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 3 byte sequence does not looks right.")
+            if b3 >> 6 != 0b10:
+                raise UnicodeDecodeError("Third byte of 3 byte sequence does not looks right.")
+
             res += chr((x & 0xf) << 12 | (b2 & 0x3f) << 6 | b3 & 0x3f)
         else:
             raise UnicodeDecodeError("Could not decode byte")
