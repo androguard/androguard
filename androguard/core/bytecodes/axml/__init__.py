@@ -12,6 +12,7 @@ from androguard.core.bytecodes.axml.types import *
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 import collections
+from collections import defaultdict
 
 from lxml import etree
 import logging
@@ -102,7 +103,7 @@ def complexToFloat(xcomplex):
 
 class StringBlock(object):
     """
-    StringBlock is a CHUNK inside an AXML File
+    StringBlock is a CHUNK inside an AXML File: `ResStringPool_header`
     It contains all strings, which are used by referecing to ID's
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
@@ -172,6 +173,9 @@ class StringBlock(object):
 
             for i in range(0, size // 4):
                 self.m_styles.append(unpack('<I', buff.read(4))[0])
+
+    def __repr__(self):
+        return "<StringPool #strings={}, #styles={}, UTF8={}>".format(self.stringCount, self.styleCount, self.m_isUTF8)
 
     def __getitem__(self, idx):
         """
@@ -432,7 +436,7 @@ class AXMLParser(object):
 
         # Now we parse the STRING POOL
         try:
-            header = ARSCHeader(self.buff)
+            header = ARSCHeader(self.buff, expected_type=RES_STRING_POOL_TYPE)
         except ResParserError as e:
             log.error("Error parsing resource header of string pool: %s", e)
             self._valid = False
@@ -440,11 +444,6 @@ class AXMLParser(object):
 
         if header.header_size != 0x1C:
             log.error("This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size))
-            self._valid = False
-            return
-
-        if header.type != RES_STRING_POOL_TYPE:
-            log.error("Expected String Pool header, got resource type 0x{:04x} instead".format(header.type))
             self._valid = False
             return
 
@@ -1186,39 +1185,76 @@ TOUCHSCREEN_FINGER = ACONFIGURATION_TOUCHSCREEN_FINGER
 class ARSCParser(object):
     """
     Parser for resource.arsc files
+
+    The ARSC File is, like the binary XML format, a chunk based format.
+    Both formats are actually identical but use different chunks in order to store the data.
+
+    The most outer chunk in the ARSC file is a chunk of type RES_TABLE_TYPE.
+    Inside this chunk is a StringPool and at least one package.
+
+    Each package is a chunk of type RES_TABLE_PACKAGE_TYPE.
+    It contains again many more chunks.
     """
     def __init__(self, raw_buff):
-        self.analyzed = False
-        self._resolved_strings = None
+        """
+        :param bytes raw_buff: the raw bytes of the file
+        """
         self.buff = bytecode.BuffHandle(raw_buff)
 
-        self.header = ARSCHeader(self.buff)
-        # TODO: assert header type
-        self.packageCount = unpack('<I', self.buff.read(4))[0]
+        if self.buff.size() < 8 or self.buff.size() > 0xFFFFFFFF:
+            raise ResParserError("Invalid file size {} for a resources.arsc file!".format(self.buff.size()))
 
-        self.packages = {}
+        self.analyzed = False
+        self._resolved_strings = None
+        self.packages = defaultdict(list)
         self.values = {}
-        self.resource_values = collections.defaultdict(collections.defaultdict)
-        self.resource_configs = collections.defaultdict(lambda: collections.defaultdict(set))
-        self.resource_keys = collections.defaultdict(
-            lambda: collections.defaultdict(collections.defaultdict))
+        self.resource_values = defaultdict(defaultdict)
+        self.resource_configs = defaultdict(lambda: defaultdict(set))
+        self.resource_keys = defaultdict(lambda: defaultdict(defaultdict))
         self.stringpool_main = None
 
-        # skip to the start of the first chunk data, skipping trailing header bytes
+        # First, there is a ResTable_header.
+        self.header = ARSCHeader(self.buff, expected_type=RES_TABLE_TYPE)
+
+        # More sanity checks...
+        if self.header.header_size != 12:
+            log.warning("The ResTable_header has an unexpected header size! Expected 12 bytes, got {}.".format(self.header.header_size))
+
+        if self.header.size > self.buff.size():
+            raise ResParserError("The file seems to be truncated. Refuse to parse the file! Filesize: {}, declared size: {}".format(self.buff.size(), self.header.size))
+
+        if self.header.size < self.buff.size():
+            log.warning("The Resource file seems to have data appended to it. Filesize: {}, declared size: {}".format(self.buff.size(), self.header.size))
+
+        # The ResTable_header contains the packageCount, i.e. the number of ResTable_package
+        self.packageCount = unpack('<I', self.buff.read(4))[0]
+
+        # Even more sanity checks...
+        if self.packageCount < 1:
+            log.warning("The number of packages is smaller than one. There should be at least one package!")
+
+        log.debug("Parsed ResTable_header with {} package(s) inside.".format(self.packageCount))
+
+        # skip to the start of the first chunk's data, skipping trailing header bytes (there should be none)
         self.buff.set_idx(self.header.start + self.header.header_size)
 
-        # Gives the offset inside the file of the end of this chunk
-        data_end = self.header.start + self.header.size
-
-        while self.buff.get_idx() <= data_end - ARSCHeader.SIZE:
+        # Now parse the data:
+        # We should find one ResStringPool_header and one or more ResTable_package chunks inside
+        while self.buff.get_idx() <= self.header.end - ARSCHeader.SIZE:
             res_header = ARSCHeader(self.buff)
 
-            if res_header.start + res_header.size > data_end:
+            if res_header.end > self.header.end:
                 # this inner chunk crosses the boundary of the table chunk
+                log.warning("Invalid chunk found! It is larger than the outer chunk: %s", res_header)
                 break
 
-            if res_header.type == RES_STRING_POOL_TYPE and not self.stringpool_main:
-                self.stringpool_main = StringBlock(self.buff, res_header)
+            if res_header.type == RES_STRING_POOL_TYPE:
+                # There should be only one StringPool per resource table.
+                if self.stringpool_main:
+                    log.warning("Already found a ResStringPool_header, but there should be only one! Will not parse the Pool again.")
+                else:
+                    self.stringpool_main = StringBlock(self.buff, res_header)
+                    log.debug("Found the main string pool: %s", self.stringpool_main)
 
             elif res_header.type == RES_TABLE_PACKAGE_TYPE:
                 if len(self.packages) > self.packageCount:
@@ -1226,24 +1262,15 @@ class ARSCParser(object):
 
                 current_package = ARSCResTablePackage(self.buff, res_header)
                 package_name = current_package.get_name()
-                package_data_end = res_header.start + res_header.size
-
-                self.packages[package_name] = []
 
                 # After the Header, we have the resource type symbol table
                 self.buff.set_idx(current_package.header.start + current_package.typeStrings)
-                type_sp_header = ARSCHeader(self.buff)
-                if type_sp_header.type != RES_STRING_POOL_TYPE:
-                    raise ResParserError("Expected String Pool header, got %x" % type_sp_header.type)
-
+                type_sp_header = ARSCHeader(self.buff, expected_type=RES_STRING_POOL_TYPE)
                 mTableStrings = StringBlock(self.buff, type_sp_header)
 
                 # Next, we should have the resource key symbol table
                 self.buff.set_idx(current_package.header.start + current_package.keyStrings)
-                key_sp_header = ARSCHeader(self.buff)
-                if key_sp_header.type != RES_STRING_POOL_TYPE:
-                    raise ResParserError("Expected String Pool header, got %x" % key_sp_header.type)
-
+                key_sp_header = ARSCHeader(self.buff, expected_type=RES_STRING_POOL_TYPE)
                 mKeyStrings = StringBlock(self.buff, key_sp_header)
 
                 # Add them to the dict of read packages
@@ -1251,20 +1278,32 @@ class ARSCParser(object):
                 self.packages[package_name].append(mTableStrings)
                 self.packages[package_name].append(mKeyStrings)
 
-                pc = PackageContext(current_package, self.stringpool_main,
-                                    mTableStrings, mKeyStrings)
+                pc = PackageContext(current_package, self.stringpool_main, mTableStrings, mKeyStrings)
+                log.debug("Constructed a PackageContext: %s", pc)
 
                 # skip to the first header in this table package chunk
                 # FIXME is this correct? We have already read the first two sections!
                 # self.buff.set_idx(res_header.start + res_header.header_size)
                 # this looks more like we want: (???)
-                self.buff.set_idx(res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size)
+                # FIXME it looks like that the two string pools we have read might not be concatenated to each other,
+                # thus jumping to the sum of the sizes might not be correct...
+                next_idx = res_header.start + res_header.header_size + type_sp_header.size + key_sp_header.size
+
+                if next_idx != self.buff.tell():
+                    # If this happens, we have a testfile ;)
+                    log.error("This looks like an odd resources.arsc file!")
+                    log.error("Please report this error including the file you have parsed!")
+                    log.error("next_idx = {}, current buffer position = {}".format(next_idx, self.buff.tell()))
+                    log.error("Please open a issue at https://github.com/androguard/androguard/issues")
+                    log.error("Thank you!")
+
+                self.buff.set_idx(next_idx)
 
                 # Read all other headers
-                while self.buff.get_idx() <= package_data_end - ARSCHeader.SIZE:
+                while self.buff.get_idx() <= res_header.end - ARSCHeader.SIZE:
                     pkg_chunk_header = ARSCHeader(self.buff)
                     log.debug("Found a header: {}".format(pkg_chunk_header))
-                    if pkg_chunk_header.start + pkg_chunk_header.size > package_data_end:
+                    if pkg_chunk_header.start + pkg_chunk_header.size > res_header.end:
                         # we are way off the package chunk; bail out
                         break
 
@@ -1274,6 +1313,8 @@ class ARSCParser(object):
                         self.packages[package_name].append(ARSCResTypeSpec(self.buff, pc))
 
                     elif pkg_chunk_header.type == RES_TABLE_TYPE_TYPE:
+                        # Parse a RES_TABLE_TYPE
+                        # http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt2/format/binary/BinaryResourceParser.cpp#311
                         a_res_type = ARSCResType(self.buff, pc)
                         self.packages[package_name].append(a_res_type)
                         self.resource_configs[package_name][a_res_type].add(a_res_type.config)
@@ -1295,7 +1336,7 @@ class ARSCParser(object):
                                 ate = ARSCResTableEntry(self.buff, res_id, pc)
                                 self.packages[package_name].append(ate)
                                 if ate.is_weak():
-                                    # FIXME we are not sure how to implement the FLAG_WEAk!
+                                    # FIXME we are not sure how to implement the FLAG_WEAK!
                                     # We saw the following: There is just a single Res_value after the ARSCResTableEntry
                                     # and then comes the next ARSCHeader.
                                     # Therefore we think this means all entries are somehow replicated?
@@ -1306,14 +1347,17 @@ class ARSCParser(object):
                     elif pkg_chunk_header.type == RES_TABLE_LIBRARY_TYPE:
                         log.warning("RES_TABLE_LIBRARY_TYPE chunk is not supported")
                     else:
-                        # FIXME: silently skip other chunk types
-                        pass
+                        # Unknown / not-handled chunk type
+                        log.warning("Unknown chunk type encountered inside RES_TABLE_PACKAGE: %s", pkg_chunk_header)
 
                     # skip to the next chunk
-                    self.buff.set_idx(pkg_chunk_header.start + pkg_chunk_header.size)
+                    self.buff.set_idx(pkg_chunk_header.end)
+            else:
+                # Unknown / not-handled chunk type
+                log.warning("Unknown chunk type encountered: %s", res_header)
 
             # move to the next resource chunk
-            self.buff.set_idx(res_header.start + res_header.size)
+            self.buff.set_idx(res_header.end)
 
     def _analyse(self):
         if self.analyzed:
@@ -1969,8 +2013,13 @@ class ARSCParser(object):
 
 
 class PackageContext(object):
-    def __init__(self, current_package, stringpool_main, mTableStrings,
-                 mKeyStrings):
+    def __init__(self, current_package, stringpool_main, mTableStrings, mKeyStrings):
+        """
+        :param ARSCResTablePackage current_package:
+        :param StringBlock stringpool_main:
+        :param StringBlock mTableStrings:
+        :param StringBlock mKeyStrings:
+        """
         self.stringpool_main = stringpool_main
         self.mTableStrings = mTableStrings
         self.mKeyStrings = mKeyStrings
@@ -1985,6 +2034,12 @@ class PackageContext(object):
     def get_package_name(self):
         return self.current_package.get_name()
 
+    def __repr__(self):
+        return "<PackageContext {}, {}, {}, {}>".format(self.current_package,
+                                                        self.stringpool_main,
+                                                        self.mTableStrings,
+                                                        self.mKeyStrings)
+
 
 class ARSCHeader(object):
     """
@@ -1996,18 +2051,30 @@ class ARSCHeader(object):
     It is not checked if the data is outside the buffer size nor if the current
     chunk fits into the parent chunk (if any)!
 
+    The parameter `expected_type` can be used to immediately check the header for the type or raise a :class:`ResParserError`.
+    This is useful if you know what type of chunk must follow.
+
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
     :raises: ResParserError
     """
+
+    # This is the minimal size such a header must have. There might be other header data too!
     SIZE = 2 + 2 + 4
 
-    def __init__(self, buff):
+    def __init__(self, buff, expected_type=None):
+        """
+        :param androguard.core.bytecode.BuffHandle buff: the buffer set to the position where the header starts.
+        :param int expected_type: the type of the header which is expected.
+        """
         self.start = buff.get_idx()
         # Make sure we do not read over the buffer:
         if buff.size() < self.start + self.SIZE:
             raise ResParserError("Can not read over the buffer size! Offset={}".format(self.start))
 
         self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+        if expected_type and self._type != expected_type:
+            raise ResParserError("Header type is not equal the expected type: Got 0x{:04x}, wanted 0x{:04x}".format(self._type, expected_type))
 
         # Assert that the read data will fit into the chunk.
         # The total size must be equal or larger than the header size
@@ -2067,12 +2134,16 @@ class ARSCHeader(object):
 
 class ARSCResTablePackage(object):
     """
+    A `ResTable_package`
+
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
     """
     def __init__(self, buff, header):
         self.header = header
         self.start = buff.get_idx()
         self.id = unpack('<I', buff.read(4))[0]
+        # 128 times 16bit -> read 256 bytes
+        # TODO why not read a null terminated string in buffer (like the meth name suggests) instead of parsing it later in get_name()?
         self.name = buff.readNullString(256)
         self.typeStrings = unpack('<I', buff.read(4))[0]
         self.lastPublicType = unpack('<I', buff.read(4))[0]
@@ -2109,6 +2180,9 @@ class ARSCResTypeSpec(object):
 
 class ARSCResType(object):
     """
+    This is a `ResTable_type` without it's `ResChunk_header`.
+    It contains a `ResTable_config
+
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
     """
     def __init__(self, buff, parent=None):
@@ -2116,6 +2190,7 @@ class ARSCResType(object):
         self.parent = parent
 
         self.id = unpack('<B', buff.read(1))[0]
+        # TODO there is now FLAG_SPARSE: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1401
         self.flags, = unpack('<B', buff.read(1))
         self.reserved = unpack('<H', buff.read(2))[0]
         if self.reserved != 0:
@@ -2128,6 +2203,8 @@ class ARSCResType(object):
 
         self.config = ARSCResTableConfig(buff)
 
+        log.debug("Parsed %s", self)
+
     def get_type(self):
         return self.parent.mTableStrings.getString(self.id - 1)
 
@@ -2135,11 +2212,10 @@ class ARSCResType(object):
         return self.parent.get_package_name()
 
     def __repr__(self):
-        return "ARSCResType(%x, %x, %x, %x, %x, %x, %x, %s)" % (
+        return "<ARSCResType(start=0x%x, id=0x%x, flags=0x%x, entryCount=%d, entriesStart=0x%x, mResId=0x%x, %s)>" % (
             self.start,
             self.id,
             self.flags,
-            self.reserved,
             self.entryCount,
             self.entriesStart,
             self.mResId,
@@ -2153,7 +2229,7 @@ class ARSCResTableConfig(object):
     This is used on the device to determine which resources should be loaded
     based on different properties of the device like locale or displaysize.
 
-    See the definition of ResTable_config in
+    See the definition of `ResTable_config` in
     http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#911
     """
     @classmethod
@@ -2324,7 +2400,7 @@ class ARSCResTableConfig(object):
 
         All possible qualifiers are listed in table 2 of https://developer.android.com/guide/topics/resources/providing-resources
 
-        FIXME: This name might not have all properties set!
+        ..todo:: This name might not have all properties set! Therefore returned values might not reflect the true qualifier name!
         :return: str
         """
         res = []
@@ -2474,18 +2550,31 @@ class ARSCResTableConfig(object):
 
 class ARSCResTableEntry(object):
     """
-    See https://github.com/LineageOS/android_frameworks_base/blob/df2898d9ce306bb2fe922d3beaa34a9cf6873d27/include/androidfw/ResourceTypes.h#L1370
+    A `ResTable_entry`.
+
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1458
     """
+    # If set, this is a complex entry, holding a set of name/value
+    # mappings.  It is followed by an array of ResTable_map structures.
     FLAG_COMPLEX = 1
+
+    # If set, this resource has been declared public, so libraries
+    # are allowed to reference it.
     FLAG_PUBLIC = 2
+
+    # If set, this is a weak resource and may be overriden by strong
+    # resources of the same name/type. This is only useful during
+    # linking with other resource tables.
     FLAG_WEAK = 4
 
     def __init__(self, buff, mResId, parent=None):
         self.start = buff.get_idx()
         self.mResId = mResId
         self.parent = parent
+
         self.size = unpack('<H', buff.read(2))[0]
         self.flags = unpack('<H', buff.read(2))[0]
+        # This is a ResStringPool_ref
         self.index = unpack('<I', buff.read(4))[0]
 
         if self.is_complex():
@@ -2493,6 +2582,9 @@ class ARSCResTableEntry(object):
         else:
             # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
+
+        if self.is_weak():
+            log.debug("Parsed %s", self)
 
     def get_index(self):
         return self.index
@@ -2523,6 +2615,15 @@ class ARSCResTableEntry(object):
 
 
 class ARSCComplex(object):
+    """
+    This is actually a `ResTable_map_entry`
+
+    It contains a set of {name: value} mappings, which are of type `ResTable_map`.
+    A `ResTable_map` contains two items: `ResTable_ref` and `Res_value`.
+
+    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1485 for `ResTable_map_entry`
+    and http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1498 for `ResTable_map`
+    """
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2531,15 +2632,23 @@ class ARSCComplex(object):
         self.count = unpack('<I', buff.read(4))[0]
 
         self.items = []
+        # Parse self.count number of `ResTable_map`
+        # these are structs of ResTable_ref and Res_value
+        # ResTable_ref is a uint32_t.
         for i in range(0, self.count):
-            self.items.append((unpack('<I', buff.read(4))[0],
-                               ARSCResStringPoolRef(buff, self.parent)))
+            self.items.append((unpack('<I', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
 
     def __repr__(self):
         return "<ARSCComplex idx='0x{:08x}' parent='{}' count='{}'>".format(self.start, self.id_parent, self.count)
 
 
 class ARSCResStringPoolRef(object):
+    """
+    This is actually a `Res_value`
+    It holds information about the stored resource value
+
+    See: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#262
+    """
     def __init__(self, buff, parent=None):
         self.start = buff.get_idx()
         self.parent = parent
@@ -2549,6 +2658,7 @@ class ARSCResStringPoolRef(object):
         if self.res0 != 0:
             raise ResParserError("res0 must be always zero!")
         self.data_type = unpack('<B', buff.read(1))[0]
+        # data is interpreted according to data_type
         self.data = unpack('<I', buff.read(4))[0]
 
     def get_data_value(self):
@@ -2564,6 +2674,9 @@ class ARSCResStringPoolRef(object):
         return TYPE_TABLE[self.data_type]
 
     def format_value(self):
+        """
+        Return the formatted (interpreted) data according to `data_type`.
+        """
         return format_value(
             self.data_type,
             self.data,
@@ -2571,6 +2684,9 @@ class ARSCResStringPoolRef(object):
         )
 
     def is_reference(self):
+        """
+        Returns True if the Res_value is actually a reference to another resource
+        """
         return self.data_type == TYPE_REFERENCE
 
     def __repr__(self):
