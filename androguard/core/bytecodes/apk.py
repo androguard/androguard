@@ -330,18 +330,14 @@ class APK(object):
                 self.package = self.get_attribute_value("manifest", "package")
                 self.androidversion["Code"] = self.get_attribute_value("manifest", "versionCode")
                 self.androidversion["Name"] = self.get_attribute_value("manifest", "versionName")
-                uses_permission = list(self.get_all_attribute_value("uses-permission", "name"))
-                self.permissions = self.permissions + uses_permission
+                permission = list(self.get_all_attribute_value("uses-permission", "name"))
+                self.permissions = list(set(self.permissions + permission))
 
-                maxSdkVersion = None
-                try:
-                    maxSdkVersion = int(self.get_max_sdk_version())
-                except ValueError:
-                    log.warning(self.get_max_sdk_version() + 'is not a valid value for <uses-permission> maxSdkVersion')
-                except TypeError:
-                    pass
-
-                self.uses_permissions = [[i, maxSdkVersion] for i in uses_permission]
+                for uses_permission in self.find_tags("uses-permission"):
+                    self.uses_permissions.append([
+                        self.get_value_from_tag(uses_permission, "name"),
+                        self._get_permission_maxsdk(uses_permission)
+                    ])
 
                 # getting details of the declared permissions
                 for d_perm_item in self.find_tags('permission'):
@@ -414,6 +410,16 @@ class APK(object):
                 break
         return string_value
 
+    def _get_permission_maxsdk(self, item):
+        maxSdkVersion = None
+        try:
+            maxSdkVersion = int(self.get_value_from_tag(item, "maxSdkVersion"))
+        except ValueError:
+            log.warning(self.get_max_sdk_version() + 'is not a valid value for <uses-permission> maxSdkVersion')
+        except TypeError:
+            pass
+        return maxSdkVersion
+
     def is_valid_APK(self):
         """
         Return true if the APK is valid, false otherwise.
@@ -447,12 +453,11 @@ class APK(object):
         """
 
         app_name = self.get_attribute_value('application', 'label')
-        if not app_name:
+        if app_name is None:
             activities = self.get_main_activities()
             main_activity_name = None
             if len(activities) > 0:
                 main_activity_name = activities.pop()
-            main_activity_name = self.get_main_activity()
             app_name = self.get_attribute_value(
                 'activity', 'label', name=main_activity_name
             )
@@ -797,20 +802,23 @@ class APK(object):
         return value
 
     def get_all_attribute_value(
-        self, tag_name, attribute, **attribute_filter
+        self, tag_name, attribute, format_value=True, **attribute_filter
     ):
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
             value = tag.get(attribute) or tag.get(self._ns(attribute))
             if value is not None:
-                yield self._format_value(value)
+                if format_value:
+                    yield self._format_value(value)
+                else:
+                    yield value
 
     def get_attribute_value(
-        self, tag_name, attribute, **attribute_filter
+        self, tag_name, attribute, format_value=False, **attribute_filter
     ):
 
         for value in self.get_all_attribute_value(
-                tag_name, attribute, **attribute_filter):
+                tag_name, attribute, format_value, **attribute_filter):
             if value is not None:
                 return value
 
@@ -850,9 +858,9 @@ class APK(object):
             return True
         for attr, value in attribute_filter.items():
             _value = tag.get(attr) or tag.get(self._ns(attr))
-            if _value == value:
-                return True
-        return False
+            if _value != value:
+                return False
+        return True
 
     def get_main_activities(self):
         """
