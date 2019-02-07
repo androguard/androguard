@@ -2181,7 +2181,7 @@ class ARSCResTypeSpec(object):
 class ARSCResType(object):
     """
     This is a `ResTable_type` without it's `ResChunk_header`.
-    It contains a `ResTable_config
+    It contains a `ResTable_config`
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
     """

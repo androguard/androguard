@@ -17,6 +17,7 @@ import zipfile
 import logging
 from struct import unpack
 import hashlib
+import warnings
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
@@ -372,7 +373,7 @@ class APK(object):
         We remove the zip from the Object, as it is not pickable
         And it does not make any sense to pickle it anyways.
 
-        :return: the picklable APK Object without zip.
+        :returns: the picklable APK Object without zip.
         """
         # Upon pickling, we need to remove the ZipFile
         x = self.__dict__
@@ -625,7 +626,7 @@ class APK(object):
         """
         Return the filetype guessed for a buffer
         :param buffer: bytes
-        :return: str of filetype
+        :returns: str of filetype
         """
         default = "Unknown"
         ftype = None
@@ -648,7 +649,7 @@ class APK(object):
         try:
             ftype = magic.from_buffer(buffer[:1024])
         except magic.MagicError as e:
-            log.exception("Error getting the magic type!")
+            log.exception("Error getting the magic type: %s", e)
             return default
 
         if not ftype:
@@ -661,7 +662,7 @@ class APK(object):
         """
         Returns a dictionary of filenames and detected magic type
 
-        :return: dictionary of files and their mime type
+        :returns: dictionary of files and their mime type
         """
         return self.get_files_types()
 
@@ -689,7 +690,7 @@ class APK(object):
 
         :param buffer: bytes of the file to detect
         :param orig: guess by mime libary
-        :return: corrected guess
+        :returns: corrected guess
         """
         if ("Zip" in orig) or ('(JAR)' in orig):
             val = androconf.is_android_raw(buffer)
@@ -702,7 +703,7 @@ class APK(object):
         """
         Calculates and returns a dictionary of filenames and CRC32
 
-        :return: dict of filename: CRC32
+        :returns: dict of filename: CRC32
         """
         if self.files_crc32 == {}:
             for i in self.get_files():
@@ -778,19 +779,22 @@ class APK(object):
         """
         Test if the APK has multiple DEX files
 
-        :return: True if multiple dex found, otherwise False
+        :returns: True if multiple dex found, otherwise False
         """
         dexre = re.compile("^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    @DeprecationWarning
     def get_elements(self, tag_name, attribute, with_namespace=True):
         """
-        Deprecated: use `get_all_attribute_value()` instead
+        .. deprecated:: 3.3.5
+            use :meth:`get_all_attribute_value` instead
+
         Return elements in xml files which match with the tag name and the specific attribute
-        :param tag_name: a string which specify the tag name
-        :param attribute: a string which specify the attribute
+
+        :param str tag_name: a string which specify the tag name
+        :param str attribute: a string which specify the attribute
         """
+        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
         for i in self.xml:
             if self.xml[i] is None:
                 continue
@@ -808,7 +812,7 @@ class APK(object):
         Format a value with packagename, if not already set
 
         :param value:
-        :return:
+        :returns:
         """
         if len(value) > 0:
             if value[0] == ".":
@@ -821,17 +825,18 @@ class APK(object):
                     value = self.package + "." + value
         return value
 
-    @DeprecationWarning
     def get_element(self, tag_name, attribute, **attribute_filter):
         """
-        :Deprecated: use `get_attribute_value()` instead
+        .. deprecated:: 3.3.5
+            use :meth:`get_attribute_value` instead
+
         Return element in xml files which match with the tag name and the specific attribute
-        :param tag_name: specify the tag name
-        :type tag_name: string
-        :param attribute: specify the attribute
-        :type attribute: string
-        :rtype: string
+
+        :param str tag_name: specify the tag name
+        :param str attribute: specify the attribute
+        :rtype: str
         """
+        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
         for i in self.xml:
             if self.xml[i] is None:
                 continue
@@ -859,13 +864,11 @@ class APK(object):
         self, tag_name, attribute, format_value=True, **attribute_filter
     ):
         """
-        Return all the attribute values in xml files which match with the tag name and the specific attribute
-        :param tag_name: specify the tag name
-        :type tag_name: string
-        :param attribute: specify the attribute
-        :type attribute: string
-        :param format_value: specify if the value needs to be formatted with packagename
-        :type format_value: boolean
+        Yields all the attribute values in xml files which match with the tag name and the specific attribute
+
+        :param str tag_name: specify the tag name
+        :param str attribute: specify the attribute
+        :param bool format_value: specify if the value needs to be formatted with packagename
         """
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
@@ -881,12 +884,10 @@ class APK(object):
     ):
         """
         Return the attribute value in xml files which matches the tag name and the specific attribute
-        :param tag_name: specify the tag name
-        :type tag_name: string
-        :param attribute: specify the attribute
-        :type attribute: string
-        :param format_value: specify if the value needs to be formatted with packagename
-        :type format_value: boolean
+
+        :param str tag_name: specify the tag name
+        :param str attribute: specify the attribute
+        :param bool format_value: specify if the value needs to be formatted with packagename
         """
 
         for value in self.get_all_attribute_value(
@@ -897,10 +898,9 @@ class APK(object):
     def get_value_from_tag(self, tag, attribute):
         """
         Return the value of the attribute in a specific tag
-        :param tag: specify the tag element
-        :type tag: Element
-        :param attribute: specify the attribute
-        :type attribute: string
+
+        :param lxml.etree.Element tag: specify the tag element
+        :param str attribute: specify the attribute
         """
 
         # TODO: figure out if both android:name and name tag exist which one to give preference
@@ -913,8 +913,8 @@ class APK(object):
     def find_tags(self, tag_name, **attribute_filter):
         """
         Return a list of all the matched tags in all available xml
-        :param tag: specify the tag name
-        :type tag: string
+
+        :param str tag: specify the tag name
         """
         all_tags = [
             self.find_tags_from_xml(
@@ -929,10 +929,9 @@ class APK(object):
     ):
         """
         Return a list of all the matched tags in a specific xml
-        :param xml_name: specify from which xml to pick the tag from
-        :type xml_name: string
-        :param tag_name: specify the tag name
-        :type tag_name: string
+        w
+        :param str xml_name: specify from which xml to pick the tag from
+        :param str tag_name: specify the tag name
         """
         xml = self.xml[xml_name]
         if xml is None:
@@ -1069,7 +1068,7 @@ class APK(object):
 
         :param itemtype: the type of parent item to look for, e.g. `activity`,  `service` or `receiver`
         :param name: the `android:name` of the parent item, e.g. activity name
-        :return: a dictionary with the keys `action` and `category` containing the `android:name` of those items
+        :returns: a dictionary with the keys `action` and `category` containing the `android:name` of those items
         """
         d = {"action": [], "category": []}
 
@@ -1173,15 +1172,18 @@ class APK(object):
                         "Unknown permission from android reference"]
         return l
 
-    @DeprecationWarning
     def get_requested_permissions(self):
         """
+        .. deprecated:: 3.1.0
+            use :meth:`get_permissions` instead.
+
         Returns all requested permissions.
 
         It has the same result as :meth:`get_permissions` and might be removed in the future
 
         :rtype: list of str
         """
+        warnings.warn("This method is deprecated since 3.1.0.", DeprecationWarning)
         return self.get_permissions()
 
     def get_requested_aosp_permissions(self):
@@ -1298,7 +1300,7 @@ class APK(object):
         Return a list of all android:names found for the tag uses-feature
         in the AndroidManifest.xml
 
-        :return: list
+        :returns: list
         """
         return list(self.get_all_attribute_value("uses-feature", "name"))
 
@@ -1311,7 +1313,7 @@ class APK(object):
         Not every app is setting this feature (not even the example Google provides),
         so it might be wise to not 100% rely on this feature.
 
-        :return: True if wearable, False otherwise
+        :returns: True if wearable, False otherwise
         """
         return 'android.hardware.type.watch' in self.get_features()
 
@@ -1320,7 +1322,7 @@ class APK(object):
         Checks if this application is build for TV (Leanback support)
         by checkin if it uses the feature 'android.software.leanback'
 
-        :return: True if leanback feature is used, false otherwise
+        :returns: True if leanback feature is used, false otherwise
         """
         return 'android.software.leanback' in self.get_features()
 
@@ -1330,7 +1332,7 @@ class APK(object):
         as this is the rule to get into the TV section of the Play Store
         See: https://developer.android.com/training/tv/start/start.html for more information.
 
-        :return: True if 'android.hardware.touchscreen' is not required, False otherwise
+        :returns: True if 'android.hardware.touchscreen' is not required, False otherwise
         """
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
@@ -1339,7 +1341,7 @@ class APK(object):
         Return the DER coded X.509 certificate from the signature file.
 
         :param filename: Signature filename in APK
-        :return: DER coded X.509 certificate as binary
+        :returns: DER coded X.509 certificate as binary
         """
         pkcs7message = self.get_file(filename)
 
@@ -1352,7 +1354,7 @@ class APK(object):
         Return a X.509 certificate object by giving the name in the apk file
 
         :param filename: filename of the signature file in the APK
-        :return: a :class:`Certificate` certificate
+        :returns: a :class:`Certificate` certificate
         """
         cert = self.get_certificate_der(filename)
         certificate = x509.Certificate.load(cert)
@@ -1594,7 +1596,6 @@ class APK(object):
         if not self.is_signed_v3():
             return
 
-        certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
@@ -1696,7 +1697,6 @@ class APK(object):
         if not self.is_signed_v2():
             return
 
-        certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()

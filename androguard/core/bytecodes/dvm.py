@@ -7605,17 +7605,33 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
     def get_vmanalysis(self):
         """
+        .. deprecated:: 3.1.0
+            The :class:`~androguard.core.analysis.analysis.Analysis` is not
+            loaded anymore into :class:`DalvikVMFormat` in order to avoid
+            cyclic dependencies.
+            :class:`~androguard.core.analysis.analysis.Analysis` extends now
+            :class:`DalvikVMFormat`.
+            This Method does nothing anymore!
+
         The Analysis Object should contain all the information required,
         inclduing the DalvikVMFormats.
         """
-        warnings.warn("deprecated", DeprecationWarning)
+        warnings.warn("deprecated, this method does nothing!", DeprecationWarning)
 
     def set_vmanalysis(self, analysis):
         """
+        .. deprecated:: 3.1.0
+            The :class:`~androguard.core.analysis.analysis.Analysis` is not
+            loaded anymore into :class:`DalvikVMFormat` in order to avoid
+            cyclic dependencies.
+            :class:`~androguard.core.analysis.analysis.Analysis` extends now
+            :class:`DalvikVMFormat`.
+            This Method does nothing anymore!
+
         The Analysis Object should contain all the information required,
         inclduing the DalvikVMFormats.
         """
-        warnings.warn("deprecated", DeprecationWarning)
+        warnings.warn("deprecated, this method does nothing!", DeprecationWarning)
 
     def get_api_version(self):
         """
