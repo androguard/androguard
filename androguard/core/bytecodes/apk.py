@@ -783,6 +783,25 @@ class APK(object):
         dexre = re.compile("^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
+    @DeprecationWarning
+    def get_elements(self, tag_name, attribute, with_namespace=True):
+        """
+        Return elements in xml files which match with the tag name and the specific attribute
+        :param tag_name: a string which specify the tag name
+        :param attribute: a string which specify the attribute
+        """
+        for i in self.xml:
+            if self.xml[i] is None:
+                continue
+            for item in self.xml[i].findall('.//' + tag_name):
+                if with_namespace:
+                    value = item.get(self._ns(attribute))
+                else:
+                    value = item.get(attribute)
+                # There might be an attribute without the namespace
+                if value:
+                    yield self._format_value(value)
+
     def _format_value(self, value):
         """
         Format a value with packagename, if not already set
@@ -800,6 +819,39 @@ class APK(object):
                 elif v_dot == -1:
                     value = self.package + "." + value
         return value
+
+    @DeprecationWarning
+    def get_element(self, tag_name, attribute, **attribute_filter):
+        """
+        Return element in xml files which match with the tag name and the specific attribute
+        :param tag_name: specify the tag name
+        :type tag_name: string
+        :param attribute: specify the attribute
+        :type attribute: string
+        :rtype: string
+        """
+        for i in self.xml:
+            if self.xml[i] is None:
+                continue
+            tag = self.xml[i].findall('.//' + tag_name)
+            if len(tag) == 0:
+                return None
+            for item in tag:
+                skip_this_item = False
+                for attr, val in list(attribute_filter.items()):
+                    attr_val = item.get(self._ns(attr))
+                    if attr_val != val:
+                        skip_this_item = True
+                        break
+
+                if skip_this_item:
+                    continue
+
+                value = item.get(self._ns(attribute))
+
+                if value is not None:
+                    return value
+        return None
 
     def get_all_attribute_value(
         self, tag_name, attribute, format_value=True, **attribute_filter
