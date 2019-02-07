@@ -904,7 +904,11 @@ class APK(object):
         """
 
         # TODO: figure out if both android:name and name tag exist which one to give preference
-        return tag.get(self._ns(attribute)) or tag.get(attribute)
+        value = tag.get(self._ns(attribute))
+        if value is None:
+            log.warning("Failed to get the attribute with namespace")
+            value = tag.get(attribute)
+        return value
 
     def find_tags(self, tag_name, **attribute_filter):
         """
@@ -958,7 +962,10 @@ class APK(object):
             return True
         for attr, value in attribute_filter.items():
             # TODO: figure out if both android:name and name tag exist which one to give preference
-            _value = tag.get(self._ns(attr)) or tag.get(attr)
+            _value = tag.get(self._ns(attr))
+            if _value is None:
+                log.warning("Failed to get the attribute with namespace")
+                _value = tag.get(attr)
             if _value != value:
                 return False
         return True
