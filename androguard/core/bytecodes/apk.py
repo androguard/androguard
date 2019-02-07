@@ -783,7 +783,6 @@ class APK(object):
         dexre = re.compile("^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    @DeprecationWarning
     def get_elements(self, tag_name, attribute, with_namespace=True):
         """
         .. deprecated:: 3.3.5
@@ -794,6 +793,7 @@ class APK(object):
         :param str tag_name: a string which specify the tag name
         :param str attribute: a string which specify the attribute
         """
+        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
         for i in self.xml:
             if self.xml[i] is None:
                 continue
@@ -824,10 +824,9 @@ class APK(object):
                     value = self.package + "." + value
         return value
 
-    @DeprecationWarning
     def get_element(self, tag_name, attribute, **attribute_filter):
         """
-        ..Deprecated:: 3.3.5
+        .. deprecated:: 3.3.5
             use :meth:`get_attribute_value` instead
 
         Return element in xml files which match with the tag name and the specific attribute
@@ -836,6 +835,7 @@ class APK(object):
         :param str attribute: specify the attribute
         :rtype: str
         """
+        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
         for i in self.xml:
             if self.xml[i] is None:
                 continue
@@ -1171,7 +1171,6 @@ class APK(object):
                         "Unknown permission from android reference"]
         return l
 
-    @DeprecationWarning
     def get_requested_permissions(self):
         """
         .. deprecated:: 3.1.0
@@ -1183,6 +1182,7 @@ class APK(object):
 
         :rtype: list of str
         """
+        warnings.warn("This method is deprecated since 3.1.0.", DeprecationWarning)
         return self.get_permissions()
 
     def get_requested_aosp_permissions(self):

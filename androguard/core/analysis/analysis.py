@@ -631,6 +631,11 @@ class ExternalClass:
         return self.methods.values()
 
     def GetMethod(self, name, descriptor):
+        """
+        .. deprecated:: 3.1.0
+            Use :meth:`get_method` instead.
+
+        """
         warnings.warn("deprecated, use get_method instead. This function might be removed in a later release!", DeprecationWarning)
         return self.get_method(name, descriptor)
 
