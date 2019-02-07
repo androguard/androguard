@@ -786,6 +786,7 @@ class APK(object):
     @DeprecationWarning
     def get_elements(self, tag_name, attribute, with_namespace=True):
         """
+        Deprecated: use `get_all_attribute_value()` instead
         Return elements in xml files which match with the tag name and the specific attribute
         :param tag_name: a string which specify the tag name
         :param attribute: a string which specify the attribute
@@ -823,6 +824,7 @@ class APK(object):
     @DeprecationWarning
     def get_element(self, tag_name, attribute, **attribute_filter):
         """
+        :Deprecated: use `get_attribute_value()` instead
         Return element in xml files which match with the tag name and the specific attribute
         :param tag_name: specify the tag name
         :type tag_name: string
@@ -856,6 +858,15 @@ class APK(object):
     def get_all_attribute_value(
         self, tag_name, attribute, format_value=True, **attribute_filter
     ):
+        """
+        Return all the attribute values in xml files which match with the tag name and the specific attribute
+        :param tag_name: specify the tag name
+        :type tag_name: string
+        :param attribute: specify the attribute
+        :type attribute: string
+        :param format_value: specify if the value needs to be formatted with packagename
+        :type format_value: boolean
+        """
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
             value = tag.get(attribute) or tag.get(self._ns(attribute))
@@ -868,6 +879,15 @@ class APK(object):
     def get_attribute_value(
         self, tag_name, attribute, format_value=False, **attribute_filter
     ):
+        """
+        Return the attribute value in xml files which matches the tag name and the specific attribute
+        :param tag_name: specify the tag name
+        :type tag_name: string
+        :param attribute: specify the attribute
+        :type attribute: string
+        :param format_value: specify if the value needs to be formatted with packagename
+        :type format_value: boolean
+        """
 
         for value in self.get_all_attribute_value(
                 tag_name, attribute, format_value, **attribute_filter):
@@ -875,9 +895,23 @@ class APK(object):
                 return value
 
     def get_value_from_tag(self, tag, attribute):
+        """
+        Return the value of the attribute in a specific tag
+        :param tag: specify the tag element
+        :type tag: Element
+        :param attribute: specify the attribute
+        :type attribute: string
+        """
+
+        # TODO: figure out if both android:name and name tag exist which one to give preference
         return tag.get(self._ns(attribute)) or tag.get(attribute)
 
     def find_tags(self, tag_name, **attribute_filter):
+        """
+        Return a list of all the matched tags in all available xml
+        :param tag: specify the tag name
+        :type tag: string
+        """
         all_tags = [
             self.find_tags_from_xml(
                 i, tag_name, **attribute_filter
@@ -889,6 +923,13 @@ class APK(object):
     def find_tags_from_xml(
         self, xml_name, tag_name, **attribute_filter
     ):
+        """
+        Return a list of all the matched tags in a specific xml
+        :param xml_name: specify from which xml to pick the tag from
+        :type xml_name: string
+        :param tag_name: specify the tag name
+        :type tag_name: string
+        """
         xml = self.xml[xml_name]
         if xml is None:
             return []
@@ -906,10 +947,18 @@ class APK(object):
         ]
 
     def is_tag_matched(self, tag, **attribute_filter):
+        """
+        Return true if the attributes matches in attribute filter
+        :param tag: specify the tag element
+        :type tag: Element
+        :param attribute: specify the attribute
+        :type attribute: string
+        """
         if len(attribute_filter) <= 0:
             return True
         for attr, value in attribute_filter.items():
-            _value = tag.get(attr) or tag.get(self._ns(attr))
+            # TODO: figure out if both android:name and name tag exist which one to give preference
+            _value = tag.get(self._ns(attr)) or tag.get(attr)
             if _value != value:
                 return False
         return True
