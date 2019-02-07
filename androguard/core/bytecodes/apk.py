@@ -17,6 +17,7 @@ import zipfile
 import logging
 from struct import unpack
 import hashlib
+import warnings
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
@@ -648,7 +649,7 @@ class APK(object):
         try:
             ftype = magic.from_buffer(buffer[:1024])
         except magic.MagicError as e:
-            log.exception("Error getting the magic type!")
+            log.exception("Error getting the magic type: %s", e)
             return default
 
         if not ftype:
@@ -1595,7 +1596,6 @@ class APK(object):
         if not self.is_signed_v3():
             return
 
-        certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
@@ -1697,7 +1697,6 @@ class APK(object):
         if not self.is_signed_v2():
             return
 
-        certificates = []
         block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
