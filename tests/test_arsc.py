@@ -126,7 +126,7 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(a.get_app_name(), "Jamendo")
         res_parser = a.get_android_resources()
 
-        res_id = int(a.get_element('application', 'label')[1:], 16)
+        res_id = int(a.get_attribute_value('application', 'label')[1:], 16)
 
         # Default Mode, no config
         self.assertEqual(len(res_parser.get_res_configs(res_id)), 2)
