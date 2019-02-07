@@ -20,7 +20,6 @@ import hashlib
 
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
-from enum import Enum
 
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
@@ -328,29 +327,34 @@ class APK(object):
                     log.error("AndroidManifest.xml does not start with a <manifest> tag! Is this a valid APK?")
                     return
 
-                self.package = self.xml[i].get("package")
-                self.androidversion["Code"] = self.xml[i].get(self._ns("versionCode"))
-                self.androidversion["Name"] = self.xml[i].get(self._ns("versionName"))
+                self.package = self.get_attribute_value("manifest", "package")
+                self.androidversion["Code"] = self.get_attribute_value("manifest", "versionCode")
+                self.androidversion["Name"] = self.get_attribute_value("manifest", "versionName")
+                uses_permission = list(self.get_all_attribute_value("uses-permission", "name"))
+                self.permissions = self.permissions + uses_permission
 
-                for item in self.xml[i].findall('uses-permission'):
-                    name = item.get(self._ns("name"))
-                    self.permissions.append(name)
-                    maxSdkVersion = None
-                    try:
-                        maxSdkVersion = int(item.get(self._ns('maxSdkVersion')))
-                    except ValueError:
-                        log.warning(item.get(self._ns('maxSdkVersion')) + 'is not a valid value for <uses-permission> maxSdkVersion')
-                    except TypeError:
-                        pass
-                    self.uses_permissions.append([name, maxSdkVersion])
+                maxSdkVersion = None
+                try:
+                    maxSdkVersion = int(self.get_max_sdk_version())
+                except ValueError:
+                    log.warning(self.get_max_sdk_version() + 'is not a valid value for <uses-permission> maxSdkVersion')
+                except TypeError:
+                    pass
+
+                self.uses_permissions = [[i, maxSdkVersion] for i in uses_permission]
 
                 # getting details of the declared permissions
-                for d_perm_item in self.xml[i].findall('permission'):
-                    d_perm_name = self._get_res_string_value(str(d_perm_item.get(self._ns("name"))))
-                    d_perm_label = self._get_res_string_value(str(d_perm_item.get(self._ns("label"))))
-                    d_perm_description = self._get_res_string_value(str(d_perm_item.get(self._ns("description"))))
-                    d_perm_permissionGroup = self._get_res_string_value(str(d_perm_item.get(self._ns("permissionGroup"))))
-                    d_perm_protectionLevel = self._get_res_string_value(str(d_perm_item.get(self._ns("protectionLevel"))))
+                for d_perm_item in self.find_tags('permission'):
+                    d_perm_name = self._get_res_string_value(
+                        str(self.get_value_from_tag(d_perm_item, "name")))
+                    d_perm_label = self._get_res_string_value(
+                        str(self.get_value_from_tag(d_perm_item, "label")))
+                    d_perm_description = self._get_res_string_value(
+                        str(self.get_value_from_tag(d_perm_item, "description")))
+                    d_perm_permissionGroup = self._get_res_string_value(
+                        str(self.get_value_from_tag(d_perm_item, "permissionGroup")))
+                    d_perm_protectionLevel = self._get_res_string_value(
+                        str(self.get_value_from_tag(d_perm_item, "protectionLevel")))
 
                     d_perm_details = {
                         "label": d_perm_label,
@@ -442,10 +446,16 @@ class APK(object):
         :rtype: :class:`str`
         """
 
-        app_name = self.get_element('application', 'label')
+        app_name = self.get_attribute_value('application', 'label')
         if not app_name:
+            activities = self.get_main_activities()
+            main_activity_name = None
+            if len(activities) > 0:
+                main_activity_name = activities.pop()
             main_activity_name = self.get_main_activity()
-            app_name = self.get_element('activity', 'label', name=main_activity_name)
+            app_name = self.get_attribute_value(
+                'activity', 'label', name=main_activity_name
+            )
 
         if app_name is None:
             # No App name set
@@ -525,10 +535,11 @@ class APK(object):
         """
         main_activity_name = self.get_main_activity()
 
-        app_icon = self.get_element('activity', 'icon', name=main_activity_name)
+        app_icon = self.get_attribute_value(
+            'activity', 'icon', name=main_activity_name)
 
         if not app_icon:
-            app_icon = self.get_element('application', 'icon')
+            app_icon = self.get_attribute_value('application', 'icon')
 
         res_parser = self.get_android_resources()
         if not res_parser:
@@ -767,25 +778,6 @@ class APK(object):
         dexre = re.compile("^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    def get_elements(self, tag_name, attribute, with_namespace=True):
-        """
-        Return elements in xml files which match with the tag name and the specific attribute
-
-        :param tag_name: a string which specify the tag name
-        :param attribute: a string which specify the attribute
-        """
-        for i in self.xml:
-            if self.xml[i] is None:
-                continue
-            for item in self.xml[i].findall('.//' + tag_name):
-                if with_namespace:
-                    value = item.get(self._ns(attribute))
-                else:
-                    value = item.get(attribute)
-                # There might be an attribute without the namespace
-                if value:
-                    yield self._format_value(value)
-
     def _format_value(self, value):
         """
         Format a value with packagename, if not already set
@@ -804,39 +796,63 @@ class APK(object):
                     value = self.package + "." + value
         return value
 
-    def get_element(self, tag_name, attribute, **attribute_filter):
-        """
-        Return element in xml files which match with the tag name and the specific attribute
+    def get_all_attribute_value(
+        self, tag_name, attribute, **attribute_filter
+    ):
+        tags = self.find_tags(tag_name, **attribute_filter)
+        for tag in tags:
+            value = tag.get(attribute) or tag.get(self._ns(attribute))
+            if value is not None:
+                yield self._format_value(value)
 
-        :param tag_name: specify the tag name
-        :type tag_name: string
-        :param attribute: specify the attribute
-        :type attribute: string
+    def get_attribute_value(
+        self, tag_name, attribute, **attribute_filter
+    ):
 
-        :rtype: string
-        """
-        for i in self.xml:
-            if self.xml[i] is None:
-                continue
-            tag = self.xml[i].findall('.//' + tag_name)
-            if len(tag) == 0:
-                return None
-            for item in tag:
-                skip_this_item = False
-                for attr, val in list(attribute_filter.items()):
-                    attr_val = item.get(self._ns(attr))
-                    if attr_val != val:
-                        skip_this_item = True
-                        break
+        for value in self.get_all_attribute_value(
+                tag_name, attribute, **attribute_filter):
+            if value is not None:
+                return value
 
-                if skip_this_item:
-                    continue
+    def get_value_from_tag(self, tag, attribute):
+        return tag.get(self._ns(attribute)) or tag.get(attribute)
 
-                value = item.get(self._ns(attribute))
+    def find_tags(self, tag_name, **attribute_filter):
+        all_tags = [
+            self.find_tags_from_xml(
+                i, tag_name, **attribute_filter
+            )
+            for i in self.xml
+        ]
+        return [tag for tag_list in all_tags for tag in tag_list]
 
-                if value is not None:
-                    return value
-        return None
+    def find_tags_from_xml(
+        self, xml_name, tag_name, **attribute_filter
+    ):
+        xml = self.xml[xml_name]
+        if xml is None:
+            return []
+        if xml.tag == tag_name:
+            if self.is_tag_matched(
+                xml.tag, **attribute_filter
+            ):
+                return [xml]
+            return []
+        tags = xml.findall(".//" + tag_name)
+        return [
+            tag for tag in tags if self.is_tag_matched(
+                tag, **attribute_filter
+            )
+        ]
+
+    def is_tag_matched(self, tag, **attribute_filter):
+        if len(attribute_filter) <= 0:
+            return True
+        for attr, value in attribute_filter.items():
+            _value = tag.get(attr) or tag.get(self._ns(attr))
+            if _value == value:
+                return True
+        return False
 
     def get_main_activities(self):
         """
@@ -901,7 +917,7 @@ class APK(object):
 
         :rtype: a list of str
         """
-        return list(self.get_elements("activity", "name"))
+        return list(self.get_all_attribute_value("activity", "name"))
 
     def get_services(self):
         """
@@ -909,7 +925,7 @@ class APK(object):
 
         :rtype: a list of str
         """
-        return list(self.get_elements("service", "name"))
+        return list(self.get_all_attribute_value("service", "name"))
 
     def get_receivers(self):
         """
@@ -917,7 +933,7 @@ class APK(object):
 
         :rtype: a list of string
         """
-        return list(self.get_elements("receiver", "name"))
+        return list(self.get_all_attribute_value("receiver", "name"))
 
     def get_providers(self):
         """
@@ -925,7 +941,7 @@ class APK(object):
 
         :rtype: a list of string
         """
-        return list(self.get_elements("provider", "name"))
+        return list(self.get_all_attribute_value("provider", "name"))
 
     def get_intent_filters(self, itemtype, name):
         """
@@ -1117,7 +1133,7 @@ class APK(object):
 
             :rtype: string
         """
-        return self.get_element("uses-sdk", "maxSdkVersion")
+        return self.get_attribute_value("uses-sdk", "maxSdkVersion")
 
     def get_min_sdk_version(self):
         """
@@ -1125,7 +1141,7 @@ class APK(object):
 
             :rtype: string
         """
-        return self.get_element("uses-sdk", "minSdkVersion")
+        return self.get_attribute_value("uses-sdk", "minSdkVersion")
 
     def get_target_sdk_version(self):
         """
@@ -1133,7 +1149,7 @@ class APK(object):
 
             :rtype: string
         """
-        return self.get_element("uses-sdk", "targetSdkVersion")
+        return self.get_attribute_value("uses-sdk", "targetSdkVersion")
 
     def get_effective_target_sdk_version(self):
         """
@@ -1159,7 +1175,7 @@ class APK(object):
 
             :rtype: list
         """
-        return self.get_elements("uses-library", "name")
+        return list(self.get_all_attribute_value("uses-library", "name"))
 
     def get_features(self):
         """
@@ -1168,7 +1184,7 @@ class APK(object):
 
         :return: list
         """
-        return self.get_elements("uses-feature", "name")
+        return list(self.get_all_attribute_value("uses-feature", "name"))
 
     def is_wearable(self):
         """
@@ -1200,7 +1216,7 @@ class APK(object):
 
         :return: True if 'android.hardware.touchscreen' is not required, False otherwise
         """
-        return self.get_element('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
+        return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
     def get_certificate_der(self, filename):
         """
