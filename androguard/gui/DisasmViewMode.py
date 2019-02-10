@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from __future__ import division
 
 from PyQt5 import QtGui, QtCore
@@ -6,9 +5,9 @@ from builtins import hex
 from builtins import range
 
 from androguard.core.bytecodes import dvm
-from . import TextSelection
-from .ViewMode import *
-from .cemu import *
+from androguard.gui import TextSelection
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import ConsoleEmulator, Directions
 
 import logging
 log = logging.getLogger("androguard.gui")

@@ -1,11 +1,18 @@
-from __future__ import absolute_import
 from __future__ import division
 
-from .Banners import *
-from .DataModel import *
+from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.uic import loadUi
 
-import sys
+from androguard.gui.Banners import Banners, FileAddrBanner, TopBanner, BottomBanner
+from androguard.gui.cemu import Cursor
+from androguard.gui.TextDecorators import HighlightASCII, TextDecorator
+from androguard.gui import TextSelection
+
 import pyperclip
+import os
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 class SearchWindow(QtWidgets.QDialog):
     def __init__(self, parent, plugin, searchable):
@@ -146,10 +153,10 @@ class Searchable(Observer):
             return -1
 
         if not previous:
-            idx1 = string.find(data, text, start)
+            idx1 = data.find(text, start)
             text1 = '\0'.join(text)
 
-            idx2 = string.find(data, text1, start)
+            idx2 = data.find(text1, start)
 
             idx = idx1
             if idx1 == -1:
@@ -159,10 +166,10 @@ class Searchable(Observer):
                     idx = idx2
 
         else:
-            idx1 = string.rfind(data, text, 0, start)
+            idx1 = data.rfind(text, 0, start)
             text1 = '\0'.join(text)
 
-            idx2 = string.rfind(data, text1, 0, start)
+            idx2 = data.rfind(text1, 0, start)
 
             idx = idx1
 
@@ -355,15 +362,6 @@ class binWidget(QtWidgets.QWidget, Observable):
                     self.dataModel.write(0, array)
                     self.viewMode.draw(True)
                     del pyperclip
-
-                if key == QtCore.Qt.Key_F4:
-                    self.unp = WUnpack(self, None)
-                    self.unp.show()
-
-            if key == QtCore.Qt.Key_F10:
-                self.dataModel.flush()
-                self.w = WHeaders(self, None)
-                self.w.show()
 
             if not self.viewMode.isInEditMode():
                 if key == QtCore.Qt.Key_Slash:

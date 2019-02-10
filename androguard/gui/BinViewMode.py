@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from __future__ import division
 
 import string
@@ -7,10 +6,13 @@ from time import time
 from PyQt5 import QtGui, QtCore
 from builtins import str
 
-from .TextDecorators import *
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
+from androguard.gui.TextDecorators import RangePen
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import ConsoleEmulator, Directions
+from androguard.gui import TextSelection
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 
 class BinViewMode(ViewMode):

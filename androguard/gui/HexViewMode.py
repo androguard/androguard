@@ -1,7 +1,5 @@
-from __future__ import absolute_import
 from __future__ import division
 
-import sys
 import string
 
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -9,11 +7,10 @@ from PyQt5.uic import loadUi
 from builtins import hex
 from builtins import str
 
-from androguard.core.androconf import CONF
-from .TextDecorators import *
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
+from androguard.gui.TextDecorators import RangePen
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import Directions, ConsoleEmulator
+from androguard.gui import TextSelection
 import os
 
 class HexViewMode(ViewMode):

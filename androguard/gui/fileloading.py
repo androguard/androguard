@@ -1,5 +1,3 @@
-import traceback
-
 from PyQt5 import QtCore
 
 import androguard.session as session
