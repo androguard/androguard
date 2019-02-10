@@ -1,4 +1,3 @@
-
 import pyperclip
 from PyQt5 import QtCore, QtGui, QtWidgets
 from builtins import str

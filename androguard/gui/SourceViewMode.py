@@ -1,9 +1,8 @@
 from __future__ import division
-from __future__ import absolute_import
 from builtins import range
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import ConsoleEmulator
+from androguard.gui import TextSelection
 
 from PyQt5 import QtGui, QtCore
 

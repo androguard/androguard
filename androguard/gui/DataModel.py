@@ -1,13 +1,15 @@
-from __future__ import absolute_import
 from __future__ import division
 
 import os
 import mmap
 
-from .BinViewMode import *
-from .HexViewMode import *
-from .DisasmViewMode import *
-from .SourceViewMode import *
+from androguard.gui.BinViewMode import BinViewMode
+from androguard.gui.HexViewMode import HexViewMode
+from androguard.gui.DisasmViewMode import DisasmViewMode
+from androguard.gui.SourceViewMode import SourceViewMode
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 
 class Observer(object):
@@ -219,6 +221,7 @@ class FileDataModel(DataModel):
         try:
             self._f = open(self._filename, "r+b")
         except OSError as e:
+            log.exception("File could not be opened for writing: %s", e)
             # could not open for writing
             return False
         self._f.write(self._mapped)

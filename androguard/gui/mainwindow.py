@@ -1,7 +1,9 @@
 import sys
 
+from PyQt5 import QtWidgets, QtGui, QtCore
+
 import androguard.session as session_module
-from androguard.gui.DataModel import *
+from androguard.gui.DataModel import ApkModel, DexClassModel
 from androguard.gui.apiwindow import APIWindow
 from androguard.gui.binwindow import binWidget
 from androguard.gui.fileloading import FileLoadingThread
