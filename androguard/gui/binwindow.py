@@ -363,15 +363,6 @@ class binWidget(QtWidgets.QWidget, Observable):
                     self.viewMode.draw(True)
                     del pyperclip
 
-                if key == QtCore.Qt.Key_F4:
-                    self.unp = WUnpack(self, None)
-                    self.unp.show()
-
-            if key == QtCore.Qt.Key_F10:
-                self.dataModel.flush()
-                self.w = WHeaders(self, None)
-                self.w.show()
-
             if not self.viewMode.isInEditMode():
                 if key == QtCore.Qt.Key_Slash:
                     self.searchWindow.show()
