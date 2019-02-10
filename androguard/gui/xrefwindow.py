@@ -189,22 +189,22 @@ class XrefDialogString(QtWidgets.QDialog):
 class XrefDialog(QtWidgets.QDialog):
     """Dialog holding our Xref listview.
         parent: SourceWindow that started the new XrefDialog
-        path: complete path of the class we are looking an xref from
-        method (optional): method of the class we are looking xref from
+        win: ???
         xrefs_list: the list of "Class -> Method" strings representing the xrefs
+        method (optional): method of the class we are looking xref from
+        path: complete path of the class we are looking an xref from
 
         path/method are used for the title of the window
         xrefs_list for the content of the QListView
     """
 
-    def __init__(self, parent=None, win=None, xrefs_list=None, method=""):
+    def __init__(self, parent=None, win=None, xrefs_list=None, method="", path=""):
         super(XrefDialog, self).__init__(parent)
 
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
             log.warning("Bad XrefDialog creation")
             return
 
-        # FIXME: what is path???
         if not method:
             title = "Xrefs to %s" % path.split("/")[-1]
         else:
