@@ -1,7 +1,11 @@
 import hashlib
-from androguard.core.analysis.analysis import *
-from androguard.core.bytecodes.dvm import *
-from androguard.decompiler.decompiler import *
+import os
+import sys
+import collections
+from androguard.core.analysis.analysis import Analysis
+from androguard.core.bytecodes.dvm import DalvikVMFormat, DalvikOdexVMFormat
+from androguard.core.bytecodes.apk import APK
+from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.core import androconf
 
 import pickle
@@ -54,7 +58,7 @@ def Save(session, filename=None):
         with open(filename, "wb") as fd:
             pickle.dump(session, fd)
         saved = True
-    except RecursionError as e:
+    except RecursionError:
         log.exception("Recursion Limit hit while saving. "
                       "Current Recursion limit: {}. "
                       "Please report this error!".format(sys.getrecursionlimit()))

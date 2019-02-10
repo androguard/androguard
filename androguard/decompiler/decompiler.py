@@ -22,7 +22,6 @@ from subprocess import Popen, PIPE, STDOUT
 
 import tempfile
 import os
-import sys
 
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
