@@ -695,7 +695,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         else:
             self.mainwin.showStatus(
                 "Rename not available. Info found: '%s' but object not supported."
-                % selection)
+                % t[0])
             return
 
         # Do the actual renaming
