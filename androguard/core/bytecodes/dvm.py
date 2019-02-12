@@ -7146,8 +7146,6 @@ class ClassManager(object):
         if config["RECODE_ASCII_STRING_METH"]:
             self.recode_ascii_string_meth = config["RECODE_ASCII_STRING_METH"]
 
-        self.lazy_analysis = config["LAZY_ANALYSIS"]
-
         self.hook_strings = {}
 
         self.engine = []
@@ -7181,7 +7179,12 @@ class ClassManager(object):
         return self.__strings_off[offset]
 
     def get_lazy_analysis(self):
-        return self.lazy_analysis
+        """
+        .. deprecated:: 3.3.5
+            do not use this function anymore!
+        """
+        warnings.warn("deprecated, this method always returns False!", DeprecationWarning)
+        return False
 
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
@@ -7557,7 +7560,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.config = {
                 "RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
                 "RECODE_ASCII_STRING_METH": CONF["RECODE_ASCII_STRING_METH"],
-                "LAZY_ANALYSIS": CONF["LAZY_ANALYSIS"]
             }
 
         self.CM = ClassManager(self, self.config)

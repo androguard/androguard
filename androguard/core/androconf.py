@@ -43,28 +43,44 @@ class Color(object):
     Grey = "\033[37m"
     Bold = "\033[1m"
 
-# TODO most of these options are duplicated, as they are also the default arguments to the functions
+
 default_conf = {
+    ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
     "BIN_JADX": "jadx",
-    "BIN_DED": "ded.sh",
+    # Dex2jar binary
     "BIN_DEX2JAR": "dex2jar.sh",
-    "BIN_JAD": "jad",
-    "BIN_WINEJAD": "jad.exe",
-    "BIN_FERNFLOWER": "fernflower.jar",
+
+    # TODO Use apksigner instead
     "BIN_JARSIGNER": "jarsigner",
 
-    "OPTIONS_FERNFLOWER": {"dgs": '1',
+    "BIN_DED": "ded.sh",  # TO BE REMOVED
+    "BIN_JAD": "jad",  # TO BE REMOVED
+    "BIN_WINEJAD": "jad.exe",  # TO BE REMOVED
+    "BIN_FERNFLOWER": "fernflower.jar",  # TO BE REMOVED
+    "OPTIONS_FERNFLOWER": {"dgs": '1',  # TO BE REMOVED
                            "asc": '1'},
-    "PRETTY_SHOW": 1,
+
+    ## Runtime variables
+    # A path to the temporary directory
     "TMP_DIRECTORY": tempfile.gettempdir(),
-    # Full python or mix python/c++ (native)
-    # "ENGINE" : "automatic",
-    "ENGINE": "python",
+
+    # Function to print stuff
+    "PRINT_FCT": sys.stdout.write,
+
+    # Default API level, if requested API is not available
+    "DEFAULT_API": 16,  # this is the minimal API version we have
+
+    # Session, for persistence
+    "SESSION": None,
+
+    # Recode strings when getting them from ClassManager
+    # FIXME: Should be not needed anymore?
     "RECODE_ASCII_STRING": False,
+    # Optional Function which can recode a string
     "RECODE_ASCII_STRING_METH": None,
-    "DEOBFUSCATED_STRING": True,
-    #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
+
+    ## Color output configuration
     "COLORS": {
         "OFFSET": Color.Yellow,
         "OFFSET_ADDR": Color.Green,
@@ -86,13 +102,8 @@ default_conf = {
             "meth": Color.Cyan,
             "type": Color.Blue,
             "field": Color.Green,
-        }
+        },
     },
-    "PRINT_FCT": sys.stdout.write,
-    "LAZY_ANALYSIS": False,
-    "MAGIC_PATH_FILE": None,
-    "DEFAULT_API": 16,  # this is the minimal API version we have
-    "SESSION": None,
 }
 
 
@@ -245,6 +256,10 @@ def show_logging(level=logging.INFO):
 
 
 def set_options(key, value):
+    """
+    .. deprecated:: 3.3.5
+        Use :code:`CONF[key] = value` instead
+    """
     CONF[key] = value
 
 
