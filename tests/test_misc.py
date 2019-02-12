@@ -20,6 +20,22 @@ class MiscTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as fp:
             self.assertEqual(fp.name + "_0", clean_file_name(fp.name, unique=True))
 
+    def testClassNameFormatting(self):
+        from androguard.core.bytecode import get_package_class_name
+
+        self.assertEqual(get_package_class_name('Ljava/lang/Object;'), ('java.lang', 'Object'))
+        self.assertEqual(get_package_class_name('LFoobar;'), ('', 'Foobar'))
+        self.assertEqual(get_package_class_name('Lsdflkjdsklfjsdkjfklsdjfkljsdkflsd/shdfjksdhkjfhsdkjfsh;'),
+                         ('sdflkjdsklfjsdkjfklsdjfkljsdkflsd', 'shdfjksdhkjfhsdkjfsh'))
+        self.assertEqual(get_package_class_name('L;'), ('', ''))
+
+        with self.assertRaises(ValueError):
+            get_package_class_name('Foobar')
+
+        with self.assertRaises(ValueError):
+            get_package_class_name('java.lang.Object')
+
+
 
 if __name__ == '__main__':
     unittest.main()
