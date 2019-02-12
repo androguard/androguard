@@ -448,7 +448,7 @@ class MethodClassAnalysis:
         Both referneces to other methods (XREF_TO) as well as methods calling
         this method (XREF_FROM) are saved.
 
-        :param method: `dvm.EncodedMethod`
+        :param androguard.core.bytecodes.dvm.EncodedMethod method: the DVM Method object
         """
         self.method = method
         self.xrefto = set()
@@ -456,6 +456,21 @@ class MethodClassAnalysis:
 
         # Reserved for further use
         self.apilist = None
+
+    @property
+    def name(self):
+        """Returns the name of this method"""
+        return self.method.get_name()
+
+    @property
+    def descriptor(self):
+        """Returns the type descriptor for this method"""
+        return self.method.get_descriptor()
+
+    @property
+    def access(self):
+        """Returns the access flags to the method as a string"""
+        return self.method.get_access_flags_string()
 
     def AddXrefTo(self, classobj, methodobj, offset):
         """
@@ -574,11 +589,15 @@ class FieldClassAnalysis:
 
         That means, that it will show you, where the field is read or written.
 
-        :param field: `dvm.EncodedField`
+        :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
         """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
+
+    @property
+    def name(self):
+        return self.field.get_name()
 
     def AddXrefRead(self, classobj, methodobj):
         self.xrefread.add((classobj, methodobj))
@@ -792,7 +811,7 @@ class ClassAnalysis:
 
     def get_methods(self):
         """
-        Return all `MethodClassAnalysis` objects of this class
+        Return all :class:`MethodClassAnalysis` objects of this class
         """
         return list(self._methods.values())
 
@@ -1422,6 +1441,49 @@ class Analysis:
                     CG.add_edge(orig_method, callee)
 
         return CG
+
+    def create_ipython_exports(self):
+        """
+        .. warning:: this feature is experimental and is currently not enabled by default! Use with caution!
+
+        Creates attributes for all classes, methods and fields on the Analysis object itself.
+        This makes it easier to work with Analysis module in an iPython shell.
+
+        Classes can be search by typing :code:`dx.CLASS_<tab>`, as each class is added via this attribute name.
+        Each class will have all methods attached to it via :code:`dx.CLASS_Foobar.METHOD_<tab>`.
+        Fields have a similar syntax: :code:`dx.CLASS_Foobar.FIELD_<tab>`.
+
+        As Strings can contain nearly anything, use :meth:`find_strings` instead.
+
+        * Each `CLASS_` item will return a :class:`~ClassAnalysis`
+        * Each `METHOD_` item will return a :class:`~MethodClassAnalysis`
+        * Each `FIELD_` item will return a :class:`~FieldClassAnalysis`
+        """
+        # TODO: it would be fun to have the classes organized like the packages. I.e. you could do dx.CLASS_xx.yyy.zzz
+        for cls in self.get_classes():
+            name = "CLASS_" + bytecode.FormatClassToPython(cls.name)
+            if hasattr(self, name):
+                log.warning("Already existing class {}!".format(name))
+            setattr(self, name, cls)
+
+            for meth in cls.get_methods():
+                method_name = meth.name
+                if method_name in ["<init>", "<clinit>"]:
+                    _, method_name = bytecode.get_package_class_name(cls.name)
+
+                # FIXME this naming schema is not very good... but to describe a method uniquely, we need all of it
+                mname = "METH_" + method_name + "_" + bytecode.FormatDescriptorToPython(meth.access) + "_" + bytecode.FormatDescriptorToPython(meth.descriptor)
+                if hasattr(cls, mname):
+                    log.warning("already existing method: {} at class {}".format(mname, name))
+                setattr(cls, mname, meth)
+
+            # FIXME: syntetic classes produce problems here.
+            # If the field name is the same in the parent as in the syntetic one, we can only add one!
+            for field in cls.get_fields():
+                mname = "FIELD_" + bytecode.FormatNameToPython(field.name)
+                if hasattr(cls, mname):
+                    log.warning("already existing field: {} at class {}".format(mname, name))
+                setattr(cls, mname, field)
 
 
 def is_ascii_obfuscation(vm):

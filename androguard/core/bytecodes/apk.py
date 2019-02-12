@@ -216,6 +216,8 @@ class APK(object):
         0x0301 : "DSA with SHA2-256 digest",
     }
 
+    __no_magic = False
+
     def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
         """
         This class can access to all elements in an APK file
@@ -291,9 +293,10 @@ class APK(object):
         if not skip_analysis:
             self._apk_analysis()
 
-    def _ns(self, name):
+    @staticmethod
+    def _ns(name):
         """
-        return the name including the Android namespace
+        return the name including the Android namespace URI
         """
         return NS_ANDROID + name
 
@@ -459,9 +462,10 @@ class APK(object):
             main_activity_name = None
             if len(activities) > 0:
                 main_activity_name = activities.pop()
-            app_name = self.get_attribute_value(
-                'activity', 'label', name=main_activity_name
-            )
+
+            # FIXME: would need to use _format_value inside get_attribute_value for each returned name!
+            # For example, as the activity name might be foobar.foo.bar but inside the activity it is only .bar
+            app_name = self.get_attribute_value('activity', 'label', name=main_activity_name)
 
         if app_name is None:
             # No App name set
@@ -530,10 +534,11 @@ class APK(object):
         For example adaptive icons are usually marked as anydpi.
 
         When it comes now to selecting an icon, there is the following flow:
-        1) is there an anydpi icon?
-        2) is there an icon for the dpi of the device?
-        3) is there a nodpi icon?
-        4) (only on very old devices) is there a icon with dpi 0 (the default)
+
+        1. is there an anydpi icon?
+        2. is there an icon for the dpi of the device?
+        3. is there a nodpi icon?
+        4. (only on very old devices) is there a icon with dpi 0 (the default)
 
         For more information read here: https://stackoverflow.com/a/34370735/446140
 
@@ -629,12 +634,23 @@ class APK(object):
         :returns: str of filetype
         """
         default = "Unknown"
-        ftype = None
+
+        # Faster way, test once, return default.
+        if self.__no_magic:
+            return default
 
         try:
             # Magic is optional
             import magic
         except ImportError:
+            self.__no_magic = True
+            log.warning("No Magic library was found on your system.")
+            return default
+        except TypeError as e:
+            self.__no_magic = True
+            log.warning("It looks like you have the magic python package installed but not the magic library itself!")
+            log.warning("Error from magic library: %s", e)
+            log.warning("Please follow the installation instructions at https://github.com/ahupp/python-magic/#installation")
             return default
 
         try:
@@ -643,7 +659,8 @@ class APK(object):
             # We use this one: https://github.com/ahupp/python-magic/
             getattr(magic, "MagicException")
         except AttributeError:
-            # Looks like no magic was installed
+            self.__no_magic = True
+            log.warning("Not the correct Magic library was found on your system. Please install python-magic!")
             return default
 
         try:
@@ -670,16 +687,14 @@ class APK(object):
         """
         Return the files inside the APK with their associated types (by using python-magic)
 
+        At the same time, the CRC32 are calculated for the files.
+
         :rtype: a dictionnary
         """
         if self._files == {}:
             # Generate File Types / CRC List
             for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files_crc32[i] = crc32(buffer)
-                # FIXME why not use the crc from the zipfile?
-                # should be validated as well.
-                #crc = self.zip.getinfo(i).CRC
+                buffer = self._get_crc32(i)
                 self._files[i] = self._get_file_magic_name(buffer)
 
         return self._files
@@ -692,12 +707,29 @@ class APK(object):
         :param orig: guess by mime libary
         :returns: corrected guess
         """
-        if ("Zip" in orig) or ('(JAR)' in orig):
-            val = androconf.is_android_raw(buffer)
-            if val == "APK":
-                return "Android application package file"
+        if ("Zip" in orig) or ('(JAR)' in orig) and androconf.is_android_raw(buffer) == 'APK':
+            return "Android application package file"
 
         return orig
+
+    def _get_crc32(self, filename):
+        """
+        Calculates and compares the CRC32 and returns the raw buffer.
+
+        The CRC32 is added to `files_crc32` dictionary, if not present.
+
+        :param filename: filename inside the zipfile
+        :rtype: bytes
+        """
+        buffer = self.zip.read(filename)
+        if filename not in self.files_crc32:
+            self.files_crc32[filename] = crc32(buffer)
+            if self.files_crc32[filename] != self.zip.getinfo(filename).CRC:
+                log.error("File '{}' has different CRC32 after unpacking! "
+                          "Declared: {:08x}, Calculated: {:08x}".format(filename,
+                                                                        self.zip.getinfo(filename).CRC,
+                                                                        self.files_crc32[filename]))
+        return buffer
 
     def get_files_crc32(self):
         """
@@ -707,8 +739,7 @@ class APK(object):
         """
         if self.files_crc32 == {}:
             for i in self.get_files():
-                buffer = self.zip.read(i)
-                self.files_crc32[i] = crc32(buffer)
+                self._get_crc32(i)
 
         return self.files_crc32
 
@@ -753,7 +784,8 @@ class APK(object):
         try:
             return self.get_file("classes.dex")
         except FileNotPresent:
-            return ""
+            # TODO is this a good idea to return an empty string?
+            return b""
 
     def get_dex_names(self):
         """
@@ -809,20 +841,21 @@ class APK(object):
 
     def _format_value(self, value):
         """
-        Format a value with packagename, if not already set
+        Format a value with packagename, if not already set.
+        For example, the name :code:`'.foobar'` will be transformed into :code:`'package.name.foobar'`.
+
+        Names which do not contain any dots are assumed to be packagename-less as well:
+        :code:`foobar` will also transform into :code:`package.name.foobar`.
 
         :param value:
         :returns:
         """
         if len(value) > 0:
-            if value[0] == ".":
-                value = self.package + value
-            else:
-                v_dot = value.find(".")
-                if v_dot == 0:
-                    value = self.package + "." + value
-                elif v_dot == -1:
-                    value = self.package + "." + value
+            v_dot = value.find(".")
+            if v_dot == 0:
+                value = self.package + "." + value
+            elif v_dot == -1:
+                value = self.package + "." + value
         return value
 
     def get_element(self, tag_name, attribute, **attribute_filter):
@@ -897,17 +930,46 @@ class APK(object):
 
     def get_value_from_tag(self, tag, attribute):
         """
-        Return the value of the attribute in a specific tag
+        Return the value of the android prefixed attribute in a specific tag.
+
+        This function will always try to get the attribute with a android: prefix first,
+        and will try to return the attribute without the prefix, if the attribute could not be found.
+        This is useful for some broken AndroidManifest.xml, where no android namespace is set,
+        but could also indicate malicious activity (i.e. wrongly repackaged files).
+        A warning is printed if the attribute is found without a namespace prefix.
+
+        If you require to get the exact result you need to query the tag directly:
+
+        example::
+            >>> from lxml.etree import Element
+            >>> tag = Element('bar', nsmap={'android': 'http://schemas.android.com/apk/res/android'})
+            >>> tag.set('{http://schemas.android.com/apk/res/android}foobar', 'barfoo')
+            >>> tag.set('name', 'baz')
+            # Assume that `a` is some APK object
+            >>> a.get_value_from_tag(tag, 'name')
+            'baz'
+            >>> tag.get('name')
+            'baz'
+            >>> tag.get('foobar')
+            None
+            >>> a.get_value_from_tag(tag, 'foobar')
+            'barfoo'
 
         :param lxml.etree.Element tag: specify the tag element
-        :param str attribute: specify the attribute
+        :param str attribute: specify the attribute name
+        :returns: the attribute's value, or None if the attribute is not present
         """
 
-        # TODO: figure out if both android:name and name tag exist which one to give preference
+        # TODO: figure out if both android:name and name tag exist which one to give preference:
+        # currently we give preference for the namespace one and fallback to the un-namespaced
         value = tag.get(self._ns(attribute))
         if value is None:
-            log.warning("Failed to get the attribute with namespace")
             value = tag.get(attribute)
+
+            if value:
+                # If value is still None, the attribute could not be found, thus is not present
+                log.warning("Failed to get the attribute '{}' on tag '{}' with namespace. "
+                            "But found the same attribute without namespace!".format(attribute, tag.tag))
         return value
 
     def find_tags(self, tag_name, **attribute_filter):
@@ -951,20 +1013,27 @@ class APK(object):
 
     def is_tag_matched(self, tag, **attribute_filter):
         """
-        Return true if the attributes matches in attribute filter
-        :param tag: specify the tag element
-        :type tag: Element
-        :param attribute: specify the attribute
-        :type attribute: string
+        Return true if the attributes matches in attribute filter.
+
+        An attribute filter is a dictionary containing: {attribute_name: value}.
+        This function will return True if and only if all attributes have the same value.
+        This function allows to set the dictionary via kwargs, thus you can filter like this:
+
+        example::
+            a.is_tag_matched(tag, name="foobar", other="barfoo")
+
+        This function uses a fallback for attribute searching. It will by default use
+        the namespace variant but fall back to the non-namespace variant.
+        Thus specifiying :code:`{"name": "foobar"}` will match on :code:`<bla name="foobar" \>`
+        as well as on :code:`<bla android:name="foobar" \>`.
+
+        :param lxml.etree.Element tag: specify the tag element
+        :param attribute_filter: specify the attribute filter as dictionary
         """
         if len(attribute_filter) <= 0:
             return True
         for attr, value in attribute_filter.items():
-            # TODO: figure out if both android:name and name tag exist which one to give preference
-            _value = tag.get(self._ns(attr))
-            if _value is None:
-                log.warning("Failed to get the attribute with namespace")
-                _value = tag.get(attr)
+            _value = self.get_value_from_tag(tag, attr)
             if _value != value:
                 return False
         return True
@@ -1683,8 +1752,6 @@ class APK(object):
             signer.maxSDK = signer_max_sdk
 
             self._v3_signing_data.append(signer)
-
-
 
     def parse_v2_signing_block(self):
         """

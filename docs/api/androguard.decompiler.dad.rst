@@ -4,10 +4,10 @@ androguard.decompiler.dad package
 Submodules
 ----------
 
-androguard.decompiler.dad.ast module
+androguard.decompiler.dad.dast module
 ------------------------------------
 
-.. automodule:: androguard.decompiler.dad.ast
+.. automodule:: androguard.decompiler.dad.dast
     :members:
     :undoc-members:
     :show-inheritance:

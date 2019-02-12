@@ -894,6 +894,34 @@ def FormatClassToPython(i):
     return i
 
 
+def get_package_class_name(name):
+    """
+    Return package and class name in a java variant from a typed variant name.
+
+    If no package could be found, the package is an empty string.
+
+    example::
+
+        >>> get_package_class_name('Ljava/lang/Object;')
+        ('java.lang', 'Object')
+
+    :param name: the name
+    :rtype: tuple
+    :return:
+    """
+    if name[0] != 'L' and name[-1] != ';':
+        raise ValueError("The name '{}' does not look like a typed name!".format(name))
+
+    name = name[1:-1]
+    if '/' not in name:
+        return '', name
+
+    package, clsname = name.rsplit('/', 1)
+    package = package.replace('/', '.')
+
+    return package, clsname
+
+
 def FormatNameToPython(i):
     """
     Transform a (method) name into a form which can be used as a python
