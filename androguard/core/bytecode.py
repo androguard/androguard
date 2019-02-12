@@ -1,5 +1,4 @@
 from __future__ import print_function
-from __future__ import absolute_import
 
 from builtins import str
 from builtins import range
@@ -10,7 +9,7 @@ from struct import unpack, pack
 import textwrap
 
 import json
-from .androconf import CONF, enable_colors, remove_colors, save_colors, color_range
+from androguard.core.androconf import CONF, enable_colors, remove_colors, save_colors, color_range
 import logging
 
 log = logging.getLogger("androguard.bytecode")

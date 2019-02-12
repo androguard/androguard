@@ -157,11 +157,16 @@ class DecompilerDex2Jad(object):
         Decompiler interface for JAD
         JAD is not a native Dalvik decompiler, therefore dex2jar is required.
 
+        .. deprecated:: 3.3.5
+            JAD is not supported anymore in androguard!
+
         :param vm:
         :param bin_dex2jar:
         :param bin_jad:
         :param tmp_dir:
         """
+        warnings.warn("JAD is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -251,11 +256,16 @@ class DecompilerDex2WineJad(object):
         """
         Use JAD on wine
 
+        .. deprecated:: 3.3.5
+            JAD is not supported anymore by androguard!
+
         :param vm:
         :param bin_dex2jar:
         :param bin_jad:
         :param tmp_dir:
         """
+        warnings.warn("JAD is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -345,12 +355,17 @@ class DecompilerDed(object):
         DED is an old, probably deprecated, decompiler
         http://siis.cse.psu.edu/ded/
 
+        .. deprecated:: 3.3.5
+            DED is not supported by androguard anymore!
+
         It is now replaced by DARE.
 
         :param vm: `DalvikVMFormat` object
         :param bin_ded:
         :param tmp_dir:
         """
+        warnings.warn("DED is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -441,6 +456,9 @@ class DecompilerDex2Fernflower(object):
         As it can not decompile Dalvik code directly, the DEX is first
         decompiled as a JAR file.
 
+        .. deprecated:: 3.3.5
+            Fernflower is not supported anymore by androguard.
+
 
         :param vm: `DalvikVMFormtat` object
         :param bin_dex2jar:
@@ -448,6 +466,8 @@ class DecompilerDex2Fernflower(object):
         :param options_fernflower:
         :param tmp_dir:
         """
+        warnings.warn("Fernflower is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
