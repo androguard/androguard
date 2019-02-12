@@ -448,7 +448,7 @@ class MethodClassAnalysis:
         Both referneces to other methods (XREF_TO) as well as methods calling
         this method (XREF_FROM) are saved.
 
-        :param method: `dvm.EncodedMethod`
+        :param androguard.core.bytecodes.dvm.EncodedMethod method: the DVM Method object
         """
         self.method = method
         self.xrefto = set()
@@ -456,6 +456,10 @@ class MethodClassAnalysis:
 
         # Reserved for further use
         self.apilist = None
+
+    @property
+    def name(self):
+        return self.method.get_name()
 
     def AddXrefTo(self, classobj, methodobj, offset):
         """
@@ -574,11 +578,15 @@ class FieldClassAnalysis:
 
         That means, that it will show you, where the field is read or written.
 
-        :param field: `dvm.EncodedField`
+        :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
         """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
+
+    @property
+    def name(self):
+        return self.field.get_name()
 
     def AddXrefRead(self, classobj, methodobj):
         self.xrefread.add((classobj, methodobj))
@@ -792,7 +800,7 @@ class ClassAnalysis:
 
     def get_methods(self):
         """
-        Return all `MethodClassAnalysis` objects of this class
+        Return all :class:`MethodClassAnalysis` objects of this class
         """
         return list(self._methods.values())
 
@@ -1422,6 +1430,50 @@ class Analysis:
                     CG.add_edge(orig_method, callee)
 
         return CG
+
+    def create_ipython_exports(self):
+        """
+        Creates attributes for all classes, methods, fields and strings on the Analysis object itself.
+        This makes it easier to work with Analysis module in an iPython shell.
+
+        Classes can be search by typing :code:`dx.CLASS_<tab>`, as each class is added via this attribute name.
+        Each class will have all methods attached to it via :code:`dx.CLASS_Foobar.METHOD_<tab>`.
+        Fields have a similar syntax: :code:`dx.CLASS_Foobar.FIELD_<tab>`.
+
+        Strings are added directly to the dx object, similar to classes: :code:`dx.STR_<tab>`.
+        As strings might be very long, they are truncated to 64 characters.
+
+        .. todo:: If strings do contain the same first 64 chars, a number is appended to the string.
+
+        * Each `CLASS_` item will return a :class:`~ClassAnalysis`
+        * Each `METHOD_` item will return a :class:`~MethodClassAnalysis`
+        * Each `FIELD_` item will return a :class:`~FieldClassAnalysis`
+        * Each `STR_` item will return a :class:`~StringAnalysis`
+        """
+
+        for cls in self.get_classes():
+            name = "CLASS_" + bytecode.FormatClassToPython(cls.name)
+            if hasattr(self, name):
+                log.warning("Already existing!")
+            setattr(self, name, cls)
+
+            for meth in cls.get_methods():
+                mname = "METH_" + bytecode.FormatNameToPython(meth.name)
+                if hasattr(cls, mname):
+                    log.warning("already existing method: {} at class {}".format(mname, name))
+                setattr(cls, mname, meth)
+
+            for field in cls.get_fields():
+                mname = "FIELD_" + bytecode.FormatNameToPython(field.name)
+                if hasattr(cls, mname):
+                    log.warning("already existing field: {} at class {}".format(mname, name))
+                setattr(cls, mname, field)
+
+        for s in self.get_strings():
+            name = "STR_" + bytecode.FormatNameToPython(s[:64])
+            if hasattr(self, mname):
+                log.warning("already existing string: {}".format(name))
+            setattr(self, name, s)
 
 
 def is_ascii_obfuscation(vm):

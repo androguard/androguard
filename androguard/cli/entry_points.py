@@ -460,22 +460,9 @@ def gui(input_file, input_plugin):
 
 @entry_point.command()
 @click.option(
-    '--debug', '--verbose', '-d',
-    is_flag=True,
-    default=False, show_default=True,
-    help='Print log messages',
-)
-@click.option(
-    '--ddebug', '--very-verbose', '-dd',
-    is_flag=True,
-    default=False, show_default=True,
-    help='Print log messages (higher verbosity)',
-)
-@click.option(
-    '--no-session',
-    is_flag=True,
-    default=False, show_default=True,
-    help='Do not start an Androguard session',
+    '--session',
+    help='Previously saved session to load instead of a file',
+    type=click.Path(exists=True),
 )
 @click.argument(
     'apk',
@@ -484,9 +471,9 @@ def gui(input_file, input_plugin):
     required=False,
     type=click.Path(exists=True),
 )
-def analyze(debug, ddebug, no_session, apk):
+def analyze(session, apk):
     """Open a IPython Shell and start reverse engineering."""
-    androlyze_main(debug, ddebug, no_session, apk)
+    androlyze_main(session, apk)
 
 
 @entry_point.command()

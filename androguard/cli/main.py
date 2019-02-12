@@ -321,52 +321,100 @@ def androgui_main(input_file, input_plugin):
     sys.exit(app.exec_())
 
 
-def androlyze_main(debug, ddebug, no_session, args_apk):
-    # Import commonly used classes
-    import logging
-    from androguard.core.bytecodes.apk import APK
-    from androguard.core.bytecodes.dvm import DalvikVMFormat
-    from androguard.core.analysis.analysis import Analysis
-    if debug:
-        androconf.show_logging(logging.INFO)
-    if ddebug:
-        androconf.show_logging(logging.DEBUG)
-
-    # Go interactive!
-    interact(session=not no_session, apk=args_apk)
-
-
-def interact(session=False, apk=None):
+def androlyze_main(session, filename):
     """
     Start an interactive shell
-    :param session:
-    :param apk:
-    :return:
+
+    :param session: Session file to load
+    :param filename: File to analyze, can be APK or DEX (or ODEX)
     """
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
     from IPython.terminal.embed import InteractiveShellEmbed
     from traitlets.config import Config
+    from androguard.misc import init_print_colors
+    from androguard.session import Session, Load
+    from colorama import Fore
+    import colorama
+    import atexit
 
-    from androguard.misc import init_print_colors, AnalyzeAPK
-    from androguard.session import Session
+    # Import commonly used classes, for further usage...
+    from androguard.core.bytecodes.apk import APK
+    from androguard.core.bytecodes.dvm import DalvikVMFormat
+    from androguard.core.analysis.analysis import Analysis
+
+    colorama.init()
 
     if session:
-        CONF["SESSION"] = Session(export_ipython=True)
+        print("Restoring session '{}'...".format(session))
+        s = CONF['SESSION'] = Load(session)
+        print("Successfully restored {}".format(s))
+        # TODO Restore a, d, dx etc...
+    else:
+        s = CONF["SESSION"] = Session(export_ipython=True)
 
-    if apk:
-        print("Loading apk {}...".format(os.path.basename(apk)))
+    if filename:
+        ("Loading apk {}...".format(os.path.basename(filename)))
         print("Please be patient, this might take a while.")
-        # TODO we can export fancy aliases for those as well...
-        a, d, dx = AnalyzeAPK(apk)
+
+        filetype = androconf.is_android(filename)
+
+        print("Found the provided file is of type '{}'".format(filetype))
+
+        if filetype not in ['DEX', 'DEY', 'APK']:
+            print(Fore.RED + "This file type is not supported by androlyze for auto loading right now!" + Fore.RESET, file=sys.stderr)
+            print("But your file is still available:")
+            print(">>> filename")
+            print(repr(filename))
+            print()
+
+        else:
+            with open(filename, "rb") as fp:
+                raw = fp.read()
+
+            h = s.add(apk, raw)
+            print("Added file to session: SHA256::{}".format(h))
+
+            if filetype == 'APK':
+                print("Loaded APK file...")
+                a, d, dx = s.get_objects_apk(digest=h)
+
+                print(">>> a")
+                print(a)
+                print(">>> d")
+                print(d)
+                print(">>> dx")
+                print(dx)
+                print()
+            elif filetype in ['DEX', 'DEY']:
+                print("Loaded DEX file...")
+                for h_, d, dx in s.get_objects_dex():
+                    if h == h_:
+                        break
+                print(">>> d")
+                print(d)
+                print(">>> dx")
+                print(dx)
+                print()
+
+    def shutdown_hook():
+        """Save the session on exit, if wanted"""
+        if not s.isOpen():
+            return
+
+        res = input("Do you want to save the session? (y/[n])?").lower()
+        if res == "y":
+            # TODO: if we already started from a session, probably we want to save it under the same name...
+            # TODO: be able to take any filename you want
+            fname = s.save()
+            print("Saved Session to file: '{}'".format(fname))
 
     cfg = Config()
     _version_string = "Androguard version {}".format(ANDROGUARD_VERSION)
     ipshell = InteractiveShellEmbed(config=cfg, banner1="{} started"
                                     .format(_version_string))
+    atexit.register(shutdown_hook)
     init_print_colors()
     ipshell()
-
-    # TODO: on exit, save the session if requested
 
 
 def androsign_main(args_apk, args_hash, args_all, show):
