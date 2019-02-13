@@ -1790,8 +1790,26 @@ class StringDataItem:
     """
     This class can parse a string_data_item of a dex file
 
+    Strings in Dalvik files might not be representable in python!
+    This is due to the fact, that you can store any UTF-16 character inside
+    a Dalvik file, but this string might not be decodeable in python as it can
+    contain invalid surrogate-pairs.
+
+    To circumvent this issue, this class has different methods how to access the
+    string. There are also some fallbacks implemented to make a "invalid" string
+    printable in python.
+    Dalvik uses MUTF-8 as encoding for the strings. This encoding has the
+    advantage to allow for null terminated strings in UTF-8 encoding, as the
+    null character maps to something else.
+    Therefore you can use :meth:`get_data` to retrieve the actual data of the
+    string and can handle encoding yourself.
+    Or you use :meth:`get_unicode` to return a decoded UTF-16 string, which
+    might cause problems during printing or saving.
+    If you want a representation of the string, which should be printable in
+    python you ca use :meth:`get` which escapes invalid characters.
+
     :param buff: a string which represents a Buff object of the string_data_item
-    :type buff: Buff object
+    :type buff: BuffHandle
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
@@ -3461,17 +3479,14 @@ class ClassDefItem(object):
         self.interfaces = self.CM.get_type_list(self.interfaces_off)
 
         if self.class_data_off != 0:
-            self.class_data_item = self.CM.get_class_data_item(
-                self.class_data_off)
+            self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
             self.class_data_item.reload()
 
         if self.static_values_off != 0:
-            self.static_values = self.CM.get_encoded_array_item(
-                self.static_values_off)
+            self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
 
-            if self.class_data_item is not None:
-                self.class_data_item.set_static_fields(
-                    self.static_values.get_value())
+            if self.class_data_item:
+                self.class_data_item.set_static_fields(self.static_values.get_value())
 
     def __str__(self):
         return "%s->%s" % (self.get_superclassname(), self.get_name())
@@ -6989,9 +7004,11 @@ class MapItem(object):
         self.item = None
 
     def get_off(self):
+        """Gets the offset of the map item itself inside the DEX file"""
         return self.off
 
     def get_offset(self):
+        """Gets the offset of the item of the map item"""
         return self.offset
 
     def get_type(self):
@@ -7001,8 +7018,9 @@ class MapItem(object):
         return self.size
 
     def parse(self):
-        log.debug("Parsing section %s" % TYPE_MAP_ITEM[self.type])
+        log.debug("Starting parsing map_item '%s'" % TYPE_MAP_ITEM[self.type])
         started_at = time.time()
+
         buff = self.buff
         buff.set_idx(self.offset)
         cm = self.CM
@@ -7070,8 +7088,8 @@ class MapItem(object):
                               (self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
-        minutes, seconds = float(diff // 60), float(diff % 60)
-        log.debug("End of parsing %s = %s:%s" % (TYPE_MAP_ITEM[self.type], str(minutes), str(round(seconds, 2))))
+        minutes, seconds = diff // 60, diff % 60
+        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM[self.type], minutes, seconds))
 
     def reload(self):
         if self.item is not None:
@@ -7100,8 +7118,7 @@ class MapItem(object):
         else:
             self.offset = self.item.get_off()
 
-        return pack("=H", self.type) + pack("=H", self.unused) + pack(
-            "=I", self.size) + pack("=I", self.offset)
+        return pack("=HHII", self.type, self.unused, self.size, self.offset)
 
     def get_length(self):
         return calcsize("=HHII")
@@ -7115,15 +7132,25 @@ class MapItem(object):
 
 class OffObj(object):
     def __init__(self, o):
+        """
+        .. deprecated:: 3.3.5
+            Will be removed!
+        """
+        warnings.warn("deprecated, this class will be removed!", DeprecationWarning)
         self.off = o
 
 
 class ClassManager(object):
     """
     This class is used to access to all elements (strings, type, proto ...) of the dex format
+    based on their offset or index.
     """
 
     def __init__(self, vm, config):
+        """
+        :param DalvikVMFormat vm: the VM to create a ClassManager for
+        :param dict config: a configuration dictionary
+        """
         self.vm = vm
         self.buff = vm
 
@@ -7148,10 +7175,7 @@ class ClassManager(object):
 
         self.hook_strings = {}
 
-        self.engine = []
-        self.engine.append("python")
-
-        if self.vm is not None:
+        if self.vm:
             self.odex_format = self.vm.get_format_type() == "ODEX"
 
     def get_ascii_string(self, s):
@@ -7167,9 +7191,13 @@ class ClassManager(object):
             return d
 
     def get_odex_format(self):
+        """Returns True if the underlying VM is ODEX"""
         return self.odex_format
 
     def get_obj_by_offset(self, offset):
+        """
+        Returnes a object from as given offset inside the DEX file
+        """
         return self.__obj_offset[offset]
 
     def get_item_by_offset(self, offset):
@@ -7190,10 +7218,20 @@ class ClassManager(object):
         self.decompiler_ob = decompiler
 
     def get_engine(self):
-        return self.engine[0]
+        """
+        .. deprecated:: 3.3.5
+            do not use this function anymore!
+        """
+        warnings.warn("deprecated, this method always returns None!", DeprecationWarning)
+        return None
 
     def get_all_engine(self):
-        return self.engine
+        """
+        .. deprecated:: 3.3.5
+            do not use this function anymore!
+        """
+        warnings.warn("deprecated, this method always returns None!", DeprecationWarning)
+        return None
 
     def add_type_item(self, type_item, c_item, item):
         self.__manage_item[type_item] = item
@@ -7238,6 +7276,11 @@ class ClassManager(object):
                 return i
 
     def get_string(self, idx):
+        """
+        Return a string from the string table at index `idx`
+
+        :param int idx: index in the string section
+        """
         if idx in self.hook_strings:
             return self.hook_strings[idx]
 
@@ -7259,9 +7302,13 @@ class ClassManager(object):
             return "AG:IS: invalid string"
 
     def get_raw_string(self, idx):
+        """
+        Return the (unprocessed) string from the string table at index `idx`.
+
+        :param int idx: the index in the string section
+        """
         try:
-            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off(
-            )
+            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
         except IndexError:
             log.warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
@@ -7282,6 +7329,7 @@ class ClassManager(object):
     def get_type(self, idx):
         """
         Return the resolved type name based on the index
+
         :param int idx:
         :return: the type name
         :rtype: str
@@ -7459,8 +7507,34 @@ class MapList(object):
             buff.set_idx(idx + mi.get_length())
 
         # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
+        # We want to parse this first, as other map items depend on it.
         ordered = sorted(self.map_item,
                          key=lambda mi: TYPE_MAP_ITEM[mi.get_type()] != "TYPE_STRING_DATA_ITEM")
+        # TODO: There could be some speedup if the parsing needs to be done only
+        # once.
+        # The idea is to parse all items in the correct order, which is possible
+        # as all items construct an acyclic graph of dependencies.
+        #
+        # We know, that we do not need to parse header_item and map_list (again)
+        # Then the following order would probably work:
+        # * string_data_item
+        # * string_id_item
+        # * type_id_item
+        # * type_list
+        # * field_id_item
+        # * proto_id_item
+        # * method_id_item
+        # * debug_info_item
+        # * code_item
+        # * method_handle_item
+        # * call_site_id_item
+        # * class_data_item
+        # * encoded_array_item
+        # * annotation_item
+        # * annotation_set_item
+        # * annotation_set_ref_item
+        # * annotations_directory_item
+        # * class_def_item
 
         for mi in ordered:
             mi.parse()
@@ -7472,14 +7546,14 @@ class MapList(object):
 
             self.CM.add_type_item(TYPE_MAP_ITEM[mi.get_type()], mi, c_item)
 
+        log.debug("Reloading all map_items to fix references")
+        started_at = time.time()
         for i in self.map_item:
-            log.debug("Reloading %s" % TYPE_MAP_ITEM[i.get_type()])
-            started_at = time.time()
+            log.debug("Reloading '%s'" % TYPE_MAP_ITEM[i.get_type()])
             i.reload()
-            diff = time.time() - started_at
-            minutes, seconds = float(diff // 60), float(diff % 60)
-            log.debug(
-                "End of reloading %s = %s:%s" % (TYPE_MAP_ITEM[i.get_type()], str(minutes), str(round(seconds, 2))))
+        diff = time.time() - started_at
+        minutes, seconds = diff // 60, diff % 60
+        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM[i.get_type()], minutes, seconds))
 
     def reload(self):
         pass
@@ -8653,6 +8727,9 @@ def get_bytecodes_methodx(method, mx):
 
 
 class ExportObject(object):
+    """
+    Wrapper object for ipython exports
+    """
     pass
 
 
