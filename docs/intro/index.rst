@@ -11,3 +11,4 @@ Introduction
    certificates.rst
    axml.rst
    bulk.rst
+   debugging.rst
