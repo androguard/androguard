@@ -646,6 +646,58 @@ class APKTest(unittest.TestCase):
         self.assertTrue(hasattr(magic, 'MagicException'))
         self.assertTrue(hasattr(magic, 'from_buffer'))
 
+    def testPermissionLoading(self):
+        """Test if fallbacks for permission lists are working"""
+        from androguard.core.api_specific_resources import load_permissions
+        from androguard.core.androconf import load_api_specific_resource_module, InvalidResourceError, CONF
+        import re
+
+        root = 'androguard/core/api_specific_resources'
+        levels = filter(lambda x: re.match(r'^permissions_\d+\.json$', x), os.listdir(os.path.join(root, "aosp_permissions")))
+        levels = list(map(lambda x: int(x[:-5].split('_')[1]), levels))
+
+        min_level = min(levels)
+        max_level = max(levels)
+
+        self.assertGreater(min_level, 0)
+        self.assertGreater(max_level, 0)
+
+        self.assertNotEqual(load_permissions(min_level), {})
+        self.assertNotEqual(load_permissions(min_level, 'groups'), {})
+        self.assertNotEqual(load_permissions(max_level), {})
+        self.assertNotEqual(load_permissions(max_level, 'groups'), {})
+
+        self.assertNotEqual(load_permissions(max_level - 1), {})
+        self.assertNotEqual(load_permissions(max_level - 1, 'groups'), {})
+
+        self.assertNotEqual(load_permissions(min_level + 1), {})
+        self.assertNotEqual(load_permissions(min_level + 1, 'groups'), {})
+
+        self.assertEqual(load_permissions(min_level - 1), load_permissions(min_level))
+        self.assertEqual(load_permissions(max_level + 1), load_permissions(max_level))
+
+        self.assertEqual(load_permissions(0), load_permissions(min_level))
+        self.assertEqual(load_permissions(1337), load_permissions(max_level))
+
+        with self.assertRaises(ValueError):
+            load_permissions(23, 'foobar')
+
+        with self.assertRaises(InvalidResourceError):
+            load_api_specific_resource_module('blablabla')
+
+        self.assertEqual(load_permissions(16), load_api_specific_resource_module('aosp_permissions', 16))
+        self.assertEqual(load_permissions(CONF['DEFAULT_API']), load_api_specific_resource_module('aosp_permissions'))
+
+        for level in levels:
+            perm = load_permissions(level)
+            self.assertIn('android.permission.INTERNET', perm)
+            self.assertTrue(isinstance(perm, dict))
+            self.assertTrue(isinstance(perm['android.permission.INTERNET'], dict))
+            self.assertIn('description', perm['android.permission.INTERNET'])
+            self.assertIn('label', perm['android.permission.INTERNET'])
+            self.assertIn('protectionLevel', perm['android.permission.INTERNET'])
+            self.assertIn('permissionGroup', perm['android.permission.INTERNET'])
+
 
 if __name__ == '__main__':
     unittest.main(failfast=True)

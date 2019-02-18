@@ -9,10 +9,19 @@
       "label_ptr": "permgrouplab_calendar",
       "name": "android.permission-group.CALENDAR"
     },
+    "android.permission-group.CALL_LOG": {
+      "description": "read and write phone call log",
+      "description_ptr": "permgroupdesc_calllog",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24.0\" viewBox=\"0 0 24.0 24.0\" width=\"24.0\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16.01,14.48l-2.62,2.62c-2.75,-1.49 -5.01,-3.75 -6.5,-6.5l2.62,-2.62c0.24,-0.24 0.34,-0.58 0.27,-0.9L9.13,3.82c-0.09,-0.47 -0.5,-0.8 -0.98,-0.8L4,3.01c-0.56,0 -1.03,0.47 -1,1.03c0.17,2.91 1.04,5.63 2.43,8.01c1.57,2.69 3.81,4.93 6.5,6.5c2.38,1.39 5.1,2.26 8.01,2.43c0.56,0.03 1.03,-0.44 1.03,-1v-4.15c0,-0.48 -0.34,-0.89 -0.8,-0.98l-3.26,-0.65C16.58,14.14 16.24,14.24 16.01,14.48z\" fill=\"#000000\"/><path d=\"M12,8h10V6H12V8zM12,4h10V2H12V4zM22,10H12v2h10V10z\" fill=\"#000000\"/></svg>",
+      "icon_ptr": "perm_group_call_log",
+      "label": "Call logs",
+      "label_ptr": "permgrouplab_calllog",
+      "name": "android.permission-group.CALL_LOG"
+    },
     "android.permission-group.CAMERA": {
       "description": "take pictures and record video",
       "description_ptr": "permgroupdesc_camera",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M 12 8.8 C 13.7673111995 8.8 15.2 10.2326888005 15.2 12 C 15.2 13.7673111995 13.7673111995 15.2 12 15.2 C 10.2326888005 15.2 8.8 13.7673111995 8.8 12 C 8.8 10.2326888005 10.2326888005 8.8 12 8.8 Z\" fill=\"#000000\"/><path d=\"M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1 .9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20,5h-3.17L15,3H9L7.17,5H4C2.9,5 2,5.9 2,7v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V7C22,5.9 21.1,5 20,5zM20,19H4V7h16V19z\" fill=\"#000000\"/><path d=\"M12,9c-2.21,0 -4,1.79 -4,4c0,2.21 1.79,4 4,4s4,-1.79 4,-4C16,10.79 14.21,9 12,9z\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_camera",
       "label": "Camera",
       "label_ptr": "permgrouplab_camera",
@@ -21,7 +30,7 @@
     "android.permission-group.CONTACTS": {
       "description": "access your contacts",
       "description_ptr": "permgroupdesc_contacts",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20 0H4v2h16V0zM4 24h16v-2H4v2zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1 .9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4,1h16v2h-16z\" fill=\"#000000\"/><path d=\"M4,21h16v2h-16z\" fill=\"#000000\"/><path d=\"M20,5H4C2.9,5 2,5.9 2,7v10c0,1.1 0.9,2 2,2h2h12h2c1.1,0 2,-0.9 2,-2V7C22,5.9 21.1,5 20,5zM8.21,17c0.7,-0.47 2.46,-1 3.79,-1s3.09,0.53 3.79,1H8.21zM20,17h-2c0,-1.99 -4,-3 -6,-3s-6,1.01 -6,3H4V7h16V17z\" fill=\"#000000\"/><path d=\"M12,13.5c1.66,0 3,-1.34 3,-3c0,-1.66 -1.34,-3 -3,-3s-3,1.34 -3,3C9,12.16 10.34,13.5 12,13.5zM12,9.5c0.55,0 1,0.45 1,1s-0.45,1 -1,1s-1,-0.45 -1,-1S11.45,9.5 12,9.5z\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_contacts",
       "label": "Contacts",
       "label_ptr": "permgrouplab_contacts",
@@ -30,7 +39,7 @@
     "android.permission-group.LOCATION": {
       "description": "access this device's location",
       "description_ptr": "permgroupdesc_location",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13C19,5.13 15.87,2 12,2zM7,9c0,-2.76 2.24,-5 5,-5s5,2.24 5,5c0,2.88 -2.88,7.19 -5,9.88C9.92,16.21 7,11.85 7,9z\" fill=\"#000000\"/><path d=\"M12,9m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_location",
       "label": "Location",
       "label_ptr": "permgrouplab_location",
@@ -39,7 +48,7 @@
     "android.permission-group.MICROPHONE": {
       "description": "record audio",
       "description_ptr": "permgroupdesc_microphone",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12,14c1.66,0 3,-1.34 3,-3V5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6C9,12.66 10.34,14 12,14zM11,5c0,-0.55 0.45,-1 1,-1s1,0.45 1,1v6c0,0.55 -0.45,1 -1,1s-1,-0.45 -1,-1V5z\" fill=\"#000000\"/><path d=\"M17,11c0,2.76 -2.24,5 -5,5s-5,-2.24 -5,-5H5c0,3.53 2.61,6.43 6,6.92V21h2v-3.08c3.39,-0.49 6,-3.39 6,-6.92H17z\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_microphone",
       "label": "Microphone",
       "label_ptr": "permgrouplab_microphone",
@@ -66,7 +75,7 @@
     "android.permission-group.SMS": {
       "description": "send and view SMS messages",
       "description_ptr": "permgroupdesc_sms",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20 2H4c-1.1 0-1.99 .9 -1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20,2H4C2.9,2 2,2.9 2,4v18l4.75,-4h14C21.1,18 22,17.1 22,16V4C22,2.9 21.1,2 20,2zM20,16H4V4h16V16zM9,11H7V9h2V11zM17,11h-2V9h2V11zM13,11h-2V9h2V11z\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_sms",
       "label": "SMS",
       "label_ptr": "permgrouplab_sms",
@@ -75,7 +84,7 @@
     "android.permission-group.STORAGE": {
       "description": "access photos, media, and files on your device",
       "description_ptr": "permgroupdesc_storage",
-      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M10 4H4c-1.1 0-1.99 .9 -1.99 2L2 18c0 1.1 .9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z\" fill=\"#000000\"/></svg>",
+      "icon": "<?xml version=\"1.0\" ?><svg height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20,6h-8l-2,-2H4C2.9,4 2.01,4.9 2.01,6L2,18c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V8C22,6.9 21.1,6 20,6zM20,18H4V8h16V18z\" fill=\"#000000\"/></svg>",
       "icon_ptr": "perm_group_storage",
       "label": "Storage",
       "label_ptr": "permgrouplab_storage",
@@ -91,6 +100,33 @@
       "name": "android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.ACCEPT_HANDOVER": {
+      "description": "Allows the app to continue a call which was started in another app.",
+      "description_ptr": "permdesc_acceptHandovers",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCEPT_HANDOVER",
+      "permissionGroup": "android.permission-group.PHONE",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.ACCESS_AMBIENT_LIGHT_STATS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_AMBIENT_LIGHT_STATS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
+    },
+    "android.permission.ACCESS_BROADCAST_RADIO": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_BROADCAST_RADIO",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_CACHE_FILESYSTEM": {
       "description": "",
@@ -111,13 +147,13 @@
       "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_COARSE_LOCATION": {
-      "description": "Allows the app to get your\n      approximate location. This location is derived by location services using\n      network location sources such as cell towers and Wi-Fi. These location\n      services must be turned on and available to your device for the app to\n      use them. Apps may use this to determine approximately where you\n      are.",
+      "description": "This app can get your location based on network sources such as cell towers and Wi-Fi networks. These location services must be turned on and available on your phone for the app to be able to use them.",
       "description_ptr": "permdesc_accessCoarseLocation",
       "label": "access approximate location\n      (network-based)",
       "label_ptr": "permlab_accessCoarseLocation",
       "name": "android.permission.ACCESS_COARSE_LOCATION",
       "permissionGroup": "android.permission-group.LOCATION",
-      "protectionLevel": "dangerous"
+      "protectionLevel": "dangerous|instant"
     },
     "android.permission.ACCESS_CONTENT_PROVIDERS_EXTERNALLY": {
       "description": "",
@@ -137,23 +173,14 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
-    "android.permission.ACCESS_EPHEMERAL_APPS": {
-      "description": "",
-      "description_ptr": "",
-      "label": "",
-      "label_ptr": "",
-      "name": "android.permission.ACCESS_EPHEMERAL_APPS",
-      "permissionGroup": "",
-      "protectionLevel": "signature"
-    },
     "android.permission.ACCESS_FINE_LOCATION": {
-      "description": "Allows the app to get your\n      precise location using the Global Positioning System (GPS) or network\n      location sources such as cell towers and Wi-Fi. These location services\n      must be turned on and available to your device for the app to use them.\n      Apps may use this to determine where you are, and may consume additional\n      battery power.",
+      "description": "This app can get your location based on GPS or network location sources such as cell towers and Wi-Fi networks. These location services must be turned on and available on your phone for the app to be able to use them. This may increase battery consumption.",
       "description_ptr": "permdesc_accessFineLocation",
       "label": "access precise location (GPS and\n      network-based)",
       "label_ptr": "permlab_accessFineLocation",
       "name": "android.permission.ACCESS_FINE_LOCATION",
       "permissionGroup": "android.permission-group.LOCATION",
-      "protectionLevel": "dangerous"
+      "protectionLevel": "dangerous|instant"
     },
     "android.permission.ACCESS_FM_RADIO": {
       "description": "",
@@ -170,7 +197,7 @@
       "label": "access IMS call service",
       "label_ptr": "permlab_accessImsCallService",
       "name": "android.permission.ACCESS_IMS_CALL_SERVICE",
-      "permissionGroup": "android.permission-group.PHONE",
+      "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_INPUT_FLINGER": {
@@ -181,6 +208,15 @@
       "name": "android.permission.ACCESS_INPUT_FLINGER",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.ACCESS_INSTANT_APPS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_INSTANT_APPS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|installer|verifier"
     },
     "android.permission.ACCESS_KEYGUARD_SECURE_STORAGE": {
       "description": "",
@@ -199,6 +235,15 @@
       "name": "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "android.permission.ACCESS_LOWPAN_STATE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_LOWPAN_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_MOCK_LOCATION": {
       "description": "",
@@ -234,7 +279,7 @@
       "label_ptr": "permlab_accessNetworkState",
       "name": "android.permission.ACCESS_NETWORK_STATE",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "normal|instant"
     },
     "android.permission.ACCESS_NOTIFICATIONS": {
       "description": "",
@@ -243,7 +288,7 @@
       "label_ptr": "",
       "name": "android.permission.ACCESS_NOTIFICATIONS",
       "permissionGroup": "",
-      "protectionLevel": "signature|privileged"
+      "protectionLevel": "signature|privileged|appop"
     },
     "android.permission.ACCESS_NOTIFICATION_POLICY": {
       "description": "Allows the app to read and write Do Not Disturb configuration.",
@@ -263,6 +308,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.ACCESS_SHORTCUTS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_SHORTCUTS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|textClassifier"
+    },
     "android.permission.ACCESS_SURFACE_FLINGER": {
       "description": "",
       "description_ptr": "",
@@ -279,7 +333,7 @@
       "label_ptr": "",
       "name": "android.permission.ACCESS_UCE_OPTIONS_SERVICE",
       "permissionGroup": "android.permission-group.PHONE",
-      "protectionLevel": "signatureOrSystem"
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_UCE_PRESENCE_SERVICE": {
       "description": "",
@@ -288,7 +342,7 @@
       "label_ptr": "",
       "name": "android.permission.ACCESS_UCE_PRESENCE_SERVICE",
       "permissionGroup": "android.permission-group.PHONE",
-      "protectionLevel": "signatureOrSystem"
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.ACCESS_VOICE_INTERACTION_SERVICE": {
       "description": "",
@@ -307,6 +361,15 @@
       "name": "android.permission.ACCESS_VR_MANAGER",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.ACCESS_VR_STATE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACCESS_VR_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|preinstalled"
     },
     "android.permission.ACCESS_WIFI_STATE": {
       "description": "Allows the app to view information\n      about Wi-Fi networking, such as whether Wi-Fi is enabled and name of\n      connected Wi-Fi devices.",
@@ -335,6 +398,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.ACTIVITY_EMBEDDING": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ACTIVITY_EMBEDDING",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
+    },
+    "android.permission.ALLOCATE_AGGRESSIVE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.ALLOCATE_AGGRESSIVE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.ALLOW_ANY_CODEC_FOR_PLAYBACK": {
       "description": "",
       "description_ptr": "",
@@ -343,6 +424,15 @@
       "name": "android.permission.ALLOW_ANY_CODEC_FOR_PLAYBACK",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.ANSWER_PHONE_CALLS": {
+      "description": "Allows the app to answer an incoming phone call.",
+      "description_ptr": "permdesc_answerPhoneCalls",
+      "label": "answer phone calls",
+      "label_ptr": "permlab_answerPhoneCalls",
+      "name": "android.permission.ANSWER_PHONE_CALLS",
+      "permissionGroup": "android.permission-group.PHONE",
+      "protectionLevel": "dangerous|runtime"
     },
     "android.permission.ASEC_ACCESS": {
       "description": "",
@@ -434,6 +524,42 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.BIND_AUTOFILL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_AUTOFILL",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_AUTOFILL_FIELD_CLASSIFICATION_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_AUTOFILL_FIELD_CLASSIFICATION_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_AUTOFILL_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_AUTOFILL_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_CACHE_QUOTA_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_CACHE_QUOTA_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.BIND_CARRIER_MESSAGING_SERVICE": {
       "description": "",
       "description_ptr": "",
@@ -458,6 +584,15 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.BIND_CHOOSER_TARGET_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_COMPANION_DEVICE_MANAGER_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_COMPANION_DEVICE_MANAGER_SERVICE",
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
@@ -505,6 +640,24 @@
       "name": "android.permission.BIND_DREAM_SERVICE",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.BIND_EUICC_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_EUICC_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_IMS_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_IMS_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|vendorPrivileged"
     },
     "android.permission.BIND_INCALL_SERVICE": {
       "description": "",
@@ -560,6 +713,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.BIND_NETWORK_RECOMMENDATION_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_NETWORK_RECOMMENDATION_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.BIND_NFC_SERVICE": {
       "description": "",
       "description_ptr": "",
@@ -569,21 +731,21 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.BIND_NOTIFICATION_ASSISTANT_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_NOTIFICATION_ASSISTANT_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE": {
       "description": "",
       "description_ptr": "",
       "label": "",
       "label_ptr": "",
       "name": "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE",
-      "permissionGroup": "",
-      "protectionLevel": "signature"
-    },
-    "android.permission.BIND_NOTIFICATION_RANKER_SERVICE": {
-      "description": "",
-      "description_ptr": "",
-      "label": "",
-      "label_ptr": "",
-      "name": "android.permission.BIND_NOTIFICATION_RANKER_SERVICE",
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
@@ -650,6 +812,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.BIND_RESOLVER_RANKER_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_RESOLVER_RANKER_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.BIND_ROUTE_PROVIDER": {
       "description": "",
       "description_ptr": "",
@@ -677,6 +848,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_SOUND_TRIGGER_DETECTION_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_SOUND_TRIGGER_DETECTION_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.BIND_TELECOM_CONNECTION_SERVICE": {
       "description": "",
       "description_ptr": "",
@@ -685,6 +874,33 @@
       "name": "android.permission.BIND_TELECOM_CONNECTION_SERVICE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.BIND_TELEPHONY_DATA_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_TELEPHONY_DATA_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_TELEPHONY_NETWORK_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_TELEPHONY_NETWORK_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_TEXTCLASSIFIER_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_TEXTCLASSIFIER_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.BIND_TEXT_SERVICE": {
       "description": "",
@@ -719,6 +935,15 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.BIND_TV_REMOTE_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.BIND_VISUAL_VOICEMAIL_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BIND_VISUAL_VOICEMAIL_SERVICE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -821,6 +1046,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.BRIGHTNESS_SLIDER_USAGE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.BRIGHTNESS_SLIDER_USAGE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
+    },
     "android.permission.BROADCAST_NETWORK_PRIVILEGED": {
       "description": "",
       "description_ptr": "",
@@ -894,13 +1128,13 @@
       "protectionLevel": "signature|privileged"
     },
     "android.permission.CAMERA": {
-      "description": "Allows the app to take pictures and videos\n      with the camera.  This permission allows the app to use the camera at any\n      time without your confirmation.",
+      "description": "This app can take pictures and record videos using the camera at any time.",
       "description_ptr": "permdesc_camera",
       "label": "take pictures and videos",
       "label_ptr": "permlab_camera",
       "name": "android.permission.CAMERA",
       "permissionGroup": "android.permission-group.CAMERA",
-      "protectionLevel": "dangerous"
+      "protectionLevel": "dangerous|instant"
     },
     "android.permission.CAMERA_DISABLE_TRANSMIT_LED": {
       "description": "",
@@ -974,6 +1208,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.CHANGE_ACCESSIBILITY_VOLUME": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CHANGE_ACCESSIBILITY_VOLUME",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.CHANGE_APP_IDLE_STATE": {
       "description": "",
       "description_ptr": "",
@@ -981,7 +1224,7 @@
       "label_ptr": "",
       "name": "android.permission.CHANGE_APP_IDLE_STATE",
       "permissionGroup": "",
-      "protectionLevel": "signature"
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.CHANGE_BACKGROUND_DATA_SETTING": {
       "description": "",
@@ -1019,6 +1262,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.CHANGE_HDMI_CEC_ACTIVE_SOURCE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CHANGE_HDMI_CEC_ACTIVE_SOURCE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.CHANGE_LOWPAN_STATE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CHANGE_LOWPAN_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.CHANGE_NETWORK_STATE": {
       "description": "Allows the app to change the state of network connectivity.",
       "description_ptr": "permdesc_changeNetworkState",
@@ -1027,6 +1288,15 @@
       "name": "android.permission.CHANGE_NETWORK_STATE",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "android.permission.CHANGE_OVERLAY_PACKAGES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CHANGE_OVERLAY_PACKAGES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.CHANGE_WIFI_MULTICAST_STATE": {
       "description": "Allows the app to receive\n      packets sent to all devices on a Wi-Fi network using multicast addresses,\n      not just your phone.  It uses more power than the non-multicast mode.",
@@ -1082,6 +1352,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|installer"
     },
+    "android.permission.CONFIGURE_DISPLAY_BRIGHTNESS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CONFIGURE_DISPLAY_BRIGHTNESS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
+    },
     "android.permission.CONFIGURE_DISPLAY_COLOR_MODE": {
       "description": "",
       "description_ptr": "",
@@ -1127,6 +1406,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.CONTROL_DISPLAY_BRIGHTNESS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CONTROL_DISPLAY_BRIGHTNESS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.CONTROL_DISPLAY_SATURATION": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CONTROL_DISPLAY_SATURATION",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.CONTROL_INCALL_EXPERIENCE": {
       "description": "",
       "description_ptr": "",
@@ -1151,6 +1448,15 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.CONTROL_LOCATION_UPDATES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -1232,6 +1538,24 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.DIAGNOSTIC",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.DISABLE_HIDDEN_API_CHECKS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.DISABLE_HIDDEN_API_CHECKS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.DISABLE_INPUT_DEVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.DISABLE_INPUT_DEVICE",
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
@@ -1325,6 +1649,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.FORCE_PERSISTABLE_URI_PERMISSIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.FORCE_PERSISTABLE_URI_PERMISSIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.FORCE_STOP_PACKAGES": {
       "description": "",
       "description_ptr": "",
@@ -1333,6 +1666,15 @@
       "name": "android.permission.FORCE_STOP_PACKAGES",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.FOREGROUND_SERVICE": {
+      "description": "Allows the app to make use of foreground services.",
+      "description_ptr": "permdesc_foregroundService",
+      "label": "run foreground service",
+      "label_ptr": "permlab_foregroundService",
+      "name": "android.permission.FOREGROUND_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "normal|instant"
     },
     "android.permission.FRAME_STATS": {
       "description": "",
@@ -1405,15 +1747,6 @@
       "name": "android.permission.GET_INTENT_SENDER_INTENT",
       "permissionGroup": "",
       "protectionLevel": "signature"
-    },
-    "android.permission.GET_PACKAGE_IMPORTANCE": {
-      "description": "",
-      "description_ptr": "",
-      "label": "",
-      "label_ptr": "",
-      "name": "android.permission.GET_PACKAGE_IMPORTANCE",
-      "permissionGroup": "",
-      "protectionLevel": "signature|privileged"
     },
     "android.permission.GET_PACKAGE_SIZE": {
       "description": "Allows the app to retrieve its code, data, and cache sizes",
@@ -1550,6 +1883,33 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.INSTALL_PACKAGE_UPDATES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.INSTALL_PACKAGE_UPDATES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.INSTALL_SELF_UPDATES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.INSTALL_SELF_UPDATES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.INSTANT_APP_FOREGROUND_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.INSTANT_APP_FOREGROUND_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|development|instant|appop"
+    },
     "android.permission.INTENT_FILTER_VERIFICATION_AGENT": {
       "description": "",
       "description_ptr": "",
@@ -1577,6 +1937,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|installer"
     },
+    "android.permission.INTERNAL_DELETE_CACHE_FILES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.INTERNAL_DELETE_CACHE_FILES",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.INTERNAL_SYSTEM_WINDOW": {
       "description": "",
       "description_ptr": "",
@@ -1593,7 +1962,7 @@
       "label_ptr": "permlab_createNetworkSockets",
       "name": "android.permission.INTERNET",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "normal|instant"
     },
     "android.permission.INVOKE_CARRIER_SETUP": {
       "description": "",
@@ -1674,7 +2043,16 @@
       "label_ptr": "",
       "name": "android.permission.MANAGE_ACTIVITY_STACKS",
       "permissionGroup": "",
-      "protectionLevel": "signature|privileged"
+      "protectionLevel": "signature|privileged|development"
+    },
+    "android.permission.MANAGE_APP_OPS_MODES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_APP_OPS_MODES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|installer|verifier"
     },
     "android.permission.MANAGE_APP_OPS_RESTRICTIONS": {
       "description": "",
@@ -1693,6 +2071,60 @@
       "name": "android.permission.MANAGE_APP_TOKENS",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_AUDIO_POLICY": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_AUDIO_POLICY",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_AUTO_FILL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_AUTO_FILL",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_BIND_INSTANT_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_BIND_INSTANT_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_BLUETOOTH_WHEN_PERMISSION_REVIEW_REQUIRED": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_BLUETOOTH_WHEN_PERMISSION_REVIEW_REQUIRED",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_CAMERA": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_CAMERA",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_CARRIER_OEM_UNLOCK_STATE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_CARRIER_OEM_UNLOCK_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.MANAGE_CA_CERTIFICATES": {
       "description": "",
@@ -1730,6 +2162,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.MANAGE_IPSEC_TUNNELS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_IPSEC_TUNNELS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|appop"
+    },
+    "android.permission.MANAGE_LOWPAN_INTERFACES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_LOWPAN_INTERFACES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.MANAGE_MEDIA_PROJECTION": {
       "description": "",
       "description_ptr": "",
@@ -1757,6 +2207,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.MANAGE_OWN_CALLS": {
+      "description": "Allows the app to route its calls through the system in\n        order to improve the calling experience.",
+      "description_ptr": "permdesc_manageOwnCalls",
+      "label": "route calls through the system",
+      "label_ptr": "permlab_manageOwnCalls",
+      "name": "android.permission.MANAGE_OWN_CALLS",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
     "android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS": {
       "description": "Allows apps to set the profile owners and the device owner.",
       "description_ptr": "permdesc_manageProfileAndDeviceOwners",
@@ -1766,12 +2225,48 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.MANAGE_SCOPED_ACCESS_DIRECTORY_PERMISSIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_SCOPED_ACCESS_DIRECTORY_PERMISSIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_SENSORS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_SENSORS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_SLICE_PERMISSIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_SLICE_PERMISSIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.MANAGE_SOUND_TRIGGER": {
       "description": "",
       "description_ptr": "",
       "label": "",
       "label_ptr": "",
       "name": "android.permission.MANAGE_SOUND_TRIGGER",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.MANAGE_SUBSCRIPTION_PLANS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_SUBSCRIPTION_PLANS",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -1793,6 +2288,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.MANAGE_USER_OEM_UNLOCK_STATE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_USER_OEM_UNLOCK_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.MANAGE_VOICE_KEYPHRASES": {
       "description": "",
       "description_ptr": "",
@@ -1801,6 +2305,15 @@
       "name": "android.permission.MANAGE_VOICE_KEYPHRASES",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.MANAGE_WIFI_WHEN_PERMISSION_REVIEW_REQUIRED": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MANAGE_WIFI_WHEN_PERMISSION_REVIEW_REQUIRED",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.MASTER_CLEAR": {
       "description": "",
@@ -1819,6 +2332,15 @@
       "name": "android.permission.MEDIA_CONTENT_CONTROL",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.MODIFY_ACCESSIBILITY_DATA": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MODIFY_ACCESSIBILITY_DATA",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.MODIFY_APPWIDGET_BIND_PERMISSIONS": {
       "description": "",
@@ -1892,6 +2414,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.MODIFY_QUIET_MODE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MODIFY_QUIET_MODE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.MODIFY_THEME_OVERLAY": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.MODIFY_THEME_OVERLAY",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.MOUNT_FORMAT_FILESYSTEMS": {
       "description": "",
       "description_ptr": "",
@@ -1918,6 +2458,42 @@
       "name": "android.permission.MOVE_PACKAGE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.NETWORK_BYPASS_PRIVATE_DNS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NETWORK_BYPASS_PRIVATE_DNS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.NETWORK_SETTINGS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NETWORK_SETTINGS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.NETWORK_SETUP_WIZARD": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NETWORK_SETUP_WIZARD",
+      "permissionGroup": "",
+      "protectionLevel": "signature|setup"
+    },
+    "android.permission.NETWORK_STACK": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NETWORK_STACK",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.NET_ADMIN": {
       "description": "",
@@ -1955,12 +2531,48 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.NFC_TRANSACTION_EVENT": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NFC_TRANSACTION_EVENT",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
+    "android.permission.NOTIFICATION_DURING_SETUP": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NOTIFICATION_DURING_SETUP",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.NOTIFY_PENDING_SYSTEM_UPDATE": {
       "description": "",
       "description_ptr": "",
       "label": "",
       "label_ptr": "",
       "name": "android.permission.NOTIFY_PENDING_SYSTEM_UPDATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.NOTIFY_TV_INPUTS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NOTIFY_TV_INPUTS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.OBSERVE_APP_USAGE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.OBSERVE_APP_USAGE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -1979,6 +2591,15 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.OEM_UNLOCK_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.OPEN_APPLICATION_DETAILS_OPEN_BY_DEFAULT_PAGE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.OPEN_APPLICATION_DETAILS_OPEN_BY_DEFAULT_PAGE",
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
@@ -2060,8 +2681,17 @@
       "label": "reroute outgoing calls",
       "label_ptr": "permlab_processOutgoingCalls",
       "name": "android.permission.PROCESS_OUTGOING_CALLS",
-      "permissionGroup": "android.permission-group.PHONE",
+      "permissionGroup": "android.permission-group.CALL_LOG",
       "protectionLevel": "dangerous"
+    },
+    "android.permission.PROVIDE_RESOLVER_RANKER_SERVICE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.PROVIDE_RESOLVER_RANKER_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.PROVIDE_TRUST_AGENT": {
       "description": "",
@@ -2081,6 +2711,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.QUERY_TIME_ZONE_RULES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.QUERY_TIME_ZONE_RULES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.READ_BLOCKED_NUMBERS": {
       "description": "",
       "description_ptr": "",
@@ -2091,21 +2730,21 @@
       "protectionLevel": "signature"
     },
     "android.permission.READ_CALENDAR": {
-      "description": "Allows the app to\n       read all calendar events stored on your phone, including those of friends\n       or co-workers. This may allow the app to share or save your calendar data,\n       regardless of confidentiality or sensitivity.",
+      "description": "This app can read all calendar events stored on your phone and share or save your calendar data.",
       "description_ptr": "permdesc_readCalendar",
-      "label": "read calendar events plus confidential information",
+      "label": "Read calendar events and details",
       "label_ptr": "permlab_readCalendar",
       "name": "android.permission.READ_CALENDAR",
       "permissionGroup": "android.permission-group.CALENDAR",
       "protectionLevel": "dangerous"
     },
     "android.permission.READ_CALL_LOG": {
-      "description": "Allows the app to read\n      your phone's call log, including data about incoming and outgoing calls.\n      This permission allows apps to save your call log data, and malicious apps\n      may share call log data without your knowledge.",
+      "description": "This app can read your call history.",
       "description_ptr": "permdesc_readCallLog",
       "label": "read call log",
       "label_ptr": "permlab_readCallLog",
       "name": "android.permission.READ_CALL_LOG",
-      "permissionGroup": "android.permission-group.PHONE",
+      "permissionGroup": "android.permission-group.CALL_LOG",
       "protectionLevel": "dangerous"
     },
     "android.permission.READ_CELL_BROADCASTS": {
@@ -2125,6 +2764,15 @@
       "name": "android.permission.READ_CONTACTS",
       "permissionGroup": "android.permission-group.CONTACTS",
       "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_CONTENT_RATING_SYSTEMS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_CONTENT_RATING_SYSTEMS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.READ_DREAM_STATE": {
       "description": "",
@@ -2180,6 +2828,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged|development"
     },
+    "android.permission.READ_LOWPAN_CREDENTIAL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_LOWPAN_CREDENTIAL",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.READ_NETWORK_USAGE_HISTORY": {
       "description": "",
       "description_ptr": "",
@@ -2197,6 +2854,15 @@
       "name": "android.permission.READ_OEM_UNLOCK_STATE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.READ_PHONE_NUMBERS": {
+      "description": "Allows the app to access the phone numbers of the device.",
+      "description_ptr": "permdesc_readPhoneNumbers",
+      "label": "read phone numbers",
+      "label_ptr": "permlab_readPhoneNumbers",
+      "name": "android.permission.READ_PHONE_NUMBERS",
+      "permissionGroup": "android.permission-group.PHONE",
+      "protectionLevel": "dangerous|instant"
     },
     "android.permission.READ_PHONE_STATE": {
       "description": "Allows the app to access the phone\n      features of the device.  This permission allows the app to determine the\n      phone number and device IDs, whether a call is active, and the remote number\n      connected by a call.",
@@ -2216,6 +2882,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.READ_PRINT_SERVICES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_PRINT_SERVICES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|preinstalled"
+    },
+    "android.permission.READ_PRINT_SERVICE_RECOMMENDATIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_PRINT_SERVICE_RECOMMENDATIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|preinstalled"
+    },
     "android.permission.READ_PRIVILEGED_PHONE_STATE": {
       "description": "",
       "description_ptr": "",
@@ -2234,6 +2918,15 @@
       "permissionGroup": "",
       "protectionLevel": "normal"
     },
+    "android.permission.READ_RUNTIME_PROFILES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_RUNTIME_PROFILES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.READ_SEARCH_INDEXABLES": {
       "description": "",
       "description_ptr": "",
@@ -2244,7 +2937,7 @@
       "protectionLevel": "signature|privileged"
     },
     "android.permission.READ_SMS": {
-      "description": "Allows the app to read SMS\n      messages stored on your phone or SIM card. This allows the app to read all\n      SMS messages, regardless of content or confidentiality.",
+      "description": "This app can read all SMS (text) messages stored on your phone.",
       "description_ptr": "permdesc_readSms",
       "label": "read your text messages (SMS or MMS)",
       "label_ptr": "permlab_readSms",
@@ -2279,6 +2972,15 @@
       "permissionGroup": "",
       "protectionLevel": "normal"
     },
+    "android.permission.READ_SYSTEM_UPDATE_INFO": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_SYSTEM_UPDATE_INFO",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.READ_USER_DICTIONARY": {
       "description": "",
       "description_ptr": "",
@@ -2287,6 +2989,15 @@
       "name": "android.permission.READ_USER_DICTIONARY",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "android.permission.READ_WALLPAPER_INTERNAL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.READ_WALLPAPER_INTERNAL",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.READ_WIFI_CREDENTIAL": {
       "description": "",
@@ -2406,13 +3117,13 @@
       "protectionLevel": "signature|privileged"
     },
     "android.permission.RECORD_AUDIO": {
-      "description": "Allows the app to record audio with the\n      microphone.  This permission allows the app to record audio at any time\n      without your confirmation.",
+      "description": "This app can record audio using the microphone at any time.",
       "description_ptr": "permdesc_recordAudio",
       "label": "record audio",
       "label_ptr": "permlab_recordAudio",
       "name": "android.permission.RECORD_AUDIO",
       "permissionGroup": "android.permission-group.MICROPHONE",
-      "protectionLevel": "dangerous"
+      "protectionLevel": "dangerous|instant"
     },
     "android.permission.RECOVERY": {
       "description": "",
@@ -2420,6 +3131,15 @@
       "label": "",
       "label_ptr": "",
       "name": "android.permission.RECOVERY",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.RECOVER_KEYSTORE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.RECOVER_KEYSTORE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -2495,6 +3215,33 @@
       "permissionGroup": "",
       "protectionLevel": "normal"
     },
+    "android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND": {
+      "description": "This app can run in the background. This may drain battery faster.",
+      "description_ptr": "permdesc_runInBackground",
+      "label": "run in the background",
+      "label_ptr": "permlab_runInBackground",
+      "name": "android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
+    "android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND": {
+      "description": "This app can use data in the background. This may increase data usage.",
+      "description_ptr": "permdesc_useDataInBackground",
+      "label": "use data in the background",
+      "label_ptr": "permlab_useDataInBackground",
+      "name": "android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
+    "android.permission.REQUEST_DELETE_PACKAGES": {
+      "description": "Allows an application to request deletion of packages.",
+      "description_ptr": "permdesc_requestDeletePackages",
+      "label": "request delete packages",
+      "label_ptr": "permlab_requestDeletePackages",
+      "name": "android.permission.REQUEST_DELETE_PACKAGES",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
     "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS": {
       "description": "Allows an app to ask for permission to ignore battery optimizations for that app.",
       "description_ptr": "permdesc_requestIgnoreBatteryOptimizations",
@@ -2511,7 +3258,16 @@
       "label_ptr": "permlab_requestInstallPackages",
       "name": "android.permission.REQUEST_INSTALL_PACKAGES",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "signature|appop"
+    },
+    "android.permission.REQUEST_NETWORK_SCORES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.REQUEST_NETWORK_SCORES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|setup"
     },
     "android.permission.RESET_FINGERPRINT_LOCKOUT": {
       "description": "",
@@ -2540,6 +3296,15 @@
       "permissionGroup": "",
       "protectionLevel": "normal"
     },
+    "android.permission.RESTRICTED_VR_ACCESS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.RESTRICTED_VR_ACCESS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|preinstalled"
+    },
     "android.permission.RETRIEVE_WINDOW_CONTENT": {
       "description": "",
       "description_ptr": "",
@@ -2567,12 +3332,30 @@
       "permissionGroup": "",
       "protectionLevel": "signature|installer|verifier"
     },
+    "android.permission.RUN_IN_BACKGROUND": {
+      "description": "This app can run in the background. This may drain battery faster.",
+      "description_ptr": "permdesc_runInBackground",
+      "label": "run in the background",
+      "label_ptr": "permlab_runInBackground",
+      "name": "android.permission.RUN_IN_BACKGROUND",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.SCORE_NETWORKS": {
       "description": "",
       "description_ptr": "",
       "label": "",
       "label_ptr": "",
       "name": "android.permission.SCORE_NETWORKS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.SEND_EMBMS_INTENTS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SEND_EMBMS_INTENTS",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
@@ -2584,6 +3367,15 @@
       "name": "android.permission.SEND_RESPOND_VIA_MESSAGE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.SEND_SHOW_SUSPENDED_APP_DETAILS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SEND_SHOW_SUSPENDED_APP_DETAILS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.SEND_SMS": {
       "description": "Allows the app to send SMS messages.\n     This may result in unexpected charges. Malicious apps may cost you money by\n     sending messages without your confirmation.",
@@ -2648,6 +3440,24 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged|development"
     },
+    "android.permission.SET_DISPLAY_OFFSET": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SET_DISPLAY_OFFSET",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.SET_HARMFUL_APP_WARNINGS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SET_HARMFUL_APP_WARNINGS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|verifier"
+    },
     "android.permission.SET_INPUT_CALIBRATION": {
       "description": "",
       "description_ptr": "",
@@ -2665,6 +3475,15 @@
       "name": "android.permission.SET_KEYBOARD_LAYOUT",
       "permissionGroup": "",
       "protectionLevel": "signature"
+    },
+    "android.permission.SET_MEDIA_KEY_LISTENER": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SET_MEDIA_KEY_LISTENER",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
     },
     "android.permission.SET_ORIENTATION": {
       "description": "",
@@ -2691,7 +3510,7 @@
       "label_ptr": "",
       "name": "android.permission.SET_PREFERRED_APPLICATIONS",
       "permissionGroup": "",
-      "protectionLevel": "signature"
+      "protectionLevel": "signature|verifier"
     },
     "android.permission.SET_PROCESS_LIMIT": {
       "description": "",
@@ -2727,7 +3546,16 @@
       "label_ptr": "permlab_setTimeZone",
       "name": "android.permission.SET_TIME_ZONE",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "signature|privileged"
+    },
+    "android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
     },
     "android.permission.SET_WALLPAPER": {
       "description": "Allows the app to set the system wallpaper.",
@@ -2755,6 +3583,15 @@
       "name": "android.permission.SET_WALLPAPER_HINTS",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "android.permission.SHOW_KEYGUARD_MESSAGE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SHOW_KEYGUARD_MESSAGE",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.SHUTDOWN": {
       "description": "",
@@ -2791,6 +3628,15 @@
       "name": "android.permission.START_TASKS_FROM_RECENTS",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.STATSCOMPANION": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.STATSCOMPANION",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.STATUS_BAR": {
       "description": "",
@@ -2855,10 +3701,19 @@
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
     },
+    "android.permission.SUSPEND_APPS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SUSPEND_APPS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.SYSTEM_ALERT_WINDOW": {
-      "description": "Allows the app to draw on top of other\n        applications or parts of the user interface.  They may interfere with your\n        use of the interface in any application, or change what you think you are\n        seeing in other applications.",
+      "description": "This app can appear on top of other apps or other parts of the screen. This may interfere with normal app usage and change the way that other apps appear.",
       "description_ptr": "permdesc_systemAlertWindow",
-      "label": "draw over other apps",
+      "label": "This app can appear on top of other apps",
       "label_ptr": "permlab_systemAlertWindow",
       "name": "android.permission.SYSTEM_ALERT_WINDOW",
       "permissionGroup": "",
@@ -2882,6 +3737,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature"
     },
+    "android.permission.TEST_BLACKLISTED_PASSWORD": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.TEST_BLACKLISTED_PASSWORD",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.TETHER_PRIVILEGED": {
       "description": "",
       "description_ptr": "",
@@ -2899,6 +3763,15 @@
       "name": "android.permission.TRANSMIT_IR",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "android.permission.TRIGGER_TIME_ZONE_RULES_CHECK": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.TRIGGER_TIME_ZONE_RULES_CHECK",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.TRUST_LISTENER": {
       "description": "",
@@ -2926,6 +3799,15 @@
       "name": "android.permission.TV_VIRTUAL_REMOTE_CONTROLLER",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.UNLIMITED_SHORTCUTS_API_CALLS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.UNLIMITED_SHORTCUTS_API_CALLS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|textClassifier"
     },
     "android.permission.UPDATE_APP_OPS_STATS": {
       "description": "",
@@ -2972,6 +3854,15 @@
       "permissionGroup": "",
       "protectionLevel": "signature|setup"
     },
+    "android.permission.UPDATE_TIME_ZONE_RULES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.UPDATE_TIME_ZONE_RULES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
+    },
     "android.permission.USER_ACTIVITY": {
       "description": "",
       "description_ptr": "",
@@ -2980,6 +3871,24 @@
       "name": "android.permission.USER_ACTIVITY",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.USE_BIOMETRIC": {
+      "description": "Allows the app to use biometric hardware for authentication",
+      "description_ptr": "permdesc_useBiometric",
+      "label": "use biometric hardware",
+      "label_ptr": "permlab_useBiometric",
+      "name": "android.permission.USE_BIOMETRIC",
+      "permissionGroup": "android.permission-group.SENSORS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.USE_COLORIZED_NOTIFICATIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.USE_COLORIZED_NOTIFICATIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|setup"
     },
     "android.permission.USE_CREDENTIALS": {
       "description": "",
@@ -2990,6 +3899,15 @@
       "permissionGroup": "",
       "protectionLevel": "normal"
     },
+    "android.permission.USE_DATA_IN_BACKGROUND": {
+      "description": "This app can use data in the background. This may increase data usage.",
+      "description_ptr": "permdesc_useDataInBackground",
+      "label": "use data in the background",
+      "label_ptr": "permlab_useDataInBackground",
+      "name": "android.permission.USE_DATA_IN_BACKGROUND",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
     "android.permission.USE_FINGERPRINT": {
       "description": "Allows the app to use fingerprint hardware for authentication",
       "description_ptr": "permdesc_useFingerprint",
@@ -2998,6 +3916,15 @@
       "name": "android.permission.USE_FINGERPRINT",
       "permissionGroup": "android.permission-group.SENSORS",
       "protectionLevel": "normal"
+    },
+    "android.permission.USE_RESERVED_DISK": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.USE_RESERVED_DISK",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "android.permission.USE_SIP": {
       "description": "Allows the app to make and receive SIP calls.",
@@ -3015,7 +3942,16 @@
       "label_ptr": "permlab_vibrate",
       "name": "android.permission.VIBRATE",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "normal|instant"
+    },
+    "android.permission.VIEW_INSTANT_APPS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.VIEW_INSTANT_APPS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|preinstalled"
     },
     "android.permission.WAKE_LOCK": {
       "description": "Allows the app to prevent the phone from going to sleep.",
@@ -3024,7 +3960,16 @@
       "label_ptr": "permlab_wakeLock",
       "name": "android.permission.WAKE_LOCK",
       "permissionGroup": "",
-      "protectionLevel": "normal"
+      "protectionLevel": "normal|instant"
+    },
+    "android.permission.WATCH_APPOPS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.WATCH_APPOPS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
     },
     "android.permission.WRITE_APN_SETTINGS": {
       "description": "",
@@ -3045,7 +3990,7 @@
       "protectionLevel": "signature"
     },
     "android.permission.WRITE_CALENDAR": {
-      "description": "Allows the app to\n        add, remove, change events that you can modify on your phone, including\n        those of friends or co-workers. This may allow the app to send messages\n        that appear to come from calendar owners, or modify events without the\n        owners' knowledge.",
+      "description": "This app can add, remove, or change calendar events on your phone. This app can send messages that may appear to come from calendar owners, or change events without notifying their owners.",
       "description_ptr": "permdesc_writeCalendar",
       "label": "add or modify calendar events and send email to guests without owners' knowledge",
       "label_ptr": "permlab_writeCalendar",
@@ -3059,7 +4004,7 @@
       "label": "write call log",
       "label_ptr": "permlab_writeCallLog",
       "name": "android.permission.WRITE_CALL_LOG",
-      "permissionGroup": "android.permission-group.PHONE",
+      "permissionGroup": "android.permission-group.CALL_LOG",
       "protectionLevel": "dangerous"
     },
     "android.permission.WRITE_CONTACTS": {
@@ -3079,6 +4024,15 @@
       "name": "android.permission.WRITE_DREAM_STATE",
       "permissionGroup": "",
       "protectionLevel": "signature|privileged"
+    },
+    "android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged|development"
     },
     "android.permission.WRITE_EXTERNAL_STORAGE": {
       "description": "Allows the app to write to the SD card.",
@@ -3214,6 +4168,15 @@
       "name": "com.android.launcher.permission.UNINSTALL_SHORTCUT",
       "permissionGroup": "",
       "protectionLevel": "normal"
+    },
+    "com.android.permission.INSTALL_EXISTING_PACKAGES": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "com.android.permission.INSTALL_EXISTING_PACKAGES",
+      "permissionGroup": "",
+      "protectionLevel": "signature|privileged"
     },
     "com.android.voicemail.permission.ADD_VOICEMAIL": {
       "description": "Allows the app to add messages\n      to your voicemail inbox.",
