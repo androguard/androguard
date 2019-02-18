@@ -1225,7 +1225,10 @@ class APK(object):
 
     def get_details_permissions(self):
         """
-        Return permissions with details
+        Return permissions with details.
+
+        THis can only return details about the permission, if the permission is
+        defined in the AOSP.
 
         :rtype: dict of {permission: [protectionLevel, label, description]}
         """
