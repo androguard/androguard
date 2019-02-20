@@ -37,7 +37,7 @@ Get XREFs for method calls
 The first example would be to query all called classes from the class :code:`tests.androguard.TestActivity`.
 Remember, that you need to provide the class name as a type format with forward slashes instead of dots.
 In order to get the class, you can simply use :py:attr:`~androguard.core.analysis.analysis.Analysis.classes`
-or :meth:`~androguard.core.analysis.analysis.Analysis.find_classes()`:
+or :meth:`~androguard.core.analysis.analysis.Analysis.find_classes`:
 
 .. code-block:: ipython
 
@@ -70,9 +70,15 @@ Here you can see, that :code:`tests.androguard.TestActivity.testCall1` uses a :c
 The method :code:`testCalls` is calling other functions from the same package.
 
 The other way around is also possible. Especially for Android API's, this is very interesting!
+
+.. note:: External method, like the API calls, will not give any XREFs for :meth:`~androguard.core.analysis.analysis.MethodClassAnalysis.xref_to`.
+
 Lets say, you want all calls to the API class :code:`java.io.file`:
 
 .. code-block:: ipython
+
+    In [3]: dx.classes['Ljava/io/File;']
+    Out[3]: <analysis.ClassAnalysis Ljava/io/File; EXTERNAL>
 
     In [4]: for meth in dx.classes['Ljava/io/File;'].get_methods():
        ...:     print("usage of method {}".format(meth.name))
@@ -103,6 +109,10 @@ Lets say, you want all calls to the API class :code:`java.io.file`:
     usage of method mkdir
       called by -> Landroid/support/v4/util/AtomicFile; -- startWrite
 
+.. note:: An external class or method is simply a class or method which could not be found inside the loaded DEX files
+    at the time the XREFs were created! Thus, it is important to always load all DEX files of a multidex file.
+    On the other hand, beware that classes might not be defined as they could be loaded dynamically later.
+    External does not automatically mean that this class/method is an Android or Java API!
 
 Get XREFs for Strings
 ---------------------
