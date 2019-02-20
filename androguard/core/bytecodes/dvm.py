@@ -2986,6 +2986,11 @@ class EncodedMethod(object):
             self.get_class_name(), self.get_name(), self.get_descriptor(),
             self.get_access_flags_string(), self.get_code_off())
 
+    @property
+    def full_name(self):
+        """Return class_name + name + descriptor, separated by spaces (no access flags"""
+        return " ".join([self.class_name, self.name, self.get_descriptor()])
+
     def get_short_string(self):
         """
         Return a shorter formatted String which encodes this method.

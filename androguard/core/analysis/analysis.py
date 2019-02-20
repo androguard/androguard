@@ -517,6 +517,16 @@ class MethodClassAnalysis:
         """Returns the access flags to the method as a string"""
         return self.method.get_access_flags_string()
 
+    @property
+    def class_name(self):
+        """Returns the name of the class of this method"""
+        return self.method.class_name
+
+    @property
+    def full_name(self):
+        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
+        return self.method.full_name
+
     def AddXrefTo(self, classobj, methodobj, offset):
         """
         Add a crossreference to another method
@@ -756,6 +766,11 @@ class ExternalMethod:
 
     def get_descriptor(self):
         return ''.join(self.descriptor)
+
+    @property
+    def full_name(self):
+        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
+        return self.class_name + " " + self.name + " " + self.get_descriptor()
 
     def get_access_flags_string(self):
         # TODO can we assume that external methods are always public?
