@@ -264,9 +264,9 @@ class APKTest(unittest.TestCase):
                     methods = apath.split("-", 1)[0].split("v")[1:]
                     for m, f in m_tests.items():
                         if m in methods:
-                            self.assertEqual(f(), True)
+                            self.assertTrue(f())
                         else:
-                            self.assertEqual(f(), False)
+                            self.assertFalse(f())
 
                 # Special error cases
                 if apath == "v2-only-apk-sig-block-size-mismatch.apk":
@@ -356,7 +356,7 @@ class APKTest(unittest.TestCase):
         self.assertIsInstance(d[0], DalvikVMFormat)
         self.assertIsInstance(dx, Analysis)
 
-        self.assertEqual(a.get_signature_name(), None)
+        self.assertIsNone(a.get_signature_name())
         self.assertEqual(a.get_signature_names(), [])
 
     def testAPKManifest(self):
@@ -537,7 +537,7 @@ class APKTest(unittest.TestCase):
             mockZip = MagicMock()
             zipFile.return_value=mockZip
             a.new_zip("testout.apk")
-            self.assertTrue(mockZip.writestr.call_count == 48)
+            self.assertEqual(mockZip.writestr.call_count, 48)
             self.assertTrue(mockZip.close.called)
 
     def testNewZipWithDeletedFile(self):
@@ -551,7 +551,7 @@ class APKTest(unittest.TestCase):
             mockZip = MagicMock()
             zipFile.return_value=mockZip
             a.new_zip("testout.apk", deleted_files="res/menu/menu.xml")
-            self.assertTrue(mockZip.writestr.call_count == 47)
+            self.assertEqual(mockZip.writestr.call_count, 47)
             self.assertTrue(mockZip.close.called)
 
     def testNewZipWithNewFile(self):
@@ -565,7 +565,7 @@ class APKTest(unittest.TestCase):
             mockZip = MagicMock()
             zipFile.return_value=mockZip
             a.new_zip("testout.apk", new_files={'res/menu/menu.xml': 'content'})
-            self.assertTrue(mockZip.writestr.call_count == 48)
+            self.assertEqual(mockZip.writestr.call_count, 48)
             self.assertTrue(mockZip.close.called)
 
     def testFeatures(self):
@@ -686,8 +686,8 @@ class APKTest(unittest.TestCase):
         for level in levels:
             perm = load_permissions(level)
             self.assertIn('android.permission.INTERNET', perm)
-            self.assertTrue(isinstance(perm, dict))
-            self.assertTrue(isinstance(perm['android.permission.INTERNET'], dict))
+            self.assertIsInstance(perm, dict)
+            self.assertIsInstance(perm['android.permission.INTERNET'], dict)
             self.assertIn('description', perm['android.permission.INTERNET'])
             self.assertIn('label', perm['android.permission.INTERNET'])
             self.assertIn('protectionLevel', perm['android.permission.INTERNET'])

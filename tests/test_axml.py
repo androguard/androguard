@@ -149,19 +149,19 @@ class AXMLTest(unittest.TestCase):
         """Test if wrong arsc headers are rejected"""
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01"))
-        self.assertTrue("Can not read over the buffer size" in str(cnx.exception))
+        self.assertIn("Can not read over the buffer size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\xFF\xFF\x08\x00\x00\x00"))
-        self.assertTrue("smaller than header size" in str(cnx.exception))
+        self.assertIn("smaller than header size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x01\x00\x08\x00\x00\x00"))
-        self.assertTrue("declared header size is smaller than required size" in str(cnx.exception))
+        self.assertIn("declared header size is smaller than required size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x08\x00\x04\x00\x00\x00"))
-        self.assertTrue("declared chunk size is smaller than required size" in str(cnx.exception))
+        self.assertIn("declared chunk size is smaller than required size", str(cnx.exception))
 
         a = axml.ARSCHeader(bytecode.BuffHandle(b"\xCA\xFE\x08\x00\x10\x00\x00\x00"
                                                 b"\xDE\xEA\xBE\xEF\x42\x42\x42\x42"))
@@ -260,7 +260,7 @@ class AXMLTest(unittest.TestCase):
         with self.assertRaises(axml.ResParserError) as cnx:
             with open(filename, "rb") as f:
                 ap = axml.AXMLPrinter(f.read())
-        self.assertTrue("not null terminated" in str(cnx.exception))
+        self.assertIn("not null terminated", str(cnx.exception))
 
     def testExtraNamespace(self):
         """
