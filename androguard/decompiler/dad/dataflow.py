@@ -26,7 +26,7 @@ from androguard.decompiler.dad.node import Node
 logger = logging.getLogger('dad.control_flow')
 
 
-class BasicReachDef(object):
+class BasicReachDef:
     def __init__(self, graph, params):
         self.g = graph
         self.A = defaultdict(set)
@@ -313,7 +313,7 @@ def register_propagation(graph, du, ud):
 
 class DummyNode(Node):
     def __init__(self, name):
-        super(DummyNode, self).__init__(name)
+        super().__init__(name)
 
     def get_loc_with_ins(self):
         return []

@@ -15,7 +15,7 @@ import os
 
 class HexViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(HexViewMode, self).__init__()
+        super().__init__()
 
         self.dataModel = data
         self.width = width
@@ -705,7 +705,7 @@ class HexViewMode(ViewMode):
         return True
 
     def setEditMode(self, mode):
-        super(HexViewMode, self).setEditMode(mode)
+        super().setEditMode(mode)
         if not mode:
             self.highpart = True
             self.transformationEngine = self.original_textdecorator
@@ -718,7 +718,7 @@ class HexViewMode(ViewMode):
     def getHeaderInfo(self):
         s = ''
         for i in range(self.HexColumns[self.idxHexColumns]):
-            s += '{0} '.format('{0:x}'.format(i).zfill(2))
+            s += '{} '.format('{:x}'.format(i).zfill(2))
 
         s += self.gap * ' ' + 'Text'
         return s
@@ -863,7 +863,7 @@ class HexViewMode(ViewMode):
 
 class NoEditDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent=None):
-        super(NoEditDelegate, self).__init__(parent)
+        super().__init__(parent)
 
     def createEditor(self, parent, option, index):
         return None
@@ -878,7 +878,7 @@ class AnnonItem(QtWidgets.QTreeWidgetItem):
     ID_COLOR = 5
 
     def __init__(self, x, parent, color):
-        super(AnnonItem, self).__init__(x)
+        super().__init__(x)
         self._color = color
         self._t_parent = parent
 
@@ -937,7 +937,7 @@ class QColorButton(QtWidgets.QPushButton):
     colorChanged = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
-        super(QColorButton, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._color = None
         self.setMaximumWidth(32)
@@ -975,12 +975,12 @@ class QColorButton(QtWidgets.QPushButton):
         if e.button() == QtCore.Qt.RightButton:
             self.setColor(None)
 
-        return super(QColorButton, self).mousePressEvent(e)
+        return super().mousePressEvent(e)
 
 
 class ComboBoxItem(QtWidgets.QComboBox):
     def __init__(self, item, column):
-        super(ComboBoxItem, self).__init__()
+        super().__init__()
 
         self.item = item
         self.column = column
@@ -990,11 +990,11 @@ class Annotation(QtWidgets.QDialog):
     _fieldIdx = 0
 
     def __init__(self, parent, view):
-        super(Annotation, self).__init__(parent)
+        super().__init__(parent)
 
         self.parent = parent
         self.view = view
-        self.oshow = super(Annotation, self).show
+        self.oshow = super().show
 
         root = os.path.dirname(os.path.realpath(__file__))
         self.ui = loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)

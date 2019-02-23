@@ -101,7 +101,7 @@ def complexToFloat(xcomplex):
     return float(xcomplex & 0xFFFFFF00) * RADIX_MULTS[(xcomplex >> 4) & 3]
 
 
-class StringBlock(object):
+class StringBlock:
     """
     StringBlock is a CHUNK inside an AXML File: `ResStringPool_header`
     It contains all strings, which are used by referecing to ID's
@@ -353,7 +353,7 @@ class StringBlock(object):
                 print("{:08d} {}".format(i, repr(self.getStyle(i))))
 
 
-class AXMLParser(object):
+class AXMLParser:
     """
     AXMLParser reads through all chunks in the AXML file
     and implements a state machine to return information about
@@ -666,7 +666,7 @@ class AXMLParser(object):
         Return the String assosciated with the tag name
         """
         if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
-            return u''
+            return ''
 
         return self.sb[self.m_name]
 
@@ -689,11 +689,11 @@ class AXMLParser(object):
         Return the Namespace URI (if any) as a String for the current tag
         """
         if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
-            return u''
+            return ''
 
         # No Namespace
         if self.m_namespaceUri == 0xFFFFFFFF:
-            return u''
+            return ''
 
         return self.sb[self.m_namespaceUri]
 
@@ -729,7 +729,7 @@ class AXMLParser(object):
         Return the String assosicated with the current text
         """
         if self.m_name == -1 or self.m_event != TEXT:
-            return u''
+            return ''
 
         return self.sb[self.m_name]
 
@@ -794,7 +794,7 @@ class AXMLParser(object):
 
         # No Namespace
         if uri == 0xFFFFFFFF:
-            return u''
+            return ''
 
         return self.sb[uri]
 
@@ -850,7 +850,7 @@ class AXMLParser(object):
         if valueType == TYPE_STRING:
             valueString = self.m_attributes[offset + ATTRIBUTE_IX_VALUE_STRING]
             return self.sb[valueString]
-        return u''
+        return ''
 
 
 def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
@@ -876,10 +876,10 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
         return lookup_string(_data)
 
     elif _type == TYPE_ATTRIBUTE:
-        return "?%s%08X" % (fmt_package(_data), _data)
+        return "?{}{:08X}".format(fmt_package(_data), _data)
 
     elif _type == TYPE_REFERENCE:
-        return "@%s%08X" % (fmt_package(_data), _data)
+        return "@{}{:08X}".format(fmt_package(_data), _data)
 
     elif _type == TYPE_FLOAT:
         return "%f" % unpack("=f", pack("=L", _data))[0]
@@ -893,10 +893,10 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
         return "true"
 
     elif _type == TYPE_DIMENSION:
-        return "%f%s" % (complexToFloat(_data), DIMENSION_UNITS[_data & COMPLEX_UNIT_MASK])
+        return "{:f}{}".format(complexToFloat(_data), DIMENSION_UNITS[_data & COMPLEX_UNIT_MASK])
 
     elif _type == TYPE_FRACTION:
-        return "%f%s" % (complexToFloat(_data) * 100, FRACTION_UNITS[_data & COMPLEX_UNIT_MASK])
+        return "{:f}{}".format(complexToFloat(_data) * 100, FRACTION_UNITS[_data & COMPLEX_UNIT_MASK])
 
     elif TYPE_FIRST_COLOR_INT <= _type <= TYPE_LAST_COLOR_INT:
         return "#%08X" % _data
@@ -904,7 +904,7 @@ def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
     elif TYPE_FIRST_INT <= _type <= TYPE_LAST_INT:
         return "%d" % fmt_int(_data)
 
-    return "<0x%X, type 0x%02X>" % (_data, _type)
+    return "<0x{:X}, type 0x{:02X}>".format(_data, _type)
 
 
 class AXMLPrinter:
@@ -1084,12 +1084,12 @@ class AXMLPrinter:
         if not self.__charrange or not self.__replacement:
             if sys.maxunicode == 0xFFFF:
                 # Fix for python 2.x, surrogate pairs does not match in regex
-                self.__charrange = re.compile(u'^([\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD]|[\uD800-\uDBFF][\uDC00-\uDFFF])*$')
+                self.__charrange = re.compile('^([\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD]|[\uD800-\uDBFF][\uDC00-\uDFFF])*$')
                 # TODO: this regex is slightly wrong... surrogates are not matched as pairs.
-                self.__replacement = re.compile(u'[^\u0020-\uDBFF\u0009\u000A\u000D\uE000-\uFFFD\uDC00-\uDFFF]')
+                self.__replacement = re.compile('[^\u0020-\uDBFF\u0009\u000A\u000D\uE000-\uFFFD\uDC00-\uDFFF]')
             else:
-                self.__charrange = re.compile(u'^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$')
-                self.__replacement = re.compile(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
+                self.__charrange = re.compile('^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$')
+                self.__replacement = re.compile('[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
 
         # Reading string until \x00. This is the same as aapt does.
         if "\x00" in value:
@@ -1182,7 +1182,7 @@ TOUCHSCREEN_STYLUS = ACONFIGURATION_TOUCHSCREEN_STYLUS
 TOUCHSCREEN_FINGER = ACONFIGURATION_TOUCHSCREEN_FINGER
 
 
-class ARSCParser(object):
+class ARSCParser:
     """
     Parser for resource.arsc files
 
@@ -1452,7 +1452,7 @@ class ARSCParser(object):
         entry_data = ate.key.get_data()
         return [
             ate.get_value(),
-            "#%02x%02x%02x%02x" % (
+            "#{:02x}{:02x}{:02x}{:02x}".format(
                 ((entry_data >> 24) & 0xFF),
                 ((entry_data >> 16) & 0xFF),
                 ((entry_data >> 8) & 0xFF),
@@ -1462,12 +1462,12 @@ class ARSCParser(object):
     def get_resource_dimen(self, ate):
         try:
             return [
-                ate.get_value(), "%s%s" % (
+                ate.get_value(), "{}{}".format(
                     complexToFloat(ate.key.get_data()),
                     DIMENSION_UNITS[ate.key.get_data() & COMPLEX_UNIT_MASK])
             ]
         except IndexError:
-            log.debug("Out of range dimension unit index for %s: %s" % (
+            log.debug("Out of range dimension unit index for {}: {}".format(
                 complexToFloat(ate.key.get_data()),
                 ate.key.get_data() & COMPLEX_UNIT_MASK))
             return [ate.get_value(), ate.key.get_data()]
@@ -1520,7 +1520,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["public"]:
-                buff += '<public type="%s" name="%s" id="0x%08x" />\n' % (
+                buff += '<public type="{}" name="{}" id="0x{:08x}" />\n'.format(
                     i[0], i[1], i[2])
         except KeyError:
             pass
@@ -1550,7 +1550,7 @@ class ARSCParser(object):
                     value = '<![CDATA[%s]]>' % i[1]
                 else:
                     value = i[1]
-                buff += '<string name="%s">%s</string>\n' % (i[0], value)
+                buff += '<string name="{}">{}</string>\n'.format(i[0], value)
         except KeyError:
             pass
 
@@ -1578,7 +1578,7 @@ class ARSCParser(object):
                 buff += '<resources>\n'
                 try:
                     for i in self.values[package_name][locale]["string"]:
-                        buff += '<string name="%s">%s</string>\n' % (i[0], escape(i[1]))
+                        buff += '<string name="{}">{}</string>\n'.format(i[0], escape(i[1]))
                 except KeyError:
                     pass
 
@@ -1611,7 +1611,7 @@ class ARSCParser(object):
                 if len(i) == 1:
                     buff += '<item type="id" name="%s"/>\n' % (i[0])
                 else:
-                    buff += '<item type="id" name="%s">%s</item>\n' % (i[0],
+                    buff += '<item type="id" name="{}">{}</item>\n'.format(i[0],
                                                                        escape(i[1]))
         except KeyError:
             pass
@@ -1637,7 +1637,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["bool"]:
-                buff += '<bool name="%s">%s</bool>\n' % (i[0], i[1])
+                buff += '<bool name="{}">{}</bool>\n'.format(i[0], i[1])
         except KeyError:
             pass
 
@@ -1662,7 +1662,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["integer"]:
-                buff += '<integer name="%s">%s</integer>\n' % (i[0], i[1])
+                buff += '<integer name="{}">{}</integer>\n'.format(i[0], i[1])
         except KeyError:
             pass
 
@@ -1687,7 +1687,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["color"]:
-                buff += '<color name="%s">%s</color>\n' % (i[0], i[1])
+                buff += '<color name="{}">{}</color>\n'.format(i[0], i[1])
         except KeyError:
             pass
 
@@ -1712,7 +1712,7 @@ class ARSCParser(object):
 
         try:
             for i in self.values[package_name][locale]["dimen"]:
-                buff += '<dimen name="%s">%s</dimen>\n' % (i[0], i[1])
+                buff += '<dimen name="{}">{}</dimen>\n'.format(i[0], i[1])
         except KeyError:
             pass
 
@@ -1740,7 +1740,7 @@ class ARSCParser(object):
             pass
         return None, None, None
 
-    class ResourceResolver(object):
+    class ResourceResolver:
         """
         Resolves resources by ID and configuration.
         This resolver deals with complex resources as well as with references.
@@ -2012,7 +2012,7 @@ class ARSCParser(object):
                 return "@{}:{}/{}".format(package, resource, name)
 
 
-class PackageContext(object):
+class PackageContext:
     def __init__(self, current_package, stringpool_main, mTableStrings, mKeyStrings):
         """
         :param ARSCResTablePackage current_package:
@@ -2041,7 +2041,7 @@ class PackageContext(object):
                                                         self.mKeyStrings)
 
 
-class ARSCHeader(object):
+class ARSCHeader:
     """
     Object which contains a Resource Chunk.
     This is an implementation of the `ResChunk_header`.
@@ -2132,7 +2132,7 @@ class ARSCHeader(object):
                                                                                          self.size)
 
 
-class ARSCResTablePackage(object):
+class ARSCResTablePackage:
     """
     A `ResTable_package`
 
@@ -2157,7 +2157,7 @@ class ARSCResTablePackage(object):
         return name
 
 
-class ARSCResTypeSpec(object):
+class ARSCResTypeSpec:
     """
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
     """
@@ -2178,7 +2178,7 @@ class ARSCResTypeSpec(object):
             self.typespec_entries.append(unpack('<I', buff.read(4))[0])
 
 
-class ARSCResType(object):
+class ARSCResType:
     """
     This is a `ResTable_type` without it's `ResChunk_header`.
     It contains a `ResTable_config`
@@ -2223,7 +2223,7 @@ class ARSCResType(object):
         )
 
 
-class ARSCResTableConfig(object):
+class ARSCResTableConfig:
     """
     ARSCResTableConfig contains the configuration for specific resource selection.
     This is used on the device to determine which resources should be loaded
@@ -2548,7 +2548,7 @@ class ARSCResTableConfig(object):
         return "<ARSCResTableConfig '{}'={}>".format(self.get_qualifier(), repr(self._get_tuple()))
 
 
-class ARSCResTableEntry(object):
+class ARSCResTableEntry:
     """
     A `ResTable_entry`.
 
@@ -2614,7 +2614,7 @@ class ARSCResTableEntry(object):
             self.item if self.is_complex() else self.key)
 
 
-class ARSCComplex(object):
+class ARSCComplex:
     """
     This is actually a `ResTable_map_entry`
 
@@ -2642,7 +2642,7 @@ class ARSCComplex(object):
         return "<ARSCComplex idx='0x{:08x}' parent='{}' count='{}'>".format(self.start, self.id_parent, self.count)
 
 
-class ARSCResStringPoolRef(object):
+class ARSCResStringPoolRef:
     """
     This is actually a `Res_value`
     It holds information about the stored resource value

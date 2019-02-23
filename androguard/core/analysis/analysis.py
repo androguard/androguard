@@ -44,7 +44,7 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = "%s-BB@0x%x" % (self.method.get_name(), self.start)
+        self.name = "{}-BB@0x{:x}".format(self.method.get_name(), self.start)
         self.exception_analysis = None
 
         self.notes = []
@@ -83,7 +83,7 @@ class DVMBasicBlock:
         return self.method
 
     def get_name(self):
-        return "%s-BB@0x%x" % (self.method.get_name(), self.start)
+        return "{}-BB@0x{:x}".format(self.method.get_name(), self.start)
 
     def get_start(self):
         return self.start
@@ -219,13 +219,13 @@ class ExceptionAnalysis:
             i.append(bb.get_basic_block(i[1]))
 
     def show_buff(self):
-        buff = "%x:%x\n" % (self.start, self.end)
+        buff = "{:x}:{:x}\n".format(self.start, self.end)
 
         for i in self.exceptions:
             if i[2] is None:
-                buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2])
+                buff += "\t({} -> {:x} {})\n".format(i[0], i[1], i[2])
             else:
-                buff += "\t(%s -> %x %s)\n" % (i[0], i[1], i[2].get_name())
+                buff += "\t({} -> {:x} {})\n".format(i[0], i[1], i[2].get_name())
 
         return buff[:-1]
 
@@ -428,7 +428,7 @@ class StringAnalysis:
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method in self.xreffrom:
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
         return data
 
     def __repr__(self):
@@ -565,12 +565,12 @@ class MethodClassAnalysis:
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
+            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
-            data += "%s:%s @0x%x\n" % (ref_class.get_vm_class().get_name(), ref_method, offset)
+            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
 
         return data
 
@@ -618,12 +618,12 @@ class FieldClassAnalysis:
         data = "XREFRead for %s\n" % self.field
         for ref_class, ref_method in self.xrefread:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method in self.xrefwrite:
             data += "in\n"
-            data += "%s:%s\n" % (ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
 
         return data
 
@@ -705,7 +705,7 @@ class ExternalMethod:
         return ""
 
     def __str__(self):
-        return "%s->%s%s" % (self.class_name, self.name, ''.join(self.descriptor))
+        return "{}->{}{}".format(self.class_name, self.name, ''.join(self.descriptor))
 
     def __repr__(self):
         return "<analysis.ExternalMethod {}>".format(self.__str__())

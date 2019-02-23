@@ -4,7 +4,7 @@ from androguard.gui.xrefwindow import XrefDialogString
 
 class StringsWindow(QtWidgets.QWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(StringsWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Strings"
@@ -30,7 +30,7 @@ class StringsWindow(QtWidgets.QWidget):
 
 class StringsValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, session=None):
-        super(StringsValueWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Strings"

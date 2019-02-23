@@ -19,7 +19,7 @@ class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
 class TreeWindow(QtWidgets.QTreeWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(TreeWindow, self).__init__(parent)
+        super().__init__(parent)
         self.itemDoubleClicked.connect(self.itemDoubleClickedHandler)
         self.mainwin = win
         self.session = session

@@ -36,7 +36,7 @@ from androguard.decompiler.dad.instruction import (
 logger = logging.getLogger('dad.opcode_ins')
 
 
-class Op(object):
+class Op:
     CMP = 'cmp'
     ADD = '+'
     SUB = '-'

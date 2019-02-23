@@ -8,13 +8,13 @@ from builtins import object
 from PyQt5 import QtGui
 
 
-class SelectionType(object):
+class SelectionType:
     NORMAL = 0
     PERMANENT = 1
     TEXTHIGHLIGHT = 2
 
 
-class Selection(object):
+class Selection:
     def __init__(self, themes, viewMode):
         self.themes = themes
         self.viewMode = viewMode
@@ -194,7 +194,7 @@ class Selection(object):
 
 class DefaultSelection(Selection):
     def __init__(self, themes, viewMode):
-        super(DefaultSelection, self).__init__(themes, viewMode)
+        super().__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
     def _makeSelection(self, qp, start, end, brush):
@@ -288,7 +288,7 @@ class DefaultSelection(Selection):
 
 class HexSelection(Selection):
     def __init__(self, themes, viewMode):
-        super(HexSelection, self).__init__(themes, viewMode)
+        super().__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
     def drawSelection(self, qp, start, end, brush=None, opacity=0.4):
@@ -346,7 +346,7 @@ class HexSelection(Selection):
 
 class DisasmSelection(Selection):
     def __init__(self, themes, viewMode):
-        super(DisasmSelection, self).__init__(themes, viewMode)
+        super().__init__(themes, viewMode)
         self.MAX_SELECTIONS = 1
 
     def drawSelection(self, qp, start, end, brush=None, opacity=0.4):

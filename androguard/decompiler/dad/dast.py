@@ -433,7 +433,7 @@ def visit_ins(op, isCtor=False):
     return expression_stmt(visit_expr(op))
 
 
-class JSONWriter(object):
+class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method

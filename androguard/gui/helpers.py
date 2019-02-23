@@ -3,7 +3,7 @@ import logging
 log = logging.getLogger("androguard.gui")
 
 
-class Signature(object):
+class Signature:
     def __init__(self, cls, method=None, descriptor=None):
         self.cls = cls
         self.class_components = self.cls.name.strip('L').strip(';').split('/')
@@ -35,7 +35,7 @@ def classmethod2func(class_, method_):
        so we can access d.CLASS_Lcom_example_sieve_AddEntryActivity.METHOD_onCreate.XREFfrom
     """
 
-    return "%s.%s" % (class2func(class_), method2func(method_))
+    return "{}.{}".format(class2func(class_), method2func(method_))
 
 
 def classmethod2display(class_, method_, descriptor_):
@@ -44,7 +44,7 @@ def classmethod2display(class_, method_, descriptor_):
     "Lcom/mwr/example/sieve/AddEntryActivity; -> onCreate"
     """
 
-    return "%s -> %s ( %s )" % (class_, method_, descriptor_)
+    return "{} -> {} ( {} )".format(class_, method_, descriptor_)
 
 
 def display2classmethod(display):

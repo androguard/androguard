@@ -16,7 +16,7 @@ MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 30
 
 
-class InstructionView(object):
+class InstructionView:
     def __init__(self, ins):
         self.ins = ins
         self._indexTable = []
@@ -161,7 +161,7 @@ class InstructionView(object):
 
 class DisasmViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(DisasmViewMode, self).__init__()
+        super().__init__()
 
         self.themes = themes
 
@@ -563,7 +563,7 @@ class DisasmViewMode(ViewMode):
             cemu.write(30 * ' ')
 
             qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
-            cemu.write('; "{0}"'.format(' '.join(comments)))
+            cemu.write('; "{}"'.format(' '.join(comments)))
 
     def _write_operands(self, asm, qp, cemu, offset):
         qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))

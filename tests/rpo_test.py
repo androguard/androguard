@@ -11,7 +11,7 @@ from androguard.decompiler.dad import node
 
 class NodeTest(node.Node):
     def __init__(self, name):
-        super(NodeTest, self).__init__(name)
+        super().__init__(name)
 
     def __str__(self):
         return '%s (%d)' % (self.name, self.num)

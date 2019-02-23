@@ -34,7 +34,7 @@ def decode(b):
     :rtype: unicode (py2), str (py3) of 16bit chars
     :raises: UnicodeDecodeError if string is not decodable
     """
-    res = u""
+    res = ""
 
     b = iter(bytearray(b))
 
@@ -102,7 +102,7 @@ def patch_string(s):
     :param s: input string
     :return: string with escaped lonely surrogates and 32bit surrogates
     """
-    res = u''
+    res = ''
     it = PeekIterator(s)
     for c in it:
         if (ord(c) >> 10) == 0b110110:
@@ -116,10 +116,10 @@ def patch_string(s):
                 next(it)
             else:
                 # Lonely high surrogate
-                res += u"\\u{:04x}".format(ord(c))
+                res += "\\u{:04x}".format(ord(c))
         elif (ord(c) >> 10) == 0b110111:
             # Lonely low surrogate
-            res += u"\\u{:04x}".format(ord(c))
+            res += "\\u{:04x}".format(ord(c))
         else:
             # Looks like a normal char...
             res += c

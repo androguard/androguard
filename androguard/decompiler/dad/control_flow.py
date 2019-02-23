@@ -36,7 +36,7 @@ def intervals(graph):
     interval_graph = Graph()  # graph of intervals
     heads = [graph.entry]  # list of header nodes
     interv_heads = {}  # interv_heads[i] = interval of header i
-    processed = dict([(i, False) for i in graph])
+    processed = {i: False for i in graph}
     edges = defaultdict(list)
 
     while heads:
@@ -252,7 +252,7 @@ def short_circuit_struct(graph, idom, node_map):
 
         entry = graph.entry in (node1, node2)
 
-        new_name = '%s+%s' % (node1.name, node2.name)
+        new_name = '{}+{}'.format(node1.name, node2.name)
         condition = Condition(node1, node2, is_and, is_not)
 
         new_node = ShortCircuitBlock(new_name, condition)

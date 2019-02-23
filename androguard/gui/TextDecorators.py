@@ -8,7 +8,7 @@ from builtins import object
 from builtins import range
 
 
-class CTextDecorator(object):
+class CTextDecorator:
     redPen = QtGui.QPen(QtGui.QColor(255, 0, 0))
 
     greenPen = QtGui.QPen(QtGui.QColor(255, 255, 0))
@@ -168,8 +168,8 @@ class HighlightASCII(PageDecorator):
         self.dataModel = decorated.getDataModel()
         self.penMap = decorated.penMap
         self.decorated = decorated
-        super(HighlightASCII, self).__init__(decorated)
-        self.dataModel = super(HighlightASCII, self).getDataModel()
+        super().__init__(decorated)
+        self.dataModel = super().getDataModel()
 
     def decorate(self, pageOffset=None):
         page = self.decorated.decorate(pageOffset)
@@ -193,7 +193,7 @@ class HighlightASCII(PageDecorator):
 
 class HighlightPrefix(PageDecorator):
     def __init__(self, decorated, text, additionalLength=0, brush=None, pen=None):
-        super(HighlightPrefix, self).__init__(decorated)
+        super().__init__(decorated)
         self.dataModel = decorated.getDataModel()
         self.decorated = decorated
 
@@ -241,7 +241,7 @@ class HighlightPrefix(PageDecorator):
 
 class HighlightWideChar(PageDecorator):
     def __init__(self, decorated):
-        super(HighlightWideChar, self).__init__(decorated)
+        super().__init__(decorated)
 
         self.dataModel = decorated.getDataModel()
         self.decorated = decorated
@@ -387,7 +387,7 @@ class HighlightWideChar(PageDecorator):
 
 class RangePen(PageDecorator):
     def __init__(self, decorated, a, b, pen, ignoreHighlights=True):
-        super(RangePen, self).__init__(decorated)
+        super().__init__(decorated)
 
         self.dataModel = decorated.getDataModel()
         self.decorated = decorated

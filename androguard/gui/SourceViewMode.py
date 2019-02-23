@@ -9,7 +9,7 @@ from PyQt5 import QtGui, QtCore
 
 class SourceViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(SourceViewMode, self).__init__()
+        super().__init__()
 
         self.themes = themes
 

@@ -2,7 +2,7 @@ from builtins import chr
 from builtins import object
 
 
-class Observable(object):
+class Observable:
     def __init__(self):
         self.Callbacks = []
 
@@ -15,11 +15,11 @@ class Observable(object):
             cbk.update_geometry(rows, cols)
 
 
-class ViewMode(Observable, object):
+class ViewMode(Observable):
     SPACER = 4
 
     def __init__(self):
-        super(ViewMode, self).__init__()
+        super().__init__()
         self.selector = None
         self._edit = False
 

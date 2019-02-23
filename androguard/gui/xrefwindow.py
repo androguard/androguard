@@ -24,7 +24,7 @@ class XrefDialogClass(QtWidgets.QDialog):
                  win=None,
                  current_class=None,
                  class_analysis=None):
-        super(XrefDialogClass, self).__init__(parent)
+        super().__init__(parent)
         self.current_class = current_class
         self.class_analysis = class_analysis
 
@@ -74,7 +74,7 @@ class XrefDialogMethod(QtWidgets.QDialog):
                  parent=None,
                  win=None,
                  method_analysis=None):
-        super(XrefDialogMethod, self).__init__(parent)
+        super().__init__(parent)
         self.method_analysis = method_analysis
 
         title = "Xrefs for the method %s" % self.method_analysis.method
@@ -116,7 +116,7 @@ class XrefDialogField(QtWidgets.QDialog):
                  current_class=None,
                  class_analysis=None,
                  field_analysis=None):
-        super(XrefDialogField, self).__init__(parent)
+        super().__init__(parent)
         self.current_class = current_class
         self.class_analysis = class_analysis
         self.field_analysis = field_analysis
@@ -155,7 +155,7 @@ class XrefDialogField(QtWidgets.QDialog):
 
 class XrefDialogString(QtWidgets.QDialog):
     def __init__(self, parent=None, win=None, string_analysis=None):
-        super(XrefDialogString, self).__init__(parent)
+        super().__init__(parent)
         self.string_analysis = string_analysis
 
         title = "Xrefs for the string %s" % self.string_analysis.value
@@ -199,7 +199,7 @@ class XrefDialog(QtWidgets.QDialog):
     """
 
     def __init__(self, parent=None, win=None, xrefs_list=None, method="", path=""):
-        super(XrefDialog, self).__init__(parent)
+        super().__init__(parent)
 
         if not isinstance(xrefs_list, list) or len(xrefs_list) == 0:
             log.warning("Bad XrefDialog creation")
@@ -208,7 +208,7 @@ class XrefDialog(QtWidgets.QDialog):
         if not method:
             title = "Xrefs to %s" % path.split("/")[-1]
         else:
-            title = "Xrefs to %s -> %s" % (path.split("/")[-1], method)
+            title = "Xrefs to {} -> {}".format(path.split("/")[-1], method)
 
         self.setWindowTitle(title)
         layout = QtWidgets.QGridLayout()
@@ -257,7 +257,7 @@ class XrefListView(QtWidgets.QWidget):
                  win=None,
                  xrefs=None,
                  headers=["Origin", "Method"]):
-        super(XrefListView, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.mainwin = win
         self.xrefs = xrefs
@@ -289,7 +289,7 @@ class XrefListView(QtWidgets.QWidget):
 
 class XrefValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, xrefs=None, headers=None):
-        super(XrefValueWindow, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.mainwin = win
         self.xrefs = xrefs

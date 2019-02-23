@@ -85,7 +85,7 @@ def _dump_digests_or_signatures(digests_or_sigs):
     return infos
 
 
-class APKV2SignedData(object):
+class APKV2SignedData:
     """ 
     This class holds all data associated with an APK V3 SigningBlock signed data.
     source : https://source.android.com/security/apksigning/v2.html
@@ -128,13 +128,13 @@ class APKV3SignedData(APKV2SignedData):
     """
 
     def __init__(self):
-        super(APKV3SignedData, self).__init__()
+        super().__init__()
         self.minSDK = None
         self.maxSDK = None
     
     def __str__(self):
 
-        base_str = super(APKV3SignedData, self).__str__()
+        base_str = super().__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
         max_sdk_str = "%d" % self.maxSDK
@@ -142,13 +142,13 @@ class APKV3SignedData(APKV2SignedData):
             max_sdk_str = "0x%x" % self.maxSDK
 
         return "\n".join([
-            'signer minSDK : {0:d}'.format(self.minSDK),
-            'signer maxSDK : {0:s}'.format(max_sdk_str),
+            'signer minSDK : {:d}'.format(self.minSDK),
+            'signer maxSDK : {:s}'.format(max_sdk_str),
             base_str    
         ])
 
 
-class APKV2Signer(object):
+class APKV2Signer:
     """ 
     This class holds all data associated with an APK V2 SigningBlock signer.
     source : https://source.android.com/security/apksigning/v2.html
@@ -162,9 +162,9 @@ class APKV2Signer(object):
 
     def __str__(self):
         return "\n".join([
-            '{0:s}'.format(str(self.signed_data)),
-            'signatures : {0}'.format(_dump_digests_or_signatures(self.signatures)),
-            'public key : {0}'.format(binascii.hexlify(self.public_key)),
+            '{:s}'.format(str(self.signed_data)),
+            'signatures : {}'.format(_dump_digests_or_signatures(self.signatures)),
+            'public key : {}'.format(binascii.hexlify(self.public_key)),
         ])
 
 
@@ -175,13 +175,13 @@ class APKV3Signer(APKV2Signer):
     """
 
     def __init__(self):
-        super(APKV3Signer, self).__init__()
+        super().__init__()
         self.minSDK = None
         self.maxSDK = None
 
     def __str__(self):
         
-        base_str = super(APKV3Signer, self).__str__()
+        base_str = super().__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
         max_sdk_str = "%d" % self.maxSDK
@@ -189,13 +189,13 @@ class APKV3Signer(APKV2Signer):
             max_sdk_str = "0x%x" % self.maxSDK
 
         return "\n".join([
-            'signer minSDK : {0:d}'.format(self.minSDK),
-            'signer maxSDK : {0:s}'.format(max_sdk_str),
+            'signer minSDK : {:d}'.format(self.minSDK),
+            'signer maxSDK : {:s}'.format(max_sdk_str),
             base_str    
         ])
 
 
-class APK(object):
+class APK:
     # Constants in ZipFile
     _PK_END_OF_CENTRAL_DIR = b"\x50\x4b\x05\x06"
     _PK_CENTRAL_DIR = b"\x50\x4b\x01\x02"
@@ -795,7 +795,7 @@ class APK(object):
 
         :rtype: a list of str
         """
-        dexre = re.compile("classes(\d*).dex")
+        dexre = re.compile(r"classes(\d*).dex")
         return filter(lambda x: dexre.match(x), self.get_files())
 
     def get_all_dex(self):
@@ -813,7 +813,7 @@ class APK(object):
 
         :returns: True if multiple dex found, otherwise False
         """
-        dexre = re.compile("^classes(\d+)?.dex$")
+        dexre = re.compile(r"^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
     def get_elements(self, tag_name, attribute, with_namespace=True):
@@ -1012,7 +1012,7 @@ class APK(object):
         ]
 
     def is_tag_matched(self, tag, **attribute_filter):
-        """
+        r"""
         Return true if the attributes matches in attribute filter.
 
         An attribute filter is a dictionary containing: {attribute_name: value}.
@@ -1975,7 +1975,7 @@ class APK(object):
 
         :rtype: List of filenames matching a Signature
         """
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
         signatures = []
 
         for i in self.get_files():
@@ -2006,7 +2006,7 @@ class APK(object):
 
         :rtype: list of bytes
         """
-        signature_expr = re.compile("^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
         signature_datas = []
 
         for i in self.get_files():
