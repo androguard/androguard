@@ -228,13 +228,8 @@ class APKTest(unittest.TestCase):
                    apath == "v2-only-truncated-cd.apk" or \
                    apath == "v1v2v3-with-rsa-2048-lineage-3-signers-invalid-zip.apk":
                     # Can not load as APK
-                    if sys.version_info.major == 2:
-                        # Different name in python2...
-                        with self.assertRaises(zipfile.BadZipfile):
-                            APK(os.path.join(root, apath))
-                    else:
-                        with self.assertRaises(zipfile.BadZipFile):
-                            APK(os.path.join(root, apath))
+                    with self.assertRaises(zipfile.BadZipFile):
+                        APK(os.path.join(root, apath))
                     continue
                 elif apath in will_not_validate_correctly:
                     # These APKs are faulty (by design) and will return a not correct fingerprint.

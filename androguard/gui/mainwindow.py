@@ -23,8 +23,6 @@ def load_module(module_name, file_path):
     """
     Load a module by name and search path
 
-    This function should work with python 2.7 and 3.x
-
     Returns None if Module could not be loaded.
     """
     if sys.version_info >= (3,5,):
