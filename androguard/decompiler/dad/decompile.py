@@ -78,7 +78,7 @@ def get_field_ast(field):
     }
 
 
-class DvMethod(object):
+class DvMethod:
     """
     This is a wrapper around :class:`~androguard.core.analysis.analysis.MethodAnalysis` and
     :class:`~androguard.core.bytecodes.dvm.EncodedMethod` inside the decompiler.
@@ -126,7 +126,7 @@ class DvMethod(object):
         if not __debug__:
             from androguard.core import bytecode
             # TODO: use tempfile to create a correct tempfile (cross platform compatible)
-            bytecode.method2png('/tmp/dad/graphs/%s#%s.png' % (self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
+            bytecode.method2png('/tmp/dad/graphs/{}#{}.png'.format(self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
     def process(self, doAST=False):
         logger.debug('METHOD : %s', self.name)
@@ -210,7 +210,7 @@ class DvMethod(object):
         return 'class DvMethod(object): %s' % self.name
 
 
-class DvClass(object):
+class DvClass:
     """
     This is a wrapper for :class:`~androguard.core.bytecodes.dvm.ClassDefItem` inside the decompiler.
 
@@ -332,9 +332,9 @@ class DvClass(object):
                     # byte value: convert from unsiged int to signed and print as hex
                     # as bytes are signed in Java
                     value = hex(struct.unpack("b", struct.pack("B", value))[0])
-                source.append('%s %s = %s;\n' % (f_type, name, value))
+                source.append('{} {} = {};\n'.format(f_type, name, value))
             else:
-                source.append('%s %s;\n' % (f_type, name))
+                source.append('{} {};\n'.format(f_type, name))
 
         for method in self.methods:
             if isinstance(method, DvMethod):
@@ -422,7 +422,7 @@ class DvClass(object):
         return 'Class(%s)' % self.name
 
 
-class DvMachine(object):
+class DvMachine:
     """
     Wrapper class for a Dalvik Object, like a DEX or ODEX file.
 
@@ -452,7 +452,7 @@ class DvMachine(object):
         else:
             raise ValueError("Format not recognised for filename '%s'" % name)
 
-        self.classes = dict((dvclass.orig_class.get_name(), dvclass.orig_class) for dvclass in self.vma.get_classes())
+        self.classes = {dvclass.orig_class.get_name(): dvclass.orig_class for dvclass in self.vma.get_classes()}
         # TODO why not?
         # util.merge_inner(self.classes)
 

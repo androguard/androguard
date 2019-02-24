@@ -20,7 +20,7 @@ TAG_ANDROID = Enum(
      'SUPPORT', 'TEST', 'TEXT', 'UTIL', 'VIEW', 'WEBKIT', 'WIDGET',
      'DALVIK_BYTECODE', 'DALVIK_SYSTEM', 'JAVA_REFLECTION'])
 
-TAG_REVERSE_ANDROID = dict((i[0], i[1]) for i in TAG_ANDROID.tuples())
+TAG_REVERSE_ANDROID = {i[0]: i[1] for i in TAG_ANDROID.tuples()}
 
 TAGS_ANDROID = {
     TAG_ANDROID.ANDROID: [0, "Landroid"],

@@ -182,7 +182,7 @@ def get_type(atype, size=None):
             if size is None:
                 res = '%s[]' % get_type(atype[1:])
             else:
-                res = '%s[%s]' % (get_type(atype[1:]), size)
+                res = '{}[{}]'.format(get_type(atype[1:]), size)
         else:
             res = atype
             logger.debug('Unknown descriptor: "%s".', atype)

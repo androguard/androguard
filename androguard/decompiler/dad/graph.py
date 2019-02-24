@@ -31,7 +31,7 @@ logger = logging.getLogger('dad.graph')
 
 
 # TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel
-class Graph(object):
+class Graph:
     """
     Stores a CFG (Control Flow Graph), which is a directed graph.
 
@@ -407,7 +407,7 @@ def bfs(start):
     :param start: start node
     """
     to_visit = [start]
-    visited = set([start])
+    visited = {start}
     while to_visit:
         node = to_visit.pop(0)
         yield node
@@ -422,7 +422,7 @@ def bfs(start):
                 visited.add(child)
 
 
-class GenInvokeRetName(object):
+class GenInvokeRetName:
     def __init__(self):
         self.num = 0
         self.ret = None

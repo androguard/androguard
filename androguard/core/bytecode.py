@@ -48,7 +48,7 @@ def _PrintNote(note, tab=0):
     print_fct = CONF["PRINT_FCT"]
     note_color = CONF["COLORS"]["NOTE"]
     normal_color = CONF["COLORS"]["NORMAL"]
-    print_fct("\t" * tab + "%s# %s%s" % (note_color, note, normal_color) + "\n")
+    print_fct("\t" * tab + "{}# {}{}".format(note_color, note, normal_color) + "\n")
 
 
 # Print arg into a correct format
@@ -118,7 +118,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
     colors = CONF["COLORS"]["OUTPUT"]
 
     for i in basic_blocks:
-        print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
+        print_fct("{}{}{} : \n".format(bb_color, i.get_name(), normal_color))
         instructions = list(i.get_instructions())
         for ins in instructions:
             if nb in notes:
@@ -152,7 +152,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
                               normal_color)
                 else:
                     if len(i.childs) == 2:
-                        print_fct("%s[ %s%s " % (branch_false_color,
+                        print_fct("{}[ {}{} ".format(branch_false_color,
                                                  i.childs[0][2].get_name(),
                                                  branch_true_color))
                         print_fct(' '.join("%s" % c[2].get_name(
@@ -215,7 +215,7 @@ def method2dot(mx, colors=None):
     blocks_html = ""
 
     method = mx.get_method()
-    sha256 = hashlib.sha256(bytearray("%s%s%s" % (
+    sha256 = hashlib.sha256(bytearray("{}{}{}".format(
         mx.get_method().get_class_name(), mx.get_method().get_name(),
         mx.get_method().get_descriptor()), "UTF-8")).hexdigest()
 
@@ -307,7 +307,7 @@ def method2dot(mx, colors=None):
 
             child_id = hashlib.md5(
                 bytearray(sha256 + DVMBasicMethodBlockChild[-1].get_name(), "UTF-8")).hexdigest()
-            edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
+            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                 block_id, child_id, val, label_edge)
             # color switch
             if val == colors["false_branch"]:
@@ -322,7 +322,7 @@ def method2dot(mx, colors=None):
                 if exception_block:
                     exception_id = hashlib.md5(
                         bytearray(sha256 + exception_block.get_name(), "UTF-8")).hexdigest()
-                    edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
+                    edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                         block_id, exception_id, "black", exception_elem[0])
 
     for link in new_links:
@@ -335,7 +335,7 @@ def method2dot(mx, colors=None):
             child_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlockChild.get_name(
             ), "UTF-8")).hexdigest()
 
-            edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"data(0x%x) to @0x%x\", style=\"dashed\"];\n" % (
+            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"data(0x{:x}) to @0x{:x}\", style=\"dashed\"];\n".format(
                 block_id, child_id, "yellow", link[1], link[2])
 
     method_label = method.get_class_name() + "." + method.get_name(
@@ -450,7 +450,7 @@ def vm2json(vm):
     return json.dumps(d)
 
 
-class TmpBlock(object):
+class TmpBlock:
 
     def __init__(self, name):
         self.name = name
@@ -598,7 +598,7 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-class SV(object):
+class SV:
 
     def __init__(self, size, buff):
         self.__size = size
@@ -623,7 +623,7 @@ class SV(object):
         self.__value = attr
 
 
-class SVs(object):
+class SVs:
 
     def __init__(self, size, ntuple, buff):
         self.__size = size
@@ -671,13 +671,13 @@ def object_to_bytes(obj):
         return obj.get_raw()
 
 
-class MethodBC(object):
+class MethodBC:
 
     def show(self, value):
         getattr(self, "show_" + value)()
 
 
-class BuffHandle(object):
+class BuffHandle:
     """
     BuffHandle is a wrapper around bytes.
     It gives the ability to jump in the byte stream, just like with BytesIO.
@@ -846,7 +846,7 @@ class BuffHandle(object):
             fd.write(self.__buff)
 
 
-class Buff(object):
+class Buff:
     def __init__(self, offset, buff):
         self.offset = offset
         self.buff = buff
@@ -966,7 +966,7 @@ def FormatDescriptorToPython(i):
     return i
 
 
-class Node(object):
+class Node:
     def __init__(self, n, s):
         self.id = n
         self.title = s

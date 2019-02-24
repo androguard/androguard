@@ -16,11 +16,11 @@ log = logging.getLogger("androguard.gui")
 
 class SearchWindow(QtWidgets.QDialog):
     def __init__(self, parent, plugin, searchable):
-        super(SearchWindow, self).__init__(parent)
+        super().__init__(parent)
         self.searchable = searchable
         self.parent = parent
         self.plugin = plugin
-        self.oshow = super(SearchWindow, self).show
+        self.oshow = super().show
 
         root = os.path.dirname(os.path.realpath(__file__))
         self.ui = loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
@@ -93,7 +93,7 @@ class SearchWindow(QtWidgets.QDialog):
         self.close()
 
 
-class Observable(object):
+class Observable:
     def __init__(self):
         self.Callbacks = []
 
@@ -106,7 +106,7 @@ class Observable(object):
             cbk.changeViewMode(viewMode)
 
 
-class Observer(object):
+class Observer:
     def changeViewMode(self, viewMode):
         self._viewMode = viewMode
 
@@ -198,7 +198,7 @@ class binWidget(QtWidgets.QWidget, Observable):
     scrolled = QtCore.pyqtSignal(int, name='scroll')
 
     def __init__(self, parent, source, title):
-        super(binWidget, self).__init__()
+        super().__init__()
         Observable.__init__(self)
         self.parent = parent
 

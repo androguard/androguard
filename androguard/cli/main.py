@@ -184,7 +184,7 @@ def export_apps_to_format(filename,
     from androguard.core.bytecodes import dvm
     from androguard.core.bytecode import method2dot, method2format
     from androguard.decompiler import decompiler
-    print("Dump information %s in %s" % (filename, output))
+    print("Dump information {} in {}".format(filename, output))
 
     if not os.path.exists(output):
         print("Create directory %s" % output)
@@ -236,7 +236,7 @@ def export_apps_to_format(filename,
 
         for method in vm.get_methods():
             if methods_filter_expr:
-                msig = "%s%s%s" % (method.get_class_name(), method.get_name(),
+                msig = "{}{}{}".format(method.get_class_name(), method.get_name(),
                                    method.get_descriptor())
                 if not methods_filter_expr.search(msig):
                     continue
@@ -246,7 +246,7 @@ def export_apps_to_format(filename,
             filename_class = os.path.join(output, filename_class)
             create_directory(filename_class)
 
-            print("Dump %s %s %s ..." % (method.get_class_name(),
+            print("Dump {} {} {} ...".format(method.get_class_name(),
                                          method.get_name(),
                                          method.get_descriptor()), end=' ')
 

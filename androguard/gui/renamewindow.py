@@ -7,7 +7,7 @@ class RenameDialog(QtWidgets.QDialog):
     """
 
     def __init__(self, parent=None, win=None, element="", info=()):
-        super(RenameDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.sourceWin = parent
         self.info = info

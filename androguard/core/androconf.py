@@ -31,7 +31,7 @@ def is_ascii_problem(s):
         return True
 
 
-class Color(object):
+class Color:
     Normal = "\033[0m"
     Black = "\033[30m"
     Red = "\033[31m"

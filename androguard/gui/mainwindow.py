@@ -23,8 +23,6 @@ def load_module(module_name, file_path):
     """
     Load a module by name and search path
 
-    This function should work with python 2.7 and 3.x
-
     Returns None if Module could not be loaded.
     """
     if sys.version_info >= (3,5,):
@@ -46,7 +44,7 @@ def load_module(module_name, file_path):
 
 class TabsWindow(QtWidgets.QTabWidget):
     def __init__(self, bin_windows, parent=None):
-        super(TabsWindow, self).__init__(parent)
+        super().__init__(parent)
         self.bin_windows = bin_windows
         self.setTabsClosable(True)
         self.tabCloseRequested.connect(self.tabCloseRequestedHandler)
@@ -122,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow):
     """
 
     def __init__(self, parent=None, session=session_module.Session(), input_file=None, input_plugin=None):
-        super(MainWindow, self).__init__(parent)
+        super().__init__(parent)
         self.session = session
         self.bin_windows = {}
 

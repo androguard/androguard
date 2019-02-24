@@ -32,7 +32,7 @@ def xml_compare(x1, x2, reporter=None):
     """
     if x1.tag != x2.tag:
         if reporter:
-            reporter('Tags do not match: %s and %s' % (x1.tag, x2.tag))
+            reporter('Tags do not match: {} and {}'.format(x1.tag, x2.tag))
         return False
     for name, value in x1.attrib.items():
         if value[0] == "@" and x2.attrib.get(name)[0] == "@":
@@ -55,11 +55,11 @@ def xml_compare(x1, x2, reporter=None):
                 return False
     if not text_compare(x1.text, x2.text):
         if reporter:
-            reporter('text: %r != %r' % (x1.text, x2.text))
+            reporter('text: {!r} != {!r}'.format(x1.text, x2.text))
         return False
     if not text_compare(x1.tail, x2.tail):
         if reporter:
-            reporter('tail: %r != %r' % (x1.tail, x2.tail))
+            reporter('tail: {!r} != {!r}'.format(x1.tail, x2.tail))
         return False
     cl1 = x1.getchildren()
     cl2 = x2.getchildren()
@@ -94,16 +94,16 @@ class AXMLTest(unittest.TestCase):
 
         self.assertIsNotNone(a)
 
-        self.assertEqual(a._fix_value(u"hello world"), u"hello world")
-        self.assertEqual(a._fix_value(u"Foobar \u000a\u000d\u0b12"), u"Foobar \u000a\u000d\u0b12")
-        self.assertEqual(a._fix_value(u"hello \U00011234"), u"hello \U00011234")
-        self.assertEqual(a._fix_value(u"\uFFFF"), u"_")
-        self.assertEqual(a._fix_value("hello\x00world"), u"hello")
+        self.assertEqual(a._fix_value("hello world"), "hello world")
+        self.assertEqual(a._fix_value("Foobar \u000a\u000d\u0b12"), "Foobar \u000a\u000d\u0b12")
+        self.assertEqual(a._fix_value("hello \U00011234"), "hello \U00011234")
+        self.assertEqual(a._fix_value("\uFFFF"), "_")
+        self.assertEqual(a._fix_value("hello\x00world"), "hello")
 
-        self.assertEqual(a._fix_name(u"foobar"), u"foobar")
-        self.assertEqual(a._fix_name(u"5foobar"), u"_5foobar")
-        self.assertEqual(a._fix_name(u"android:foobar"), u"foobar")
-        self.assertEqual(a._fix_name(u"5:foobar"), u"_5_foobar")
+        self.assertEqual(a._fix_name("foobar"), "foobar")
+        self.assertEqual(a._fix_name("5foobar"), "_5foobar")
+        self.assertEqual(a._fix_name("android:foobar"), "foobar")
+        self.assertEqual(a._fix_name("5:foobar"), "_5_foobar")
 
     def testNoStringPool(self):
         """Test if a single header without string pool is rejected"""
@@ -149,19 +149,19 @@ class AXMLTest(unittest.TestCase):
         """Test if wrong arsc headers are rejected"""
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01"))
-        self.assertTrue("Can not read over the buffer size" in str(cnx.exception))
+        self.assertIn("Can not read over the buffer size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\xFF\xFF\x08\x00\x00\x00"))
-        self.assertTrue("smaller than header size" in str(cnx.exception))
+        self.assertIn("smaller than header size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x01\x00\x08\x00\x00\x00"))
-        self.assertTrue("declared header size is smaller than required size" in str(cnx.exception))
+        self.assertIn("declared header size is smaller than required size", str(cnx.exception))
 
         with self.assertRaises(axml.ResParserError) as cnx:
             axml.ARSCHeader(bytecode.BuffHandle(b"\x02\x01\x08\x00\x04\x00\x00\x00"))
-        self.assertTrue("declared chunk size is smaller than required size" in str(cnx.exception))
+        self.assertIn("declared chunk size is smaller than required size", str(cnx.exception))
 
         a = axml.ARSCHeader(bytecode.BuffHandle(b"\xCA\xFE\x08\x00\x10\x00\x00\x00"
                                                 b"\xDE\xEA\xBE\xEF\x42\x42\x42\x42"))
@@ -260,7 +260,7 @@ class AXMLTest(unittest.TestCase):
         with self.assertRaises(axml.ResParserError) as cnx:
             with open(filename, "rb") as f:
                 ap = axml.AXMLPrinter(f.read())
-        self.assertTrue("not null terminated" in str(cnx.exception))
+        self.assertIn("not null terminated", str(cnx.exception))
 
     def testExtraNamespace(self):
         """

@@ -21,7 +21,7 @@ class DataflowTest(unittest.TestCase):
         we added this wrapper.
         """
         try:
-            return super(DataflowTest, self).assertItemsEqual(a, b)
+            return super().assertItemsEqual(a, b)
         except AttributeError as e:
             return self.assertCountEqual(a, b)
 
@@ -129,36 +129,36 @@ class DataflowTest(unittest.TestCase):
             dummynode_mock.side_effect = [dummy_entry_mock, dummy_exit_mock]
             analysis = dataflow.reach_def_analysis(graph_mock, ['a', 'b'])
         expected_A = {
-            dummy_entry_mock: set([-2, -1]),
-            n1: set([-2, -1, 0, 1]),
-            n2: set([-2, -1, 0, 1]),
-            n3: set([-2, -1, 0, 1, 3]),
-            n4: set([-2, -1, 0, 1]),
-            n5: set([-2, -1, 0, 1]),
-            n6: set([-2, -1, 1, 6]),
-            n7: set([-2, -1, 0, 7]),
-            n8: set([-2, -1, 0, 1, 6, 7, 8]),
-            n9: set([-2, -1, 0, 1, 3, 6, 7, 8]),
-            dummy_exit_mock: set([-2, -1, 0, 1, 3, 6, 7, 8])
+            dummy_entry_mock: {-2, -1},
+            n1: {-2, -1, 0, 1},
+            n2: {-2, -1, 0, 1},
+            n3: {-2, -1, 0, 1, 3},
+            n4: {-2, -1, 0, 1},
+            n5: {-2, -1, 0, 1},
+            n6: {-2, -1, 1, 6},
+            n7: {-2, -1, 0, 7},
+            n8: {-2, -1, 0, 1, 6, 7, 8},
+            n9: {-2, -1, 0, 1, 3, 6, 7, 8},
+            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_R = {
-            n1: set([-2, -1]),
-            n2: set([-2, -1, 0, 1]),
-            n3: set([-2, -1, 0, 1]),
-            n4: set([-2, -1, 0, 1]),
-            n5: set([-2, -1, 0, 1]),
-            n6: set([-2, -1, 0, 1]),
-            n7: set([-2, -1, 0, 1]),
-            n8: set([-2, -1, 0, 1, 6, 7]),
-            n9: set([-2, -1, 0, 1, 3, 6, 7, 8]),
-            dummy_exit_mock: set([-2, -1, 0, 1, 3, 6, 7, 8])
+            n1: {-2, -1},
+            n2: {-2, -1, 0, 1},
+            n3: {-2, -1, 0, 1},
+            n4: {-2, -1, 0, 1},
+            n5: {-2, -1, 0, 1},
+            n6: {-2, -1, 0, 1},
+            n7: {-2, -1, 0, 1},
+            n8: {-2, -1, 0, 1, 6, 7},
+            n9: {-2, -1, 0, 1, 3, 6, 7, 8},
+            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_def_to_loc = {
-            'a': set([-1]),
-            'b': set([-2]),
-            'c': set([0, 6]),
-            'd': set([1, 7]),
-            'ret': set([3, 8])
+            'a': {-1},
+            'b': {-2},
+            'c': {0, 6},
+            'd': {1, 7},
+            'ret': {3, 8}
         }
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
@@ -182,34 +182,34 @@ class DataflowTest(unittest.TestCase):
 
         mock_analysis = mock_reach_def.return_value
         mock_analysis.def_to_loc = {
-            'a': set([-1]),
-            'b': set([-2]),
-            'c': set([0, 6]),
-            'd': set([1, 7]),
-            'ret': set([3, 8])
+            'a': {-1},
+            'b': {-2},
+            'c': {0, 6},
+            'd': {1, 7},
+            'ret': {3, 8}
         }
         mock_analysis.defs = {
-            n1: {'c': set([0]),
-                 'd': set([1])},
+            n1: {'c': {0},
+                 'd': {1}},
             n2: {},
-            n3: {'ret': set([3])},
+            n3: {'ret': {3}},
             n4: {},
             n5: {},
-            n6: {'c': set([6])},
-            n7: {'d': set([7])},
-            n8: {'ret': set([8])},
+            n6: {'c': {6}},
+            n7: {'d': {7}},
+            n8: {'ret': {8}},
             n9: {}
         }
         mock_analysis.R = {
-            n1: set([-2, -1]),
-            n2: set([-2, -1, 0, 1]),
-            n3: set([-2, -1, 0, 1]),
-            n4: set([-2, -1, 0, 1]),
-            n5: set([-2, -1, 0, 1]),
-            n6: set([-2, -1, 0, 1]),
-            n7: set([-2, -1, 0, 1]),
-            n8: set([-2, -1, 0, 1, 6, 7]),
-            n9: set([-2, -1, 0, 1, 3, 6, 7, 8])
+            n1: {-2, -1},
+            n2: {-2, -1, 0, 1},
+            n3: {-2, -1, 0, 1},
+            n4: {-2, -1, 0, 1},
+            n5: {-2, -1, 0, 1},
+            n6: {-2, -1, 0, 1},
+            n7: {-2, -1, 0, 1},
+            n8: {-2, -1, 0, 1, 6, 7},
+            n9: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_du = {
             ('a', -1): [0],
@@ -259,30 +259,30 @@ class DataflowTest(unittest.TestCase):
 
         mock_analysis = mock_reach_def.return_value
         mock_analysis.def_to_loc = {
-            0: set([0, 4, 5, 7]),
-            1: set([6]),
-            2: set([-1]),
-            3: set([-2])
+            0: {0, 4, 5, 7},
+            1: {6},
+            2: {-1},
+            3: {-2}
         }
         mock_analysis.defs = {
-            n1: {0: set([0])},
+            n1: {0: {0}},
             n2: {},
             n3: {},
-            n4: {0: set([4])},
-            n5: {0: set([5])},
-            n6: {0: set([7]),
-                 1: set([6])},
+            n4: {0: {4}},
+            n5: {0: {5}},
+            n6: {0: {7},
+                 1: {6}},
             n7: {}
         }
 
         mock_analysis.R = {
-            n1: set([-1, -2]),
-            n2: set([0, -2, -1]),
-            n3: set([0, -1, -2]),
-            n4: set([0, -2, -1]),
-            n5: set([0, -2, -1]),
-            n6: set([0, -1, -2]),
-            n7: set([4, -1, 6, 7, -2, 5])
+            n1: {-1, -2},
+            n2: {0, -2, -1},
+            n3: {0, -1, -2},
+            n4: {0, -2, -1},
+            n5: {0, -2, -1},
+            n6: {0, -1, -2},
+            n7: {4, -1, 6, 7, -2, 5}
         }
 
         expected_du = {

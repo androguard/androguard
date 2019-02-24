@@ -12,7 +12,7 @@ Please remove this template if you only have a question or do not want to create
 ### System Information
 
 - Androguard Version: master
-- Python Version: 2.7/3.5/...
+- Python Version: 3.4/3.5/...
 - Operating System
 
 ### Further Log Files and Output

@@ -114,7 +114,7 @@ class MethodFilter(Filter):
 
 
 # TODO move it somewhere else
-class Dex2Jar(object):
+class Dex2Jar:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -147,7 +147,7 @@ class Dex2Jar(object):
         return self.jarfile
 
 
-class DecompilerDex2Jad(object):
+class DecompilerDex2Jad:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -247,7 +247,7 @@ class DecompilerDex2Jad(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDex2WineJad(object):
+class DecompilerDex2WineJad:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -346,7 +346,7 @@ class DecompilerDex2WineJad(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDed(object):
+class DecompilerDed:
     def __init__(self,
                  vm,
                  bin_ded="ded.sh",
@@ -440,7 +440,7 @@ class DecompilerDed(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDex2Fernflower(object):
+class DecompilerDex2Fernflower:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",

@@ -17,7 +17,7 @@ log = logging.getLogger("androguard.gui")
 
 class BinViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(BinViewMode, self).__init__()
+        super().__init__()
 
         self.dataModel = data
         self.addHandler(self.dataModel)
@@ -585,7 +585,7 @@ class BinViewMode(ViewMode):
         return True
 
     def setEditMode(self, mode):
-        super(BinViewMode, self).setEditMode(mode)
+        super().setEditMode(mode)
 
         letters = string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
 

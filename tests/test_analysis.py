@@ -31,14 +31,14 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$", no_external=True))), 124)
 
         # Find all constructors by method name
-        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor="^\(.+\).*$"))), 138)
-        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor="^\(.+\).*$", no_external=True))), 94)
+        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$"))), 138)
+        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$", no_external=True))), 94)
 
         # Find url like strings
-        self.assertEqual(len(list(dx.find_strings(".*:\/\/.*"))), 15)
+        self.assertEqual(len(list(dx.find_strings(r".*:\/\/.*"))), 15)
 
         # find String fields
-        self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype="Ljava\/lang\/String;"))), 63)
+        self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype=r"Ljava\/lang\/String;"))), 63)
 
     def testAnalysis(self):
         h, d, dx = AnalyzeDex("examples/tests/AnalysisTest.dex")
