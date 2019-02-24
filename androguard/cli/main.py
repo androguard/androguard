@@ -399,12 +399,16 @@ def androlyze_main(session, filename):
         if not s.isOpen():
             return
 
-        res = input("Do you want to save the session? (y/[n])?").lower()
-        if res == "y":
-            # TODO: if we already started from a session, probably we want to save it under the same name...
-            # TODO: be able to take any filename you want
-            fname = s.save()
-            print("Saved Session to file: '{}'".format(fname))
+        try:
+            res = input("Do you want to save the session? (y/[n])?").lower()
+        except (EOFError, KeyboardInterrupt):
+            pass
+        else:
+            if res == "y":
+                # TODO: if we already started from a session, probably we want to save it under the same name...
+                # TODO: be able to take any filename you want
+                fname = s.save()
+                print("Saved Session to file: '{}'".format(fname))
 
     cfg = Config()
     _version_string = "Androguard version {}".format(ANDROGUARD_VERSION)
