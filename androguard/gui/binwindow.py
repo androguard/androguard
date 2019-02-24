@@ -1,5 +1,3 @@
-from __future__ import division
-
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.uic import loadUi
 

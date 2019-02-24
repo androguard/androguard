@@ -15,9 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import zip
-from builtins import range
-from builtins import object
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET

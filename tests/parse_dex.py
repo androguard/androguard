@@ -1,4 +1,3 @@
-from __future__ import print_function
 from struct import pack, unpack
 import sys
 from binascii import hexlify

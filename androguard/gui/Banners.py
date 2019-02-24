@@ -1,5 +1,3 @@
-from __future__ import division
-
 from PyQt5 import QtGui, QtCore
 
 from androguard.gui.cemu import ConsoleEmulator, enum

@@ -1,11 +1,7 @@
-from __future__ import absolute_import
-
 import re
 import string
 
 from PyQt5 import QtGui, QtCore
-from builtins import object
-from builtins import range
 
 
 class CTextDecorator:

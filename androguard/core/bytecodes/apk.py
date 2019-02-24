@@ -1,8 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
-from builtins import str
-from builtins import object
 from androguard.core import androconf
 from androguard.util import read, get_certificate_name_string
 

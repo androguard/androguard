@@ -1,9 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
-from builtins import chr
-from builtins import range
-from builtins import object
 from androguard.core import bytecode
 
 from androguard.core.resources import public
@@ -1082,14 +1076,8 @@ class AXMLPrinter:
         :return: the cleaned value
         """
         if not self.__charrange or not self.__replacement:
-            if sys.maxunicode == 0xFFFF:
-                # Fix for python 2.x, surrogate pairs does not match in regex
-                self.__charrange = re.compile('^([\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD]|[\uD800-\uDBFF][\uDC00-\uDFFF])*$')
-                # TODO: this regex is slightly wrong... surrogates are not matched as pairs.
-                self.__replacement = re.compile('[^\u0020-\uDBFF\u0009\u000A\u000D\uE000-\uFFFD\uDC00-\uDFFF]')
-            else:
-                self.__charrange = re.compile('^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$')
-                self.__replacement = re.compile('[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
+            self.__charrange = re.compile('^[\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]*$')
+            self.__replacement = re.compile('[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
 
         # Reading string until \x00. This is the same as aapt does.
         if "\x00" in value:

@@ -1,10 +1,7 @@
-from __future__ import division
-
 import string
 from time import time
 
 from PyQt5 import QtGui, QtCore
-from builtins import str
 
 from androguard.gui.TextDecorators import RangePen
 from androguard.gui.ViewMode import ViewMode

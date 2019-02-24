@@ -1,11 +1,7 @@
-from __future__ import division
-
 import string
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.uic import loadUi
-from builtins import hex
-from builtins import str
 
 from androguard.gui.TextDecorators import RangePen
 from androguard.gui.ViewMode import ViewMode

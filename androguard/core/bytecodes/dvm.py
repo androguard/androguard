@@ -1,9 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
-from builtins import str
-from builtins import range
-from builtins import object
 from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
@@ -4703,6 +4697,7 @@ class Instruction21h(Instruction):
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
 
+        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
         self.BBBB = unpack("=h", buff[2:4])[0]
 
         self.formatted_operands = []
@@ -4750,6 +4745,7 @@ class Instruction11n(Instruction):
         i16 = unpack("=h", buff[0:2])[0]
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
+        # FIXME: is this correct? B: signed int (4 bits)
         self.B = (i16 >> 12)
 
     def get_output(self, idx=-1):
@@ -4829,9 +4825,11 @@ class Instruction21s(Instruction):
 
         self.formatted_operands = []
 
+        # FIXME: why no formatted_operands for const/16?
+        # FIXME: is this actually correct? pack d, unpack d??
         if self.OP == 0x16:
-            self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0
-                                           ])
+            self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0])
+
     def get_length(self):
         return 4
 
@@ -5116,7 +5114,7 @@ class Instruction51l(Instruction):
 
 class Instruction31i(Instruction):
     """
-    This class represents all instructions which have the 3li format
+    This class represents all instructions which have the 31i format
     """
 
     def __init__(self, cm, buff):
@@ -5126,17 +5124,22 @@ class Instruction31i(Instruction):
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
 
+        # FIXME: 0x14 const: arbitrary 32-bit constant, not neccessarily signed!
+        # onlt 0x17 const-wide/32 is signed, but const-wide move sign extened to
+        # 64bit
         self.BBBBBBBB = unpack("=i", buff[2:6])[0]
 
         self.formatted_operands = []
 
+        # FIXME: this is a crude assumption! The formatted value depends on the
+        # usage of the value!
         if self.OP == 0x14:
-            self.formatted_operands.append(unpack("=f", pack("=i",
-                                                             self.BBBBBBBB))[0])
+            self.formatted_operands.append(unpack("=f", pack("=i", self.BBBBBBBB))[0])
 
         elif self.OP == 0x17:
-            self.formatted_operands.append(unpack('=d', pack('=d',
-                                                             self.BBBBBBBB))[0])
+            # FIXME: this looks very wrong - should be packed as <i, unpacked as
+            # <d? Again: Crude assumption, that this is always double.
+            self.formatted_operands.append(unpack('=d', pack('=d', self.BBBBBBBB))[0])
 
     def get_length(self):
         return 6

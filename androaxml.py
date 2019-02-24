@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is part of Androguard.
 #
@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 # core modules
 import os
 import re

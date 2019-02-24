@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import range
 from androguard.gui.ViewMode import ViewMode
 from androguard.gui.cemu import ConsoleEmulator
 from androguard.gui import TextSelection

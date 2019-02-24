@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """Androguard is a full Python tool to play with Android files."""
-
-from __future__ import print_function
 
 # core modules
 import sys
