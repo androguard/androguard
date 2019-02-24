@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import range
-from builtins import object
 import logging
 from collections import defaultdict
 from androguard.decompiler.dad.instruction import (Variable, ThisParam, Param)

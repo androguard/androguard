@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import object
 import androguard.decompiler.dad.util as util
 
 

@@ -1,6 +1,5 @@
 import pyperclip
 from PyQt5 import QtCore, QtGui, QtWidgets
-from builtins import str
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import JavaLexer
 from pygments.style import Style

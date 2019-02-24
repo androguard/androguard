@@ -1,4 +1,3 @@
-from builtins import object
 from PyQt5 import QtGui
 
 import logging

@@ -16,10 +16,6 @@
 # limitations under the License.
 
 
-from builtins import object
-from future.utils import with_metaclass
-
-
 class MakeProperties(type):
     def __init__(cls, name, bases, dct):
 
@@ -58,7 +54,7 @@ class MakeProperties(type):
         return obj
 
 
-class LoopType(with_metaclass(MakeProperties, object)):
+class LoopType(MakeProperties):
     _set_is_pretest = _set_is_posttest = _set_is_endless = None
     _get_is_pretest = _get_is_posttest = _get_is_endless = None
 
@@ -69,7 +65,7 @@ class LoopType(with_metaclass(MakeProperties, object)):
         return res
 
 
-class NodeType(with_metaclass(MakeProperties, object)):
+class NodeType(MakeProperties):
     _set_is_cond = _set_is_switch = _set_is_stmt = None
     _get_is_cond = _get_is_switch = _get_is_stmt = None
     _set_is_return = _set_is_throw = None

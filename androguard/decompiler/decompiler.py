@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2013, Anthony Desnos <desnos at t0t0.fr>
@@ -16,8 +15,6 @@ from __future__ import print_function
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import range
-from builtins import object
 from subprocess import Popen, PIPE, STDOUT
 
 import tempfile

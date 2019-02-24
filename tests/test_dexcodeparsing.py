@@ -1,4 +1,3 @@
-from __future__ import print_function
 from androguard.core.bytecodes.dvm import DalvikVMFormat
 from binascii import hexlify
 import parse_dex

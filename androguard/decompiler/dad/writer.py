@@ -15,11 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import str
-from builtins import zip
-from builtins import range
-from past.builtins import basestring
-from builtins import object
 import logging
 from struct import unpack
 from androguard.decompiler.dad.util import get_type
@@ -430,8 +425,7 @@ class Writer:
             self.end_ins()
 
     def visit_constant(self, cst):
-        # FIXME: basestring should be replaced
-        if isinstance(cst, basestring):
+        if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst,
                    data="CONSTANT_INTEGER")  # INTEGER or also others?

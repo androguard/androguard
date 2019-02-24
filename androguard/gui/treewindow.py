@@ -1,6 +1,4 @@
 from PyQt5 import QtWidgets
-from builtins import range
-from builtins import str
 
 from androguard.gui.helpers import Signature
 from androguard.gui.xrefwindow import XrefDialogClass

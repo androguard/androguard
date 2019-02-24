@@ -1,10 +1,3 @@
-from __future__ import division
-
-import logging
-from collections import defaultdict
-
-from builtins import object
-from builtins import range
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -21,7 +14,8 @@ from builtins import range
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from builtins import str
+import logging
+from collections import defaultdict
 
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)

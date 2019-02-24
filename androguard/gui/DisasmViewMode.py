@@ -1,8 +1,4 @@
-from __future__ import division
-
 from PyQt5 import QtGui, QtCore
-from builtins import hex
-from builtins import range
 
 from androguard.core.bytecodes import dvm
 from androguard.gui import TextSelection

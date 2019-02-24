@@ -1,9 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
-from builtins import str
-from builtins import range
-from builtins import object
 from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF

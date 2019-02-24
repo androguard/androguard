@@ -1,8 +1,3 @@
-from __future__ import print_function
-
-from builtins import str
-from builtins import range
-from builtins import object
 import hashlib
 from xml.sax.saxutils import escape
 from struct import unpack, pack

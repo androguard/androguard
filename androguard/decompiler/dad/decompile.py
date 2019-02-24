@@ -1,10 +1,3 @@
-from __future__ import print_function
-
-import logging
-import struct
-import sys
-from builtins import input
-from builtins import map
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -21,10 +14,9 @@ from builtins import map
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from builtins import next
-from builtins import object
-from builtins import range
-from builtins import str
+import logging
+import struct
+import sys
 from collections import defaultdict
 
 import androguard.core.androconf as androconf

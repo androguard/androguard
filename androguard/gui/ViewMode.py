@@ -1,7 +1,3 @@
-from builtins import chr
-from builtins import object
-
-
 class Observable:
     def __init__(self):
         self.Callbacks = []

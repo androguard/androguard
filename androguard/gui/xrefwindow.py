@@ -1,6 +1,4 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
-from builtins import range
-from builtins import str
 
 from androguard.gui.helpers import classmethod2display
 import logging

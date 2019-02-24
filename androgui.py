@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """Androguard Gui"""
-from __future__ import print_function
-
 import argparse
 
 from androguard.core import androconf

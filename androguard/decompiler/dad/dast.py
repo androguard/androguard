@@ -14,12 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This file is a simplified version of writer.py that outputs an AST instead of source code."""
-from builtins import zip
-from builtins import hex
-from builtins import str
-from builtins import map
-from builtins import range
-from builtins import object
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins

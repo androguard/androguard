@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
 import sys
 from androguard import __version__
 
@@ -16,7 +15,7 @@ if sys.version_info < (3, 4):
 if sys.version_info <= (3, 4):
     print("PyQT5 is probably not available for your system, the GUI might not work!", file=sys.stderr)
 
-install_requires = ['future',
+install_requires = [
                     'networkx>=1.11',
                     'pygments',
                     'lxml',

@@ -1,4 +1,3 @@
-from builtins import object
 import logging
 log = logging.getLogger("androguard.gui")
 

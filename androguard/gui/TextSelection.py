@@ -1,10 +1,8 @@
-from __future__ import division
 #
 #  Format Viewer, Marius TIVADAR, 2014
 #
 #
 
-from builtins import object
 from PyQt5 import QtGui
 
 
