@@ -31,6 +31,7 @@ from pygments.formatters import TerminalFormatter
 from pygments.token import Token
 
 import logging
+import warnings
 
 log = logging.getLogger("androguard.decompiler")
 
