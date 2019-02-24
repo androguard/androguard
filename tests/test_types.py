@@ -20,6 +20,7 @@
 
 import sys
 import unittest
+from struct import pack, unpack, calcsize
 
 from androguard.session import Session
 
@@ -27,78 +28,164 @@ TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
 
 VALUES = {
     'Ltests/androguard/TestActivity; testDouble ()V': [
-        # double values
-        -5.0, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-        # long values
-        -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-        # float values
-        -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-        # Double values
-        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
-        # Long values
-        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
-        # Float values
-        65534, 65535, 65536, 65537, 32769, 32768, 32767, 32766,
-        # Double, long, float
-        5346952, 5346952, 5346952,
-        # Double
-        65534.5, 65535.5, 65536.5, 65537.5,
-        32769.5, 32768.5, 32767.5, 32766.5,
-        # Float
-        65534.5, 65535.5, 65536.5, 65537.5,
-        32769.5, 32768.5, 32767.5, 32766.5,
-        # Float
-        -5, -65535, -65536,
-        # As this is a IEEE-754 float, we believe the result should not be
-        # -123456789123456789.555555555 but -123456790519087104
-        -123456790519087104,
-        # Double
-        -123456789123456789.555555555,
-        # int
-        -606384730,
-        # float
-        -123456790519087104,
-        # -606384730 + 2 + 3.5f
-        -606384730,
-        # constant from calculation
-        3.5
+        ('<d', -5),
+        ('<d', -4),
+        ('<d', -3),
+        ('<d', -2),
+        ('<d', -1),
+        ('<d', 0),
+        ('<d', 1),
+        ('<d', 2),
+        ('<d', 3),
+        ('<d', 4),
+        ('<d', 5),
+
+        ('<l', -5),
+        ('<l', -4),
+        ('<l', -3),
+        ('<l', -2),
+        ('<l', -1),
+        ('<l', 0),
+        ('<l', 1),
+        ('<l', 2),
+        ('<l', 3),
+        ('<l', 4),
+        ('<l', 5),
+
+        ('<f', -5),
+        ('<f', -4),
+        ('<f', -3),
+        ('<f', -2),
+        ('<f', -1),
+        ('<f', 0),
+        ('<f', 1),
+        ('<f', 2),
+        ('<f', 3),
+        ('<f', 4),
+        ('<f', 5),
+
+        ('<d', 65534),
+        ('<d', 65535),
+        ('<d', 65536),
+        ('<d', 65537),
+
+        ('<d', 32769),
+        ('<d', 32768),
+        ('<d', 32767),
+        ('<d', 32766),
+
+        ('<l', 65534),
+        ('<l', 65535),
+        ('<l', 65536),
+        ('<l', 65537),
+
+        ('<l', 32769),
+        ('<l', 32768),
+        ('<l', 32767),
+        ('<l', 32766),
+
+        ('<f', 65534),
+        ('<f', 65535),
+        ('<f', 65536),
+        ('<f', 65537),
+
+        ('<f', 32769),
+        ('<f', 32768),
+        ('<f', 32767),
+        ('<f', 32766),
+
+        ('<d', 5346952),
+        ('<l', 5346952),
+        ('<f', 5346952),
+
+        ('<d', 65534.50),
+        ('<d', 65535.50),
+        ('<d', 65536.50),
+        ('<d', 65537.50),
+
+        ('<d', 32769.50),
+        ('<d', 32768.50),
+        ('<d', 32767.50),
+        ('<d', 32766.50),
+
+        ('<f', 65534.50),
+        ('<f', 65535.50),
+        ('<f', 65536.50),
+        ('<f', 65537.50),
+
+        ('<f', 32769.50),
+        ('<f', 32768.50),
+        ('<f', 32767.50),
+        ('<f', 32766.50),
+
+        ('<f', -5),
+        ('<f', -65535),
+        ('<f', -65536),
+        # ('<f', -123456789123456789.555555555), --> this value will be -123456790519087104 as float!
+        ('<f', -123456790519087104),
+        ('<d', -123456789123456789.555555555),
+        # int boom
+        ('<i', -606384730),
+        # float reboom
+        ('<f', -123456790519087104),
+        # not in the java file, but appears due to the calculation: boom again
+        # but the two is added already -> some compiler optimization
+        ('<i', -606384730 + 2),
+        # the 3.5 from the calculation
+        ('<f', 3.5),
     ],
 }
 
+
+def format_value(literal, ins, to):
+    # Need to convert the instruction (which is always signed)
+    # to the requested format.
+    formats = dict(i='i', h='h', l='q', s='h')
+    char = ins.__class__.__name__[-1]
+    if char not in formats:
+        raise ValueError("wrong type of instruction")
+
+    # Need to calculate for extra padding bytes
+    # if the number is negative, trailing \xff are added (sign extension)
+    print(calcsize(to), calcsize(formats[char]))
+    packed = pack('<{}'.format(formats[char]), literal)
+    padding = bytearray()
+    trailing = bytearray()
+    print(packed)
+    if to == '<l' and packed[-1] & 0x80 == 0x80:
+        # Sign extension
+        trailing = bytearray([0xff] * (calcsize(to) - calcsize(formats[char])))
+    elif to == '<l' and packed[-1] & 0x80 == 0x00:
+        # no sign extension, but requires zero trailing
+        trailing = bytearray([0] * (calcsize(to) - calcsize(formats[char])))
+    else:
+        padding = bytearray([0] * (calcsize(to) - calcsize(formats[char])))
+
+    print(ins.__class__.__name__, char, formats[char], to, padding, trailing, literal)
+    return unpack(to, padding + packed + trailing)[0]
+
+
 class TypesTest(unittest.TestCase):
 
-    @unittest.skip("Not working test!")
     def testTypes(self):
         s = Session()
         with open(TEST_CASE, "rb") as fd:
             digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
-        for method in d.get_methods():
-            key = method.get_class_name() + " " + method.get_name(
-            ) + " " + method.get_descriptor()
+        for method in filter(lambda x: x.full_name in VALUES, d.get_methods()):
+            print("METHOD", method.full_name)
 
-            if key not in VALUES:
-                continue
+            for i in filter(lambda x: 'const' in x.get_name(), method.get_instructions()):
+                i.show(0)
+                # ins should only have one literal
+                self.assertEquals(len(i.get_literals()), 1)
 
-            print("METHOD", method.get_class_name(), method.get_name(
-            ), method.get_descriptor())
+                fmt, value = VALUES[method.full_name].pop(0)
+                converted = format_value(i.get_literals()[0], i, fmt)
+                print(i.get_literals(), fmt, value, converted)
+                self.assertEqual(converted, value)
+                print()
 
-            code = method.get_code()
-            bc = code.get_bc()
-
-            idx = 0
-            for i in bc.get_instructions():
-                if "const" in i.get_name():
-                    i.show(0)
-                    formatted_operands = i.get_formatted_operands()
-                    print(formatted_operands)
-                    if not formatted_operands:
-                        VALUES[key].pop(0)
-                    else:
-                        for f in formatted_operands:
-                            self.assertAlmostEqual(f, VALUES[key].pop(0), places=4)
-
-                idx += i.get_length()
 
 if __name__ == '__main__':
     unittest.main()
