@@ -1,6 +1,3 @@
-import struct
-
-
 def decode(b):
     """
     Decode bytes as MUTF-8
