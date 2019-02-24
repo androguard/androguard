@@ -13,16 +13,21 @@ import time
 from struct import pack, unpack, calcsize
 import logging
 import warnings
+import zlib
+import hashlib
 
 log = logging.getLogger("androguard.dvm")
 
-# TODO there is DEX 38 already
+# TODO: have some more generic magic...
 DEX_FILE_MAGIC_35 = b'dex\n035\x00'
 DEX_FILE_MAGIC_36 = b'dex\n036\x00'
 DEX_FILE_MAGIC_37 = b'dex\n037\x00'
+DEX_FILE_MAGIC_38 = b'dex\n038\x00'
+
 ODEX_FILE_MAGIC_35 = b'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = b'dey\n036\x00'
 ODEX_FILE_MAGIC_37 = b'dey\n037\x00'
+ODEX_FILE_MAGIC_38 = b'dey\n038\x00'
 
 # https://source.android.com/devices/tech/dalvik/dex-format#value-formats
 VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
@@ -404,10 +409,14 @@ def determineException(vm, m):
 
 class HeaderItem:
     """
-    This class can parse an header_item of a dex file
+    This class can parse an header_item of a dex file.
+
+    Several checks are performed to detect if this is not an header_item.
+    Also the Adler32 checksum of the file is calculated in order to detect file
+    corruption.
 
     :param buff: a string which represents a Buff object of the header_item
-    :type buff: Buff object
+    :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
@@ -417,29 +426,77 @@ class HeaderItem:
 
         self.offset = buff.get_idx()
 
-        self.magic = unpack("=Q", buff.read(8))[0]
-        self.checksum = unpack("=i", buff.read(4))[0]
-        self.signature = unpack("=20s", buff.read(20))[0]
-        self.file_size = unpack("=I", buff.read(4))[0]
-        self.header_size = unpack("=I", buff.read(4))[0]
-        self.endian_tag = unpack("=I", buff.read(4))[0]
-        self.link_size = unpack("=I", buff.read(4))[0]
-        self.link_off = unpack("=I", buff.read(4))[0]
-        self.map_off = unpack("=I", buff.read(4))[0]
-        self.string_ids_size = unpack("=I", buff.read(4))[0]
-        self.string_ids_off = unpack("=I", buff.read(4))[0]
-        self.type_ids_size = unpack("=I", buff.read(4))[0]
-        self.type_ids_off = unpack("=I", buff.read(4))[0]
-        self.proto_ids_size = unpack("=I", buff.read(4))[0]
-        self.proto_ids_off = unpack("=I", buff.read(4))[0]
-        self.field_ids_size = unpack("=I", buff.read(4))[0]
-        self.field_ids_off = unpack("=I", buff.read(4))[0]
-        self.method_ids_size = unpack("=I", buff.read(4))[0]
-        self.method_ids_off = unpack("=I", buff.read(4))[0]
-        self.class_defs_size = unpack("=I", buff.read(4))[0]
-        self.class_defs_off = unpack("=I", buff.read(4))[0]
-        self.data_size = unpack("=I", buff.read(4))[0]
-        self.data_off = unpack("=I", buff.read(4))[0]
+        if self.offset != 0:
+            log.warning("Unusual DEX file, does not have the header at offset 0")
+
+        magic_bytes = buff.read(8)
+
+        # Q is actually wrong, but we do not change it here and unpack our own
+        # stuff...
+        self.magic = unpack("<Q", magic_bytes)[0]
+        # possible dex or dey:
+        if magic_bytes[:2] != b'de' or magic_bytes[2] not in [0x78, 0x79] or magic_bytes[3] != 0x0a or magic_bytes[7] != 0x00:
+            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(magic_bytes)))
+
+        try:
+            self.dex_version = int(magic_bytes[4:7].decode('ascii'), 10)
+        except (UnicodeDecodeError, ValueError):
+            raise ValueError("This is not a DEX file! Wrong DEX version: {}".format(repr(magic_bytes)))
+
+        self.checksum = unpack("<I", buff.read(4))[0]
+
+        if zlib.adler32(buff.readat(buff.tell())) != self.checksum:
+            raise ValueError("Wrong Adler32 checksum for DEX file!")
+
+        self.signature = unpack("<20s", buff.read(20))[0]
+        self.file_size = unpack("<I", buff.read(4))[0]
+
+        if self.file_size != buff.size():
+            # Maybe raise an error here too...
+            log.warning("DEX file size is different to the buffer. Trying to parse anyways.")
+
+        self.header_size = unpack("<I", buff.read(4))[0]
+
+        if self.header_size != 0x70:
+            raise ValueError("This is not a DEX file! Wrong header size: '{}'".format(self.header_size))
+
+        self.endian_tag = unpack("<I", buff.read(4))[0]
+
+        if self.endian_tag == 0x78563412:
+            log.error("DEX file with byte swapped endian tag is not supported!")
+            raise NotImplementedError("Byte swapped endian tag encountered!")
+        elif self.endian_tag != 0x12345678:
+            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(self.endian_tag))
+
+        self.link_size = unpack("<I", buff.read(4))[0]
+        self.link_off = unpack("<I", buff.read(4))[0]
+        self.map_off = unpack("<I", buff.read(4))[0]
+        self.string_ids_size = unpack("<I", buff.read(4))[0]
+        self.string_ids_off = unpack("<I", buff.read(4))[0]
+        self.type_ids_size = unpack("<I", buff.read(4))[0]
+
+        if self.type_ids_size > 65535:
+            raise ValueError("DEX file contains too many ({}) TYPE_IDs to be valid!".format(self.type_ids_size))
+
+        self.type_ids_off = unpack("<I", buff.read(4))[0]
+        self.proto_ids_size = unpack("<I", buff.read(4))[0]
+
+        if self.proto_ids_size > 65535:
+            raise ValueError("DEX file contains too many ({}) PROTO_IDs to be valid!".format(self.proto_ids_size))
+
+        self.proto_ids_off = unpack("<I", buff.read(4))[0]
+        self.field_ids_size = unpack("<I", buff.read(4))[0]
+        self.field_ids_off = unpack("<I", buff.read(4))[0]
+        self.method_ids_size = unpack("<I", buff.read(4))[0]
+        self.method_ids_off = unpack("<I", buff.read(4))[0]
+        self.class_defs_size = unpack("<I", buff.read(4))[0]
+        self.class_defs_off = unpack("<I", buff.read(4))[0]
+        self.data_size = unpack("<I", buff.read(4))[0]
+
+        if self.data_size % 4 != 0:
+            log.warning("data_size is not a multiple of sizeof(uint), but try to parse anyways.")
+
+        self.data_off = unpack("<I", buff.read(4))[0]
 
         self.map_off_obj = None
         self.string_off_obj = None
@@ -503,29 +560,29 @@ class HeaderItem:
         self.data_size = len(self.data_off_obj.map_item)
         self.data_off = self.data_off_obj.get_off()
 
-        return pack("=Q", self.magic) + \
-               pack("=i", self.checksum) + \
-               pack("=20s", self.signature) + \
-               pack("=I", self.file_size) + \
-               pack("=I", self.header_size) + \
-               pack("=I", self.endian_tag) + \
-               pack("=I", self.link_size) + \
-               pack("=I", self.link_off) + \
-               pack("=I", self.map_off) + \
-               pack("=I", self.string_ids_size) + \
-               pack("=I", self.string_ids_off) + \
-               pack("=I", self.type_ids_size) + \
-               pack("=I", self.type_ids_off) + \
-               pack("=I", self.proto_ids_size) + \
-               pack("=I", self.proto_ids_off) + \
-               pack("=I", self.field_ids_size) + \
-               pack("=I", self.field_ids_off) + \
-               pack("=I", self.method_ids_size) + \
-               pack("=I", self.method_ids_off) + \
-               pack("=I", self.class_defs_size) + \
-               pack("=I", self.class_defs_off) + \
-               pack("=I", self.data_size) + \
-               pack("=I", self.data_off)
+        return pack("<Q", self.magic) + \
+               pack("<I", self.checksum) + \
+               pack("<20s", self.signature) + \
+               pack("<I", self.file_size) + \
+               pack("<I", self.header_size) + \
+               pack("<I", self.endian_tag) + \
+               pack("<I", self.link_size) + \
+               pack("<I", self.link_off) + \
+               pack("<I", self.map_off) + \
+               pack("<I", self.string_ids_size) + \
+               pack("<I", self.string_ids_off) + \
+               pack("<I", self.type_ids_size) + \
+               pack("<I", self.type_ids_off) + \
+               pack("<I", self.proto_ids_size) + \
+               pack("<I", self.proto_ids_off) + \
+               pack("<I", self.field_ids_size) + \
+               pack("<I", self.field_ids_off) + \
+               pack("<I", self.method_ids_size) + \
+               pack("<I", self.method_ids_off) + \
+               pack("<I", self.class_defs_size) + \
+               pack("<I", self.class_defs_off) + \
+               pack("<I", self.data_size) + \
+               pack("<I", self.data_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -7168,6 +7225,7 @@ class ClassManager:
 
         self.__cached_proto = {}
 
+        # TODO remove recoding
         self.recode_ascii_string = config["RECODE_ASCII_STRING"]
         self.recode_ascii_string_meth = None
         if config["RECODE_ASCII_STRING_METH"]:
@@ -7177,8 +7235,11 @@ class ClassManager:
 
         if self.vm:
             self.odex_format = self.vm.get_format_type() == "ODEX"
+        else:
+            self.odex_format = False
 
     def get_ascii_string(self, s):
+        # TODO Remove method
         try:
             return s.decode("ascii")
         except UnicodeDecodeError:
@@ -7330,16 +7391,26 @@ class ClassManager:
         """
         Return the resolved type name based on the index
 
+        This returns the string associated with the type.
+
         :param int idx:
         :return: the type name
         :rtype: str
         """
-        _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
+        _type = self.get_type_ref(idx)
         if _type == -1:
             return "AG:ITI: invalid type"
         return self.get_string(_type)
 
     def get_type_ref(self, idx):
+        """
+        Returns the string reference ID for a given type ID.
+
+        This method is similar to :meth:`get_type` but does not resolve
+        the string but returns the ID into the string section.
+
+        If the type IDX is not found, -1 is returned.
+        """
         return self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
 
     def get_proto(self, idx):
@@ -7352,15 +7423,14 @@ class ClassManager:
                 proto.get_return_type_idx_value()]
 
     def get_field(self, idx):
-        field = self.__manage_item["TYPE_FIELD_ID_ITEM"].get(idx)
+        field = self.get_field_ref(idx)
         return [field.get_class_name(), field.get_type(), field.get_name()]
 
     def get_field_ref(self, idx):
         return self.__manage_item["TYPE_FIELD_ID_ITEM"].get(idx)
 
     def get_method(self, idx):
-        method = self.__manage_item["TYPE_METHOD_ID_ITEM"].get(idx)
-        return method.get_list()
+        return self.get_method_ref(idx).get_list()
 
     def get_method_ref(self, idx):
         return self.__manage_item["TYPE_METHOD_ID_ITEM"].get(idx)
@@ -7877,14 +7947,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
           :rtype: string
         """
-        import zlib
-        import hashlib
 
         signature = hashlib.sha1(buff[32:]).digest()
 
         buff = buff[:12] + signature + buff[32:]
         checksum = zlib.adler32(buff[12:])
-        buff = buff[:8] + pack("=i", checksum) + buff[12:]
+        buff = buff[:8] + pack("=I", checksum) + buff[12:]
 
         log.debug("NEW SIGNATURE %s" % repr(signature))
         log.debug("NEW CHECKSUM %x" % checksum)
