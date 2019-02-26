@@ -3,7 +3,7 @@ from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
 from androguard.core.bytecodes import mutf8
-from androguard.core.bytecodes.dvm_types import TYPE_MAP_ITEM, ACCESS_FLAGS, TYPE_DESCRIPTOR
+from androguard.core.bytecodes.dvm_types import TypeMapItem, TYPE_MAP_ITEM_STRINGS, ACCESS_FLAGS, TYPE_DESCRIPTOR
 
 import sys
 import re
@@ -7018,69 +7018,69 @@ class MapItem:
         return self.size
 
     def parse(self):
-        log.debug("Starting parsing map_item '%s'" % TYPE_MAP_ITEM[self.type])
+        log.debug("Starting parsing map_item '%s'" % TYPE_MAP_ITEM_STRINGS[self.type])
         started_at = time.time()
 
         buff = self.buff
         buff.set_idx(self.offset)
         cm = self.CM
 
-        if TYPE_MAP_ITEM[self.type] == "TYPE_STRING_ID_ITEM":
+        if TypeMapItem.STRING_ID_ITEM == self.type:
             self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CODE_ITEM":
+        elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_TYPE_ID_ITEM":
+        elif TypeMapItem.TYPE_ID_ITEM == self.type:
             self.item = TypeHIdItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_PROTO_ID_ITEM":
+        elif TypeMapItem.PROTO_ID_ITEM == self.type:
             self.item = ProtoHIdItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_FIELD_ID_ITEM":
+        elif TypeMapItem.FIELD_ID_ITEM == self.type:
             self.item = FieldHIdItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_METHOD_ID_ITEM":
+        elif TypeMapItem.METHOD_ID_ITEM == self.type:
             self.item = MethodHIdItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CLASS_DEF_ITEM":
+        elif TypeMapItem.CLASS_DEF_ITEM == self.type:
             self.item = ClassHDefItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_HEADER_ITEM":
+        elif TypeMapItem.HEADER_ITEM == self.type:
             self.item = HeaderItem(self.size, buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ANNOTATION_ITEM":
+        elif TypeMapItem.ANNOTATION_ITEM == self.type:
             self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ANNOTATION_SET_ITEM":
+        elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
             self.item = [AnnotationSetItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ANNOTATIONS_DIRECTORY_ITEM":
+        elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
             self.item = [AnnotationsDirectoryItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ANNOTATION_SET_REF_LIST":
+        elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
             self.item = [AnnotationSetRefList(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_TYPE_LIST":
+        elif TypeMapItem.TYPE_LIST == self.type:
             self.item = [TypeList(buff, cm) for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_STRING_DATA_ITEM":
+        elif TypeMapItem.STRING_DATA_ITEM == self.type:
             self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_DEBUG_INFO_ITEM":
+        elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_ENCODED_ARRAY_ITEM":
+        elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
             self.item = [EncodedArrayItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_CLASS_DATA_ITEM":
+        elif TypeMapItem.CLASS_DATA_ITEM == self.type:
             self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
 
-        elif TYPE_MAP_ITEM[self.type] == "TYPE_MAP_LIST":
+        elif TypeMapItem.MAP_LIST == self.type:
             pass  # It's me I think !!!
 
         else:
@@ -7089,7 +7089,7 @@ class MapItem:
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM[self.type], minutes, seconds))
+        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM_STRINGS[self.type], minutes, seconds))
 
     def reload(self):
         if self.item is not None:
@@ -7100,7 +7100,7 @@ class MapItem:
                 self.item.reload()
 
     def show(self):
-        bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM[self.type])
+        bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM_STRINGS[self.type])
 
         if self.item is not None:
             if isinstance(self.item, list):
@@ -7248,18 +7248,18 @@ class ClassManager:
 
                 self.__obj_offset[i.get_off()] = i
 
-                if type_item == "TYPE_STRING_DATA_ITEM":
+                if type_item == TypeMapItem.STRING_DATA_ITEM:
                     self.__strings_off[goff] = i
-                elif type_item == "TYPE_TYPE_LIST":
+                elif type_item == TypeMapItem.TYPE_LIST:
                     self.__typelists_off[goff] = i
-                elif type_item == "TYPE_CLASS_DATA_ITEM":
+                elif type_item == TypeMapItem.CLASS_DATA_ITEM:
                     self.__classdata_off[goff] = i
         else:
             self.__manage_item_off.append(c_item.get_offset())
 
     def get_code(self, idx):
         try:
-            return self.__manage_item["TYPE_CODE_ITEM"].get_code(idx)
+            return self.__manage_item[TypeMapItem.CODE_ITEM].get_code(idx)
         except KeyError:
             return None
 
@@ -7271,7 +7271,7 @@ class ClassManager:
         return i
 
     def get_encoded_array_item(self, off):
-        for i in self.__manage_item["TYPE_ENCODED_ARRAY_ITEM"]:
+        for i in self.__manage_item[TypeMapItem.ENCODED_ARRAY_ITEM]:
             if i.get_off() == off:
                 return i
 
@@ -7285,7 +7285,7 @@ class ClassManager:
             return self.hook_strings[idx]
 
         try:
-            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
+            off = self.__manage_item[TypeMapItem.STRING_ID_ITEM][idx].get_string_data_off()
         except IndexError:
             log.warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
@@ -7308,7 +7308,7 @@ class ClassManager:
         :param int idx: the index in the string section
         """
         try:
-            off = self.__manage_item["TYPE_STRING_ID_ITEM"][idx].get_string_data_off()
+            off = self.__manage_item[TypeMapItem.STRING_ID_ITEM][idx].get_string_data_off()
         except IndexError:
             log.warning("unknown string item @ %d" % idx)
             return "AG:IS: invalid string"
@@ -7334,40 +7334,40 @@ class ClassManager:
         :return: the type name
         :rtype: str
         """
-        _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
+        _type = self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
         if _type == -1:
             return "AG:ITI: invalid type"
         return self.get_string(_type)
 
     def get_type_ref(self, idx):
-        return self.__manage_item["TYPE_TYPE_ID_ITEM"].get(idx)
+        return self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
 
     def get_proto(self, idx):
         proto = self.__cached_proto.get(idx)
         if not proto:
-            proto = self.__manage_item["TYPE_PROTO_ID_ITEM"].get(idx)
+            proto = self.__manage_item[TypeMapItem.PROTO_ID_ITEM].get(idx)
             self.__cached_proto[idx] = proto
 
         return [proto.get_parameters_off_value(),
                 proto.get_return_type_idx_value()]
 
     def get_field(self, idx):
-        field = self.__manage_item["TYPE_FIELD_ID_ITEM"].get(idx)
+        field = self.__manage_item[TypeMapItem.FIELD_ID_ITEM].get(idx)
         return [field.get_class_name(), field.get_type(), field.get_name()]
 
     def get_field_ref(self, idx):
-        return self.__manage_item["TYPE_FIELD_ID_ITEM"].get(idx)
+        return self.__manage_item[TypeMapItem.FIELD_ID_ITEM].get(idx)
 
     def get_method(self, idx):
-        method = self.__manage_item["TYPE_METHOD_ID_ITEM"].get(idx)
+        method = self.__manage_item[TypeMapItem.METHOD_ID_ITEM].get(idx)
         return method.get_list()
 
     def get_method_ref(self, idx):
-        return self.__manage_item["TYPE_METHOD_ID_ITEM"].get(idx)
+        return self.__manage_item[TypeMapItem.METHOD_ID_ITEM].get(idx)
 
     def set_hook_class_name(self, class_def, value):
         python_export = True
-        _type = self.__manage_item["TYPE_TYPE_ID_ITEM"].get(
+        _type = self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(
             class_def.get_class_idx())
         self.set_hook_string(_type, value)
 
@@ -7379,7 +7379,7 @@ class ClassManager:
         class_def.reload()
 
         # FIXME
-        self.__manage_item["TYPE_METHOD_ID_ITEM"].reload()
+        self.__manage_item[TypeMapItem.METHOD_ID_ITEM].reload()
 
         for i in class_def.get_methods():
             i.reload()
@@ -7393,11 +7393,11 @@ class ClassManager:
     def set_hook_method_name(self, encoded_method, value):
         python_export = True
 
-        method = self.__manage_item["TYPE_METHOD_ID_ITEM"].get(
+        method = self.__manage_item[TypeMapItem.METHOD_ID_ITEM].get(
             encoded_method.get_method_idx())
         self.set_hook_string(method.get_name_idx(), value)
 
-        class_def = self.__manage_item["TYPE_CLASS_DEF_ITEM"].get_class_idx(
+        class_def = self.__manage_item[TypeMapItem.CLASS_DEF_ITEM].get_class_idx(
             method.get_class_idx())
         if class_def is not None:
             try:
@@ -7442,11 +7442,11 @@ class ClassManager:
     def set_hook_field_name(self, encoded_field, value):
         python_export = True
 
-        field = self.__manage_item["TYPE_FIELD_ID_ITEM"].get(
+        field = self.__manage_item[TypeMapItem.FIELD_ID_ITEM].get(
             encoded_field.get_field_idx())
         self.set_hook_string(field.get_name_idx(), value)
 
-        class_def = self.__manage_item["TYPE_CLASS_DEF_ITEM"].get_class_idx(
+        class_def = self.__manage_item[TypeMapItem.CLASS_DEF_ITEM].get_class_idx(
             field.get_class_idx())
         if class_def is not None:
             try:
@@ -7509,7 +7509,7 @@ class MapList:
         # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
         # We want to parse this first, as other map items depend on it.
         ordered = sorted(self.map_item,
-                         key=lambda mi: TYPE_MAP_ITEM[mi.get_type()] != "TYPE_STRING_DATA_ITEM")
+                         key=lambda mi: TypeMapItem.STRING_DATA_ITEM != mi.get_type())
         # TODO: There could be some speedup if the parsing needs to be done only
         # once.
         # The idea is to parse all items in the correct order, which is possible
@@ -7544,16 +7544,16 @@ class MapList:
                 mi.set_item(self)
                 c_item = mi.get_item()
 
-            self.CM.add_type_item(TYPE_MAP_ITEM[mi.get_type()], mi, c_item)
+            self.CM.add_type_item(mi.get_type(), mi, c_item)
 
         log.debug("Reloading all map_items to fix references")
         started_at = time.time()
         for i in self.map_item:
-            log.debug("Reloading '%s'" % TYPE_MAP_ITEM[i.get_type()])
+            log.debug("Reloading '%s'" % TYPE_MAP_ITEM_STRINGS[i.get_type()])
             i.reload()
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM[i.get_type()], minutes, seconds))
+        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM_STRINGS[i.get_type()], minutes, seconds))
 
     def reload(self):
         pass
@@ -7573,7 +7573,7 @@ class MapList:
         :rtype: None or the item object
         """
         for i in self.map_item:
-            if TYPE_MAP_ITEM[i.get_type()] == ttype:
+            if i.get_type() == ttype:
                 return i.get_item()
         return None
 
@@ -7653,13 +7653,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         else:
             self.map_list = MapList(self.CM, self.__header.map_off, self)
 
-            self.classes = self.map_list.get_item_type("TYPE_CLASS_DEF_ITEM")
-            self.methods = self.map_list.get_item_type("TYPE_METHOD_ID_ITEM")
-            self.fields = self.map_list.get_item_type("TYPE_FIELD_ID_ITEM")
-            self.codes = self.map_list.get_item_type("TYPE_CODE_ITEM")
-            self.strings = self.map_list.get_item_type("TYPE_STRING_DATA_ITEM")
-            self.debug = self.map_list.get_item_type("TYPE_DEBUG_INFO_ITEM")
-            self.header = self.map_list.get_item_type("TYPE_HEADER_ITEM")
+            self.classes = self.map_list.get_item_type(TypeMapItem.CLASS_DEF_ITEM)
+            self.methods = self.map_list.get_item_type(TypeMapItem.METHOD_ID_ITEM)
+            self.fields = self.map_list.get_item_type(TypeMapItem.FIELD_ID_ITEM)
+            self.codes = self.map_list.get_item_type(TypeMapItem.CODE_ITEM)
+            self.strings = self.map_list.get_item_type(TypeMapItem.STRING_DATA_ITEM)
+            self.debug = self.map_list.get_item_type(TypeMapItem.DEBUG_INFO_ITEM)
+            self.header = self.map_list.get_item_type(TypeMapItem.HEADER_ITEM)
 
         self._flush()
 
