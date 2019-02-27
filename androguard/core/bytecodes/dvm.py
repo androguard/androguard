@@ -7053,7 +7053,7 @@ class MapItem:
 
         self.off = buff.get_idx()
 
-        self.type = unpack("=H", buff.read(2))[0]
+        self.type = TypeMapItem(unpack("=H", buff.read(2))[0])
         self.unused = unpack("=H", buff.read(2))[0]
         self.size = unpack("=I", buff.read(4))[0]
         self.offset = unpack("=I", buff.read(4))[0]
@@ -7075,7 +7075,7 @@ class MapItem:
         return self.size
 
     def parse(self):
-        log.debug("Starting parsing map_item '%s'" % TypeMapItem(self.type).name)
+        log.debug("Starting parsing map_item '{}'".format(self.type.name))
         started_at = time.time()
 
         buff = self.buff
@@ -7083,7 +7083,7 @@ class MapItem:
         cm = self.CM
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
-            self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringIdItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
@@ -7104,49 +7104,45 @@ class MapItem:
             self.item = ClassHDefItem(self.size, buff, cm)
 
         elif TypeMapItem.HEADER_ITEM == self.type:
+            # FIXME probably not necessary to parse again here...
             self.item = HeaderItem(self.size, buff, cm)
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
-            self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
+            self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
-            self.item = [AnnotationSetItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationSetItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
-            self.item = [AnnotationsDirectoryItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
-            self.item = [AnnotationSetRefList(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationSetRefList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
-            self.item = [TypeList(buff, cm) for i in range(0, self.size)]
+            self.item = [TypeList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.STRING_DATA_ITEM == self.type:
-            self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
-            self.item = [EncodedArrayItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [EncodedArrayItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
-            self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
-            pass  # It's me I think !!!
+            pass  # It's me I think !!! No need to parse again
 
         else:
-            log.warning("Map item %d @ 0x%x(%d) is unknown" %
-                              (self.type, buff.get_idx(), buff.get_idx()))
+            log.warning("Map item '{}' @ 0x{:x}({}) is unknown".format(self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(self.type).name, minutes, seconds))
+        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(self.type.name, minutes, seconds))
 
     def reload(self):
         if self.item is not None:
