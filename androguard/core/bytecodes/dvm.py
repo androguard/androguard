@@ -13,16 +13,21 @@ import time
 from struct import pack, unpack, calcsize
 import logging
 import warnings
+import zlib
+import hashlib
 
 log = logging.getLogger("androguard.dvm")
 
-# TODO there is DEX 38 already
+# TODO: have some more generic magic...
 DEX_FILE_MAGIC_35 = b'dex\n035\x00'
 DEX_FILE_MAGIC_36 = b'dex\n036\x00'
 DEX_FILE_MAGIC_37 = b'dex\n037\x00'
+DEX_FILE_MAGIC_38 = b'dex\n038\x00'
+
 ODEX_FILE_MAGIC_35 = b'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = b'dey\n036\x00'
 ODEX_FILE_MAGIC_37 = b'dey\n037\x00'
+ODEX_FILE_MAGIC_38 = b'dey\n038\x00'
 
 # https://source.android.com/devices/tech/dalvik/dex-format#value-formats
 VALUE_BYTE = 0x00  # (none; must be 0)      ubyte[1]         signed one-byte integer value
@@ -404,10 +409,14 @@ def determineException(vm, m):
 
 class HeaderItem:
     """
-    This class can parse an header_item of a dex file
+    This class can parse an header_item of a dex file.
+
+    Several checks are performed to detect if this is not an header_item.
+    Also the Adler32 checksum of the file is calculated in order to detect file
+    corruption.
 
     :param buff: a string which represents a Buff object of the header_item
-    :type buff: Buff object
+    :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
@@ -417,29 +426,77 @@ class HeaderItem:
 
         self.offset = buff.get_idx()
 
-        self.magic = unpack("=Q", buff.read(8))[0]
-        self.checksum = unpack("=i", buff.read(4))[0]
-        self.signature = unpack("=20s", buff.read(20))[0]
-        self.file_size = unpack("=I", buff.read(4))[0]
-        self.header_size = unpack("=I", buff.read(4))[0]
-        self.endian_tag = unpack("=I", buff.read(4))[0]
-        self.link_size = unpack("=I", buff.read(4))[0]
-        self.link_off = unpack("=I", buff.read(4))[0]
-        self.map_off = unpack("=I", buff.read(4))[0]
-        self.string_ids_size = unpack("=I", buff.read(4))[0]
-        self.string_ids_off = unpack("=I", buff.read(4))[0]
-        self.type_ids_size = unpack("=I", buff.read(4))[0]
-        self.type_ids_off = unpack("=I", buff.read(4))[0]
-        self.proto_ids_size = unpack("=I", buff.read(4))[0]
-        self.proto_ids_off = unpack("=I", buff.read(4))[0]
-        self.field_ids_size = unpack("=I", buff.read(4))[0]
-        self.field_ids_off = unpack("=I", buff.read(4))[0]
-        self.method_ids_size = unpack("=I", buff.read(4))[0]
-        self.method_ids_off = unpack("=I", buff.read(4))[0]
-        self.class_defs_size = unpack("=I", buff.read(4))[0]
-        self.class_defs_off = unpack("=I", buff.read(4))[0]
-        self.data_size = unpack("=I", buff.read(4))[0]
-        self.data_off = unpack("=I", buff.read(4))[0]
+        if self.offset != 0:
+            log.warning("Unusual DEX file, does not have the header at offset 0")
+
+        magic_bytes = buff.read(8)
+
+        # Q is actually wrong, but we do not change it here and unpack our own
+        # stuff...
+        self.magic = unpack("<Q", magic_bytes)[0]
+        # possible dex or dey:
+        if magic_bytes[:2] != b'de' or magic_bytes[2] not in [0x78, 0x79] or magic_bytes[3] != 0x0a or magic_bytes[7] != 0x00:
+            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(magic_bytes)))
+
+        try:
+            self.dex_version = int(magic_bytes[4:7].decode('ascii'), 10)
+        except (UnicodeDecodeError, ValueError):
+            raise ValueError("This is not a DEX file! Wrong DEX version: {}".format(repr(magic_bytes)))
+
+        self.checksum = unpack("<I", buff.read(4))[0]
+
+        if zlib.adler32(buff.readat(buff.tell())) != self.checksum:
+            raise ValueError("Wrong Adler32 checksum for DEX file!")
+
+        self.signature = unpack("<20s", buff.read(20))[0]
+        self.file_size = unpack("<I", buff.read(4))[0]
+
+        if self.file_size != buff.size():
+            # Maybe raise an error here too...
+            log.warning("DEX file size is different to the buffer. Trying to parse anyways.")
+
+        self.header_size = unpack("<I", buff.read(4))[0]
+
+        if self.header_size != 0x70:
+            raise ValueError("This is not a DEX file! Wrong header size: '{}'".format(self.header_size))
+
+        self.endian_tag = unpack("<I", buff.read(4))[0]
+
+        if self.endian_tag == 0x78563412:
+            log.error("DEX file with byte swapped endian tag is not supported!")
+            raise NotImplementedError("Byte swapped endian tag encountered!")
+        elif self.endian_tag != 0x12345678:
+            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(self.endian_tag))
+
+        self.link_size = unpack("<I", buff.read(4))[0]
+        self.link_off = unpack("<I", buff.read(4))[0]
+        self.map_off = unpack("<I", buff.read(4))[0]
+        self.string_ids_size = unpack("<I", buff.read(4))[0]
+        self.string_ids_off = unpack("<I", buff.read(4))[0]
+        self.type_ids_size = unpack("<I", buff.read(4))[0]
+
+        if self.type_ids_size > 65535:
+            raise ValueError("DEX file contains too many ({}) TYPE_IDs to be valid!".format(self.type_ids_size))
+
+        self.type_ids_off = unpack("<I", buff.read(4))[0]
+        self.proto_ids_size = unpack("<I", buff.read(4))[0]
+
+        if self.proto_ids_size > 65535:
+            raise ValueError("DEX file contains too many ({}) PROTO_IDs to be valid!".format(self.proto_ids_size))
+
+        self.proto_ids_off = unpack("<I", buff.read(4))[0]
+        self.field_ids_size = unpack("<I", buff.read(4))[0]
+        self.field_ids_off = unpack("<I", buff.read(4))[0]
+        self.method_ids_size = unpack("<I", buff.read(4))[0]
+        self.method_ids_off = unpack("<I", buff.read(4))[0]
+        self.class_defs_size = unpack("<I", buff.read(4))[0]
+        self.class_defs_off = unpack("<I", buff.read(4))[0]
+        self.data_size = unpack("<I", buff.read(4))[0]
+
+        if self.data_size % 4 != 0:
+            log.warning("data_size is not a multiple of sizeof(uint), but try to parse anyways.")
+
+        self.data_off = unpack("<I", buff.read(4))[0]
 
         self.map_off_obj = None
         self.string_off_obj = None
@@ -503,29 +560,29 @@ class HeaderItem:
         self.data_size = len(self.data_off_obj.map_item)
         self.data_off = self.data_off_obj.get_off()
 
-        return pack("=Q", self.magic) + \
-               pack("=i", self.checksum) + \
-               pack("=20s", self.signature) + \
-               pack("=I", self.file_size) + \
-               pack("=I", self.header_size) + \
-               pack("=I", self.endian_tag) + \
-               pack("=I", self.link_size) + \
-               pack("=I", self.link_off) + \
-               pack("=I", self.map_off) + \
-               pack("=I", self.string_ids_size) + \
-               pack("=I", self.string_ids_off) + \
-               pack("=I", self.type_ids_size) + \
-               pack("=I", self.type_ids_off) + \
-               pack("=I", self.proto_ids_size) + \
-               pack("=I", self.proto_ids_off) + \
-               pack("=I", self.field_ids_size) + \
-               pack("=I", self.field_ids_off) + \
-               pack("=I", self.method_ids_size) + \
-               pack("=I", self.method_ids_off) + \
-               pack("=I", self.class_defs_size) + \
-               pack("=I", self.class_defs_off) + \
-               pack("=I", self.data_size) + \
-               pack("=I", self.data_off)
+        return pack("<Q", self.magic) + \
+               pack("<I", self.checksum) + \
+               pack("<20s", self.signature) + \
+               pack("<I", self.file_size) + \
+               pack("<I", self.header_size) + \
+               pack("<I", self.endian_tag) + \
+               pack("<I", self.link_size) + \
+               pack("<I", self.link_off) + \
+               pack("<I", self.map_off) + \
+               pack("<I", self.string_ids_size) + \
+               pack("<I", self.string_ids_off) + \
+               pack("<I", self.type_ids_size) + \
+               pack("<I", self.type_ids_off) + \
+               pack("<I", self.proto_ids_size) + \
+               pack("<I", self.proto_ids_off) + \
+               pack("<I", self.field_ids_size) + \
+               pack("<I", self.field_ids_off) + \
+               pack("<I", self.method_ids_size) + \
+               pack("<I", self.method_ids_off) + \
+               pack("<I", self.class_defs_size) + \
+               pack("<I", self.class_defs_off) + \
+               pack("<I", self.data_size) + \
+               pack("<I", self.data_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -6859,17 +6916,17 @@ class DalvikCode:
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        buff += pack("=H", self.registers_size) + \
-                pack("=H", self.ins_size) + \
-                pack("=H", self.outs_size) + \
-                pack("=H", self.tries_size) + \
-                pack("=I", self.debug_info_off) + \
-                pack("=I", self.insns_size) + \
+        buff += pack("<H", self.registers_size) + \
+                pack("<H", self.ins_size) + \
+                pack("<H", self.outs_size) + \
+                pack("<H", self.tries_size) + \
+                pack("<I", self.debug_info_off) + \
+                pack("<I", self.insns_size) + \
                 code_raw
 
         if self.tries_size > 0:
             if (self.insns_size % 2 == 1):
-                buff += pack("=H", self.padding)
+                buff += pack("<H", self.padding)
 
             for i in self.tries:
                 buff += i.get_raw()
@@ -6897,12 +6954,12 @@ class DalvikCode:
 
     def get_size(self):
         length = 0
-        length += len(pack("=H", self.registers_size) + \
-                      pack("=H", self.ins_size) + \
-                      pack("=H", self.outs_size) + \
-                      pack("=H", self.tries_size) + \
-                      pack("=I", self.debug_info_off) + \
-                      pack("=I", self.insns_size))
+        length += len(pack("<H", self.registers_size) + \
+                      pack("<H", self.ins_size) + \
+                      pack("<H", self.outs_size) + \
+                      pack("<H", self.tries_size) + \
+                      pack("<I", self.debug_info_off) + \
+                      pack("<I", self.insns_size))
         length += self.code.get_length()
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
@@ -6996,10 +7053,10 @@ class MapItem:
 
         self.off = buff.get_idx()
 
-        self.type = unpack("=H", buff.read(2))[0]
-        self.unused = unpack("=H", buff.read(2))[0]
-        self.size = unpack("=I", buff.read(4))[0]
-        self.offset = unpack("=I", buff.read(4))[0]
+        self.type = TypeMapItem(unpack("<H", buff.read(2))[0])
+        self.unused = unpack("<H", buff.read(2))[0]
+        self.size = unpack("<I", buff.read(4))[0]
+        self.offset = unpack("<I", buff.read(4))[0]
 
         self.item = None
 
@@ -7015,10 +7072,14 @@ class MapItem:
         return self.type
 
     def get_size(self):
+        """
+        Returns the number of items found at the location indicated by
+        :meth:`get_offset`.
+        """
         return self.size
 
     def parse(self):
-        log.debug("Starting parsing map_item '%s'" % TypeMapItem(self.type).name)
+        log.debug("Starting parsing map_item '{}'".format(self.type.name))
         started_at = time.time()
 
         buff = self.buff
@@ -7026,7 +7087,7 @@ class MapItem:
         cm = self.CM
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
-            self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringIdItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
@@ -7047,49 +7108,45 @@ class MapItem:
             self.item = ClassHDefItem(self.size, buff, cm)
 
         elif TypeMapItem.HEADER_ITEM == self.type:
+            # FIXME probably not necessary to parse again here...
             self.item = HeaderItem(self.size, buff, cm)
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
-            self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
+            self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
-            self.item = [AnnotationSetItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationSetItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
-            self.item = [AnnotationsDirectoryItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
-            self.item = [AnnotationSetRefList(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [AnnotationSetRefList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
-            self.item = [TypeList(buff, cm) for i in range(0, self.size)]
+            self.item = [TypeList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.STRING_DATA_ITEM == self.type:
-            self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
-            self.item = [EncodedArrayItem(buff, cm)
-                         for i in range(0, self.size)]
+            self.item = [EncodedArrayItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
-            self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
-            pass  # It's me I think !!!
+            pass  # It's me I think !!! No need to parse again
 
         else:
-            log.warning("Map item %d @ 0x%x(%d) is unknown" %
-                              (self.type, buff.get_idx(), buff.get_idx()))
+            log.warning("Map item '{}' @ 0x{:x}({}) is unknown".format(self.type, buff.get_idx(), buff.get_idx()))
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(self.type).name, minutes, seconds))
+        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(self.type.name, minutes, seconds))
 
     def reload(self):
         if self.item is not None:
@@ -7100,7 +7157,7 @@ class MapItem:
                 self.item.reload()
 
     def show(self):
-        bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
+        bytecode._Print("\tMAP_TYPE_ITEM {}".format(self.type.name))
 
         if self.item is not None:
             if isinstance(self.item, list):
@@ -7110,21 +7167,29 @@ class MapItem:
                 self.item.show()
 
     def get_obj(self):
+        """
+        Return the associated item itself.
+        Might return None, if :meth:`parse` was not called yet.
+
+        This method is the same as :meth:`get_item`.
+        """
         return self.item
 
+    # alias
+    get_item = get_obj
+
     def get_raw(self):
+        # FIXME why is it necessary to get the offset here agin? We have this
+        # stored?!
         if isinstance(self.item, list):
             self.offset = self.item[0].get_off()
         else:
             self.offset = self.item.get_off()
 
-        return pack("=HHII", self.type, self.unused, self.size, self.offset)
+        return pack("<HHII", self.type, self.unused, self.size, self.offset)
 
     def get_length(self):
-        return calcsize("=HHII")
-
-    def get_item(self):
-        return self.item
+        return calcsize("<HHII")
 
     def set_item(self, item):
         self.item = item
@@ -7168,6 +7233,7 @@ class ClassManager:
 
         self.__cached_proto = {}
 
+        # TODO remove recoding
         self.recode_ascii_string = config["RECODE_ASCII_STRING"]
         self.recode_ascii_string_meth = None
         if config["RECODE_ASCII_STRING_METH"]:
@@ -7177,8 +7243,11 @@ class ClassManager:
 
         if self.vm:
             self.odex_format = self.vm.get_format_type() == "ODEX"
+        else:
+            self.odex_format = False
 
     def get_ascii_string(self, s):
+        # TODO Remove method
         try:
             return s.decode("ascii")
         except UnicodeDecodeError:
@@ -7330,16 +7399,26 @@ class ClassManager:
         """
         Return the resolved type name based on the index
 
+        This returns the string associated with the type.
+
         :param int idx:
         :return: the type name
         :rtype: str
         """
-        _type = self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
+        _type = self.get_type_ref(idx)
         if _type == -1:
             return "AG:ITI: invalid type"
         return self.get_string(_type)
 
     def get_type_ref(self, idx):
+        """
+        Returns the string reference ID for a given type ID.
+
+        This method is similar to :meth:`get_type` but does not resolve
+        the string but returns the ID into the string section.
+
+        If the type IDX is not found, -1 is returned.
+        """
         return self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
 
     def get_proto(self, idx):
@@ -7352,15 +7431,14 @@ class ClassManager:
                 proto.get_return_type_idx_value()]
 
     def get_field(self, idx):
-        field = self.__manage_item[TypeMapItem.FIELD_ID_ITEM].get(idx)
+        field = self.get_field_ref(idx)
         return [field.get_class_name(), field.get_type(), field.get_name()]
 
     def get_field_ref(self, idx):
         return self.__manage_item[TypeMapItem.FIELD_ID_ITEM].get(idx)
 
     def get_method(self, idx):
-        method = self.__manage_item[TypeMapItem.METHOD_ID_ITEM].get(idx)
-        return method.get_list()
+        return self.get_method_ref(idx).get_list()
 
     def get_method_ref(self, idx):
         return self.__manage_item[TypeMapItem.METHOD_ID_ITEM].get(idx)
@@ -7659,6 +7737,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.codes = self.map_list.get_item_type(TypeMapItem.CODE_ITEM)
             self.strings = self.map_list.get_item_type(TypeMapItem.STRING_DATA_ITEM)
             self.debug = self.map_list.get_item_type(TypeMapItem.DEBUG_INFO_ITEM)
+            # FIXME: why not use __header here?
             self.header = self.map_list.get_item_type(TypeMapItem.HEADER_ITEM)
 
         self._flush()
@@ -7677,6 +7756,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         self.__cache_all_methods = None
         self.__cache_all_fields = None
 
+    @property
+    def version(self):
+        """
+        Returns the version number of the DEX Format
+        """
+        return self.__header.dex_version
 
     def get_vmanalysis(self):
         """
@@ -7877,14 +7962,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
           :rtype: string
         """
-        import zlib
-        import hashlib
 
         signature = hashlib.sha1(buff[32:]).digest()
 
         buff = buff[:12] + signature + buff[32:]
         checksum = zlib.adler32(buff[12:])
-        buff = buff[:8] + pack("=i", checksum) + buff[12:]
+        buff = buff[:8] + pack("=I", checksum) + buff[12:]
 
         log.debug("NEW SIGNATURE %s" % repr(signature))
         log.debug("NEW CHECKSUM %x" % checksum)

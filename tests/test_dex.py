@@ -7,8 +7,7 @@ from androguard.core.bytecodes import dvm
 
 class DexTest(unittest.TestCase):
     def testDex(self):
-        with open("examples/android/TestsAndroguard/bin/classes.dex",
-                  "rb") as fd:
+        with open("examples/android/TestsAndroguard/bin/classes.dex", "rb") as fd:
             d = dvm.DalvikVMFormat(fd.read())
             self.assertTrue(d)
 
@@ -47,6 +46,46 @@ class DexTest(unittest.TestCase):
 
     def testMultiDex(self):
         pass
+
+
+    def testDexVersion(self):
+        dexfiles = [
+            'examples/dalvik/test/bin/classes_output.dex',
+            'examples/dalvik/test/bin/classes.dex',
+            'examples/obfu/classes_tc_diff_dasho.dex',
+            'examples/obfu/classes_tc_dasho.dex',
+            'examples/obfu/classes_tc_mark1.dex',
+            'examples/obfu/classes_tc.dex',
+            'examples/obfu/classes_tc_diff.dex',
+            'examples/obfu/classes_tc_proguard.dex',
+            'examples/android/TCDiff/bin/classes.dex',
+            'examples/android/TestsAndroguard/bin/classes.dex',
+            'examples/android/TC/bin/classes.dex',
+            'examples/tests/Test.dex',
+            'examples/tests/ExceptionHandling.dex',
+            'examples/tests/InterfaceCls.dex',
+            'examples/tests/FillArrays.dex',
+            'examples/tests/StringTests.dex',
+            'examples/tests/AnalysisTest.dex',
+            'examples/tests/Switch.dex',
+                ]
+
+        for dexf in dexfiles:
+            print(dexf)
+            with open(dexf, 'rb') as fp:
+                d = dvm.DalvikVMFormat(fp.read())
+
+                self.assertEqual(d.version, 35)
+
+                self.assertGreater(d.header.string_ids_size, 0)
+                self.assertGreater(d.header.type_ids_size, 0)
+                self.assertGreater(d.header.proto_ids_size, 0)
+                self.assertGreater(d.header.method_ids_size, 0)
+                self.assertGreater(d.header.class_defs_size, 0)
+                self.assertGreater(d.header.data_size, 0)
+
+                for i in range(d.header.string_ids_size):
+                    self.assertIsInstance(d.strings[i], dvm.StringDataItem)
 
 
 class InstructionTest(unittest.TestCase):

@@ -781,6 +781,9 @@ class BuffHandle:
         """
         Read all bytes from the start of `off` until the end of the buffer
 
+        This method can be used to determine a checksum of a buffer from a given
+        point on.
+
         :param int off: starting offset
         :rtype: bytearray
         """
