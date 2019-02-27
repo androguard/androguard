@@ -6916,17 +6916,17 @@ class DalvikCode:
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        buff += pack("=H", self.registers_size) + \
-                pack("=H", self.ins_size) + \
-                pack("=H", self.outs_size) + \
-                pack("=H", self.tries_size) + \
-                pack("=I", self.debug_info_off) + \
-                pack("=I", self.insns_size) + \
+        buff += pack("<H", self.registers_size) + \
+                pack("<H", self.ins_size) + \
+                pack("<H", self.outs_size) + \
+                pack("<H", self.tries_size) + \
+                pack("<I", self.debug_info_off) + \
+                pack("<I", self.insns_size) + \
                 code_raw
 
         if self.tries_size > 0:
             if (self.insns_size % 2 == 1):
-                buff += pack("=H", self.padding)
+                buff += pack("<H", self.padding)
 
             for i in self.tries:
                 buff += i.get_raw()
@@ -6954,12 +6954,12 @@ class DalvikCode:
 
     def get_size(self):
         length = 0
-        length += len(pack("=H", self.registers_size) + \
-                      pack("=H", self.ins_size) + \
-                      pack("=H", self.outs_size) + \
-                      pack("=H", self.tries_size) + \
-                      pack("=I", self.debug_info_off) + \
-                      pack("=I", self.insns_size))
+        length += len(pack("<H", self.registers_size) + \
+                      pack("<H", self.ins_size) + \
+                      pack("<H", self.outs_size) + \
+                      pack("<H", self.tries_size) + \
+                      pack("<I", self.debug_info_off) + \
+                      pack("<I", self.insns_size))
         length += self.code.get_length()
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
@@ -7053,10 +7053,10 @@ class MapItem:
 
         self.off = buff.get_idx()
 
-        self.type = TypeMapItem(unpack("=H", buff.read(2))[0])
-        self.unused = unpack("=H", buff.read(2))[0]
-        self.size = unpack("=I", buff.read(4))[0]
-        self.offset = unpack("=I", buff.read(4))[0]
+        self.type = TypeMapItem(unpack("<H", buff.read(2))[0])
+        self.unused = unpack("<H", buff.read(2))[0]
+        self.size = unpack("<I", buff.read(4))[0]
+        self.offset = unpack("<I", buff.read(4))[0]
 
         self.item = None
 
@@ -7072,6 +7072,10 @@ class MapItem:
         return self.type
 
     def get_size(self):
+        """
+        Returns the number of items found at the location indicated by
+        :meth:`get_offset`.
+        """
         return self.size
 
     def parse(self):
@@ -7153,7 +7157,7 @@ class MapItem:
                 self.item.reload()
 
     def show(self):
-        bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
+        bytecode._Print("\tMAP_TYPE_ITEM {}".format(self.type.name))
 
         if self.item is not None:
             if isinstance(self.item, list):
@@ -7163,21 +7167,29 @@ class MapItem:
                 self.item.show()
 
     def get_obj(self):
+        """
+        Return the associated item itself.
+        Might return None, if :meth:`parse` was not called yet.
+
+        This method is the same as :meth:`get_item`.
+        """
         return self.item
 
+    # alias
+    get_item = get_obj
+
     def get_raw(self):
+        # FIXME why is it necessary to get the offset here agin? We have this
+        # stored?!
         if isinstance(self.item, list):
             self.offset = self.item[0].get_off()
         else:
             self.offset = self.item.get_off()
 
-        return pack("=HHII", self.type, self.unused, self.size, self.offset)
+        return pack("<HHII", self.type, self.unused, self.size, self.offset)
 
     def get_length(self):
-        return calcsize("=HHII")
-
-    def get_item(self):
-        return self.item
+        return calcsize("<HHII")
 
     def set_item(self, item):
         self.item = item
@@ -7725,6 +7737,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.codes = self.map_list.get_item_type(TypeMapItem.CODE_ITEM)
             self.strings = self.map_list.get_item_type(TypeMapItem.STRING_DATA_ITEM)
             self.debug = self.map_list.get_item_type(TypeMapItem.DEBUG_INFO_ITEM)
+            # FIXME: why not use __header here?
             self.header = self.map_list.get_item_type(TypeMapItem.HEADER_ITEM)
 
         self._flush()
@@ -7743,6 +7756,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         self.__cache_all_methods = None
         self.__cache_all_fields = None
 
+    @property
+    def version(self):
+        """
+        Returns the version number of the DEX Format
+        """
+        return self.__header.dex_version
 
     def get_vmanalysis(self):
         """
