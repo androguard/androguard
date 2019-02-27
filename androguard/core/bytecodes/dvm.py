@@ -3,7 +3,7 @@ from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
 from androguard.core.bytecodes import mutf8
-from androguard.core.bytecodes.dvm_types import TypeMapItem, TYPE_MAP_ITEM_STRINGS, ACCESS_FLAGS, TYPE_DESCRIPTOR
+from androguard.core.bytecodes.dvm_types import TypeMapItem, ACCESS_FLAGS, TYPE_DESCRIPTOR
 
 import sys
 import re
@@ -7018,7 +7018,7 @@ class MapItem:
         return self.size
 
     def parse(self):
-        log.debug("Starting parsing map_item '%s'" % TYPE_MAP_ITEM_STRINGS[self.type])
+        log.debug("Starting parsing map_item '%s'" % TypeMapItem(self.type).name)
         started_at = time.time()
 
         buff = self.buff
@@ -7089,7 +7089,7 @@ class MapItem:
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM_STRINGS[self.type], minutes, seconds))
+        log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(self.type).name, minutes, seconds))
 
     def reload(self):
         if self.item is not None:
@@ -7100,7 +7100,7 @@ class MapItem:
                 self.item.reload()
 
     def show(self):
-        bytecode._Print("\tMAP_TYPE_ITEM", TYPE_MAP_ITEM_STRINGS[self.type])
+        bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
 
         if self.item is not None:
             if isinstance(self.item, list):
@@ -7549,11 +7549,11 @@ class MapList:
         log.debug("Reloading all map_items to fix references")
         started_at = time.time()
         for i in self.map_item:
-            log.debug("Reloading '%s'" % TYPE_MAP_ITEM_STRINGS[i.get_type()])
+            log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
             i.reload()
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
-        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TYPE_MAP_ITEM_STRINGS[i.get_type()], minutes, seconds))
+        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
 
     def reload(self):
         pass
