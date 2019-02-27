@@ -614,11 +614,9 @@ class AnnotationSetItem:
     def __init__(self, buff, cm):
         self.CM = cm
         self.offset = buff.get_idx()
-        self.annotation_off_item = []
 
         self.size = unpack("=I", buff.read(4))[0]
-        for i in range(0, self.size):
-            self.annotation_off_item.append(AnnotationOffItem(buff, cm))
+        self.annotation_off_item = [AnnotationOffItem(buff, cm) for i in range(0, self.size)]
 
     def get_annotation_off_item(self):
         """
@@ -942,17 +940,11 @@ class AnnotationsDirectoryItem:
         self.annotated_methods_size = unpack("=I", buff.read(4))[0]
         self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
 
-        self.field_annotations = []
-        for i in range(0, self.annotated_fields_size):
-            self.field_annotations.append(FieldAnnotation(buff, cm))
+        self.field_annotations = [FieldAnnotation(buff, cm) for i in range(0, self.annotated_fields_size)]
 
-        self.method_annotations = []
-        for i in range(0, self.annotated_methods_size):
-            self.method_annotations.append(MethodAnnotation(buff, cm))
+        self.method_annotations = [MethodAnnotation(buff, cm) for i in range(0, self.annotated_methods_size)]
 
-        self.parameter_annotations = []
-        for i in range(0, self.annotated_parameters_size):
-            self.parameter_annotations.append(ParameterAnnotation(buff, cm))
+        self.parameter_annotations = [ParameterAnnotation(buff, cm) for i in range(0, self.annotated_parameters_size)]
 
     def get_class_annotations_off(self):
         """
@@ -1125,9 +1117,7 @@ class TypeList:
         self.offset = buff.get_idx()
         self.size = unpack("=I", buff.read(4))[0]
 
-        self.list = []
-        for i in range(0, self.size):
-            self.list.append(TypeItem(buff, cm))
+        self.list = [TypeItem(buff, cm) for i in range(0, self.size)]
 
         self.pad = b""
         if self.size % 2 != 0:
@@ -2006,9 +1996,7 @@ class TypeHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.type = []
-        for i in range(0, size):
-            self.type.append(TypeIdItem(buff, cm))
+        self.type = [TypeIdItem(buff, cm) for i in range(0,size)]
 
     def get_type(self):
         """
@@ -2176,10 +2164,7 @@ class ProtoHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.proto = []
-
-        for i in range(0, size):
-            self.proto.append(ProtoIdItem(buff, cm))
+        self.proto = [ProtoIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2348,9 +2333,7 @@ class FieldHIdItem:
     def __init__(self, size, buff, cm):
         self.offset = buff.get_idx()
 
-        self.elem = []
-        for i in range(0, size):
-            self.elem.append(FieldIdItem(buff, cm))
+        self.elem = [FieldIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2536,9 +2519,7 @@ class MethodHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.methods = []
-        for i in range(0, size):
-            self.methods.append(MethodIdItem(buff, cm))
+        self.methods = [MethodIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -7048,52 +7029,52 @@ class MapItem:
         buff.set_idx(self.offset)
         cm = self.CM
 
-        if TypeMapItem.STRING_ID_ITEM == self.type: #
+        if TypeMapItem.STRING_ID_ITEM == self.type:
             self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
 
-        elif TypeMapItem.TYPE_ID_ITEM == self.type: #
+        elif TypeMapItem.TYPE_ID_ITEM == self.type:
             self.item = TypeHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.PROTO_ID_ITEM == self.type: #
+        elif TypeMapItem.PROTO_ID_ITEM == self.type:
             self.item = ProtoHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.FIELD_ID_ITEM == self.type: #
+        elif TypeMapItem.FIELD_ID_ITEM == self.type:
             self.item = FieldHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.METHOD_ID_ITEM == self.type: #
+        elif TypeMapItem.METHOD_ID_ITEM == self.type:
             self.item = MethodHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.CLASS_DEF_ITEM == self.type: #
+        elif TypeMapItem.CLASS_DEF_ITEM == self.type:
             self.item = ClassHDefItem(self.size, buff, cm)
 
-        elif TypeMapItem.HEADER_ITEM == self.type: #
+        elif TypeMapItem.HEADER_ITEM == self.type:
             self.item = HeaderItem(self.size, buff, cm)
 
-        elif TypeMapItem.ANNOTATION_ITEM == self.type: #
+        elif TypeMapItem.ANNOTATION_ITEM == self.type:
             self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATION_SET_ITEM == self.type: #
+        elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
             self.item = [AnnotationSetItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type: #
+        elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
             self.item = [AnnotationsDirectoryItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type: #
+        elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
             self.item = [AnnotationSetRefList(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.TYPE_LIST == self.type: #
+        elif TypeMapItem.TYPE_LIST == self.type:
             self.item = [TypeList(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.STRING_DATA_ITEM == self.type: #
+        elif TypeMapItem.STRING_DATA_ITEM == self.type:
             self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.DEBUG_INFO_ITEM == self.type: #
+        elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type: #
