@@ -7547,13 +7547,14 @@ class MapList:
             self.CM.add_type_item(mi.get_type(), mi, c_item)
 
         log.debug("Reloading all map_items to fix references")
-        started_at = time.time()
         for i in self.map_item:
+            started_at = time.time()
             log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
             i.reload()
-        diff = time.time() - started_at
-        minutes, seconds = diff // 60, diff % 60
-        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
+            diff = time.time() - started_at
+            minutes, seconds = diff // 60, diff % 60
+            log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
+
 
     def reload(self):
         pass
