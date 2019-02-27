@@ -1357,14 +1357,15 @@ class DebugInfoItemEmpty:
         return self.offset
 
     def reload(self):
-        offset = self.offset
+        pass
+        # offset = self.offset
 
-        n = self.CM.get_next_offset_item(offset)
+        # n = self.CM.get_next_offset_item(offset)
 
-        s_idx = self.__buff.get_idx()
-        self.__buff.set_idx(offset)
-        self.__raw = self.__buff.read(n - offset)
-        self.__buff.set_idx(s_idx)
+        # s_idx = self.__buff.get_idx()
+        # self.__buff.set_idx(offset)
+        # self.__raw = self.__buff.read(n - offset)
+        # self.__buff.set_idx(s_idx)
 
     def show(self):
         pass
@@ -1954,7 +1955,7 @@ class TypeIdItem:
         self.offset = buff.get_idx()
 
         self.descriptor_idx = unpack("=I", buff.read(4))[0]
-        self.descriptor_idx_value = None
+        self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
 
     def get_descriptor_idx(self):
         """
@@ -1973,7 +1974,7 @@ class TypeIdItem:
         return self.descriptor_idx_value
 
     def reload(self):
-        self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
+        pass
 
     def show(self):
         bytecode._PrintSubBanner("Type Id Item")
@@ -2030,8 +2031,9 @@ class TypeHIdItem:
         return self.offset
 
     def reload(self):
-        for i in self.type:
-            i.reload()
+        pass
+        # for i in self.type:
+        #     i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Type List Item")
@@ -2069,13 +2071,14 @@ class ProtoIdItem:
         self.return_type_idx = unpack("=I", buff.read(4))[0]
         self.parameters_off = unpack("=I", buff.read(4))[0]
 
-        self.shorty_idx_value = None
-        self.return_type_idx_value = None
+        self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
+        self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
         self.parameters_off_value = None
 
     def reload(self):
-        self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
-        self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
+        pass
+        # self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
+        # self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
 
     def get_shorty_idx(self):
         """
@@ -2191,8 +2194,9 @@ class ProtoHIdItem:
             return ProtoIdItemInvalid()
 
     def reload(self):
-        for i in self.proto:
-            i.reload()
+        pass
+        # for i in self.proto:
+        #     i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Proto List Item")
@@ -2230,14 +2234,15 @@ class FieldIdItem:
         self.type_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self.class_idx_value = None
-        self.type_idx_value = None
-        self.name_idx_value = None
-
-    def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.type_idx_value = self.CM.get_type(self.type_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
+
+    def reload(self):
+        pass
+        # self.class_idx_value = self.CM.get_type(self.class_idx)
+        # self.type_idx_value = self.CM.get_type(self.type_idx)
+        # self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2363,8 +2368,9 @@ class FieldHIdItem:
             return FieldIdItemInvalid()
 
     def reload(self):
-        for i in self.elem:
-            i.reload()
+        pass
+        # for i in self.elem:
+        #     i.reload()
 
     def show(self):
         nb = 0
@@ -2404,14 +2410,15 @@ class MethodIdItem:
         self.proto_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self.class_idx_value = None
-        self.proto_idx_value = None
-        self.name_idx_value = None
-
-    def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.proto_idx_value = self.CM.get_proto(self.proto_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
+
+    def reload(self):
+        pass
+        # self.class_idx_value = self.CM.get_type(self.class_idx)
+        # self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+        # self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2546,8 +2553,9 @@ class MethodHIdItem:
             return MethodIdItemInvalid()
 
     def reload(self):
-        for i in self.methods:
-            i.reload()
+        pass
+        # for i in self.methods:
+        #     i.reload()
 
     def show(self):
         print("METHOD_ID_ITEM")
@@ -3456,28 +3464,39 @@ class ClassDefItem:
         self.class_data_off = unpack("=I", buff.read(4))[0]
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
-        self.interfaces = []
-        self.class_data_item = None
-        self.static_values = None
-
-        self.name = None
-        self.sname = None
-        self.access_flags_string = None
-
-    def reload(self):
         self.name = self.CM.get_type(self.class_idx)
         self.sname = self.CM.get_type(self.superclass_idx)
         self.interfaces = self.CM.get_type_list(self.interfaces_off)
 
+        self.class_data_item = None
+        self.static_values = None
+
         if self.class_data_off != 0:
             self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
-            self.class_data_item.reload()
+            # self.class_data_item.reload()
 
         if self.static_values_off != 0:
             self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
 
             if self.class_data_item:
                 self.class_data_item.set_static_fields(self.static_values.get_value())
+        self.access_flags_string = None
+
+    def reload(self):
+        pass
+        # self.name = self.CM.get_type(self.class_idx)
+        # self.sname = self.CM.get_type(self.superclass_idx)
+        # self.interfaces = self.CM.get_type_list(self.interfaces_off)
+
+        # if self.class_data_off != 0:
+        #     self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
+        #     self.class_data_item.reload()
+
+        # if self.static_values_off != 0:
+        #     self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
+
+        #     if self.class_data_item:
+        #         self.class_data_item.set_static_fields(self.static_values.get_value())
 
     def __str__(self):
         return "{}->{}".format(self.get_superclassname(), self.get_name())
@@ -3739,8 +3758,9 @@ class ClassHDefItem:
         return [x.get_name() for x in self.class_def]
 
     def reload(self):
-        for i in self.class_def:
-            i.reload()
+        pass
+        # for i in self.class_def:
+        #     i.reload()
 
     def show(self):
         for i in self.class_def:
@@ -6544,7 +6564,8 @@ class DCode:
             yield i
 
     def reload(self):
-        self.cached_instructions = None
+        pass
+        # self.cached_instructions = None
 
     def add_inote(self, msg, idx, off=None):
         """
@@ -6823,7 +6844,8 @@ class DalvikCode:
         self.code.set_idx(idx)
 
     def reload(self):
-        self.code.reload()
+        pass
+        # self.code.reload()
 
     def get_length(self):
         return self.insns_size
@@ -6957,8 +6979,9 @@ class CodeItem:
             return None
 
     def reload(self):
-        for i in self.code:
-            i.reload()
+        pass
+        # for i in self.code:
+        #     i.reload()
 
     def show(self):
         # FIXME workaround for showing the MAP_ITEMS
@@ -7025,59 +7048,59 @@ class MapItem:
         buff.set_idx(self.offset)
         cm = self.CM
 
-        if TypeMapItem.STRING_ID_ITEM == self.type:
+        if TypeMapItem.STRING_ID_ITEM == self.type: #
             self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
 
-        elif TypeMapItem.TYPE_ID_ITEM == self.type:
+        elif TypeMapItem.TYPE_ID_ITEM == self.type: #
             self.item = TypeHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.PROTO_ID_ITEM == self.type:
+        elif TypeMapItem.PROTO_ID_ITEM == self.type: #
             self.item = ProtoHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.FIELD_ID_ITEM == self.type:
+        elif TypeMapItem.FIELD_ID_ITEM == self.type: #
             self.item = FieldHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.METHOD_ID_ITEM == self.type:
+        elif TypeMapItem.METHOD_ID_ITEM == self.type: #
             self.item = MethodHIdItem(self.size, buff, cm)
 
-        elif TypeMapItem.CLASS_DEF_ITEM == self.type:
+        elif TypeMapItem.CLASS_DEF_ITEM == self.type: #
             self.item = ClassHDefItem(self.size, buff, cm)
 
-        elif TypeMapItem.HEADER_ITEM == self.type:
+        elif TypeMapItem.HEADER_ITEM == self.type: #
             self.item = HeaderItem(self.size, buff, cm)
 
-        elif TypeMapItem.ANNOTATION_ITEM == self.type:
+        elif TypeMapItem.ANNOTATION_ITEM == self.type: #
             self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
+        elif TypeMapItem.ANNOTATION_SET_ITEM == self.type: #
             self.item = [AnnotationSetItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
+        elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type: #
             self.item = [AnnotationsDirectoryItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
+        elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type: #
             self.item = [AnnotationSetRefList(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.TYPE_LIST == self.type:
+        elif TypeMapItem.TYPE_LIST == self.type: #
             self.item = [TypeList(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.STRING_DATA_ITEM == self.type:
+        elif TypeMapItem.STRING_DATA_ITEM == self.type: #
             self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
 
-        elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
+        elif TypeMapItem.DEBUG_INFO_ITEM == self.type: #
             self.item = DebugInfoItemEmpty(buff, cm)
 
-        elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
+        elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type: #
             self.item = [EncodedArrayItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.CLASS_DATA_ITEM == self.type:
+        elif TypeMapItem.CLASS_DATA_ITEM == self.type: #
             self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
@@ -7092,12 +7115,13 @@ class MapItem:
         log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(self.type).name, minutes, seconds))
 
     def reload(self):
-        if self.item is not None:
-            if isinstance(self.item, list):
-                for i in self.item:
-                    i.reload()
-            else:
-                self.item.reload()
+        pass
+        # if self.item is not None:
+        #     if isinstance(self.item, list):
+        #         for i in self.item:
+        #             i.reload()
+        #     else:
+        #         self.item.reload()
 
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
@@ -7508,8 +7532,9 @@ class MapList:
 
         # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
         # We want to parse this first, as other map items depend on it.
+        load_order = TypeMapItem.determine_load_order()
         ordered = sorted(self.map_item,
-                         key=lambda mi: TypeMapItem.STRING_DATA_ITEM != mi.get_type())
+                        key=lambda mi: load_order[TypeMapItem(mi.get_type()).value])
         # TODO: There could be some speedup if the parsing needs to be done only
         # once.
         # The idea is to parse all items in the correct order, which is possible
@@ -7546,14 +7571,14 @@ class MapList:
 
             self.CM.add_type_item(mi.get_type(), mi, c_item)
 
-        log.debug("Reloading all map_items to fix references")
-        for i in self.map_item:
-            started_at = time.time()
-            log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
-            i.reload()
-            diff = time.time() - started_at
-            minutes, seconds = diff // 60, diff % 60
-            log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
+        # log.debug("Reloading all map_items to fix references")
+        # for i in self.map_item:
+        #     started_at = time.time()
+        #     log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
+        #     i.reload()
+        #     diff = time.time() - started_at
+        #     minutes, seconds = diff // 60, diff % 60
+        #     log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
 
 
     def reload(self):
