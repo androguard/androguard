@@ -1347,15 +1347,14 @@ class DebugInfoItemEmpty:
         return self.offset
 
     def reload(self):
-        pass
-        # offset = self.offset
+        offset = self.offset
 
-        # n = self.CM.get_next_offset_item(offset)
+        n = self.CM.get_next_offset_item(offset)
 
-        # s_idx = self.__buff.get_idx()
-        # self.__buff.set_idx(offset)
-        # self.__raw = self.__buff.read(n - offset)
-        # self.__buff.set_idx(s_idx)
+        s_idx = self.__buff.get_idx()
+        self.__buff.set_idx(offset)
+        self.__raw = self.__buff.read(n - offset)
+        self.__buff.set_idx(s_idx)
 
     def show(self):
         pass
@@ -2020,8 +2019,6 @@ class TypeHIdItem:
 
     def reload(self):
         pass
-        # for i in self.type:
-        #     i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Type List Item")
@@ -2065,8 +2062,6 @@ class ProtoIdItem:
 
     def reload(self):
         pass
-        # self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
-        # self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
 
     def get_shorty_idx(self):
         """
@@ -2180,8 +2175,6 @@ class ProtoHIdItem:
 
     def reload(self):
         pass
-        # for i in self.proto:
-        #     i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Proto List Item")
@@ -2225,9 +2218,6 @@ class FieldIdItem:
 
     def reload(self):
         pass
-        # self.class_idx_value = self.CM.get_type(self.class_idx)
-        # self.type_idx_value = self.CM.get_type(self.type_idx)
-        # self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2352,8 +2342,6 @@ class FieldHIdItem:
 
     def reload(self):
         pass
-        # for i in self.elem:
-        #     i.reload()
 
     def show(self):
         nb = 0
@@ -2399,9 +2387,6 @@ class MethodIdItem:
 
     def reload(self):
         pass
-        # self.class_idx_value = self.CM.get_type(self.class_idx)
-        # self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-        # self.name_idx_value = self.CM.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2535,8 +2520,6 @@ class MethodHIdItem:
 
     def reload(self):
         pass
-        # for i in self.methods:
-        #     i.reload()
 
     def show(self):
         print("METHOD_ID_ITEM")
@@ -3465,19 +3448,6 @@ class ClassDefItem:
 
     def reload(self):
         pass
-        # self.name = self.CM.get_type(self.class_idx)
-        # self.sname = self.CM.get_type(self.superclass_idx)
-        # self.interfaces = self.CM.get_type_list(self.interfaces_off)
-
-        # if self.class_data_off != 0:
-        #     self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
-        #     self.class_data_item.reload()
-
-        # if self.static_values_off != 0:
-        #     self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
-
-        #     if self.class_data_item:
-        #         self.class_data_item.set_static_fields(self.static_values.get_value())
 
     def __str__(self):
         return "{}->{}".format(self.get_superclassname(), self.get_name())
@@ -3740,8 +3710,6 @@ class ClassHDefItem:
 
     def reload(self):
         pass
-        # for i in self.class_def:
-        #     i.reload()
 
     def show(self):
         for i in self.class_def:
@@ -6546,7 +6514,6 @@ class DCode:
 
     def reload(self):
         pass
-        # self.cached_instructions = None
 
     def add_inote(self, msg, idx, off=None):
         """
@@ -6826,7 +6793,6 @@ class DalvikCode:
 
     def reload(self):
         pass
-        # self.code.reload()
 
     def get_length(self):
         return self.insns_size
@@ -6961,8 +6927,6 @@ class CodeItem:
 
     def reload(self):
         pass
-        # for i in self.code:
-        #     i.reload()
 
     def show(self):
         # FIXME workaround for showing the MAP_ITEMS
@@ -7097,12 +7061,6 @@ class MapItem:
 
     def reload(self):
         pass
-        # if self.item is not None:
-        #     if isinstance(self.item, list):
-        #         for i in self.item:
-        #             i.reload()
-        #     else:
-        #         self.item.reload()
 
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
@@ -7511,36 +7469,9 @@ class MapList:
 
             buff.set_idx(idx + mi.get_length())
 
-        # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
-        # We want to parse this first, as other map items depend on it.
         load_order = TypeMapItem.determine_load_order()
         ordered = sorted(self.map_item,
                         key=lambda mi: load_order[TypeMapItem(mi.get_type()).value])
-        # TODO: There could be some speedup if the parsing needs to be done only
-        # once.
-        # The idea is to parse all items in the correct order, which is possible
-        # as all items construct an acyclic graph of dependencies.
-        #
-        # We know, that we do not need to parse header_item and map_list (again)
-        # Then the following order would probably work:
-        # * string_data_item
-        # * string_id_item
-        # * type_id_item
-        # * type_list
-        # * field_id_item
-        # * proto_id_item
-        # * method_id_item
-        # * debug_info_item
-        # * code_item
-        # * method_handle_item
-        # * call_site_id_item
-        # * class_data_item
-        # * encoded_array_item
-        # * annotation_item
-        # * annotation_set_item
-        # * annotation_set_ref_item
-        # * annotations_directory_item
-        # * class_def_item
 
         for mi in ordered:
             mi.parse()
@@ -7551,16 +7482,6 @@ class MapList:
                 c_item = mi.get_item()
 
             self.CM.add_type_item(mi.get_type(), mi, c_item)
-
-        # log.debug("Reloading all map_items to fix references")
-        # for i in self.map_item:
-        #     started_at = time.time()
-        #     log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
-        #     i.reload()
-        #     diff = time.time() - started_at
-        #     minutes, seconds = diff // 60, diff % 60
-        #     log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
-
 
     def reload(self):
         pass
