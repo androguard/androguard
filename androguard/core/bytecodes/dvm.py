@@ -7041,11 +7041,11 @@ class MapItem:
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
-        elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type: #
+        elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
             self.item = [EncodedArrayItem(buff, cm)
                          for i in range(0, self.size)]
 
-        elif TypeMapItem.CLASS_DATA_ITEM == self.type: #
+        elif TypeMapItem.CLASS_DATA_ITEM == self.type:
             self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
