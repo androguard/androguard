@@ -441,7 +441,11 @@ class HeaderItem:
         try:
             self.dex_version = int(magic_bytes[4:7].decode('ascii'), 10)
         except (UnicodeDecodeError, ValueError):
-            raise ValueError("This is not a DEX file! Wrong DEX version: {}".format(repr(magic_bytes)))
+            log.warning("Wrong DEX version: {}, trying to parse anyways".format(repr(magic_bytes)))
+            self.dex_version = 35  # assume a common version...
+
+        if self.dex_version < 35:
+            self.warning("Either a very old DEX file version or trying to break the parser. Dex version '{}' found.".format(self.dex_version))
 
         self.checksum = unpack("<I", buff.read(4))[0]
 
