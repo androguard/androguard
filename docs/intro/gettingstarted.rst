@@ -225,7 +225,7 @@ XREFs are generated for four things:
 * Fields
 * Strings
 
-XREFs work in two directions: xref_from and xref_to.
+XREFs work in two directions: `xref_from` and `xref_to`.
 `To` means, that the current object is calling another object.
 `From` means, that the current object is called by another object.
 
@@ -239,3 +239,5 @@ therefore it will be contained in the :code:`xref_to` of
 
 The Field :code:`afield` will be contained in the :code:`xref_to` of
 :code:`Barfoo.othermethod` as well as the call to :code:`Foobar.somethod`.
+
+More on XREFs can be found in xrefs_.

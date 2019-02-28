@@ -16,10 +16,6 @@
 # limitations under the License.
 
 
-from builtins import object
-from future.utils import with_metaclass
-
-
 class MakeProperties(type):
     def __init__(cls, name, bases, dct):
 
@@ -38,7 +34,7 @@ class MakeProperties(type):
 
             return fun
 
-        super(MakeProperties, cls).__init__(name, bases, dct)
+        super().__init__(name, bases, dct)
         attrs = []
         prefixes = ('_get_', '_set_')
         for key in list(dct.keys()):
@@ -52,13 +48,13 @@ class MakeProperties(type):
         cls._attrs = attrs
 
     def __call__(cls, *args, **kwds):
-        obj = super(MakeProperties, cls).__call__(*args, **kwds)
+        obj = super().__call__(*args, **kwds)
         for attr in cls._attrs:
             obj.__dict__[attr] = False
         return obj
 
 
-class LoopType(with_metaclass(MakeProperties, object)):
+class LoopType(metaclass=MakeProperties):
     _set_is_pretest = _set_is_posttest = _set_is_endless = None
     _get_is_pretest = _get_is_posttest = _get_is_endless = None
 
@@ -69,7 +65,7 @@ class LoopType(with_metaclass(MakeProperties, object)):
         return res
 
 
-class NodeType(with_metaclass(MakeProperties, object)):
+class NodeType(metaclass=MakeProperties):
     _set_is_cond = _set_is_switch = _set_is_stmt = None
     _get_is_cond = _get_is_switch = _get_is_stmt = None
     _set_is_return = _set_is_throw = None
@@ -82,7 +78,7 @@ class NodeType(with_metaclass(MakeProperties, object)):
         return res
 
 
-class Node(object):
+class Node:
     def __init__(self, name):
         self.name = name
         self.num = 0
@@ -110,7 +106,7 @@ class Node(object):
         self.latch = n_map.get(self.latch, self.latch)
         for follow_type, value in self.follow.items():
             self.follow[follow_type] = n_map.get(value, value)
-        self.loop_nodes = list(set(n_map.get(n, n) for n in self.loop_nodes))
+        self.loop_nodes = list({n_map.get(n, n) for n in self.loop_nodes})
 
     def get_head(self):
         return self
@@ -122,10 +118,10 @@ class Node(object):
         return '%s' % self
 
 
-class Interval(object):
+class Interval:
     def __init__(self, head):
         self.name = 'Interval-%s' % head.name
-        self.content = set([head])
+        self.content = {head}
         self.end = None
         self.head = head
         self.in_catch = head.in_catch
@@ -162,4 +158,4 @@ class Interval(object):
         return len(self.content)
 
     def __repr__(self):
-        return '%s(%s)' % (self.name, self.content)
+        return '{}({})'.format(self.name, self.content)

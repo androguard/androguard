@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is part of Androguard.
 #
@@ -18,51 +18,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
 from argparse import ArgumentParser
 
-from IPython.terminal.embed import InteractiveShellEmbed
-from traitlets.config import Config
+from androguard.cli import androlyze_main
 
+# Import commonly used classes
 from androguard.core.androconf import *
 from androguard.misc import *
-from androguard.session import Session
-import os
-import logging
-# Import commonly used classes
-from androguard.core.bytecodes.apk import APK
-from androguard.core.bytecodes.dvm import DalvikVMFormat
-from androguard.core.analysis.analysis import Analysis
-
-_version_string = "Androguard version {}".format(ANDROGUARD_VERSION)
 
 
-def interact(session=False, apk=None):
-    """
-    Start an interactive shell
-    :param session:
-    :param apk:
-    :return:
-    """
-    if session:
-        CONF["SESSION"] = Session(export_ipython=True)
-
-    if apk:
-        print("Loading apk {}...".format(os.path.basename(apk)))
-        print("Please be patient, this might take a while.")
-        # TODO we can export fancy aliases for those as well...
-        a, d, dx = AnalyzeAPK(apk)
-
-    cfg = Config()
-    ipshell = InteractiveShellEmbed(config=cfg, banner1="{} started".format(_version_string))
-    init_print_colors()
-    ipshell()
-
-    # TODO: on exit, save the session if requested
-
-
-if __name__ == "__main__":
+def get_parser():
     parser = ArgumentParser(description="Open a IPython Shell and start reverse engineering")
 
     parser.add_argument("--shell", "-s", default=False, action="store_true", help="Will do nothing, this argument is just here for your convenience")
@@ -71,17 +36,10 @@ if __name__ == "__main__":
     parser.add_argument("--no-session", default=False, action="store_true", help="Do not start an Androguard session")
     parser.add_argument("--version", "-v", default=False, action="store_true", help="Print the Androguard Version and exit")
     parser.add_argument("apk", default=None, nargs="?", help="Start the shell with the given APK. a, d, dx are available then. Loading might be slower in this case!")
+    return parser
 
+
+if __name__ == "__main__":
+    parser = get_parser()
     args = parser.parse_args()
-
-    if args.version:
-        print(_version_string)
-        sys.exit()
-
-    if args.debug:
-        androconf.show_logging(logging.INFO)
-    if args.ddebug:
-        androconf.show_logging(logging.DEBUG)
-
-    # Go interactive!
-    interact(session=not args.no_session, apk=args.apk)
+    androlyze_main(args.debug, args.ddebug, args.no_session, args.apk)

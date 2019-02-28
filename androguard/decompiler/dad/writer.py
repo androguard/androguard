@@ -15,11 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import str
-from builtins import zip
-from builtins import range
-from past.builtins import basestring
-from builtins import object
 import logging
 from struct import unpack
 from androguard.decompiler.dad.util import get_type
@@ -31,7 +26,11 @@ from androguard.decompiler.dad.instruction import (
 logger = logging.getLogger('dad.writer')
 
 
-class Writer(object):
+class Writer:
+    """
+    Transforms a method into Java code.
+
+    """
     def __init__(self, graph, method):
         self.graph = graph
         self.method = method
@@ -158,7 +157,7 @@ class Writer(object):
             self.write(name)
             self.write_ext(('NAME_METHOD_PROTOTYPE', '%s' % name, self.method))
         else:
-            self.write('%s %s' % (get_type(self.method.type), self.method.name))
+            self.write('{} {}'.format(get_type(self.method.type), self.method.name))
             self.write_ext(
                 ('PROTOTYPE_TYPE', '%s' % get_type(self.method.type)))
             self.write_ext(('SPACE', ' '))
@@ -170,7 +169,7 @@ class Writer(object):
         proto = ''
         self.write_ext(('PARENTHESIS_START', '('))
         if self.method.params_type:
-            proto = ', '.join(['%s p%s' % (get_type(p_type), param) for p_type,
+            proto = ', '.join(['{} p{}'.format(get_type(p_type), param) for p_type,
                                                                         param in zip(self.method.params_type, params)])
             first = True
             for p_type, param in zip(self.method.params_type, params):
@@ -420,13 +419,13 @@ class Writer(object):
     def visit_decl(self, var):
         if not var.declared:
             var_type = var.get_type() or 'unknownType'
-            self.write('%s%s v%s' % (
+            self.write('{}{} v{}'.format(
                 self.space(), get_type(var_type), var.name),
                        data="DECLARATION")
             self.end_ins()
 
     def visit_constant(self, cst):
-        if isinstance(cst, basestring):
+        if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst,
                    data="CONSTANT_INTEGER")  # INTEGER or also others?
@@ -482,7 +481,7 @@ class Writer(object):
 
     def visit_put_static(self, cls, name, rhs):
         self.write_ind()
-        self.write('%s.%s = ' % (cls, name), data="STATIC_PUT")
+        self.write('{}.{} = '.format(cls, name), data="STATIC_PUT")
         rhs.visit(self)
         self.end_ins()
 
@@ -513,15 +512,15 @@ class Writer(object):
         base.visit(self)
         if name != '<init>':
             if isinstance(base, BaseClass):
-                call_name = "%s -> %s" % (base.cls, name)
+                call_name = "{} -> {}".format(base.cls, name)
             elif isinstance(base, InstanceExpression):
-                call_name = "%s -> %s" % (base.ftype, name)
+                call_name = "{} -> {}".format(base.ftype, name)
             elif hasattr(base, "base") and hasattr(base, "var_map"):
                 base2base = base
                 while True:
                     base2base = base2base.var_map[base2base.base]
                     if isinstance(base2base, NewInstance):
-                        call_name = "%s -> %s" % (base2base.type, name)
+                        call_name = "{} -> {}".format(base2base.type, name)
                         break
                     elif (hasattr(base2base, "base") and
                               hasattr(base2base, "var_map")):
@@ -532,7 +531,7 @@ class Writer(object):
             elif isinstance(base, ThisParam):
                 call_name = "this -> %s" % name
             elif isinstance(base, Variable):
-                call_name = "%s -> %s" % (base.type, name)
+                call_name = "{} -> {}".format(base.type, name)
             else:
                 call_name = "UNKNOWN_TODO2"
             self.write('.%s' % name)
@@ -622,7 +621,7 @@ class Writer(object):
     def visit_move_exception(self, var, data=None):
         var.declared = True
         var_type = var.get_type() or 'unknownType'
-        self.write('%s v%s' % (get_type(var_type), var.name))
+        self.write('{} v{}'.format(get_type(var_type), var.name))
         self.write_ext(('EXCEPTION_TYPE', '%s' % get_type(var_type), data.type))
         self.write_ext(('SPACE', ' '))
         self.write_ext(
@@ -691,7 +690,7 @@ class Writer(object):
         self.write_ext(('NAME_CLASS_INSTANCE', '%s' % name, data))
 
     def visit_get_static(self, cls, name):
-        self.write('%s.%s' % (cls, name), data="GET_STATIC")
+        self.write('{}.{}'.format(cls, name), data="GET_STATIC")
 
 
 def string(s):

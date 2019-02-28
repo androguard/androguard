@@ -1,8 +1,8 @@
-from __future__ import print_function
-from builtins import object
+import logging
+log = logging.getLogger("androguard.gui")
 
 
-class Signature(object):
+class Signature:
     def __init__(self, cls, method=None, descriptor=None):
         self.cls = cls
         self.class_components = self.cls.name.strip('L').strip(';').split('/')
@@ -34,7 +34,7 @@ def classmethod2func(class_, method_):
        so we can access d.CLASS_Lcom_example_sieve_AddEntryActivity.METHOD_onCreate.XREFfrom
     """
 
-    return "%s.%s" % (class2func(class_), method2func(method_))
+    return "{}.{}".format(class2func(class_), method2func(method_))
 
 
 def classmethod2display(class_, method_, descriptor_):
@@ -43,7 +43,7 @@ def classmethod2display(class_, method_, descriptor_):
     "Lcom/mwr/example/sieve/AddEntryActivity; -> onCreate"
     """
 
-    return "%s -> %s ( %s )" % (class_, method_, descriptor_)
+    return "{} -> {} ( {} )".format(class_, method_, descriptor_)
 
 
 def display2classmethod(display):
@@ -70,7 +70,7 @@ def classdot2class(path):
         so we can change name of a class by d.CLASS_Landroid_support_v4_app_ActivityCompat.set_name(new_name)
     """
     if path[0] == 'L' and path[-1] == ';':
-        print("WARNING: %s already a Lclass; name" % path)
+        log.debug("WARNING: %s already a Lclass; name" % path)
         return path
 
     new_name = 'L' + path.replace('.', '/') + ';'

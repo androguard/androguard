@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is part of Androguard.
 #
@@ -18,33 +18,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import sys
-from lxml import etree
 from argparse import ArgumentParser
 
 from androguard.core import androconf
-from androguard.core.bytecodes import apk
-from androguard.util import read
-
-
-def main(inp, outp=None):
-    ret_type = androconf.is_android(inp)
-    if ret_type == "APK":
-        a = apk.APK(inp)
-        axml = a.get_android_manifest_xml()
-    elif ".xml" in inp:
-        axml = apk.AXMLPrinter(read(inp)).get_xml_obj()
-    else:
-        print("Unknown file type")
-        return
-
-    buff = etree.tostring(axml, pretty_print=True, encoding="utf-8")
-    if outp:
-        with open(outp, "wb") as fd:
-            fd.write(buff)
-    else:
-        print(buff.decode("UTF-8"))
+from androguard.cli import androaxml_main as main
 
 
 if __name__ == "__main__":

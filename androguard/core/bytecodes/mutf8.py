@@ -1,27 +1,3 @@
-import builtins
-from builtins import str
-import struct
-
-
-def chr(val):
-    """
-    Patched Version of builtins.chr, to work with narrow python builds
-    In those versions, the function unichr does not work with inputs >0x10000
-
-    This seems to be a problem usually on older windows builds.
-
-    :param val: integer value of character
-    :return: character
-    """
-    try:
-        return builtins.chr(val)
-    except ValueError as e:
-        if "(narrow Python build)" in str(e):
-            return struct.pack('i', val).decode('utf-32')
-        else:
-            raise e
-
-
 def decode(b):
     """
     Decode bytes as MUTF-8
@@ -32,8 +8,9 @@ def decode(b):
 
     :param b: bytes to decode
     :rtype: unicode (py2), str (py3) of 16bit chars
+    :raises: UnicodeDecodeError if string is not decodable
     """
-    res = u""
+    res = ""
 
     b = iter(bytearray(b))
 
@@ -44,14 +21,19 @@ def decode(b):
         elif x >> 5 == 0b110:
             # 2 byte Multichar
             b2 = next(b)
-            assert b2 >> 6 == 0b10, "Second byte of 2 byte sequence does not looks right."
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 2 byte sequence does not looks right.")
+
             res += chr((x & 0x1f) << 6 | b2 & 0x3f)
         elif x >> 4 == 0b1110:
             # 3 byte Multichar
             b2 = next(b)
             b3 = next(b)
-            assert b2 >> 6 == 0b10, "Second byte of 3 byte sequence does not looks right."
-            assert b3 >> 6 == 0b10, "Third byte of 3 byte sequence does not looks right."
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 3 byte sequence does not looks right.")
+            if b3 >> 6 != 0b10:
+                raise UnicodeDecodeError("Third byte of 3 byte sequence does not looks right.")
+
             res += chr((x & 0xf) << 12 | (b2 & 0x3f) << 6 | b3 & 0x3f)
         else:
             raise UnicodeDecodeError("Could not decode byte")
@@ -96,7 +78,7 @@ def patch_string(s):
     :param s: input string
     :return: string with escaped lonely surrogates and 32bit surrogates
     """
-    res = u''
+    res = ''
     it = PeekIterator(s)
     for c in it:
         if (ord(c) >> 10) == 0b110110:
@@ -110,10 +92,10 @@ def patch_string(s):
                 next(it)
             else:
                 # Lonely high surrogate
-                res += u"\\u{:04x}".format(ord(c))
+                res += "\\u{:04x}".format(ord(c))
         elif (ord(c) >> 10) == 0b110111:
             # Lonely low surrogate
-            res += u"\\u{:04x}".format(ord(c))
+            res += "\\u{:04x}".format(ord(c))
         else:
             # Looks like a normal char...
             res += c

@@ -1,16 +1,10 @@
-from __future__ import print_function
-from __future__ import absolute_import
-
-from builtins import str
-from builtins import range
-from builtins import object
 import hashlib
 from xml.sax.saxutils import escape
 from struct import unpack, pack
 import textwrap
 
 import json
-from .androconf import CONF, enable_colors, remove_colors, save_colors, color_range
+from androguard.core.androconf import CONF, enable_colors, remove_colors, save_colors, color_range
 import logging
 
 log = logging.getLogger("androguard.bytecode")
@@ -49,7 +43,7 @@ def _PrintNote(note, tab=0):
     print_fct = CONF["PRINT_FCT"]
     note_color = CONF["COLORS"]["NOTE"]
     normal_color = CONF["COLORS"]["NORMAL"]
-    print_fct("\t" * tab + "%s# %s%s" % (note_color, note, normal_color) + "\n")
+    print_fct("\t" * tab + "{}# {}{}".format(note_color, note, normal_color) + "\n")
 
 
 # Print arg into a correct format
@@ -119,7 +113,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
     colors = CONF["COLORS"]["OUTPUT"]
 
     for i in basic_blocks:
-        print_fct("%s%s%s : \n" % (bb_color, i.get_name(), normal_color))
+        print_fct("{}{}{} : \n".format(bb_color, i.get_name(), normal_color))
         instructions = list(i.get_instructions())
         for ins in instructions:
             if nb in notes:
@@ -153,7 +147,7 @@ def PrettyShow(m_a, basic_blocks, notes={}):
                               normal_color)
                 else:
                     if len(i.childs) == 2:
-                        print_fct("%s[ %s%s " % (branch_false_color,
+                        print_fct("{}[ {}{} ".format(branch_false_color,
                                                  i.childs[0][2].get_name(),
                                                  branch_true_color))
                         print_fct(' '.join("%s" % c[2].get_name(
@@ -216,7 +210,7 @@ def method2dot(mx, colors=None):
     blocks_html = ""
 
     method = mx.get_method()
-    sha256 = hashlib.sha256(bytearray("%s%s%s" % (
+    sha256 = hashlib.sha256(bytearray("{}{}{}".format(
         mx.get_method().get_class_name(), mx.get_method().get_name(),
         mx.get_method().get_descriptor()), "UTF-8")).hexdigest()
 
@@ -308,7 +302,7 @@ def method2dot(mx, colors=None):
 
             child_id = hashlib.md5(
                 bytearray(sha256 + DVMBasicMethodBlockChild[-1].get_name(), "UTF-8")).hexdigest()
-            edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
+            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                 block_id, child_id, val, label_edge)
             # color switch
             if val == colors["false_branch"]:
@@ -323,7 +317,7 @@ def method2dot(mx, colors=None):
                 if exception_block:
                     exception_id = hashlib.md5(
                         bytearray(sha256 + exception_block.get_name(), "UTF-8")).hexdigest()
-                    edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"%s\"];\n" % (
+                    edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                         block_id, exception_id, "black", exception_elem[0])
 
     for link in new_links:
@@ -336,7 +330,7 @@ def method2dot(mx, colors=None):
             child_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlockChild.get_name(
             ), "UTF-8")).hexdigest()
 
-            edges_html += "struct_%s:tail -> struct_%s:header  [color=\"%s\", label=\"data(0x%x) to @0x%x\", style=\"dashed\"];\n" % (
+            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"data(0x{:x}) to @0x{:x}\", style=\"dashed\"];\n".format(
                 block_id, child_id, "yellow", link[1], link[2])
 
     method_label = method.get_class_name() + "." + method.get_name(
@@ -451,7 +445,7 @@ def vm2json(vm):
     return json.dumps(d)
 
 
-class TmpBlock(object):
+class TmpBlock:
 
     def __init__(self, name):
         self.name = name
@@ -599,7 +593,7 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-class SV(object):
+class SV:
 
     def __init__(self, size, buff):
         self.__size = size
@@ -624,7 +618,7 @@ class SV(object):
         self.__value = attr
 
 
-class SVs(object):
+class SVs:
 
     def __init__(self, size, ntuple, buff):
         self.__size = size
@@ -672,38 +666,140 @@ def object_to_bytes(obj):
         return obj.get_raw()
 
 
-class MethodBC(object):
+class MethodBC:
 
     def show(self, value):
         getattr(self, "show_" + value)()
 
 
-class BuffHandle(object):
+class BuffHandle:
+    """
+    BuffHandle is a wrapper around bytes.
+    It gives the ability to jump in the byte stream, just like with BytesIO.
+    """
 
     def __init__(self, buff):
         self.__buff = bytearray(buff)
         self.__idx = 0
 
+    def __getitem__(self, item):
+        """
+        Get the byte at the position `item`
+
+        :param int item: offset in the buffer
+        :returns: byte at the position
+        :rtype: int
+        """
+        return self.__buff[item]
+
+    def __len__(self):
+        return self.size()
+
     def size(self):
+        """
+        Get the total size of the buffer
+
+        :rtype: int
+        """
         return len(self.__buff)
 
+    def length_buff(self):
+        """
+        Alias for :meth:`size`
+        """
+        return self.size()
+
     def set_idx(self, idx):
+        """
+        Set the current offset in the buffer
+
+        :param int idx: offset to set
+        """
         self.__idx = idx
 
     def get_idx(self):
+        """
+        Get the current offset in the buffer
+
+        :rtype: int
+        """
+        return self.__idx
+
+    def add_idx(self, idx):
+        """
+        Advance the current offset by `idx`
+
+        :param int idx: number of bytes to advance
+        """
+        self.__idx += idx
+
+    def tell(self):
+        """
+        Alias for :meth:`get_idx`.
+
+        :rtype: int
+        """
         return self.__idx
 
     def readNullString(self, size):
+        """
+        Read a String with length `size` at the current offset
+
+        :param int size: length of the string
+        :rtype: bytearray
+        """
         data = self.read(size)
         return data
 
     def read_b(self, size):
+        """
+        Read bytes with length `size` without incrementing the current offset
+
+        :param int size: length to read in bytes
+        :rtype: bytearray
+        """
         return self.__buff[self.__idx:self.__idx + size]
 
+    def peek(self, size):
+        """
+        Alias for :meth:`read_b`
+        """
+        return self.read_b(size)
+
     def read_at(self, offset, size):
+        """
+        Read bytes from the given offset with length `size` without incrementing
+        the current offset
+
+        :param int offset: offset to start reading
+        :param int size: length of bytes to read
+        :rtype: bytearray
+        """
         return self.__buff[offset:offset + size]
 
+    def readat(self, off):
+        """
+        Read all bytes from the start of `off` until the end of the buffer
+
+        This method can be used to determine a checksum of a buffer from a given
+        point on.
+
+        :param int off: starting offset
+        :rtype: bytearray
+        """
+        if isinstance(off, SV):
+            off = off.value
+
+        return self.__buff[off:]
+
     def read(self, size):
+        """
+        Read from the current offset a total number of `size` bytes
+        and increment the offset by `size`
+
+        :param int size: length of bytes to read
+        :rtype: bytearray
+        """
         if isinstance(size, SV):
             size = size.value
 
@@ -713,11 +809,42 @@ class BuffHandle(object):
         return buff
 
     def end(self):
+        """
+        Test if the current offset is at the end or over the buffer boundary
+
+        :rtype: bool
+        """
         return self.__idx >= len(self.__buff)
 
+    def get_buff(self):
+        """
+        Return the whole buffer
 
-class Buff(object):
+        :rtype: bytearray
+        """
+        return self.__buff
 
+    def set_buff(self, buff):
+        """
+        Overwrite the current buffer with the content of `buff`
+
+        :param bytearray buff: the new buffer
+        """
+        self.__buff = buff
+
+    def save(self, filename):
+        """
+        Save the current buffer to `filename`
+
+        Exisiting files with the same name will be overwritten.
+
+        :param str filename: the name of the file to save to
+        """
+        with open(filename, "wb") as fd:
+            fd.write(self.__buff)
+
+
+class Buff:
     def __init__(self, offset, buff):
         self.offset = offset
         self.buff = buff
@@ -725,74 +852,38 @@ class Buff(object):
         self.size = len(buff)
 
 
-class _Bytecode(object):
-
-    def __init__(self, buff):
-        self.__buff = bytearray(buff)
-        self.__idx = 0
-
-    def __getitem__(self, item):
-        return self.__buff[item]
-
-    def __len__(self):
-        return len(self.__buff)
-
-    def read(self, size):
-        if isinstance(size, SV):
-            size = size.value
-
-        buff = self.__buff[self.__idx:self.__idx + size]
-        self.__idx += size
-
-        return buff
-
-    def readat(self, off):
-        if isinstance(off, SV):
-            off = off.value
-
-        return self.__buff[off:]
-
-    def read_b(self, size):
-        return self.__buff[self.__idx:self.__idx + size]
-
-    def set_idx(self, idx):
-        self.__idx = idx
-
-    def get_idx(self):
-        return self.__idx
-
-    def add_idx(self, idx):
-        self.__idx += idx
-
-    def register(self, type_register, fct):
-        self.__registers[type_register].append(fct)
-
-    def get_buff(self):
-        return self.__buff
-
-    def length_buff(self):
-        return len(self.__buff)
-
-    def set_buff(self, buff):
-        self.__buff = buff
-
-    def save(self, filename):
-        buff = self._save()
-        with open(filename, "wb") as fd:
-            fd.write(buff)
+# Here for legacy reasons. Might get removed some day...
+_Bytecode = BuffHandle
 
 
 def FormatClassToJava(i):
     """
-       Transform a typical xml format class into java format
+    Transform a java class name into the typed variant found in DEX files.
 
-       :param i: the input class name
-       :rtype: string
+    example::
+
+        >>> FormatClassToJava('java.lang.Object')
+        'Ljava/lang/Object;'
+
+    :param i: the input class name
+    :rtype: str
     """
     return "L" + i.replace(".", "/") + ";"
 
 
 def FormatClassToPython(i):
+    """
+    Transform a typed class name into a form which can be used as a python
+    attribute
+
+    example::
+
+        >>> FormatClassToPython('Lfoo/bar/foo/Barfoo$InnerClass;')
+        'Lfoo_bar_foo_Barfoo_InnerClass'
+
+    :param i: classname to transform
+    :rtype: str
+    """
     i = i[:-1]
     i = i.replace("/", "_")
     i = i.replace("$", "_")
@@ -800,7 +891,48 @@ def FormatClassToPython(i):
     return i
 
 
+def get_package_class_name(name):
+    """
+    Return package and class name in a java variant from a typed variant name.
+
+    If no package could be found, the package is an empty string.
+
+    example::
+
+        >>> get_package_class_name('Ljava/lang/Object;')
+        ('java.lang', 'Object')
+
+    :param name: the name
+    :rtype: tuple
+    :return:
+    """
+    if name[0] != 'L' and name[-1] != ';':
+        raise ValueError("The name '{}' does not look like a typed name!".format(name))
+
+    name = name[1:-1]
+    if '/' not in name:
+        return '', name
+
+    package, clsname = name.rsplit('/', 1)
+    package = package.replace('/', '.')
+
+    return package, clsname
+
+
 def FormatNameToPython(i):
+    """
+    Transform a (method) name into a form which can be used as a python
+    attribute
+
+    example::
+
+        >>> FormatNameToPython('<clinit>')
+        'clinit'
+
+    :param i: name to transform
+    :rtype: str
+    """
+
     i = i.replace("<", "")
     i = i.replace(">", "")
     i = i.replace("$", "_")
@@ -809,6 +941,18 @@ def FormatNameToPython(i):
 
 
 def FormatDescriptorToPython(i):
+    """
+    Format a descriptor into a form which can be used as a python attribute
+
+    example::
+
+        >>> FormatDescriptorToPython('(Ljava/lang/Long; Ljava/lang/Long; Z Z)V')
+        'Ljava_lang_LongLjava_lang_LongZZV
+
+    :param i: name to transform
+    :rtype: str
+    """
+
     i = i.replace("/", "_")
     i = i.replace(";", "")
     i = i.replace("[", "")
@@ -820,9 +964,9 @@ def FormatDescriptorToPython(i):
     return i
 
 
-class Node(object):
-
+class Node:
     def __init__(self, n, s):
         self.id = n
         self.title = s
         self.children = []
+

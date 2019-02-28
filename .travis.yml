@@ -1,23 +1,24 @@
 language: python
+dist: xenial
 
 # Download jadx decompiler
 before_script:
-  - wget https://github.com/skylot/jadx/releases/download/v0.7.1/jadx-0.7.1.zip -O /tmp/jadx-0.7.1.zip
-  - unzip /tmp/jadx-0.7.1.zip -d jadx-0.7.1
-  - export PATH=$PATH:$PWD/jadx-0.7.1/bin
+  - wget https://github.com/skylot/jadx/releases/download/v0.9.0/jadx-0.9.0.zip -O /tmp/jadx-0.9.0.zip
+  - unzip /tmp/jadx-0.9.0.zip -d jadx-0.9.0
+  - export PATH=$PATH:$PWD/jadx-0.9.0/bin
 
 python:
   - "3.6"
+  - "3.7"
   - "3.5"
-  - "2.7"
   - "3.4"
-  - "nightly"
+  - "3.8-dev"
 # command to install dependencies
 install:
-  - "pip install .[tests,docs]"
+  - "pip install .[tests,docs,magic]"
 # command to run tests
 script:
-  - nosetests --with-coverage --with-timer --timer-top-n 50
+  - nosetests --with-coverage --with-timer --timer-top-n 50 --logging-level CRITICAL
   # Testing the scripts - crude ;)
   - for f in $(find ./ -! -path \*signing\* -name \*.apk); do
       echo "testing $f";
@@ -30,13 +31,6 @@ script:
       androarsc.py -i $f -t string -o /dev/null || true;
       done
   - python setup.py build_sphinx
-
-notifications:
-  email:
-    recipients:
-      - desnos@t0t0.fr
-    on_success: always
-    on_failure: always
 
 after_success:
   - codecov

@@ -1,17 +1,16 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import mmap
 
-from .BinViewMode import *
-from .HexViewMode import *
-from .DisasmViewMode import *
-from .SourceViewMode import *
+from androguard.gui.BinViewMode import BinViewMode
+from androguard.gui.HexViewMode import HexViewMode
+from androguard.gui.DisasmViewMode import DisasmViewMode
+from androguard.gui.SourceViewMode import SourceViewMode
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 
-class Observer(object):
+class Observer:
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
@@ -30,7 +29,7 @@ class DataModel(Observer):
 
     @dataOffset.setter
     def dataOffset(self, value):
-        print("DATA OFFSET", value)
+        log.debug("DATA OFFSET %s", value)
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -96,7 +95,7 @@ class DataModel(Observer):
         if not asString:
             return d
 
-        s = '{0:016X}'.format(d)
+        s = '{:016X}'.format(d)
 
         return s
 
@@ -111,7 +110,7 @@ class DataModel(Observer):
         if not asString:
             return d
 
-        s = '{0:08X}'.format(d)
+        s = '{:08X}'.format(d)
 
         return s
 
@@ -126,7 +125,7 @@ class DataModel(Observer):
         if not asString:
             return d
 
-        s = '{0:04X}'.format(d)
+        s = '{:04X}'.format(d)
 
         return s
 
@@ -141,7 +140,7 @@ class DataModel(Observer):
         if not asString:
             return d
 
-        s = '{0:02X}'.format(d)
+        s = '{:02X}'.format(d)
 
         return s
 
@@ -208,7 +207,7 @@ class FileDataModel(DataModel):
         # memory-map the file, size 0 means whole file
         self._mapped = mmap.mmap(self._f.fileno(), 0, access=mmap.ACCESS_COPY)
 
-        super(FileDataModel, self).__init__(self._mapped)
+        super().__init__(self._mapped)
 
     @property
     def source(self):
@@ -220,6 +219,7 @@ class FileDataModel(DataModel):
         try:
             self._f = open(self._filename, "r+b")
         except OSError as e:
+            log.exception("File could not be opened for writing: %s", e)
             # could not open for writing
             return False
         self._f.write(self._mapped)
@@ -241,10 +241,10 @@ class FileDataModel(DataModel):
 import io
 
 
-class MyStringIO(io.StringIO, object):
+class MyStringIO(io.StringIO):
     def __init__(self, data):
         self.raw = data
-        super(MyStringIO, self).__init__(data)
+        super().__init__(data)
 
     def __len__(self):
         return len(self.raw)
@@ -254,7 +254,7 @@ class MyByte(bytearray):
     def __init__(self, data):
         self.raw = data
         self._pointer = 0
-        super(MyByte, self).__init__(data)
+        super().__init__(data)
 
     def __len__(self):
         return len(self.raw)
@@ -284,7 +284,7 @@ class BufferDataModel(DataModel):
     def __init__(self, data, name):
         self._filename = name
         self.raw = data
-        super(BufferDataModel, self).__init__(data)
+        super().__init__(data)
 
     @property
     def source(self):
@@ -306,12 +306,11 @@ class BufferDataModel(DataModel):
 
 class ApkModel(DataModel):
     def __init__(self, apkobj):
-        print(apkobj)
         self._filename = str(apkobj)
         self.raw = apkobj.get_raw()
         self.data = MyByte(self.raw)
 
-        super(ApkModel, self).__init__(self.data)
+        super().__init__(self.data)
 
     def GetViews(self):
         return [BinViewMode, HexViewMode]
@@ -331,12 +330,18 @@ class ApkModel(DataModel):
 
 
 class DexClassModel(DataModel):
-    def __init__(self, current_class):
+    def __init__(self, current_class, dx):
+        """
+
+        :param current_class: a ClassDefItem
+        :param dx: a Analysis object
+        """
         self.current_class = current_class
         self._filename = current_class.get_name()
+        self.dx = dx
 
         raw = self.GetRawData(current_class)
-        super(DexClassModel, self).__init__(raw)
+        super().__init__(raw)
 
     def GetRawData(self, current_class):
         buff = bytearray()

@@ -31,7 +31,7 @@ def is_ascii_problem(s):
         return True
 
 
-class Color(object):
+class Color:
     Normal = "\033[0m"
     Black = "\033[30m"
     Red = "\033[31m"
@@ -43,28 +43,44 @@ class Color(object):
     Grey = "\033[37m"
     Bold = "\033[1m"
 
-# TODO most of these options are duplicated, as they are also the default arguments to the functions
+
 default_conf = {
+    ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
     "BIN_JADX": "jadx",
-    "BIN_DED": "ded.sh",
+    # Dex2jar binary
     "BIN_DEX2JAR": "dex2jar.sh",
-    "BIN_JAD": "jad",
-    "BIN_WINEJAD": "jad.exe",
-    "BIN_FERNFLOWER": "fernflower.jar",
+
+    # TODO Use apksigner instead
     "BIN_JARSIGNER": "jarsigner",
 
-    "OPTIONS_FERNFLOWER": {"dgs": '1',
+    "BIN_DED": "ded.sh",  # TO BE REMOVED
+    "BIN_JAD": "jad",  # TO BE REMOVED
+    "BIN_WINEJAD": "jad.exe",  # TO BE REMOVED
+    "BIN_FERNFLOWER": "fernflower.jar",  # TO BE REMOVED
+    "OPTIONS_FERNFLOWER": {"dgs": '1',  # TO BE REMOVED
                            "asc": '1'},
-    "PRETTY_SHOW": 1,
+
+    ## Runtime variables
+    # A path to the temporary directory
     "TMP_DIRECTORY": tempfile.gettempdir(),
-    # Full python or mix python/c++ (native)
-    # "ENGINE" : "automatic",
-    "ENGINE": "python",
+
+    # Function to print stuff
+    "PRINT_FCT": sys.stdout.write,
+
+    # Default API level, if requested API is not available
+    "DEFAULT_API": 16,  # this is the minimal API version we have
+
+    # Session, for persistence
+    "SESSION": None,
+
+    # Recode strings when getting them from ClassManager
+    # FIXME: Should be not needed anymore?
     "RECODE_ASCII_STRING": False,
+    # Optional Function which can recode a string
     "RECODE_ASCII_STRING_METH": None,
-    "DEOBFUSCATED_STRING": True,
-    #    "DEOBFUSCATED_STRING_METH" : get_deobfuscated_string,
+
+    ## Color output configuration
     "COLORS": {
         "OFFSET": Color.Yellow,
         "OFFSET_ADDR": Color.Green,
@@ -86,13 +102,8 @@ default_conf = {
             "meth": Color.Cyan,
             "type": Color.Blue,
             "field": Color.Green,
-        }
+        },
     },
-    "PRINT_FCT": sys.stdout.write,
-    "LAZY_ANALYSIS": False,
-    "MAGIC_PATH_FILE": None,
-    "DEFAULT_API": 16,  # this is the minimal API version we have
-    "SESSION": None,
 }
 
 
@@ -186,13 +197,12 @@ def save_colors():
     return c
 
 
-
-
 def is_android(filename):
-    """Return the type of the file
+    """
+    Return the type of the file
 
-        @param filename : the filename
-        @rtype : "APK", "DEX", None
+    :param filename : the filename
+    :returns: "APK", "DEX", None
     """
     if not filename:
         return None
@@ -204,8 +214,8 @@ def is_android(filename):
 
 def is_android_raw(raw):
     """
-        Returns a string that describes the type of file, for common Android
-        specific formats
+    Returns a string that describes the type of file, for common Android
+    specific formats
     """
     val = None
 
@@ -222,10 +232,10 @@ def is_android_raw(raw):
         val = "DEX"
     elif raw[0:3] == b"dey":
         val = "DEY"
-    elif raw[0:4] == b"\x03\x00\x08\x00":
+    elif raw[0:4] == b"\x03\x00\x08\x00" or raw[0:4] == b"\x00\x00\x08\x00":
         val = "AXML"
     elif raw[0:4] == b"\x02\x00\x0C\x00":
-        val = b"ARSC"
+        val = "ARSC"
 
     return val
 
@@ -238,14 +248,18 @@ def show_logging(level=logging.INFO):
     """
     logger = logging.getLogger()
 
-    h = logging.StreamHandler(stream=sys.stdout)
-    h.setFormatter(logging.Formatter(fmt="%(asctime)s [%(levelname)-8s] %(name)s (%(filename)s): %(message)s"))
+    h = logging.StreamHandler(stream=sys.stderr)
+    h.setFormatter(logging.Formatter(fmt="[%(levelname)-8s] %(name)s: %(message)s"))
 
     logger.addHandler(h)
     logger.setLevel(level)
 
 
 def set_options(key, value):
+    """
+    .. deprecated:: 3.3.5
+        Use :code:`CONF[key] = value` instead
+    """
     CONF[key] = value
 
 
@@ -352,5 +366,13 @@ def load_api_specific_resource_module(resource_name, api=None):
     if not api:
         api = CONF["DEFAULT_API"]
 
-    return loader[resource_name](api)
+    ret = loader[resource_name](api)
+
+    if ret == {}:
+        # No API mapping found, return default
+        log.warning("API mapping for API level {} was not found! "
+                    "Returning default, which is API level {}".format(api, CONF['DEFAULT_API']))
+        ret = loader[resource_name](CONF['DEFAULT_API'])
+
+    return ret
 

@@ -4,7 +4,7 @@ from androguard.gui.xrefwindow import XrefDialogMethod
 
 class APIWindow(QtWidgets.QWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(APIWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "API"
@@ -30,7 +30,7 @@ class APIWindow(QtWidgets.QWidget):
 
 class APIValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, session=None):
-        super(APIValueWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "API"

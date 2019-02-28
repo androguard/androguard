@@ -1,16 +1,13 @@
-from __future__ import division
-from __future__ import absolute_import
-from builtins import range
-from .ViewMode import *
-from .cemu import *
-from . import TextSelection
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import ConsoleEmulator
+from androguard.gui import TextSelection
 
 from PyQt5 import QtGui, QtCore
 
 
 class SourceViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(SourceViewMode, self).__init__()
+        super().__init__()
 
         self.themes = themes
 
@@ -103,7 +100,6 @@ class SourceViewMode(ViewMode):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
-            # print 'hit'
             self.drawAdditionals()
             return
 
@@ -151,7 +147,6 @@ class SourceViewMode(ViewMode):
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
         # ast = self.dataModel.current_class.get_ast()
-        # print ast
 
         for i in range(self.ROWS):
             if i < len(self.LINES):

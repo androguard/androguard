@@ -1,10 +1,3 @@
-from __future__ import division
-
-import logging
-from collections import defaultdict
-
-from builtins import object
-from builtins import range
 # This file is part of Androguard.
 #
 # Copyright (c) 2012 Geoffroy Gueguen <geoffroy.gueguen@gmail.com>
@@ -21,7 +14,8 @@ from builtins import range
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from builtins import str
+import logging
+from collections import defaultdict
 
 from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
@@ -30,13 +24,21 @@ from androguard.decompiler.dad.instruction import Variable
 logger = logging.getLogger('dad.graph')
 
 
-class Graph(object):
+# TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel
+class Graph:
+    """
+    Stores a CFG (Control Flow Graph), which is a directed graph.
+
+    The CFG defines an entry node :py:attr:`entry`, a single exit node :py:attr:`exit`, a list of nodes
+    :py:attr:`nodes` and a list of edges :py:attr:`edges`.
+    """
     def __init__(self):
         self.entry = None
         self.exit = None
         self.nodes = list()
-        self.rpo = []
         self.edges = defaultdict(list)
+
+        self.rpo = []
         self.catch_edges = defaultdict(list)
         self.reverse_edges = defaultdict(list)
         self.reverse_catch_edges = defaultdict(list)
@@ -57,6 +59,11 @@ class Graph(object):
             node, []))
 
     def add_node(self, node):
+        """
+        Adds the given node to the graph, without connecting it to anyhting else.
+
+        :param androguard.decompiler.dad.node.Node node: node to add
+        """
         self.nodes.append(node)
 
     def add_edge(self, e1, e2):
@@ -76,6 +83,11 @@ class Graph(object):
             lpreds.append(e1)
 
     def remove_node(self, node):
+        """
+        Remove the node from the graph, removes also all connections.
+
+        :param androguard.decompiler.dad.node.Node node: the node to remove
+        """
         preds = self.reverse_edges.get(node, [])
         for pred in preds:
             self.edges[pred].remove(node)
@@ -134,10 +146,9 @@ class Graph(object):
 
     def post_order(self):
         """
-        Return the nodes of the graph in post-order i.e we visit all the
+        Yields the :class`~androguard.decompiler.dad.node.Node`s of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         """
-
         def _visit(n, cnt):
             visited.add(n)
             for suc in self.all_sucs(n):
@@ -152,7 +163,17 @@ class Graph(object):
             yield node
 
     def draw(self, name, dname, draw_branches=True):
+        """
+        Writes the current graph as a PNG file
+
+        :param str name: filename (without .png)
+        :param str dname: directory of the output png
+        :param draw_branches:
+        :return:
+        """
         from pydot import Dot, Edge
+        import os
+
         g = Dot()
         g.set_node_defaults(color='lightgray',
                             style='filled',
@@ -172,7 +193,7 @@ class Graph(object):
                                 color='black',
                                 style='dashed'))
 
-        g.write_png('%s/%s.png' % (dname, name))
+        g.write(os.path.join(dname, '%s.png' % name), format='png')
 
     def immediate_dominators(self):
         return dom_lt(self)
@@ -309,7 +330,7 @@ def simplify(graph):
 
 
 def dom_lt(graph):
-    """Dominator algorithm from Lengaeur-Tarjan"""
+    """Dominator algorithm from Lengauer-Tarjan"""
 
     def _dfs(v, n):
         semi[v] = n = n + 1
@@ -372,8 +393,15 @@ def dom_lt(graph):
 
 
 def bfs(start):
+    """
+    Breadth first search
+
+    Yields all nodes found from the starting point
+
+    :param start: start node
+    """
     to_visit = [start]
-    visited = set([start])
+    visited = {start}
     while to_visit:
         node = to_visit.pop(0)
         yield node
@@ -388,7 +416,7 @@ def bfs(start):
                 visited.add(child)
 
 
-class GenInvokeRetName(object):
+class GenInvokeRetName:
     def __init__(self):
         self.num = 0
         self.ret = None
@@ -449,6 +477,15 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
 
 
 def construct(start_block, vmap, exceptions):
+    """
+    Constructs a CFG
+
+    :param androguard.core.analysis.analysis.DVMBasicBlock start_block: The startpoint
+    :param vmap: variable mapping
+    :param exceptions: list of androguard.core.analysis.analysis.ExceptionAnalysis
+
+    :rtype: Graph
+    """
     bfs_blocks = bfs(start_block)
 
     graph = Graph()

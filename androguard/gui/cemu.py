@@ -1,11 +1,10 @@
-from builtins import object
 from PyQt5 import QtGui
 
 import logging
 log = logging.getLogger("androguard.gui")
 
 
-class Cursor(object):
+class Cursor:
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -29,7 +28,7 @@ def enum(**enums):
 Directions = enum(Left=1, Right=2, Up=3, Down=4, End=5, Home=6, CtrlEnd=7, CtrlHome=8)
 
 
-class ConsoleEmulator(object):
+class ConsoleEmulator:
     def __init__(self, qp, rows, cols):
         self.qp = qp
         self._x = 0

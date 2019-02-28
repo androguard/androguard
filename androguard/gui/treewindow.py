@@ -1,6 +1,4 @@
 from PyQt5 import QtWidgets
-from builtins import range
-from builtins import str
 
 from androguard.gui.helpers import Signature
 from androguard.gui.xrefwindow import XrefDialogClass
@@ -19,7 +17,7 @@ class HashableQTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
 class TreeWindow(QtWidgets.QTreeWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(TreeWindow, self).__init__(parent)
+        super().__init__(parent)
         self.itemDoubleClicked.connect(self.itemDoubleClickedHandler)
         self.mainwin = win
         self.session = session

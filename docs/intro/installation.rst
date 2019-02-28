@@ -4,12 +4,12 @@ Installation
 There are several ways how to install androguard.
 
 Before you start, make sure you are using a supported python version!
-Although androguard should run with python 2.7.x, we highly recommend a newer version like python 3.6!
-The python 2.x support might be dropped in the future.
 For Windows, we recommend using the Anaconda python 3.6.x package.
 
-Note that there is no PyQT5 for python 2.x! If you like to use the GUI, please
-use a newer version of python!
+.. warning::
+
+   The magic library might not work out of the box. If your magic library does not work,
+   please refer to the installation instructions of python-magic_.
 
 PIP
 ---
@@ -19,17 +19,20 @@ Just use
 
 .. code-block:: bash
 
-    $ pip install -U androguard[magic,graphing,GUI]
-    
-to  install androguard.
+    $ pip install -U androguard[magic,GUI]
+
+
+to  install androguard including the GUI and magic file type detection.
+In order to use features which use :code:`dot`, you need Graphviz_ installed.
+This is not a python dependency but a binary package! Please follow the installation instructions for GraphvizInstall_.
 
 You can also make use of an `virtualenv`, to separate the installation from your system wide packages:
 
 .. code-block:: bash
 
     $ virtualenv venv-androguard
-    $ . venv-androguard/bin/activate
-    $ pip install -U androguard[magic,graphing,GUI]
+    $ source venv-androguard/bin/activate
+    $ pip install -U androguard[magic,GUI]
     
 pip should install all required packages too.
 
@@ -44,25 +47,40 @@ Install from Source
 
 Use git to fetch the sources, then install it.
 Please install git and python on your own.
-Beware, that androguard requires python 2.7 or at least 3.4 to work.
+Androguard requires Python at least 3.4 to work.
 Pypy >= 5.9.0 should work as well but is not tested.
-On Windows, there might be some issues with the magic library.
-Usually the Anaconda suite works fine!
+
 
 .. code-block:: bash
 
     $ git clone --recursive https://github.com/androguard/androguard.git
     $ cd androguard
-    $ pip install .[magic]
-
-if you like to install the GUI as well, use
-
-.. code-block:: bash
-
-    $ pip install .[magic,GUI,graphing]
+    $ virtualenv -p python3 venv-androguard
+    $ source venv-androguard/bin/activate
+    $ pip install .[magic,GUI]
 
 The dependencies, defined in :code:`setup.py` will be automatically installed.
 
-If you are installing the libraries using :code:`pip`, make sure you download the correct packages.
-For example, there are a lot of implemenations of the :code:`magic` library.
-Get the one, that is shipped with the file command (See [Fine Free File Command](http://www.darwinsys.com/file/)) or use `filemagic`, which should work as well.
+For development purposes, you might want to install the extra dependecies for
+`docs` and `tests` as well:
+
+.. code-block:: bash
+
+    $ git clone --recursive https://github.com/androguard/androguard.git
+    $ cd androguard
+    $ virtualenv -p python3 venv-androguard
+    $ source venv-androguard/bin/activate
+    $ pip install -e .[magic,GUI,tests,docs]
+
+You can then create a local copy of the documentation:
+
+
+.. code-block:: bash
+
+   $ python3 setup.py build_sphinx
+
+Which is generated in :code:`build/sphinx/html`.
+
+.. _Graphviz: https://graphviz.org/
+.. _GraphvizInstall: https://graphviz.org/download/
+.. _python-magic: https://github.com/ahupp/python-magic/#installation

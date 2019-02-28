@@ -1,0 +1,1401 @@
+{
+  "groups": {
+    "android.permission-group.ACCOUNTS": {
+      "description": "Access the available accounts.",
+      "description_ptr": "permgroupdesc_accounts",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Your accounts",
+      "label_ptr": "permgrouplab_accounts",
+      "name": "android.permission-group.ACCOUNTS"
+    },
+    "android.permission-group.COST_MONEY": {
+      "description": "Allow applications to do things\n        that can cost you money.",
+      "description_ptr": "permgroupdesc_costMoney",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Services that cost you money",
+      "label_ptr": "permgrouplab_costMoney",
+      "name": "android.permission-group.COST_MONEY"
+    },
+    "android.permission-group.DEVELOPMENT_TOOLS": {
+      "description": "Features only needed for\n        application developers.",
+      "description_ptr": "permgroupdesc_developmentTools",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Development tools",
+      "label_ptr": "permgrouplab_developmentTools",
+      "name": "android.permission-group.DEVELOPMENT_TOOLS"
+    },
+    "android.permission-group.HARDWARE_CONTROLS": {
+      "description": "Direct access to hardware on\n        the handset.",
+      "description_ptr": "permgroupdesc_hardwareControls",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Hardware controls",
+      "label_ptr": "permgrouplab_hardwareControls",
+      "name": "android.permission-group.HARDWARE_CONTROLS"
+    },
+    "android.permission-group.LOCATION": {
+      "description": "Monitor your physical location",
+      "description_ptr": "permgroupdesc_location",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Your location",
+      "label_ptr": "permgrouplab_location",
+      "name": "android.permission-group.LOCATION"
+    },
+    "android.permission-group.MESSAGES": {
+      "description": "Read and write your SMS,\n        e-mail, and other messages.",
+      "description_ptr": "permgroupdesc_messages",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Your messages",
+      "label_ptr": "permgrouplab_messages",
+      "name": "android.permission-group.MESSAGES"
+    },
+    "android.permission-group.NETWORK": {
+      "description": "Allow applications to access\n        various network features.",
+      "description_ptr": "permgroupdesc_network",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Network communication",
+      "label_ptr": "permgrouplab_network",
+      "name": "android.permission-group.NETWORK"
+    },
+    "android.permission-group.PERSONAL_INFO": {
+      "description": "Direct access to your contacts\n        and calendar stored on the phone.",
+      "description_ptr": "permgroupdesc_personalInfo",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Your personal information",
+      "label_ptr": "permgrouplab_personalInfo",
+      "name": "android.permission-group.PERSONAL_INFO"
+    },
+    "android.permission-group.PHONE_CALLS": {
+      "description": "Monitor, record, and process\n        phone calls.",
+      "description_ptr": "permgroupdesc_phoneCalls",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Phone calls",
+      "label_ptr": "permgrouplab_phoneCalls",
+      "name": "android.permission-group.PHONE_CALLS"
+    },
+    "android.permission-group.STORAGE": {
+      "description": "Access the SD card.",
+      "description_ptr": "permgroupdesc_storage",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "Storage",
+      "label_ptr": "permgrouplab_storage",
+      "name": "android.permission-group.STORAGE"
+    },
+    "android.permission-group.SYSTEM_TOOLS": {
+      "description": "Lower-level access and control\n        of the system.",
+      "description_ptr": "permgroupdesc_systemTools",
+      "icon": "",
+      "icon_ptr": "",
+      "label": "System tools",
+      "label_ptr": "permgrouplab_systemTools",
+      "name": "android.permission-group.SYSTEM_TOOLS"
+    }
+  },
+  "permissions": {
+    "android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.intent.category.MASTER_CLEAR.permission.C2D_MESSAGE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ACCESS_CACHE_FILESYSTEM": {
+      "description": "Allows an application to read and write the cache filesystem.",
+      "description_ptr": "permdesc_cache_filesystem",
+      "label": "access the cache filesystem",
+      "label_ptr": "permlab_cache_filesystem",
+      "name": "android.permission.ACCESS_CACHE_FILESYSTEM",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.ACCESS_CHECKIN_PROPERTIES": {
+      "description": "Allows read/write access to\n        properties uploaded by the checkin service.  Not for use by normal\n        applications.",
+      "description_ptr": "permdesc_checkinProperties",
+      "label": "access checkin properties",
+      "label_ptr": "permlab_checkinProperties",
+      "name": "android.permission.ACCESS_CHECKIN_PROPERTIES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.ACCESS_COARSE_LOCATION": {
+      "description": "Access coarse location sources such as the cellular\n        network database to determine an approximate phone location, where available. Malicious\n        applications can use this to determine approximately where you are.",
+      "description_ptr": "permdesc_accessCoarseLocation",
+      "label": "coarse (network-based) location",
+      "label_ptr": "permlab_accessCoarseLocation",
+      "name": "android.permission.ACCESS_COARSE_LOCATION",
+      "permissionGroup": "android.permission-group.LOCATION",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.ACCESS_FINE_LOCATION": {
+      "description": "Access fine location sources such as the\n        Global Positioning System on the phone, where available.\n        Malicious applications can use this to determine where you are, and may\n        consume additional battery power.",
+      "description_ptr": "permdesc_accessFineLocation",
+      "label": "fine (GPS) location",
+      "label_ptr": "permlab_accessFineLocation",
+      "name": "android.permission.ACCESS_FINE_LOCATION",
+      "permissionGroup": "android.permission-group.LOCATION",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS": {
+      "description": "Access extra location provider commands.\n        Malicious applications could use this to interfere with the operation of the GPS\n        or other location sources.",
+      "description_ptr": "permdesc_accessLocationExtraCommands",
+      "label": "access extra location provider commands",
+      "label_ptr": "permlab_accessLocationExtraCommands",
+      "name": "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+      "permissionGroup": "android.permission-group.LOCATION",
+      "protectionLevel": "normal"
+    },
+    "android.permission.ACCESS_MOCK_LOCATION": {
+      "description": "Create mock location sources for testing.\n        Malicious applications can use this to override the location and/or status returned by real\n        location sources such as GPS or Network providers.",
+      "description_ptr": "permdesc_accessMockLocation",
+      "label": "mock location sources for testing",
+      "label_ptr": "permlab_accessMockLocation",
+      "name": "android.permission.ACCESS_MOCK_LOCATION",
+      "permissionGroup": "android.permission-group.LOCATION",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.ACCESS_MTP": {
+      "description": "Allows access to the kernel MTP driver to implement the MTP USB protocol.",
+      "description_ptr": "permdesc_accessMtp",
+      "label": "implement MTP protocol",
+      "label_ptr": "permlab_accessMtp",
+      "name": "android.permission.ACCESS_MTP",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.ACCESS_NETWORK_STATE": {
+      "description": "Allows an application to view\n      the state of all networks.",
+      "description_ptr": "permdesc_accessNetworkState",
+      "label": "view network state",
+      "label_ptr": "permlab_accessNetworkState",
+      "name": "android.permission.ACCESS_NETWORK_STATE",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "normal"
+    },
+    "android.permission.ACCESS_SURFACE_FLINGER": {
+      "description": "Allows application to use\n        SurfaceFlinger low-level features.",
+      "description_ptr": "permdesc_accessSurfaceFlinger",
+      "label": "access SurfaceFlinger",
+      "label_ptr": "permlab_accessSurfaceFlinger",
+      "name": "android.permission.ACCESS_SURFACE_FLINGER",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ACCESS_WIFI_STATE": {
+      "description": "Allows an application to view\n      the information about the state of Wi-Fi.",
+      "description_ptr": "permdesc_accessWifiState",
+      "label": "view Wi-Fi state",
+      "label_ptr": "permlab_accessWifiState",
+      "name": "android.permission.ACCESS_WIFI_STATE",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "normal"
+    },
+    "android.permission.ACCOUNT_MANAGER": {
+      "description": "Allows an\n    application to make calls to AccountAuthenticators",
+      "description_ptr": "permdesc_accountManagerService",
+      "label": "act as the AccountManagerService",
+      "label_ptr": "permlab_accountManagerService",
+      "name": "android.permission.ACCOUNT_MANAGER",
+      "permissionGroup": "android.permission-group.ACCOUNTS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ASEC_ACCESS": {
+      "description": "Allows the application to get information on internal storage.",
+      "description_ptr": "permdesc_asec_access",
+      "label": "get information on internal storage",
+      "label_ptr": "permlab_asec_access",
+      "name": "android.permission.ASEC_ACCESS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ASEC_CREATE": {
+      "description": "Allows the application to create internal storage.",
+      "description_ptr": "permdesc_asec_create",
+      "label": "create internal storage",
+      "label_ptr": "permlab_asec_create",
+      "name": "android.permission.ASEC_CREATE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ASEC_DESTROY": {
+      "description": "Allows the application to destroy internal storage.",
+      "description_ptr": "permdesc_asec_destroy",
+      "label": "destroy internal storage",
+      "label_ptr": "permlab_asec_destroy",
+      "name": "android.permission.ASEC_DESTROY",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ASEC_MOUNT_UNMOUNT": {
+      "description": "Allows the application to mount / unmount internal storage.",
+      "description_ptr": "permdesc_asec_mount_unmount",
+      "label": "mount / unmount internal storage",
+      "label_ptr": "permlab_asec_mount_unmount",
+      "name": "android.permission.ASEC_MOUNT_UNMOUNT",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.ASEC_RENAME": {
+      "description": "Allows the application to rename internal storage.",
+      "description_ptr": "permdesc_asec_rename",
+      "label": "rename internal storage",
+      "label_ptr": "permlab_asec_rename",
+      "name": "android.permission.ASEC_RENAME",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.AUTHENTICATE_ACCOUNTS": {
+      "description": "Allows an application\n    to use the account authenticator capabilities of the\n    AccountManager, including creating accounts and getting and\n    setting their passwords.",
+      "description_ptr": "permdesc_authenticateAccounts",
+      "label": "act as an account authenticator",
+      "label_ptr": "permlab_authenticateAccounts",
+      "name": "android.permission.AUTHENTICATE_ACCOUNTS",
+      "permissionGroup": "android.permission-group.ACCOUNTS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.BACKUP": {
+      "description": "Allows the application to control the system's backup and restore mechanism.  Not for use by normal applications.",
+      "description_ptr": "permdesc_backup",
+      "label": "control system backup and restore",
+      "label_ptr": "permlab_backup",
+      "name": "android.permission.BACKUP",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.BATTERY_STATS": {
+      "description": "Allows the modification of\n        collected battery statistics. Not for use by normal applications.",
+      "description_ptr": "permdesc_batteryStats",
+      "label": "modify battery statistics",
+      "label_ptr": "permlab_batteryStats",
+      "name": "android.permission.BATTERY_STATS",
+      "permissionGroup": "",
+      "protectionLevel": "normal"
+    },
+    "android.permission.BIND_APPWIDGET": {
+      "description": "Allows the application to tell the system\n        which widgets can be used by which application.  With this permission,\n        applications can give access to personal data to other applications.\n        Not for use by normal applications.",
+      "description_ptr": "permdesc_bindGadget",
+      "label": "choose widgets",
+      "label_ptr": "permlab_bindGadget",
+      "name": "android.permission.BIND_APPWIDGET",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.BIND_DEVICE_ADMIN": {
+      "description": "Allows the holder to send intents to\n        a device administrator. Should never be needed for normal applications.",
+      "description_ptr": "permdesc_bindDeviceAdmin",
+      "label": "interact with a device admin",
+      "label_ptr": "permlab_bindDeviceAdmin",
+      "name": "android.permission.BIND_DEVICE_ADMIN",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_INPUT_METHOD": {
+      "description": "Allows the holder to bind to the top-level\n        interface of an input method. Should never be needed for normal applications.",
+      "description_ptr": "permdesc_bindInputMethod",
+      "label": "bind to an input method",
+      "label_ptr": "permlab_bindInputMethod",
+      "name": "android.permission.BIND_INPUT_METHOD",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BIND_REMOTEVIEWS": {
+      "description": "Allows the holder to bind to the top-level\n        interface of a widget service. Should never be needed for normal applications.",
+      "description_ptr": "permdesc_bindRemoteViews",
+      "label": "bind to a widget service",
+      "label_ptr": "permlab_bindRemoteViews",
+      "name": "android.permission.BIND_REMOTEVIEWS",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.BIND_WALLPAPER": {
+      "description": "Allows the holder to bind to the top-level\n        interface of a wallpaper. Should never be needed for normal applications.",
+      "description_ptr": "permdesc_bindWallpaper",
+      "label": "bind to a wallpaper",
+      "label_ptr": "permlab_bindWallpaper",
+      "name": "android.permission.BIND_WALLPAPER",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.BLUETOOTH": {
+      "description": "Allows an application to view\n      configuration of the local Bluetooth phone, and to make and accept\n      connections with paired devices.",
+      "description_ptr": "permdesc_bluetooth",
+      "label": "create Bluetooth connections",
+      "label_ptr": "permlab_bluetooth",
+      "name": "android.permission.BLUETOOTH",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.BLUETOOTH_ADMIN": {
+      "description": "Allows an application to configure\n      the local Bluetooth phone, and to discover and pair with remote\n      devices.",
+      "description_ptr": "permdesc_bluetoothAdmin",
+      "label": "bluetooth administration",
+      "label_ptr": "permlab_bluetoothAdmin",
+      "name": "android.permission.BLUETOOTH_ADMIN",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.BRICK": {
+      "description": "Allows the application to\n        disable the entire phone permanently. This is very dangerous.",
+      "description_ptr": "permdesc_brick",
+      "label": "permanently disable phone",
+      "label_ptr": "permlab_brick",
+      "name": "android.permission.BRICK",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BROADCAST_PACKAGE_REMOVED": {
+      "description": "Allows an application to\n        broadcast a notification that an application package has been removed.\n        Malicious applications may use this to kill any other running\n        application.",
+      "description_ptr": "permdesc_broadcastPackageRemoved",
+      "label": "send package removed broadcast",
+      "label_ptr": "permlab_broadcastPackageRemoved",
+      "name": "android.permission.BROADCAST_PACKAGE_REMOVED",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BROADCAST_SMS": {
+      "description": "Allows an application to\n        broadcast a notification that an SMS message has been received.\n        Malicious applications may use this to forge incoming SMS messages.",
+      "description_ptr": "permdesc_broadcastSmsReceived",
+      "label": "send SMS-received broadcast",
+      "label_ptr": "permlab_broadcastSmsReceived",
+      "name": "android.permission.BROADCAST_SMS",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "signature"
+    },
+    "android.permission.BROADCAST_STICKY": {
+      "description": "Allows an application to send\n        sticky broadcasts, which remain after the broadcast ends.\n        Malicious applications can make the phone slow or unstable by causing it\n        to use too much memory.",
+      "description_ptr": "permdesc_broadcastSticky",
+      "label": "send sticky broadcast",
+      "label_ptr": "permlab_broadcastSticky",
+      "name": "android.permission.BROADCAST_STICKY",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.BROADCAST_WAP_PUSH": {
+      "description": "Allows an application to\n        broadcast a notification that a WAP PUSH message has been received.\n        Malicious applications may use this to forge MMS message receipt or to\n        silently replace the content of any web page with malicious variants.",
+      "description_ptr": "permdesc_broadcastWapPush",
+      "label": "send WAP-PUSH-received broadcast",
+      "label_ptr": "permlab_broadcastWapPush",
+      "name": "android.permission.BROADCAST_WAP_PUSH",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "signature"
+    },
+    "android.permission.CALL_PHONE": {
+      "description": "Allows the application to call\n        phone numbers without your intervention. Malicious applications may\n        cause unexpected calls on your phone bill. Note that this does not\n        allow the application to call emergency numbers.",
+      "description_ptr": "permdesc_callPhone",
+      "label": "directly call phone numbers",
+      "label_ptr": "permlab_callPhone",
+      "name": "android.permission.CALL_PHONE",
+      "permissionGroup": "android.permission-group.COST_MONEY",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CALL_PRIVILEGED": {
+      "description": "Allows the application to call\n        any phone number, including emergency numbers, without your intervention.\n        Malicious applications may place unnecessary and illegal calls to emergency\n        services.",
+      "description_ptr": "permdesc_callPrivileged",
+      "label": "directly call any phone numbers",
+      "label_ptr": "permlab_callPrivileged",
+      "name": "android.permission.CALL_PRIVILEGED",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.CAMERA": {
+      "description": "Allows application to take pictures and videos\n        with the camera. This allows the application at any time to collect\n        images the camera is seeing.",
+      "description_ptr": "permdesc_camera",
+      "label": "take pictures and videos",
+      "label_ptr": "permlab_camera",
+      "name": "android.permission.CAMERA",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CHANGE_BACKGROUND_DATA_SETTING": {
+      "description": "Allows an application to change\n      the background data usage setting.",
+      "description_ptr": "permdesc_changeBackgroundDataSetting",
+      "label": "change background data usage setting",
+      "label_ptr": "permlab_changeBackgroundDataSetting",
+      "name": "android.permission.CHANGE_BACKGROUND_DATA_SETTING",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.CHANGE_COMPONENT_ENABLED_STATE": {
+      "description": "Allows an application to change whether a\n        component of another application is enabled or not. Malicious applications can use this\n        to disable important phone capabilities. Care must be used with this permission, as it is\n        possible to get application components into an unusable, inconsistent, or unstable state.\n    ",
+      "description_ptr": "permdesc_changeComponentState",
+      "label": "enable or disable application components",
+      "label_ptr": "permlab_changeComponentState",
+      "name": "android.permission.CHANGE_COMPONENT_ENABLED_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.CHANGE_CONFIGURATION": {
+      "description": "Allows an application to\n        change the current configuration, such as the locale or overall font\n        size.",
+      "description_ptr": "permdesc_changeConfiguration",
+      "label": "change your UI settings",
+      "label_ptr": "permlab_changeConfiguration",
+      "name": "android.permission.CHANGE_CONFIGURATION",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CHANGE_NETWORK_STATE": {
+      "description": "Allows an application to change\n      the state of network connectivity.",
+      "description_ptr": "permdesc_changeNetworkState",
+      "label": "change network connectivity",
+      "label_ptr": "permlab_changeNetworkState",
+      "name": "android.permission.CHANGE_NETWORK_STATE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CHANGE_WIFI_MULTICAST_STATE": {
+      "description": "Allows an application to\n      receive packets not directly addressed to your device.  This can be\n      useful when discovering services offered near by.  It uses more power\n      than the non-multicast mode.",
+      "description_ptr": "permdesc_changeWifiMulticastState",
+      "label": "allow Wi-Fi Multicast\n      reception",
+      "label_ptr": "permlab_changeWifiMulticastState",
+      "name": "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CHANGE_WIFI_STATE": {
+      "description": "Allows an application to connect\n      to and disconnect from Wi-Fi access points, and to make changes to\n      configured Wi-Fi networks.",
+      "description_ptr": "permdesc_changeWifiState",
+      "label": "change Wi-Fi state",
+      "label_ptr": "permlab_changeWifiState",
+      "name": "android.permission.CHANGE_WIFI_STATE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CLEAR_APP_CACHE": {
+      "description": "Allows an application to free phone storage\n        by deleting files in application cache directory. Access is very\n        restricted usually to system process.",
+      "description_ptr": "permdesc_clearAppCache",
+      "label": "delete all application cache data",
+      "label_ptr": "permlab_clearAppCache",
+      "name": "android.permission.CLEAR_APP_CACHE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.CLEAR_APP_USER_DATA": {
+      "description": "Allows an application to clear user data.",
+      "description_ptr": "permdesc_clearAppUserData",
+      "label": "delete other applications' data",
+      "label_ptr": "permlab_clearAppUserData",
+      "name": "android.permission.CLEAR_APP_USER_DATA",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.CONNECTIVITY_INTERNAL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CONNECTIVITY_INTERNAL",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.CONTROL_LOCATION_UPDATES": {
+      "description": "Allows enabling/disabling location\n        update notifications from the radio.  Not for use by normal applications.",
+      "description_ptr": "permdesc_locationUpdates",
+      "label": "control location update notifications",
+      "label_ptr": "permlab_locationUpdates",
+      "name": "android.permission.CONTROL_LOCATION_UPDATES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.COPY_PROTECTED_DATA": {
+      "description": "Allows to invoke default container service to copy content. Not for use by normal applications.",
+      "description_ptr": "permlab_copyProtectedData",
+      "label": "Allows to invoke default container service to copy content. Not for use by normal applications.",
+      "label_ptr": "permlab_copyProtectedData",
+      "name": "android.permission.COPY_PROTECTED_DATA",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.CRYPT_KEEPER": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.CRYPT_KEEPER",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.DELETE_CACHE_FILES": {
+      "description": "Allows an application to delete\n        cache files.",
+      "description_ptr": "permdesc_deleteCacheFiles",
+      "label": "delete other applications' caches",
+      "label_ptr": "permlab_deleteCacheFiles",
+      "name": "android.permission.DELETE_CACHE_FILES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.DELETE_PACKAGES": {
+      "description": "Allows an application to delete\n        Android packages. Malicious applications can use this to delete important applications.",
+      "description_ptr": "permdesc_deletePackages",
+      "label": "delete applications",
+      "label_ptr": "permlab_deletePackages",
+      "name": "android.permission.DELETE_PACKAGES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.DEVICE_POWER": {
+      "description": "Allows the application to turn the\n        phone on or off.",
+      "description_ptr": "permdesc_devicePower",
+      "label": "power phone on or off",
+      "label_ptr": "permlab_devicePower",
+      "name": "android.permission.DEVICE_POWER",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.DIAGNOSTIC": {
+      "description": "Allows an application to read and write to\n    any resource owned by the diag group; for example, files in /dev. This could\n    potentially affect system stability and security. This should be ONLY be used\n    for hardware-specific diagnostics by the manufacturer or operator.",
+      "description_ptr": "permdesc_diagnostic",
+      "label": "read/write to resources owned by diag",
+      "label_ptr": "permlab_diagnostic",
+      "name": "android.permission.DIAGNOSTIC",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.DISABLE_KEYGUARD": {
+      "description": "Allows an application to disable\n      the keylock and any associated password security. A legitimate example of\n      this is the phone disabling the keylock when receiving an incoming phone call,\n      then re-enabling the keylock when the call is finished.",
+      "description_ptr": "permdesc_disableKeyguard",
+      "label": "disable keylock",
+      "label_ptr": "permlab_disableKeyguard",
+      "name": "android.permission.DISABLE_KEYGUARD",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.DUMP": {
+      "description": "Allows application to retrieve\n        internal state of the system. Malicious applications may retrieve\n        a wide variety of private and secure information that they should\n        never normally need.",
+      "description_ptr": "permdesc_dump",
+      "label": "retrieve system internal state",
+      "label_ptr": "permlab_dump",
+      "name": "android.permission.DUMP",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.EXPAND_STATUS_BAR": {
+      "description": "Allows application to\n        expand or collapse the status bar.",
+      "description_ptr": "permdesc_expandStatusBar",
+      "label": "expand/collapse status bar",
+      "label_ptr": "permlab_expandStatusBar",
+      "name": "android.permission.EXPAND_STATUS_BAR",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.FACTORY_TEST": {
+      "description": "Run as a low-level manufacturer test,\n        allowing complete access to the phone hardware. Only available\n        when a phone is running in manufacturer test mode.",
+      "description_ptr": "permdesc_factoryTest",
+      "label": "run in factory test mode",
+      "label_ptr": "permlab_factoryTest",
+      "name": "android.permission.FACTORY_TEST",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.FLASHLIGHT": {
+      "description": "Allows the application to control\n        the flashlight.",
+      "description_ptr": "permdesc_flashlight",
+      "label": "control flashlight",
+      "label_ptr": "permlab_flashlight",
+      "name": "android.permission.FLASHLIGHT",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.FORCE_BACK": {
+      "description": "Allows an application to force any\n        activity that is in the foreground to close and go back.\n        Should never be needed for normal applications.",
+      "description_ptr": "permdesc_forceBack",
+      "label": "force application to close",
+      "label_ptr": "permlab_forceBack",
+      "name": "android.permission.FORCE_BACK",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.FORCE_STOP_PACKAGES": {
+      "description": "Allows an application to\n        forcibly stop other applications.",
+      "description_ptr": "permdesc_forceStopPackages",
+      "label": "force stop other applications",
+      "label_ptr": "permlab_forceStopPackages",
+      "name": "android.permission.FORCE_STOP_PACKAGES",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.GET_ACCOUNTS": {
+      "description": "Allows an application to get\n      the list of accounts known by the phone.",
+      "description_ptr": "permdesc_getAccounts",
+      "label": "discover known accounts",
+      "label_ptr": "permlab_getAccounts",
+      "name": "android.permission.GET_ACCOUNTS",
+      "permissionGroup": "android.permission-group.ACCOUNTS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.GET_PACKAGE_SIZE": {
+      "description": "Allows an application to retrieve\n        its code, data, and cache sizes",
+      "description_ptr": "permdesc_getPackageSize",
+      "label": "measure application storage space",
+      "label_ptr": "permlab_getPackageSize",
+      "name": "android.permission.GET_PACKAGE_SIZE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.GET_TASKS": {
+      "description": "Allows application to retrieve\n        information about currently and recently running tasks. May allow\n        malicious applications to discover private information about other applications.",
+      "description_ptr": "permdesc_getTasks",
+      "label": "retrieve running applications",
+      "label_ptr": "permlab_getTasks",
+      "name": "android.permission.GET_TASKS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.GLOBAL_SEARCH": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.GLOBAL_SEARCH",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.GLOBAL_SEARCH_CONTROL": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.GLOBAL_SEARCH_CONTROL",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.HARDWARE_TEST": {
+      "description": "Allows the application to control\n        various peripherals for the purpose of hardware testing.",
+      "description_ptr": "permdesc_hardware_test",
+      "label": "test hardware",
+      "label_ptr": "permlab_hardware_test",
+      "name": "android.permission.HARDWARE_TEST",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.INJECT_EVENTS": {
+      "description": "Allows an application to deliver\n        its own input events (key presses, etc.) to other applications. Malicious\n        applications can use this to take over the phone.",
+      "description_ptr": "permdesc_injectEvents",
+      "label": "press keys and control buttons",
+      "label_ptr": "permlab_injectEvents",
+      "name": "android.permission.INJECT_EVENTS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.INSTALL_LOCATION_PROVIDER": {
+      "description": "Create mock location sources for testing.\n        Malicious applications can use this to override the location and/or status returned by real\n        location sources such as GPS or Network providers or monitor and report your location to an external source.",
+      "description_ptr": "permdesc_installLocationProvider",
+      "label": "permission to install a location provider",
+      "label_ptr": "permlab_installLocationProvider",
+      "name": "android.permission.INSTALL_LOCATION_PROVIDER",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.INSTALL_PACKAGES": {
+      "description": "Allows an application to install new or updated\n        Android packages. Malicious applications can use this to add new applications with arbitrarily\n        powerful permissions.",
+      "description_ptr": "permdesc_installPackages",
+      "label": "directly install applications",
+      "label_ptr": "permlab_installPackages",
+      "name": "android.permission.INSTALL_PACKAGES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.INTERNAL_SYSTEM_WINDOW": {
+      "description": "Allows the creation of\n        windows that are intended to be used by the internal system\n        user interface. Not for use by normal applications.",
+      "description_ptr": "permdesc_internalSystemWindow",
+      "label": "display unauthorized windows",
+      "label_ptr": "permlab_internalSystemWindow",
+      "name": "android.permission.INTERNAL_SYSTEM_WINDOW",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.INTERNET": {
+      "description": "Allows an application to\n      create network sockets.",
+      "description_ptr": "permdesc_createNetworkSockets",
+      "label": "full Internet access",
+      "label_ptr": "permlab_createNetworkSockets",
+      "name": "android.permission.INTERNET",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.KILL_BACKGROUND_PROCESSES": {
+      "description": "Allows an application to\n        kill background processes of other applications, even if memory\n        isn't low.",
+      "description_ptr": "permdesc_killBackgroundProcesses",
+      "label": "kill background processes",
+      "label_ptr": "permlab_killBackgroundProcesses",
+      "name": "android.permission.KILL_BACKGROUND_PROCESSES",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.MANAGE_ACCOUNTS": {
+      "description": "Allows an application to\n    perform operations like adding, and removing accounts and deleting\n    their password.",
+      "description_ptr": "permdesc_manageAccounts",
+      "label": "manage the accounts list",
+      "label_ptr": "permlab_manageAccounts",
+      "name": "android.permission.MANAGE_ACCOUNTS",
+      "permissionGroup": "android.permission-group.ACCOUNTS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.MANAGE_APP_TOKENS": {
+      "description": "Allows applications to\n        create and manage their own tokens, bypassing their normal\n        Z-ordering. Should never be needed for normal applications.",
+      "description_ptr": "permdesc_manageAppTokens",
+      "label": "manage application tokens",
+      "label_ptr": "permlab_manageAppTokens",
+      "name": "android.permission.MANAGE_APP_TOKENS",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.MANAGE_USB": {
+      "description": "Allows the application to manage preferences and permissions for USB devices.",
+      "description_ptr": "permdesc_manageUsb",
+      "label": "manage preferences and permissions for USB devices",
+      "label_ptr": "permlab_manageUsb",
+      "name": "android.permission.MANAGE_USB",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.MASTER_CLEAR": {
+      "description": "Allows an application to completely\n        reset the system to its factory settings, erasing all data,\n        configuration, and installed applications.",
+      "description_ptr": "permdesc_masterClear",
+      "label": "reset system to factory defaults",
+      "label_ptr": "permlab_masterClear",
+      "name": "android.permission.MASTER_CLEAR",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.MODIFY_AUDIO_SETTINGS": {
+      "description": "Allows application to modify\n        global audio settings such as volume and routing.",
+      "description_ptr": "permdesc_modifyAudioSettings",
+      "label": "change your audio settings",
+      "label_ptr": "permlab_modifyAudioSettings",
+      "name": "android.permission.MODIFY_AUDIO_SETTINGS",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.MODIFY_PHONE_STATE": {
+      "description": "Allows the application to control the\n        phone features of the device. An application with this permission can switch\n        networks, turn the phone radio on and off and the like without ever notifying\n        you.",
+      "description_ptr": "permdesc_modifyPhoneState",
+      "label": "modify phone state",
+      "label_ptr": "permlab_modifyPhoneState",
+      "name": "android.permission.MODIFY_PHONE_STATE",
+      "permissionGroup": "android.permission-group.PHONE_CALLS",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.MOUNT_FORMAT_FILESYSTEMS": {
+      "description": "Allows the application to format removable storage.",
+      "description_ptr": "permdesc_mount_format_filesystems",
+      "label": "format external storage",
+      "label_ptr": "permlab_mount_format_filesystems",
+      "name": "android.permission.MOUNT_FORMAT_FILESYSTEMS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.MOUNT_UNMOUNT_FILESYSTEMS": {
+      "description": "Allows the application to mount and\n        unmount filesystems for removable storage.",
+      "description_ptr": "permdesc_mount_unmount_filesystems",
+      "label": "mount and unmount filesystems",
+      "label_ptr": "permlab_mount_unmount_filesystems",
+      "name": "android.permission.MOUNT_UNMOUNT_FILESYSTEMS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.MOVE_PACKAGE": {
+      "description": "Allows an application to move application resources from internal to external media and vice versa.",
+      "description_ptr": "permdesc_movePackage",
+      "label": "Move application resources",
+      "label_ptr": "permlab_movePackage",
+      "name": "android.permission.MOVE_PACKAGE",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.NET_ADMIN": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.NET_ADMIN",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.NFC": {
+      "description": "Allows an application to communicate\n      with Near Field Communication (NFC) tags, cards, and readers.",
+      "description_ptr": "permdesc_nfc",
+      "label": "control Near Field Communication",
+      "label_ptr": "permlab_nfc",
+      "name": "android.permission.NFC",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.PACKAGE_USAGE_STATS": {
+      "description": "Allows the modification of collected component usage statistics. Not for use by normal applications.",
+      "description_ptr": "permdesc_pkgUsageStats",
+      "label": "update component usage statistics",
+      "label_ptr": "permlab_pkgUsageStats",
+      "name": "android.permission.PACKAGE_USAGE_STATS",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.PERFORM_CDMA_PROVISIONING": {
+      "description": "Allows the application to start CDMA provisioning.\n        Malicious applications may unnecessarily start CDMA provisioning",
+      "description_ptr": "permdesc_performCdmaProvisioning",
+      "label": "directly start CDMA phone setup",
+      "label_ptr": "permlab_performCdmaProvisioning",
+      "name": "android.permission.PERFORM_CDMA_PROVISIONING",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.PERSISTENT_ACTIVITY": {
+      "description": "Allows an application to make\n        parts of itself persistent, so the system can't use it for other\n        applications.",
+      "description_ptr": "permdesc_persistentActivity",
+      "label": "make application always run",
+      "label_ptr": "permlab_persistentActivity",
+      "name": "android.permission.PERSISTENT_ACTIVITY",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.PROCESS_OUTGOING_CALLS": {
+      "description": "Allows application to\n        process outgoing calls and change the number to be dialed.  Malicious\n        applications may monitor, redirect, or prevent outgoing calls.",
+      "description_ptr": "permdesc_processOutgoingCalls",
+      "label": "intercept outgoing calls",
+      "label_ptr": "permlab_processOutgoingCalls",
+      "name": "android.permission.PROCESS_OUTGOING_CALLS",
+      "permissionGroup": "android.permission-group.PHONE_CALLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_CALENDAR": {
+      "description": "Allows an application to read all\n        of the calendar events stored on your phone. Malicious applications\n        can use this to send your calendar events to other people.",
+      "description_ptr": "permdesc_readCalendar",
+      "label": "read calendar events",
+      "label_ptr": "permlab_readCalendar",
+      "name": "android.permission.READ_CALENDAR",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_CONTACTS": {
+      "description": "Allows an application to read all\n        of the contact (address) data stored on your phone. Malicious applications\n        can use this to send your data to other people.",
+      "description_ptr": "permdesc_readContacts",
+      "label": "read contact data",
+      "label_ptr": "permlab_readContacts",
+      "name": "android.permission.READ_CONTACTS",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_FRAME_BUFFER": {
+      "description": "Allows application to\n        read the content of the frame buffer.",
+      "description_ptr": "permdesc_readFrameBuffer",
+      "label": "read frame buffer",
+      "label_ptr": "permlab_readFrameBuffer",
+      "name": "android.permission.READ_FRAME_BUFFER",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.READ_INPUT_STATE": {
+      "description": "Allows applications to watch the\n        keys you press even when interacting with another application (such\n        as entering a password). Should never be needed for normal applications.",
+      "description_ptr": "permdesc_readInputState",
+      "label": "record what you type and actions you take",
+      "label_ptr": "permlab_readInputState",
+      "name": "android.permission.READ_INPUT_STATE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.READ_LOGS": {
+      "description": "Allows an application to read from the\n        system's various log files.  This allows it to discover general\n        information about what you are doing with the phone, potentially\n        including personal or private information.",
+      "description_ptr": "permdesc_readLogs",
+      "label": "read sensitive log data",
+      "label_ptr": "permlab_readLogs",
+      "name": "android.permission.READ_LOGS",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_PHONE_STATE": {
+      "description": "Allows the application to access the phone\n        features of the device.  An application with this permission can determine the phone\n        number and serial number of this phone, whether a call is active, the number that call\n        is connected to and the like.",
+      "description_ptr": "permdesc_readPhoneState",
+      "label": "read phone state and identity",
+      "label_ptr": "permlab_readPhoneState",
+      "name": "android.permission.READ_PHONE_STATE",
+      "permissionGroup": "android.permission-group.PHONE_CALLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_SMS": {
+      "description": "Allows application to read\n      SMS messages stored on your phone or SIM card. Malicious applications\n      may read your confidential messages.",
+      "description_ptr": "permdesc_readSms",
+      "label": "read SMS or MMS",
+      "label_ptr": "permlab_readSms",
+      "name": "android.permission.READ_SMS",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.READ_SYNC_SETTINGS": {
+      "description": "Allows an application to read the sync settings,\n        such as whether sync is enabled for Contacts.",
+      "description_ptr": "permdesc_readSyncSettings",
+      "label": "read sync settings",
+      "label_ptr": "permlab_readSyncSettings",
+      "name": "android.permission.READ_SYNC_SETTINGS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.READ_SYNC_STATS": {
+      "description": "Allows an application to read the sync stats; e.g., the\n        history of syncs that have occurred.",
+      "description_ptr": "permdesc_readSyncStats",
+      "label": "read sync statistics",
+      "label_ptr": "permlab_readSyncStats",
+      "name": "android.permission.READ_SYNC_STATS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.READ_USER_DICTIONARY": {
+      "description": "Allows an application to read any private\n      words, names and phrases that the user may have stored in the user dictionary.",
+      "description_ptr": "permdesc_readDictionary",
+      "label": "read user defined dictionary",
+      "label_ptr": "permlab_readDictionary",
+      "name": "android.permission.READ_USER_DICTIONARY",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.REBOOT": {
+      "description": "Allows the application to\n        force the phone to reboot.",
+      "description_ptr": "permdesc_reboot",
+      "label": "force phone reboot",
+      "label_ptr": "permlab_reboot",
+      "name": "android.permission.REBOOT",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.RECEIVE_BOOT_COMPLETED": {
+      "description": "Allows an application to\n        have itself started as soon as the system has finished booting.\n        This can make it take longer to start the phone and allow the\n        application to slow down the overall phone by always running.",
+      "description_ptr": "permdesc_receiveBootCompleted",
+      "label": "automatically start at boot",
+      "label_ptr": "permlab_receiveBootCompleted",
+      "name": "android.permission.RECEIVE_BOOT_COMPLETED",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.RECEIVE_MMS": {
+      "description": "Allows application to receive\n      and process MMS messages. Malicious applications may monitor\n      your messages or delete them without showing them to you.",
+      "description_ptr": "permdesc_receiveMms",
+      "label": "receive MMS",
+      "label_ptr": "permlab_receiveMms",
+      "name": "android.permission.RECEIVE_MMS",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.RECEIVE_SMS": {
+      "description": "Allows application to receive\n      and process SMS messages. Malicious applications may monitor\n      your messages or delete them without showing them to you.",
+      "description_ptr": "permdesc_receiveSms",
+      "label": "receive SMS",
+      "label_ptr": "permlab_receiveSms",
+      "name": "android.permission.RECEIVE_SMS",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.RECEIVE_WAP_PUSH": {
+      "description": "Allows application to receive\n      and process WAP messages. Malicious applications may monitor\n      your messages or delete them without showing them to you.",
+      "description_ptr": "permdesc_receiveWapPush",
+      "label": "receive WAP",
+      "label_ptr": "permlab_receiveWapPush",
+      "name": "android.permission.RECEIVE_WAP_PUSH",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.RECORD_AUDIO": {
+      "description": "Allows application to access\n        the audio record path.",
+      "description_ptr": "permdesc_recordAudio",
+      "label": "record audio",
+      "label_ptr": "permlab_recordAudio",
+      "name": "android.permission.RECORD_AUDIO",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.REORDER_TASKS": {
+      "description": "Allows an application to move\n        tasks to the foreground and background. Malicious applications can force\n        themselves to the front without your control.",
+      "description_ptr": "permdesc_reorderTasks",
+      "label": "reorder running applications",
+      "label_ptr": "permlab_reorderTasks",
+      "name": "android.permission.REORDER_TASKS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.RESTART_PACKAGES": {
+      "description": "Allows an application to\n        kill background processes of other applications, even if memory\n        isn't low.",
+      "description_ptr": "permdesc_killBackgroundProcesses",
+      "label": "kill background processes",
+      "label_ptr": "permlab_killBackgroundProcesses",
+      "name": "android.permission.RESTART_PACKAGES",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.SEND_SMS": {
+      "description": "Allows application to send SMS\n      messages. Malicious applications may cost you money by sending\n      messages without your confirmation.",
+      "description_ptr": "permdesc_sendSms",
+      "label": "send SMS messages",
+      "label_ptr": "permlab_sendSms",
+      "name": "android.permission.SEND_SMS",
+      "permissionGroup": "android.permission-group.COST_MONEY",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_ACTIVITY_WATCHER": {
+      "description": "Allows an application to\n        monitor and control how the system launches activities.\n        Malicious applications may completely compromise the system. This\n        permission is only needed for development, never for normal\n        use.",
+      "description_ptr": "permdesc_runSetActivityWatcher",
+      "label": "monitor and control all application launching",
+      "label_ptr": "permlab_runSetActivityWatcher",
+      "name": "android.permission.SET_ACTIVITY_WATCHER",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.SET_ALWAYS_FINISH": {
+      "description": "Allows an application\n        to control whether activities are always finished as soon as they\n        go to the background. Never needed for normal applications.",
+      "description_ptr": "permdesc_setAlwaysFinish",
+      "label": "make all background applications close",
+      "label_ptr": "permlab_setAlwaysFinish",
+      "name": "android.permission.SET_ALWAYS_FINISH",
+      "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_ANIMATION_SCALE": {
+      "description": "Allows an application to change\n        the global animation speed (faster or slower animations) at any time.",
+      "description_ptr": "permdesc_setAnimationScale",
+      "label": "modify global animation speed",
+      "label_ptr": "permlab_setAnimationScale",
+      "name": "android.permission.SET_ANIMATION_SCALE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_DEBUG_APP": {
+      "description": "Allows an application to turn\n        on debugging for another application. Malicious applications can use this\n        to kill other applications.",
+      "description_ptr": "permdesc_setDebugApp",
+      "label": "enable application debugging",
+      "label_ptr": "permlab_setDebugApp",
+      "name": "android.permission.SET_DEBUG_APP",
+      "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_ORIENTATION": {
+      "description": "Allows an application to change\n        the rotation of the screen at any time. Should never be needed for\n        normal applications.",
+      "description_ptr": "permdesc_setOrientation",
+      "label": "change screen orientation",
+      "label_ptr": "permlab_setOrientation",
+      "name": "android.permission.SET_ORIENTATION",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.SET_POINTER_SPEED": {
+      "description": "Allows an application to change\n        the mouse or trackpad pointer speed at any time. Should never be needed for\n        normal applications.",
+      "description_ptr": "permdesc_setPointerSpeed",
+      "label": "change pointer speed",
+      "label_ptr": "permlab_setPointerSpeed",
+      "name": "android.permission.SET_POINTER_SPEED",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.SET_PREFERRED_APPLICATIONS": {
+      "description": "Allows an application to\n        modify your preferred applications. This can allow malicious applications\n        to silently change the applications that are run, spoofing your\n        existing applications to collect private data from you.",
+      "description_ptr": "permdesc_setPreferredApplications",
+      "label": "set preferred applications",
+      "label_ptr": "permlab_setPreferredApplications",
+      "name": "android.permission.SET_PREFERRED_APPLICATIONS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signature"
+    },
+    "android.permission.SET_PROCESS_LIMIT": {
+      "description": "Allows an application\n        to control the maximum number of processes that will run. Never\n        needed for normal applications.",
+      "description_ptr": "permdesc_setProcessLimit",
+      "label": "limit number of running processes",
+      "label_ptr": "permlab_setProcessLimit",
+      "name": "android.permission.SET_PROCESS_LIMIT",
+      "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_TIME": {
+      "description": "Allows an application to change\n        the phone's clock time.",
+      "description_ptr": "permdesc_setTime",
+      "label": "set time",
+      "label_ptr": "permlab_setTime",
+      "name": "android.permission.SET_TIME",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.SET_TIME_ZONE": {
+      "description": "Allows an application to change\n        the phone's time zone.",
+      "description_ptr": "permdesc_setTimeZone",
+      "label": "set time zone",
+      "label_ptr": "permlab_setTimeZone",
+      "name": "android.permission.SET_TIME_ZONE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SET_WALLPAPER": {
+      "description": "Allows the application\n        to set the system wallpaper.",
+      "description_ptr": "permdesc_setWallpaper",
+      "label": "set wallpaper",
+      "label_ptr": "permlab_setWallpaper",
+      "name": "android.permission.SET_WALLPAPER",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.SET_WALLPAPER_COMPONENT": {
+      "description": "",
+      "description_ptr": "",
+      "label": "",
+      "label_ptr": "",
+      "name": "android.permission.SET_WALLPAPER_COMPONENT",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.SET_WALLPAPER_HINTS": {
+      "description": "Allows the application\n        to set the system wallpaper size hints.",
+      "description_ptr": "permdesc_setWallpaperHints",
+      "label": "set wallpaper size hints",
+      "label_ptr": "permlab_setWallpaperHints",
+      "name": "android.permission.SET_WALLPAPER_HINTS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.SHUTDOWN": {
+      "description": "Puts the activity manager into a shutdown\n        state.  Does not perform a complete shutdown.",
+      "description_ptr": "permdesc_shutdown",
+      "label": "partial shutdown",
+      "label_ptr": "permlab_shutdown",
+      "name": "android.permission.SHUTDOWN",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.SIGNAL_PERSISTENT_PROCESSES": {
+      "description": "Allows application to request that the\n        supplied signal be sent to all persistent processes.",
+      "description_ptr": "permdesc_signalPersistentProcesses",
+      "label": "send Linux signals to applications",
+      "label_ptr": "permlab_signalPersistentProcesses",
+      "name": "android.permission.SIGNAL_PERSISTENT_PROCESSES",
+      "permissionGroup": "android.permission-group.DEVELOPMENT_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.STATUS_BAR": {
+      "description": "Allows application to disable\n        the status bar or add and remove system icons.",
+      "description_ptr": "permdesc_statusBar",
+      "label": "disable or modify status bar",
+      "label_ptr": "permlab_statusBar",
+      "name": "android.permission.STATUS_BAR",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.STATUS_BAR_SERVICE": {
+      "description": "Allows the application to be the status bar.",
+      "description_ptr": "permdesc_statusBarService",
+      "label": "status bar",
+      "label_ptr": "permlab_statusBarService",
+      "name": "android.permission.STATUS_BAR_SERVICE",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.STOP_APP_SWITCHES": {
+      "description": "Prevents the user from switching to\n        another application.",
+      "description_ptr": "permdesc_stopAppSwitches",
+      "label": "prevent app switches",
+      "label_ptr": "permlab_stopAppSwitches",
+      "name": "android.permission.STOP_APP_SWITCHES",
+      "permissionGroup": "",
+      "protectionLevel": "signature"
+    },
+    "android.permission.SUBSCRIBED_FEEDS_READ": {
+      "description": "Allows an application to get details about the currently synced feeds.",
+      "description_ptr": "permdesc_subscribedFeedsRead",
+      "label": "read subscribed feeds",
+      "label_ptr": "permlab_subscribedFeedsRead",
+      "name": "android.permission.SUBSCRIBED_FEEDS_READ",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.SUBSCRIBED_FEEDS_WRITE": {
+      "description": "Allows an application to modify\n      your currently synced feeds. This could allow a malicious application to\n      change your synced feeds.",
+      "description_ptr": "permdesc_subscribedFeedsWrite",
+      "label": "write subscribed feeds",
+      "label_ptr": "permlab_subscribedFeedsWrite",
+      "name": "android.permission.SUBSCRIBED_FEEDS_WRITE",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.SYSTEM_ALERT_WINDOW": {
+      "description": "Allows an application to\n        show system alert windows. Malicious applications can take over the\n        entire screen.",
+      "description_ptr": "permdesc_systemAlertWindow",
+      "label": "display system-level alerts",
+      "label_ptr": "permlab_systemAlertWindow",
+      "name": "android.permission.SYSTEM_ALERT_WINDOW",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.UPDATE_DEVICE_STATS": {
+      "description": "Allows the modification of\n        collected battery statistics. Not for use by normal applications.",
+      "description_ptr": "permdesc_batteryStats",
+      "label": "modify battery statistics",
+      "label_ptr": "permlab_batteryStats",
+      "name": "android.permission.UPDATE_DEVICE_STATS",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.USE_CREDENTIALS": {
+      "description": "Allows an application to\n    request authentication tokens.",
+      "description_ptr": "permdesc_useCredentials",
+      "label": "use the authentication\n    credentials of an account",
+      "label_ptr": "permlab_useCredentials",
+      "name": "android.permission.USE_CREDENTIALS",
+      "permissionGroup": "android.permission-group.ACCOUNTS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.USE_SIP": {
+      "description": "Allows an application to use the SIP service to make/receive Internet calls.",
+      "description_ptr": "permdesc_use_sip",
+      "label": "make/receive Internet calls",
+      "label_ptr": "permlab_use_sip",
+      "name": "android.permission.USE_SIP",
+      "permissionGroup": "android.permission-group.NETWORK",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.VIBRATE": {
+      "description": "Allows the application to control\n        the vibrator.",
+      "description_ptr": "permdesc_vibrate",
+      "label": "control vibrator",
+      "label_ptr": "permlab_vibrate",
+      "name": "android.permission.VIBRATE",
+      "permissionGroup": "android.permission-group.HARDWARE_CONTROLS",
+      "protectionLevel": "normal"
+    },
+    "android.permission.WAKE_LOCK": {
+      "description": "Allows an application to prevent\n        the phone from going to sleep.",
+      "description_ptr": "permdesc_wakeLock",
+      "label": "prevent phone from sleeping",
+      "label_ptr": "permlab_wakeLock",
+      "name": "android.permission.WAKE_LOCK",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_APN_SETTINGS": {
+      "description": "Allows an application to modify the APN\n        settings, such as Proxy and Port of any APN.",
+      "description_ptr": "permdesc_writeApnSettings",
+      "label": "write Access Point Name settings",
+      "label_ptr": "permlab_writeApnSettings",
+      "name": "android.permission.WRITE_APN_SETTINGS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_CALENDAR": {
+      "description": "Allows an application to add or change the\n        events on your calendar, which may send email to guests. Malicious applications can use this\n        to erase or modify your calendar events or to send email to guests.",
+      "description_ptr": "permdesc_writeCalendar",
+      "label": "add or modify calendar events and send email to guests",
+      "label_ptr": "permlab_writeCalendar",
+      "name": "android.permission.WRITE_CALENDAR",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_CONTACTS": {
+      "description": "Allows an application to modify the\n        contact (address) data stored on your phone. Malicious\n        applications can use this to erase or modify your contact data.",
+      "description_ptr": "permdesc_writeContacts",
+      "label": "write contact data",
+      "label_ptr": "permlab_writeContacts",
+      "name": "android.permission.WRITE_CONTACTS",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_EXTERNAL_STORAGE": {
+      "description": "Allows an application to write to the SD card.",
+      "description_ptr": "permdesc_sdcardWrite",
+      "label": "modify/delete SD card contents",
+      "label_ptr": "permlab_sdcardWrite",
+      "name": "android.permission.WRITE_EXTERNAL_STORAGE",
+      "permissionGroup": "android.permission-group.STORAGE",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_GSERVICES": {
+      "description": "Allows an application to modify the\n        Google services map.  Not for use by normal applications.",
+      "description_ptr": "permdesc_writeGservices",
+      "label": "modify the Google services map",
+      "label_ptr": "permlab_writeGservices",
+      "name": "android.permission.WRITE_GSERVICES",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.WRITE_MEDIA_STORAGE": {
+      "description": "Allows an application to modify the contents of the internal media storage.",
+      "description_ptr": "permdesc_mediaStorageWrite",
+      "label": "modify/delete internal media storage contents",
+      "label_ptr": "permlab_mediaStorageWrite",
+      "name": "android.permission.WRITE_MEDIA_STORAGE",
+      "permissionGroup": "android.permission-group.STORAGE",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.WRITE_SECURE_SETTINGS": {
+      "description": "Allows an application to modify the\n        system's secure settings data. Not for use by normal applications.",
+      "description_ptr": "permdesc_writeSecureSettings",
+      "label": "modify secure system settings",
+      "label_ptr": "permlab_writeSecureSettings",
+      "name": "android.permission.WRITE_SECURE_SETTINGS",
+      "permissionGroup": "",
+      "protectionLevel": "signatureOrSystem"
+    },
+    "android.permission.WRITE_SETTINGS": {
+      "description": "Allows an application to modify the\n        system's settings data. Malicious applications can corrupt your system's\n        configuration.",
+      "description_ptr": "permdesc_writeSettings",
+      "label": "modify global system settings",
+      "label_ptr": "permlab_writeSettings",
+      "name": "android.permission.WRITE_SETTINGS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_SMS": {
+      "description": "Allows application to write\n      to SMS messages stored on your phone or SIM card. Malicious applications\n      may delete your messages.",
+      "description_ptr": "permdesc_writeSms",
+      "label": "edit SMS or MMS",
+      "label_ptr": "permlab_writeSms",
+      "name": "android.permission.WRITE_SMS",
+      "permissionGroup": "android.permission-group.MESSAGES",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_SYNC_SETTINGS": {
+      "description": "Allows an application to modify the sync\n        settings, such as whether sync is enabled for Contacts.",
+      "description_ptr": "permdesc_writeSyncSettings",
+      "label": "write sync settings",
+      "label_ptr": "permlab_writeSyncSettings",
+      "name": "android.permission.WRITE_SYNC_SETTINGS",
+      "permissionGroup": "android.permission-group.SYSTEM_TOOLS",
+      "protectionLevel": "dangerous"
+    },
+    "android.permission.WRITE_USER_DICTIONARY": {
+      "description": "Allows an application to write new words into the\n      user dictionary.",
+      "description_ptr": "permdesc_writeDictionary",
+      "label": "write to user defined dictionary",
+      "label_ptr": "permlab_writeDictionary",
+      "name": "android.permission.WRITE_USER_DICTIONARY",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "normal"
+    },
+    "com.android.alarm.permission.SET_ALARM": {
+      "description": "Allows the application to set an alarm in\n      an installed alarm clock application. Some alarm clock applications may\n      not implement this feature.",
+      "description_ptr": "permdesc_setAlarm",
+      "label": "set alarm in alarm clock",
+      "label_ptr": "permlab_setAlarm",
+      "name": "com.android.alarm.permission.SET_ALARM",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "normal"
+    },
+    "com.android.browser.permission.READ_HISTORY_BOOKMARKS": {
+      "description": "Allows the application to read all\n        the URLs that the Browser has visited, and all of the Browser's bookmarks.",
+      "description_ptr": "permdesc_readHistoryBookmarks",
+      "label": "read Browser's history and bookmarks",
+      "label_ptr": "permlab_readHistoryBookmarks",
+      "name": "com.android.browser.permission.READ_HISTORY_BOOKMARKS",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    },
+    "com.android.browser.permission.WRITE_HISTORY_BOOKMARKS": {
+      "description": "Allows an application to modify the\n        Browser's history or bookmarks stored on your phone. Malicious applications\n        can use this to erase or modify your Browser's data.",
+      "description_ptr": "permdesc_writeHistoryBookmarks",
+      "label": "write Browser's history and bookmarks",
+      "label_ptr": "permlab_writeHistoryBookmarks",
+      "name": "com.android.browser.permission.WRITE_HISTORY_BOOKMARKS",
+      "permissionGroup": "android.permission-group.PERSONAL_INFO",
+      "protectionLevel": "dangerous"
+    }
+  }
+}

@@ -4,7 +4,7 @@ from androguard.gui.xrefwindow import XrefDialogMethod
 
 class MethodsWindow(QtWidgets.QWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(MethodsWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Methods"
@@ -30,7 +30,7 @@ class MethodsWindow(QtWidgets.QWidget):
 
 class MethodsValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, session=None):
-        super(MethodsValueWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Methods"

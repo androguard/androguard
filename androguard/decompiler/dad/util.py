@@ -182,7 +182,7 @@ def get_type(atype, size=None):
             if size is None:
                 res = '%s[]' % get_type(atype[1:])
             else:
-                res = '%s[%s]' % (get_type(atype[1:]), size)
+                res = '{}[{}]'.format(get_type(atype[1:]), size)
         else:
             res = atype
             logger.debug('Unknown descriptor: "%s".', atype)
@@ -200,6 +200,14 @@ def get_params_type(descriptor):
 
 
 def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
+    """
+    Creates a PNG from a given :class:`~androguard.decompiler.dad.graph.Graph`.
+
+    :param str cls_name: name of the class
+    :param str meth_name: name of the method
+    :param androguard.decompiler.dad.graph.Graph graph:
+    :param str dir_name: output directory
+    """
     m_name = ''.join(x for x in meth_name if x.isalnum())
     name = ''.join((cls_name.split('/')[-1][:-1], '#', m_name))
     graph.draw(name, dir_name)

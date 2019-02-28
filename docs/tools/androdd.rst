@@ -1,12 +1,12 @@
-androdd - Decompile APKs and create CFG
-=======================================
+androguard decompile - Decompile APKs and create CFG
+====================================================
 
 androdd is a tool to create a decompiled version of an APK using the available decompilers.
 
 Synopsis
 --------
 
-.. program-output:: python ../androdd.py -h
+.. program-output:: androguard decompile --help
 
 
 It also can generate control flow graphs (CFG) for each method using the graphviz format.
@@ -23,7 +23,7 @@ To get all CFG in png format and limit the processing only to a certain namespac
 
 .. code-block:: bash
 
-    androdd.py -o outputfolder -f png -i someapp.apk --limit "^Lcom/elite/.*"
+    androguard decompile -o outputfolder -f png -i someapp.apk --limit "^Lcom/elite/.*"
 
 
 This will decompile the app `someapp.apk` into the folder `outputfolder` and limit the processing to all methods, where

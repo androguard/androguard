@@ -37,6 +37,7 @@ Commonly used APIs
 :ARSC parser: :class:`androguard.core.bytecodes.axml.ARSCParser`
 :Analysis: :class:`androguard.core.analysis.analysis.Analysis`
 :Session: :class:`androguard.session.Session`
+:Automated Analysis: :class:`androguard.core.analysis.auto.AndroAuto`
 :Decompilers: :class:`androguard.decompiler.decompiler`
 
 

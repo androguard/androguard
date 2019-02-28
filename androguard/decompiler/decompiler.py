@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This file is part of Androguard.
 #
 # Copyright (C) 2013, Anthony Desnos <desnos at t0t0.fr>
@@ -16,13 +15,10 @@ from __future__ import print_function
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import range
-from builtins import object
 from subprocess import Popen, PIPE, STDOUT
 
 import tempfile
 import os
-import sys
 
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
@@ -35,6 +31,7 @@ from pygments.formatters import TerminalFormatter
 from pygments.token import Token
 
 import logging
+import warnings
 
 log = logging.getLogger("androguard.decompiler")
 
@@ -115,7 +112,7 @@ class MethodFilter(Filter):
 
 
 # TODO move it somewhere else
-class Dex2Jar(object):
+class Dex2Jar:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -148,7 +145,7 @@ class Dex2Jar(object):
         return self.jarfile
 
 
-class DecompilerDex2Jad(object):
+class DecompilerDex2Jad:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -158,11 +155,16 @@ class DecompilerDex2Jad(object):
         Decompiler interface for JAD
         JAD is not a native Dalvik decompiler, therefore dex2jar is required.
 
+        .. deprecated:: 3.3.5
+            JAD is not supported anymore in androguard!
+
         :param vm:
         :param bin_dex2jar:
         :param bin_jad:
         :param tmp_dir:
         """
+        warnings.warn("JAD is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -243,7 +245,7 @@ class DecompilerDex2Jad(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDex2WineJad(object):
+class DecompilerDex2WineJad:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -252,11 +254,16 @@ class DecompilerDex2WineJad(object):
         """
         Use JAD on wine
 
+        .. deprecated:: 3.3.5
+            JAD is not supported anymore by androguard!
+
         :param vm:
         :param bin_dex2jar:
         :param bin_jad:
         :param tmp_dir:
         """
+        warnings.warn("JAD is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -337,7 +344,7 @@ class DecompilerDex2WineJad(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDed(object):
+class DecompilerDed:
     def __init__(self,
                  vm,
                  bin_ded="ded.sh",
@@ -346,12 +353,17 @@ class DecompilerDed(object):
         DED is an old, probably deprecated, decompiler
         http://siis.cse.psu.edu/ded/
 
+        .. deprecated:: 3.3.5
+            DED is not supported by androguard anymore!
+
         It is now replaced by DARE.
 
         :param vm: `DalvikVMFormat` object
         :param bin_ded:
         :param tmp_dir:
         """
+        warnings.warn("DED is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -426,7 +438,7 @@ class DecompilerDed(object):
         print(self.get_all(_class.get_name()))
 
 
-class DecompilerDex2Fernflower(object):
+class DecompilerDex2Fernflower:
     def __init__(self,
                  vm,
                  bin_dex2jar="dex2jar.sh",
@@ -442,6 +454,9 @@ class DecompilerDex2Fernflower(object):
         As it can not decompile Dalvik code directly, the DEX is first
         decompiled as a JAR file.
 
+        .. deprecated:: 3.3.5
+            Fernflower is not supported anymore by androguard.
+
 
         :param vm: `DalvikVMFormtat` object
         :param bin_dex2jar:
@@ -449,6 +464,8 @@ class DecompilerDex2Fernflower(object):
         :param options_fernflower:
         :param tmp_dir:
         """
+        warnings.warn("Fernflower is deprecated since 3.3.5.", DeprecationWarning)
+
         self.classes = {}
         self.classes_failed = []
 
@@ -537,11 +554,15 @@ class DecompilerDex2Fernflower(object):
 class DecompilerDAD:
     def __init__(self, vm, vmx):
         """
-        Decompiler wrapper for DAD
+        Decompiler wrapper for DAD: **D**AD is **A** **D**ecompiler
         DAD is the androguard internal decompiler.
 
-        :param vm: `DalvikVMFormat` object
-        :param vmx: `Analysis` object
+        This Method does not use the :class:`~androguard.decompiler.dad.decompile.DvMachine` but
+        creates :class:`~androguard.decompiler.dad.decompile.DvClass` and
+        :class:`~androguard.decompiler.dad.decompile.DvMethod` on demand.
+
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat vm: `DalvikVMFormat` object
+        :param androguard.core.analysis.analysis.Analysis vmx: `Analysis` object
         """
         self.vm = vm
         self.vmx = vmx

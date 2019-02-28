@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is part of Androguard.
 #
@@ -18,39 +18,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 import sys
 from argparse import ArgumentParser
-import lxml.etree as etree
 
 from androguard.core import androconf
 from androguard.core.bytecodes import apk
 from androguard.util import read
-
-
-def main(arscobj, outp=None, package=None, typ=None, locale=None):
-    package = package or arscobj.get_packages_names()[0]
-    ttype = typ or "public"
-    locale = locale or '\x00\x00'
-
-    # TODO: be able to dump all locales of a specific type
-    # TODO: be able to recreate the structure of files when developing, eg a res
-    # folder with all the XML files
-
-    if not hasattr(arscobj, "get_{}_resources".format(ttype)):
-        print("No decoder found for type: '{}'! Please open a bug report.".format(ttype), file=sys.stderr)
-        sys.exit(1)
-
-    x = getattr(arscobj, "get_" + ttype + "_resources")(package, locale)
-
-    buff = etree.tostring(etree.fromstring(x), pretty_print=True, encoding="UTF-8")
-
-    if outp:
-        with open(outp, "wb") as fd:
-            fd.write(buff)
-    else:
-        print(buff.decode("UTF-8"))
-
+from androguard.cli import androarsc_main as main
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Decode resources.arsc either directly"

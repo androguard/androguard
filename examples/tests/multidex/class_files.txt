@@ -1,0 +1,1 @@
+com/foobar/foo/Foobar.class

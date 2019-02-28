@@ -1,11 +1,9 @@
-from __future__ import absolute_import
-from __future__ import division
+from PyQt5 import QtGui, QtCore
 
-from .TextDecorators import *
-from .cemu import *
+from androguard.gui.cemu import ConsoleEmulator, enum
 
 
-class Banner(object):
+class Banner:
     def getOrientation(self):
         NotImplementedError('method not implemented.')
 
@@ -28,7 +26,7 @@ class Banner(object):
 Orientation = enum(Left=0, Bottom=1, Top=2)
 
 
-class Observer(object):
+class Observer:
     def changeViewMode(self, viewMode):
         self.setViewMode(viewMode)
 
@@ -164,7 +162,7 @@ class FileAddrBanner(Banner):
         qp.setFont(self.font)
 
         for i in range(rows):
-            s = '{0:08x}'.format(offset)
+            s = '{:08x}'.format(offset)
             qp.drawText(0 + 5, (i + 1) * self.fontHeight, s)
             columns = self.viewMode.getColumnsbyRow(i)
             offset += columns
@@ -223,20 +221,20 @@ class BottomBanner(Banner):
         if dword is None:
             dword = '----'
 
-        sd = 'DWORD: {0}'.format(dword)
+        sd = 'DWORD: {}'.format(dword)
 
-        pos = 'POS: {0:08x}'.format(self.viewMode.getCursorAbsolutePosition())
+        pos = 'POS: {:08x}'.format(self.viewMode.getCursorAbsolutePosition())
 
         qword = self.dataModel.getQWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if qword is None:
             qword = '----'
-        sq = 'QWORD: {0}'.format(qword)
+        sq = 'QWORD: {}'.format(qword)
 
         byte = self.dataModel.getBYTE(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if byte is None:
             byte = '-'
 
-        sb = 'BYTE: {0}'.format(byte)
+        sb = 'BYTE: {}'.format(byte)
 
         cemu.writeAt(1, 0, pos)
         cemu.writeAt(17, 0, sd)
@@ -255,7 +253,7 @@ class BottomBanner(Banner):
                 qp.setPen(pen)
 
                 cemu.writeAt(73, 0, 'Selection: ')
-                cemu.write('{0:x}:{1}'.format(u, v - u))
+                cemu.write('{:x}:{}'.format(u, v - u))
         else:
             pen = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
             qp.setPen(pen)

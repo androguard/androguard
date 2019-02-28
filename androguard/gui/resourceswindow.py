@@ -1,10 +1,9 @@
-from builtins import str
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class ResourcesWindow(QtWidgets.QWidget):
     def __init__(self, parent=None, win=None, session=None):
-        super(ResourcesWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Resources"
@@ -30,7 +29,7 @@ class ResourcesWindow(QtWidgets.QWidget):
 
 class ResourcesValueWindow(QtWidgets.QTreeView):
     def __init__(self, parent=None, win=None, session=None):
-        super(ResourcesValueWindow, self).__init__(parent)
+        super().__init__(parent)
         self.mainwin = win
         self.session = session
         self.title = "Resources"
@@ -38,19 +37,18 @@ class ResourcesValueWindow(QtWidgets.QTreeView):
         self.proxyModel = QtCore.QSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
 
-        string_resources = None
+        string_resources = []
+        nb = 0
         for digest, apk in self.session.get_all_apks():
             a = apk[0]
             resources = a.get_android_resources()
 
             string_resources = resources.get_resolved_strings()
-            nb = 0
             for p in string_resources:
                 for l in string_resources[p]:
                     nb += len(string_resources[p][l])
 
-        self.model = QtGui.QStandardItemModel(nb, 4,
-                                              self)
+        self.model = QtGui.QStandardItemModel(nb, 4, self)
 
         self.model.setHeaderData(0, QtCore.Qt.Horizontal, "Package name")
         self.model.setHeaderData(1, QtCore.Qt.Horizontal, "Locale")

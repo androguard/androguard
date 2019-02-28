@@ -1,8 +1,5 @@
-from __future__ import print_function
-
 import pyperclip
 from PyQt5 import QtCore, QtGui, QtWidgets
-from builtins import str
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import JavaLexer
 from pygments.style import Style
@@ -28,7 +25,7 @@ class SourceDocument(QtGui.QTextDocument):
     """QTextDocument associated with the SourceWindow."""
 
     def __init__(self, parent=None, lines=[]):
-        super(SourceDocument, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
 
         self.setDefaultFont(QtGui.QFont('Monaco', 9, QtGui.QFont.Light))
@@ -57,7 +54,7 @@ class PygmentsBlockUserData(QtGui.QTextBlockUserData):
 
     def __repr__(self):
         attrs = ['syntax_stack']
-        kwds = ', '.join(['%s=%r' % (attr, getattr(self, attr))
+        kwds = ', '.join(['{}={!r}'.format(attr, getattr(self, attr))
                           for attr in attrs])
         return 'PygmentsBlockUserData(%s)' % kwds
 
@@ -167,7 +164,7 @@ class MyHighlighter(QtGui.QSyntaxHighlighter):
     # ---------------------------------------------------------------------------
 
     def __init__(self, parent, lexer=None):
-        super(MyHighlighter, self).__init__(parent)
+        super().__init__(parent)
 
         self._document = self.document()
         self._formatter = HtmlFormatter(nowrap=True)
@@ -302,7 +299,7 @@ class SourceWindow(QtWidgets.QTextEdit):
                  current_filename=None,
                  current_digest=None,
                  session=None):
-        super(SourceWindow, self).__init__(parent)
+        super().__init__(parent)
 
         log.debug("New source tab for: %s" % current_class)
 
@@ -335,14 +332,7 @@ class SourceWindow(QtWidgets.QTextEdit):
 
         # TODO: idea, highlight the method in the screen so we do not have to search for it
 
-        log.debug("Browsing to %s -> %s" % (self.current_class, method))
-
-        # debug
-        #        if False:
-        #            for k, v in self.doc.infoBlocks.items():
-        #                print k
-        #                print v
-        #                print "-"*10
+        log.debug("Browsing to {} -> {}".format(self.current_class, method))
 
     def reload_java_sources(self):
         """Reload completely the sources by asking Androguard
@@ -355,7 +345,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         log.debug("Getting sources for %s" % self.current_class)
 
         lines = [("COMMENTS", [(
-            "COMMENT", "// filename:%s\n// digest:%s\n\n" % (
+            "COMMENT", "// filename:{}\n// digest:{}\n\n".format(
                 self.current_filename, self.current_digest))])]
 
         method_info_buff = ""
@@ -532,7 +522,7 @@ class SourceWindow(QtWidgets.QTextEdit):
             #    return
 
     def actionCopy(self):
-        print('COPY')
+        log.debug('COPY')
         cur = self.textCursor()
         pyperclip.copy(cur.selectedText())
 
@@ -696,7 +686,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         elif t[0] == 'NAME_PROTOTYPE':  # class definition on top of a class
             class_ = t[2] + '.' + t[1]
             package_ = t[2]
-            log.debug("Found: package=%s, class=%s" % (package_, class_))
+            log.debug("Found: package={}, class={}".format(package_, class_))
             type_ = "CLASS"
         elif t[0] == 'NAME_FIELD':
             field_item = t[3]
@@ -704,7 +694,7 @@ class SourceWindow(QtWidgets.QTextEdit):
         else:
             self.mainwin.showStatus(
                 "Rename not available. Info found: '%s' but object not supported."
-                % selection)
+                % t[0])
             return
 
         # Do the actual renaming

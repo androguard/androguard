@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import range
-from builtins import object
 import logging
 from struct import pack, unpack
 import androguard.decompiler.dad.util as util
@@ -36,7 +34,7 @@ from androguard.decompiler.dad.instruction import (
 logger = logging.getLogger('dad.opcode_ins')
 
 
-class Op(object):
+class Op:
     CMP = 'cmp'
     ADD = '+'
     SUB = '-'

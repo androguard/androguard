@@ -1,20 +1,20 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import string
 from time import time
 
 from PyQt5 import QtGui, QtCore
-from builtins import str
 
-from .TextDecorators import *
-from .ViewMode import *
-from .cemu import *
+from androguard.gui.TextDecorators import RangePen
+from androguard.gui.ViewMode import ViewMode
+from androguard.gui.cemu import ConsoleEmulator, Directions
+from androguard.gui import TextSelection
+
+import logging
+log = logging.getLogger("androguard.gui")
 
 
 class BinViewMode(ViewMode):
     def __init__(self, themes, width, height, data, cursor, widget=None):
-        super(BinViewMode, self).__init__()
+        super().__init__()
 
         self.dataModel = data
         self.addHandler(self.dataModel)
@@ -75,7 +75,6 @@ class BinViewMode(ViewMode):
                 pix = QtGui.QImage(self.width, self.height, QtGui.QImage.Format_ARGB32)
                 self.scrollPages(1, cachePix=pix, pageOffset=i)
                 self.Paints[self.dataModel.getPageOffset(i)] = pix
-                # print 'cache'
 
     def _getNewPixmap(self, width, height):
         return QtGui.QPixmap(width, height)
@@ -129,20 +128,19 @@ class BinViewMode(ViewMode):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
-            # print 'hit'
             self.drawAdditionals()
             return
 
         if self.refresh or refresh:
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
-            # start = time()
+            start = time()
             if not howMany:
                 howMany = self.ROWS
 
             self.drawTextMode(qp, row=row, howMany=howMany)
-            # end = time() - start
-            # print 'Time ' + str(end)
+            end = time() - start
+            log.debug('draw Time ' + str(end))
             self.refresh = False
             qp.end()
 
@@ -154,7 +152,7 @@ class BinViewMode(ViewMode):
             start = time()
             self.drawTextMode(qp, howMany=self.ROWS)
             end = time() - start
-            # print 'Time ' + str(end)
+            log.debug('draw2 Time ' + str(end))
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
 
@@ -295,10 +293,6 @@ class BinViewMode(ViewMode):
         qp.end()
 
         end = time() - start
-
-    #        print end
-    #        sys.exit()
-
 
     def scroll(self, dx, dy, cachePix=None, pageOffset=None):
         if not cachePix:
@@ -588,7 +582,7 @@ class BinViewMode(ViewMode):
         return True
 
     def setEditMode(self, mode):
-        super(BinViewMode, self).setEditMode(mode)
+        super().setEditMode(mode)
 
         letters = string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
 

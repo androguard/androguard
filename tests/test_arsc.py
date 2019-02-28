@@ -1,5 +1,6 @@
-import sys
+# -*- coding: utf-8 -*-
 import unittest
+from lxml import etree
 
 from androguard.core.bytecodes import apk, axml
 from androguard.core.bytecodes.apk import APK
@@ -44,6 +45,59 @@ class ARSCTest(unittest.TestCase):
             self.assertEqual(app_icon_path, correct_path,
                              "Incorrect icon path for requested density")
 
+    def testStrings(self):
+        arsc = self.apk.get_android_resources()
+
+        p = arsc.get_packages_names()[0]
+        l = "\x00\x00"
+
+        e = etree.fromstring(arsc.get_string_resources(p, l))
+
+        self.assertEqual(e.find("string[@name='hello']").text, 'Hello World, TestActivity! kikoololmodif')
+        self.assertEqual(e.find("string[@name='app_name']").text, 'TestsAndroguardApplication')
+
+    def testResourceNames(self):
+        """
+        Test if the resource name translation works
+        """
+        arsc = self.apk.get_android_resources()
+
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001), "@tests.androguard:string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000), "@tests.androguard:drawable/icon")
+
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001, 'tests.androguard'), "@string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000, 'tests.androguard'), "@drawable/icon")
+
+        # Also test non existing resources
+        self.assertIsNone(arsc.get_resource_xml_name(0xFFFFFFFF))
+        self.assertEqual(arsc.get_id('sdf', 0x7F040001), (None, None, None))
+        self.assertEqual(arsc.get_id('tests.androguard', 0xFFFFFFFF), (None, None, None))
+
+    def testDifferentStringLocales(self):
+        """
+        Test if the resolving of different string locales works
+        """
+        a = APK("examples/tests/a2dp.Vol_137.apk")
+        arsc = a.get_android_resources()
+
+        p = arsc.get_packages_names()[0]
+
+        self.assertEqual(sorted(["\x00\x00", "da", "de", "el", "fr", "ja", "ru"]),
+                         sorted(arsc.get_locales(p)))
+
+        item = "SMSDelayText"
+        strings = {"\x00\x00": "Delay for reading text message",
+                   "da": "Forsinkelse for læsning af tekst besked",
+                   "de": "Verzögerung vor dem Lesen einer SMS",
+                   "el": "Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
+                   "fr": "Délai pour lire un SMS",
+                   "ja": "テキストメッセージ読み上げの遅延",
+                   "ru": "Задержка зачитывания SMS",
+                   }
+        for k, v in strings.items():
+            e = etree.fromstring(arsc.get_string_resources(p, k))
+            self.assertEqual(e.find("string[@name='{}']".format(item)).text, v)
+
     def testTypeConfigs(self):
         arsc = self.apk.get_android_resources()
         configs = arsc.get_type_configs(None)
@@ -72,7 +126,7 @@ class ARSCTest(unittest.TestCase):
         self.assertEqual(a.get_app_name(), "Jamendo")
         res_parser = a.get_android_resources()
 
-        res_id = int(a.get_element('application', 'label')[1:], 16)
+        res_id = int(a.get_attribute_value('application', 'label')[1:], 16)
 
         # Default Mode, no config
         self.assertEqual(len(res_parser.get_res_configs(res_id)), 2)
@@ -84,6 +138,23 @@ class ARSCTest(unittest.TestCase):
         # Also test on resolver:
         self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))), ["Jamendo", "Jamendo"])
         self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id, axml.ARSCResTableConfig.default_config()))), ["Jamendo"])
+
+    def testIDParsing(self):
+        parser = axml.ARSCParser.parse_id
+
+        self.assertEqual(parser('@DEADBEEF'), (0xDEADBEEF, None))
+        self.assertEqual(parser('@android:DEADBEEF'), (0xDEADBEEF, 'android'))
+        self.assertEqual(parser('@foobar:01020304'), (0x01020304, 'foobar'))
+
+        with self.assertRaises(ValueError):
+            parser('@whatisthis')
+        with self.assertRaises(ValueError):
+            parser('#almost')
+        with self.assertRaises(ValueError):
+            parser('@android:NONOTHEX')
+        with self.assertRaises(ValueError):
+            parser('@android:00')
+
 
 if __name__ == '__main__':
     unittest.main()
