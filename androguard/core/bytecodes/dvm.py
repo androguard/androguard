@@ -445,7 +445,7 @@ class HeaderItem:
             self.dex_version = 35  # assume a common version...
 
         if self.dex_version < 35:
-            self.warning("Either a very old DEX file version or trying to break the parser. Dex version '{}' found.".format(self.dex_version))
+            log.warning("Either a very old DEX file version or trying to break the parser. Dex version '{}' found.".format(self.dex_version))
 
         self.checksum = unpack("<I", buff.read(4))[0]
 
@@ -498,7 +498,7 @@ class HeaderItem:
         self.data_size = unpack("<I", buff.read(4))[0]
 
         if self.data_size % 4 != 0:
-            log.warning("data_size is not a multiple of sizeof(uint), but try to parse anyways.")
+            log.warning("data_size is not a multiple of sizeof(uint32_t), but try to parse anyways.")
 
         self.data_off = unpack("<I", buff.read(4))[0]
 
@@ -519,8 +519,7 @@ class HeaderItem:
             self.map_off_obj = self.CM.get_item_by_offset(self.map_off)
 
         if self.string_off_obj is None:
-            self.string_off_obj = self.CM.get_item_by_offset(
-                self.string_ids_off)
+            self.string_off_obj = self.CM.get_item_by_offset(self.string_ids_off)
 
         if self.type_off_obj is None:
             self.type_off_obj = self.CM.get_item_by_offset(self.type_ids_off)
@@ -1199,7 +1198,7 @@ class TypeList:
     def get_pad(self):
         """
         Return the alignment string
-        
+
         :rtype: string
         """
         return self.pad
@@ -6546,8 +6545,7 @@ class DCode:
         # it is possible to a cache for instructions (avoid a new disasm)
         if self.cached_instructions is None:
             lsa = LinearSweepAlgorithm()
-            ins = lsa.get_instructions(self.CM, self.size, self.insn,
-                                          self.idx)
+            ins = lsa.get_instructions(self.CM, self.size, self.insn, self.idx)
             self.cached_instructions = list(ins)
 
         for i in self.cached_instructions:
@@ -6726,20 +6724,21 @@ class DalvikCode:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.registers_size = unpack("=H", buff.read(2))[0]
-        self.ins_size = unpack("=H", buff.read(2))[0]
-        self.outs_size = unpack("=H", buff.read(2))[0]
-        self.tries_size = unpack("=H", buff.read(2))[0]
-        self.debug_info_off = unpack("=I", buff.read(4))[0]
-        self.insns_size = unpack("=I", buff.read(4))[0]
+        self.registers_size = unpack("<H", buff.read(2))[0]
+        self.ins_size = unpack("<H", buff.read(2))[0]
+        self.outs_size = unpack("<H", buff.read(2))[0]
+        self.tries_size = unpack("<H", buff.read(2))[0]
+        self.debug_info_off = unpack("<I", buff.read(4))[0]
+        self.insns_size = unpack("<I", buff.read(4))[0]
 
-        ushort = calcsize('=H')
+        ushort = calcsize('<H')
 
-        self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
-            self.insns_size * ushort))
+        self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
-            self.padding = unpack("=H", buff.read(2))[0]
+            self.padding = unpack("<H", buff.read(2))[0]
+            if self.padding != 0:
+                log.warning("padding in code_item at 0x{:08x} is not equal to zero!".format(self.offset))
 
         self.tries = []
         self.handlers = None
@@ -7061,8 +7060,8 @@ class MapItem:
             self.item = ClassHDefItem(self.size, buff, cm)
 
         elif TypeMapItem.HEADER_ITEM == self.type:
-            # FIXME probably not necessary to parse again here...
-            self.item = HeaderItem(self.size, buff, cm)
+            # probably not necessary to parse again here...
+            pass
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
             self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
@@ -7164,10 +7163,9 @@ class ClassManager:
     based on their offset or index.
     """
 
-    def __init__(self, vm, config):
+    def __init__(self, vm):
         """
         :param DalvikVMFormat vm: the VM to create a ClassManager for
-        :param dict config: a configuration dictionary
         """
         self.vm = vm
         self.buff = vm
@@ -7186,31 +7184,12 @@ class ClassManager:
 
         self.__cached_proto = {}
 
-        # TODO remove recoding
-        self.recode_ascii_string = config["RECODE_ASCII_STRING"]
-        self.recode_ascii_string_meth = None
-        if config["RECODE_ASCII_STRING_METH"]:
-            self.recode_ascii_string_meth = config["RECODE_ASCII_STRING_METH"]
-
         self.hook_strings = {}
 
         if self.vm:
             self.odex_format = self.vm.get_format_type() == "ODEX"
         else:
             self.odex_format = False
-
-    def get_ascii_string(self, s):
-        # TODO Remove method
-        try:
-            return s.decode("ascii")
-        except UnicodeDecodeError:
-            d = ""
-            for i in s:
-                if i < 128:
-                    d += i
-                else:
-                    d += "%x" % i
-            return d
 
     def get_odex_format(self):
         """Returns True if the underlying VM is ODEX"""
@@ -7301,27 +7280,14 @@ class ClassManager:
         """
         Return a string from the string table at index `idx`
 
+        If string is hooked, the hooked string is returned.
+
         :param int idx: index in the string section
         """
         if idx in self.hook_strings:
             return self.hook_strings[idx]
 
-        try:
-            off = self.__manage_item[TypeMapItem.STRING_ID_ITEM][idx].get_string_data_off()
-        except IndexError:
-            log.warning("unknown string item @ %d" % idx)
-            return "AG:IS: invalid string"
-
-        try:
-            if self.recode_ascii_string:
-                if self.recode_ascii_string_meth:
-                    return self.recode_ascii_string_meth(
-                        self.__strings_off[off].get())
-                return self.get_ascii_string(self.__strings_off[off].get())
-            return self.__strings_off[off].get()
-        except KeyError:
-            log.warning("unknown string item @ 0x%x(%d)" % (off, idx))
-            return "AG:IS: invalid string"
+        return self.get_raw_string(idx)
 
     def get_raw_string(self, idx):
         """
@@ -7657,17 +7623,9 @@ class DalvikVMFormat(bytecode.BuffHandle):
         else:
             self.api_version = CONF["DEFAULT_API"]
 
-        # TODO: can using_api be added to config parameter?
         super().__init__(buff)
 
-        self.config = config
-        if not self.config:
-            self.config = {
-                "RECODE_ASCII_STRING": CONF["RECODE_ASCII_STRING"],
-                "RECODE_ASCII_STRING_METH": CONF["RECODE_ASCII_STRING_METH"],
-            }
-
-        self.CM = ClassManager(self, self.config)
+        self.CM = ClassManager(self)
         self.CM.set_decompiler(decompiler)
 
         self._preload(buff)
@@ -7677,12 +7635,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         pass
 
     def _load(self, buff):
-        self.__header = HeaderItem(0, self, ClassManager(None, self.config))
+        self.header = HeaderItem(0, self, self.CM)
 
-        if self.__header.map_off == 0:
-            log.warning("no map list ...")
+        if self.header.map_off == 0:
+            # TODO check if the header specifys items but does not have a map
+            log.warning("no map list! This DEX file is probably empty.")
         else:
-            self.map_list = MapList(self.CM, self.__header.map_off, self)
+            self.map_list = MapList(self.CM, self.header.map_off, self)
 
             self.classes = self.map_list.get_item_type(TypeMapItem.CLASS_DEF_ITEM)
             self.methods = self.map_list.get_item_type(TypeMapItem.METHOD_ID_ITEM)
@@ -7690,8 +7649,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.codes = self.map_list.get_item_type(TypeMapItem.CODE_ITEM)
             self.strings = self.map_list.get_item_type(TypeMapItem.STRING_DATA_ITEM)
             self.debug = self.map_list.get_item_type(TypeMapItem.DEBUG_INFO_ITEM)
-            # FIXME: why not use __header here?
-            self.header = self.map_list.get_item_type(TypeMapItem.HEADER_ITEM)
 
         self._flush()
 
@@ -7714,7 +7671,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         Returns the version number of the DEX Format
         """
-        return self.__header.dex_version
+        return self.header.dex_version
 
     def get_vmanalysis(self):
         """
