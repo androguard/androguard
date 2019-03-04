@@ -616,7 +616,7 @@ class AnnotationSetItem:
         self.offset = buff.get_idx()
 
         self.size = unpack("=I", buff.read(4))[0]
-        self.annotation_off_item = [AnnotationOffItem(buff, cm) for i in range(0, self.size)]
+        self.annotation_off_item = [AnnotationOffItem(buff, cm) for _ in range(self.size)]
 
     def get_annotation_off_item(self):
         """
@@ -708,11 +708,9 @@ class AnnotationSetRefList:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.list = []
-
         self.size = unpack("=I", buff.read(4))[0]
-        for i in range(0, self.size):
-            self.list.append(AnnotationSetRefItem(buff, cm))
+
+        self.list = [AnnotationSetRefItem(buff, cm) for _ in range(self.size)]
 
     def get_list(self):
         """
@@ -1117,7 +1115,7 @@ class TypeList:
         self.offset = buff.get_idx()
         self.size = unpack("=I", buff.read(4))[0]
 
-        self.list = [TypeItem(buff, cm) for i in range(0, self.size)]
+        self.list = [TypeItem(buff, cm) for _ in range(self.size)]
 
         self.pad = b""
         if self.size % 2 != 0:
@@ -1387,9 +1385,7 @@ class EncodedArray:
 
         self.size = readuleb128(buff)
 
-        self.values = []
-        for i in range(0, self.size):
-            self.values.append(EncodedValue(buff, cm))
+        self.values = [EncodedValue(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
         """
@@ -1603,9 +1599,7 @@ class EncodedAnnotation:
         self.type_idx = readuleb128(buff)
         self.size = readuleb128(buff)
 
-        self.elements = []
-        for i in range(0, self.size):
-            self.elements.append(AnnotationElement(buff, cm))
+        self.elements = [AnnotationElement(buff, cm) for _ in range(self.size)]
 
     def get_type_idx(self):
         """
@@ -3882,10 +3876,7 @@ class EncodedCatchHandlerList:
         self.offset = buff.get_idx()
 
         self.size = readuleb128(buff)
-        self.list = []
-
-        for i in range(0, self.size):
-            self.list.append(EncodedCatchHandler(buff, cm))
+        self.list = [EncodedCatchHandler(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
         """
@@ -7000,7 +6991,7 @@ class MapItem:
         cm = self.CM
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
-            self.item = [StringIdItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringIdItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
             self.item = CodeItem(self.size, buff, cm)
@@ -7024,35 +7015,35 @@ class MapItem:
             self.item = HeaderItem(self.size, buff, cm)
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
-            self.item = [AnnotationItem(buff, cm) for i in range(0, self.size)]
+            self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
             self.item = [AnnotationSetItem(buff, cm)
-                         for i in range(0, self.size)]
+                         for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
             self.item = [AnnotationsDirectoryItem(buff, cm)
-                         for i in range(0, self.size)]
+                         for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
             self.item = [AnnotationSetRefList(buff, cm)
-                         for i in range(0, self.size)]
+                         for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
-            self.item = [TypeList(buff, cm) for i in range(0, self.size)]
+            self.item = [TypeList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.STRING_DATA_ITEM == self.type:
-            self.item = [StringDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [StringDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
             self.item = [EncodedArrayItem(buff, cm)
-                         for i in range(0, self.size)]
+                         for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
-            self.item = [ClassDataItem(buff, cm) for i in range(0, self.size)]
+            self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
             pass  # It's me I think !!!
