@@ -7018,16 +7018,13 @@ class MapItem:
             self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
-            self.item = [AnnotationSetItem(buff, cm)
-                         for _ in range(self.size)]
+            self.item = [AnnotationSetItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
-            self.item = [AnnotationsDirectoryItem(buff, cm)
-                         for _ in range(self.size)]
+            self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
-            self.item = [AnnotationSetRefList(buff, cm)
-                         for _ in range(self.size)]
+            self.item = [AnnotationSetRefList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
             self.item = [TypeList(buff, cm) for _ in range(self.size)]
@@ -7039,8 +7036,7 @@ class MapItem:
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
-            self.item = [EncodedArrayItem(buff, cm)
-                         for _ in range(self.size)]
+            self.item = [EncodedArrayItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
             self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
