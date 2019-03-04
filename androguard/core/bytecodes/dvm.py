@@ -1340,6 +1340,8 @@ class DebugInfoItemEmpty:
         self.__buff = buff
         self.__raw = ""
 
+        self.reload()
+
     def set_off(self, off):
         self.offset = off
 
@@ -2212,12 +2214,12 @@ class FieldIdItem:
         self.type_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
+        self.reload()
+
+    def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.type_idx_value = self.CM.get_type(self.type_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
-
-    def reload(self):
-        pass
 
     def get_class_idx(self):
         """
@@ -2381,12 +2383,12 @@ class MethodIdItem:
         self.proto_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
+        self.reload()
+
+    def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
         self.proto_idx_value = self.CM.get_proto(self.proto_idx)
         self.name_idx_value = self.CM.get_string(self.name_idx)
-
-    def reload(self):
-        pass
 
     def get_class_idx(self):
         """
@@ -3428,26 +3430,30 @@ class ClassDefItem:
         self.class_data_off = unpack("=I", buff.read(4))[0]
         self.static_values_off = unpack("=I", buff.read(4))[0]
 
+        self.interfaces = []
+        self.class_data_item = None
+        self.static_values = None
+
+        self.name = None
+        self.sname = None
+        self.access_flags_string = None
+
+        self.reload()
+
+    def reload(self):
         self.name = self.CM.get_type(self.class_idx)
         self.sname = self.CM.get_type(self.superclass_idx)
         self.interfaces = self.CM.get_type_list(self.interfaces_off)
 
-        self.class_data_item = None
-        self.static_values = None
-
         if self.class_data_off != 0:
             self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
-            # self.class_data_item.reload()
+            self.class_data_item.reload()
 
         if self.static_values_off != 0:
             self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
 
             if self.class_data_item:
                 self.class_data_item.set_static_fields(self.static_values.get_value())
-        self.access_flags_string = None
-
-    def reload(self):
-        pass
 
     def __str__(self):
         return "{}->{}".format(self.get_superclassname(), self.get_name())
