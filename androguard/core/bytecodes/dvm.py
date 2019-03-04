@@ -7458,7 +7458,7 @@ class MapList:
         self.size = unpack("=I", buff.read(4))[0]
 
         self.map_item = []
-        for i in range(0, self.size):
+        for _ in range(0, self.size):
             idx = buff.get_idx()
 
             mi = MapItem(buff, self.CM)
@@ -7468,7 +7468,7 @@ class MapList:
 
         load_order = TypeMapItem.determine_load_order()
         ordered = sorted(self.map_item,
-                        key=lambda mi: load_order[TypeMapItem(mi.get_type()).value])
+                        key=lambda mi: load_order[mi.get_type()])
 
         for mi in ordered:
             mi.parse()
