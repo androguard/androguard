@@ -845,11 +845,13 @@ class APK:
         :param value:
         :returns:
         """
-        if len(value) > 0:
+        if value and self.package:
             v_dot = value.find(".")
             if v_dot == 0:
-                value = self.package + "." + value
+                # Dot at the start
+                value = self.package + value
             elif v_dot == -1:
+                # Not a single dot
                 value = self.package + "." + value
         return value
 
