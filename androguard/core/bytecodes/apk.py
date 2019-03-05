@@ -848,8 +848,10 @@ class APK:
         if len(value) > 0:
             v_dot = value.find(".")
             if v_dot == 0:
-                value = self.package + "." + value
+                # Dot at the start
+                value = self.package + value
             elif v_dot == -1:
+                # Not a single dot
                 value = self.package + "." + value
         return value
 

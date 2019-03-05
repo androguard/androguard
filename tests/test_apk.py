@@ -693,6 +693,27 @@ class APKTest(unittest.TestCase):
             self.assertIn('protectionLevel', perm['android.permission.INTERNET'])
             self.assertIn('permissionGroup', perm['android.permission.INTERNET'])
 
+    def testShortNamesInManifest(self):
+        """Test if shortnames are correctly handled"""
+        a = apk.APK("examples/axml/AndroidManifest_ShortName.apk")
+
+        self.assertEqual(a.get_package(), 'com.android.galaxy4')
+
+        self.assertEqual(len(a.get_activities()), 1)
+        self.assertEqual(len(a.get_services()), 1)
+
+        self.assertEqual(a.get_activities()[0], 'com.android.galaxy4.Galaxy4')
+        self.assertEqual(a.get_services()[0], 'com.android.galaxy4.Galaxy4Wallpaper')
+
+        self.assertEqual(list(a.get_all_attribute_value("activity", "name"))[0], 'com.android.galaxy4.Galaxy4')
+        self.assertEqual(list(a.get_all_attribute_value("activity", "name", format_value=False))[0], '.Galaxy4')
+
+        # Test some formattings
+        self.assertEqual(a._format_value('foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(a._format_value('.foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
+
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
