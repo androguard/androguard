@@ -845,7 +845,7 @@ class APK:
         :param value:
         :returns:
         """
-        if len(value) > 0:
+        if value and self.package:
             v_dot = value.find(".")
             if v_dot == 0:
                 # Dot at the start

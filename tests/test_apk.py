@@ -713,6 +713,15 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a._format_value('.foo'), 'com.android.galaxy4.foo')
         self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')
         self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
+        self.assertEqual(a._format_value(None), None)
+
+        a.package = None
+        self.assertEqual(a._format_value('foo'), 'foo')
+        self.assertEqual(a._format_value('.foo'), '.foo')
+        self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
+        self.assertEqual(a._format_value(None), None)
+
 
 
 if __name__ == '__main__':
