@@ -14,9 +14,13 @@ class RenameTest(unittest.TestCase):
 
     def testMethodRename(self):
         meth, = self.d.get_method("testDouble")
+        clas = self.d.get_class(meth.get_class_name())
         self.assertEqual(meth.get_name(), "testDouble")
+        self.assertIn(meth.get_name(), [i.name for i in clas.get_methods()])
         meth.set_name("blablaMyMethod")
         self.assertEqual(meth.get_name(), "blablaMyMethod")
+        self.assertIn(meth.get_name(), [i.name for i in clas.get_methods()])
+        self.assertNotIn("testDouble", [i.name for i in clas.get_methods()])
 
     def testFieldRename(self):
         field, = self.d.get_field("FLAG_REGISTER_CONTENT_OBSERVER")
