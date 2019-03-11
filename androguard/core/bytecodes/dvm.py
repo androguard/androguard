@@ -450,9 +450,6 @@ class HeaderItem:
         self.class_off_obj = None
         self.data_off_obj = None
 
-    def reload(self):
-        pass
-
     def get_obj(self):
         if self.map_off_obj is None:
             self.map_off_obj = self.CM.get_item_by_offset(self.map_off)
@@ -632,9 +629,6 @@ class AnnotationSetItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Annotation Set Item")
         for i in self.annotation_off_item:
@@ -725,9 +719,6 @@ class AnnotationSetRefList:
 
     def set_off(self, off):
         self.offset = off
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Annotation Set Ref List Item")
@@ -1007,9 +998,6 @@ class AnnotationsDirectoryItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Annotations Directory Item")
         bytecode._PrintDefault(
@@ -1169,9 +1157,6 @@ class TypeList:
     def get_off(self):
         return self.offset + self.len_pad
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Type List")
         bytecode._PrintDefault("size=%d\n" % self.size)
@@ -1282,9 +1267,6 @@ class DebugInfoItem:
 
             bcode = DBGBytecode(self.CM, get_byte(buff))
             self.bytecodes.append(bcode)
-
-    def reload(self):
-        pass
 
     def get_parameters_size(self):
         return self.parameters_size
@@ -1689,9 +1671,6 @@ class AnnotationItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Annotation Item")
         bytecode._PrintDefault("visibility=%d\n" % self.visibility)
@@ -1737,9 +1716,6 @@ class EncodedArrayItem:
 
     def set_off(self, off):
         self.offset = off
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Encoded Array Item")
@@ -1816,9 +1792,6 @@ class StringDataItem:
 
     def get_off(self):
         return self.offset
-
-    def reload(self):
-        pass
 
     def get_unicode(self):
         """
@@ -1904,9 +1877,6 @@ class StringIdItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("String Id Item")
         bytecode._PrintDefault("string_data_off=%x\n" % self.string_data_off)
@@ -1957,9 +1927,6 @@ class TypeIdItem:
         :rtype: string
         """
         return self.descriptor_idx_value
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Type Id Item")
@@ -2013,9 +1980,6 @@ class TypeHIdItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Type List Item")
         for i in self.type:
@@ -2055,9 +2019,6 @@ class ProtoIdItem:
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
         self.parameters_off_value = None
-
-    def reload(self):
-        pass
 
     def get_shorty_idx(self):
         """
@@ -2168,9 +2129,6 @@ class ProtoHIdItem:
             return self.proto[idx]
         except IndexError:
             return ProtoIdItemInvalid()
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Proto List Item")
@@ -2335,9 +2293,6 @@ class FieldHIdItem:
             return self.elem[idx]
         except IndexError:
             return FieldIdItemInvalid()
-
-    def reload(self):
-        pass
 
     def show(self):
         nb = 0
@@ -2515,7 +2470,8 @@ class MethodHIdItem:
             return MethodIdItemInvalid()
 
     def reload(self):
-        pass
+        for i in self.methods:
+            i.reload()
 
     def show(self):
         print("METHOD_ID_ITEM")
@@ -3226,9 +3182,6 @@ class ClassDataItem:
         self._load_elements(self.virtual_methods_size, self.virtual_methods,
                             EncodedMethod, buff, cm)
 
-    def reload(self):
-        pass
-
     def get_static_fields_size(self):
         """
         Return the number of static fields defined in this item
@@ -3441,7 +3394,6 @@ class ClassDefItem:
 
         if self.class_data_off != 0:
             self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
-            self.class_data_item.reload()
 
         if self.static_values_off != 0:
             self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
@@ -3707,9 +3659,6 @@ class ClassHDefItem:
 
     def get_names(self):
         return [x.get_name() for x in self.class_def]
-
-    def reload(self):
-        pass
 
     def show(self):
         for i in self.class_def:
@@ -6509,9 +6458,6 @@ class DCode:
         for i in self.cached_instructions:
             yield i
 
-    def reload(self):
-        pass
-
     def add_inote(self, msg, idx, off=None):
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
@@ -6788,9 +6734,6 @@ class DalvikCode:
     def set_idx(self, idx):
         self.code.set_idx(idx)
 
-    def reload(self):
-        pass
-
     def get_length(self):
         return self.insns_size
 
@@ -6922,9 +6865,6 @@ class CodeItem:
         except KeyError:
             return None
 
-    def reload(self):
-        pass
-
     def show(self):
         # FIXME workaround for showing the MAP_ITEMS
         # if m_a is none, we use get_raw.
@@ -7051,9 +6991,6 @@ class MapItem:
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
         log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(self.type).name, minutes, seconds))
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", TypeMapItem(self.type).name)
@@ -7475,9 +7412,6 @@ class MapList:
                 c_item = mi.get_item()
 
             self.CM.add_type_item(mi.get_type(), mi, c_item)
-
-    def reload(self):
-        pass
 
     def get_off(self):
         return self.offset
