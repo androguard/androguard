@@ -309,6 +309,8 @@ def cg(output,
     """
     Create a call graph and export it into a graph format.
 
+    classnames are found in the type "Lfoo/bar/bla;".
+
     Example:
 
     \b
