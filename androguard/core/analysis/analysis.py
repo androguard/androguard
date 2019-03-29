@@ -1513,22 +1513,18 @@ class Analysis:
         :rtype: DiGraph
         """
 
-        def _add_node(G, method, _entry_points):
+        def _add_node(G, method):
             """
             Wrapper to add methods to a graph
             """
             if method not in G.node:
-                if isinstance(method, ExternalMethod):
-                    is_external = True
-                else:
-                    is_external = False
-
-                if method.get_class_name() in _entry_points:
-                    is_entry_point = True
-                else:
-                    is_entry_point = False
-
-                G.add_node(method, external=is_external, entrypoint=is_entry_point)
+                G.add_node(method,
+                           external=isinstance(method, ExternalMethod),
+                           entrypoint=method.get_class_name() in entry_points,
+                           native="native" in method.get_access_flags_string(),
+                           public="public" in method.get_access_flags_string(),
+                           static="static" in method.get_access_flags_string(),
+                           )
 
         CG = nx.DiGraph()
 
@@ -1543,10 +1539,10 @@ class Analysis:
                 log.info("Skipped {}, because if has no xrefs".format(orig_method))
                 continue
 
-            _add_node(CG, orig_method, entry_points)
+            _add_node(CG, orig_method)
 
             for other_class, callee, offset in m.get_xref_to():
-                _add_node(CG, callee, entry_points)
+                _add_node(CG, callee)
 
                 # As this is a DiGraph and we are not interested in duplicate edges,
                 # check if the edge is already in the edge set.
