@@ -243,6 +243,32 @@ class AnalysisTest(unittest.TestCase):
 
         # Not testing println, as it has too many variants...
 
+    def testPermissions(self):
+        """Test the get_permissions and get_permission_usage methods"""
+        a, _, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity.apk")
+
+        api_level = a.get_effective_target_sdk_version()
+        used_permissions = ['android.permission.BROADCAST_STICKY', 'android.permission.ACCESS_NETWORK_STATE']
+        sticky_meths = ['onMenuItemSelected', 'navigateUpTo']
+        network_meths = ['getNetworkInfo', 'getActiveNetworkInfo', 'isActiveNetworkMetered']
+
+        for _, perm in dx.get_permissions(api_level):
+            for p in perm:
+                self.assertIn(p, used_permissions)
+        meths = [x.name for x in dx.get_permission_usage('android.permission.BROADCAST_STICKY', api_level)]
+        self.assertListEqual(sorted(meths), sorted(sticky_meths))
+        meths = [x.name for x in dx.get_permission_usage('android.permission.ACCESS_NETWORK_STATE', api_level)]
+        self.assertListEqual(sorted(meths), sorted(network_meths))
+
+        # Should give same result if no API level is given
+        for _, perm in dx.get_permissions():
+            for p in perm:
+                self.assertIn(p, used_permissions)
+        meths = [x.name for x in dx.get_permission_usage('android.permission.BROADCAST_STICKY')]
+        self.assertListEqual(sorted(meths), sorted(sticky_meths))
+        meths = [x.name for x in dx.get_permission_usage('android.permission.ACCESS_NETWORK_STATE')]
+        self.assertListEqual(sorted(meths), sorted(network_meths))
+
 
 if __name__ == '__main__':
     unittest.main()
