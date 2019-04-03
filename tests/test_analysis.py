@@ -256,9 +256,9 @@ class AnalysisTest(unittest.TestCase):
             for p in perm:
                 self.assertIn(p, used_permissions)
         meths = [x.name for x in dx.get_permission_usage('android.permission.BROADCAST_STICKY', api_level)]
-        self.assertListEqual(meths, sticky_meths)
+        self.assertListEqual(sorted(meths), sorted(sticky_meths))
         meths = [x.name for x in dx.get_permission_usage('android.permission.ACCESS_NETWORK_STATE', api_level)]
-        self.assertListEqual(meths, network_meths)
+        self.assertListEqual(sorted(meths), sorted(network_meths))
 
         # Should give same result if no API level is given
         for _, perm in dx.get_permissions():
