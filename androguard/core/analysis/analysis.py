@@ -2,7 +2,7 @@ import re
 import collections
 import time
 import warnings
-from androguard.core.androconf import is_ascii_problem
+from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 import logging
 from androguard.core import bytecode
@@ -769,6 +769,11 @@ class ExternalMethod:
     def full_name(self):
         """Returns classname + name + descriptor, separated by spaces (no access flags)"""
         return self.class_name + " " + self.name + " " + self.get_descriptor()
+
+    @property
+    def permission_api_name(self):
+        """Returns a name which can be used to look up in the permission maps"""
+        return self.class_name + "-" + self.name + "-" + self.get_descriptor()
 
     def get_access_flags_string(self):
         # TODO can we assume that external methods are always public?
@@ -1594,6 +1599,90 @@ class Analysis:
                 if hasattr(cls, mname):
                     log.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
+
+    def get_permissions(self, apilevel=None):
+        """
+        Returns the permissions and the API method based on the API level specified.
+        This can be used to find usage of API methods which require a permission.
+        Should be used in combination with an :class:`~androguard.core.bytecodes.apk.APK`.
+
+        The returned permissions are a list, as some API methods require multiple permissions at once.
+
+        The following example shows the usage and how to get the calling methods using XREF:
+
+        example::
+            from androguard.misc import AnalyzeAPK
+            a, d, dx = AnalyzeAPK("somefile.apk")
+
+            for meth, perm in dx.get_permissions(a.get_effective_target_sdk_version()):
+                print("Using API method {} for permission {}".format(meth, perm))
+                print("used in:")
+                for _, m, _ in meth.get_xref_from():
+                    print(m.full_name)
+
+        ..note::
+            This method might be unreliable and might not extract all used permissions.
+            The permission mapping is based on [Axplorer](https://github.com/reddr/axplorer)
+            and might be incomplete due to the nature of the extraction process.
+            Unfortunately, there is no official API<->Permission mapping.
+
+            The output of this method relies also on the set API level.
+            If the wrong API level is used, the results might be wrong.
+
+        :param apilevel: API level to load, or None for default
+        :return: yields tuples of :class:`MethodClassAnalysis` (of the API method) and list of permission string
+        """
+
+        # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
+        permmap = load_api_specific_resource_module('api_permission_mappings', apilevel)
+        if not permmap:
+            raise ValueError("No permission mapping found! Is one available? "
+                             "The requested API level was '{}'".format(apilevel))
+
+        for cls in self.get_external_classes():
+            for meth_analysis in cls.get_methods():
+                meth = meth_analysis.get_method()
+                if meth.permission_api_name in permmap:
+                    yield meth_analysis, permmap[meth.permission_api_name]
+
+    def get_permission_usage(self, permission, apilevel=None):
+        """
+        Find the usage of a permission inside the Analysis.
+
+        example::
+            from androguard.misc import AnalyzeAPK
+            a, d, dx = AnalyzeAPK("somefile.apk")
+
+            for meth in dx.get_permission_usage('android.permission.SEND_SMS', a.get_effective_target_sdk_version()):
+                print("Using API method {}".format(meth))
+                print("used in:")
+                for _, m, _ in meth.get_xref_from():
+                    print(m.full_name)
+
+        .. note::
+            The permission mappings might be incomplete! See also :meth:`get_permissions`.
+
+        :param permission: the name of the android permission (usually 'android.permission.XXX')
+        :param apilevel: the requested API level or None for default
+        :return: yields :class:`MethodClassAnalysis` objects for all using API methods
+        """
+
+        # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
+        permmap = load_api_specific_resource_module('api_permission_mappings', apilevel)
+        if not permmap:
+            raise ValueError("No permission mapping found! Is one available? "
+                             "The requested API level was '{}'".format(apilevel))
+
+        apis = {k for k, v in permmap.items() if permission in v}
+        if not apis:
+            raise ValueError("No API methods could be found which use the permission. "
+                             "Does the permission exists? You requested: '{}'".format(permission))
+
+        for cls in self.get_external_classes():
+            for meth_analysis in cls.get_methods():
+                meth = meth_analysis.get_method()
+                if meth.permission_api_name in apis:
+                    yield meth_analysis
 
 
 def is_ascii_obfuscation(vm):
