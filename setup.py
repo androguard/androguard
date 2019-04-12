@@ -59,17 +59,21 @@ setup(
         # Collect also the GUI files this way
         "androguard.gui": ["annotation.ui", "search.ui", "androguard.ico"],
     },
-    scripts=['androaxml.py',
-             'androarsc.py',
-             'androsign.py',
-             'androdis.py',
-             'androlyze.py',
-             'androdd.py',
-             'androgui.py',
-             'androcg.py',
-             ],
     entry_points={
-        'console_scripts': ['androguard=androguard.cli.entry_points:entry_point']
+        'console_scripts': [
+            # The "master" script, bundles all separate commands
+            'androguard = androguard.cli.entry_points:entry_point',
+            # Providing the same scripts as before
+            'androapkid = androguard.cli.entry_points:apkid',
+            'androarsc = androguard.cli.entry_points:arsc',
+            'androaxml = androguard.cli.entry_points:axml',
+            'androcg = androguard.cli.entry_points:cg',
+            'androdd = androguard.cli.entry_points:decompile',
+            'androdis = androguard.cli.entry_points:disassemble',
+            'androgui = androguard.cli.entry_points:gui',
+            'androlyze = androguard.cli.entry_points:analyze',
+            'androsign = androguard.cli.entry_points:sign',
+        ]
     },
     install_requires=install_requires,
     extras_require={
