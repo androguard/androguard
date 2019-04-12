@@ -426,6 +426,7 @@ def sign(hash_, print_all_hashes, show, apk):
     """Return the fingerprint(s) of all certificates inside an APK."""
     androsign_main(apk, hash_, print_all_hashes, show)
 
+
 @entry_point.command()
 @click.argument(
     'apks',
