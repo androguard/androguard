@@ -318,32 +318,68 @@ def writesleb128(value):
     return buff
 
 
-def determineNext(i, end, m):
+def determineNext(i, cur_idx, m):
+    """
+    Determine the next offsets inside the bytecode of an :class:`EncodedMethod`.
+    The offsets are calculated in number of bytes from the start of the method.
+    Note, that offsets inside the bytecode are denoted in 16bit units but this method returns actual bytes!
+
+    Offsets inside the opcode are counted from the beginning of the opcode.
+
+    The returned type is a list, as branching opcodes will have multiple paths.
+    `if` and `switch` opcodes will return more than one item in the list, while
+    `throw`, `return` and `goto` opcodes will always return a list with length one.
+
+    An offset of -1 indicates that the method is exited, for example by `throw` or `return`.
+
+    If the entered opcode is not branching or jumping, an empty list is returned.
+
+    :param Instruction i: the current Instruction
+    :param int cur_idx: Index of the instruction
+    :param EncodedMethod m: the current method
+    :return:
+    :rtype: list
+    """
     op_value = i.get_op_value()
 
-    # throw + return*
     if (op_value == 0x27) or (0x0e <= op_value <= 0x11):
+        # throw + return*
         return [-1]
-    # goto
     elif 0x28 <= op_value <= 0x2a:
+        # all kind of 'goto'
         off = i.get_ref_off() * 2
-        return [off + end]
-    # if
+        return [off + cur_idx]
     elif 0x32 <= op_value <= 0x3d:
+        # all kind of 'if'
         off = i.get_ref_off() * 2
-        return [end + i.get_length(), off + end]
-    # sparse/packed
+        return [cur_idx + i.get_length(), off + cur_idx]
     elif op_value in (0x2b, 0x2c):
-        x = [end + i.get_length()]
+        # packed/sparse switch
+        # Code flow will continue after the switch command
+        x = [cur_idx + i.get_length()]
 
+        # The payload must be read at the offset position
         code = m.get_code().get_bc()
         off = i.get_ref_off() * 2
 
-        data = code.get_ins_off(off + end)
+        # See DEX bytecode documentation:
+        # "the instructions must be located on even-numbered bytecode offsets (that is, 4-byte aligned).
+        # In order to meet this requirement, dex generation tools must
+        # emit an extra nop instruction as a spacer if such an instruction would otherwise be unaligned."
+        padding = (off + cur_idx) % 4
+        if padding != 0:
+            log.warning("Switch payload not aligned, assume stuff and add {} bytes...".format(padding))
+        data = code.get_ins_off(off + cur_idx + padding)
 
-        if data is not None:
+        # TODO: some malware points to invalid code
+        # Does Android ignores the nop and searches for the switch payload?
+        # So we make sure that this is a switch payload
+        if data and (isinstance(data, PackedSwitch) or isinstance(data, SparseSwitch)):
             for target in data.get_targets():
-                x.append(target * 2 + end)
+                x.append(target * 2 + cur_idx)
+        else:
+            log.warning("Could not determine payload of switch command at offset {} inside {}! "
+                        "Possibly broken bytecode?".format(cur_idx, m))
 
         return x
     return []
@@ -5003,11 +5039,7 @@ class Instruction31t(Instruction):
         return 6
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, +%x (0x%x)" % (self.AA, self.BBBBBBBB,
-                                     self.BBBBBBBB * 2 + idx)
-
-        return buff
+        return "v{}, {:+x}h (payload@0x{:08x})".format(self.AA, self.BBBBBBBB, self.BBBBBBBB * 2 + idx)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_LITERAL, self.BBBBBBBB)]
@@ -6679,7 +6711,7 @@ class DCode:
         """
         off = 0
         for n, i in enumerate(self.get_instructions()):
-            print("{:8d} (0x{:08x}) {:30} {}".format(n, off, i.get_name(), i.get_output(self.idx)))
+            print("{:8d} (0x{:08x}) {:04x} {:30} {}".format(n, off, i.get_op_value(), i.get_name(), i.get_output(self.idx)))
             off += i.get_length()
 
     def get_raw(self):
