@@ -162,11 +162,11 @@ class DVMBasicBlock:
 
     def get_special_ins(self, idx):
         """
-            Return the associated instruction to a specific instruction (for example a packed/sparse switch)
+        Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
-            :param idx: the index of the instruction
+        :param idx: the index of the instruction
 
-            :rtype: None or an Instruction
+        :rtype: None or an Instruction
         """
         if idx in self.special_ins:
             return self.special_ins[idx]
@@ -185,7 +185,7 @@ class DVMBasicBlock:
 
 class BasicBlocks:
     """
-        This class represents all basic blocks of a method
+    This class represents all basic blocks of a method
     """
 
     def __init__(self, _vm):
@@ -206,14 +206,14 @@ class BasicBlocks:
 
     def get(self):
         """
-            :rtype: return each basic block (:class:`DVMBasicBlock` object)
+        :returns: yields each basic block (:class:`DVMBasicBlock` object)
         """
         for i in self.bb:
             yield i
 
     def gets(self):
         """
-            :rtype: a list of basic blocks (:class:`DVMBasicBlock` objects)
+        :returns: a list of basic blocks (:class:`DVMBasicBlock` objects)
         """
         return self.bb
 
@@ -307,10 +307,10 @@ class MethodAnalysis:
         h = {}
         idx = 0
 
-        log.debug("Parsing instructions")
+        log.debug("Parsing instructions for method {}".format(self))
         for i in bc.get_instructions():
             for j in BasicOPCODES:
-                if j.match(i.get_name()) is not None:
+                if j.match(i.get_name()):
                     v = dvm.determineNext(i, idx, self.method)
                     h[idx] = v
                     l.extend(v)
@@ -365,13 +365,16 @@ class MethodAnalysis:
 
     def get_basic_blocks(self):
         """
-            :rtype: a :class:`BasicBlocks` object
+        Returns the :class:`BasicBlocks` generated for this method.
+        The :class:`BasicBlocks` can be used to get a control flow graph (CFG) of the method.
+
+        :rtype: a :class:`BasicBlocks` object
         """
         return self.basic_blocks
 
     def get_length(self):
         """
-            :rtype: an integer which is the length of the code
+        :rtype: an integer which is the length of the code
         """
         return self.code.get_length() if self.code else 0
 
