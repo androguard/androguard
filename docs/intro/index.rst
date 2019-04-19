@@ -7,6 +7,7 @@ Introduction
    installation.rst
    gettingstarted.rst
    xrefs.rst
+   basicblocks.rst
    sessions.rst
    use_jadx.rst
    certificates.rst

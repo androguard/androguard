@@ -38,9 +38,11 @@ class REF_TYPE(IntEnum):
 
 class DVMBasicBlock:
     """
-        A simple basic block of a dalvik method
-    """
+    A simple basic block of a dalvik method.
 
+    A basic block consists of a series of :class:`~androguard.core.bytecodes.dvm.Instruction`
+    which are not interrupted by branch or jump instructions such as `goto`, `if`, `throw`, `return`, `switch` etc.
+    """
     def __init__(self, start, vm, method, context):
         self.__vm = vm
         self.method = method
@@ -57,7 +59,7 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = "{}-BB@0x{:x}".format(self.method.get_name(), self.start)
+        self.name = "{}-BB@0x{:08x}".format(self.method.get_name(), self.start)
         self.exception_analysis = None
 
         self.notes = []
@@ -80,9 +82,8 @@ class DVMBasicBlock:
         """
         Get all instructions from a basic block.
 
-        :rtype: Return all instructions in the current basic block
+        :returns: Return all instructions in the current basic block
         """
-        tmp_ins = []
         idx = 0
         for i in self.method.get_instructions():
             if self.start <= idx < self.end:
@@ -93,33 +94,58 @@ class DVMBasicBlock:
         return self.nb_instructions
 
     def get_method(self):
+        """
+        Returns the originiating method
+
+        :return: the method
+        :rtype: androguard.core.bytecodes.dvm.EncodedMethod
+        """
         return self.method
 
     def get_name(self):
-        return "{}-BB@0x{:x}".format(self.method.get_name(), self.start)
+        return self.name
 
     def get_start(self):
+        """
+        Get the starting offset of this basic block
+
+        :return: starting offset
+        :rtype: int
+        """
         return self.start
 
     def get_end(self):
+        """
+        Get the end offset of this basic block
+
+        :return: end offset
+        :rtype: int
+        """
         return self.end
 
     def get_last(self):
-        return self.get_instructions()[-1]
+        """
+        Get the last instruction in the basic block
+
+        :return: androguard.core.bytecodes.dvm.Instruction
+        """
+        return list(self.get_instructions())[-1]
 
     def get_next(self):
         """
-            Get next basic blocks
+        Get next basic blocks
 
-            :rtype: a list of the next basic blocks
+        :returns: a list of the next basic blocks
+        :rtype: DVMBasicBlock
         """
         return self.childs
 
     def get_prev(self):
         """
-            Get previous basic blocks
+        Get previous basic blocks
 
-            :rtype: a list of the previous basic blocks
+        :returns: a list of the previous basic blocks
+        :rtype: DVMBasicBlock
         """
         return self.fathers
 
@@ -180,19 +206,32 @@ class DVMBasicBlock:
         self.exception_analysis = exception_analysis
 
     def show(self):
-        print(self.get_name(), self.get_start(), self.get_end())
+        print("{}: {:04x} - {:04x}".format(self.get_name(), self.get_start(), self.get_end()))
+        for note in self.get_notes():
+            print(note)
+        print('=' * 20)
 
 
 class BasicBlocks:
     """
-    This class represents all basic blocks of a method
-    """
+    This class represents all basic blocks of a method.
 
+    It is a collection of many :class:`DVMBasicBlock`.
+    """
     def __init__(self, _vm):
+        """
+
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat _vm:
+        """
         self.__vm = _vm
         self.bb = []
 
     def push(self, bb):
+        """
+        Adds another basic block to the collection
+
+        :param DVBMBasicBlock bb: the DVMBasicBlock to add
+        """
         self.bb.append(bb)
 
     def pop(self, idx):
@@ -204,12 +243,24 @@ class BasicBlocks:
                 return i
         return None
 
-    def get(self):
+    def __len__(self):
+        return len(self.bb)
+
+    def __iter__(self):
         """
         :returns: yields each basic block (:class:`DVMBasicBlock` object)
         """
-        for i in self.bb:
-            yield i
+        yield from self.bb
+
+    def __getitem__(self, item):
+        """
+        Get the basic block at the index
+
+        :param item: index
+        :return: The basic block
+        :rtype: DVMBasicBlock
+        """
+        return self.bb[item]
 
     def gets(self):
         """
@@ -217,8 +268,9 @@ class BasicBlocks:
         """
         return self.bb
 
-    def get_basic_block_pos(self, idx):
-        return self.bb[idx]
+    # Alias for legacy programs
+    get = __iter__
+    get_basic_block_pos = __getitem__
 
 
 class ExceptionAnalysis:
@@ -283,7 +335,7 @@ class MethodAnalysis:
         """
         This class analyses in details a method of a class/dex file
         It is a wrapper around a :class:`EncodedMethod` and enhances it
-        by using multiple :class:`BasicBlock`.
+        by using multiple :class:`DVMBasicBlock` encapsulated in a :class:`BasicBlocks` object.
 
         :type vm: a :class:`DalvikVMFormat` object
         :type method: a :class:`EncodedMethod` object
