@@ -593,6 +593,7 @@ class HeaderItem:
         self.class_defs_size = len(self.class_off_obj.class_def)
         self.class_defs_off = self.class_off_obj.get_off()
 
+        # FIXME: data_off_obj has no map_item!!!
         self.data_size = len(self.data_off_obj.map_item)
         self.data_off = self.data_off_obj.get_off()
 
@@ -7189,7 +7190,7 @@ class MapItem:
                 self.item.reload()
 
     def show(self):
-        bytecode._Print("\tMAP_TYPE_ITEM {}".format(self.type.name))
+        bytecode._Print("\tMAP_TYPE_ITEM", self.type.name)
 
         if self.item is not None:
             if isinstance(self.item, list):
@@ -8051,7 +8052,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list of string
         """
         if self.classes_names is None or update:
-            self.classes_names = [i.get_name() for i in self.classes.class_def]
+            self.classes_names = [i.get_name() for i in self.get_classes()]
         return self.classes_names
 
     def get_classes(self):
@@ -8060,7 +8061,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         :rtype: a list of :class:`ClassDefItem` objects
         """
-        return self.classes.class_def
+        if self.classes:
+            return self.classes.class_def
+        else:
+            # There is a rare case that the DEX has no classes
+            return []
 
     def get_class(self, name):
         """
@@ -8070,7 +8075,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         :rtype: a :class:`ClassDefItem` object
         """
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             if i.get_name() == name:
                 return i
         return None
@@ -8086,7 +8091,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         # TODO could use a generator here
         prog = re.compile(name)
         l = []
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             for j in i.get_methods():
                 if prog.match(j.get_name()):
                     l.append(j)
@@ -8103,7 +8108,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         # TODO could use a generator here
         prog = re.compile(name)
         l = []
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             for j in i.get_fields():
                 if prog.match(j.get_name()):
                     l.append(j)
@@ -8128,7 +8133,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         if self.__cache_all_fields is None:
             self.__cache_all_fields = []
-            for i in self.classes.class_def:
+            for i in self.get_classes():
                 for j in i.get_fields():
                     self.__cache_all_fields.append(j)
         return self.__cache_all_fields
@@ -8141,7 +8146,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         if self.__cache_all_methods is None:
             self.__cache_all_methods = []
-            for i in self.classes.class_def:
+            for i in self.get_classes():
                 for j in i.get_methods():
                     self.__cache_all_methods.append(j)
         return self.__cache_all_methods
@@ -8164,7 +8169,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         if self.__cached_methods_idx is None:
             self.__cached_methods_idx = {}
-            for i in self.classes.class_def:
+            for i in self.get_classes():
                 for j in i.get_methods():
                     self.__cached_methods_idx[j.get_method_idx()] = j
 
@@ -8190,7 +8195,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         if self.__cache_methods is None:
             self.__cache_methods = {}
-            for i in self.classes.class_def:
+            for i in self.get_classes():
                 for j in i.get_methods():
                     self.__cache_methods[j.get_class_name() + j.get_name() +
                                          j.get_descriptor()] = j
@@ -8209,7 +8214,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: None or a :class:`EncodedMethod` object
         """
         l = []
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             if i.get_name() == class_name:
                 for j in i.get_methods():
                     if j.get_name() == method_name:
@@ -8227,7 +8232,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with :class:`EncodedMethod` objects
         """
         l = []
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             for j in i.get_methods():
                 if class_name == j.get_class_name():
                     l.append(j)
@@ -8244,7 +8249,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with :class:`EncodedField` objects
         """
         l = []
-        for i in self.classes.class_def:
+        for i in self.get_classes():
             for j in i.get_fields():
                 if class_name == j.get_class_name():
                     l.append(j)
@@ -8269,7 +8274,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         if self.__cache_fields is None:
             self.__cache_fields = {}
-            for i in self.classes.class_def:
+            for i in self.get_classes():
                 for j in i.get_fields():
                     self.__cache_fields[j.get_class_name() + j.get_name() +
                                         j.get_descriptor()] = j
