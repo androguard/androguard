@@ -922,8 +922,8 @@ class AXMLPrinter:
             _type = next(self.axml)
 
             if _type == START_TAG:
-                name = self._fix_name(self.axml.name)
                 uri = self._print_namespace(self.axml.namespace)
+                uri, name = self._fix_name(uri, self.axml.name)
                 tag = "{}{}".format(uri, name)
 
                 comment = self.axml.comment
@@ -938,7 +938,7 @@ class AXMLPrinter:
 
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
-                    name = self._fix_name(self.axml.getAttributeName(i))
+                    uri, name = self._fix_name(uri, self.axml.getAttributeName(i))
                     value = self._fix_value(self._get_attribute_value(i))
 
                     log.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
@@ -1022,8 +1022,7 @@ class AXMLPrinter:
 
     def _get_attribute_value(self, index):
         """
-        Wrapper function for format_value
-        to resolve the actual value of an attribute in a tag
+        Wrapper function for format_value to resolve the actual value of an attribute in a tag
         :param index: index of the current attribute
         :return: formatted value
         """
@@ -1032,7 +1031,7 @@ class AXMLPrinter:
 
         return format_value(_type, _data, lambda _: self.axml.getAttributeValue(index))
 
-    def _fix_name(self, name):
+    def _fix_name(self, prefix, name):
         """
         Apply some fixes to element named and attribute names.
         Try to get conform to:
@@ -1040,29 +1039,50 @@ class AXMLPrinter:
         > The rest of the name can contain letters, digits, hyphens, underscores, and periods.
         See: https://msdn.microsoft.com/en-us/library/ms256152(v=vs.110).aspx
 
-        :param name: Name of the attribute
-        :return: a fixed version of the name
+        This function tries to fix some broken namespace mappings.
+        In some cases, the namespace prefix is inside the name and not in the prefix field.
+        Then, the tag name will usually look like 'android:foobar'.
+        If and only if the namespace prefix is inside the namespace mapping and the actual prefix field is empty,
+        we will strip the prefix from the attribute name and return the fixed prefix URI instead.
+        Otherwise replacement rules will be applied.
+
+        The replacement rules work in that way, that all unwanted characters are replaced by underscores.
+        In other words, all characters except the ones listed above are replaced.
+
+        :param name: Name of the attribute or tag
+        :param prefix: The existing prefix uri as found in the AXML chunk
+        :return: a fixed version of prefix and name
+        :rtype: tuple
         """
         if not name[0].isalpha() and name[0] != "_":
-            log.warning("Invalid start for name '{}'".format(name))
+            log.warning("Invalid start for name '{}'. "
+                        "XML name must start with a letter.".format(name))
             self.packerwarning = True
             name = "_{}".format(name)
-        if name.startswith("android:"):
+        if name.startswith("android:") and prefix == '' and 'android' in self.axml.nsmap:
             # Seems be a common thing...
-            # Actually this means that the Manifest is likely to be broken, as
-            # usually no namespace URI is set in this case.
-            log.warning("Name '{}' starts with 'android:' prefix! The Manifest seems to be broken? Removing prefix.".format(name))
-            self.packerwarning = True
+            log.info("Name '{}' starts with 'android:' prefix but 'android' is a known prefix. Replacing prefix.".format(name))
+            prefix = self._print_namespace(self.axml.nsmap['android'])
             name = name[len("android:"):]
-        if ":" in name:
-            # Print out an extra warning
-            log.warning("Name seems to contain a namespace prefix: '{}'".format(name))
+            # It looks like this is some kind of packer... Not sure though.
+            self.packerwarning = True
+        elif ":" in name and prefix == '':
+            self.packerwarning = True
+            embedded_prefix, new_name = name.split(":", 1)
+            if embedded_prefix in self.axml.nsmap:
+                log.info("Prefix '{}' is in namespace mapping, assume that it is a prefix.")
+                prefix = self._print_namespace(self.axml.nsmap[embedded_prefix])
+                name = new_name
+            else:
+                # Print out an extra warning
+                log.warning("Confused: name contains a unknown namespace prefix: '{}'. "
+                            "This is either a broken AXML file or some attempt to break stuff.".format(name))
         if not re.match(r"^[a-zA-Z0-9._-]*$", name):
             log.warning("Name '{}' contains invalid characters!".format(name))
             self.packerwarning = True
             name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
 
-        return name
+        return prefix, name
 
     def _fix_value(self, value):
         """
