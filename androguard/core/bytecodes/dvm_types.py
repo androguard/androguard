@@ -1,4 +1,5 @@
 from enum import IntEnum
+from collections import OrderedDict
 
 # This file contains dictionaries used in the Dalvik Format.
 
@@ -22,6 +23,47 @@ class TypeMapItem(IntEnum):
     ANNOTATION_ITEM = 0x2004
     ENCODED_ARRAY_ITEM = 0x2005
     ANNOTATIONS_DIRECTORY_ITEM = 0x2006
+
+    @staticmethod
+    def _get_dependencies():
+        return OrderedDict([
+            (TypeMapItem.HEADER_ITEM, set()),
+            (TypeMapItem.STRING_ID_ITEM, set([TypeMapItem.STRING_DATA_ITEM])),
+            (TypeMapItem.TYPE_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM])),
+            (TypeMapItem.PROTO_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST])),
+            (TypeMapItem.FIELD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
+            (TypeMapItem.METHOD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM])),
+            (TypeMapItem.CLASS_DEF_ITEM, set([TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM])),
+            (TypeMapItem.MAP_LIST, set()),
+            (TypeMapItem.TYPE_LIST, set([TypeMapItem.TYPE_ID_ITEM])),
+            (TypeMapItem.ANNOTATION_SET_REF_LIST, set([TypeMapItem.ANNOTATION_SET_ITEM])),
+            (TypeMapItem.ANNOTATION_SET_ITEM, set([TypeMapItem.ANNOTATION_ITEM])),
+            (TypeMapItem.CLASS_DATA_ITEM, set([TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
+            (TypeMapItem.CODE_ITEM, set([TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.TYPE_ID_ITEM])),
+            (TypeMapItem.STRING_DATA_ITEM, set()),
+            (TypeMapItem.DEBUG_INFO_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
+            (TypeMapItem.ANNOTATION_ITEM, set([TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
+            (TypeMapItem.ENCODED_ARRAY_ITEM, set([TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
+            (TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, set([TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM]))
+        ])
+
+    @staticmethod
+    def determine_load_order():
+        dependencies = TypeMapItem._get_dependencies()
+        ordered = dict()
+        while dependencies:
+            found_next = False
+            for type_name, unloaded in dependencies.items():
+                if not unloaded:
+                    ordered[type_name] = len(ordered)
+                    found_next = True
+                    break
+            if found_next is False:
+                raise Exception('recursive loading dependency')
+            dependencies.pop(type_name)
+            for unloaded in dependencies.values():
+                unloaded.discard(type_name)
+        return ordered
 
 # https://source.android.com/devices/tech/dalvik/dex-format#access-flags
 ACCESS_FLAGS = {

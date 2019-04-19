@@ -543,9 +543,6 @@ class HeaderItem:
         self.class_off_obj = None
         self.data_off_obj = None
 
-    def reload(self):
-        pass
-
     def get_obj(self):
         if self.map_off_obj is None:
             self.map_off_obj = self.CM.get_item_by_offset(self.map_off)
@@ -708,11 +705,9 @@ class AnnotationSetItem:
     def __init__(self, buff, cm):
         self.CM = cm
         self.offset = buff.get_idx()
-        self.annotation_off_item = []
 
         self.size = unpack("=I", buff.read(4))[0]
-        for i in range(0, self.size):
-            self.annotation_off_item.append(AnnotationOffItem(buff, cm))
+        self.annotation_off_item = [AnnotationOffItem(buff, cm) for _ in range(self.size)]
 
     def get_annotation_off_item(self):
         """
@@ -727,9 +722,6 @@ class AnnotationSetItem:
 
     def get_off(self):
         return self.offset
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Annotation Set Item")
@@ -804,11 +796,9 @@ class AnnotationSetRefList:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.list = []
-
         self.size = unpack("=I", buff.read(4))[0]
-        for i in range(0, self.size):
-            self.list.append(AnnotationSetRefItem(buff, cm))
+
+        self.list = [AnnotationSetRefItem(buff, cm) for _ in range(self.size)]
 
     def get_list(self):
         """
@@ -823,9 +813,6 @@ class AnnotationSetRefList:
 
     def set_off(self, off):
         self.offset = off
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Annotation Set Ref List Item")
@@ -1036,17 +1023,11 @@ class AnnotationsDirectoryItem:
         self.annotated_methods_size = unpack("=I", buff.read(4))[0]
         self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
 
-        self.field_annotations = []
-        for i in range(0, self.annotated_fields_size):
-            self.field_annotations.append(FieldAnnotation(buff, cm))
+        self.field_annotations = [FieldAnnotation(buff, cm) for i in range(0, self.annotated_fields_size)]
 
-        self.method_annotations = []
-        for i in range(0, self.annotated_methods_size):
-            self.method_annotations.append(MethodAnnotation(buff, cm))
+        self.method_annotations = [MethodAnnotation(buff, cm) for i in range(0, self.annotated_methods_size)]
 
-        self.parameter_annotations = []
-        for i in range(0, self.annotated_parameters_size):
-            self.parameter_annotations.append(ParameterAnnotation(buff, cm))
+        self.parameter_annotations = [ParameterAnnotation(buff, cm) for i in range(0, self.annotated_parameters_size)]
 
     def get_class_annotations_off(self):
         """
@@ -1110,9 +1091,6 @@ class AnnotationsDirectoryItem:
 
     def get_off(self):
         return self.offset
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Annotations Directory Item")
@@ -1219,9 +1197,7 @@ class TypeList:
         self.offset = buff.get_idx()
         self.size = unpack("=I", buff.read(4))[0]
 
-        self.list = []
-        for i in range(0, self.size):
-            self.list.append(TypeItem(buff, cm))
+        self.list = [TypeItem(buff, cm) for _ in range(self.size)]
 
         self.pad = b""
         if self.size % 2 != 0:
@@ -1274,9 +1250,6 @@ class TypeList:
 
     def get_off(self):
         return self.offset + self.len_pad
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Type List")
@@ -1389,9 +1362,6 @@ class DebugInfoItem:
             bcode = DBGBytecode(self.CM, get_byte(buff))
             self.bytecodes.append(bcode)
 
-    def reload(self):
-        pass
-
     def get_parameters_size(self):
         return self.parameters_size
 
@@ -1444,6 +1414,8 @@ class DebugInfoItemEmpty:
         self.__buff = buff
         self.__raw = ""
 
+        self.reload()
+
     def set_off(self, off):
         self.offset = off
 
@@ -1489,9 +1461,7 @@ class EncodedArray:
 
         self.size = readuleb128(buff)
 
-        self.values = []
-        for i in range(0, self.size):
-            self.values.append(EncodedValue(buff, cm))
+        self.values = [EncodedValue(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
         """
@@ -1705,9 +1675,7 @@ class EncodedAnnotation:
         self.type_idx = readuleb128(buff)
         self.size = readuleb128(buff)
 
-        self.elements = []
-        for i in range(0, self.size):
-            self.elements.append(AnnotationElement(buff, cm))
+        self.elements = [AnnotationElement(buff, cm) for _ in range(self.size)]
 
     def get_type_idx(self):
         """
@@ -1797,9 +1765,6 @@ class AnnotationItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("Annotation Item")
         bytecode._PrintDefault("visibility=%d\n" % self.visibility)
@@ -1845,9 +1810,6 @@ class EncodedArrayItem:
 
     def set_off(self, off):
         self.offset = off
-
-    def reload(self):
-        pass
 
     def show(self):
         bytecode._PrintSubBanner("Encoded Array Item")
@@ -1924,9 +1886,6 @@ class StringDataItem:
 
     def get_off(self):
         return self.offset
-
-    def reload(self):
-        pass
 
     def get_unicode(self):
         """
@@ -2012,9 +1971,6 @@ class StringIdItem:
     def get_off(self):
         return self.offset
 
-    def reload(self):
-        pass
-
     def show(self):
         bytecode._PrintSubBanner("String Id Item")
         bytecode._PrintDefault("string_data_off=%x\n" % self.string_data_off)
@@ -2048,7 +2004,7 @@ class TypeIdItem:
         self.offset = buff.get_idx()
 
         self.descriptor_idx = unpack("=I", buff.read(4))[0]
-        self.descriptor_idx_value = None
+        self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
 
     def get_descriptor_idx(self):
         """
@@ -2065,9 +2021,6 @@ class TypeIdItem:
         :rtype: string
         """
         return self.descriptor_idx_value
-
-    def reload(self):
-        self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
 
     def show(self):
         bytecode._PrintSubBanner("Type Id Item")
@@ -2099,9 +2052,7 @@ class TypeHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.type = []
-        for i in range(0, size):
-            self.type.append(TypeIdItem(buff, cm))
+        self.type = [TypeIdItem(buff, cm) for i in range(0,size)]
 
     def get_type(self):
         """
@@ -2122,10 +2073,6 @@ class TypeHIdItem:
 
     def get_off(self):
         return self.offset
-
-    def reload(self):
-        for i in self.type:
-            i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Type List Item")
@@ -2163,13 +2110,9 @@ class ProtoIdItem:
         self.return_type_idx = unpack("=I", buff.read(4))[0]
         self.parameters_off = unpack("=I", buff.read(4))[0]
 
-        self.shorty_idx_value = None
-        self.return_type_idx_value = None
-        self.parameters_off_value = None
-
-    def reload(self):
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
+        self.parameters_off_value = None
 
     def get_shorty_idx(self):
         """
@@ -2267,10 +2210,7 @@ class ProtoHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.proto = []
-
-        for i in range(0, size):
-            self.proto.append(ProtoIdItem(buff, cm))
+        self.proto = [ProtoIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2283,10 +2223,6 @@ class ProtoHIdItem:
             return self.proto[idx]
         except IndexError:
             return ProtoIdItemInvalid()
-
-    def reload(self):
-        for i in self.proto:
-            i.reload()
 
     def show(self):
         bytecode._PrintSubBanner("Proto List Item")
@@ -2324,9 +2260,7 @@ class FieldIdItem:
         self.type_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self.class_idx_value = None
-        self.type_idx_value = None
-        self.name_idx_value = None
+        self.reload()
 
     def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
@@ -2437,9 +2371,7 @@ class FieldHIdItem:
     def __init__(self, size, buff, cm):
         self.offset = buff.get_idx()
 
-        self.elem = []
-        for i in range(0, size):
-            self.elem.append(FieldIdItem(buff, cm))
+        self.elem = [FieldIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2455,10 +2387,6 @@ class FieldHIdItem:
             return self.elem[idx]
         except IndexError:
             return FieldIdItemInvalid()
-
-    def reload(self):
-        for i in self.elem:
-            i.reload()
 
     def show(self):
         nb = 0
@@ -2498,9 +2426,7 @@ class MethodIdItem:
         self.proto_idx = unpack("=H", buff.read(2))[0]
         self.name_idx = unpack("=I", buff.read(4))[0]
 
-        self.class_idx_value = None
-        self.proto_idx_value = None
-        self.name_idx_value = None
+        self.reload()
 
     def reload(self):
         self.class_idx_value = self.CM.get_type(self.class_idx)
@@ -2623,9 +2549,7 @@ class MethodHIdItem:
 
         self.offset = buff.get_idx()
 
-        self.methods = []
-        for i in range(0, size):
-            self.methods.append(MethodIdItem(buff, cm))
+        self.methods = [MethodIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -3352,9 +3276,6 @@ class ClassDataItem:
         self._load_elements(self.virtual_methods_size, self.virtual_methods,
                             EncodedMethod, buff, cm)
 
-    def reload(self):
-        pass
-
     def get_static_fields_size(self):
         """
         Return the number of static fields defined in this item
@@ -3558,6 +3479,8 @@ class ClassDefItem:
         self.sname = None
         self.access_flags_string = None
 
+        self.reload()
+
     def reload(self):
         self.name = self.CM.get_type(self.class_idx)
         self.sname = self.CM.get_type(self.superclass_idx)
@@ -3565,7 +3488,6 @@ class ClassDefItem:
 
         if self.class_data_off != 0:
             self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
-            self.class_data_item.reload()
 
         if self.static_values_off != 0:
             self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
@@ -3832,10 +3754,6 @@ class ClassHDefItem:
     def get_names(self):
         return [x.get_name() for x in self.class_def]
 
-    def reload(self):
-        for i in self.class_def:
-            i.reload()
-
     def show(self):
         for i in self.class_def:
             i.show()
@@ -4001,10 +3919,7 @@ class EncodedCatchHandlerList:
         self.offset = buff.get_idx()
 
         self.size = readuleb128(buff)
-        self.list = []
-
-        for i in range(0, self.size):
-            self.list.append(EncodedCatchHandler(buff, cm))
+        self.list = [EncodedCatchHandler(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
         """
@@ -6633,9 +6548,6 @@ class DCode:
         for i in self.cached_instructions:
             yield i
 
-    def reload(self):
-        self.cached_instructions = None
-
     def add_inote(self, msg, idx, off=None):
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
@@ -6912,9 +6824,6 @@ class DalvikCode:
     def set_idx(self, idx):
         self.code.set_idx(idx)
 
-    def reload(self):
-        self.code.reload()
-
     def get_length(self):
         return self.insns_size
 
@@ -7046,10 +6955,6 @@ class CodeItem:
         except KeyError:
             return None
 
-    def reload(self):
-        for i in self.code:
-            i.reload()
-
     def show(self):
         # FIXME workaround for showing the MAP_ITEMS
         # if m_a is none, we use get_raw.
@@ -7180,14 +7085,6 @@ class MapItem:
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
         log.debug("End of parsing map_item '{}'. Required time {:.0f}:{:07.4f}".format(self.type.name, minutes, seconds))
-
-    def reload(self):
-        if self.item is not None:
-            if isinstance(self.item, list):
-                for i in self.item:
-                    i.reload()
-            else:
-                self.item.reload()
 
     def show(self):
         bytecode._Print("\tMAP_TYPE_ITEM", self.type.name)
@@ -7609,7 +7506,7 @@ class MapList:
         self.size = unpack("=I", buff.read(4))[0]
 
         self.map_item = []
-        for i in range(0, self.size):
+        for _ in range(0, self.size):
             idx = buff.get_idx()
 
             mi = MapItem(buff, self.CM)
@@ -7617,35 +7514,9 @@ class MapList:
 
             buff.set_idx(idx + mi.get_length())
 
-        # TYPE_STRING_DATA_ITEM will be at the beginning of ordered
-        # We want to parse this first, as other map items depend on it.
+        load_order = TypeMapItem.determine_load_order()
         ordered = sorted(self.map_item,
-                         key=lambda mi: TypeMapItem.STRING_DATA_ITEM != mi.get_type())
-        # TODO: There could be some speedup if the parsing needs to be done only
-        # once.
-        # The idea is to parse all items in the correct order, which is possible
-        # as all items construct an acyclic graph of dependencies.
-        #
-        # We know, that we do not need to parse header_item and map_list (again)
-        # Then the following order would probably work:
-        # * string_data_item
-        # * string_id_item
-        # * type_id_item
-        # * type_list
-        # * field_id_item
-        # * proto_id_item
-        # * method_id_item
-        # * debug_info_item
-        # * code_item
-        # * method_handle_item
-        # * call_site_id_item
-        # * class_data_item
-        # * encoded_array_item
-        # * annotation_item
-        # * annotation_set_item
-        # * annotation_set_ref_item
-        # * annotations_directory_item
-        # * class_def_item
+                        key=lambda mi: load_order[mi.get_type()])
 
         for mi in ordered:
             mi.parse()
@@ -7656,18 +7527,6 @@ class MapList:
                 c_item = mi.get_item()
 
             self.CM.add_type_item(mi.get_type(), mi, c_item)
-
-        log.debug("Reloading all map_items to fix references")
-        started_at = time.time()
-        for i in self.map_item:
-            log.debug("Reloading '%s'" % TypeMapItem(i.get_type()).name)
-            i.reload()
-        diff = time.time() - started_at
-        minutes, seconds = diff // 60, diff % 60
-        log.debug("End of reloading '{}'. Required time {:.0f}:{:07.4f}".format(TypeMapItem(i.get_type()).name, minutes, seconds))
-
-    def reload(self):
-        pass
 
     def get_off(self):
         return self.offset

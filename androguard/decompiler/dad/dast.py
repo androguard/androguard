@@ -338,7 +338,7 @@ def visit_expr(op):
                 keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
                 return method_invocation(op.triple, keyword, None, params)
             elif isinstance(base, instruction.NewInstance):
-                return ['ClassInstanceCreation', params,
+                return ['ClassInstanceCreation', op.triple, params,
                         parse_descriptor(base.type)]
             else:
                 assert (isinstance(base, instruction.Variable))
