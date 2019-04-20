@@ -99,10 +99,43 @@ class AXMLTest(unittest.TestCase):
         self.assertEqual(a._fix_value("\uFFFF"), "_")
         self.assertEqual(a._fix_value("hello\x00world"), "hello")
 
-        self.assertEqual(a._fix_name("foobar"), "foobar")
-        self.assertEqual(a._fix_name("5foobar"), "_5foobar")
-        self.assertEqual(a._fix_name("android:foobar"), "foobar")
-        self.assertEqual(a._fix_name("5:foobar"), "_5_foobar")
+        self.assertEqual(a._fix_name('', 'foobar'), ('', 'foobar'))
+        self.assertEqual(a._fix_name('', '5foobar'), ('', '_5foobar'))
+        self.assertEqual(a._fix_name('', 'android:foobar'), ('', 'android_foobar'))
+        self.assertEqual(a._fix_name('', 'androiddd:foobar'), ('', 'androiddd_foobar'))
+        self.assertEqual(a._fix_name('', 'sdf:foobar'), ('', 'sdf_foobar'))
+        self.assertEqual(a._fix_name('', 'android:sdf:foobar'), ('', 'android_sdf_foobar'))
+        self.assertEqual(a._fix_name('', '5:foobar'), ('', '_5_foobar'))
+
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'foobar'), ('{http://schemas.android.com/apk/res/android}', 'foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5foobar'), ('{http://schemas.android.com/apk/res/android}', '_5foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:foobar'), ('{http://schemas.android.com/apk/res/android}', 'android_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'androiddd:foobar'), ('{http://schemas.android.com/apk/res/android}', 'androiddd_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'sdf:foobar'), ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:sdf:foobar'), ('{http://schemas.android.com/apk/res/android}', 'android_sdf_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5:foobar'), ('{http://schemas.android.com/apk/res/android}', '_5_foobar'))
+
+        # Add a namespace mapping and try again
+        def new_nsmap(self):
+            return {"android": "http://schemas.android.com/apk/res/android",
+                    "something": "http://example/url"}
+        setattr(axml.AXMLParser, 'nsmap', property(new_nsmap))
+
+        self.assertEqual(a._fix_name('', 'foobar'), ('', 'foobar'))
+        self.assertEqual(a._fix_name('', '5foobar'), ('', '_5foobar'))
+        self.assertEqual(a._fix_name('', 'android:foobar'), ('{http://schemas.android.com/apk/res/android}', 'foobar'))
+        self.assertEqual(a._fix_name('', 'something:foobar'), ('{http://example/url}', 'foobar'))
+        self.assertEqual(a._fix_name('', 'androiddd:foobar'), ('', 'androiddd_foobar'))
+        self.assertEqual(a._fix_name('', 'sdf:foobar'), ('', 'sdf_foobar'))
+        self.assertEqual(a._fix_name('', 'android:sdf:foobar'), ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
+        self.assertEqual(a._fix_name('', '5:foobar'), ('', '_5_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'foobar'), ('{http://schemas.android.com/apk/res/android}', 'foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5foobar'), ('{http://schemas.android.com/apk/res/android}', '_5foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:foobar'), ('{http://schemas.android.com/apk/res/android}', 'android_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'androiddd:foobar'), ('{http://schemas.android.com/apk/res/android}', 'androiddd_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'sdf:foobar'), ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:sdf:foobar'), ('{http://schemas.android.com/apk/res/android}', 'android_sdf_foobar'))
+        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5:foobar'), ('{http://schemas.android.com/apk/res/android}', '_5_foobar'))
 
     def testNoStringPool(self):
         """Test if a single header without string pool is rejected"""
@@ -182,6 +215,7 @@ class AXMLTest(unittest.TestCase):
             "examples/axml/AndroidManifestLiapp.xml",
             "examples/axml/AndroidManifestMaskingNamespace.xml",
             "examples/axml/AndroidManifest_NamespaceInAttributeName.xml",
+            "examples/axml/AndroidManifest_NamespaceInAttributeName2.xml",
             "examples/axml/AndroidManifestNonZeroStyle.xml",
             "examples/axml/AndroidManifestNullbytes.xml",
             "examples/axml/AndroidManifestTextChunksXML.xml",
