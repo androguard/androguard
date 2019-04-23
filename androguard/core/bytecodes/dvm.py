@@ -6978,6 +6978,7 @@ class MapItem:
         elif TypeMapItem.HEADER_ITEM == self.type:
             # probably not necessary to parse again here...
             # self.item = HeaderItem(self.size, buff, cm)
+            pass
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
             self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
