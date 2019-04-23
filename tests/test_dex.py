@@ -3,6 +3,7 @@ import unittest
 import sys
 import random
 import binascii
+import logging
 
 from androguard.core.bytecodes import dvm
 
@@ -11,6 +12,7 @@ class FakeClassManager:
     def get_odex_format(self):
         return False
 
+log = logging.getLogger("androguard.tests")
 
 class DexTest(unittest.TestCase):
     def testDex(self):
@@ -53,31 +55,32 @@ class DexTest(unittest.TestCase):
 
     def testDexVersion(self):
         dexfiles = [
-            'examples/dalvik/test/bin/classes_output.dex',
-            'examples/dalvik/test/bin/classes.dex',
-            'examples/obfu/classes_tc_diff_dasho.dex',
-            'examples/obfu/classes_tc_dasho.dex',
-            'examples/obfu/classes_tc_mark1.dex',
-            'examples/obfu/classes_tc.dex',
-            'examples/obfu/classes_tc_diff.dex',
-            'examples/obfu/classes_tc_proguard.dex',
-            'examples/android/TCDiff/bin/classes.dex',
-            'examples/android/TestsAndroguard/bin/classes.dex',
-            'examples/android/TC/bin/classes.dex',
-            'examples/tests/Test.dex',
-            'examples/tests/ExceptionHandling.dex',
-            'examples/tests/InterfaceCls.dex',
-            'examples/tests/FillArrays.dex',
-            'examples/tests/StringTests.dex',
-            'examples/tests/AnalysisTest.dex',
-            'examples/tests/Switch.dex',
-        ]
+            ('examples/dalvik/test/bin/classes_output.dex', 35),
+            ('examples/dalvik/test/bin/classes.dex', 35),
+            ('examples/obfu/classes_tc_diff_dasho.dex', 35),
+            ('examples/obfu/classes_tc_dasho.dex', 35),
+            ('examples/obfu/classes_tc_mark1.dex', 35),
+            ('examples/obfu/classes_tc.dex', 35),
+            ('examples/obfu/classes_tc_diff.dex', 35),
+            ('examples/obfu/classes_tc_proguard.dex', 35),
+            ('examples/android/TCDiff/bin/classes.dex', 35),
+            ('examples/android/TestsAndroguard/bin/classes.dex', 35),
+            ('examples/android/TC/bin/classes.dex', 35),
+            ('examples/tests/Test.dex', 35),
+            ('examples/tests/ExceptionHandling.dex', 35),
+            ('examples/tests/InterfaceCls.dex', 35),
+            ('examples/tests/FillArrays.dex', 35),
+            ('examples/tests/StringTests.dex', 35),
+            ('examples/tests/AnalysisTest.dex', 35),
+            ('examples/tests/Switch.dex', 35),
+                ]
 
-        for dexf in dexfiles:
+        for dexf, dexver in dexfiles:
+            log.info("Testing {} -> Version {}".format(dexf, dexver))
             with open(dexf, 'rb') as fp:
                 d = dvm.DalvikVMFormat(fp.read())
 
-                self.assertEqual(d.version, 35)
+                self.assertEqual(d.version, dexver)
 
                 self.assertGreater(d.header.string_ids_size, 0)
                 self.assertGreater(d.header.type_ids_size, 0)
