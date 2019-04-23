@@ -5486,6 +5486,7 @@ class Instruction32x(Instruction):
         super().__init__()
 
         i16 = unpack("=H", buff[0:2])[0]
+        # FIXME check that higher byte of OP is zero
         self.OP = i16 & 0xff
         self.AAAA = unpack("=H", buff[2:4])[0]
         self.BBBB = unpack("=H", buff[4:6])[0]
@@ -5499,7 +5500,7 @@ class Instruction32x(Instruction):
         return [(OPERAND_REGISTER, self.AAAA), (OPERAND_REGISTER, self.BBBB)]
 
     def get_raw(self):
-        return pack("=HHH", self.OP, self.AAAA, self.BBBB)
+        return pack("<HHH", self.OP, self.AAAA, self.BBBB)
 
 
 class Instruction20bc(Instruction):
@@ -5512,11 +5513,7 @@ class Instruction20bc(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
+        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5527,7 +5524,7 @@ class Instruction20bc(Instruction):
         return [(OPERAND_LITERAL, self.AA), (OPERAND_LITERAL, self.BBBB)]
 
     def get_raw(self):
-        return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
+        return pack("<HH", (self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction35mi(Instruction):
@@ -5603,7 +5600,7 @@ class Instruction35mi(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
                     (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
@@ -5618,17 +5615,14 @@ class Instruction35ms(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.G = (i16 >> 8) & 0xf
-        self.A = (i16 >> 12) & 0xf
-        self.BBBB = unpack("=H", buff[2:4])[0]
+        self.OP, i16, self.BBBB, i17 = unpack("<BBHH", buff[:self.length])
+        self.G = i16 & 0x0f
+        self.A = (i16 >> 4) & 0x0f
 
-        i16 = unpack("=H", buff[4:6])[0]
-        self.C = i16 & 0xf
-        self.D = (i16 >> 4) & 0xf
-        self.E = (i16 >> 8) & 0xf
-        self.F = (i16 >> 12) & 0xf
+        self.C = i17 & 0xf
+        self.D = (i17 >> 4) & 0xf
+        self.E = (i17 >> 8) & 0xf
+        self.F = (i17 >> 12) & 0xf
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5680,7 +5674,7 @@ class Instruction35ms(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
                     (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
@@ -5695,13 +5689,7 @@ class Instruction3rmi(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
-        self.CCCC = unpack("=H", buff[4:6])[0]
-
+        self.OP, self.AA, self.BBBB, self.CCCC = unpack('<BBHH', buff[:self.length])
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
@@ -5733,7 +5721,7 @@ class Instruction3rmi(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction3rms(Instruction):
@@ -5747,13 +5735,7 @@ class Instruction3rms(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
-        self.CCCC = unpack("=H", buff[4:6])[0]
-
+        self.OP, self.AA, self.BBBB, self.CCCC = unpack('<BBHH', buff[:self.length])
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
@@ -5785,7 +5767,7 @@ class Instruction3rms(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction41c(Instruction):
@@ -5799,10 +5781,7 @@ class Instruction41c(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP = unpack("=H", buff[0:2])[0]
-        self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-
-        self.AAAA = unpack("=H", buff[6:8])[0]
+        self.OP, self.BBBBBBBB, self.AAAA = unpack("<HIH", buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5820,7 +5799,7 @@ class Instruction41c(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
+        return pack("<HIH", self.OP, self.BBBBBBBB, self.AAAA)
 
 
 class Instruction40sc(Instruction):
@@ -5834,9 +5813,7 @@ class Instruction40sc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP = unpack("=H", buff[0:2])[0]
-        self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-        self.AAAA = unpack("=H", buff[6:8])[0]
+        self.OP, self.BBBBBBBB, self.AAAA = unpack("=HIH", buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5854,7 +5831,7 @@ class Instruction40sc(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("=HIH", self.OP, self.BBBBBBBB, self.AAAA)
+        return pack("<HIH", self.OP, self.BBBBBBBB, self.AAAA)
 
 
 class Instruction52c(Instruction):
@@ -5868,10 +5845,7 @@ class Instruction52c(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP = unpack("=H", buff[0:2])[0]
-        self.CCCCCCCC = unpack("=I", buff[2:6])[0]
-        self.AAAA = unpack("=H", buff[6:8])[0]
-        self.BBBB = unpack("=H", buff[8:10])[0]
+        self.OP, self.CCCCCCCC, self.AAAA, self.BBBB = unpack("<HIHH", buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
@@ -5889,7 +5863,7 @@ class Instruction52c(Instruction):
         return self.CCCCCCCC
 
     def get_raw(self):
-        return pack("=HIHH", self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
+        return pack("<HIHH", self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
 
 
 class Instruction5rc(Instruction):
@@ -5903,11 +5877,7 @@ class Instruction5rc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP = unpack("=H", buff[0:2])[0]
-        self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-        self.AAAA = unpack("=H", buff[6:8])[0]
-        self.CCCC = unpack("=H", buff[8:10])[0]
-
+        self.OP, self.BBBBBBBB, self.AAAA, self.CCCC = unpack("<HIHH", buff[:self.length])
         self.NNNN = self.CCCC + self.AAAA - 1
 
     def get_output(self, idx=-1):
@@ -5926,20 +5896,20 @@ class Instruction5rc(Instruction):
 
         if self.CCCC == self.NNNN:
             return [(OPERAND_REGISTER, self.CCCC),
-                    (self.get_kind() + OPERAND_KIND, self.BBBB, kind)]
+                    (self.get_kind() + OPERAND_KIND, self.BBBBBBBB, kind)]
         else:
             l = []
             for i in range(self.CCCC, self.NNNN):
                 l.append((OPERAND_REGISTER, i))
 
-            l.append((self.get_kind() + OPERAND_KIND, self.BBBB, kind))
+            l.append((self.get_kind() + OPERAND_KIND, self.BBBBBBBB, kind))
             return l
 
     def get_ref_kind(self):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("=HIHH", self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
+        return pack("<HIHH", self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
 
 
 class Instruction45cc(Instruction):
