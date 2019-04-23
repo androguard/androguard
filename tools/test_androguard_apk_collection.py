@@ -28,8 +28,8 @@ A single APK takes already several minutes.
 """
 
 # Adjust those two variables to your own needs:
-COLLECTION_PATH = r"G:\fdroid"
-LOG_FILENAME = 'ANDROGUARD_TESTS_BUGS.txt'
+COLLECTION_PATH = r"G:\testset"
+LOG_FILENAME = 'G:\ANDROGUARD_TESTS_BUGS.txt'
 
 logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 
@@ -37,8 +37,7 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 def samples():
     for root, _, files in os.walk(COLLECTION_PATH):
         for f in files:
-            if f.endswith(".apk"):
-                yield os.path.join(root, f)
+            yield os.path.join(root, f)
 
 
 def main():
@@ -61,7 +60,8 @@ def main():
         tests_dex = ["get_api_version", "get_classes_def_item", "get_methods_id_item", "get_fields_id_item",
                      "get_codes_item", "get_string_data_item",
                      "get_debug_info_item", "get_header_item", "get_class_manager", "show",
-                     "save", "get_classes_names", "get_classes",
+                     # "save",  # FIXME broken
+                     "get_classes_names", "get_classes",
                      "get_all_fields", "get_fields", "get_methods", "get_len_methods",
                      "get_strings", "get_format_type", "create_python_export",
                      "get_BRANCH_DVM_OPCODES", "get_determineNext",
@@ -84,10 +84,10 @@ def main():
 
 
             # Testing DEX
+            dx = Analysis()
             for dex in a.get_all_dex():
                 d = DalvikVMFormat(dex)
-                dx = Analysis(d)
-                d.set_vmanalysis(dx)
+                dx.add(d)
 
                 # Test decompilation
                 for c in d.get_classes():
@@ -110,7 +110,7 @@ def main():
                             print(path, aaa, file=sys.stderr)
                             logging.exception("{} .. {} .. {}".format(path, c.get_name(), m.get_name()))
 
-                # Other tests
+                # DEX tests
                 for t in tests_dex:
                     print(t)
                     x = getattr(d, t)
@@ -121,6 +121,26 @@ def main():
                         traceback.print_exc()
                         print(path, aaa, file=sys.stderr)
                         logging.exception("{} .. {}".format(path, t))
+
+            # Analysis Tests
+            try:
+                dx.create_xref()
+            except Exception as aaa:
+                print(aaa)
+                traceback.print_exc()
+                print(path, aaa, file=sys.stderr)
+                logging.exception("{} .. {} at Analysis".format(path, t))
+
+            # MethodAnalysis tests
+            for m in dx.methods.values():
+                for bb in m.get_basic_blocks():
+                    try:
+                        list(bb.get_instructions())
+                    except Exception as aaa:
+                        print(aaa)
+                        traceback.print_exc()
+                        print(path, aaa, file=sys.stderr)
+                        logging.exception("{} .. {} at BasicBlock {}".format(path, t, m))
 
         except KeyboardInterrupt:
             raise

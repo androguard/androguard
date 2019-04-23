@@ -15,6 +15,7 @@ import logging
 import warnings
 import zlib
 import hashlib
+from enum import IntEnum
 
 log = logging.getLogger("androguard.dvm")
 
@@ -3105,9 +3106,9 @@ class EncodedMethod:
 
         :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
-        if self.code is None:
+        if self.get_code() is None:
             return []
-        return self.code.get_bc().get_instructions()
+        return self.get_code().get_bc().get_instructions()
 
     def set_instructions(self, instructions):
         """
@@ -3131,8 +3132,8 @@ class EncodedMethod:
 
         :rtype: an :class:`Instruction` object
         """
-        if self.code is not None:
-            return self.code.get_bc().get_instruction(idx, off)
+        if self.get_code() is not None:
+            return self.get_code().get_bc().get_instruction(idx, off)
         return None
 
     def get_debug(self):
@@ -3141,9 +3142,9 @@ class EncodedMethod:
 
         :rtype: :class:`DebugInfoItem`
         """
-        if self.code is None:
+        if self.get_code() is None:
             return None
-        return self.code.get_debug()
+        return self.get_code().get_debug()
 
     def get_descriptor(self):
         """
@@ -3971,15 +3972,37 @@ class EncodedCatchHandlerList:
         return length
 
 
-KIND_METH = 0
-KIND_STRING = 1
-KIND_FIELD = 2
-KIND_TYPE = 3
-VARIES = 4
-INLINE_METHOD = 5
-VTABLE_OFFSET = 6
-FIELD_OFFSET = 7
-KIND_RAW_STRING = 8
+class Kind(IntEnum):
+    """
+    This Enum is used to determine the kind of argument
+    inside an Dalvik instruction.
+
+    It is used to reference the actual item instead of the refernece index
+    from the :class:`ClassManager` when disassembling the bytecode.
+    """
+    # Indicates a method reference
+    METH = 0
+    # Indicates that opcode argument is a string index
+    STRING = 1
+    # Indicates a field reference
+    FIELD = 2
+    # Indicates a type reference
+    TYPE = 3
+    # indicates a prototype reference
+    PROTO = 9
+    # indicates method reference and proto reference (invoke-polymorphic)
+    METH_PROTO = 10
+    # indicates call site item
+    CALL_SITE = 11
+
+    # TODO: not very well documented
+    VARIES = 4
+    # inline lined stuff
+    INLINE_METHOD = 5
+    # static linked stuff
+    VTABLE_OFFSET = 6
+    FIELD_OFFSET = 7
+    RAW_STRING = 8
 
 OPERAND_REGISTER = 0
 OPERAND_LITERAL = 1
@@ -4001,7 +4024,7 @@ def get_kind(cm, kind, value):
 
     :rtype: string
     """
-    if kind == KIND_METH:
+    if kind == Kind.METH:
         method = cm.get_method_ref(value)
         class_name = method.get_class_name()
         name = method.get_name()
@@ -4009,26 +4032,27 @@ def get_kind(cm, kind, value):
 
         return "{}->{}{}".format(class_name, name, descriptor)
 
-    elif kind == KIND_STRING:
+    elif kind == Kind.STRING:
         return repr(cm.get_string(value))
 
-    elif kind == KIND_RAW_STRING:
+    # TODO: unused?
+    elif kind == Kind.RAW_STRING:
         return cm.get_string(value)
 
-    elif kind == KIND_FIELD:
+    elif kind == Kind.FIELD:
         class_name, proto, field_name = cm.get_field(value)
         return "{}->{} {}".format(class_name, field_name, proto)
 
-    elif kind == KIND_TYPE:
+    elif kind == Kind.TYPE:
         return cm.get_type(value)
 
-    elif kind == VTABLE_OFFSET:
+    elif kind == Kind.VTABLE_OFFSET:
         return "vtable[0x%x]" % value
 
-    elif kind == FIELD_OFFSET:
+    elif kind == Kind.FIELD_OFFSET:
         return "field[0x%x]" % value
 
-    elif kind == INLINE_METHOD:
+    elif kind == Kind.INLINE_METHOD:
         buff = "inline[0x%x]" % value
 
         # FIXME: depends of the android version ...
@@ -4045,6 +4069,7 @@ class Instruction:
     """
     This class represents a dalvik instruction
     """
+    length = 0
 
     def get_kind(self):
         """
@@ -4052,10 +4077,8 @@ class Instruction:
 
         :rtype: int
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
+        if self.OP >= 0xf2ff:
+            return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
         return DALVIK_OPCODES_FORMAT[self.OP][1][1]
 
     def get_name(self):
@@ -4064,10 +4087,8 @@ class Instruction:
 
         :rtype: string
         """
-        if self.OP > 0xff:
-            if self.OP >= 0xf2ff:
-                return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
-            return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][0]
+        if self.OP >= 0xf2ff:
+            return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
         return DALVIK_OPCODES_FORMAT[self.OP][1][0]
 
     def get_op_value(self):
@@ -4126,11 +4147,11 @@ class Instruction:
 
     def get_length(self):
         """
-        Return the length of the instruction
+        Return the length of the instruction in bytes
 
         :rtype: int
         """
-        raise Exception("not implemented")
+        return self.length
 
     def get_raw(self):
         """
@@ -4159,46 +4180,14 @@ class Instruction:
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
 
-class InstructionInvalid(Instruction):
-    """
-    This class represents an invalid instruction
-    """
-
-    def __init__(self, cm, buff):
-        super().__init__()
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-
-        # log.debug("OP:%x" % (self.OP))
-
-    def get_name(self):
-        """
-        Return the name of the instruction
-
-        :rtype: string
-        """
-        return "AG:invalid_instruction"
-
-    def get_output(self, idx=-1):
-        return "(OP:%x)" % self.OP
-
-    def get_operands(self, idx=-1):
-        return []
-
-    def get_length(self):
-        return 2
-
-    def get_raw(self):
-        return pack("=H", self.OP)
-
-
 class FillArrayData:
     """
     This class can parse a FillArrayData instruction
 
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
+
+    # FIXME: why is this not a subclass of Instruction?
 
     def __init__(self, buff):
         self.notes = []
@@ -4328,6 +4317,8 @@ class SparseSwitch:
 
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
+
+    # FIXME: why is this not a subclass of Instruction?
 
     def __init__(self, buff):
         self.notes = []
@@ -4459,6 +4450,8 @@ class PackedSwitch:
 
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
+
+    # FIXME: why is this not a subclass of Instruction?
 
     def __init__(self, buff):
         self.notes = []
@@ -4593,6 +4586,7 @@ class Instruction35c(Instruction):
     """
     This class represents all instructions which have the 35c format
     """
+    length = 6
 
     def __init__(self, cm, buff):
         super().__init__()
@@ -4659,9 +4653,6 @@ class Instruction35c(Instruction):
 
         return l
 
-    def get_length(self):
-        return 6
-
     def get_ref_kind(self):
         return self.BBBB
 
@@ -4675,6 +4666,8 @@ class Instruction10x(Instruction):
     This class represents all instructions which have the 10x format
     """
 
+    length = 2
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -4687,9 +4680,6 @@ class Instruction10x(Instruction):
     def get_operands(self, idx=-1):
         return []
 
-    def get_length(self):
-        return 2
-
     def get_raw(self):
         return pack("=H", self.OP)
 
@@ -4698,6 +4688,8 @@ class Instruction21h(Instruction):
     """
     This class represents all instructions which have the 21h format
     """
+
+    length = 4
 
     def __init__(self, cm, buff):
         super().__init__()
@@ -4717,9 +4709,6 @@ class Instruction21h(Instruction):
         elif self.OP == 0x19:
             self.formatted_operands.append(unpack(
                 '=d', bytearray([0, 0, 0, 0, 0, 0]) + pack('=h', self.BBBB))[0])
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4748,6 +4737,8 @@ class Instruction11n(Instruction):
     This class represents all instructions which have the 11n format
     """
 
+    length = 2
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -4768,9 +4759,6 @@ class Instruction11n(Instruction):
     def get_literals(self):
         return [self.B]
 
-    def get_length(self):
-        return 2
-
     def get_raw(self):
         return pack("=h", (self.B << 12) | (self.A << 8) | self.OP)
 
@@ -4779,6 +4767,8 @@ class Instruction21c(Instruction):
     """
     This class represents all instructions which have the 21c format
     """
+
+    length = 4
 
     def __init__(self, cm, buff):
         super().__init__()
@@ -4789,9 +4779,6 @@ class Instruction21c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4812,7 +4799,7 @@ class Instruction21c(Instruction):
         return get_kind(self.cm, self.get_kind(), self.BBBB)
 
     def get_raw_string(self):
-        return get_kind(self.cm, KIND_RAW_STRING, self.BBBB)
+        return get_kind(self.cm, Kind.RAW_STRING, self.BBBB)
 
     def get_raw(self):
         return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
@@ -4822,6 +4809,8 @@ class Instruction21s(Instruction):
     """
     This class represents all instructions which have the 21s format
     """
+
+    length = 4
 
     def __init__(self, cm, buff):
         super().__init__()
@@ -4838,9 +4827,6 @@ class Instruction21s(Instruction):
         # FIXME: is this actually correct? pack d, unpack d??
         if self.OP == 0x16:
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0])
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4869,6 +4855,8 @@ class Instruction22c(Instruction):
     This class represents all instructions which have the 22c format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -4878,9 +4866,6 @@ class Instruction22c(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4906,6 +4891,8 @@ class Instruction22cs(Instruction):
     This class represents all instructions which have the 22cs format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -4915,9 +4902,6 @@ class Instruction22cs(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=H", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -4943,6 +4927,8 @@ class Instruction31t(Instruction):
     This class represents all instructions which have the 31t format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         i16 = unpack("=H", buff[0:2])[0]
@@ -4950,9 +4936,6 @@ class Instruction31t(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=i", buff[2:6])[0]
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         return "v{}, {:+x}h (payload@0x{:08x})".format(self.AA, self.BBBBBBBB, self.BBBBBBBB * 2 + idx)
@@ -4972,6 +4955,8 @@ class Instruction31c(Instruction):
     This class represents all instructions which have the 31c format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -4981,9 +4966,6 @@ class Instruction31c(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5009,7 +4991,7 @@ class Instruction31c(Instruction):
         return get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
 
     def get_raw_string(self):
-        return get_kind(self.cm, KIND_RAW_STRING, self.BBBBBBBB)
+        return get_kind(self.cm, Kind.RAW_STRING, self.BBBBBBBB)
 
     def get_raw(self):
         return pack("=HI", (self.AA << 8) | self.OP, self.BBBBBBBB)
@@ -5020,6 +5002,8 @@ class Instruction12x(Instruction):
     This class represents all instructions which have the 12x format
     """
 
+    length = 2
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5027,9 +5011,6 @@ class Instruction12x(Instruction):
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
-
-    def get_length(self):
-        return 2
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5048,15 +5029,14 @@ class Instruction11x(Instruction):
     This class represents all instructions which have the 11x format
     """
 
+    length = 2
+
     def __init__(self, cm, buff):
         super().__init__()
 
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
-
-    def get_length(self):
-        return 2
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5075,6 +5055,8 @@ class Instruction51l(Instruction):
     This class represents all instructions which have the 51l format
     """
 
+    length = 10
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5089,9 +5071,6 @@ class Instruction51l(Instruction):
         if self.OP == 0x18:
             self.formatted_operands.append(unpack('=d', pack(
                 '=q', self.BBBBBBBBBBBBBBBB))[0])
-
-    def get_length(self):
-        return 10
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5122,6 +5101,8 @@ class Instruction31i(Instruction):
     This class represents all instructions which have the 31i format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5130,7 +5111,7 @@ class Instruction31i(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         # FIXME: 0x14 const: arbitrary 32-bit constant, not neccessarily signed!
-        # onlt 0x17 const-wide/32 is signed, but const-wide move sign extened to
+        # only 0x17 const-wide/32 is signed, but const-wide move sign extened to
         # 64bit
         self.BBBBBBBB = unpack("=i", buff[2:6])[0]
 
@@ -5145,9 +5126,6 @@ class Instruction31i(Instruction):
             # FIXME: this looks very wrong - should be packed as <i, unpacked as
             # <d? Again: Crude assumption, that this is always double.
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBBBBBB))[0])
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5176,6 +5154,8 @@ class Instruction22x(Instruction):
     This class represents all instructions which have the 22x format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5184,9 +5164,6 @@ class Instruction22x(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5205,6 +5182,8 @@ class Instruction23x(Instruction):
     This class represents all instructions which have the 23x format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5215,9 +5194,6 @@ class Instruction23x(Instruction):
         i16 = unpack("=H", buff[2:4])[0]
         self.BB = i16 & 0xff
         self.CC = (i16 >> 8) & 0xff
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5237,15 +5213,14 @@ class Instruction20t(Instruction):
     This class represents all instructions which have the 20t format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
         self.AAAA = unpack("=h", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5267,6 +5242,8 @@ class Instruction21t(Instruction):
     This class represents all instructions which have the 21t format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5275,9 +5252,6 @@ class Instruction21t(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=h", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5299,14 +5273,13 @@ class Instruction10t(Instruction):
     This class represents all instructions which have the 10t format
     """
 
+    length = 2
+
     def __init__(self, cm, buff):
         super().__init__()
 
         self.OP = unpack("=B", buff[0:1])[0]
         self.AA = unpack("=b", buff[1:2])[0]
-
-    def get_length(self):
-        return 2
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5328,6 +5301,8 @@ class Instruction22t(Instruction):
     This class represents all instructions which have the 22t format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5336,9 +5311,6 @@ class Instruction22t(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5361,6 +5333,8 @@ class Instruction22s(Instruction):
     This class represents all instructions which have the 22s format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5369,9 +5343,6 @@ class Instruction22s(Instruction):
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
         self.CCCC = unpack("=h", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5394,6 +5365,8 @@ class Instruction22b(Instruction):
     This class represents all instructions which have the 22b format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5403,9 +5376,6 @@ class Instruction22b(Instruction):
 
         self.BB = unpack("=B", buff[2:3])[0]
         self.CC = unpack("=b", buff[3:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5428,6 +5398,8 @@ class Instruction30t(Instruction):
     This class represents all instructions which have the 30t format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5435,10 +5407,6 @@ class Instruction30t(Instruction):
         self.OP = i16 & 0xff
 
         self.AAAAAAAA = unpack("=i", buff[2:6])[0]
-
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5460,6 +5428,8 @@ class Instruction3rc(Instruction):
     This class represents all instructions which have the 3rc format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5472,9 +5442,6 @@ class Instruction3rc(Instruction):
         self.CCCC = unpack("=H", buff[4:6])[0]
 
         self.NNNN = self.CCCC + self.AA - 1
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5513,6 +5480,8 @@ class Instruction32x(Instruction):
     This class represents all instructions which have the 32x format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5520,9 +5489,6 @@ class Instruction32x(Instruction):
         self.OP = i16 & 0xff
         self.AAAA = unpack("=H", buff[2:4])[0]
         self.BBBB = unpack("=H", buff[4:6])[0]
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5541,6 +5507,8 @@ class Instruction20bc(Instruction):
     This class represents all instructions which have the 20bc format
     """
 
+    length = 4
+
     def __init__(self, cm, buff):
         super().__init__()
 
@@ -5549,9 +5517,6 @@ class Instruction20bc(Instruction):
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=H", buff[2:4])[0]
-
-    def get_length(self):
-        return 4
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5570,6 +5535,8 @@ class Instruction35mi(Instruction):
     This class represents all instructions which have the 35mi format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5631,9 +5598,6 @@ class Instruction35mi(Instruction):
                                                       self.BBBB, kind)])
 
         return l
-
-    def get_length(self):
-        return 6
 
     def get_ref_kind(self):
         return self.BBBB
@@ -5648,6 +5612,8 @@ class Instruction35ms(Instruction):
     This class represents all instructions which have the 35ms format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5710,9 +5676,6 @@ class Instruction35ms(Instruction):
 
         return l
 
-    def get_length(self):
-        return 6
-
     def get_ref_kind(self):
         return self.BBBB
 
@@ -5726,6 +5689,8 @@ class Instruction3rmi(Instruction):
     This class represents all instructions which have the 3rmi format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5738,9 +5703,6 @@ class Instruction3rmi(Instruction):
         self.CCCC = unpack("=H", buff[4:6])[0]
 
         self.NNNN = self.CCCC + self.AA - 1
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5779,6 +5741,8 @@ class Instruction3rms(Instruction):
     This class represents all instructions which have the 3rms format
     """
 
+    length = 6
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5791,9 +5755,6 @@ class Instruction3rms(Instruction):
         self.CCCC = unpack("=H", buff[4:6])[0]
 
         self.NNNN = self.CCCC + self.AA - 1
-
-    def get_length(self):
-        return 6
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5832,6 +5793,8 @@ class Instruction41c(Instruction):
     This class represents all instructions which have the 41c format
     """
 
+    length = 8
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5840,9 +5803,6 @@ class Instruction41c(Instruction):
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
 
         self.AAAA = unpack("=H", buff[6:8])[0]
-
-    def get_length(self):
-        return 8
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5868,6 +5828,8 @@ class Instruction40sc(Instruction):
     This class represents all instructions which have the 40sc format
     """
 
+    length = 8
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5875,9 +5837,6 @@ class Instruction40sc(Instruction):
         self.OP = unpack("=H", buff[0:2])[0]
         self.BBBBBBBB = unpack("=I", buff[2:6])[0]
         self.AAAA = unpack("=H", buff[6:8])[0]
-
-    def get_length(self):
-        return 8
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5903,6 +5862,8 @@ class Instruction52c(Instruction):
     This class represents all instructions which have the 52c format
     """
 
+    length = 10
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5911,9 +5872,6 @@ class Instruction52c(Instruction):
         self.CCCCCCCC = unpack("=I", buff[2:6])[0]
         self.AAAA = unpack("=H", buff[6:8])[0]
         self.BBBB = unpack("=H", buff[8:10])[0]
-
-    def get_length(self):
-        return 10
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
@@ -5939,6 +5897,8 @@ class Instruction5rc(Instruction):
     This class represents all instructions which have the 5rc format
     """
 
+    length = 10
+
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
@@ -5949,9 +5909,6 @@ class Instruction5rc(Instruction):
         self.CCCC = unpack("=H", buff[8:10])[0]
 
         self.NNNN = self.CCCC + self.AAAA - 1
-
-    def get_length(self):
-        return 10
 
     def get_output(self, idx=-1):
         buff = ""
@@ -5985,7 +5942,49 @@ class Instruction5rc(Instruction):
         return pack("=HIHH", self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
 
 
+class Instruction45cc(Instruction):
+    length = 8
+
+    # FIXME!!!
+    def __init__(self, cm, buff):
+        super().__init__()
+        self.cm = cm
+
+        # Note: the documentation says A|G|op|BBBB ... but we need to parse op|A|G because of LE
+        self.OP, reg1, self.BBBB, reg2, self.HHHH = unpack('<BBHHH', buff[:self.get_length()])
+        self.A = (reg1 & 0xF0) >> 4
+        self.G = (reg1 & 0x0F)
+        self.C = (reg2 & 0x0F)
+        self.D = (reg2 & 0xF0) >> 4
+        self.F = (reg2 & 0x0F00) >> 8
+        self.E = (reg2 & 0xF000) >> 12
+
+
+class Instruction4rcc(Instruction):
+    length = 8
+
+    # FIXME!!!
+    def __init__(self, cm, buff):
+        super().__init__()
+        self.cm = cm
+
+        self.OPself.AA, self.BBBB, self.CCCC, self.HHHH = unpack('<BBHHH',  buff[:self.get_length()])
+        self.NNNN = self.AA + self.CCCC - 1
+
+
 DALVIK_OPCODES_FORMAT = {
+    # From the Dalvik documentation:
+    #
+    # > Most format IDs consist of three characters, two digits followed by a letter.
+    # > The first digit indicates the number of 16-bit code units in the format.
+    # > The second digit indicates the maximum number of registers that the
+    # > format contains (maximum, since some formats can accommodate a variable number of registers),
+    # > with the special designation "r" indicating that a range of registers is encoded.
+    # > The final letter semi-mnemonically indicates the type of any extra data encoded by the format.
+    # > For example, format "21t" is of length two, contains one register reference,
+    # > and additionally contains a branch target.
+
+    #FIXME: we treat unused instructions as NOP, maybe not a good idea
     0x00: [Instruction10x, ["nop"]],
     0x01: [Instruction12x, ["move"]],
     0x02: [Instruction22x, ["move/from16"]],
@@ -6012,18 +6011,18 @@ DALVIK_OPCODES_FORMAT = {
     0x17: [Instruction31i, ["const-wide/32"]],
     0x18: [Instruction51l, ["const-wide"]],
     0x19: [Instruction21h, ["const-wide/high16"]],
-    0x1a: [Instruction21c, ["const-string", KIND_STRING]],
-    0x1b: [Instruction31c, ["const-string/jumbo", KIND_STRING]],
-    0x1c: [Instruction21c, ["const-class", KIND_TYPE]],
+    0x1a: [Instruction21c, ["const-string", Kind.STRING]],
+    0x1b: [Instruction31c, ["const-string/jumbo", Kind.STRING]],
+    0x1c: [Instruction21c, ["const-class", Kind.TYPE]],
     0x1d: [Instruction11x, ["monitor-enter"]],
     0x1e: [Instruction11x, ["monitor-exit"]],
-    0x1f: [Instruction21c, ["check-cast", KIND_TYPE]],
-    0x20: [Instruction22c, ["instance-of", KIND_TYPE]],
+    0x1f: [Instruction21c, ["check-cast", Kind.TYPE]],
+    0x20: [Instruction22c, ["instance-of", Kind.TYPE]],
     0x21: [Instruction12x, ["array-length"]],
-    0x22: [Instruction21c, ["new-instance", KIND_TYPE]],
-    0x23: [Instruction22c, ["new-array", KIND_TYPE]],
-    0x24: [Instruction35c, ["filled-new-array", KIND_TYPE]],
-    0x25: [Instruction3rc, ["filled-new-array/range", KIND_TYPE]],
+    0x22: [Instruction21c, ["new-instance", Kind.TYPE]],
+    0x23: [Instruction22c, ["new-array", Kind.TYPE]],
+    0x24: [Instruction35c, ["filled-new-array", Kind.TYPE]],
+    0x25: [Instruction3rc, ["filled-new-array/range", Kind.TYPE]],
     0x26: [Instruction31t, ["fill-array-data"]],
     0x27: [Instruction11x, ["throw"]],
     0x28: [Instruction10t, ["goto"]],
@@ -6055,6 +6054,7 @@ DALVIK_OPCODES_FORMAT = {
     0x41: [Instruction10x, ["nop"]],
     0x42: [Instruction10x, ["nop"]],
     0x43: [Instruction10x, ["nop"]],
+
     0x44: [Instruction23x, ["aget"]],
     0x45: [Instruction23x, ["aget-wide"]],
     0x46: [Instruction23x, ["aget-object"]],
@@ -6069,49 +6069,51 @@ DALVIK_OPCODES_FORMAT = {
     0x4f: [Instruction23x, ["aput-byte"]],
     0x50: [Instruction23x, ["aput-char"]],
     0x51: [Instruction23x, ["aput-short"]],
-    0x52: [Instruction22c, ["iget", KIND_FIELD]],
-    0x53: [Instruction22c, ["iget-wide", KIND_FIELD]],
-    0x54: [Instruction22c, ["iget-object", KIND_FIELD]],
-    0x55: [Instruction22c, ["iget-boolean", KIND_FIELD]],
-    0x56: [Instruction22c, ["iget-byte", KIND_FIELD]],
-    0x57: [Instruction22c, ["iget-char", KIND_FIELD]],
-    0x58: [Instruction22c, ["iget-short", KIND_FIELD]],
-    0x59: [Instruction22c, ["iput", KIND_FIELD]],
-    0x5a: [Instruction22c, ["iput-wide", KIND_FIELD]],
-    0x5b: [Instruction22c, ["iput-object", KIND_FIELD]],
-    0x5c: [Instruction22c, ["iput-boolean", KIND_FIELD]],
-    0x5d: [Instruction22c, ["iput-byte", KIND_FIELD]],
-    0x5e: [Instruction22c, ["iput-char", KIND_FIELD]],
-    0x5f: [Instruction22c, ["iput-short", KIND_FIELD]],
-    0x60: [Instruction21c, ["sget", KIND_FIELD]],
-    0x61: [Instruction21c, ["sget-wide", KIND_FIELD]],
-    0x62: [Instruction21c, ["sget-object", KIND_FIELD]],
-    0x63: [Instruction21c, ["sget-boolean", KIND_FIELD]],
-    0x64: [Instruction21c, ["sget-byte", KIND_FIELD]],
-    0x65: [Instruction21c, ["sget-char", KIND_FIELD]],
-    0x66: [Instruction21c, ["sget-short", KIND_FIELD]],
-    0x67: [Instruction21c, ["sput", KIND_FIELD]],
-    0x68: [Instruction21c, ["sput-wide", KIND_FIELD]],
-    0x69: [Instruction21c, ["sput-object", KIND_FIELD]],
-    0x6a: [Instruction21c, ["sput-boolean", KIND_FIELD]],
-    0x6b: [Instruction21c, ["sput-byte", KIND_FIELD]],
-    0x6c: [Instruction21c, ["sput-char", KIND_FIELD]],
-    0x6d: [Instruction21c, ["sput-short", KIND_FIELD]],
-    0x6e: [Instruction35c, ["invoke-virtual", KIND_METH]],
-    0x6f: [Instruction35c, ["invoke-super", KIND_METH]],
-    0x70: [Instruction35c, ["invoke-direct", KIND_METH]],
-    0x71: [Instruction35c, ["invoke-static", KIND_METH]],
-    0x72: [Instruction35c, ["invoke-interface", KIND_METH]],
+    0x52: [Instruction22c, ["iget", Kind.FIELD]],
+    0x53: [Instruction22c, ["iget-wide", Kind.FIELD]],
+    0x54: [Instruction22c, ["iget-object", Kind.FIELD]],
+    0x55: [Instruction22c, ["iget-boolean", Kind.FIELD]],
+    0x56: [Instruction22c, ["iget-byte", Kind.FIELD]],
+    0x57: [Instruction22c, ["iget-char", Kind.FIELD]],
+    0x58: [Instruction22c, ["iget-short", Kind.FIELD]],
+    0x59: [Instruction22c, ["iput", Kind.FIELD]],
+    0x5a: [Instruction22c, ["iput-wide", Kind.FIELD]],
+    0x5b: [Instruction22c, ["iput-object", Kind.FIELD]],
+    0x5c: [Instruction22c, ["iput-boolean", Kind.FIELD]],
+    0x5d: [Instruction22c, ["iput-byte", Kind.FIELD]],
+    0x5e: [Instruction22c, ["iput-char", Kind.FIELD]],
+    0x5f: [Instruction22c, ["iput-short", Kind.FIELD]],
+    0x60: [Instruction21c, ["sget", Kind.FIELD]],
+    0x61: [Instruction21c, ["sget-wide", Kind.FIELD]],
+    0x62: [Instruction21c, ["sget-object", Kind.FIELD]],
+    0x63: [Instruction21c, ["sget-boolean", Kind.FIELD]],
+    0x64: [Instruction21c, ["sget-byte", Kind.FIELD]],
+    0x65: [Instruction21c, ["sget-char", Kind.FIELD]],
+    0x66: [Instruction21c, ["sget-short", Kind.FIELD]],
+    0x67: [Instruction21c, ["sput", Kind.FIELD]],
+    0x68: [Instruction21c, ["sput-wide", Kind.FIELD]],
+    0x69: [Instruction21c, ["sput-object", Kind.FIELD]],
+    0x6a: [Instruction21c, ["sput-boolean", Kind.FIELD]],
+    0x6b: [Instruction21c, ["sput-byte", Kind.FIELD]],
+    0x6c: [Instruction21c, ["sput-char", Kind.FIELD]],
+    0x6d: [Instruction21c, ["sput-short", Kind.FIELD]],
+    0x6e: [Instruction35c, ["invoke-virtual", Kind.METH]],
+    0x6f: [Instruction35c, ["invoke-super", Kind.METH]],
+    0x70: [Instruction35c, ["invoke-direct", Kind.METH]],
+    0x71: [Instruction35c, ["invoke-static", Kind.METH]],
+    0x72: [Instruction35c, ["invoke-interface", Kind.METH]],
     # unused
     0x73: [Instruction10x, ["nop"]],
-    0x74: [Instruction3rc, ["invoke-virtual/range", KIND_METH]],
-    0x75: [Instruction3rc, ["invoke-super/range", KIND_METH]],
-    0x76: [Instruction3rc, ["invoke-direct/range", KIND_METH]],
-    0x77: [Instruction3rc, ["invoke-static/range", KIND_METH]],
-    0x78: [Instruction3rc, ["invoke-interface/range", KIND_METH]],
+
+    0x74: [Instruction3rc, ["invoke-virtual/range", Kind.METH]],
+    0x75: [Instruction3rc, ["invoke-super/range", Kind.METH]],
+    0x76: [Instruction3rc, ["invoke-direct/range", Kind.METH]],
+    0x77: [Instruction3rc, ["invoke-static/range", Kind.METH]],
+    0x78: [Instruction3rc, ["invoke-interface/range", Kind.METH]],
     # unused
     0x79: [Instruction10x, ["nop"]],
     0x7a: [Instruction10x, ["nop"]],
+
     0x7b: [Instruction12x, ["neg-int"]],
     0x7c: [Instruction12x, ["not-int"]],
     0x7d: [Instruction12x, ["neg-long"]],
@@ -6216,43 +6218,48 @@ DALVIK_OPCODES_FORMAT = {
     0xe0: [Instruction22b, ["shl-int/lit8"]],
     0xe1: [Instruction22b, ["shr-int/lit8"]],
     0xe2: [Instruction22b, ["ushr-int/lit8"]],
-    # expanded opcodes
-    0xe3: [Instruction22c, ["iget-volatile", KIND_FIELD]],
-    0xe4: [Instruction22c, ["iput-volatile", KIND_FIELD]],
-    0xe5: [Instruction21c, ["sget-volatile", KIND_FIELD]],
-    0xe6: [Instruction21c, ["sput-volatile", KIND_FIELD]],
-    0xe7: [Instruction22c, ["iget-object-volatile", KIND_FIELD]],
-    0xe8: [Instruction22c, ["iget-wide-volatile", KIND_FIELD]],
-    0xe9: [Instruction22c, ["iput-wide-volatile", KIND_FIELD]],
-    0xea: [Instruction21c, ["sget-wide-volatile", KIND_FIELD]],
-    0xeb: [Instruction21c, ["sput-wide-volatile", KIND_FIELD]],
-    0xec: [Instruction10x, ["breakpoint"]],
-    0xed: [Instruction20bc, ["throw-verification-error", VARIES]],
-    0xee: [Instruction35mi, ["execute-inline", INLINE_METHOD]],
-    0xef: [Instruction3rmi, ["execute-inline/range", INLINE_METHOD]],
-    0xf0: [Instruction35c, ["invoke-object-init/range", KIND_METH]],
-    0xf1: [Instruction10x, ["return-void-barrier"]],
-    0xf2: [Instruction22cs, ["iget-quick", FIELD_OFFSET]],
-    0xf3: [Instruction22cs, ["iget-wide-quick", FIELD_OFFSET]],
-    0xf4: [Instruction22cs, ["iget-object-quick", FIELD_OFFSET]],
-    0xf5: [Instruction22cs, ["iput-quick", FIELD_OFFSET]],
-    0xf6: [Instruction22cs, ["iput-wide-quick", FIELD_OFFSET]],
-    0xf7: [Instruction22cs, ["iput-object-quick", FIELD_OFFSET]],
-    0xf8: [Instruction35ms, ["invoke-virtual-quick", VTABLE_OFFSET]],
-    0xf9: [Instruction3rms, ["invoke-virtual-quick/range", VTABLE_OFFSET]],
-    0xfa: [Instruction35ms, ["invoke-super-quick", VTABLE_OFFSET]],
-    0xfb: [Instruction3rms, ["invoke-super-quick/range", VTABLE_OFFSET]],
-    0xfc: [Instruction22c, ["iput-object-volatile", KIND_FIELD]],
-    0xfd: [Instruction21c, ["sget-object-volatile", KIND_FIELD]],
-    0xfe: [Instruction21c, ["sput-object-volatile", KIND_FIELD]],
+    # unused
+    0xe3: [Instruction10x, ["nop"]],
+    0xe4: [Instruction10x, ["nop"]],
+    0xe5: [Instruction10x, ["nop"]],
+    0xe6: [Instruction10x, ["nop"]],
+    0xe7: [Instruction10x, ["nop"]],
+    0xe8: [Instruction10x, ["nop"]],
+    0xe9: [Instruction10x, ["nop"]],
+    0xea: [Instruction10x, ["nop"]],
+    0xeb: [Instruction10x, ["nop"]],
+    0xec: [Instruction10x, ["nop"]],
+    0xed: [Instruction10x, ["nop"]],
+    0xee: [Instruction10x, ["nop"]],
+    0xef: [Instruction10x, ["nop"]],
+    0xf0: [Instruction10x, ["nop"]],
+    0xf1: [Instruction10x, ["nop"]],
+    0xf2: [Instruction10x, ["nop"]],
+    0xf3: [Instruction10x, ["nop"]],
+    0xf4: [Instruction10x, ["nop"]],
+    0xf5: [Instruction10x, ["nop"]],
+    0xf6: [Instruction10x, ["nop"]],
+    0xf7: [Instruction10x, ["nop"]],
+    0xf8: [Instruction10x, ["nop"]],
+    0xf9: [Instruction10x, ["nop"]],
+
+    # FIXME: what is with the Kinds? Need to implement in get_kinds and opcodes too
+    0xfa: [Instruction45cc, ["invoke-polymorphic", Kind.METH_PROTO]],  # Dalvik 038
+    0xfb: [Instruction4rcc, ["invoke-polymorphic/range", Kind.METH_PROTO]],  # Dalvik 038
+    0xfc: [Instruction35c, ["invoke-custom", Kind.CALL_SITE]],  # Dalvik 038
+    0xfd: [Instruction3rc, ["invoke-custom/range", Kind.CALL_SITE]],  # Dalvik 038
+    0xfe: [Instruction21c, ["const-method-handle", Kind.METH]],  # Dalvik 039
+    0xff: [Instruction21c, ['const-method-type', Kind.PROTO]],  # Dalvik 039
 }
 
+# Pseudo instructions used for payload
 DALVIK_OPCODES_PAYLOAD = {
     0x0100: [PackedSwitch],
     0x0200: [SparseSwitch],
     0x0300: [FillArrayData],
 }
 
+# TODO: is this even used? Examples?
 INLINE_METHODS = [
     ["Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V"
      ],
@@ -6279,63 +6286,21 @@ INLINE_METHODS = [
     ["Ljava/lang/Double;", "longBitsToDouble", "(J)D"],
 ]
 
-DALVIK_OPCODES_EXTENDED_WIDTH = {
-    0x00ff: [Instruction41c, ["const-class/jumbo", KIND_TYPE]],
-    0x01ff: [Instruction41c, ["check-cast/jumbo", KIND_TYPE]],
-    0x02ff: [Instruction52c, ["instance-of/jumbo", KIND_TYPE]],
-    0x03ff: [Instruction41c, ["new-instance/jumbo", KIND_TYPE]],
-    0x04ff: [Instruction52c, ["new-array/jumbo", KIND_TYPE]],
-    0x05ff: [Instruction5rc, ["filled-new-array/jumbo", KIND_TYPE]],
-    0x06ff: [Instruction52c, ["iget/jumbo", KIND_FIELD]],
-    0x07ff: [Instruction52c, ["iget-wide/jumbo", KIND_FIELD]],
-    0x08ff: [Instruction52c, ["iget-object/jumbo", KIND_FIELD]],
-    0x09ff: [Instruction52c, ["iget-boolean/jumbo", KIND_FIELD]],
-    0x0aff: [Instruction52c, ["iget-byte/jumbo", KIND_FIELD]],
-    0x0bff: [Instruction52c, ["iget-char/jumbo", KIND_FIELD]],
-    0x0cff: [Instruction52c, ["iget-short/jumbo", KIND_FIELD]],
-    0x0dff: [Instruction52c, ["iput/jumbo", KIND_FIELD]],
-    0x0eff: [Instruction52c, ["iput-wide/jumbo", KIND_FIELD]],
-    0x0fff: [Instruction52c, ["iput-object/jumbo", KIND_FIELD]],
-    0x10ff: [Instruction52c, ["iput-boolean/jumbo", KIND_FIELD]],
-    0x11ff: [Instruction52c, ["iput-byte/jumbo", KIND_FIELD]],
-    0x12ff: [Instruction52c, ["iput-char/jumbo", KIND_FIELD]],
-    0x13ff: [Instruction52c, ["iput-short/jumbo", KIND_FIELD]],
-    0x14ff: [Instruction41c, ["sget/jumbo", KIND_FIELD]],
-    0x15ff: [Instruction41c, ["sget-wide/jumbo", KIND_FIELD]],
-    0x16ff: [Instruction41c, ["sget-object/jumbo", KIND_FIELD]],
-    0x17ff: [Instruction41c, ["sget-boolean/jumbo", KIND_FIELD]],
-    0x18ff: [Instruction41c, ["sget-byte/jumbo", KIND_FIELD]],
-    0x19ff: [Instruction41c, ["sget-char/jumbo", KIND_FIELD]],
-    0x1aff: [Instruction41c, ["sget-short/jumbo", KIND_FIELD]],
-    0x1bff: [Instruction41c, ["sput/jumbo", KIND_FIELD]],
-    0x1cff: [Instruction41c, ["sput-wide/jumbo", KIND_FIELD]],
-    0x1dff: [Instruction41c, ["sput-object/jumbo", KIND_FIELD]],
-    0x1eff: [Instruction41c, ["sput-boolean/jumbo", KIND_FIELD]],
-    0x1fff: [Instruction41c, ["sput-byte/jumbo", KIND_FIELD]],
-    0x20ff: [Instruction41c, ["sput-char/jumbo", KIND_FIELD]],
-    0x21ff: [Instruction41c, ["sput-short/jumbo", KIND_FIELD]],
-    0x22ff: [Instruction5rc, ["invoke-virtual/jumbo", KIND_METH]],
-    0x23ff: [Instruction5rc, ["invoke-super/jumbo", KIND_METH]],
-    0x24ff: [Instruction5rc, ["invoke-direct/jumbo", KIND_METH]],
-    0x25ff: [Instruction5rc, ["invoke-static/jumbo", KIND_METH]],
-    0x26ff: [Instruction5rc, ["invoke-interface/jumbo", KIND_METH]],
-}
-
 DALVIK_OPCODES_OPTIMIZED = {
-    0xf2ff: [Instruction5rc, ["invoke-object-init/jumbo", KIND_METH]],
-    0xf3ff: [Instruction52c, ["iget-volatile/jumbo", KIND_FIELD]],
-    0xf4ff: [Instruction52c, ["iget-wide-volatile/jumbo", KIND_FIELD]],
-    0xf5ff: [Instruction52c, ["iget-object-volatile/jumbo ", KIND_FIELD]],
-    0xf6ff: [Instruction52c, ["iput-volatile/jumbo", KIND_FIELD]],
-    0xf7ff: [Instruction52c, ["iput-wide-volatile/jumbo", KIND_FIELD]],
-    0xf8ff: [Instruction52c, ["iput-object-volatile/jumbo", KIND_FIELD]],
-    0xf9ff: [Instruction41c, ["sget-volatile/jumbo", KIND_FIELD]],
-    0xfaff: [Instruction41c, ["sget-wide-volatile/jumbo", KIND_FIELD]],
-    0xfbff: [Instruction41c, ["sget-object-volatile/jumbo", KIND_FIELD]],
-    0xfcff: [Instruction41c, ["sput-volatile/jumbo", KIND_FIELD]],
-    0xfdff: [Instruction41c, ["sput-wide-volatile/jumbo", KIND_FIELD]],
-    0xfeff: [Instruction41c, ["sput-object-volatile/jumbo", KIND_FIELD]],
-    0xffff: [Instruction40sc, ["throw-verification-error/jumbo", VARIES]],
+    0xf2ff: [Instruction5rc, ["invoke-object-init/jumbo", Kind.METH]],
+    0xf3ff: [Instruction52c, ["iget-volatile/jumbo", Kind.FIELD]],
+    0xf4ff: [Instruction52c, ["iget-wide-volatile/jumbo", Kind.FIELD]],
+    0xf5ff: [Instruction52c, ["iget-object-volatile/jumbo ", Kind.FIELD]],
+    0xf6ff: [Instruction52c, ["iput-volatile/jumbo", Kind.FIELD]],
+    0xf7ff: [Instruction52c, ["iput-wide-volatile/jumbo", Kind.FIELD]],
+    0xf8ff: [Instruction52c, ["iput-object-volatile/jumbo", Kind.FIELD]],
+    0xf9ff: [Instruction41c, ["sget-volatile/jumbo", Kind.FIELD]],
+    0xfaff: [Instruction41c, ["sget-wide-volatile/jumbo", Kind.FIELD]],
+    0xfbff: [Instruction41c, ["sget-object-volatile/jumbo", Kind.FIELD]],
+    0xfcff: [Instruction41c, ["sput-volatile/jumbo", Kind.FIELD]],
+    0xfdff: [Instruction41c, ["sput-wide-volatile/jumbo", Kind.FIELD]],
+    0xfeff: [Instruction41c, ["sput-object-volatile/jumbo", Kind.FIELD]],
+    0xffff: [Instruction40sc, ["throw-verification-error/jumbo", Kind.VARIES]],
 }
 
 
@@ -6348,7 +6313,7 @@ class Unresolved(Instruction):
         return "unresolved"
 
     def get_operands(self, idx=-1):
-        return [(OPERAND_KIND + KIND_STRING, -1,
+        return [(OPERAND_KIND + Kind.STRING, -1,
                  "AG:OP: invalid opcode " + repr(self.data))]
 
     def get_op_value(self):
@@ -6364,38 +6329,37 @@ class Unresolved(Instruction):
         return self.data
 
 
-def get_instruction(cm, op_value, buff, odex=False):
-    try:
-        if not odex and (0xe3 <= op_value <= 0xfe):
-            return InstructionInvalid(cm, buff)
-        try:
-            return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
-        except KeyError:
-            return InstructionInvalid(cm, buff)
-    except Exception as e:
-        # FIXME too broad exception
-        return Unresolved(cm, buff)
+def get_instruction(cm, op_value, buff):
+    """
+    Return the :class:`Instruction` for the given opcode
 
-
-def get_extented_instruction(cm, op_value, buff):
+    :param ClassManager cm: ClassManager to propagate to Instruction
+    :param int op_value: integer value of the instruction
+    :param bytearray buff: Bytecode starting with the instruction
+    :return: the parsed Instruction
+    :rtype: Instruction
+    """
     try:
-        return DALVIK_OPCODES_EXTENDED_WIDTH[op_value][0](cm, buff)
+        return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
     except struct.error:
-        raise InvalidInstruction("Invalid Instruction for 0x{:x}:{}".format(op_value, repr(buff)))
+        # FIXME: there are other possible errors too...
+        raise InvalidInstruction("Invalid Instruction for '0x{:02x}': {}".format(op_value, repr(buff)))
 
 
 def get_optimized_instruction(cm, op_value, buff):
     try:
         return DALVIK_OPCODES_OPTIMIZED[op_value][0](cm, buff)
     except struct.error:
-        raise InvalidInstruction("Invalid Instruction for 0x{:x}:{}".format(op_value, repr(buff)))
+        # FIXME: there are other possible errors too...
+        raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
 
 
 def get_instruction_payload(op_value, buff):
     try:
         return DALVIK_OPCODES_PAYLOAD[op_value][0](buff)
     except struct.error:
-        raise InvalidInstruction("Invalid Instruction for 0x{:x}:{}".format(op_value, repr(buff)))
+        # FIXME: there are other possible errors too...
+        raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
 
 
 class LinearSweepAlgorithm:
@@ -6403,63 +6367,45 @@ class LinearSweepAlgorithm:
     This class is used to disassemble a method. The algorithm used by this class is linear sweep.
     """
 
-    def get_instructions(self, cm, size, insn, idx):
+    @staticmethod
+    def get_instructions(cm, size, insn, idx):
         """
         :param cm: a ClassManager object
-        :type cm: :class:`ClassManager` object
-        :param size: the total size of the buffer
+        :type cm: ClassManager
+        :param size: the total size of the buffer in 16-bit units
         :type size: int
         :param insn: a raw buffer where are the instructions
-        :type insn: string
+        :type insn: bytearray
         :param idx: a start address in the buffer
         :type idx: int
 
         :rtype: a generator of :class:`Instruction` objects
         """
-        self.odex = cm.get_odex_format()
+        is_odex = cm.get_odex_format()
 
-        max_idx = size * calcsize('=H')
+        max_idx = size * calcsize('<H')
         if max_idx > len(insn):
+            log.warning("Declared size of instructions is different to length of bytecode!")
             max_idx = len(insn)
 
         # Get instructions
         while idx < max_idx:
-            obj = None
-            classic_instruction = True
+            # Get one 16bit unit
+            op_value, = unpack('<H', insn[idx:idx + 2])
 
-            op_value = insn[idx]
-
-            # print "%x %x" % (op_value, idx)
-
-            # payload instructions or extented/optimized instructions
-            if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx):
-                op_value = unpack('=H', insn[idx:idx + 2])[0]
-
-                # payload instructions ?
+            # FIXME: in theory, it could happen that this is a normal opcode?
+            if op_value > 0xff and (op_value & 0xff) in (0x00, 0xff):
                 if op_value in DALVIK_OPCODES_PAYLOAD:
-                    try:
-                        obj = get_instruction_payload(op_value, insn[idx:])
-                        classic_instruction = False
-                    except struct.error:
-                        log.warning("error while decoding instruction ...")
+                    # payload instructions, i.e. for arrays or switch
+                    obj = get_instruction_payload(op_value, insn[idx:])
 
-                elif op_value in DALVIK_OPCODES_EXTENDED_WIDTH:
-                    try:
-                        obj = get_extented_instruction(cm, op_value, insn[idx:])
-                        classic_instruction = False
-                    except struct.error as why:
-                        log.warning("error while decoding instruction ..." +
-                                why.__str__())
-
-                # optimized instructions ?
-                elif self.odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
+                elif is_odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
+                    # optimized instructions, only of ODEX file
                     obj = get_optimized_instruction(cm, op_value, insn[idx:])
-                    classic_instruction = False
-
-            # classical instructions
-            if classic_instruction:
-                op_value = insn[idx]
-                obj = get_instruction(cm, op_value, insn[idx:], self.odex)
+                else:
+                    raise InvalidInstruction("Unknown Instruction '0x{:04x}' at idx {}: {}".format(op_value, idx, repr(insn[idx:])))
+            else:
+                obj = get_instruction(cm, op_value & 0xff, insn[idx:])
 
             # emit instruction
             yield obj
@@ -6540,9 +6486,7 @@ class DCode:
         """
         # it is possible to a cache for instructions (avoid a new disasm)
         if self.cached_instructions is None:
-            lsa = LinearSweepAlgorithm()
-            ins = lsa.get_instructions(self.CM, self.size, self.insn,
-                                          self.idx)
+            ins = LinearSweepAlgorithm.get_instructions(self.CM, self.size, self.insn, self.idx)
             self.cached_instructions = list(ins)
 
         for i in self.cached_instructions:
@@ -6652,9 +6596,9 @@ class TryItem:
     This class represents the try_item format
 
     :param buff: a raw buffer where are the try_item format
-    :type buff: string
+    :type buff: BuffHandle
     :param cm: the ClassManager
-    :type cm: :class:`ClassManager` object
+    :type cm: ClassManager
     """
 
     def __init__(self, buff, cm):
@@ -6709,7 +6653,7 @@ class DalvikCode:
     This class represents the instructions of a method
 
     :param buff: a raw buffer where are the instructions
-    :type buff: string
+    :type buff: BuffHandle
     :param cm: the ClassManager
     :type cm: :class:`ClassManager` object
     """
@@ -6867,7 +6811,7 @@ class DalvikCode:
                 code_raw
 
         if self.tries_size > 0:
-            if (self.insns_size % 2 == 1):
+            if self.insns_size % 2 == 1:
                 buff += pack("<H", self.padding)
 
             for i in self.tries:
@@ -7578,7 +7522,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: string
+    :type buff: bytes
     :type decompiler: object
 
     example::
@@ -8419,16 +8363,16 @@ class DalvikVMFormat(bytecode.BuffHandle):
                                   )
 
             elif operand[0] & OPERAND_KIND:
-                if operand[0] == (OPERAND_KIND + KIND_STRING):
+                if operand[0] == (OPERAND_KIND + Kind.STRING):
                     yield "{}{}{}".format(colors["string"], operand[2],
                                       colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_METH):
+                elif operand[0] == (OPERAND_KIND + Kind.METH):
                     yield "{}{}{}".format(colors["meth"], operand[2],
                                       colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_FIELD):
+                elif operand[0] == (OPERAND_KIND + Kind.FIELD):
                     yield "{}{}{}".format(colors["field"], operand[2],
                                       colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_TYPE):
+                elif operand[0] == (OPERAND_KIND + Kind.TYPE):
                     yield "{}{}{}".format(colors["type"], operand[2],
                                       colors["normal"])
                 else:
@@ -8462,7 +8406,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
                 colors["offset"], operand[1])
 
         elif operand[0] & OPERAND_KIND:
-            if operand[0] == (OPERAND_KIND + KIND_STRING):
+            if operand[0] == (OPERAND_KIND + Kind.STRING):
                 if len(operand[2]) > 32:
                     wrapped = wrap_fct(operand[2], 32)
                     wrapped_adjust = "<br/>" + "<br/>".join(escape_fct(i)
@@ -8472,13 +8416,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
                 return "<FONT color=\"{}\">{}</FONT>".format(colors["string"],
                                                          escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_METH):
+            elif operand[0] == (OPERAND_KIND + Kind.METH):
                 return "<FONT color=\"{}\">{}</FONT>".format(colors["method"],
                                                          escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_FIELD):
+            elif operand[0] == (OPERAND_KIND + Kind.FIELD):
                 return "<FONT color=\"{}\">{}</FONT>".format(colors["field"],
                                                          escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_TYPE):
+            elif operand[0] == (OPERAND_KIND + Kind.TYPE):
                 return "<FONT color=\"{}\">{}</FONT>".format(colors["type"],
                                                          escape_fct(operand[2]))
 
