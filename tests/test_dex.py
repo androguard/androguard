@@ -1,6 +1,7 @@
 import unittest
 
 import sys
+import random
 import binascii
 
 from androguard.core.bytecodes import dvm
@@ -109,6 +110,9 @@ class DexTest(unittest.TestCase):
 class InstructionTest(unittest.TestCase):
     def testInstructions(self):
         """Tests if all instructions are at least covered"""
+        # Set the seed here, so we have reproduceable results later
+        random.seed(1337)
+
         for op_value in range(0, 256):
             ins = dvm.DALVIK_OPCODES_FORMAT[op_value][0]
             self.assertEqual(issubclass(ins, dvm.Instruction), True)
@@ -116,6 +120,28 @@ class InstructionTest(unittest.TestCase):
             # The Name should code for the length of the opcode
             length = int(ins.__name__[11]) * 2
             self.assertEqual(ins.length, length)
+
+            # Test if instruction can be parsed
+            bytecode = bytearray([op_value] + [0] * (length - 1))
+            instruction = ins(FakeClassManager(), bytecode)
+            self.assertIsInstance(instruction, dvm.Instruction)
+            self.assertEqual(instruction.get_op_value(), op_value)
+
+            # And packed again
+            self.assertEqual(instruction.get_raw(), bytecode)
+
+            # Test with some pseudorandom stuff
+            if ins.__name__ in ['Instruction10x', 'Instruction20t', 'Instruction30t', 'Instruction32x']:
+                # note this only works for certain opcode (which are not forced to 0 in certain places)
+                # Thus we need to make sure these places are zero.
+                # TODO: actually raise an error in the instruction if the place is not zero
+                bytecode = bytearray([op_value, 0] + [random.randint(0x00, 0xff) for _ in range(length - 2)])
+            else:
+                bytecode = bytearray([op_value] + [random.randint(0x00, 0xff) for _ in range(length - 1)])
+            instruction = ins(FakeClassManager(), bytecode)
+            self.assertIsInstance(instruction, dvm.Instruction)
+            self.assertEqual(instruction.get_op_value(), op_value)
+            self.assertEqual(instruction.get_raw(), bytecode)
 
     def testNOP(self):
         """test if NOP instructions are parsed"""

@@ -5952,12 +5952,21 @@ class Instruction45cc(Instruction):
 
         # Note: the documentation says A|G|op|BBBB ... but we need to parse op|A|G because of LE
         self.OP, reg1, self.BBBB, reg2, self.HHHH = unpack('<BBHHH', buff[:self.get_length()])
+        # TODO need to check if registers are correct
         self.A = (reg1 & 0xF0) >> 4
         self.G = (reg1 & 0x0F)
         self.C = (reg2 & 0x0F)
         self.D = (reg2 & 0xF0) >> 4
-        self.F = (reg2 & 0x0F00) >> 8
-        self.E = (reg2 & 0xF000) >> 12
+        self.E = (reg2 & 0x0F00) >> 8
+        self.F = (reg2 & 0xF000) >> 12
+
+    def get_raw(self):
+        return pack('<BBHHH',
+                    self.OP,
+                    self.A << 4 | self.G,
+                    self.BBBB,
+                    self.F << 12 | self.E << 8 | self.D << 4 | self.C,
+                    self.HHHH)
 
 
 class Instruction4rcc(Instruction):
@@ -5968,8 +5977,11 @@ class Instruction4rcc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OPself.AA, self.BBBB, self.CCCC, self.HHHH = unpack('<BBHHH',  buff[:self.get_length()])
+        self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH = unpack('<BBHHH',  buff[:self.get_length()])
         self.NNNN = self.AA + self.CCCC - 1
+
+    def get_raw(self):
+        return pack('<BBHHH', self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH)
 
 
 DALVIK_OPCODES_FORMAT = {
@@ -5984,7 +5996,7 @@ DALVIK_OPCODES_FORMAT = {
     # > For example, format "21t" is of length two, contains one register reference,
     # > and additionally contains a branch target.
 
-    #FIXME: we treat unused instructions as NOP, maybe not a good idea
+    #FIXME: we treat unused instructions as NOP, maybe not a good idea. Maybe use an actual InvalidInstruction here with length zero?
     0x00: [Instruction10x, ["nop"]],
     0x01: [Instruction12x, ["move"]],
     0x02: [Instruction22x, ["move/from16"]],
