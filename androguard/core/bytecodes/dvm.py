@@ -4182,6 +4182,14 @@ class Instruction:
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
+    # FIXME Better name
+    def disasm(self):
+        """Some small line for disassembly view"""
+        s = binascii.hexlify(self.get_raw()).decode('ascii')
+        byteview = " ".join(s[i:i + 4] for i in range(0, len(s), 4))
+        return '{:24s}  {:24s} {}'.format(byteview, self.get_name(), self.get_output())
+
+
 
 class FillArrayData:
     """
