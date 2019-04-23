@@ -73,7 +73,10 @@ class DexTest(unittest.TestCase):
             ('examples/tests/StringTests.dex', 35),
             ('examples/tests/AnalysisTest.dex', 35),
             ('examples/tests/Switch.dex', 35),
-                ]
+            ('examples/tests/2992e3a94a774ddfe2b50c6e8667d925a5684d71.36.dex', 36),
+            ('examples/tests/921d74ac9568121d0ea1453922a369cb66739c68.36.dex', 36),
+            ('examples/tests/dc4b1bb9d58daa82f29e60f79d5662f731a3351f.37.dex', 37),
+            ]
 
         for dexf, dexver in dexfiles:
             log.info("Testing {} -> Version {}".format(dexf, dexver))
