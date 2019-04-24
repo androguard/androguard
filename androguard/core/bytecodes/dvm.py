@@ -4179,6 +4179,10 @@ class Instruction:
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
+    def __str__(self):
+        # FIXME output requires idx, maybe we need something similar but in raw form?
+        return "{} {}".format(self.get_name(), self.get_output())
+
 
 class FillArrayData:
     """
