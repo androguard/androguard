@@ -7,12 +7,13 @@ import logging
 
 from androguard.core.bytecodes import dvm
 
+log = logging.getLogger("androguard.tests")
+
 
 class FakeClassManager:
     def get_odex_format(self):
         return False
 
-log = logging.getLogger("androguard.tests")
 
 class DexTest(unittest.TestCase):
     def testDex(self):
@@ -73,9 +74,16 @@ class DexTest(unittest.TestCase):
             ('examples/tests/StringTests.dex', 35),
             ('examples/tests/AnalysisTest.dex', 35),
             ('examples/tests/Switch.dex', 35),
+            # Dalvik 036
             ('examples/tests/2992e3a94a774ddfe2b50c6e8667d925a5684d71.36.dex', 36),
             ('examples/tests/921d74ac9568121d0ea1453922a369cb66739c68.36.dex', 36),
+            # Dalvik 037
             ('examples/tests/dc4b1bb9d58daa82f29e60f79d5662f731a3351f.37.dex', 37),
+            ('examples/tests/fdroid/com.example.trigger_130.dex', 37),
+            ('examples/tests/fdroid/net.eneiluj.nextcloud.phonetrack_2.dex', 37),
+            ('examples/tests/fdroid/org.andstatus.app_254.dex', 37),
+            # Dalvik 038
+            ('examples/tests/fdroid/cat.mvmike.minimalcalendarwidget_17.dex', 38),
             ]
 
         for dexf, dexver in dexfiles:
@@ -121,11 +129,19 @@ class InstructionTest(unittest.TestCase):
 
         for op_value in range(0, 256):
             ins = dvm.DALVIK_OPCODES_FORMAT[op_value][0]
+            name = dvm.DALVIK_OPCODES_FORMAT[op_value][1]
             self.assertEqual(issubclass(ins, dvm.Instruction), True)
 
             # The Name should code for the length of the opcode
             length = int(ins.__name__[11]) * 2
             self.assertEqual(ins.length, length)
+
+            if name[0] == 'unused':
+                # unused instructions should raise an error on invocation
+                with self.assertRaises(dvm.InvalidInstruction):
+                    ins(FakeClassManager(), bytearray([op_value, 0]))
+                # therefore, we can not test much else here...
+                continue
 
             # Test if instruction can be parsed
             bytecode = bytearray([op_value] + [0] * (length - 1))
