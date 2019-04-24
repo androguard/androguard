@@ -82,8 +82,13 @@ class DexTest(unittest.TestCase):
             ('examples/tests/fdroid/com.example.trigger_130.dex', 37),
             ('examples/tests/fdroid/net.eneiluj.nextcloud.phonetrack_2.dex', 37),
             ('examples/tests/fdroid/org.andstatus.app_254.dex', 37),
-            # Dalvik 038
+            # Dalvik 038 / Requires a minimal API level of 26
             ('examples/tests/fdroid/cat.mvmike.minimalcalendarwidget_17.dex', 38),
+            ('examples/tests/okhttp.d8.038.dex', 38),
+            ('examples/tests/okhttp.dx.038.dex', 38),
+            # Dalvik 039 / Requires a minimal API level of 28
+            ('examples/tests/okhttp.d8.039.dex', 39),
+            ('examples/tests/okhttp.dx.039.dex', 39),
             ]
 
         for dexf, dexver in dexfiles:

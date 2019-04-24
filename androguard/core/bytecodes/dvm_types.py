@@ -12,6 +12,8 @@ class TypeMapItem(IntEnum):
     FIELD_ID_ITEM = 0x4
     METHOD_ID_ITEM = 0x5
     CLASS_DEF_ITEM = 0x6
+    CALL_SITE_ITEM = 0x7  # New in DEX038
+    METHOD_HANDLE_ITEM = 0x8  # New in DEX038
     MAP_LIST = 0x1000
     TYPE_LIST = 0x1001
     ANNOTATION_SET_REF_LIST = 0x1002
@@ -34,6 +36,8 @@ class TypeMapItem(IntEnum):
             (TypeMapItem.FIELD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
             (TypeMapItem.METHOD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM])),
             (TypeMapItem.CLASS_DEF_ITEM, set([TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM])),
+            (TypeMapItem.CALL_SITE_ITEM, {TypeMapItem.METHOD_HANDLE_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
+            (TypeMapItem.METHOD_HANDLE_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
             (TypeMapItem.MAP_LIST, set()),
             (TypeMapItem.TYPE_LIST, set([TypeMapItem.TYPE_ID_ITEM])),
             (TypeMapItem.ANNOTATION_SET_REF_LIST, set([TypeMapItem.ANNOTATION_SET_ITEM])),

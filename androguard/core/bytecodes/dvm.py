@@ -5767,15 +5767,12 @@ class Instruction5rc(Instruction):
         self.NNNN = self.CCCC + self.AAAA - 1
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
 
         if self.CCCC == self.NNNN:
-            buff += "v%d, %s" % (self.CCCC, kind)
+            return "v%d, %s" % (self.CCCC, kind)
         else:
-            buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
-        return buff
+            return "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
