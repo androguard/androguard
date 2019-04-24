@@ -85,10 +85,10 @@ class DexTest(unittest.TestCase):
             # Dalvik 038 / Requires a minimal API level of 26
             ('examples/tests/fdroid/cat.mvmike.minimalcalendarwidget_17.dex', 38),
             ('examples/tests/okhttp.d8.038.dex', 38),
-            ('examples/tests/okhttp.dx.038.dex', 38),
+            ('examples/tests/okhttp.dx.038.dex', 38),  # contains invoke-custom opcode
             # Dalvik 039 / Requires a minimal API level of 28
             ('examples/tests/okhttp.d8.039.dex', 39),
-            ('examples/tests/okhttp.dx.039.dex', 39),
+            ('examples/tests/okhttp.dx.039.dex', 39),  # contains invoke-custom opcode
             ]
 
         for dexf, dexver in dexfiles:

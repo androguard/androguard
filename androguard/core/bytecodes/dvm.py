@@ -6880,7 +6880,7 @@ class MapItem:
             pass  # It's me I think !!! No need to parse again
 
         else:
-            log.warning("Map item '{}' @ 0x{:x}({}) is unknown".format(self.type, buff.get_idx(), buff.get_idx()))
+            log.warning("Map item with id '{}' offset: 0x{:x}({}) size: {} is unknown".format(self.type, buff.get_idx(), buff.get_idx(), self.size))
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
