@@ -4070,7 +4070,10 @@ def get_kind(cm, kind, value):
 
 class Instruction:
     """
-    This class represents a dalvik instruction
+    This class represents a Dalvik instruction
+
+    More information about the instruction format can be found in the official documentation:
+    https://source.android.com/devices/tech/dalvik/instruction-formats.html
     """
     length = 0
 
@@ -4113,6 +4116,8 @@ class Instruction:
     def show(self, idx):
         """
         Print the instruction
+
+        No Line ending is printed.
         """
         print(self.get_name() + " " + self.get_output(idx), end=' ')
 
@@ -4214,8 +4219,7 @@ class FillArrayData:
         if buf_len % 2:
             buf_len += 1
 
-        self.data = buff[self.format_general_size:self.format_general_size +
-                                                  buf_len]
+        self.data = buff[self.format_general_size:self.format_general_size + buf_len]
 
     def add_note(self, msg):
         """
@@ -4246,7 +4250,7 @@ class FillArrayData:
         """
         Return the data of this instruction (the payload)
 
-        :rtype: string
+        :rtype: bytes
         """
         return self.data
 
@@ -4312,14 +4316,12 @@ class FillArrayData:
         return ((self.size * self.element_width + 1) // 2 + 4) * 2
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.element_width) + pack(
-            "=I", self.size) + self.data
+        return pack("<HHI", self.ident, self.element_width, self.size) + self.data
 
     def get_hex(self):
         """
         Returns a HEX String, separated by spaces every byte
         """
-
         s = binascii.hexlify(self.get_raw()).decode("ascii")
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
@@ -4618,25 +4620,24 @@ class Instruction35c(Instruction):
         self.F = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
-        buff = ""
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.A == 0:
-            buff += "%s" % kind
+            return "%s" % kind
         elif self.A == 1:
-            buff += "v%d, %s" % (self.C, kind)
+            return "v%d, %s" % (self.C, kind)
         elif self.A == 2:
-            buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+            return "v%d, v%d, %s" % (self.C, self.D, kind)
         elif self.A == 3:
-            buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+            return "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
         elif self.A == 4:
-            buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
-                                                kind)
+            return "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
+                                               kind)
         elif self.A == 5:
-            buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
-                                                     self.F, self.G, kind)
+            return "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
+                                                    self.F, self.G, kind)
 
-        return buff
+        return ''
 
     def get_operands(self, idx=-1):
         l = []
@@ -4670,7 +4671,7 @@ class Instruction35c(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
                     (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
@@ -4684,8 +4685,9 @@ class Instruction10x(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
+        self.OP, padding = unpack("<BB", buff[:self.length])
+        if padding != 0:
+            raise ValueError('The Instruction does not have a zero byte padding: {}'.format(repr(buff)))
 
     def get_output(self, idx=-1):
         return ""
@@ -4694,7 +4696,7 @@ class Instruction10x(Instruction):
         return []
 
     def get_raw(self):
-        return pack("=H", self.OP)
+        return pack("<H", self.OP)
 
 
 class Instruction21h(Instruction):
@@ -4707,12 +4709,8 @@ class Instruction21h(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
         # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
-        self.BBBB = unpack("=h", buff[2:4])[0]
+        self.OP, self.AA, self.BBBB = unpack("<BBh", buff[:self.length])
 
         self.formatted_operands = []
 
@@ -4724,13 +4722,8 @@ class Instruction21h(Instruction):
                 '=d', bytearray([0, 0, 0, 0, 0, 0]) + pack('=h', self.BBBB))[0])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, %d" % (self.AA, self.BBBB)
-
-        if self.formatted_operands:
-            buff += " # %s" % (str(self.formatted_operands))
-
-        return buff
+        return "v{}, {}".format(self.AA, self.BBBB,
+                                ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_LITERAL, self.BBBB)]
@@ -4762,9 +4755,7 @@ class Instruction11n(Instruction):
         self.B = (i16 >> 12)
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, %d" % (self.A, self.B)
-        return buff
+        return "v%d, %d" % (self.A, self.B)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.A), (OPERAND_LITERAL, self.B)]
@@ -4786,19 +4777,11 @@ class Instruction21c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
+        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
-
-        buff += "v%d, %s" % (self.AA, kind)
-        return buff
+        return "v%d, %s" % (self.AA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -4815,7 +4798,7 @@ class Instruction21c(Instruction):
         return get_kind(self.cm, Kind.RAW_STRING, self.BBBB)
 
     def get_raw(self):
-        return pack("=HH", (self.AA << 8) | self.OP, self.BBBB)
+        return pack("<HH", (self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction21s(Instruction):
@@ -4827,12 +4810,7 @@ class Instruction21s(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=h", buff[2:4])[0]
+        self.OP, self.AA, self.BBBB = unpack("<BBh", buff[:self.length])
 
         self.formatted_operands = []
 
@@ -4842,13 +4820,8 @@ class Instruction21s(Instruction):
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, %d" % (self.AA, self.BBBB)
-
-        if self.formatted_operands:
-            buff += " # %s" % str(self.formatted_operands)
-
-        return buff
+        return "v{}, {}{}".format(self.AA, self.BBBB,
+                                  ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_LITERAL, self.BBBB)]
@@ -4881,10 +4854,8 @@ class Instruction22c(Instruction):
         self.CCCC = unpack("=H", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
-        buff += "v%d, v%d, %s" % (self.A, self.B, kind)
-        return buff
+        return "v%d, v%d, %s" % (self.A, self.B, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4917,10 +4888,8 @@ class Instruction22cs(Instruction):
         self.CCCC = unpack("=H", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
-        buff += "v%d, v%d, %s" % (self.A, self.B, kind)
-        return buff
+        return "v%d, v%d, %s" % (self.A, self.B, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4973,19 +4942,11 @@ class Instruction31c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBBBBBB = unpack("=I", buff[2:6])[0]
+        self.OP, self.AA, self.BBBBBBBB = unpack("<BBI", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
-        buff += "v%d, %s" % (self.AA, kind)
-        return buff
+        return "v%d, %s" % (self.AA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5026,9 +4987,7 @@ class Instruction12x(Instruction):
         self.B = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d" % (self.A, self.B)
-        return buff
+        return "v%d, v%d" % (self.A, self.B)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.A), (OPERAND_REGISTER, self.B)]
@@ -5046,15 +5005,10 @@ class Instruction11x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA = unpack("<BB", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d" % self.AA
-        return buff
+        return "v%d" % self.AA
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA)]
@@ -5073,11 +5027,7 @@ class Instruction51l(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBBBBBBBBBBBBBB = unpack("=q", buff[2:10])[0]
+        self.OP, self.AA, self.BBBBBBBBBBBBBBBB = unpack("<BBq", buff[:self.length])
 
         self.formatted_operands = []
 
@@ -5086,14 +5036,8 @@ class Instruction51l(Instruction):
                 '=q', self.BBBBBBBBBBBBBBBB))[0])
 
     def get_output(self, idx=-1):
-        buff = ""
-
-        buff += "v%d, %d" % (self.AA, self.BBBBBBBBBBBBBBBB)
-
-        if self.formatted_operands:
-            buff += " # %s" % str(self.formatted_operands)
-
-        return buff
+        return "v{}, {}{}".format(self.AA, self.BBBBBBBBBBBBBBBB,
+                                  ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA),
@@ -5106,7 +5050,7 @@ class Instruction51l(Instruction):
         return [self.BBBBBBBBBBBBBBBB]
 
     def get_raw(self):
-        return pack("=Hq", (self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
+        return pack("<Hq", (self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
 
 
 class Instruction31i(Instruction):
@@ -5119,14 +5063,10 @@ class Instruction31i(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
         # FIXME: 0x14 const: arbitrary 32-bit constant, not neccessarily signed!
         # only 0x17 const-wide/32 is signed, but const-wide move sign extened to
         # 64bit
-        self.BBBBBBBB = unpack("=i", buff[2:6])[0]
+        self.OP, self.AA, self.BBBBBBBB = unpack("<BBi", buff[:self.length])
 
         self.formatted_operands = []
 
@@ -5141,13 +5081,7 @@ class Instruction31i(Instruction):
             self.formatted_operands.append(unpack('=d', pack('=d', self.BBBBBBBB))[0])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, %d" % (self.AA, self.BBBBBBBB)
-
-        if self.formatted_operands:
-            buff += " # %s" % str(self.formatted_operands)
-
-        return buff
+        return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_LITERAL, self.BBBBBBBB)]
@@ -5171,17 +5105,10 @@ class Instruction22x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
+        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d" % (self.AA, self.BBBB)
-        return buff
+        return "v%d, v%d" % (self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_REGISTER, self.BBBB)]
@@ -5209,9 +5136,7 @@ class Instruction23x(Instruction):
         self.CC = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d, v%d" % (self.AA, self.BB, self.CC)
-        return buff
+        return "v%d, v%d, v%d" % (self.AA, self.BB, self.CC)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_REGISTER, self.BB),
@@ -5233,12 +5158,11 @@ class Instruction20t(Instruction):
 
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
+        # FIXME: check if high bytes of OP are zero
         self.AAAA = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "%+x" % self.AAAA
-        return buff
+        return "%+x" % self.AAAA
 
     def get_operands(self, idx=-1):
         return [(OPERAND_OFFSET, self.AAAA)]
@@ -5262,14 +5186,13 @@ class Instruction21t(Instruction):
 
         i16 = unpack("=H", buff[0:2])[0]
         self.OP = i16 & 0xff
+        # FIXME: check if high bytes of OP are zero
         self.AA = (i16 >> 8) & 0xff
 
         self.BBBB = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, %+x" % (self.AA, self.BBBB)
-        return buff
+        return "v%d, %+x" % (self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_OFFSET, self.BBBB)]
@@ -5291,13 +5214,10 @@ class Instruction10t(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        self.OP = unpack("=B", buff[0:1])[0]
-        self.AA = unpack("=b", buff[1:2])[0]
+        self.OP, self.AA = unpack("<Bb", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "%+x" % self.AA
-        return buff
+        return "%+x" % self.AA
 
     def get_operands(self, idx=-1):
         return [(OPERAND_OFFSET, self.AA)]
@@ -5306,7 +5226,7 @@ class Instruction10t(Instruction):
         return self.AA
 
     def get_raw(self):
-        return pack("=Bb", self.OP, self.AA)
+        return pack("<Bb", self.OP, self.AA)
 
 
 class Instruction22t(Instruction):
@@ -5326,9 +5246,7 @@ class Instruction22t(Instruction):
         self.CCCC = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d, %+x" % (self.A, self.B, self.CCCC)
-        return buff
+        return "v%d, v%d, %+x" % (self.A, self.B, self.CCCC)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.A), (OPERAND_REGISTER, self.B),
@@ -5358,9 +5276,7 @@ class Instruction22s(Instruction):
         self.CCCC = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d, %d" % (self.A, self.B, self.CCCC)
-        return buff
+        return "v%d, v%d, %d" % (self.A, self.B, self.CCCC)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.A), (OPERAND_REGISTER, self.B),
@@ -5383,17 +5299,10 @@ class Instruction22b(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BB = unpack("=B", buff[2:3])[0]
-        self.CC = unpack("=b", buff[3:4])[0]
+        self.OP, self.AA, self.BB, self.CC = unpack("<BBBb", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d, %d" % (self.AA, self.BB, self.CC)
-        return buff
+        return "v%d, v%d, %d" % (self.AA, self.BB, self.CC)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AA), (OPERAND_REGISTER, self.BB),
@@ -5403,7 +5312,7 @@ class Instruction22b(Instruction):
         return [self.CC]
 
     def get_raw(self):
-        return pack("=Hh", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
+        return pack("<Hh", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 
 class Instruction30t(Instruction):
@@ -5417,14 +5326,13 @@ class Instruction30t(Instruction):
         super().__init__()
 
         i16 = unpack("=H", buff[0:2])[0]
+        # FIXME: check if high byte of OP is zero
         self.OP = i16 & 0xff
 
         self.AAAAAAAA = unpack("=i", buff[2:6])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "%+x" % self.AAAAAAAA
-        return buff
+        return "%+x" % self.AAAAAAAA
 
     def get_operands(self, idx=-1):
         return [(OPERAND_OFFSET, self.AAAAAAAA)]
@@ -5447,25 +5355,17 @@ class Instruction3rc(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.BBBB = unpack("=H", buff[2:4])[0]
-        self.CCCC = unpack("=H", buff[4:6])[0]
+        self.OP, self.AA, self.BBBB, self.CCCC = unpack("<BBHH", buff[:self.length])
 
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.CCCC == self.NNNN:
-            buff += "v%d, %s" % (self.CCCC, kind)
+            return "v%d, %s" % (self.CCCC, kind)
         else:
-            buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
-        return buff
+            return "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -5485,7 +5385,7 @@ class Instruction3rc(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction32x(Instruction):
@@ -5505,9 +5405,7 @@ class Instruction32x(Instruction):
         self.BBBB = unpack("=H", buff[4:6])[0]
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "v%d, v%d" % (self.AAAA, self.BBBB)
-        return buff
+        return "v%d, v%d" % (self.AAAA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_REGISTER, self.AAAA), (OPERAND_REGISTER, self.BBBB)]
@@ -5529,9 +5427,7 @@ class Instruction20bc(Instruction):
         self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
 
     def get_output(self, idx=-1):
-        buff = ""
-        buff += "%d, %d" % (self.AA, self.BBBB)
-        return buff
+        return "%d, %d" % (self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(OPERAND_LITERAL, self.AA), (OPERAND_LITERAL, self.BBBB)]
@@ -5564,24 +5460,20 @@ class Instruction35mi(Instruction):
         self.F = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.A == 1:
-            buff += "v%d, %s" % (self.C, kind)
+            return "v%d, %s" % (self.C, kind)
         elif self.A == 2:
-            buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+            return "v%d, v%d, %s" % (self.C, self.D, kind)
         elif self.A == 3:
-            buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+            return "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
         elif self.A == 4:
-            buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
+            return "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
                                                 kind)
         elif self.A == 5:
-            buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
+            return "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
                                                      self.F, self.G, kind)
-
-        return buff
 
     def get_operands(self, idx=-1):
         l = []
@@ -5638,24 +5530,20 @@ class Instruction35ms(Instruction):
         self.F = (i17 >> 12) & 0xf
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.A == 1:
-            buff += "v%d, %s" % (self.C, kind)
+            return "v%d, %s" % (self.C, kind)
         elif self.A == 2:
-            buff += "v%d, v%d, %s" % (self.C, self.D, kind)
+            return "v%d, v%d, %s" % (self.C, self.D, kind)
         elif self.A == 3:
-            buff += "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
+            return "v%d, v%d, v%d, %s" % (self.C, self.D, self.E, kind)
         elif self.A == 4:
-            buff += "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
-                                                kind)
+            return "v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E, self.F,
+                                               kind)
         elif self.A == 5:
-            buff += "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
-                                                     self.F, self.G, kind)
-
-        return buff
+            return "v%d, v%d, v%d, v%d, v%d, %s" % (self.C, self.D, self.E,
+                                                    self.F, self.G, kind)
 
     def get_operands(self, idx=-1):
         l = []
@@ -5706,15 +5594,12 @@ class Instruction3rmi(Instruction):
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.CCCC == self.NNNN:
-            buff += "v%d, %s" % (self.CCCC, kind)
+            return "v%d, %s" % (self.CCCC, kind)
         else:
-            buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
-        return buff
+            return "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -5752,15 +5637,12 @@ class Instruction3rms(Instruction):
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
-        buff = ""
-
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
 
         if self.CCCC == self.NNNN:
-            buff += "v%d, %s" % (self.CCCC, kind)
+            return "v{}, {}".format(self.CCCC, kind)
         else:
-            buff += "v%d ... v%d, %s" % (self.CCCC, self.NNNN, kind)
-        return buff
+            return "v{} ... v{}, {}".format(self.CCCC, self.NNNN, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -5798,10 +5680,7 @@ class Instruction41c(Instruction):
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
-
-        buff = ""
-        buff += "v%d, %s" % (self.AAAA, kind)
-        return buff
+        return "v{}, {}".format(self.AAAA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5830,10 +5709,7 @@ class Instruction40sc(Instruction):
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
-
-        buff = ""
-        buff += "%d, %s" % (self.AAAA, kind)
-        return buff
+        return "{}, {}".format(self.AAAA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5862,10 +5738,7 @@ class Instruction52c(Instruction):
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
-
-        buff = ""
-        buff += "v%d, v%d, %s" % (self.AAAA, self.BBBB, kind)
-        return buff
+        return "v{}, v{}, {}".format(self.AAAA, self.BBBB, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
