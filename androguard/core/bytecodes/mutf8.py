@@ -41,6 +41,69 @@ def decode(b):
     return res
 
 
+def decode_and_patch(b, size):
+    """
+    Decode bytes as MUTF-8
+    See https://docs.oracle.com/javase/6/docs/api/java/io/DataInput.html#modified-utf-8
+    for more information
+
+    Surrogates will be returned as two 16 bit characters.
+
+    :param b: bytes to decode
+    :rtype: unicode (py2), str (py3) of 16bit chars
+    :raises: UnicodeDecodeError if string is not decodable
+    """
+    chr_array = [""] * size
+
+    b = iter(b)
+
+    high_surrogate = None
+    chr_index = 0
+    for x in b:
+        n = 0
+        if x >> 7 == 0:
+            # Single char:
+            n = x & 0x7f
+        elif x >> 5 == 0b110:
+            # 2 byte Multichar
+            b2 = next(b)
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 2 byte sequence does not looks right.")
+
+            n = (x & 0x1f) << 6 | b2 & 0x3f
+        elif x >> 4 == 0b1110:
+            # 3 byte Multichar
+            b2 = next(b)
+            b3 = next(b)
+            if b2 >> 6 != 0b10:
+                raise UnicodeDecodeError("Second byte of 3 byte sequence does not looks right.")
+            if b3 >> 6 != 0b10:
+                raise UnicodeDecodeError("Third byte of 3 byte sequence does not looks right.")
+
+            n = (x & 0xf) << 12 | (b2 & 0x3f) << 6 | b3 & 0x3f
+        else:
+            raise UnicodeDecodeError("Could not decode byte")
+        if high_surrogate is not None:
+            c = high_surrogate
+            if n and (n >> 10) == 0b110111:
+                chr_array[chr_index] = chr(((c & 0x3ff) << 10 | (n & 0x3ff)) + 0x10000)
+                chr_index += 1
+            else:
+                chr_array[chr_index] = "\\u{:04x}".format(c)
+            high_surrogate = None
+        else:
+            c = n
+            if (c >> 10) == 0b110110:
+                high_surrogate = c
+            elif (c >> 10) == 0b110111:
+                chr_array[chr_index] = "\\u{:04x}".format(c)
+            else:
+                chr_array[chr_index] = chr(c)
+            chr_index += 1
+
+    return "".join(chr_array)
+
+
 class PeekIterator:
     """
     A quick'n'dirty variant of an Iterator that has a special function
