@@ -387,6 +387,35 @@ class InstructionTest(unittest.TestCase):
             for _ in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 5, bytearray(b"\x18\x01\xff\xff"), 0):
                 pass
 
+    def testInstruction21h(self):
+        """Test function of Instruction 21h used for const{,-wide}/high16"""
+        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x15, 0x00, 0x42, 0x11]))
+        self.assertEqual(ins.get_op_value(), 0x15)
+        self.assertEqual(ins.get_formatted_operands(), [0x11420000])
+        self.assertEqual(ins.get_literals(), [0x1142])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
+        self.assertEqual(ins.get_name(), 'const/high16')
+        self.assertEqual(ins.get_output(), 'v0 4418 # 289538048')
+        self.assertEqual(ins.get_raw(), bytearray([0x15, 0x00, 0x42, 0x11]))
+
+        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0x42, 0x11]))
+        self.assertEqual(ins.get_op_value(), 0x19)
+        self.assertEqual(ins.get_formatted_operands(), [0x1142000000000000])
+        self.assertEqual(ins.get_literals(), [0x1142])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
+        self.assertEqual(ins.get_name(), 'const-wide/high16')
+        self.assertEqual(ins.get_output(), 'v0 4418 # 289538048')
+        self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0x42, 0x11]))
+
+        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0xbe, 0xff]))
+        self.assertEqual(ins.get_op_value(), 0x19)
+        self.assertEqual(ins.get_formatted_operands(), [-0x42000000000000])
+        self.assertEqual(ins.get_literals(), [-66])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, -66)])
+        self.assertEqual(ins.get_name(), 'const-wide/high16')
+        self.assertEqual(ins.get_output(), 'v0 -66 # -18577348462903296')
+        self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0xbe, 0xff]))
+
 
 if __name__ == '__main__':
     unittest.main()
