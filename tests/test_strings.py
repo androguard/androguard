@@ -56,6 +56,12 @@ class StringTest(unittest.TestCase):
 
         self.assertEqual("\U00024f5c\U0001f64f\\ud83d\uacf0hello world\x00", mutf8.patch_string(mutf8.decode(b)))
 
+        self.assertEqual("hello world", mutf8.decode_and_patch(b"\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64", 11))
+        self.assertEqual("\U00024f5c", mutf8.decode_and_patch(b"\xed\xa1\x93\xed\xbd\x9c",2))
+        self.assertEqual("\U0001f64f", mutf8.decode_and_patch(b"\xed\xa0\xbd\xed\xb9\x8f",2))
+        self.assertEqual("\\ud853", mutf8.decode_and_patch(b"\xed\xa1\x93", 1))
+        self.assertEqual("\U00024f5c\U0001f64f\\ud83d\uacf0hello world\x00", mutf8.decode_and_patch(b, 18))
+
 
 
 if __name__ == '__main__':
