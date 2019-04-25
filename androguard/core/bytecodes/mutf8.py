@@ -56,6 +56,7 @@ def decode_and_patch(b, size):
     chr_array = [""] * size
 
     b = iter(b)
+    decoded_size = 0
 
     high_surrogate = None
     chr_index = 0
@@ -100,6 +101,10 @@ def decode_and_patch(b, size):
             else:
                 chr_array[chr_index] = chr(c)
             chr_index += 1
+        decoded_size += 1
+
+    if decoded_size != size:
+        raise ValueError("UTF16 Length does not match!")
 
     return "".join(chr_array)
 

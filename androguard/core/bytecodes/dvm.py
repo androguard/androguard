@@ -1908,11 +1908,8 @@ class StringDataItem:
         string as 6 characters: \\ud853
         Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
         """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
         # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        return mutf8.patch_string(s)
+        return mutf8.decode_and_patch(self.data, self.utf16_size)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
