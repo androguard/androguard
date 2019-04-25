@@ -33,6 +33,70 @@ class DexTest(unittest.TestCase):
             self.assertTrue(fields)
             self.assertEqual(len(fields), 803)
 
+    def testBrokenDex(self):
+        """Test various broken DEX headers"""
+        # really not a dex file
+        with self.assertRaises(ValueError) as cnx:
+            dvm.DalvikVMFormat(b'\x00\x00\x00\x00\x00\x00\x00\x00')
+        self.assertIn('Wrong magic', str(cnx.exception))
+
+        # Adler32 will not match, zeroed out file
+        dex = binascii.unhexlify('6465780A303335001F6C4D5A6ACF889AF588F3237FC9F20B41F56A2408749D1B'
+                                 'C81E000070000000785634120000000000000000341E00009400000070000000'
+                                 '2E000000C0020000310000007803000011000000C4050000590000004C060000'
+                                 '090000001409000094140000340A0000' + ('00' * (7880 - 0x70)))
+
+        with self.assertRaises(ValueError) as cnx:
+            dvm.DalvikVMFormat(dex)
+        self.assertIn("Adler32", str(cnx.exception))
+
+        # A very very basic dex file (without a map)
+        # But should parse...
+        dex = binascii.unhexlify('6465780A30333500460A4882696E76616C6964696E76616C6964696E76616C69'
+                                 '7000000070000000785634120000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000000000000000000000000000000000'
+                                 '00000000000000000000000000000000')
+        with self.assertLogs(logger='androguard.dvm', level=logging.WARNING) as cnx:
+            self.assertIsNotNone(dvm.DalvikVMFormat(dex))
+        self.assertEqual(cnx.output, ["WARNING:androguard.dvm:no map list! This DEX file is probably empty."])
+
+        # Wrong header size
+        dex = binascii.unhexlify('6465780A30333500480A2C8D696E76616C6964696E76616C6964696E76616C69'
+                                 '7100000071000000785634120000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000')
+        with self.assertRaises(ValueError) as cnx:
+            dvm.DalvikVMFormat(dex)
+        self.assertIn("Wrong header size", str(cnx.exception))
+
+        # Non integer version
+        dex = binascii.unhexlify('6465780AFF00AB00460A4882696E76616C6964696E76616C6964696E76616C69'
+                                 '7000000070000000785634120000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000000000000000000000000000000000'
+                                 '00000000000000000000000000000000')
+        with self.assertLogs(logger='androguard.dvm', level=logging.WARNING) as cnx:
+            dvm.DalvikVMFormat(dex)
+        self.assertEqual(cnx.output, ["WARNING:androguard.dvm:Wrong DEX version: bytearray(b'dex\\n\\xff\\x00\\xab\\x00'), trying to parse anyways",
+                                      "WARNING:androguard.dvm:no map list! This DEX file is probably empty."])
+
+        # Big Endian file
+        dex = binascii.unhexlify('6465780A30333500460AF480696E76616C6964696E76616C6964696E76616C69'
+                                 '7000000070000000123456780000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000000000000000000000000000000000'
+                                 '00000000000000000000000000000000')
+        with self.assertRaises(NotImplementedError) as cnx:
+            dvm.DalvikVMFormat(dex)
+        self.assertIn("swapped endian tag", str(cnx.exception))
+
+        # Weird endian file
+        dex = binascii.unhexlify('6465780A30333500AB0BC3E4696E76616C6964696E76616C6964696E76616C69'
+                                 '7000000070000000ABCDEF120000000000000000000000000000000000000000'
+                                 '0000000000000000000000000000000000000000000000000000000000000000'
+                                 '00000000000000000000000000000000')
+        with self.assertRaises(ValueError) as cnx:
+            dvm.DalvikVMFormat(dex)
+        self.assertIn("Wrong endian tag", str(cnx.exception))
+
     def testDexWrapper(self):
         from androguard.misc import AnalyzeDex
         from androguard.core.bytecodes.dvm import DalvikVMFormat
@@ -225,7 +289,7 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(instructions, [])
         # Check if all bytes are read
         self.assertEqual(len(bytecode), l)
-        
+
     def testLinearSweepSwitch(self):
         """test if switch payloads are unpacked correctly"""
         bytecode = bytearray(binascii.unhexlify('2B02140000001300110038030400130063000F001300170028F913002A0028F6'

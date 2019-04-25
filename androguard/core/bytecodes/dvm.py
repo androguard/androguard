@@ -5843,12 +5843,12 @@ class Instruction4rcc(Instruction):
         return 'FIXME!!!'
 
 
-class Instruction0Unused(Instruction):
+class Instruction00x(Instruction):
     """A class for unused instructions, has zero length and raises an error on initialization"""
     length = 0
 
     def __init__(self, cm, buff):
-        raise InvalidInstruction("Instruction '{}' is unused and thus invalid!".format(repr(buff)))
+        raise InvalidInstruction("Instruction with opcode '0x{:02x}' is unused! This looks like invalid bytecode.".format(buff[0]))
 
 
 DALVIK_OPCODES_FORMAT = {
@@ -5863,7 +5863,6 @@ DALVIK_OPCODES_FORMAT = {
     # > For example, format "21t" is of length two, contains one register reference,
     # > and additionally contains a branch target.
 
-    # FIXME: we treat unused instructions as zero length, maybe not a good idea? Time will tell...
     0x00: [Instruction10x, ["nop"]],
     0x01: [Instruction12x, ["move"]],
     0x02: [Instruction22x, ["move/from16"]],
@@ -5927,12 +5926,12 @@ DALVIK_OPCODES_FORMAT = {
     0x3c: [Instruction21t, ["if-gtz"]],
     0x3d: [Instruction21t, ["if-lez"]],
     # unused
-    0x3e: [Instruction0Unused, ["unused"]],
-    0x3f: [Instruction0Unused, ["unused"]],
-    0x40: [Instruction0Unused, ["unused"]],
-    0x41: [Instruction0Unused, ["unused"]],
-    0x42: [Instruction0Unused, ["unused"]],
-    0x43: [Instruction0Unused, ["unused"]],
+    0x3e: [Instruction00x, ["unused"]],
+    0x3f: [Instruction00x, ["unused"]],
+    0x40: [Instruction00x, ["unused"]],
+    0x41: [Instruction00x, ["unused"]],
+    0x42: [Instruction00x, ["unused"]],
+    0x43: [Instruction00x, ["unused"]],
 
     0x44: [Instruction23x, ["aget"]],
     0x45: [Instruction23x, ["aget-wide"]],
@@ -5982,7 +5981,7 @@ DALVIK_OPCODES_FORMAT = {
     0x71: [Instruction35c, ["invoke-static", Kind.METH]],
     0x72: [Instruction35c, ["invoke-interface", Kind.METH]],
     # unused
-    0x73: [Instruction0Unused, ["unused"]],
+    0x73: [Instruction00x, ["unused"]],
 
     0x74: [Instruction3rc, ["invoke-virtual/range", Kind.METH]],
     0x75: [Instruction3rc, ["invoke-super/range", Kind.METH]],
@@ -5990,8 +5989,8 @@ DALVIK_OPCODES_FORMAT = {
     0x77: [Instruction3rc, ["invoke-static/range", Kind.METH]],
     0x78: [Instruction3rc, ["invoke-interface/range", Kind.METH]],
     # unused
-    0x79: [Instruction0Unused, ["unused"]],
-    0x7a: [Instruction0Unused, ["unused"]],
+    0x79: [Instruction00x, ["unused"]],
+    0x7a: [Instruction00x, ["unused"]],
 
     0x7b: [Instruction12x, ["neg-int"]],
     0x7c: [Instruction12x, ["not-int"]],
@@ -6098,29 +6097,29 @@ DALVIK_OPCODES_FORMAT = {
     0xe1: [Instruction22b, ["shr-int/lit8"]],
     0xe2: [Instruction22b, ["ushr-int/lit8"]],
     # unused
-    0xe3: [Instruction0Unused, ["unused"]],
-    0xe4: [Instruction0Unused, ["unused"]],
-    0xe5: [Instruction0Unused, ["unused"]],
-    0xe6: [Instruction0Unused, ["unused"]],
-    0xe7: [Instruction0Unused, ["unused"]],
-    0xe8: [Instruction0Unused, ["unused"]],
-    0xe9: [Instruction0Unused, ["unused"]],
-    0xea: [Instruction0Unused, ["unused"]],
-    0xeb: [Instruction0Unused, ["unused"]],
-    0xec: [Instruction0Unused, ["unused"]],
-    0xed: [Instruction0Unused, ["unused"]],
-    0xee: [Instruction0Unused, ["unused"]],
-    0xef: [Instruction0Unused, ["unused"]],
-    0xf0: [Instruction0Unused, ["unused"]],
-    0xf1: [Instruction0Unused, ["unused"]],
-    0xf2: [Instruction0Unused, ["unused"]],
-    0xf3: [Instruction0Unused, ["unused"]],
-    0xf4: [Instruction0Unused, ["unused"]],
-    0xf5: [Instruction0Unused, ["unused"]],
-    0xf6: [Instruction0Unused, ["unused"]],
-    0xf7: [Instruction0Unused, ["unused"]],
-    0xf8: [Instruction0Unused, ["unused"]],
-    0xf9: [Instruction0Unused, ["unused"]],
+    0xe3: [Instruction00x, ["unused"]],
+    0xe4: [Instruction00x, ["unused"]],
+    0xe5: [Instruction00x, ["unused"]],
+    0xe6: [Instruction00x, ["unused"]],
+    0xe7: [Instruction00x, ["unused"]],
+    0xe8: [Instruction00x, ["unused"]],
+    0xe9: [Instruction00x, ["unused"]],
+    0xea: [Instruction00x, ["unused"]],
+    0xeb: [Instruction00x, ["unused"]],
+    0xec: [Instruction00x, ["unused"]],
+    0xed: [Instruction00x, ["unused"]],
+    0xee: [Instruction00x, ["unused"]],
+    0xef: [Instruction00x, ["unused"]],
+    0xf0: [Instruction00x, ["unused"]],
+    0xf1: [Instruction00x, ["unused"]],
+    0xf2: [Instruction00x, ["unused"]],
+    0xf3: [Instruction00x, ["unused"]],
+    0xf4: [Instruction00x, ["unused"]],
+    0xf5: [Instruction00x, ["unused"]],
+    0xf6: [Instruction00x, ["unused"]],
+    0xf7: [Instruction00x, ["unused"]],
+    0xf8: [Instruction00x, ["unused"]],
+    0xf9: [Instruction00x, ["unused"]],
 
     # FIXME: what is with the Kinds? Need to implement in get_kinds and opcodes too
     0xfa: [Instruction45cc, ["invoke-polymorphic", Kind.METH_PROTO]],  # Dalvik 038
