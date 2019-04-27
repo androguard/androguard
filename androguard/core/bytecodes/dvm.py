@@ -101,13 +101,18 @@ def read_null_terminated_string(f):
     :param f: file-like object
     :rtype: bytearray
     """
-    x = bytearray()
+    x = []
     while True:
-        z = f.read(1)
-        if ord(z) == 0:
-            return x
+        z = f.read(128)
+        if 0 in z:
+            s = z.split(b'\x00',1)
+            x.append(s[0])
+            idx = f.get_idx()
+            f.set_idx(idx - len(s[1]))
+            break
         else:
-            x.append(ord(z))
+            x.append(z)
+    return b''.join(x)
 
 
 def get_access_flags_string(value):
