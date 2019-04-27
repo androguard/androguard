@@ -199,11 +199,11 @@ def static_operand_instruction(instruction):
 
 
 def get_sbyte(buff):
-    return unpack('=b', bytearray(buff.read(1)))[0]
+    return unpack('=b', buff.read(1))[0]
 
 
 def get_byte(buff):
-    return unpack('=B', bytearray(buff.read(1)))[0]
+    return unpack('=B', buff.read(1))[0]
 
 
 def readuleb128(buff):
