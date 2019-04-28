@@ -465,74 +465,62 @@ class HeaderItem:
         if self.offset != 0:
             log.warning("Unusual DEX file, does not have the header at offset 0")
 
-        magic_bytes = buff.read(8)
+        self.endian_tag, = unpack('<I', buff.read_at(40,4))
+        self.packer = DalvikPacker(self.endian_tag)
 
         # Q is actually wrong, but we do not change it here and unpack our own
         # stuff...
-        self.magic = unpack("<Q", magic_bytes)[0]
+        self.magic, \
+        self.checksum, \
+        self.signature, \
+        self.file_size, \
+        self.header_size, \
+        endian_tag, \
+        self.link_size, \
+        self.link_off, \
+        self.map_off, \
+        self.string_ids_size, \
+        self.string_ids_off, \
+        self.type_ids_size, \
+        self.type_ids_off, \
+        self.proto_ids_size, \
+        self.proto_ids_offn, \
+        self.field_ids_size, \
+        self.field_ids_off, \
+        self.method_ids_size, \
+        self.method_ids_off, \
+        self.class_defs_size, \
+        self.class_defs_off, \
+        self.data_size, \
+        self.data_off = self.packer['8sI20s20I'].unpack(buff.read(112))
+
         # possible dex or dey:
-        if magic_bytes[:2] != b'de' or magic_bytes[2] not in [0x78, 0x79] or magic_bytes[3] != 0x0a or magic_bytes[7] != 0x00:
-            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(magic_bytes)))
+        if self.magic[:2] != b'de' or self.magic[2] not in [0x78, 0x79] or self.magic[3] != 0x0a or self.magic[7] != 0x00:
+            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(self.magic)))
 
         try:
-            self.dex_version = int(magic_bytes[4:7].decode('ascii'), 10)
+            self.dex_version = int(self.magic[4:7].decode('ascii'), 10)
         except (UnicodeDecodeError, ValueError):
-            raise ValueError("This is not a DEX file! Wrong DEX version: {}".format(repr(magic_bytes)))
+            raise ValueError("This is not a DEX file! Wrong DEX version: {}".format(repr(self.magic)))
 
-        self.checksum = unpack("<I", buff.read(4))[0]
-
-        if zlib.adler32(buff.readat(buff.tell())) != self.checksum:
+        if zlib.adler32(buff.readat(self.offset + 12)) != self.checksum:
             raise ValueError("Wrong Adler32 checksum for DEX file!")
-
-        self.signature = unpack("<20s", buff.read(20))[0]
-        self.file_size = unpack("<I", buff.read(4))[0]
 
         if self.file_size != buff.size():
             # Maybe raise an error here too...
             log.warning("DEX file size is different to the buffer. Trying to parse anyways.")
 
-        self.header_size = unpack("<I", buff.read(4))[0]
-
         if self.header_size != 0x70:
             raise ValueError("This is not a DEX file! Wrong header size: '{}'".format(self.header_size))
-
-        self.endian_tag = unpack("<I", buff.read(4))[0]
-
-        if self.endian_tag == 0x78563412:
-            log.error("DEX file with byte swapped endian tag is not supported!")
-            raise NotImplementedError("Byte swapped endian tag encountered!")
-        elif self.endian_tag != 0x12345678:
-            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(self.endian_tag))
-
-        self.link_size = unpack("<I", buff.read(4))[0]
-        self.link_off = unpack("<I", buff.read(4))[0]
-        self.map_off = unpack("<I", buff.read(4))[0]
-        self.string_ids_size = unpack("<I", buff.read(4))[0]
-        self.string_ids_off = unpack("<I", buff.read(4))[0]
-        self.type_ids_size = unpack("<I", buff.read(4))[0]
 
         if self.type_ids_size > 65535:
             raise ValueError("DEX file contains too many ({}) TYPE_IDs to be valid!".format(self.type_ids_size))
 
-        self.type_ids_off = unpack("<I", buff.read(4))[0]
-        self.proto_ids_size = unpack("<I", buff.read(4))[0]
-
         if self.proto_ids_size > 65535:
             raise ValueError("DEX file contains too many ({}) PROTO_IDs to be valid!".format(self.proto_ids_size))
 
-        self.proto_ids_off = unpack("<I", buff.read(4))[0]
-        self.field_ids_size = unpack("<I", buff.read(4))[0]
-        self.field_ids_off = unpack("<I", buff.read(4))[0]
-        self.method_ids_size = unpack("<I", buff.read(4))[0]
-        self.method_ids_off = unpack("<I", buff.read(4))[0]
-        self.class_defs_size = unpack("<I", buff.read(4))[0]
-        self.class_defs_off = unpack("<I", buff.read(4))[0]
-        self.data_size = unpack("<I", buff.read(4))[0]
-
         if self.data_size % 4 != 0:
             log.warning("data_size is not a multiple of sizeof(uint), but try to parse anyways.")
-
-        self.data_off = unpack("<I", buff.read(4))[0]
 
         self.map_off_obj = None
         self.string_off_obj = None
@@ -7572,6 +7560,25 @@ class MapList:
         return len(self.get_raw())
 
 
+class DalvikPacker():
+    def __init__(self, endian_tag):
+        if endian_tag == 0x78563412:
+            log.error("DEX file with byte swapped endian tag is not supported!")
+            raise NotImplementedError("Byte swapped endian tag encountered!")
+        elif endian_tag == 0x12345678:
+            self.endian_tag = '<'
+        else:
+            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(endian_tag))
+        self.__structs = {}
+
+    def __getitem__(self, item):
+        try:
+            return self.__structs[item]
+        except KeyError:
+            self.__structs[item] = struct.Struct(self.endian_tag + item)
+        return self.__structs[item]
+
+
 class DalvikVMFormat(bytecode.BuffHandle):
     """
     This class can parse a classes.dex file of an Android application (APK).
@@ -7654,6 +7661,10 @@ class DalvikVMFormat(bytecode.BuffHandle):
         Returns the version number of the DEX Format
         """
         return self.__header.dex_version
+
+    @property
+    def packer(self):
+        return self.__header.packer
 
     def get_vmanalysis(self):
         """
