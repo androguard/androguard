@@ -17,6 +17,7 @@
 
 import logging
 from struct import unpack
+from androguard.core.bytecodes import mutf8
 from androguard.decompiler.dad.util import get_type
 from androguard.decompiler.dad.opcode_ins import Op
 from androguard.decompiler.dad.instruction import (
@@ -48,7 +49,7 @@ class Writer:
         self.need_break = True
 
     def __str__(self):
-        return ''.join(self.buffer)
+        return mutf8.MUTF8String.join(self.buffer).string
 
     def str_ext(self):
         return self.buffer2

@@ -446,11 +446,9 @@ def determineException(vm, m):
 class HeaderItem:
     """
     This class can parse an header_item of a dex file.
-
     Several checks are performed to detect if this is not an header_item.
     Also the Adler32 checksum of the file is calculated in order to detect file
     corruption.
-
     :param buff: a string which represents a Buff object of the header_item
     :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
@@ -1887,19 +1885,19 @@ class StringDataItem:
     def get_off(self):
         return self.offset
 
-    def get_unicode(self):
-        """
-        Returns an Unicode String
-        This is the actual string. Beware that some strings might be not
-        decodeable with usual UTF-16 decoder, as they use surrogates that are
-        not supported by python.
-        """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
+    # def get_unicode(self):
+    #     """
+    #     Returns an Unicode String
+    #     This is the actual string. Beware that some strings might be not
+    #     decodeable with usual UTF-16 decoder, as they use surrogates that are
+    #     not supported by python.
+    #     """
+    #     s = mutf8.decode(self.data)
+    #     if len(s) != self.utf16_size:
+    #         raise ValueError("UTF16 Length does not match!")
 
-        # Return a UTF16 String
-        return s
+    #     # Return a UTF16 String
+    #     return s
 
     def get(self):
         """
@@ -1908,11 +1906,12 @@ class StringDataItem:
         string as 6 characters: \\ud853
         Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
         """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
-        # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        return mutf8.patch_string(s)
+        return mutf8.MUTF8String.from_bytes(self.data)
+        # s = mutf8.decode(self.data)
+        # if len(s) != self.utf16_size:
+        #     raise ValueError("UTF16 Length does not match!")
+        # # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
+        # return mutf8.patch_string(s)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2167,7 +2166,7 @@ class ProtoIdItem:
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = '({})'.format(' '.join(params))
+            self.parameters_off_value = mutf8.MUTF8String.from_bytes(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String.from_bytes(b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2680,7 +2679,7 @@ class EncodedField:
         name = self.CM.get_field(self.field_idx)
         self.class_name = name[0]
         self.name = name[2]
-        self.proto = ''.join(i for i in name[1])
+        self.proto = name[1]
 
     def set_init_value(self, value):
         """
@@ -2916,7 +2915,7 @@ class EncodedMethod:
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
-            self.proto = ''.join(i for i in v[2])
+            self.proto = mutf8.MUTF8String.join(i for i in v[2])
         else:
             self.class_name = 'CLASS_NAME_ERROR'
             self.name = 'NAME_ERROR'
@@ -2993,7 +2992,7 @@ class EncodedMethod:
     @property
     def full_name(self):
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
-        return " ".join([self.class_name, self.name, self.get_descriptor()])
+        return mutf8.MUTF8String.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
 
     def get_short_string(self):
         """
@@ -7948,11 +7947,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_methods():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -7965,11 +7965,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_fields():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -8212,7 +8213,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
     def _create_python_export_class(self, _class, delete=False):
         if _class is not None:
             ### Class
-            name = bytecode.FormatClassToPython(_class.get_name())
+            name = bytecode.FormatClassToPython(_class.get_name()).string
             if delete:
                 delattr(self.C, name)
                 return
@@ -8236,13 +8237,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.M, name, j)
             else:
                 for j in m[i]:
                     name = (
                         bytecode.FormatNameToPython(j.get_name()) + "_" +
-                        bytecode.FormatDescriptorToPython(j.get_descriptor()))
+                        bytecode.FormatDescriptorToPython(j.get_descriptor())).string
                     setattr(_class.M, name, j)
 
     def _create_python_export_fields(self, _class, delete):
@@ -8257,13 +8258,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in f:
             if len(f[i]) == 1:
                 j = f[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.F, name, j)
             else:
                 for j in f[i]:
                     name = bytecode.FormatNameToPython(j.get_name(
                     )) + "_" + bytecode.FormatDescriptorToPython(
-                        j.get_descriptor())
+                        j.get_descriptor()).string
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):

@@ -3,7 +3,7 @@ import collections
 import time
 import warnings
 from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core.bytecodes import dvm
+from androguard.core.bytecodes import dvm, mutf8
 import logging
 from androguard.core import bytecode
 import networkx as nx
@@ -789,7 +789,7 @@ class ExternalClass:
         :param descriptor: method descriptor, for example `'(I)V'`
         :return: :class:`ExternalMethod`
         """
-        key = name + str(descriptor)
+        key = name + mutf8.MUTF8String.join(descriptor)
         if key not in self.methods:
             self.methods[key] = ExternalMethod(self.name, name, descriptor)
 
@@ -818,7 +818,7 @@ class ExternalMethod:
         return self.class_name
 
     def get_descriptor(self):
-        return ''.join(self.descriptor)
+        return mutf8.MUTF8String.join(self.descriptor)
 
     @property
     def full_name(self):
@@ -837,7 +837,7 @@ class ExternalMethod:
         return ""
 
     def __str__(self):
-        return "{}->{}{}".format(self.class_name, self.name, ''.join(self.descriptor))
+        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), mutf8.MUTF8String.join(self.descriptor).string)
 
     def __repr__(self):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
@@ -986,7 +986,7 @@ class ClassAnalysis:
 
         # We are searching an unknown method in this class
         # It could be something that the class herits
-        key = name + str(descriptor)
+        key = name + mutf8.MUTF8String.join(descriptor)
         if key not in self._inherits_methods:
             self._inherits_methods[key] = ExternalMethod(self.orig_class.get_name(), name, descriptor)
         return self._inherits_methods[key]
@@ -1269,7 +1269,7 @@ class Analysis:
                         method_item = None
                         # TODO: should create get_method_descriptor inside Analysis
                         for vm in self.vms:
-                            method_item = vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                            method_item = vm.get_method_descriptor(method_info[0], method_info[1], mutf8.MUTF8String.join(method_info[2]))
                             if method_item:
                                 break
 
@@ -1485,10 +1485,11 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: generator of `ClassAnalysis`
         """
+        name = mutf8.MUTF8String.from_str(name).bytes
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
-            if re.match(name, cname):
+            if re.match(name, cname.bytes):
                 yield c
 
     def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
@@ -1505,8 +1506,11 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: generator of `MethodClassAnalysis`
         """
+        classname = mutf8.MUTF8String.from_str(classname).bytes
+        methodname = mutf8.MUTF8String.from_str(methodname).bytes
+        descriptor = mutf8.MUTF8String.from_str(descriptor).bytes
         for cname, c in self.classes.items():
-            if re.match(classname, cname):
+            if re.match(classname, cname.bytes):
                 for m in c.get_methods():
                     z = m.get_method()
                     # TODO is it even possible that an internal class has
@@ -1514,8 +1518,8 @@ class Analysis:
                     # instead...
                     if no_external and isinstance(z, ExternalMethod):
                         continue
-                    if re.match(methodname, z.get_name()) and \
-                       re.match(descriptor, z.get_descriptor()) and \
+                    if re.match(methodname, z.get_name().bytes) and \
+                       re.match(descriptor, z.get_descriptor().bytes) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
@@ -1526,8 +1530,9 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: generator of `StringAnalysis`
         """
+        string = mutf8.MUTF8String.from_str(string).bytes
         for s, sa in self.strings.items():
-            if re.match(string, s):
+            if re.match(string, s.bytes):
                 yield sa
 
     def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*", accessflags=".*"):
@@ -1540,12 +1545,15 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: generator of `FieldClassAnalysis`
         """
+        classname = mutf8.MUTF8String.from_str(classname).bytes
+        fieldname = mutf8.MUTF8String.from_str(fieldname).bytes
+        fieldtype = mutf8.MUTF8String.from_str(fieldtype).bytes
         for cname, c in self.classes.items():
-            if re.match(classname, cname):
+            if re.match(classname, cname.bytes):
                 for f in c.get_fields():
                     z = f.get_field()
-                    if re.match(fieldname, z.get_name()) and \
-                       re.match(fieldtype, z.get_descriptor()) and \
+                    if re.match(fieldname, z.get_name().bytes) and \
+                       re.match(fieldtype, z.get_descriptor().bytes) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield f
 

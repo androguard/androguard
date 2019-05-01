@@ -91,20 +91,37 @@ def encode(s):
 
 class MUTF8String():
     def __init__(self, data, raw=True):
-        self.__encoded = None
-        self.__decoded = None
-        if raw:
-            self.__encoded = data
+        if isinstance(data, MUTF8String):
+            self.__encoded = data.__encoded
+            self.__decoded = data.__decoded
         else:
-            self.__decoded = data
+            self.__encoded = None
+            self.__decoded = None
+            if raw:
+                self.__encoded = data
+            else:
+                self.__decoded = data
 
     @classmethod
     def from_bytes(cls, data):
-        return cls(data)
+        return cls(bytes(data))
 
     @classmethod
     def from_str(cls, data):
         return cls(data, raw=False)
+
+    @classmethod
+    def join(cls, data, spacing=b''):
+        array = []
+        for i in data:
+            try:
+                array.append(i.bytes)
+            except AttributeError:
+                if isinstance(i, bytes):
+                    array.append(i)
+                else:
+                    array.append(encode(i))
+        return MUTF8String.from_bytes(spacing.join(array))
 
     @property
     def bytes(self):
@@ -118,17 +135,53 @@ class MUTF8String():
             self.__decoded = decode(self.__encoded)
         return self.__decoded
 
+    def replace(self, old, new):
+        try:
+            return MUTF8String.from_bytes(self.bytes.replace(old, new))
+        except TypeError:
+            return MUTF8String.from_bytes(self.bytes.replace(encode(old), encode(new)))
+
+    def find(self, sub):
+        try:
+            return self.bytes.find(sub)
+        except TypeError:
+            return self.bytes.find(encode(sub))
+
+    def split(self, sub):
+        try:
+            return self.bytes.split(sub)
+        except TypeError:
+            return self.bytes.split(encode(sub))
+
+    def startswith(self, sub):
+        try:
+            return self.bytes.startswith(sub)
+        except TypeError:
+            return self.bytes.startswith(encode(sub))
+
+    def __add__(self, other):
+        try:
+            return MUTF8String.from_bytes(self.bytes + other.bytes)
+        except AttributeError:
+            return MUTF8String.from_bytes(self.bytes + encode(other))
+
+    def __getitem__(self, item):
+        return MUTF8String.from_bytes(self.bytes[item])
+
     def __repr__(self):
         return "<mutf8.MUTF8String {}>".format(self.__str__())
 
     def __str__(self):
         return self.string.encode('utf8', errors='backslashreplace').decode('utf8')
 
+    def __format__(self, format_spec):
+        return format(self.string, format_spec)
+
     def __hash__(self):
-        return self.bytes.__hash__()
+        return hash(self.bytes)
 
     def __len__(self):
-        return self.bytes.__len__()
+        return len(self.bytes)
 
     def __lt__(self, other):
         try:
