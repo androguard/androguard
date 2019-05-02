@@ -395,7 +395,7 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(ins.get_literals(), [0x1142])
         self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
         self.assertEqual(ins.get_name(), 'const/high16')
-        self.assertEqual(ins.get_output(), 'v0 4418 # 289538048')
+        self.assertEqual(ins.get_output(), 'v0, 4418 # 289538048')
         self.assertEqual(ins.get_raw(), bytearray([0x15, 0x00, 0x42, 0x11]))
 
         ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0x42, 0x11]))
@@ -404,7 +404,7 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(ins.get_literals(), [0x1142])
         self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
         self.assertEqual(ins.get_name(), 'const-wide/high16')
-        self.assertEqual(ins.get_output(), 'v0 4418 # 289538048')
+        self.assertEqual(ins.get_output(), 'v0, 4418 # 289538048')
         self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0x42, 0x11]))
 
         ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0xbe, 0xff]))
@@ -413,7 +413,7 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(ins.get_literals(), [-66])
         self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, -66)])
         self.assertEqual(ins.get_name(), 'const-wide/high16')
-        self.assertEqual(ins.get_output(), 'v0 -66 # -18577348462903296')
+        self.assertEqual(ins.get_output(), 'v0, -66 # -18577348462903296')
         self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0xbe, 0xff]))
 
 

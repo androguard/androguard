@@ -1461,6 +1461,8 @@ class Analysis:
         """
         Returns a list of `MethodClassAnalysis` objects
 
+        :rtype: Iterator[MethodClassAnalysis]
+
         """
         for c in self.classes.values():
             for m in c.get_methods():

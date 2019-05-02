@@ -4731,7 +4731,7 @@ class Instruction21h(Instruction):
 
     def get_output(self, idx=-1):
         return "v{}, {}".format(self.AA, self.BBBB,
-                                ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
+                                ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBB)]
