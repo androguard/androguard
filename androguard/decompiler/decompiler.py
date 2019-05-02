@@ -740,7 +740,7 @@ class DecompilerJADX:
                     return res
 
         # Check the whole supplied name
-        fname = os.path.join(basefolder, clname.replace("/", os.sep) + ".java")
+        fname = os.path.join(basefolder, (clname.replace("/", os.sep) + ".java").string)
         if not os.path.isfile(fname):
             return None
         return fname

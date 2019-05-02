@@ -885,7 +885,6 @@ def FormatClassToPython(i):
     :rtype: str
     """
     i = i[:-1]
-    print(i)
     i = i.replace("/", "_")
     i = i.replace("$", "_")
 
