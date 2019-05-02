@@ -696,7 +696,7 @@ class DecompilerJADX:
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
-            fname = self._find_class(cl, tmpfolder)
+            fname = self._find_class(cl.string, tmpfolder)
             if fname:
                 if "L{};".format(cl) not in self.classes:
                     with open(fname, "rb") as fp:
@@ -740,7 +740,7 @@ class DecompilerJADX:
                     return res
 
         # Check the whole supplied name
-        fname = os.path.join(basefolder, (clname.replace("/", os.sep) + ".java").string)
+        fname = os.path.join(basefolder, clname.replace("/", os.sep) + ".java")
         if not os.path.isfile(fname):
             return None
         return fname

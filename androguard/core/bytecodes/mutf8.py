@@ -165,6 +165,12 @@ class MUTF8String():
         except TypeError:
             return [MUTF8String.from_bytes(i) for i in self.bytes.rsplit(encode(sep), maxsplit)]
 
+    def lstrip(self, sub):
+        try:
+            return MUTF8String.from_bytes(self.bytes.lstrip(sub))
+        except TypeError:
+            return MUTF8String.from_bytes(self.bytes.lstrip(encode(sub)))
+
     def startswith(self, sub):
         try:
             return self.bytes.startswith(sub)

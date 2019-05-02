@@ -3027,11 +3027,11 @@ class EncodedMethod:
                 cls = cls.rsplit("/", 1)[1]
             return arr + cls
 
-        clsname = _fmt_classname(self.get_class_name())
+        clsname = _fmt_classname(self.get_class_name().string)
 
-        param, ret = self.get_descriptor()[1:].split(")")
+        param, ret = self.get_descriptor().string[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
-        desc = "({}){}".format(" ".join(params), _fmt_classname(ret))
+        desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
 
         return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
 
