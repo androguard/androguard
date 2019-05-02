@@ -299,7 +299,7 @@ class DvClass:
 
         if len(self.interfaces) > 0:
             prototype += ' implements %s' % ', '.join(
-                [n[1:-1].replace('/', '.') for n in self.interfaces])
+                [n[1:-1].replace('/', '.').string for n in self.interfaces])
 
         source.append('%s {\n' % prototype)
         for field in self.fields:

@@ -679,6 +679,10 @@ class Writer:
             arg.visit(self)
         else:
             arg.visit(self)
+            try:
+                atype = atype.string
+            except AttributeError:
+                pass
             if atype in 'VBSCIJFD':
                 self.write(' %s 0' % op, data="TODO64")
             else:
