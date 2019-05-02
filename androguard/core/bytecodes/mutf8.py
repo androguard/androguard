@@ -135,11 +135,17 @@ class MUTF8String():
             self.__decoded = decode(self.__encoded)
         return self.__decoded
 
-    def replace(self, old, new):
-        try:
-            return MUTF8String.from_bytes(self.bytes.replace(old, new))
-        except TypeError:
-            return MUTF8String.from_bytes(self.bytes.replace(encode(old), encode(new)))
+    def replace(self, old, new, count=None):
+        if count is None:
+            try:
+                return MUTF8String.from_bytes(self.bytes.replace(old, new))
+            except TypeError:
+                return MUTF8String.from_bytes(self.bytes.replace(encode(old), encode(new)))
+        else:
+            try:
+                return MUTF8String.from_bytes(self.bytes.replace(old, new, count))
+            except TypeError:
+                return MUTF8String.from_bytes(self.bytes.replace(encode(old), encode(new), count))
 
     def find(self, sub):
         try:
@@ -147,11 +153,17 @@ class MUTF8String():
         except TypeError:
             return self.bytes.find(encode(sub))
 
-    def split(self, sub):
+    def split(self, sep=None, maxsplit=-1):
         try:
-            return self.bytes.split(sub)
+            return [MUTF8String.from_bytes(i) for i in self.bytes.split(sep, maxsplit)]
         except TypeError:
-            return self.bytes.split(encode(sub))
+            return [MUTF8String.from_bytes(i) for i in self.bytes.split(encode(sep), maxsplit)]
+
+    def rsplit(self, sep=None, maxsplit=-1):
+        try:
+            return [MUTF8String.from_bytes(i) for i in self.bytes.rsplit(sep, maxsplit)]
+        except TypeError:
+            return [MUTF8String.from_bytes(i) for i in self.bytes.rsplit(encode(sep), maxsplit)]
 
     def startswith(self, sub):
         try:
