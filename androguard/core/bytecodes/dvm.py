@@ -1889,33 +1889,11 @@ class StringDataItem:
     def get_off(self):
         return self.offset
 
-    # def get_unicode(self):
-    #     """
-    #     Returns an Unicode String
-    #     This is the actual string. Beware that some strings might be not
-    #     decodeable with usual UTF-16 decoder, as they use surrogates that are
-    #     not supported by python.
-    #     """
-    #     s = mutf8.decode(self.data)
-    #     if len(s) != self.utf16_size:
-    #         raise ValueError("UTF16 Length does not match!")
-
-    #     # Return a UTF16 String
-    #     return s
-
     def get(self):
         """
-        Returns a printable string.
-        In this case, all lonely surrogates are escaped, thus are represented in the
-        string as 6 characters: \\ud853
-        Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
+        Returns a MUTF8String object
         """
         return mutf8.MUTF8String.from_bytes(self.data)
-        # s = mutf8.decode(self.data)
-        # if len(s) != self.utf16_size:
-        #     raise ValueError("UTF16 Length does not match!")
-        # # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        # return mutf8.patch_string(s)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2166,7 +2144,7 @@ class ProtoIdItem:
         """
         Return the string associated to the parameters_off
 
-        :rtype: string
+        :rtype: MUTF8String
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
@@ -8144,27 +8122,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
                                         j.get_descriptor()] = j
 
         return self.__cache_fields.get(key)
-
-    def get_strings_unicode(self):
-        """
-        Return all strings
-
-        This method will return pure UTF-16 strings. This is the "exact" same string as used in Java.
-        Those strings can be problematic for python, as they can contain surrogates as well as "broken"
-        surrogate pairs, ie single high or low surrogates.
-        Such a string can for example not be printed.
-        To avoid such problems, there is an escape mechanism to detect such lonely surrogates
-        and escape them in the string. Of course, this results in a different string than in the Java Source!
-
-        Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
-        from the Java Source.
-        You can always escape the string from `get_strings_unicode()` using the function
-        :meth:`androguard.core.bytecodes.mutf8.patch_string`
-
-        :rtype: a list with all strings used in the format (types, names ...)
-        """
-        for i in self.strings:
-            yield i.get_unicode()
 
     def get_strings(self):
         """
