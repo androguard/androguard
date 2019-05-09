@@ -2,7 +2,7 @@ from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
-from androguard.core.bytecodes import mutf8
+from androguard.core import mutf8
 from androguard.core.bytecodes.dvm_types import TypeMapItem, ACCESS_FLAGS, TYPE_DESCRIPTOR
 
 import sys

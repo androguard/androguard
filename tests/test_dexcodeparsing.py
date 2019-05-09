@@ -45,7 +45,7 @@ class TestDexCodeParsing(unittest.TestCase):
     def testClassManager(self):
         """Test if the classmanager has the same items"""
 
-        from androguard.core.bytecodes.mutf8 import decode
+        from androguard.core.mutf8 import decode
 
         fname = "examples/android/TestsAndroguard/bin/classes.dex"
 

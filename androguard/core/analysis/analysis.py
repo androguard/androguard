@@ -3,9 +3,9 @@ import collections
 import time
 import warnings
 from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core.bytecodes import dvm, mutf8
+from androguard.core.bytecodes import dvm
 import logging
-from androguard.core import bytecode
+from androguard.core import bytecode, mutf8
 import networkx as nx
 from enum import IntEnum
 

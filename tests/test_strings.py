@@ -3,7 +3,8 @@ import unittest
 
 import sys
 
-from androguard.core.bytecodes import dvm, mutf8
+from androguard.core import  mutf8
+from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
 
 

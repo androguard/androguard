@@ -17,7 +17,7 @@
 
 import logging
 from struct import unpack
-from androguard.core.bytecodes import mutf8
+from androguard.core import mutf8
 from androguard.decompiler.dad.util import get_type
 from androguard.decompiler.dad.opcode_ins import Op
 from androguard.decompiler.dad.instruction import (
