@@ -944,6 +944,8 @@ class ClassAnalysis:
     def get_methods(self):
         """
         Return all :class:`MethodClassAnalysis` objects of this class
+
+        :rtype: Iterator[MethodClassAnalysis]
         """
         return list(self._methods.values())
 
@@ -1172,6 +1174,7 @@ class Analysis:
         :param vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
         """
         self.vms.append(vm)
+        log.info("Adding DEX file version {}".format(vm.version))
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
 
@@ -1207,8 +1210,8 @@ class Analysis:
         for c in self._get_all_classes():
             self._create_xref(c)
 
-        log.info("End of creating cross references (XREF)")
-        log.info("run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
+        log.info("End of creating cross references (XREF) "
+                 "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def _create_xref(self, current_class):
         """
@@ -1414,7 +1417,7 @@ class Analysis:
         Returns all external classes, that means all classes that are not
         defined in the given set of `DalvikVMObjects`.
 
-        :rtype: generator of `ClassAnalysis`
+        :rtype: Iterator[ClassAnalysis]
         """
         for cls in self.classes.values():
             if cls.is_external():
@@ -1425,7 +1428,7 @@ class Analysis:
         Returns all external classes, that means all classes that are
         defined in the given set of :class:`~DalvikVMFormat`.
 
-        :rtype: generator of :class:`~ClassAnalysis`
+        :rtype: Iterator[ClassAnalysis]
         """
         for cls in self.classes.values():
             if not cls.is_external():
@@ -1435,7 +1438,7 @@ class Analysis:
         """
         Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
 
-        :return: a dictionary
+        :rtype: dict
         """
         return self.strings
 
@@ -1443,7 +1446,7 @@ class Analysis:
         """
         Returns a list of :class:`StringAnalysis` objects
 
-        :rtype: list of :class:`StringAnalysis`
+        :rtype: Iterator[StringAnalysis]
         """
         return self.strings.values()
 
@@ -1453,7 +1456,7 @@ class Analysis:
 
         Returns both internal and external classes (if any)
 
-        :rtype: list of :class:`ClassAnalysis`
+        :rtype: Iterator[ClassAnalysis]
         """
         return self.classes.values()
 
@@ -1470,6 +1473,7 @@ class Analysis:
         """
         Returns a list of `FieldClassAnalysis` objects
 
+        :rtype: Iterator[FieldClassAnalysis]
         """
         for c in self.classes.values():
             for f in c.get_fields():
@@ -1483,7 +1487,7 @@ class Analysis:
 
         :param name: regular expression for class name (default ".*")
         :param no_external: Remove external classes from the output (default False)
-        :rtype: generator of `ClassAnalysis`
+        :rtype: Iterator[ClassAnalysis]
         """
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
@@ -1503,7 +1507,7 @@ class Analysis:
         :param descriptor: regular expression for the descriptor
         :param accessflags: regular expression for the accessflags
         :param no_external: Remove external method from the output (default False)
-        :rtype: generator of `MethodClassAnalysis`
+        :rtype: Iterator[MethodClassAnalysis]
         """
         for cname, c in self.classes.items():
             if re.match(classname, cname):
@@ -1524,7 +1528,7 @@ class Analysis:
         Find strings by regex
 
         :param string: regular expression for the string to search for
-        :rtype: generator of `StringAnalysis`
+        :rtype: Iterator[StringAnalysis]
         """
         for s, sa in self.strings.items():
             if re.match(string, s):
@@ -1538,7 +1542,7 @@ class Analysis:
         :param fieldname: regular expression of the fieldname
         :param fieldtype: regular expression of the fieldtype
         :param accessflags: regular expression of the access flags
-        :rtype: generator of `FieldClassAnalysis`
+        :rtype: Iterator[FieldClassAnalysis]
         """
         for cname, c in self.classes.items():
             if re.match(classname, cname):
@@ -1570,7 +1574,7 @@ class Analysis:
         :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
         :param entry_points: A list of classes that are marked as entry point
 
-        :rtype: DiGraph
+        :rtype: networkx.DiGraph
         """
 
         def _add_node(G, method):
