@@ -916,8 +916,7 @@ def get_package_class_name(name):
         raise ValueError("The name '{}' does not look like a typed name!".format(name))
 
     # discard array types, there might be many...
-    while name[0] == '[':
-        name = name[1:]
+    name = name.lstrip('[')
 
     if name[0] != 'L':
         raise ValueError("The name '{}' does not look like a typed name!".format(name))

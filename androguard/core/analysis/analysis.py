@@ -1243,7 +1243,7 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type)
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
 
                     # Internal xref related to class manipulation
                     # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
@@ -1267,12 +1267,12 @@ class Analysis:
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if method_info:
-                        class_info = method_info[0]
+                        class_info = method_info[0].lstrip('[')
 
                         method_item = None
                         # TODO: should create get_method_descriptor inside Analysis
                         for vm in self.vms:
-                            method_item = vm.get_method_descriptor(method_info[0], method_info[1], ''.join(method_info[2]))
+                            method_item = vm.get_method_descriptor(class_info, method_info[1], ''.join(method_info[2]))
                             if method_item:
                                 break
 
@@ -1280,9 +1280,9 @@ class Analysis:
                             # Seems to be an external class, create it first
                             # Beware: if not all DEX files are loaded at the time create_xref runs
                             # you will run into problems!
-                            if method_info[0] not in self.classes:
-                                self.classes[method_info[0]] = ClassAnalysis(ExternalClass(method_info[0]))
-                            method_item = self.classes[method_info[0]].get_fake_method(method_info[1], method_info[2])
+                            if class_info not in self.classes:
+                                self.classes[class_info] = ClassAnalysis(ExternalClass(class_info))
+                            method_item = self.classes[class_info].get_fake_method(method_info[1], method_info[2])
 
                         self.classes[cur_cls_name].AddMXrefTo(current_method, self.classes[class_info], method_item, off)
                         self.classes[class_info].AddMXrefFrom(method_item, self.classes[cur_cls_name], current_method, off)
