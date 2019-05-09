@@ -271,6 +271,7 @@ class APK:
         self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
 
         if testzip:
+            log.info("Testing zip file integrity, this might take a while...")
             # Test the zipfile for integrity before continuing.
             # This process might be slow, as the whole file is read.
             # Therefore it is possible to enable it as a separate feature.
@@ -304,6 +305,7 @@ class APK:
         extracted from the Manifest.
         """
         i = "AndroidManifest.xml"
+        log.info("Starting analysis on {}".format(i))
         try:
             manifest_data = self.zip.read(i)
         except KeyError:
@@ -360,6 +362,7 @@ class APK:
                     self.declared_permissions[d_perm_name] = d_perm_details
 
                 self.valid_apk = True
+                log.info("APK file was successfully validated!")
 
         self.permission_module = androconf.load_api_specific_resource_module(
             "aosp_permissions", self.get_target_sdk_version())
