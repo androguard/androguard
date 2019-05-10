@@ -7594,7 +7594,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: string
+    :type buff: bytes
     :type decompiler: object
 
     example::
