@@ -184,7 +184,10 @@ class MUTF8String():
             return MUTF8String.from_bytes(self.bytes + encode(other))
 
     def __getitem__(self, item):
-        return MUTF8String.from_bytes(self.bytes[item])
+        if isinstance(item, int):
+            return MUTF8String.from_bytes(self.bytes[item].to_bytes(1, byteorder='big'))
+        else:
+            return MUTF8String.from_bytes(self.bytes[item])
 
     def __repr__(self):
         return "<mutf8.MUTF8String {}>".format(self.__str__())

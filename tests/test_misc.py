@@ -24,6 +24,10 @@ class MiscTest(unittest.TestCase):
         from androguard.core.bytecode import get_package_class_name
 
         self.assertEqual(get_package_class_name('Ljava/lang/Object;'), ('java.lang', 'Object'))
+        self.assertEqual(get_package_class_name('[Ljava/lang/Object;'), ('java.lang', 'Object'))
+        self.assertEqual(get_package_class_name('[[Ljava/lang/Object;'), ('java.lang', 'Object'))
+        self.assertEqual(get_package_class_name('[[[[[[[[[[[[[[[[[[[[[[[Ljava/lang/Object;'), ('java.lang', 'Object'))
+        self.assertEqual(get_package_class_name('[[[[[[[[[[[[[[[[[[[[[[[LObject;'), ('', 'Object'))
         self.assertEqual(get_package_class_name('LFoobar;'), ('', 'Foobar'))
         self.assertEqual(get_package_class_name('Lsdflkjdsklfjsdkjfklsdjfkljsdkflsd/shdfjksdhkjfhsdkjfsh;'),
                          ('sdflkjdsklfjsdkjfklsdjfkljsdkflsd', 'shdfjksdhkjfhsdkjfsh'))
@@ -35,6 +39,17 @@ class MiscTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_package_class_name('java.lang.Object')
 
+        with self.assertRaises(ValueError):
+            get_package_class_name('LOLjava.lang.Object')
+
+        with self.assertRaises(ValueError):
+            get_package_class_name('[[LOLjava.lang.Object')
+
+        with self.assertRaises(ValueError):
+            get_package_class_name('java.lang.Object;')
+
+        with self.assertRaises(ValueError):
+            get_package_class_name('[java.lang.Object;')
 
 
 if __name__ == '__main__':
