@@ -466,7 +466,7 @@ class HeaderItem:
             log.warning("Unusual DEX file, does not have the header at offset 0")
 
         self.endian_tag, = unpack('<I', buff.read_at(40,4))
-        self.packer = DalvikPacker(self.endian_tag)
+        cm.packer = DalvikPacker(self.endian_tag)
 
         # Q is actually wrong, but we do not change it here and unpack our own
         # stuff...
@@ -492,7 +492,7 @@ class HeaderItem:
         self.class_defs_size, \
         self.class_defs_off, \
         self.data_size, \
-        self.data_off = self.packer['8sI20s20I'].unpack(buff.read(112))
+        self.data_off = cm.packer['8sI20s20I'].unpack(buff.read(112))
 
         # possible dex or dey:
         if self.magic[:2] != b'de' or self.magic[2] not in [0x78, 0x79] or self.magic[3] != 0x0a or self.magic[7] != 0x00:
@@ -7139,6 +7139,8 @@ class ClassManager:
 
         self.decompiler_ob = None
 
+        self.__packer = None
+
         self.__manage_item = {}
         self.__manage_item_off = []
 
@@ -7163,6 +7165,14 @@ class ClassManager:
             self.odex_format = self.vm.get_format_type() == "ODEX"
         else:
             self.odex_format = False
+
+    @property
+    def packer(self):
+        return self.__packer
+
+    @packer.setter
+    def packer(self, p):
+        self.__packer = p
 
     def get_ascii_string(self, s):
         # TODO Remove method
@@ -7578,6 +7588,13 @@ class DalvikPacker():
             self.__structs[item] = struct.Struct(self.endian_tag + item)
         return self.__structs[item]
 
+    def __getstate__(self):
+        return self.endian_tag
+
+    def __setstate__(self, state):
+        self.endian_tag = state
+        self.__structs = {}
+
 
 class DalvikVMFormat(bytecode.BuffHandle):
     """
@@ -7623,7 +7640,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         pass
 
     def _load(self, buff):
-        self.__header = HeaderItem(0, self, ClassManager(None, self.config))
+        self.__header = HeaderItem(0, self, self.CM)
 
         if self.__header.map_off == 0:
             log.warning("no map list ...")
@@ -7661,10 +7678,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
         Returns the version number of the DEX Format
         """
         return self.__header.dex_version
-
-    @property
-    def packer(self):
-        return self.__header.packer
 
     def get_vmanalysis(self):
         """
