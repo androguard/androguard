@@ -3109,6 +3109,22 @@ class EncodedMethod:
             return []
         return self.code.get_bc().get_instructions()
 
+    def get_instructions_idx(self):
+        """
+        Iterate over all instructions of the method, but also return the current index.
+        This is the same as using :meth:`get_instructions` and adding the instruction length
+        to a variable each time.
+
+        :return:
+        :rtype: Iterator[(int, Instruction)]
+        """
+        if self.get_code() is None:
+            return []
+        idx = 0
+        for ins in self.get_code().get_bc().get_instructions():
+            yield idx, ins
+            idx += ins.get_length()
+
     def set_instructions(self, instructions):
         """
         Set the instructions
@@ -7578,7 +7594,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: string
+    :type buff: bytes
     :type decompiler: object
 
     example::

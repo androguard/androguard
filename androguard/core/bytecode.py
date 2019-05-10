@@ -897,16 +897,28 @@ def get_package_class_name(name):
 
     If no package could be found, the package is an empty string.
 
+    If the name is an array type, the array is discarded.
+
     example::
 
         >>> get_package_class_name('Ljava/lang/Object;')
         ('java.lang', 'Object')
+        >>> get_package_class_name('[[Ljava/lang/Object;')
+        ('java.lang', 'Object')
+        >>> get_package_class_name('LSomeClass;')
+        ('', 'SomeClass')
 
     :param name: the name
     :rtype: tuple
     :return:
     """
-    if name[0] != 'L' and name[-1] != ';':
+    if name[-1] != ';':
+        raise ValueError("The name '{}' does not look like a typed name!".format(name))
+
+    # discard array types, there might be many...
+    name = name.lstrip('[')
+
+    if name[0] != 'L':
         raise ValueError("The name '{}' does not look like a typed name!".format(name))
 
     name = name[1:-1]

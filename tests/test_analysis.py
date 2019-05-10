@@ -23,12 +23,16 @@ class AnalysisTest(unittest.TestCase):
 
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
-        self.assertEqual(len(list(dx.get_methods())), 11694)
+        self.assertEqual(len(list(dx.get_methods())), 11691)
         self.assertEqual(len(list(dx.get_fields())), 3033)
-        self.assertEqual(len(list(dx.get_external_classes())), 394)
+        self.assertEqual(len(list(dx.get_external_classes())), 388)
+
+        for cls in dx.get_external_classes():
+            self.assertEqual(cls.name[0], 'L')
+            self.assertEqual(cls.name[-1], ';')
 
         # Filter all support libraries
-        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$"))), 516)
+        self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$"))), 512)
         self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$", no_external=True))), 124)
 
         # Find all constructors by method name
