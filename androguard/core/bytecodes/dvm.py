@@ -84,14 +84,7 @@ DBG_LINE_BASE = -4
 DBG_LINE_RANGE = 15
 
 
-class Error(Exception):
-    """
-    Base class for exceptions in this module.
-    """
-    pass
-
-
-class InvalidInstruction(Error):
+class InvalidInstruction(Exception):
     pass
 
 
@@ -4710,7 +4703,7 @@ class Instruction10x(Instruction):
 
         self.OP, padding = unpack("<BB", buff[:self.length])
         if padding != 0:
-            raise ValueError('The Instruction does not have a zero byte padding: {}'.format(repr(buff)))
+            raise InvalidInstruction('High byte of opcode with format 10x must be zero!')
 
     def get_output(self, idx=-1):
         return ""
@@ -5183,7 +5176,7 @@ class Instruction20t(Instruction):
 
         self.OP, padding, self.AAAA = unpack("<BBh", buff[:self.length])
         if padding != 0:
-            raise ValueError('High byte of opcode is not zero!')
+            raise InvalidInstruction('High byte of opcode with format 20t must be zero!')
 
     def get_output(self, idx=-1):
         # Offset is in 16bit units
@@ -5345,7 +5338,7 @@ class Instruction30t(Instruction):
 
         self.OP, padding, self.AAAAAAAA = unpack("<BBi", buff[:self.length])
         if padding != 0:
-            raise ValueError('Higher Byte of Opcode must be zero!')
+            raise InvalidInstruction('High byte of opcode with format 30t must be zero!')
 
     def get_output(self, idx=-1):
         return "{:+08x}h".format(self.AAAAAAAA)
@@ -6243,46 +6236,57 @@ class LinearSweepAlgorithm:
     @staticmethod
     def get_instructions(cm, size, insn, idx):
         """
-        :param cm: a ClassManager object
-        :type cm: ClassManager
-        :param size: the total size of the buffer in 16-bit units
-        :type size: int
-        :param insn: a raw buffer where are the instructions
-        :type insn: bytearray
-        :param idx: a start address in the buffer
-        :type idx: int
+        Yields all instructions for the given bytecode sequence.
+        If unknown/corrupt/unused instructions are encountered,
+        the loop will stop and an error is written to the log.
 
-        :rtype: a generator of :class:`Instruction` objects
+        That means that the bytecode read might be corrupt
+        or was crafted in this way, to break parsers.
+
+        :param ClassManager cm: a ClassManager object
+        :param int size: the total size of the buffer in 16-bit units
+        :param bytearray insn: a raw buffer where are the instructions
+        :param int idx: a start address in the buffer
+        :param bool raise_errors: True to raise errors instead of simply logging them
+
+        :rtype: Iterator[Instruction]
         """
         is_odex = cm.get_odex_format()
 
         max_idx = size * calcsize('<H')
         if max_idx > len(insn):
-            log.warning("Declared size of instructions is different to length of bytecode!")
+            log.warning("Declared size of instructions is larger than the bytecode!")
             max_idx = len(insn)
 
         # Get instructions
+        # TODO sometimes there are padding bytes after the last instruction, to ensure 16bit alignment.
         while idx < max_idx:
             # Get one 16bit unit
+            # TODO: possible optimization; instead of reading the first 16 bits twice,
+            #       just push this into the Instruction's constructor
             op_value, = unpack('<H', insn[idx:idx + 2])
 
-            # FIXME: in theory, it could happen that this is a normal opcode?
-            if op_value > 0xff and (op_value & 0xff) in (0x00, 0xff):
-                if op_value in DALVIK_OPCODES_PAYLOAD:
-                    # payload instructions, i.e. for arrays or switch
-                    obj = get_instruction_payload(op_value, insn[idx:])
-
-                elif is_odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
-                    # optimized instructions, only of ODEX file
-                    obj = get_optimized_instruction(cm, op_value, insn[idx:])
+            try:
+                if op_value > 0xff and (op_value & 0xff) in (0x00, 0xff):
+                    # FIXME: in theory, it could happen that this is a normal opcode? I.e. a 0xff opcode with AA being non zero
+                    if op_value in DALVIK_OPCODES_PAYLOAD:
+                        # payload instructions, i.e. for arrays or switch
+                        obj = get_instruction_payload(op_value, insn[idx:])
+                    elif is_odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
+                        # optimized instructions, only of ODEX file
+                        obj = get_optimized_instruction(cm, op_value, insn[idx:])
+                    else:
+                        raise InvalidInstruction("Unknown Instruction '0x{:04x}'".format(op_value))
                 else:
-                    raise InvalidInstruction("Unknown Instruction '0x{:04x}' at idx {}: {}".format(op_value, idx, repr(insn[idx:])))
-            else:
-                obj = get_instruction(cm, op_value & 0xff, insn[idx:])
+                    obj = get_instruction(cm, op_value & 0xff, insn[idx:])
+            except InvalidInstruction as e:
+                # TODO somehow it would be nice to know that the parsing failed at the level of EncodedMethod or for the decompiler
+                log.error("Invalid instruction encountered! Stop parsing bytecode at idx %s. Message: %s", idx, e)
+                return
 
             # emit instruction
             yield obj
-            idx = idx + obj.get_length()
+            idx += obj.get_length()
 
 
 class DCode:
