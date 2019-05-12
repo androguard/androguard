@@ -4189,13 +4189,14 @@ class FillArrayData:
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
 
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HHI")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.element_width = unpack("=H", buff[2:4])[0]
-        self.size = unpack("=I", buff[4:8])[0]
+        self.format_general_size = calcsize("2HI")
+        self.ident, \
+        self.element_width, \
+        self.size = cm.packer["2HI"].unpack(buff[0:8])
 
         buf_len = self.size * self.element_width
         if buf_len % 2:
@@ -4299,8 +4300,7 @@ class FillArrayData:
         return ((self.size * self.element_width + 1) // 2 + 4) * 2
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.element_width) + pack(
-            "=I", self.size) + self.data
+        return self.CM.packer["2HI"].pack(self.ident, self.element_width, self.size) + self.data
 
     def get_hex(self):
         """
@@ -4318,12 +4318,13 @@ class SparseSwitch:
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
 
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HH")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
+        self.format_general_size = calcsize("2H")
+        self.ident, \
+        self.size = cm.packer["2H"].unpack(buff[0:4])
 
         self.keys = []
         self.targets = []
@@ -4430,9 +4431,7 @@ class SparseSwitch:
         return self.format_general_size + (self.size * calcsize('<L')) * 2
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.size) + b''.join(pack(
-            "=l", i) for i in self.keys) + b''.join(pack("=l", i)
-                                                    for i in self.targets)
+        return self.CM.packer["2H"].pack(self.ident, self.size) + b''.join(self.CM.packer["l"].pack(i) for i in self.keys) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self):
         """
@@ -4449,14 +4448,15 @@ class PackedSwitch:
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
 
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HHI")
+        self.format_general_size = calcsize("2HI")
 
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
-        self.first_key = unpack("=i", buff[4:8])[0]
+        self.ident, \
+        self.size, \
+        self.first_key = cm.packer["2Hi"].unpack(buff[0:8])
 
         self.targets = []
 
@@ -4567,8 +4567,7 @@ class PackedSwitch:
         return self.format_general_size + (self.size * calcsize('=L'))
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.size) + pack(
-            "=i", self.first_key) + b''.join(pack("=l", i) for i in self.targets)
+        return self.CM.packer["2Hi"].pack(self.ident, self.size, self.first_key) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self):
         """
@@ -6375,9 +6374,9 @@ def get_optimized_instruction(cm, op_value, buff):
         raise InvalidInstruction("Invalid Instruction for 0x{:x}:{}".format(op_value, repr(buff)))
 
 
-def get_instruction_payload(op_value, buff):
+def get_instruction_payload(op_value, cm, buff):
     try:
-        return DALVIK_OPCODES_PAYLOAD[op_value][0](buff)
+        return DALVIK_OPCODES_PAYLOAD[op_value][0](cm, buff)
     except struct.error:
         raise InvalidInstruction("Invalid Instruction for 0x{:x}:{}".format(op_value, repr(buff)))
 
@@ -6422,7 +6421,7 @@ class LinearSweepAlgorithm:
                 # payload instructions ?
                 if op_value in DALVIK_OPCODES_PAYLOAD:
                     try:
-                        obj = get_instruction_payload(op_value, insn[idx:])
+                        obj = get_instruction_payload(op_value, cm, insn[idx:])
                         classic_instruction = False
                     except struct.error:
                         log.warning("error while decoding instruction ...")
