@@ -657,7 +657,7 @@ class AnnotationOffItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.annotation_off = unpack("=I", buff.read(4))[0]
+        self.annotation_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_annotation_off(self):
         return self.annotation_off
@@ -671,7 +671,7 @@ class AnnotationOffItem:
             self.annotation_off = self.CM.get_obj_by_offset(
                 self.annotation_off).get_off()
 
-        return pack("=I", self.annotation_off)
+        return self.CM.packer["I"].pack(self.annotation_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -694,7 +694,7 @@ class AnnotationSetItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
         self.annotation_off_item = [AnnotationOffItem(buff, cm) for _ in range(self.size)]
 
     def get_annotation_off_item(self):
@@ -717,7 +717,7 @@ class AnnotationSetItem:
             i.show()
 
     def get_obj(self):
-        return pack("=I", self.size)
+        return self.CM.packer["I"].pack(self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw()
@@ -744,7 +744,7 @@ class AnnotationSetRefItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.annotations_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_annotations_off(self):
         """
@@ -764,7 +764,7 @@ class AnnotationSetRefItem:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.annotations_off)
+        return self.CM.packer["I"].pack(self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -784,7 +784,7 @@ class AnnotationSetRefList:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.list = [AnnotationSetRefItem(buff, cm) for _ in range(self.size)]
 
@@ -811,7 +811,7 @@ class AnnotationSetRefList:
         return [i for i in self.list]
 
     def get_raw(self):
-        return pack("=I", self.size) + b''.join(i.get_raw() for i in self.list)
+        return self.CM.packer["I"].pack(self.size) + b''.join(i.get_raw() for i in self.list)
 
     def get_length(self):
         return len(self.get_raw())
@@ -831,8 +831,8 @@ class FieldAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.field_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.field_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_field_idx(self):
         """
@@ -866,7 +866,7 @@ class FieldAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.field_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.field_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -889,8 +889,8 @@ class MethodAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.method_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.method_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_method_idx(self):
         """
@@ -924,7 +924,7 @@ class MethodAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.method_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -947,8 +947,8 @@ class ParameterAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.method_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.method_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_method_idx(self):
         """
@@ -982,7 +982,7 @@ class ParameterAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.method_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -1006,10 +1006,10 @@ class AnnotationsDirectoryItem:
 
         self.offset = buff.get_idx()
 
-        self.class_annotations_off = unpack("=I", buff.read(4))[0]
-        self.annotated_fields_size = unpack("=I", buff.read(4))[0]
-        self.annotated_methods_size = unpack("=I", buff.read(4))[0]
-        self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
+        self.class_annotations_off, \
+        self.annotated_fields_size, \
+        self.annotated_methods_size, \
+        self.annotated_parameters_size = cm.packer["4I"].unpack(buff.read(16))
 
         self.field_annotations = [FieldAnnotation(buff, cm) for i in range(0, self.annotated_fields_size)]
 
@@ -1101,10 +1101,10 @@ class AnnotationsDirectoryItem:
             self.class_annotations_off = self.CM.get_obj_by_offset(
                 self.class_annotations_off).get_off()
 
-        return pack("=I", self.class_annotations_off) + \
-               pack("=I", self.annotated_fields_size) + \
-               pack("=I", self.annotated_methods_size) + \
-               pack("=I", self.annotated_parameters_size)
+        return self.CM.packer["4I"].pack(self.class_annotations_off,
+                    self.annotated_fields_size,
+                    self.annotated_methods_size,
+                    self.annotated_parameters_size)
 
     def get_raw(self):
         return self.get_obj() + \
