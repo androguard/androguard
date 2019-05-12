@@ -1138,7 +1138,7 @@ class TypeItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.type_idx = unpack("=H", buff.read(2))[0]
+        self.type_idx, = cm.packer["H"].unpack(buff.read(2))
 
     def get_type_idx(self):
         """
@@ -1161,7 +1161,7 @@ class TypeItem:
         bytecode._PrintDefault("type_idx=%d\n" % self.type_idx)
 
     def get_obj(self):
-        return pack("=H", self.type_idx)
+        return self.CM.packer["H"].pack(self.type_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -1183,7 +1183,7 @@ class TypeList:
     def __init__(self, buff, cm):
         self.CM = cm
         self.offset = buff.get_idx()
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.list = [TypeItem(buff, cm) for _ in range(self.size)]
 
@@ -1247,7 +1247,7 @@ class TypeList:
             i.show()
 
     def get_obj(self):
-        return self.pad + pack("=I", self.size)
+        return self.pad + self.CM.packer["I"].pack(self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw() for i in self.list)
@@ -1943,7 +1943,7 @@ class StringIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.string_data_off = unpack("=I", buff.read(4))[0]
+        self.string_data_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_string_data_off(self):
         """
@@ -1968,7 +1968,7 @@ class StringIdItem:
             self.string_data_off = self.CM.get_string_by_offset(
                 self.string_data_off).get_off()
 
-        return pack("=I", self.string_data_off)
+        return self.CM.packer["I"].pack(self.string_data_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -1991,7 +1991,7 @@ class TypeIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.descriptor_idx = unpack("=I", buff.read(4))[0]
+        self.descriptor_idx, = cm.packer["I"].unpack(buff.read(4))
         self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
 
     def get_descriptor_idx(self):
@@ -2016,7 +2016,7 @@ class TypeIdItem:
                                (self.descriptor_idx, self.descriptor_idx_value))
 
     def get_obj(self):
-        return pack("=I", self.descriptor_idx)
+        return self.CM.packer["I"].pack(self.descriptor_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2094,9 +2094,9 @@ class ProtoIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.shorty_idx = unpack("=I", buff.read(4))[0]
-        self.return_type_idx = unpack("=I", buff.read(4))[0]
-        self.parameters_off = unpack("=I", buff.read(4))[0]
+        self.shorty_idx, \
+        self.return_type_idx, \
+        self.parameters_off = cm.packer["3I"].unpack(buff.read(12))
 
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
@@ -2173,8 +2173,9 @@ class ProtoIdItem:
             self.parameters_off = self.CM.get_obj_by_offset(
                 self.parameters_off).get_off()
 
-        return pack("=I", self.shorty_idx) + pack(
-            "=I", self.return_type_idx) + pack("=I", self.parameters_off)
+        return self.CM.packer["3I"].pack(self.shorty_idx,
+                    self.return_type_idx,
+                    self.parameters_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -2244,9 +2245,9 @@ class FieldIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=H", buff.read(2))[0]
-        self.type_idx = unpack("=H", buff.read(2))[0]
-        self.name_idx = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.type_idx, \
+        self.name_idx = cm.packer["2HI"].unpack(buff.read(8))
 
         self.reload()
 
@@ -2335,9 +2336,9 @@ class FieldIdItem:
             (self.class_idx_value, self.type_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return pack("=H", self.class_idx) + \
-               pack("=H", self.type_idx) + \
-               pack("=I", self.name_idx)
+        return self.CM.packer["2HI"].pack(self.class_idx,
+                    self.type_idx,
+                    self.name_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2410,9 +2411,9 @@ class MethodIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=H", buff.read(2))[0]
-        self.proto_idx = unpack("=H", buff.read(2))[0]
-        self.name_idx = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.proto_idx, \
+        self.name_idx = cm.packer["2HI"].unpack(buff.read(8))
 
         self.reload()
 
@@ -2512,8 +2513,9 @@ class MethodIdItem:
             (self.class_idx_value, self.proto_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return pack("H", self.class_idx) + pack("H", self.proto_idx) + pack(
-            "I", self.name_idx)
+        return self.CM.packer["2HI"].pack(self.class_idx,
+                    self.proto_idx,
+                    self.name_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -3450,14 +3452,14 @@ class ClassDefItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=I", buff.read(4))[0]
-        self.access_flags = unpack("=I", buff.read(4))[0]
-        self.superclass_idx = unpack("=I", buff.read(4))[0]
-        self.interfaces_off = unpack("=I", buff.read(4))[0]
-        self.source_file_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
-        self.class_data_off = unpack("=I", buff.read(4))[0]
-        self.static_values_off = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.access_flags, \
+        self.superclass_idx, \
+        self.interfaces_off, \
+        self.source_file_idx, \
+        self.annotations_off, \
+        self.class_data_off, \
+        self.static_values_off = cm.packer["8I"].unpack(buff.read(32))
 
         self.interfaces = []
         self.class_data_item = None
@@ -3675,14 +3677,14 @@ class ClassDefItem:
             self.static_values_off = self.CM.get_obj_by_offset(
                 self.static_values_off).get_off()
 
-        return pack("=I", self.class_idx) + \
-               pack("=I", self.access_flags) + \
-               pack("=I", self.superclass_idx) + \
-               pack("=I", self.interfaces_off) + \
-               pack("=I", self.source_file_idx) + \
-               pack("=I", self.annotations_off) + \
-               pack("=I", self.class_data_off) + \
-               pack("=I", self.static_values_off)
+        return self.CM.packer["8I"].pack(self.class_idx,
+                    self.access_flags,
+                    self.superclass_idx,
+                    self.interfaces_off,
+                    self.source_file_idx,
+                    self.annotations_off,
+                    self.class_data_off,
+                    self.static_values_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -4331,11 +4333,11 @@ class SparseSwitch:
 
         idx = self.format_general_size
         for i in range(0, self.size):
-            self.keys.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.keys.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
         for i in range(0, self.size):
-            self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.targets.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
     def add_note(self, msg):
@@ -4467,7 +4469,7 @@ class PackedSwitch:
             max_size = len(buff) - idx - 8
 
         for i in range(0, max_size):
-            self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.targets.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
     def add_note(self, msg):
@@ -6416,7 +6418,7 @@ class LinearSweepAlgorithm:
 
             # payload instructions or extented/optimized instructions
             if (op_value == 0x00 or op_value == 0xff) and ((idx + 2) < max_idx):
-                op_value = unpack('=H', insn[idx:idx + 2])[0]
+                op_value, = cm.packer["H"].unpack(insn[idx:idx + 2])
 
                 # payload instructions ?
                 if op_value in DALVIK_OPCODES_PAYLOAD:
@@ -6645,9 +6647,9 @@ class TryItem:
 
         self.CM = cm
 
-        self.start_addr = unpack("=I", buff.read(4))[0]
-        self.insn_count = unpack("=H", buff.read(2))[0]
-        self.handler_off = unpack("=H", buff.read(2))[0]
+        self.start_addr, \
+        self.insn_count, \
+        self.handler_off = cm.packer["I2H"].unpack(buff.read(8))
 
     def set_off(self, off):
         self.offset = off
@@ -6680,8 +6682,9 @@ class TryItem:
         return self.handler_off
 
     def get_raw(self):
-        return pack("=I", self.start_addr) + pack("=H", self.insn_count) + pack(
-            "=H", self.handler_off)
+        return self.CM.packer["I2H"].pack(self.start_addr,
+                    self.insn_count,
+                    self.handler_off)
 
     def get_length(self):
         return len(self.get_raw())
@@ -6701,20 +6704,20 @@ class DalvikCode:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.registers_size = unpack("=H", buff.read(2))[0]
-        self.ins_size = unpack("=H", buff.read(2))[0]
-        self.outs_size = unpack("=H", buff.read(2))[0]
-        self.tries_size = unpack("=H", buff.read(2))[0]
-        self.debug_info_off = unpack("=I", buff.read(4))[0]
-        self.insns_size = unpack("=I", buff.read(4))[0]
+        self.registers_size, \
+        self.ins_size, \
+        self.outs_size, \
+        self.tries_size, \
+        self.debug_info_off, \
+        self.insns_size = cm.packer["4H2I"].unpack(buff.read(16))
 
-        ushort = calcsize('=H')
+        ushort = calcsize('H')
 
         self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
             self.insns_size * ushort))
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
-            self.padding = unpack("=H", buff.read(2))[0]
+            self.padding, = cm.packer["H"].unpack(buff.read(2))
 
         self.tries = []
         self.handlers = None
@@ -6841,17 +6844,16 @@ class DalvikCode:
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        buff += pack("<H", self.registers_size) + \
-                pack("<H", self.ins_size) + \
-                pack("<H", self.outs_size) + \
-                pack("<H", self.tries_size) + \
-                pack("<I", self.debug_info_off) + \
-                pack("<I", self.insns_size) + \
-                code_raw
+        buff += self.CM.packer["4H2I"].pack(self.registers_size,
+                    self.ins_size,
+                    self.outs_size,
+                    self.tries_size,
+                    self.debug_info_off,
+                    self.insns_size) + code_raw
 
         if self.tries_size > 0:
             if (self.insns_size % 2 == 1):
-                buff += pack("<H", self.padding)
+                buff += self.CM.packer["H"].pack(self.padding)
 
             for i in self.tries:
                 buff += i.get_raw()
@@ -6974,10 +6976,10 @@ class MapItem:
 
         self.off = buff.get_idx()
 
-        self.type = TypeMapItem(unpack("<H", buff.read(2))[0])
-        self.unused = unpack("<H", buff.read(2))[0]
-        self.size = unpack("<I", buff.read(4))[0]
-        self.offset = unpack("<I", buff.read(4))[0]
+        self.type = TypeMapItem(cm.packer["H"].unpack(buff.read(2))[0])
+        self.unused, \
+        self.size, \
+        self.offset = cm.packer["H2I"].unpack(buff.read(10))
 
         self.item = None
 
@@ -7099,10 +7101,13 @@ class MapItem:
         else:
             self.offset = self.item.get_off()
 
-        return pack("<HHII", self.type, self.unused, self.size, self.offset)
+        return self.CM.packer["2H2I"].pack(self.type,
+                    self.unused,
+                    self.size,
+                    self.offset)
 
     def get_length(self):
-        return calcsize("<HHII")
+        return calcsize("HHII")
 
     def set_item(self, item):
         self.item = item
@@ -7496,7 +7501,7 @@ class MapList:
 
         self.offset = off
 
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.map_item = []
         for _ in range(0, self.size):
@@ -7555,8 +7560,7 @@ class MapList:
         return [x.get_obj() for x in self.map_item]
 
     def get_raw(self):
-        return pack("=I", self.size) + b''.join(x.get_raw()
-                                                for x in self.map_item)
+        return self.CM.packer["I"].pack(self.size) + b''.join(x.get_raw() for x in self.map_item)
 
     def get_class_manager(self):
         return self.CM
