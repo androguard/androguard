@@ -2,7 +2,7 @@ from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
-from androguard.core.bytecodes import mutf8
+from androguard.core import mutf8
 from androguard.core.bytecodes.dvm_types import TypeMapItem, ACCESS_FLAGS, TYPE_DESCRIPTOR
 
 import sys
@@ -97,17 +97,21 @@ class InvalidInstruction(Error):
 def read_null_terminated_string(f):
     """
     Read a null terminated string from a file-like object.
-
     :param f: file-like object
     :rtype: bytearray
     """
-    x = bytearray()
+    x = []
     while True:
-        z = f.read(1)
-        if ord(z) == 0:
-            return x
+        z = f.read(128)
+        if 0 in z:
+            s = z.split(b'\x00',1)
+            x.append(s[0])
+            idx = f.get_idx()
+            f.set_idx(idx - len(s[1]))
+            break
         else:
-            x.append(ord(z))
+            x.append(z)
+    return b''.join(x)
 
 
 def get_access_flags_string(value):
@@ -194,11 +198,11 @@ def static_operand_instruction(instruction):
 
 
 def get_sbyte(buff):
-    return unpack('=b', bytearray(buff.read(1)))[0]
+    return unpack('=b', buff.read(1))[0]
 
 
 def get_byte(buff):
-    return unpack('=B', bytearray(buff.read(1)))[0]
+    return unpack('=B', buff.read(1))[0]
 
 
 def readuleb128(buff):
@@ -446,11 +450,9 @@ def determineException(vm, m):
 class HeaderItem:
     """
     This class can parse an header_item of a dex file.
-
     Several checks are performed to detect if this is not an header_item.
     Also the Adler32 checksum of the file is calculated in order to detect file
     corruption.
-
     :param buff: a string which represents a Buff object of the header_item
     :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
@@ -1875,32 +1877,11 @@ class StringDataItem:
     def get_off(self):
         return self.offset
 
-    def get_unicode(self):
-        """
-        Returns an Unicode String
-        This is the actual string. Beware that some strings might be not
-        decodeable with usual UTF-16 decoder, as they use surrogates that are
-        not supported by python.
-        """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
-
-        # Return a UTF16 String
-        return s
-
     def get(self):
         """
-        Returns a printable string.
-        In this case, all lonely surrogates are escaped, thus are represented in the
-        string as 6 characters: \\ud853
-        Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
+        Returns a MUTF8String object
         """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
-        # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        return mutf8.patch_string(s)
+        return mutf8.MUTF8String.from_bytes(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2151,11 +2132,11 @@ class ProtoIdItem:
         """
         Return the string associated to the parameters_off
 
-        :rtype: string
+        :rtype: MUTF8String
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = '({})'.format(' '.join(params))
+            self.parameters_off_value = mutf8.MUTF8String.from_bytes(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String.from_bytes(b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2670,7 +2651,7 @@ class EncodedField:
         name = self.CM.get_field(self.field_idx)
         self.class_name = name[0]
         self.name = name[2]
-        self.proto = ''.join(i for i in name[1])
+        self.proto = name[1]
 
     def set_init_value(self, value):
         """
@@ -2906,7 +2887,7 @@ class EncodedMethod:
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
-            self.proto = ''.join(i for i in v[2])
+            self.proto = mutf8.MUTF8String.join(i for i in v[2])
         else:
             self.class_name = 'CLASS_NAME_ERROR'
             self.name = 'NAME_ERROR'
@@ -2983,7 +2964,7 @@ class EncodedMethod:
     @property
     def full_name(self):
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
-        return " ".join([self.class_name, self.name, self.get_descriptor()])
+        return mutf8.MUTF8String.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
 
     def get_short_string(self):
         """
@@ -3014,11 +2995,11 @@ class EncodedMethod:
                 cls = cls.rsplit("/", 1)[1]
             return arr + cls
 
-        clsname = _fmt_classname(self.get_class_name())
+        clsname = _fmt_classname(self.get_class_name().string)
 
-        param, ret = self.get_descriptor()[1:].split(")")
+        param, ret = self.get_descriptor().string[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
-        desc = "({}){}".format(" ".join(params), _fmt_classname(ret))
+        desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
 
         return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
 
@@ -3098,6 +3079,22 @@ class EncodedMethod:
         if self.code is None:
             return []
         return self.code.get_bc().get_instructions()
+
+    def get_instructions_idx(self):
+        """
+        Iterate over all instructions of the method, but also return the current index.
+        This is the same as using :meth:`get_instructions` and adding the instruction length
+        to a variable each time.
+
+        :return:
+        :rtype: Iterator[(int, Instruction)]
+        """
+        if self.get_code() is None:
+            return []
+        idx = 0
+        for ins in self.get_code().get_bc().get_instructions():
+            yield idx, ins
+            idx += ins.get_length()
 
     def set_instructions(self, instructions):
         """
@@ -7601,7 +7598,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: string
+    :type buff: bytes
     :type decompiler: object
 
     example::
@@ -7971,11 +7968,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_methods():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -7988,11 +7986,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_fields():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -8163,27 +8162,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         return self.__cache_fields.get(key)
 
-    def get_strings_unicode(self):
-        """
-        Return all strings
-
-        This method will return pure UTF-16 strings. This is the "exact" same string as used in Java.
-        Those strings can be problematic for python, as they can contain surrogates as well as "broken"
-        surrogate pairs, ie single high or low surrogates.
-        Such a string can for example not be printed.
-        To avoid such problems, there is an escape mechanism to detect such lonely surrogates
-        and escape them in the string. Of course, this results in a different string than in the Java Source!
-
-        Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
-        from the Java Source.
-        You can always escape the string from `get_strings_unicode()` using the function
-        :meth:`androguard.core.bytecodes.mutf8.patch_string`
-
-        :rtype: a list with all strings used in the format (types, names ...)
-        """
-        for i in self.strings:
-            yield i.get_unicode()
-
     def get_strings(self):
         """
         Return all strings
@@ -8235,7 +8213,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
     def _create_python_export_class(self, _class, delete=False):
         if _class is not None:
             ### Class
-            name = bytecode.FormatClassToPython(_class.get_name())
+            name = bytecode.FormatClassToPython(_class.get_name()).string
             if delete:
                 delattr(self.C, name)
                 return
@@ -8259,13 +8237,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.M, name, j)
             else:
                 for j in m[i]:
                     name = (
                         bytecode.FormatNameToPython(j.get_name()) + "_" +
-                        bytecode.FormatDescriptorToPython(j.get_descriptor()))
+                        bytecode.FormatDescriptorToPython(j.get_descriptor())).string
                     setattr(_class.M, name, j)
 
     def _create_python_export_fields(self, _class, delete):
@@ -8280,13 +8258,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in f:
             if len(f[i]) == 1:
                 j = f[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.F, name, j)
             else:
                 for j in f[i]:
                     name = bytecode.FormatNameToPython(j.get_name(
                     )) + "_" + bytecode.FormatDescriptorToPython(
-                        j.get_descriptor())
+                        j.get_descriptor()).string
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):
