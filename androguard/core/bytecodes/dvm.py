@@ -197,33 +197,33 @@ def static_operand_instruction(instruction):
     return buff
 
 
-def get_sbyte(buff):
-    return unpack('=b', buff.read(1))[0]
+def get_sbyte(cm, buff):
+    return cm.packer["b"].unpack(buff.read(1))[0]
 
 
-def get_byte(buff):
-    return unpack('=B', buff.read(1))[0]
+def get_byte(cm, buff):
+    return cm.packer["B"].unpack(buff.read(1))[0]
 
 
-def readuleb128(buff):
+def readuleb128(cm, buff):
     """
     Read an unsigned LEB128 at the current position of the buffer
 
     :param buff: a file like object
     :return: decoded unsigned LEB128
     """
-    result = get_byte(buff)
+    result = get_byte(cm, buff)
     if result > 0x7f:
-        cur = get_byte(buff)
+        cur = get_byte(cm, buff)
         result = (result & 0x7f) | ((cur & 0x7f) << 7)
         if cur > 0x7f:
-            cur = get_byte(buff)
+            cur = get_byte(cm, buff)
             result |= (cur & 0x7f) << 14
             if cur > 0x7f:
-                cur = get_byte(buff)
+                cur = get_byte(cm, buff)
                 result |= (cur & 0x7f) << 21
                 if cur > 0x7f:
-                    cur = get_byte(buff)
+                    cur = get_byte(cm, buff)
                     if cur > 0x0f:
                         log.warning("possible error while decoding number")
                     result |= cur << 28
@@ -231,7 +231,7 @@ def readuleb128(buff):
     return result
 
 
-def readuleb128p1(buff):
+def readuleb128p1(cm, buff):
     """
     Read an unsigned LEB128p1 at the current position of the buffer.
     This format is the same as uLEB128 but has the ability to store the value -1.
@@ -239,10 +239,10 @@ def readuleb128p1(buff):
     :param buff: a file like object
     :return: decoded uLEB128p1
     """
-    return readuleb128(buff) - 1
+    return readuleb128(cm, buff) - 1
 
 
-def readsleb128(buff):
+def readsleb128(cm, buff):
     """
     Read a signed LEB128 at the current position of the buffer.
 
@@ -253,7 +253,7 @@ def readsleb128(buff):
     shift = 0
 
     for x in range(0, 5):
-        cur = get_byte(buff)
+        cur = get_byte(cm, buff)
         result |= (cur & 0x7f) << shift
         shift += 7
 
@@ -268,7 +268,7 @@ def readsleb128(buff):
     return result
 
 
-def writeuleb128(value):
+def writeuleb128(cm, value):
     """
     Convert an integer value to the corresponding unsigned LEB128.
 
@@ -284,16 +284,16 @@ def writeuleb128(value):
 
     buff = bytearray()
     while remaining > 0:
-        buff += pack("=B", ((value & 0x7f) | 0x80))
+        buff += cm.packer["B"].pack(((value & 0x7f) | 0x80))
 
         value = remaining
         remaining >>= 7
 
-    buff += pack("=B", value & 0x7f)
+    buff += cm.packer["B"].pack(value & 0x7f)
     return buff
 
 
-def writesleb128(value):
+def writesleb128(cm, value):
     """
     Convert an integer value to the corresponding signed LEB128
 
@@ -315,7 +315,7 @@ def writesleb128(value):
         if hasMore:
             tmp = 0x80
 
-        buff += pack("=B", (value & 0x7f) | tmp)
+        buff += cm.packer["B"].pack((value & 0x7f) | tmp)
         value = remaining
         remaining >>= 7
 
@@ -1295,9 +1295,9 @@ class DBGBytecode:
         buff = self.op_value.get_value_buff()
         for i in self.format:
             if i[1] == "u":
-                buff += writeuleb128(i[0])
+                buff += writeuleb128(self.CM, i[0])
             elif i[1] == "s":
-                buff += writesleb128(i[0])
+                buff += writesleb128(self.CM, i[0])
         return buff
 
 
@@ -1307,49 +1307,49 @@ class DebugInfoItem:
 
         self.offset = buff.get_idx()
 
-        self.line_start = readuleb128(buff)
-        self.parameters_size = readuleb128(buff)
+        self.line_start = readuleb128(cm, buff)
+        self.parameters_size = readuleb128(cm, buff)
 
         # print "line", self.line_start, "params", self.parameters_size
 
         self.parameter_names = []
         for i in range(0, self.parameters_size):
-            self.parameter_names.append(readuleb128p1(buff))
+            self.parameter_names.append(readuleb128p1(cm, buff))
 
         self.bytecodes = []
-        bcode = DBGBytecode(self.CM, get_byte(buff))
+        bcode = DBGBytecode(self.CM, get_byte(cm, buff))
         self.bytecodes.append(bcode)
 
         while bcode.get_op_value() != DBG_END_SEQUENCE:
             bcode_value = bcode.get_op_value()
 
             if bcode_value == DBG_ADVANCE_PC:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_ADVANCE_LINE:
-                bcode.add(readsleb128(buff), "s")
+                bcode.add(readsleb128(cm, buff), "s")
             elif bcode_value == DBG_START_LOCAL:
-                bcode.add(readuleb128(buff), "u")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128(cm, buff), "u")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             elif bcode_value == DBG_START_LOCAL_EXTENDED:
-                bcode.add(readuleb128(buff), "u")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128(cm, buff), "u")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             elif bcode_value == DBG_END_LOCAL:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_RESTART_LOCAL:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_SET_PROLOGUE_END:
                 pass
             elif bcode_value == DBG_SET_EPILOGUE_BEGIN:
                 pass
             elif bcode_value == DBG_SET_FILE:
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             else:  # bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END:
                 pass
 
-            bcode = DBGBytecode(self.CM, get_byte(buff))
+            bcode = DBGBytecode(self.CM, get_byte(cm, buff))
             self.bytecodes.append(bcode)
 
     def get_parameters_size(self):
@@ -1387,9 +1387,9 @@ class DebugInfoItem:
             i.show()
 
     def get_raw(self):
-        return [bytecode.Buff(self.__offset, writeuleb128(self.line_start) + \
-                              writeuleb128(self.parameters_size) + \
-                              b''.join(writeuleb128(i) for i in self.parameter_names) + \
+        return [bytecode.Buff(self.__offset, writeuleb128(self.CM, self.line_start) + \
+                              writeuleb128(self.CM, self.parameters_size) + \
+                              b''.join(writeuleb128(self.CM, i) for i in self.parameter_names) + \
                               b''.join(i.get_raw() for i in self.bytecodes))]
 
     def get_off(self):
@@ -1449,7 +1449,7 @@ class EncodedArray:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readuleb128(buff)
+        self.size = readuleb128(cm, buff)
 
         self.values = [EncodedValue(buff, cm) for _ in range(self.size)]
 
@@ -1478,7 +1478,7 @@ class EncodedArray:
             i.show()
 
     def get_obj(self):
-        return writeuleb128(self.size)
+        return writeuleb128(self.CM, self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw() for i in self.values)
@@ -1504,7 +1504,7 @@ class EncodedValue:
     def __init__(self, buff, cm):
         self.CM = cm
 
-        self.val = get_byte(buff)
+        self.val = get_byte(cm, buff)
         self.value_arg = self.val >> 5
         self.value_type = self.val & 0x1f
 
@@ -1540,7 +1540,7 @@ class EncodedValue:
         elif self.value_type == VALUE_ANNOTATION:
             self.value = EncodedAnnotation(buff, cm)
         elif self.value_type == VALUE_BYTE:
-            self.value = get_byte(buff)
+            self.value = get_byte(cm, buff)
         elif self.value_type == VALUE_NULL:
             self.value = None
         elif self.value_type == VALUE_BOOLEAN:
@@ -1587,17 +1587,12 @@ class EncodedValue:
 
     def get_raw(self):
         if self.raw_value is None:
-            return pack("=B", self.val) + bytecode.object_to_bytes(self.value)
+            return self.CM.packer["B"].pack(self.val) + bytecode.object_to_bytes(self.value)
         else:
-            return pack("=B", self.val) + bytecode.object_to_bytes(self.raw_value)
+            return self.CM.packer["B"].pack(self.val) + bytecode.object_to_bytes(self.raw_value)
 
     def get_length(self):
-        if self.raw_value is None:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
-                self.value))
-        else:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
-                self.raw_value))
+        return len(self.get_raw())
 
 
 class AnnotationElement:
@@ -1614,7 +1609,7 @@ class AnnotationElement:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.name_idx = readuleb128(buff)
+        self.name_idx = readuleb128(cm, buff)
         self.value = EncodedValue(buff, cm)
 
     def get_name_idx(self):
@@ -1639,7 +1634,7 @@ class AnnotationElement:
         self.value.show()
 
     def get_obj(self):
-        return writeuleb128(self.name_idx)
+        return writeuleb128(self.CM, self.name_idx)
 
     def get_raw(self):
         return self.get_obj() + self.value.get_raw()
@@ -1662,8 +1657,8 @@ class EncodedAnnotation:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.type_idx = readuleb128(buff)
-        self.size = readuleb128(buff)
+        self.type_idx = readuleb128(cm, buff)
+        self.size = readuleb128(cm, buff)
 
         self.elements = [AnnotationElement(buff, cm) for _ in range(self.size)]
 
@@ -1703,11 +1698,11 @@ class EncodedAnnotation:
         return [i for i in self.elements]
 
     def get_raw(self):
-        return writeuleb128(self.type_idx) + writeuleb128(self.size) + b''.join(
+        return writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.size) + b''.join(
             i.get_raw() for i in self.elements)
 
     def get_length(self):
-        length = len(writeuleb128(self.type_idx) + writeuleb128(self.size))
+        length = len(writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.size))
 
         for i in self.elements:
             length += i.get_length()
@@ -1730,7 +1725,7 @@ class AnnotationItem:
 
         self.offset = buff.get_idx()
 
-        self.visibility = get_byte(buff)
+        self.visibility = get_byte(cm, buff)
         self.annotation = EncodedAnnotation(buff, cm)
 
     def get_visibility(self):
@@ -1764,14 +1759,10 @@ class AnnotationItem:
         return [self.annotation]
 
     def get_raw(self):
-        return pack("=B", self.visibility) + self.annotation.get_raw()
+        return self.CM.packer["B"].pack(self.visibility) + self.annotation.get_raw()
 
     def get_length(self):
-        length = len(pack("=B", self.visibility))
-
-        length += self.annotation.get_length()
-
-        return length
+        return len(self.get_raw())
 
 
 class EncodedArrayItem:
@@ -1852,7 +1843,7 @@ class StringDataItem:
         self.offset = buff.get_idx()
 
         # Content of string_data_item
-        self.utf16_size = readuleb128(buff)
+        self.utf16_size = readuleb128(cm, buff)
         self.data = read_null_terminated_string(buff)
 
     def get_utf16_size(self):
@@ -1898,7 +1889,7 @@ class StringDataItem:
 
         :return: bytes
         """
-        return writeuleb128(self.utf16_size) + self.data + b"\x00"
+        return writeuleb128(self.CM, self.utf16_size) + self.data + b"\x00"
 
     def get_length(self):
         """
@@ -1907,7 +1898,7 @@ class StringDataItem:
 
         :return: int
         """
-        return len(writeuleb128(self.utf16_size)) + len(self.data) + 1
+        return len(writeuleb128(self.CM, self.utf16_size)) + len(self.data) + 1
 
 
 class StringIdItem:
@@ -2628,8 +2619,8 @@ class EncodedField:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.field_idx_diff = readuleb128(buff)
-        self.access_flags = readuleb128(buff)
+        self.field_idx_diff = readuleb128(cm, buff)
+        self.access_flags = readuleb128(cm, buff)
 
         self.field_idx = 0
 
@@ -2752,7 +2743,7 @@ class EncodedField:
         return []
 
     def get_raw(self):
-        return writeuleb128(self.field_idx_diff) + writeuleb128(
+        return writeuleb128(self.CM, self.field_idx_diff) + writeuleb128(self.CM, 
             self.access_flags)
 
     def get_size(self):
@@ -2792,9 +2783,9 @@ class EncodedMethod:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.method_idx_diff = readuleb128(buff)  #: method index diff in the corresponding section
-        self.access_flags = readuleb128(buff)  #: access flags of the method
-        self.code_off = readuleb128(buff)  #: offset of the code section
+        self.method_idx_diff = readuleb128(cm, buff)  #: method index diff in the corresponding section
+        self.access_flags = readuleb128(cm, buff)  #: access flags of the method
+        self.code_off = readuleb128(cm, buff)  #: offset of the code section
 
         self.method_idx = 0
 
@@ -3222,8 +3213,8 @@ class EncodedMethod:
         if self.code is not None:
             self.code_off = self.code.get_off()
 
-        return writeuleb128(self.method_idx_diff) + writeuleb128(
-            self.access_flags) + writeuleb128(self.code_off)
+        return writeuleb128(self.CM, self.method_idx_diff) + writeuleb128(self.CM, 
+            self.access_flags) + writeuleb128(self.CM, self.code_off)
 
     def get_size(self):
         return len(self.get_raw())
@@ -3244,10 +3235,10 @@ class ClassDataItem:
 
         self.offset = buff.get_idx()
 
-        self.static_fields_size = readuleb128(buff)
-        self.instance_fields_size = readuleb128(buff)
-        self.direct_methods_size = readuleb128(buff)
-        self.virtual_methods_size = readuleb128(buff)
+        self.static_fields_size = readuleb128(cm, buff)
+        self.instance_fields_size = readuleb128(cm, buff)
+        self.direct_methods_size = readuleb128(cm, buff)
+        self.virtual_methods_size = readuleb128(cm, buff)
 
         self.static_fields = []
         self.instance_fields = []
@@ -3400,10 +3391,10 @@ class ClassDataItem:
                [i for i in self.virtual_methods]
 
     def get_raw(self):
-        buff = writeuleb128(self.static_fields_size) + \
-               writeuleb128(self.instance_fields_size) + \
-               writeuleb128(self.direct_methods_size) + \
-               writeuleb128(self.virtual_methods_size) + \
+        buff = writeuleb128(self.CM, self.static_fields_size) + \
+               writeuleb128(self.CM, self.instance_fields_size) + \
+               writeuleb128(self.CM, self.direct_methods_size) + \
+               writeuleb128(self.CM, self.virtual_methods_size) + \
                b''.join(i.get_raw() for i in self.static_fields) + \
                b''.join(i.get_raw() for i in self.instance_fields) + \
                b''.join(i.get_raw() for i in self.direct_methods) + \
@@ -3412,10 +3403,10 @@ class ClassDataItem:
         return buff
 
     def get_length(self):
-        length = len(writeuleb128(self.static_fields_size)) + \
-                 len(writeuleb128(self.instance_fields_size)) + \
-                 len(writeuleb128(self.direct_methods_size)) + \
-                 len(writeuleb128(self.virtual_methods_size))
+        length = len(writeuleb128(self.CM, self.static_fields_size)) + \
+                 len(writeuleb128(self.CM, self.instance_fields_size)) + \
+                 len(writeuleb128(self.CM, self.direct_methods_size)) + \
+                 len(writeuleb128(self.CM, self.virtual_methods_size))
 
         for i in self.static_fields:
             length += i.get_size()
@@ -3713,7 +3704,7 @@ class ClassHDefItem:
             class_def = ClassDefItem(buff, cm)
             self.class_def.append(class_def)
 
-            buff.set_idx(idx + calcsize("=IIIIIIII"))
+            buff.set_idx(idx + calcsize("8I"))
 
     def set_off(self, off):
         self.offset = off
@@ -3768,9 +3759,10 @@ class EncodedTypeAddrPair:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff):
-        self.type_idx = readuleb128(buff)
-        self.addr = readuleb128(buff)
+    def __init__(self, cm, buff):
+        self.CM = cm
+        self.type_idx = readuleb128(cm, buff)
+        self.addr = readuleb128(cm, buff)
 
     def get_type_idx(self):
         """
@@ -3797,7 +3789,7 @@ class EncodedTypeAddrPair:
                                (self.type_idx, self.addr))
 
     def get_raw(self):
-        return writeuleb128(self.type_idx) + writeuleb128(self.addr)
+        return writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.addr)
 
     def get_length(self):
         return len(self.get_raw())
@@ -3814,17 +3806,18 @@ class EncodedCatchHandler:
     """
 
     def __init__(self, buff, cm):
+        self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readsleb128(buff)
+        self.size = readsleb128(cm, buff)
 
         self.handlers = []
 
         for i in range(0, abs(self.size)):
-            self.handlers.append(EncodedTypeAddrPair(buff))
+            self.handlers.append(EncodedTypeAddrPair(cm, buff))
 
         if self.size <= 0:
-            self.catch_all_addr = readuleb128(buff)
+            self.catch_all_addr = readuleb128(cm, buff)
 
     def get_size(self):
         """
@@ -3871,23 +3864,23 @@ class EncodedCatchHandler:
         :rtype: bytearray
         """
         buff = bytearray()
-        buff += writesleb128(self.size)
+        buff += writesleb128(self.CM, self.size)
         for i in self.handlers:
             buff += i.get_raw()
 
         if self.size <= 0:
-            buff += writeuleb128(self.catch_all_addr)
+            buff += writeuleb128(self.CM, self.catch_all_addr)
 
         return buff
 
     def get_length(self):
-        length = len(writesleb128(self.size))
+        length = len(writesleb128(self.CM, self.size))
 
         for i in self.handlers:
             length += i.get_length()
 
         if self.size <= 0:
-            length += len(writeuleb128(self.catch_all_addr))
+            length += len(writeuleb128(self.CM, self.catch_all_addr))
 
         return length
 
@@ -3903,9 +3896,10 @@ class EncodedCatchHandlerList:
     """
 
     def __init__(self, buff, cm):
+        self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readuleb128(buff)
+        self.size = readuleb128(cm, buff)
         self.list = [EncodedCatchHandler(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
@@ -3938,7 +3932,7 @@ class EncodedCatchHandlerList:
         self.offset = off
 
     def get_obj(self):
-        return writeuleb128(self.size)
+        return writeuleb128(self.CM, self.size)
 
     def get_raw(self):
         """
@@ -4563,7 +4557,7 @@ class PackedSwitch:
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
-        return self.format_general_size + (self.size * calcsize('=L'))
+        return self.format_general_size + (self.size * calcsize('<L'))
 
     def get_raw(self):
         return self.CM.packer["2Hi"].pack(self.ident, self.size, self.first_key) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
@@ -5408,7 +5402,7 @@ class Instruction22b(Instruction):
         return [self.CC]
 
     def get_raw(self):
-        return pack("=Hh", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 
 class Instruction30t(Instruction):
@@ -6400,7 +6394,7 @@ class LinearSweepAlgorithm:
         """
         self.odex = cm.get_odex_format()
 
-        max_idx = size * calcsize('=H')
+        max_idx = size * calcsize('H')
         if max_idx > len(insn):
             max_idx = len(insn)
 
@@ -6877,25 +6871,7 @@ class DalvikCode:
             return self.code.get_instruction(idx, off)
 
     def get_size(self):
-        length = 0
-        length += len(pack("<H", self.registers_size) + \
-                      pack("<H", self.ins_size) + \
-                      pack("<H", self.outs_size) + \
-                      pack("<H", self.tries_size) + \
-                      pack("<I", self.debug_info_off) + \
-                      pack("<I", self.insns_size))
-        length += self.code.get_length()
-
-        if self.insns_size % 2 == 1 and self.tries_size > 0:
-            length += len(pack("=H", self.padding))
-
-        if self.tries_size > 0:
-            for i in self.tries:
-                length += i.get_length()
-
-            length += self.handlers.get_length()
-
-        return length
+        return len(self.get_raw())
 
     def set_off(self, off):
         self.offset = off
@@ -7879,7 +7855,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         buff = buff[:12] + signature + buff[32:]
         checksum = zlib.adler32(buff[12:])
-        buff = buff[:8] + pack("=I", checksum) + buff[12:]
+        buff = buff[:8] + self.CM.packer["I"].pack(checksum) + buff[12:]
 
         log.debug("NEW SIGNATURE %s" % repr(signature))
         log.debug("NEW CHECKSUM %x" % checksum)
