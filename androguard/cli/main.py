@@ -240,7 +240,7 @@ def export_apps_to_format(filename,
                     continue
 
             # Current Folder to write to
-            filename_class = valid_class_name(method.get_class_name())
+            filename_class = valid_class_name(method.get_class_name().string)
             filename_class = os.path.join(output, filename_class)
             create_directory(filename_class)
 
@@ -257,10 +257,10 @@ def export_apps_to_format(filename,
                 method2format(filename + "." + form, form, None, buff)
 
             # Write the Java file for the whole class
-            if method.get_class_name() not in dump_classes:
+            if method.get_class_name().string not in dump_classes:
                 print("source codes ...", end=' ')
                 current_class = vm.get_class(method.get_class_name())
-                current_filename_class = valid_class_name(current_class.get_name())
+                current_filename_class = valid_class_name(current_class.get_name().string)
 
                 current_filename_class = os.path.join(output, current_filename_class + ".java")
                 with open(current_filename_class, "w") as fd:

@@ -45,7 +45,7 @@ class TestDexCodeParsing(unittest.TestCase):
     def testClassManager(self):
         """Test if the classmanager has the same items"""
 
-        from androguard.core.bytecodes.mutf8 import decode, patch_string
+        from androguard.core.mutf8 import decode
 
         fname = "examples/android/TestsAndroguard/bin/classes.dex"
 
@@ -64,7 +64,7 @@ class TestDexCodeParsing(unittest.TestCase):
         for idx in range(parsed.string_ids_size):
             self.assertNotEqual(cm.get_string(idx), ERR_STR)
             self.assertNotEqual(cm.get_raw_string(idx), ERR_STR)
-            self.assertEqual(cm.get_raw_string(idx), patch_string(decode(parsed.str_raw[idx])))
+            self.assertEqual(cm.get_raw_string(idx), decode(parsed.str_raw[idx]))
 
         self.assertEqual(cm.get_string(parsed.string_ids_size), ERR_STR)
         self.assertEqual(cm.get_raw_string(parsed.string_ids_size), ERR_STR)

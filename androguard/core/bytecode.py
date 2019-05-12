@@ -593,60 +593,6 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-class SV:
-
-    def __init__(self, size, buff):
-        self.__size = size
-        self.__value = unpack(self.__size, buff)[0]
-
-    def _get(self):
-        return pack(self.__size, self.__value)
-
-    def __str__(self):
-        return "0x%x" % self.__value
-
-    def __int__(self):
-        return self.__value
-
-    def get_value_buff(self):
-        return self._get()
-
-    def get_value(self):
-        return self.__value
-
-    def set_value(self, attr):
-        self.__value = attr
-
-
-class SVs:
-
-    def __init__(self, size, ntuple, buff):
-        self.__size = size
-
-        self.__value = ntuple._make(unpack(self.__size, buff))
-
-    def _get(self):
-        l = []
-        for i in self.__value._fields:
-            l.append(getattr(self.__value, i))
-        return pack(self.__size, *l)
-
-    def _export(self):
-        return [x for x in self.__value._fields]
-
-    def get_value_buff(self):
-        return self._get()
-
-    def get_value(self):
-        return self.__value
-
-    def set_value(self, attr):
-        self.__value = self.__value._replace(**attr)
-
-    def __str__(self):
-        return self.__value.__str__()
-
-
 def object_to_bytes(obj):
     """
     Convert a object to a bytearray or call get_raw() of the object
@@ -787,9 +733,6 @@ class BuffHandle:
         :param int off: starting offset
         :rtype: bytearray
         """
-        if isinstance(off, SV):
-            off = off.value
-
         return self.__buff[off:]
 
     def read(self, size):
@@ -800,9 +743,6 @@ class BuffHandle:
         :param int size: length of bytes to read
         :rtype: bytearray
         """
-        if isinstance(size, SV):
-            size = size.value
-
         buff = self.__buff[self.__idx:self.__idx + size]
         self.__idx += size
 
