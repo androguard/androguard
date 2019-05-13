@@ -11,10 +11,9 @@ from enum import IntEnum
 
 log = logging.getLogger("androguard.analysis")
 
-BasicOPCODES = []
-for i in dvm.BRANCH_DVM_OPCODES:
-    BasicOPCODES.append(re.compile(i))
-
+BasicOPCODES = set()
+for i in dvm.BRANCH_DVM_OPCODES.values():
+    BasicOPCODES |= i
 
 class REF_TYPE(IntEnum):
     """
@@ -359,14 +358,13 @@ class MethodAnalysis:
         h = {}
         idx = 0
 
-        log.debug("Parsing instructions for method {}".format(self.method.get_code_off()))
+        log.debug("Parsing instructions for method at @{}".format(self.method.get_code_off()))
         for i in bc.get_instructions():
-            for j in BasicOPCODES:
-                if j.match(i.get_name()):
-                    v = dvm.determineNext(i, idx, self.method)
-                    h[idx] = v
-                    l.extend(v)
-                    break
+            if i.OP in BasicOPCODES:
+                v = dvm.determineNext(i, idx, self.method)
+                h[idx] = v
+                l.extend(v)
+                break
 
             idx += i.get_length()
 
@@ -377,7 +375,7 @@ class MethodAnalysis:
             for handler in i[2:]:
                 l.append(handler[1])
 
-        log.debug("Creating basic blocks in method %s" % self.method.get_code_off())
+        log.debug("Creating basic blocks in method at @%s" % self.method.get_code_off())
         idx = 0
         for i in bc.get_instructions():
             # index is a destination
