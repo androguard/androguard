@@ -59,7 +59,7 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = "{}-BB@0x{:08x}".format(self.method.get_name(), self.start)
+        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@0x%08x' % self.start])
         self.exception_analysis = None
 
         self.notes = []
@@ -359,7 +359,7 @@ class MethodAnalysis:
         h = {}
         idx = 0
 
-        log.debug("Parsing instructions for method {}".format(self))
+        log.debug("Parsing instructions for method {}".format(self.method.get_code_off()))
         for i in bc.get_instructions():
             for j in BasicOPCODES:
                 if j.match(i.get_name()):
@@ -377,7 +377,7 @@ class MethodAnalysis:
             for handler in i[2:]:
                 l.append(handler[1])
 
-        log.debug("Creating basic blocks in %s" % self.method)
+        log.debug("Creating basic blocks in method %s" % self.method.get_code_off())
         idx = 0
         for i in bc.get_instructions():
             # index is a destination
