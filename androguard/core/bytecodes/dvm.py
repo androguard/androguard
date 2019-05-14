@@ -2,7 +2,7 @@ from androguard.core import bytecode
 from androguard.core.bytecodes.apk import APK
 from androguard.core.androconf import CONF
 
-from androguard.core.bytecodes import mutf8
+from androguard.core import mutf8
 from androguard.core.bytecodes.dvm_types import TypeMapItem, ACCESS_FLAGS, TYPE_DESCRIPTOR
 
 import sys
@@ -91,17 +91,21 @@ class InvalidInstruction(Exception):
 def read_null_terminated_string(f):
     """
     Read a null terminated string from a file-like object.
-
     :param f: file-like object
     :rtype: bytearray
     """
-    x = bytearray()
+    x = []
     while True:
-        z = f.read(1)
-        if ord(z) == 0:
-            return x
+        z = f.read(128)
+        if 0 in z:
+            s = z.split(b'\x00',1)
+            x.append(s[0])
+            idx = f.get_idx()
+            f.set_idx(idx - len(s[1]))
+            break
         else:
-            x.append(ord(z))
+            x.append(z)
+    return b''.join(x)
 
 
 def get_access_flags_string(value):
@@ -187,33 +191,33 @@ def static_operand_instruction(instruction):
     return buff
 
 
-def get_sbyte(buff):
-    return unpack('=b', bytearray(buff.read(1)))[0]
+def get_sbyte(cm, buff):
+    return cm.packer["b"].unpack(buff.read(1))[0]
 
 
-def get_byte(buff):
-    return unpack('=B', bytearray(buff.read(1)))[0]
+def get_byte(cm, buff):
+    return cm.packer["B"].unpack(buff.read(1))[0]
 
 
-def readuleb128(buff):
+def readuleb128(cm, buff):
     """
     Read an unsigned LEB128 at the current position of the buffer
 
     :param buff: a file like object
     :return: decoded unsigned LEB128
     """
-    result = get_byte(buff)
+    result = get_byte(cm, buff)
     if result > 0x7f:
-        cur = get_byte(buff)
+        cur = get_byte(cm, buff)
         result = (result & 0x7f) | ((cur & 0x7f) << 7)
         if cur > 0x7f:
-            cur = get_byte(buff)
+            cur = get_byte(cm, buff)
             result |= (cur & 0x7f) << 14
             if cur > 0x7f:
-                cur = get_byte(buff)
+                cur = get_byte(cm, buff)
                 result |= (cur & 0x7f) << 21
                 if cur > 0x7f:
-                    cur = get_byte(buff)
+                    cur = get_byte(cm, buff)
                     if cur > 0x0f:
                         log.warning("possible error while decoding number")
                     result |= cur << 28
@@ -221,7 +225,7 @@ def readuleb128(buff):
     return result
 
 
-def readuleb128p1(buff):
+def readuleb128p1(cm, buff):
     """
     Read an unsigned LEB128p1 at the current position of the buffer.
     This format is the same as uLEB128 but has the ability to store the value -1.
@@ -229,10 +233,10 @@ def readuleb128p1(buff):
     :param buff: a file like object
     :return: decoded uLEB128p1
     """
-    return readuleb128(buff) - 1
+    return readuleb128(cm, buff) - 1
 
 
-def readsleb128(buff):
+def readsleb128(cm, buff):
     """
     Read a signed LEB128 at the current position of the buffer.
 
@@ -243,7 +247,7 @@ def readsleb128(buff):
     shift = 0
 
     for x in range(0, 5):
-        cur = get_byte(buff)
+        cur = get_byte(cm, buff)
         result |= (cur & 0x7f) << shift
         shift += 7
 
@@ -258,7 +262,7 @@ def readsleb128(buff):
     return result
 
 
-def writeuleb128(value):
+def writeuleb128(cm, value):
     """
     Convert an integer value to the corresponding unsigned LEB128.
 
@@ -274,16 +278,16 @@ def writeuleb128(value):
 
     buff = bytearray()
     while remaining > 0:
-        buff += pack("=B", ((value & 0x7f) | 0x80))
+        buff += cm.packer["B"].pack(((value & 0x7f) | 0x80))
 
         value = remaining
         remaining >>= 7
 
-    buff += pack("=B", value & 0x7f)
+    buff += cm.packer["B"].pack(value & 0x7f)
     return buff
 
 
-def writesleb128(value):
+def writesleb128(cm, value):
     """
     Convert an integer value to the corresponding signed LEB128
 
@@ -305,7 +309,7 @@ def writesleb128(value):
         if hasMore:
             tmp = 0x80
 
-        buff += pack("=B", (value & 0x7f) | tmp)
+        buff += cm.packer["B"].pack((value & 0x7f) | tmp)
         value = remaining
         remaining >>= 7
 
@@ -440,11 +444,9 @@ def determineException(vm, m):
 class HeaderItem:
     """
     This class can parse an header_item of a dex file.
-
     Several checks are performed to detect if this is not an header_item.
     Also the Adler32 checksum of the file is calculated in order to detect file
     corruption.
-
     :param buff: a string which represents a Buff object of the header_item
     :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
@@ -459,78 +461,66 @@ class HeaderItem:
         if self.offset != 0:
             log.warning("Unusual DEX file, does not have the header at offset 0")
 
-        magic_bytes = buff.read(8)
+        if len(buff) < self.get_length():
+            raise ValueError("Not a DEX file, Header too small.")
+
+        self.endian_tag, = unpack('<I', buff.read_at(40, 4))
+        cm.packer = DalvikPacker(self.endian_tag)
 
         # Q is actually wrong, but we do not change it here and unpack our own
         # stuff...
-        self.magic = unpack("<Q", magic_bytes)[0]
+        self.magic, \
+        self.checksum, \
+        self.signature, \
+        self.file_size, \
+        self.header_size, \
+        endian_tag, \
+        self.link_size, \
+        self.link_off, \
+        self.map_off, \
+        self.string_ids_size, \
+        self.string_ids_off, \
+        self.type_ids_size, \
+        self.type_ids_off, \
+        self.proto_ids_size, \
+        self.proto_ids_offn, \
+        self.field_ids_size, \
+        self.field_ids_off, \
+        self.method_ids_size, \
+        self.method_ids_off, \
+        self.class_defs_size, \
+        self.class_defs_off, \
+        self.data_size, \
+        self.data_off = cm.packer['8sI20s20I'].unpack(buff.read(112))
+
         # possible dex or dey:
-        if magic_bytes[:2] != b'de' or magic_bytes[2] not in [0x78, 0x79] or magic_bytes[3] != 0x0a or magic_bytes[7] != 0x00:
-            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(magic_bytes)))
+        if self.magic[:2] != b'de' or self.magic[2] not in [0x78, 0x79] or self.magic[3] != 0x0a or self.magic[7] != 0x00:
+            raise ValueError("This is not a DEX file! Wrong magic: {}".format(repr(self.magic)))
 
         try:
-            self.dex_version = int(magic_bytes[4:7].decode('ascii'), 10)
+            self.dex_version = int(self.magic[4:7].decode('ascii'), 10)
         except (UnicodeDecodeError, ValueError):
-            log.warning("Wrong DEX version: {}, trying to parse anyways".format(repr(magic_bytes)))
+            log.warning("Wrong DEX version: {}, trying to parse anyways".format(repr(self.magic)))
             self.dex_version = 35  # assume a common version...
 
-        if self.dex_version < 35:
-            log.warning("Either a very old DEX file version or trying to break the parser. Dex version '{}' found.".format(self.dex_version))
-
-        self.checksum = unpack("<I", buff.read(4))[0]
-
-        if zlib.adler32(buff.readat(buff.tell())) != self.checksum:
+        if zlib.adler32(buff.readat(self.offset + 12)) != self.checksum:
             raise ValueError("Wrong Adler32 checksum for DEX file!")
-
-        self.signature = unpack("<20s", buff.read(20))[0]
-        self.file_size = unpack("<I", buff.read(4))[0]
 
         if self.file_size != buff.size():
             # Maybe raise an error here too...
             log.warning("DEX file size is different to the buffer. Trying to parse anyways.")
 
-        self.header_size = unpack("<I", buff.read(4))[0]
-
         if self.header_size != 0x70:
             raise ValueError("This is not a DEX file! Wrong header size: '{}'".format(self.header_size))
-
-        self.endian_tag = unpack("<I", buff.read(4))[0]
-
-        if self.endian_tag == 0x78563412:
-            log.error("DEX file with byte swapped endian tag is not supported!")
-            raise NotImplementedError("Byte swapped endian tag encountered!")
-        elif self.endian_tag != 0x12345678:
-            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(self.endian_tag))
-
-        self.link_size = unpack("<I", buff.read(4))[0]
-        self.link_off = unpack("<I", buff.read(4))[0]
-        self.map_off = unpack("<I", buff.read(4))[0]
-        self.string_ids_size = unpack("<I", buff.read(4))[0]
-        self.string_ids_off = unpack("<I", buff.read(4))[0]
-        self.type_ids_size = unpack("<I", buff.read(4))[0]
 
         if self.type_ids_size > 65535:
             raise ValueError("DEX file contains too many ({}) TYPE_IDs to be valid!".format(self.type_ids_size))
 
-        self.type_ids_off = unpack("<I", buff.read(4))[0]
-        self.proto_ids_size = unpack("<I", buff.read(4))[0]
-
         if self.proto_ids_size > 65535:
             raise ValueError("DEX file contains too many ({}) PROTO_IDs to be valid!".format(self.proto_ids_size))
 
-        self.proto_ids_off = unpack("<I", buff.read(4))[0]
-        self.field_ids_size = unpack("<I", buff.read(4))[0]
-        self.field_ids_off = unpack("<I", buff.read(4))[0]
-        self.method_ids_size = unpack("<I", buff.read(4))[0]
-        self.method_ids_off = unpack("<I", buff.read(4))[0]
-        self.class_defs_size = unpack("<I", buff.read(4))[0]
-        self.class_defs_off = unpack("<I", buff.read(4))[0]
-        self.data_size = unpack("<I", buff.read(4))[0]
-
         if self.data_size % 4 != 0:
             log.warning("data_size is not a multiple of sizeof(uint32_t), but try to parse anyways.")
-
-        self.data_off = unpack("<I", buff.read(4))[0]
 
         self.map_off_obj = None
         self.string_off_obj = None
@@ -567,6 +557,7 @@ class HeaderItem:
         if self.data_off_obj is None:
             self.data_off_obj = self.CM.get_item_by_offset(self.data_off)
 
+        # FIXME: has no object map_off_obj!
         self.map_off = self.map_off_obj.get_off()
 
         self.string_ids_size = len(self.string_off_obj)
@@ -619,7 +610,7 @@ class HeaderItem:
         return self.get_obj()
 
     def get_length(self):
-        return len(self.get_raw())
+        return 112
 
     def show(self):
         bytecode._PrintSubBanner("Header Item")
@@ -666,7 +657,7 @@ class AnnotationOffItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.annotation_off = unpack("=I", buff.read(4))[0]
+        self.annotation_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_annotation_off(self):
         return self.annotation_off
@@ -680,7 +671,7 @@ class AnnotationOffItem:
             self.annotation_off = self.CM.get_obj_by_offset(
                 self.annotation_off).get_off()
 
-        return pack("=I", self.annotation_off)
+        return self.CM.packer["I"].pack(self.annotation_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -703,7 +694,7 @@ class AnnotationSetItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
         self.annotation_off_item = [AnnotationOffItem(buff, cm) for _ in range(self.size)]
 
     def get_annotation_off_item(self):
@@ -726,7 +717,7 @@ class AnnotationSetItem:
             i.show()
 
     def get_obj(self):
-        return pack("=I", self.size)
+        return self.CM.packer["I"].pack(self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw()
@@ -753,7 +744,7 @@ class AnnotationSetRefItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.annotations_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_annotations_off(self):
         """
@@ -773,7 +764,7 @@ class AnnotationSetRefItem:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.annotations_off)
+        return self.CM.packer["I"].pack(self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -793,7 +784,7 @@ class AnnotationSetRefList:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.list = [AnnotationSetRefItem(buff, cm) for _ in range(self.size)]
 
@@ -820,7 +811,7 @@ class AnnotationSetRefList:
         return [i for i in self.list]
 
     def get_raw(self):
-        return pack("=I", self.size) + b''.join(i.get_raw() for i in self.list)
+        return self.CM.packer["I"].pack(self.size) + b''.join(i.get_raw() for i in self.list)
 
     def get_length(self):
         return len(self.get_raw())
@@ -840,8 +831,8 @@ class FieldAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.field_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.field_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_field_idx(self):
         """
@@ -875,7 +866,7 @@ class FieldAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.field_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.field_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -898,8 +889,8 @@ class MethodAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.method_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.method_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_method_idx(self):
         """
@@ -933,7 +924,7 @@ class MethodAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.method_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -956,8 +947,8 @@ class ParameterAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.method_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
+        self.method_idx, \
+        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_method_idx(self):
         """
@@ -991,7 +982,7 @@ class ParameterAnnotation:
             self.annotations_off = self.CM.get_obj_by_offset(
                 self.annotations_off).get_off()
 
-        return pack("=I", self.method_idx) + pack("=I", self.annotations_off)
+        return self.CM.packer["2I"].pack(self.method_idx, self.annotations_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -1015,10 +1006,10 @@ class AnnotationsDirectoryItem:
 
         self.offset = buff.get_idx()
 
-        self.class_annotations_off = unpack("=I", buff.read(4))[0]
-        self.annotated_fields_size = unpack("=I", buff.read(4))[0]
-        self.annotated_methods_size = unpack("=I", buff.read(4))[0]
-        self.annotated_parameters_size = unpack("=I", buff.read(4))[0]
+        self.class_annotations_off, \
+        self.annotated_fields_size, \
+        self.annotated_methods_size, \
+        self.annotated_parameters_size = cm.packer["4I"].unpack(buff.read(16))
 
         self.field_annotations = [FieldAnnotation(buff, cm) for i in range(0, self.annotated_fields_size)]
 
@@ -1110,10 +1101,10 @@ class AnnotationsDirectoryItem:
             self.class_annotations_off = self.CM.get_obj_by_offset(
                 self.class_annotations_off).get_off()
 
-        return pack("=I", self.class_annotations_off) + \
-               pack("=I", self.annotated_fields_size) + \
-               pack("=I", self.annotated_methods_size) + \
-               pack("=I", self.annotated_parameters_size)
+        return self.CM.packer["4I"].pack(self.class_annotations_off,
+                    self.annotated_fields_size,
+                    self.annotated_methods_size,
+                    self.annotated_parameters_size)
 
     def get_raw(self):
         return self.get_obj() + \
@@ -1147,7 +1138,7 @@ class TypeItem:
 
     def __init__(self, buff, cm):
         self.CM = cm
-        self.type_idx = unpack("=H", buff.read(2))[0]
+        self.type_idx, = cm.packer["H"].unpack(buff.read(2))
 
     def get_type_idx(self):
         """
@@ -1170,7 +1161,7 @@ class TypeItem:
         bytecode._PrintDefault("type_idx=%d\n" % self.type_idx)
 
     def get_obj(self):
-        return pack("=H", self.type_idx)
+        return self.CM.packer["H"].pack(self.type_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -1192,7 +1183,7 @@ class TypeList:
     def __init__(self, buff, cm):
         self.CM = cm
         self.offset = buff.get_idx()
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.list = [TypeItem(buff, cm) for _ in range(self.size)]
 
@@ -1256,7 +1247,7 @@ class TypeList:
             i.show()
 
     def get_obj(self):
-        return self.pad + pack("=I", self.size)
+        return self.pad + self.CM.packer["I"].pack(self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw() for i in self.list)
@@ -1302,9 +1293,9 @@ class DBGBytecode:
         buff = self.op_value.get_value_buff()
         for i in self.format:
             if i[1] == "u":
-                buff += writeuleb128(i[0])
+                buff += writeuleb128(self.CM, i[0])
             elif i[1] == "s":
-                buff += writesleb128(i[0])
+                buff += writesleb128(self.CM, i[0])
         return buff
 
 
@@ -1314,49 +1305,49 @@ class DebugInfoItem:
 
         self.offset = buff.get_idx()
 
-        self.line_start = readuleb128(buff)
-        self.parameters_size = readuleb128(buff)
+        self.line_start = readuleb128(cm, buff)
+        self.parameters_size = readuleb128(cm, buff)
 
         # print "line", self.line_start, "params", self.parameters_size
 
         self.parameter_names = []
         for i in range(0, self.parameters_size):
-            self.parameter_names.append(readuleb128p1(buff))
+            self.parameter_names.append(readuleb128p1(cm, buff))
 
         self.bytecodes = []
-        bcode = DBGBytecode(self.CM, get_byte(buff))
+        bcode = DBGBytecode(self.CM, get_byte(cm, buff))
         self.bytecodes.append(bcode)
 
         while bcode.get_op_value() != DBG_END_SEQUENCE:
             bcode_value = bcode.get_op_value()
 
             if bcode_value == DBG_ADVANCE_PC:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_ADVANCE_LINE:
-                bcode.add(readsleb128(buff), "s")
+                bcode.add(readsleb128(cm, buff), "s")
             elif bcode_value == DBG_START_LOCAL:
-                bcode.add(readuleb128(buff), "u")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128(cm, buff), "u")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             elif bcode_value == DBG_START_LOCAL_EXTENDED:
-                bcode.add(readuleb128(buff), "u")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128(cm, buff), "u")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             elif bcode_value == DBG_END_LOCAL:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_RESTART_LOCAL:
-                bcode.add(readuleb128(buff), "u")
+                bcode.add(readuleb128(cm, buff), "u")
             elif bcode_value == DBG_SET_PROLOGUE_END:
                 pass
             elif bcode_value == DBG_SET_EPILOGUE_BEGIN:
                 pass
             elif bcode_value == DBG_SET_FILE:
-                bcode.add(readuleb128p1(buff), "u1")
+                bcode.add(readuleb128p1(cm, buff), "u1")
             else:  # bcode_value >= DBG_Special_Opcodes_BEGIN and bcode_value <= DBG_Special_Opcodes_END:
                 pass
 
-            bcode = DBGBytecode(self.CM, get_byte(buff))
+            bcode = DBGBytecode(self.CM, get_byte(cm, buff))
             self.bytecodes.append(bcode)
 
     def get_parameters_size(self):
@@ -1394,9 +1385,9 @@ class DebugInfoItem:
             i.show()
 
     def get_raw(self):
-        return [bytecode.Buff(self.__offset, writeuleb128(self.line_start) + \
-                              writeuleb128(self.parameters_size) + \
-                              b''.join(writeuleb128(i) for i in self.parameter_names) + \
+        return [bytecode.Buff(self.__offset, writeuleb128(self.CM, self.line_start) + \
+                              writeuleb128(self.CM, self.parameters_size) + \
+                              b''.join(writeuleb128(self.CM, i) for i in self.parameter_names) + \
                               b''.join(i.get_raw() for i in self.bytecodes))]
 
     def get_off(self):
@@ -1456,7 +1447,7 @@ class EncodedArray:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readuleb128(buff)
+        self.size = readuleb128(cm, buff)
 
         self.values = [EncodedValue(buff, cm) for _ in range(self.size)]
 
@@ -1485,7 +1476,7 @@ class EncodedArray:
             i.show()
 
     def get_obj(self):
-        return writeuleb128(self.size)
+        return writeuleb128(self.CM, self.size)
 
     def get_raw(self):
         return self.get_obj() + b''.join(i.get_raw() for i in self.values)
@@ -1511,7 +1502,7 @@ class EncodedValue:
     def __init__(self, buff, cm):
         self.CM = cm
 
-        self.val = get_byte(buff)
+        self.val = get_byte(cm, buff)
         self.value_arg = self.val >> 5
         self.value_type = self.val & 0x1f
 
@@ -1547,7 +1538,7 @@ class EncodedValue:
         elif self.value_type == VALUE_ANNOTATION:
             self.value = EncodedAnnotation(buff, cm)
         elif self.value_type == VALUE_BYTE:
-            self.value = get_byte(buff)
+            self.value = get_byte(cm, buff)
         elif self.value_type == VALUE_NULL:
             self.value = None
         elif self.value_type == VALUE_BOOLEAN:
@@ -1594,17 +1585,12 @@ class EncodedValue:
 
     def get_raw(self):
         if self.raw_value is None:
-            return pack("=B", self.val) + bytecode.object_to_bytes(self.value)
+            return self.CM.packer["B"].pack(self.val) + bytecode.object_to_bytes(self.value)
         else:
-            return pack("=B", self.val) + bytecode.object_to_bytes(self.raw_value)
+            return self.CM.packer["B"].pack(self.val) + bytecode.object_to_bytes(self.raw_value)
 
     def get_length(self):
-        if self.raw_value is None:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
-                self.value))
-        else:
-            return len(pack("=B", self.val)) + len(bytecode.object_to_bytes(
-                self.raw_value))
+        return len(self.get_raw())
 
 
 class AnnotationElement:
@@ -1621,7 +1607,7 @@ class AnnotationElement:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.name_idx = readuleb128(buff)
+        self.name_idx = readuleb128(cm, buff)
         self.value = EncodedValue(buff, cm)
 
     def get_name_idx(self):
@@ -1646,7 +1632,7 @@ class AnnotationElement:
         self.value.show()
 
     def get_obj(self):
-        return writeuleb128(self.name_idx)
+        return writeuleb128(self.CM, self.name_idx)
 
     def get_raw(self):
         return self.get_obj() + self.value.get_raw()
@@ -1669,8 +1655,8 @@ class EncodedAnnotation:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.type_idx = readuleb128(buff)
-        self.size = readuleb128(buff)
+        self.type_idx = readuleb128(cm, buff)
+        self.size = readuleb128(cm, buff)
 
         self.elements = [AnnotationElement(buff, cm) for _ in range(self.size)]
 
@@ -1710,11 +1696,11 @@ class EncodedAnnotation:
         return [i for i in self.elements]
 
     def get_raw(self):
-        return writeuleb128(self.type_idx) + writeuleb128(self.size) + b''.join(
+        return writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.size) + b''.join(
             i.get_raw() for i in self.elements)
 
     def get_length(self):
-        length = len(writeuleb128(self.type_idx) + writeuleb128(self.size))
+        length = len(writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.size))
 
         for i in self.elements:
             length += i.get_length()
@@ -1737,7 +1723,7 @@ class AnnotationItem:
 
         self.offset = buff.get_idx()
 
-        self.visibility = get_byte(buff)
+        self.visibility = get_byte(cm, buff)
         self.annotation = EncodedAnnotation(buff, cm)
 
     def get_visibility(self):
@@ -1771,14 +1757,10 @@ class AnnotationItem:
         return [self.annotation]
 
     def get_raw(self):
-        return pack("=B", self.visibility) + self.annotation.get_raw()
+        return self.CM.packer["B"].pack(self.visibility) + self.annotation.get_raw()
 
     def get_length(self):
-        length = len(pack("=B", self.visibility))
-
-        length += self.annotation.get_length()
-
-        return length
+        return len(self.get_raw())
 
 
 class EncodedArrayItem:
@@ -1859,7 +1841,7 @@ class StringDataItem:
         self.offset = buff.get_idx()
 
         # Content of string_data_item
-        self.utf16_size = readuleb128(buff)
+        self.utf16_size = readuleb128(cm, buff)
         self.data = read_null_terminated_string(buff)
 
     def get_utf16_size(self):
@@ -1884,32 +1866,11 @@ class StringDataItem:
     def get_off(self):
         return self.offset
 
-    def get_unicode(self):
-        """
-        Returns an Unicode String
-        This is the actual string. Beware that some strings might be not
-        decodeable with usual UTF-16 decoder, as they use surrogates that are
-        not supported by python.
-        """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
-
-        # Return a UTF16 String
-        return s
-
     def get(self):
         """
-        Returns a printable string.
-        In this case, all lonely surrogates are escaped, thus are represented in the
-        string as 6 characters: \\ud853
-        Valid surrogates are encoded as 32bit values, ie. \U00024f5c.
+        Returns a MUTF8String object
         """
-        s = mutf8.decode(self.data)
-        if len(s) != self.utf16_size:
-            raise ValueError("UTF16 Length does not match!")
-        # log.debug("Decoding UTF16 string with IDX {}, utf16 length {} and hexdata '{}'.".format(self.offset, self.utf16_size, binascii.hexlify(self.data)))
-        return mutf8.patch_string(s)
+        return mutf8.MUTF8String.from_bytes(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -1926,7 +1887,7 @@ class StringDataItem:
 
         :return: bytes
         """
-        return writeuleb128(self.utf16_size) + self.data + b"\x00"
+        return writeuleb128(self.CM, self.utf16_size) + self.data + b"\x00"
 
     def get_length(self):
         """
@@ -1935,7 +1896,7 @@ class StringDataItem:
 
         :return: int
         """
-        return len(writeuleb128(self.utf16_size)) + len(self.data) + 1
+        return len(writeuleb128(self.CM, self.utf16_size)) + len(self.data) + 1
 
 
 class StringIdItem:
@@ -1952,7 +1913,7 @@ class StringIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.string_data_off = unpack("=I", buff.read(4))[0]
+        self.string_data_off, = cm.packer["I"].unpack(buff.read(4))
 
     def get_string_data_off(self):
         """
@@ -1977,7 +1938,7 @@ class StringIdItem:
             self.string_data_off = self.CM.get_string_by_offset(
                 self.string_data_off).get_off()
 
-        return pack("=I", self.string_data_off)
+        return self.CM.packer["I"].pack(self.string_data_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -2000,7 +1961,7 @@ class TypeIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.descriptor_idx = unpack("=I", buff.read(4))[0]
+        self.descriptor_idx, = cm.packer["I"].unpack(buff.read(4))
         self.descriptor_idx_value = self.CM.get_string(self.descriptor_idx)
 
     def get_descriptor_idx(self):
@@ -2025,7 +1986,7 @@ class TypeIdItem:
                                (self.descriptor_idx, self.descriptor_idx_value))
 
     def get_obj(self):
-        return pack("=I", self.descriptor_idx)
+        return self.CM.packer["I"].pack(self.descriptor_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2103,9 +2064,9 @@ class ProtoIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.shorty_idx = unpack("=I", buff.read(4))[0]
-        self.return_type_idx = unpack("=I", buff.read(4))[0]
-        self.parameters_off = unpack("=I", buff.read(4))[0]
+        self.shorty_idx, \
+        self.return_type_idx, \
+        self.parameters_off = cm.packer["3I"].unpack(buff.read(12))
 
         self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
         self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
@@ -2160,11 +2121,11 @@ class ProtoIdItem:
         """
         Return the string associated to the parameters_off
 
-        :rtype: string
+        :rtype: MUTF8String
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = '({})'.format(' '.join(params))
+            self.parameters_off_value = mutf8.MUTF8String.from_bytes(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String.from_bytes(b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2182,8 +2143,9 @@ class ProtoIdItem:
             self.parameters_off = self.CM.get_obj_by_offset(
                 self.parameters_off).get_off()
 
-        return pack("=I", self.shorty_idx) + pack(
-            "=I", self.return_type_idx) + pack("=I", self.parameters_off)
+        return self.CM.packer["3I"].pack(self.shorty_idx,
+                    self.return_type_idx,
+                    self.parameters_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -2253,9 +2215,9 @@ class FieldIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=H", buff.read(2))[0]
-        self.type_idx = unpack("=H", buff.read(2))[0]
-        self.name_idx = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.type_idx, \
+        self.name_idx = cm.packer["2HI"].unpack(buff.read(8))
 
         self.reload()
 
@@ -2344,9 +2306,9 @@ class FieldIdItem:
             (self.class_idx_value, self.type_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return pack("=H", self.class_idx) + \
-               pack("=H", self.type_idx) + \
-               pack("=I", self.name_idx)
+        return self.CM.packer["2HI"].pack(self.class_idx,
+                    self.type_idx,
+                    self.name_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2419,9 +2381,9 @@ class MethodIdItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=H", buff.read(2))[0]
-        self.proto_idx = unpack("=H", buff.read(2))[0]
-        self.name_idx = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.proto_idx, \
+        self.name_idx = cm.packer["2HI"].unpack(buff.read(8))
 
         self.reload()
 
@@ -2521,8 +2483,9 @@ class MethodIdItem:
             (self.class_idx_value, self.proto_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return pack("H", self.class_idx) + pack("H", self.proto_idx) + pack(
-            "I", self.name_idx)
+        return self.CM.packer["2HI"].pack(self.class_idx,
+                    self.proto_idx,
+                    self.name_idx)
 
     def get_raw(self):
         return self.get_obj()
@@ -2654,8 +2617,8 @@ class EncodedField:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.field_idx_diff = readuleb128(buff)
-        self.access_flags = readuleb128(buff)
+        self.field_idx_diff = readuleb128(cm, buff)
+        self.access_flags = readuleb128(cm, buff)
 
         self.field_idx = 0
 
@@ -2677,7 +2640,7 @@ class EncodedField:
         name = self.CM.get_field(self.field_idx)
         self.class_name = name[0]
         self.name = name[2]
-        self.proto = ''.join(i for i in name[1])
+        self.proto = name[1]
 
     def set_init_value(self, value):
         """
@@ -2778,7 +2741,7 @@ class EncodedField:
         return []
 
     def get_raw(self):
-        return writeuleb128(self.field_idx_diff) + writeuleb128(
+        return writeuleb128(self.CM, self.field_idx_diff) + writeuleb128(self.CM, 
             self.access_flags)
 
     def get_size(self):
@@ -2818,9 +2781,9 @@ class EncodedMethod:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.method_idx_diff = readuleb128(buff)  #: method index diff in the corresponding section
-        self.access_flags = readuleb128(buff)  #: access flags of the method
-        self.code_off = readuleb128(buff)  #: offset of the code section
+        self.method_idx_diff = readuleb128(cm, buff)  #: method index diff in the corresponding section
+        self.access_flags = readuleb128(cm, buff)  #: access flags of the method
+        self.code_off = readuleb128(cm, buff)  #: offset of the code section
 
         self.method_idx = 0
 
@@ -2913,7 +2876,7 @@ class EncodedMethod:
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
-            self.proto = ''.join(i for i in v[2])
+            self.proto = mutf8.MUTF8String.join(i for i in v[2])
         else:
             self.class_name = 'CLASS_NAME_ERROR'
             self.name = 'NAME_ERROR'
@@ -2990,7 +2953,7 @@ class EncodedMethod:
     @property
     def full_name(self):
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
-        return " ".join([self.class_name, self.name, self.get_descriptor()])
+        return mutf8.MUTF8String.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
 
     def get_short_string(self):
         """
@@ -3021,11 +2984,11 @@ class EncodedMethod:
                 cls = cls.rsplit("/", 1)[1]
             return arr + cls
 
-        clsname = _fmt_classname(self.get_class_name())
+        clsname = _fmt_classname(self.get_class_name().string)
 
-        param, ret = self.get_descriptor()[1:].split(")")
+        param, ret = self.get_descriptor().string[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
-        desc = "({}){}".format(" ".join(params), _fmt_classname(ret))
+        desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
 
         return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
 
@@ -3248,8 +3211,8 @@ class EncodedMethod:
         if self.code is not None:
             self.code_off = self.code.get_off()
 
-        return writeuleb128(self.method_idx_diff) + writeuleb128(
-            self.access_flags) + writeuleb128(self.code_off)
+        return writeuleb128(self.CM, self.method_idx_diff) + writeuleb128(self.CM, 
+            self.access_flags) + writeuleb128(self.CM, self.code_off)
 
     def get_size(self):
         return len(self.get_raw())
@@ -3270,10 +3233,10 @@ class ClassDataItem:
 
         self.offset = buff.get_idx()
 
-        self.static_fields_size = readuleb128(buff)
-        self.instance_fields_size = readuleb128(buff)
-        self.direct_methods_size = readuleb128(buff)
-        self.virtual_methods_size = readuleb128(buff)
+        self.static_fields_size = readuleb128(cm, buff)
+        self.instance_fields_size = readuleb128(cm, buff)
+        self.direct_methods_size = readuleb128(cm, buff)
+        self.virtual_methods_size = readuleb128(cm, buff)
 
         self.static_fields = []
         self.instance_fields = []
@@ -3426,10 +3389,10 @@ class ClassDataItem:
                [i for i in self.virtual_methods]
 
     def get_raw(self):
-        buff = writeuleb128(self.static_fields_size) + \
-               writeuleb128(self.instance_fields_size) + \
-               writeuleb128(self.direct_methods_size) + \
-               writeuleb128(self.virtual_methods_size) + \
+        buff = writeuleb128(self.CM, self.static_fields_size) + \
+               writeuleb128(self.CM, self.instance_fields_size) + \
+               writeuleb128(self.CM, self.direct_methods_size) + \
+               writeuleb128(self.CM, self.virtual_methods_size) + \
                b''.join(i.get_raw() for i in self.static_fields) + \
                b''.join(i.get_raw() for i in self.instance_fields) + \
                b''.join(i.get_raw() for i in self.direct_methods) + \
@@ -3438,10 +3401,10 @@ class ClassDataItem:
         return buff
 
     def get_length(self):
-        length = len(writeuleb128(self.static_fields_size)) + \
-                 len(writeuleb128(self.instance_fields_size)) + \
-                 len(writeuleb128(self.direct_methods_size)) + \
-                 len(writeuleb128(self.virtual_methods_size))
+        length = len(writeuleb128(self.CM, self.static_fields_size)) + \
+                 len(writeuleb128(self.CM, self.instance_fields_size)) + \
+                 len(writeuleb128(self.CM, self.direct_methods_size)) + \
+                 len(writeuleb128(self.CM, self.virtual_methods_size))
 
         for i in self.static_fields:
             length += i.get_size()
@@ -3475,14 +3438,14 @@ class ClassDefItem:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.class_idx = unpack("=I", buff.read(4))[0]
-        self.access_flags = unpack("=I", buff.read(4))[0]
-        self.superclass_idx = unpack("=I", buff.read(4))[0]
-        self.interfaces_off = unpack("=I", buff.read(4))[0]
-        self.source_file_idx = unpack("=I", buff.read(4))[0]
-        self.annotations_off = unpack("=I", buff.read(4))[0]
-        self.class_data_off = unpack("=I", buff.read(4))[0]
-        self.static_values_off = unpack("=I", buff.read(4))[0]
+        self.class_idx, \
+        self.access_flags, \
+        self.superclass_idx, \
+        self.interfaces_off, \
+        self.source_file_idx, \
+        self.annotations_off, \
+        self.class_data_off, \
+        self.static_values_off = cm.packer["8I"].unpack(buff.read(32))
 
         self.interfaces = []
         self.class_data_item = None
@@ -3700,14 +3663,14 @@ class ClassDefItem:
             self.static_values_off = self.CM.get_obj_by_offset(
                 self.static_values_off).get_off()
 
-        return pack("=I", self.class_idx) + \
-               pack("=I", self.access_flags) + \
-               pack("=I", self.superclass_idx) + \
-               pack("=I", self.interfaces_off) + \
-               pack("=I", self.source_file_idx) + \
-               pack("=I", self.annotations_off) + \
-               pack("=I", self.class_data_off) + \
-               pack("=I", self.static_values_off)
+        return self.CM.packer["8I"].pack(self.class_idx,
+                    self.access_flags,
+                    self.superclass_idx,
+                    self.interfaces_off,
+                    self.source_file_idx,
+                    self.annotations_off,
+                    self.class_data_off,
+                    self.static_values_off)
 
     def get_raw(self):
         return self.get_obj()
@@ -3739,7 +3702,7 @@ class ClassHDefItem:
             class_def = ClassDefItem(buff, cm)
             self.class_def.append(class_def)
 
-            buff.set_idx(idx + calcsize("=IIIIIIII"))
+            buff.set_idx(idx + calcsize("8I"))
 
     def set_off(self, off):
         self.offset = off
@@ -3794,9 +3757,10 @@ class EncodedTypeAddrPair:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff):
-        self.type_idx = readuleb128(buff)
-        self.addr = readuleb128(buff)
+    def __init__(self, cm, buff):
+        self.CM = cm
+        self.type_idx = readuleb128(cm, buff)
+        self.addr = readuleb128(cm, buff)
 
     def get_type_idx(self):
         """
@@ -3823,7 +3787,7 @@ class EncodedTypeAddrPair:
                                (self.type_idx, self.addr))
 
     def get_raw(self):
-        return writeuleb128(self.type_idx) + writeuleb128(self.addr)
+        return writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.addr)
 
     def get_length(self):
         return len(self.get_raw())
@@ -3840,17 +3804,18 @@ class EncodedCatchHandler:
     """
 
     def __init__(self, buff, cm):
+        self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readsleb128(buff)
+        self.size = readsleb128(cm, buff)
 
         self.handlers = []
 
         for i in range(0, abs(self.size)):
-            self.handlers.append(EncodedTypeAddrPair(buff))
+            self.handlers.append(EncodedTypeAddrPair(cm, buff))
 
         if self.size <= 0:
-            self.catch_all_addr = readuleb128(buff)
+            self.catch_all_addr = readuleb128(cm, buff)
 
     def get_size(self):
         """
@@ -3897,23 +3862,23 @@ class EncodedCatchHandler:
         :rtype: bytearray
         """
         buff = bytearray()
-        buff += writesleb128(self.size)
+        buff += writesleb128(self.CM, self.size)
         for i in self.handlers:
             buff += i.get_raw()
 
         if self.size <= 0:
-            buff += writeuleb128(self.catch_all_addr)
+            buff += writeuleb128(self.CM, self.catch_all_addr)
 
         return buff
 
     def get_length(self):
-        length = len(writesleb128(self.size))
+        length = len(writesleb128(self.CM, self.size))
 
         for i in self.handlers:
             length += i.get_length()
 
         if self.size <= 0:
-            length += len(writeuleb128(self.catch_all_addr))
+            length += len(writeuleb128(self.CM, self.catch_all_addr))
 
         return length
 
@@ -3929,9 +3894,10 @@ class EncodedCatchHandlerList:
     """
 
     def __init__(self, buff, cm):
+        self.CM = cm
         self.offset = buff.get_idx()
 
-        self.size = readuleb128(buff)
+        self.size = readuleb128(cm, buff)
         self.list = [EncodedCatchHandler(buff, cm) for _ in range(self.size)]
 
     def get_size(self):
@@ -3964,7 +3930,7 @@ class EncodedCatchHandlerList:
         self.offset = off
 
     def get_obj(self):
-        return writeuleb128(self.size)
+        return writeuleb128(self.CM, self.size)
 
     def get_raw(self):
         """
@@ -4222,14 +4188,14 @@ class FillArrayData:
     """
 
     # FIXME: why is this not a subclass of Instruction?
-
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HHI")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.element_width = unpack("=H", buff[2:4])[0]
-        self.size = unpack("=I", buff[4:8])[0]
+        self.format_general_size = calcsize("2HI")
+        self.ident, \
+        self.element_width, \
+        self.size = cm.packer["2HI"].unpack(buff[0:8])
 
         buf_len = self.size * self.element_width
         if buf_len % 2:
@@ -4332,7 +4298,7 @@ class FillArrayData:
         return ((self.size * self.element_width + 1) // 2 + 4) * 2
 
     def get_raw(self):
-        return pack("<HHI", self.ident, self.element_width, self.size) + self.data
+        return self.CM.packer["2HI"].pack(self.ident, self.element_width, self.size) + self.data
 
     def get_hex(self):
         """
@@ -4349,25 +4315,24 @@ class SparseSwitch:
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
 
-    # FIXME: why is this not a subclass of Instruction?
-
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HH")
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
+        self.format_general_size = calcsize("2H")
+        self.ident, \
+        self.size = cm.packer["2H"].unpack(buff[0:4])
 
         self.keys = []
         self.targets = []
 
         idx = self.format_general_size
         for i in range(0, self.size):
-            self.keys.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.keys.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
         for i in range(0, self.size):
-            self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.targets.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
     def add_note(self, msg):
@@ -4463,9 +4428,7 @@ class SparseSwitch:
         return self.format_general_size + (self.size * calcsize('<L')) * 2
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.size) + b''.join(pack(
-            "=l", i) for i in self.keys) + b''.join(pack("=l", i)
-                                                    for i in self.targets)
+        return self.CM.packer["2H"].pack(self.ident, self.size) + b''.join(self.CM.packer["l"].pack(i) for i in self.keys) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self):
         """
@@ -4483,15 +4446,15 @@ class PackedSwitch:
     """
 
     # FIXME: why is this not a subclass of Instruction?
-
-    def __init__(self, buff):
+    def __init__(self, cm, buff):
         self.notes = []
+        self.CM = cm
 
-        self.format_general_size = calcsize("=HHI")
+        self.format_general_size = calcsize("2HI")
 
-        self.ident = unpack("=H", buff[0:2])[0]
-        self.size = unpack("=H", buff[2:4])[0]
-        self.first_key = unpack("=i", buff[4:8])[0]
+        self.ident, \
+        self.size, \
+        self.first_key = cm.packer["2Hi"].unpack(buff[0:8])
 
         self.targets = []
 
@@ -4502,7 +4465,7 @@ class PackedSwitch:
             max_size = len(buff) - idx - 8
 
         for i in range(0, max_size):
-            self.targets.append(unpack('=l', buff[idx:idx + 4])[0])
+            self.targets.append(cm.packer["l"].unpack(buff[idx:idx + 4])[0])
             idx += 4
 
     def add_note(self, msg):
@@ -4599,11 +4562,10 @@ class PackedSwitch:
         print(self.show_buff(pos), end=' ')
 
     def get_length(self):
-        return self.format_general_size + (self.size * calcsize('=L'))
+        return self.format_general_size + (self.size * calcsize('<L'))
 
     def get_raw(self):
-        return pack("=H", self.ident) + pack("=H", self.size) + pack(
-            "=i", self.first_key) + b''.join(pack("=l", i) for i in self.targets)
+        return self.CM.packer["2Hi"].pack(self.ident, self.size, self.first_key) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self):
         """
@@ -4623,17 +4585,17 @@ class Instruction35c(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.G = (i16 >> 8) & 0xf
-        self.A = (i16 >> 12) & 0xf
-        self.BBBB = unpack("=H", buff[2:4])[0]
+        i16a, \
+        self.BBBB, \
+        i16b = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16a & 0xff
+        self.G = (i16a >> 8) & 0xf
+        self.A = (i16a >> 12) & 0xf
 
-        i16 = unpack("=H", buff[4:6])[0]
-        self.C = i16 & 0xf
-        self.D = (i16 >> 4) & 0xf
-        self.E = (i16 >> 8) & 0xf
-        self.F = (i16 >> 12) & 0xf
+        self.C = i16b & 0xf
+        self.D = (i16b >> 4) & 0xf
+        self.E = (i16b >> 8) & 0xf
+        self.F = (i16b >> 12) & 0xf
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -4687,7 +4649,7 @@ class Instruction35c(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+        return self.cm.packer["3H"].pack((self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
                     (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
@@ -4700,8 +4662,9 @@ class Instruction10x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, padding = unpack("<BB", buff[:self.length])
+        self.OP, padding = cm.packer["BB"].unpack(buff[:self.length])
         if padding != 0:
             raise InvalidInstruction('High byte of opcode with format 10x must be zero!')
 
@@ -4712,7 +4675,7 @@ class Instruction10x(Instruction):
         return []
 
     def get_raw(self):
-        return pack("<H", self.OP)
+        return self.cm.packer["H"].pack(self.OP)
 
 
 class Instruction21h(Instruction):
@@ -4724,22 +4687,24 @@ class Instruction21h(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, self.AA, self.BBBB = unpack("<BBh", buff[:self.length])
-
+        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
+        i16, \
+        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
         self.formatted_operands = []
 
         # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32/64 bits) into the specified register.
         # The question is, if we should leave BBBB untouched and only show it in the formatted operands or not.
         if self.OP == 0x15:
-            # const/high16, extend to 32bit
-            self.formatted_operands.append(unpack('<i', bytearray([0] * 2) + pack('<h', self.BBBB))[0])
+            self.formatted_operands.append(cm.packer["i"].unpack(bytearray([0] * 2) + cm.packer["h"].pack(self.BBBB))[0])
         elif self.OP == 0x19:
-            # const-wide/high16, extend to 64bit
-            self.formatted_operands.append(unpack('<q', bytearray([0] * 6) + pack('<h', self.BBBB))[0])
+            self.formatted_operands.append(cm.packer["q"].unpack(bytearray([0] * 6) + cm.packer["h"].pack(self.BBBB))[0])
 
     def get_output(self, idx=-1):
-        return "v{}, {}".format(self.AA, self.BBBB,
+        return "v{}, {}{}".format(self.AA, self.BBBB,
                                 ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
@@ -4752,7 +4717,7 @@ class Instruction21h(Instruction):
         return [self.BBBB]
 
     def get_raw(self):
-        return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction11n(Instruction):
@@ -4764,8 +4729,9 @@ class Instruction11n(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=h", buff[0:2])[0]
+        i16, = cm.packer["h"].unpack(buff[0:2])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         # FIXME: is this correct? B: signed int (4 bits)
@@ -4781,7 +4747,7 @@ class Instruction11n(Instruction):
         return [self.B]
 
     def get_raw(self):
-        return pack("=h", (self.B << 12) | (self.A << 8) | self.OP)
+        return self.cm.packer["h"].pack((self.B << 12) | (self.A << 8) | self.OP)
 
 
 class Instruction21c(Instruction):
@@ -4794,7 +4760,10 @@ class Instruction21c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
+        i16, \
+        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -4815,7 +4784,7 @@ class Instruction21c(Instruction):
         return get_kind(self.cm, Kind.RAW_STRING, self.BBBB)
 
     def get_raw(self):
-        return pack("<HH", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["2H"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction21s(Instruction):
@@ -4827,14 +4796,19 @@ class Instruction21s(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        self.OP, self.AA, self.BBBB = unpack("<BBh", buff[:self.length])
+        self.cm = cm
+
+        i16, \
+        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
         self.formatted_operands = []
 
         # FIXME: why no formatted_operands for const/16?
         # FIXME: is this actually correct? pack d, unpack d??
         if self.OP == 0x16:
-            self.formatted_operands.append(unpack('=d', pack('=d', self.BBBB))[0])
+            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["d"].pack(self.BBBB))[0])
 
     def get_output(self, idx=-1):
         return "v{}, {}{}".format(self.AA, self.BBBB,
@@ -4850,7 +4824,7 @@ class Instruction21s(Instruction):
         return self.formatted_operands
 
     def get_raw(self):
-        return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction22c(Instruction):
@@ -4864,11 +4838,11 @@ class Instruction22c(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
+        i16, \
+        self.CCCC = cm.packer["2H"].unpack(buff[0:4])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
-        self.CCCC = unpack("=H", buff[2:4])[0]
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4883,8 +4857,7 @@ class Instruction22c(Instruction):
         return self.CCCC
 
     def get_raw(self):
-        return pack("=HH",
-                    (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
+        return self.cm.packer["2H"].pack((self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction22cs(Instruction):
@@ -4898,11 +4871,11 @@ class Instruction22cs(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
+        i16, \
+        self.CCCC = cm.packer["2H"].unpack(buff[0:4])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
-        self.CCCC = unpack("=H", buff[2:4])[0]
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4917,8 +4890,7 @@ class Instruction22cs(Instruction):
         return self.CCCC
 
     def get_raw(self):
-        return pack("=HH",
-                    (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
+        return self.cm.packer["2H"].pack((self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction31t(Instruction):
@@ -4930,11 +4902,12 @@ class Instruction31t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        i16 = unpack("=H", buff[0:2])[0]
+        self.cm = cm
+
+        i16, \
+        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
-
-        self.BBBBBBBB = unpack("=i", buff[2:6])[0]
 
     def get_output(self, idx=-1):
         return "v{}, {:+08x}h".format(self.AA, self.BBBBBBBB)
@@ -4947,7 +4920,7 @@ class Instruction31t(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
+        return self.cm.packer["Hi"].pack((self.AA << 8) | self.OP, self.BBBBBBBB)
 
 
 class Instruction31c(Instruction):
@@ -4960,7 +4933,10 @@ class Instruction31c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-        self.OP, self.AA, self.BBBBBBBB = unpack("<BBI", buff[:self.length])
+        i16, \
+        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -4986,7 +4962,7 @@ class Instruction31c(Instruction):
         return get_kind(self.cm, Kind.RAW_STRING, self.BBBBBBBB)
 
     def get_raw(self):
-        return pack("=HI", (self.AA << 8) | self.OP, self.BBBBBBBB)
+        return self.cm.packer["HI"].pack((self.AA << 8) | self.OP, self.BBBBBBBB)
 
 
 class Instruction12x(Instruction):
@@ -4998,8 +4974,9 @@ class Instruction12x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=h", buff[0:2])[0]
+        i16, = cm.packer["h"].unpack(buff[0:2])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
@@ -5011,7 +4988,7 @@ class Instruction12x(Instruction):
         return [(Operand.REGISTER, self.A), (Operand.REGISTER, self.B)]
 
     def get_raw(self):
-        return pack("=H", (self.B << 12) | (self.A << 8) | self.OP)
+        return self.cm.packer["H"].pack((self.B << 12) | (self.A << 8) | self.OP)
 
 
 class Instruction11x(Instruction):
@@ -5023,7 +5000,11 @@ class Instruction11x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        self.OP, self.AA = unpack("<BB", buff[:self.length])
+        self.cm = cm
+
+        i16, = cm.packer["H"].unpack(buff[0:2])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "v{}".format(self.AA)
@@ -5032,7 +5013,7 @@ class Instruction11x(Instruction):
         return [(Operand.REGISTER, self.AA)]
 
     def get_raw(self):
-        return pack("<H", (self.AA << 8) | self.OP)
+        return self.cm.packer["H"].pack((self.AA << 8) | self.OP)
 
 
 class Instruction51l(Instruction):
@@ -5044,14 +5025,17 @@ class Instruction51l(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, self.AA, self.BBBBBBBBBBBBBBBB = unpack("<BBq", buff[:self.length])
+        i16, \
+        self.BBBBBBBBBBBBBBBB = cm.packer["Hq"].unpack(buff[0:10])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
         self.formatted_operands = []
 
         if self.OP == 0x18:
-            self.formatted_operands.append(unpack('=d', pack(
-                '=q', self.BBBBBBBBBBBBBBBB))[0])
+            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["q"].pack(self.BBBBBBBBBBBBBBBB))[0])
 
     def get_output(self, idx=-1):
         return "v{}, {}{}".format(self.AA, self.BBBBBBBBBBBBBBBB,
@@ -5068,7 +5052,7 @@ class Instruction51l(Instruction):
         return [self.BBBBBBBBBBBBBBBB]
 
     def get_raw(self):
-        return pack("<Hq", (self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
+        return self.cm.packer["Hq"].pack((self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
 
 
 class Instruction31i(Instruction):
@@ -5080,23 +5064,27 @@ class Instruction31i(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
         # FIXME: 0x14 const: arbitrary 32-bit constant, not neccessarily signed!
         # only 0x17 const-wide/32 is signed, but const-wide move sign extened to
         # 64bit
-        self.OP, self.AA, self.BBBBBBBB = unpack("<BBi", buff[:self.length])
+        i16, \
+        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
         self.formatted_operands = []
 
         # FIXME: this is a crude assumption! The formatted value depends on the
         # usage of the value!
         if self.OP == 0x14:
-            self.formatted_operands.append(unpack("=f", pack("=i", self.BBBBBBBB))[0])
+            self.formatted_operands.append(cm.packer["f"].unpack(cm.packer["i"].pack(self.BBBBBBBB))[0])
 
         elif self.OP == 0x17:
             # FIXME: this looks very wrong - should be packed as <i, unpacked as
             # <d? Again: Crude assumption, that this is always double.
-            self.formatted_operands.append(unpack('=d', pack('=d', self.BBBBBBBB))[0])
+            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["d"].pack(self.BBBBBBBB))[0])
 
     def get_output(self, idx=-1):
         return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
@@ -5111,7 +5099,7 @@ class Instruction31i(Instruction):
         return [self.BBBBBBBB]
 
     def get_raw(self):
-        return pack("=Hi", (self.AA << 8) | self.OP, self.BBBBBBBB)
+        return self.cm.packer["Hi"].pack((self.AA << 8) | self.OP, self.BBBBBBBB)
 
 
 class Instruction22x(Instruction):
@@ -5123,7 +5111,12 @@ class Instruction22x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
+        self.cm = cm
+
+        i16, \
+        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "v{}, v{}".format(self.AA, self.BBBB)
@@ -5132,7 +5125,7 @@ class Instruction22x(Instruction):
         return [(Operand.REGISTER, self.AA), (Operand.REGISTER, self.BBBB)]
 
     def get_raw(self):
-        return pack("<HH", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["2H"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction23x(Instruction):
@@ -5144,14 +5137,14 @@ class Instruction23x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        i16 = unpack("=H", buff[2:4])[0]
-        self.BB = i16 & 0xff
-        self.CC = (i16 >> 8) & 0xff
+        i16a, \
+        i16b = cm.packer["2H"].unpack(buff[0:4])
+        self.OP = i16a & 0xff
+        self.AA = (i16a >> 8) & 0xff
+        self.BB = i16b & 0xff
+        self.CC = (i16b >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "v{}, v{}, v{}".format(self.AA, self.BB, self.CC)
@@ -5161,7 +5154,7 @@ class Instruction23x(Instruction):
                 (Operand.REGISTER, self.CC)]
 
     def get_raw(self):
-        return pack("<HH", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
+        return self.cm.packer["2H"].pack((self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 
 class Instruction20t(Instruction):
@@ -5173,10 +5166,11 @@ class Instruction20t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, padding, self.AAAA = unpack("<BBh", buff[:self.length])
-        if padding != 0:
-            raise InvalidInstruction('High byte of opcode with format 20t must be zero!')
+        i16, \
+        self.AAAA = cm.packer["Hh"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
 
     def get_output(self, idx=-1):
         # Offset is in 16bit units
@@ -5189,7 +5183,7 @@ class Instruction20t(Instruction):
         return self.AAAA
 
     def get_raw(self):
-        return pack("=Hh", self.OP, self.AAAA)
+        return self.cm.packer["Hh"].pack(self.OP, self.AAAA)
 
 
 class Instruction21t(Instruction):
@@ -5200,7 +5194,12 @@ class Instruction21t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        self.OP, self.AA, self.BBBB = unpack("<BBh", buff[:self.length])
+        self.cm = cm
+
+        i16, \
+        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "v{}, {:+04x}h".format(self.AA, self.BBBB)
@@ -5212,7 +5211,7 @@ class Instruction21t(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("=Hh", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction10t(Instruction):
@@ -5224,7 +5223,10 @@ class Instruction10t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
-        self.OP, self.AA = unpack("<Bb", buff[:self.length])
+        self.cm = cm
+
+        self.OP, \
+        self.AA = cm.packer["Bb"].unpack(buff[0:2])
 
     def get_output(self, idx=-1):
         # Offset is given in 16bit units
@@ -5237,7 +5239,7 @@ class Instruction10t(Instruction):
         return self.AA
 
     def get_raw(self):
-        return pack("<Bb", self.OP, self.AA)
+        return self.cm.packer["Bb"].pack(self.OP, self.AA)
 
 
 class Instruction22t(Instruction):
@@ -5249,12 +5251,13 @@ class Instruction22t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
+        i16, \
+        self.CCCC = cm.packer["Hh"].unpack(buff[0:4])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
-        self.CCCC = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
         return "v{}, v{}, {:+04x}h".format(self.A, self.B, self.CCCC)
@@ -5267,7 +5270,7 @@ class Instruction22t(Instruction):
         return self.CCCC
 
     def get_raw(self):
-        return pack("=Hh", (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
+        return self.cm.packer["Hh"].pack((self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction22s(Instruction):
@@ -5279,12 +5282,13 @@ class Instruction22s(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
+        i16, \
+        self.CCCC = cm.packer["Hh"].unpack(buff[0:4])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
-        self.CCCC = unpack("=h", buff[2:4])[0]
 
     def get_output(self, idx=-1):
         return "v{}, v{}, {}".format(self.A, self.B, self.CCCC)
@@ -5297,7 +5301,7 @@ class Instruction22s(Instruction):
         return [self.CCCC]
 
     def get_raw(self):
-        return pack("=Hh", (self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
+        return self.cm.packer["Hh"].pack((self.B << 12) | (self.A << 8) | self.OP, self.CCCC)
 
 
 class Instruction22b(Instruction):
@@ -5309,8 +5313,13 @@ class Instruction22b(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, self.AA, self.BB, self.CC = unpack("<BBBb", buff[:self.length])
+        i16, \
+        self.BB, \
+        self.CC = cm.packer["HBb"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "v{}, v{}, {}".format(self.AA, self.BB, self.CC)
@@ -5323,7 +5332,7 @@ class Instruction22b(Instruction):
         return [self.CC]
 
     def get_raw(self):
-        return pack("<Hh", (self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, (self.CC << 8) | self.BB)
 
 
 class Instruction30t(Instruction):
@@ -5335,10 +5344,11 @@ class Instruction30t(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, padding, self.AAAAAAAA = unpack("<BBi", buff[:self.length])
-        if padding != 0:
-            raise InvalidInstruction('High byte of opcode with format 30t must be zero!')
+        i16, \
+        self.AAAAAAAA = cm.packer["Hi"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
 
     def get_output(self, idx=-1):
         return "{:+08x}h".format(self.AAAAAAAA)
@@ -5350,7 +5360,7 @@ class Instruction30t(Instruction):
         return self.AAAAAAAA
 
     def get_raw(self):
-        return pack("=Hi", self.OP, self.AAAAAAAA)
+        return self.cm.packer["Hi"].pack(self.OP, self.AAAAAAAA)
 
 
 class Instruction3rc(Instruction):
@@ -5364,7 +5374,11 @@ class Instruction3rc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.AA, self.BBBB, self.CCCC = unpack("<BBHH", buff[:self.length])
+        i16, \
+        self.BBBB, \
+        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
         self.NNNN = self.CCCC + self.AA - 1
 
@@ -5386,7 +5400,7 @@ class Instruction3rc(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return self.cm.packer["3H"].pack((self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction32x(Instruction):
@@ -5398,12 +5412,13 @@ class Instruction32x(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
         # FIXME check that higher byte of OP is zero
+        i16, \
+        self.AAAA, \
+        self.BBBB = cm.packer["3H"].unpack(buff[0:6])
         self.OP = i16 & 0xff
-        self.AAAA = unpack("=H", buff[2:4])[0]
-        self.BBBB = unpack("=H", buff[4:6])[0]
 
     def get_output(self, idx=-1):
         return "v{}, v{}".format(self.AAAA, self.BBBB)
@@ -5412,7 +5427,7 @@ class Instruction32x(Instruction):
         return [(Operand.REGISTER, self.AAAA), (Operand.REGISTER, self.BBBB)]
 
     def get_raw(self):
-        return pack("<HHH", self.OP, self.AAAA, self.BBBB)
+        return self.cm.packer["3H"].pack(self.OP, self.AAAA, self.BBBB)
 
 
 class Instruction20bc(Instruction):
@@ -5424,8 +5439,12 @@ class Instruction20bc(Instruction):
 
     def __init__(self, cm, buff):
         super().__init__()
+        self.cm = cm
 
-        self.OP, self.AA, self.BBBB = unpack("<BBH", buff[:self.length])
+        i16, \
+        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
 
     def get_output(self, idx=-1):
         return "{}, {}".format(self.AA, self.BBBB)
@@ -5434,7 +5453,7 @@ class Instruction20bc(Instruction):
         return [(Operand.LITERAL, self.AA), (Operand.LITERAL, self.BBBB)]
 
     def get_raw(self):
-        return pack("<HH", (self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["2H"].pack((self.AA << 8) | self.OP, self.BBBB)
 
 
 class Instruction35mi(Instruction):
@@ -5448,17 +5467,16 @@ class Instruction35mi(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16 = unpack("=H", buff[0:2])[0]
-        self.OP = i16 & 0xff
-        self.G = (i16 >> 8) & 0xf
-        self.A = (i16 >> 12) & 0xf
-        self.BBBB = unpack("=H", buff[2:4])[0]
-
-        i16 = unpack("=H", buff[4:6])[0]
-        self.C = i16 & 0xf
-        self.D = (i16 >> 4) & 0xf
-        self.E = (i16 >> 8) & 0xf
-        self.F = (i16 >> 12) & 0xf
+        i16a, \
+        self.BBBB, \
+        i16b = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16a & 0xff
+        self.G = (i16a >> 8) & 0xf
+        self.A = (i16a >> 12) & 0xf
+        self.C = i16b & 0xf
+        self.D = (i16b >> 4) & 0xf
+        self.E = (i16b >> 8) & 0xf
+        self.F = (i16b >> 12) & 0xf
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -5506,7 +5524,7 @@ class Instruction35mi(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+        return self.cm.packer["3H"].pack((self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
                     (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
@@ -5521,14 +5539,16 @@ class Instruction35ms(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, i16, self.BBBB, i17 = unpack("<BBHH", buff[:self.length])
-        self.G = i16 & 0x0f
-        self.A = (i16 >> 4) & 0x0f
-
-        self.C = i17 & 0xf
-        self.D = (i17 >> 4) & 0xf
-        self.E = (i17 >> 8) & 0xf
-        self.F = (i17 >> 12) & 0xf
+        i16a, \
+        self.BBBB, \
+        i16b = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16a & 0xff
+        self.G = (i16a >> 8) & 0xf
+        self.A = (i16a >> 12) & 0xf
+        self.C = i16b & 0xf
+        self.D = (i16b >> 4) & 0xf
+        self.E = (i16b >> 8) & 0xf
+        self.F = (i16b >> 12) & 0xf
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -5576,8 +5596,8 @@ class Instruction35ms(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
-                    (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
+        return self.cm.packer["3H"].pack((self.A << 12) | (self.G << 8) | self.OP, self.BBBB,
+                                         (self.F << 12) | (self.E << 8) | (self.D << 4) | self.C)
 
 
 class Instruction3rmi(Instruction):
@@ -5593,7 +5613,12 @@ class Instruction3rmi(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.AA, self.BBBB, self.CCCC = unpack('<BBHH', buff[:self.length])
+        i16, \
+        self.BBBB, \
+        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
+
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
@@ -5622,7 +5647,7 @@ class Instruction3rmi(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return self.cm.packer["3H"].pack((self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction3rms(Instruction):
@@ -5638,7 +5663,12 @@ class Instruction3rms(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.AA, self.BBBB, self.CCCC = unpack('<BBHH', buff[:self.length])
+        i16, \
+        self.BBBB, \
+        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
+        self.OP = i16 & 0xff
+        self.AA = (i16 >> 8) & 0xff
+
         self.NNNN = self.CCCC + self.AA - 1
 
     def get_output(self, idx=-1):
@@ -5667,7 +5697,7 @@ class Instruction3rms(Instruction):
         return self.BBBB
 
     def get_raw(self):
-        return pack("<HHH", (self.AA << 8) | self.OP, self.BBBB, self.CCCC)
+        return self.cm.packer["3H"].pack((self.AA << 8) | self.OP, self.BBBB, self.CCCC)
 
 
 class Instruction41c(Instruction):
@@ -5683,7 +5713,9 @@ class Instruction41c(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.BBBBBBBB, self.AAAA = unpack("<HIH", buff[:self.length])
+        self.OP, \
+        self.BBBBBBBB, \
+        self.AAAA = cm.packer["HIH"].unpack(buff[0:8])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5698,7 +5730,7 @@ class Instruction41c(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("<HIH", self.OP, self.BBBBBBBB, self.AAAA)
+        return self.cm.packer["HIH"].pack(self.OP, self.BBBBBBBB, self.AAAA)
 
 
 class Instruction40sc(Instruction):
@@ -5714,7 +5746,9 @@ class Instruction40sc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.BBBBBBBB, self.AAAA = unpack("<HIH", buff[:self.length])
+        self.OP, \
+        self.BBBBBBBB, \
+        self.AAAA = cm.packer["HIH"].unpack(buff[0:8])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5729,7 +5763,7 @@ class Instruction40sc(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("<HIH", self.OP, self.BBBBBBBB, self.AAAA)
+        return self.cm.packer["HIH"].pack(self.OP, self.BBBBBBBB, self.AAAA)
 
 
 class Instruction52c(Instruction):
@@ -5745,7 +5779,10 @@ class Instruction52c(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.CCCCCCCC, self.AAAA, self.BBBB = unpack("<HIHH", buff[:self.length])
+        self.OP, \
+        self.CCCCCCCC, \
+        self.AAAA, \
+        self.BBBB = cm.packer["HI2H"].unpack(buff[0:10])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
@@ -5760,7 +5797,7 @@ class Instruction52c(Instruction):
         return self.CCCCCCCC
 
     def get_raw(self):
-        return pack("<HIHH", self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
+        return self.cm.packer["HI2H"].pack(self.OP, self.CCCCCCCC, self.AAAA, self.BBBB)
 
 
 class Instruction5rc(Instruction):
@@ -5776,7 +5813,11 @@ class Instruction5rc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.BBBBBBBB, self.AAAA, self.CCCC = unpack("<HIHH", buff[:self.length])
+        self.OP, \
+        self.BBBBBBBB, \
+        self.AAAA, \
+        self.CCCC = cm.packer["HI2H"].unpack(buff[0:10])
+
         self.NNNN = self.CCCC + self.AAAA - 1
 
     def get_output(self, idx=-1):
@@ -5805,7 +5846,7 @@ class Instruction5rc(Instruction):
         return self.BBBBBBBB
 
     def get_raw(self):
-        return pack("<HIHH", self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
+        return self.cm.packer["HI2H"].pack(self.OP, self.BBBBBBBB, self.AAAA, self.CCCC)
 
 
 class Instruction45cc(Instruction):
@@ -5817,7 +5858,7 @@ class Instruction45cc(Instruction):
         self.cm = cm
 
         # Note: the documentation says A|G|op|BBBB ... but we need to parse op|A|G because of LE
-        self.OP, reg1, self.BBBB, reg2, self.HHHH = unpack('<BBHHH', buff[:self.get_length()])
+        self.OP, reg1, self.BBBB, reg2, self.HHHH = self.cm.packer["BBHHH"].unpack(buff[:self.get_length()])
         # TODO need to check if registers are correct
         self.A = (reg1 & 0xF0) >> 4
         self.G = (reg1 & 0x0F)
@@ -5827,7 +5868,7 @@ class Instruction45cc(Instruction):
         self.F = (reg2 & 0xF000) >> 12
 
     def get_raw(self):
-        return pack('<BBHHH',
+        return self.cm.packer["BBHHH"].pack(
                     self.OP,
                     self.A << 4 | self.G,
                     self.BBBB,
@@ -5846,7 +5887,7 @@ class Instruction4rcc(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH = unpack('<BBHHH',  buff[:self.get_length()])
+        self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH = self.cm.packer['BBHHH'].unpack(buff[:self.get_length()])
         self.NNNN = self.AA + self.CCCC - 1
 
     def get_raw(self):
@@ -6220,9 +6261,9 @@ def get_optimized_instruction(cm, op_value, buff):
         raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
 
 
-def get_instruction_payload(op_value, buff):
+def get_instruction_payload(op_value, cm, buff):
     try:
-        return DALVIK_OPCODES_PAYLOAD[op_value][0](buff)
+        return DALVIK_OPCODES_PAYLOAD[op_value][0](cm, buff)
     except struct.error:
         # FIXME: there are other possible errors too...
         raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
@@ -6253,7 +6294,7 @@ class LinearSweepAlgorithm:
         """
         is_odex = cm.get_odex_format()
 
-        max_idx = size * calcsize('<H')
+        max_idx = size * calcsize('H')
         if max_idx > len(insn):
             log.warning("Declared size of instructions is larger than the bytecode!")
             max_idx = len(insn)
@@ -6264,14 +6305,14 @@ class LinearSweepAlgorithm:
             # Get one 16bit unit
             # TODO: possible optimization; instead of reading the first 16 bits twice,
             #       just push this into the Instruction's constructor
-            op_value, = unpack('<H', insn[idx:idx + 2])
+            op_value, = cm.packer['H'].unpack(insn[idx:idx + 2])
 
             try:
                 if op_value > 0xff and (op_value & 0xff) in (0x00, 0xff):
                     # FIXME: in theory, it could happen that this is a normal opcode? I.e. a 0xff opcode with AA being non zero
                     if op_value in DALVIK_OPCODES_PAYLOAD:
                         # payload instructions, i.e. for arrays or switch
-                        obj = get_instruction_payload(op_value, insn[idx:])
+                        obj = get_instruction_payload(op_value, cm, insn[idx:])
                     elif is_odex and (op_value in DALVIK_OPCODES_OPTIMIZED):
                         # optimized instructions, only of ODEX file
                         obj = get_optimized_instruction(cm, op_value, insn[idx:])
@@ -6283,7 +6324,6 @@ class LinearSweepAlgorithm:
                 # TODO somehow it would be nice to know that the parsing failed at the level of EncodedMethod or for the decompiler
                 log.error("Invalid instruction encountered! Stop parsing bytecode at idx %s. Message: %s", idx, e)
                 return
-
             # emit instruction
             yield obj
             idx += obj.get_length()
@@ -6483,9 +6523,9 @@ class TryItem:
 
         self.CM = cm
 
-        self.start_addr = unpack("=I", buff.read(4))[0]
-        self.insn_count = unpack("=H", buff.read(2))[0]
-        self.handler_off = unpack("=H", buff.read(2))[0]
+        self.start_addr, \
+        self.insn_count, \
+        self.handler_off = cm.packer["I2H"].unpack(buff.read(8))
 
     def set_off(self, off):
         self.offset = off
@@ -6518,8 +6558,9 @@ class TryItem:
         return self.handler_off
 
     def get_raw(self):
-        return pack("=I", self.start_addr) + pack("=H", self.insn_count) + pack(
-            "=H", self.handler_off)
+        return self.CM.packer["I2H"].pack(self.start_addr,
+                    self.insn_count,
+                    self.handler_off)
 
     def get_length(self):
         return len(self.get_raw())
@@ -6539,21 +6580,19 @@ class DalvikCode:
         self.CM = cm
         self.offset = buff.get_idx()
 
-        self.registers_size = unpack("<H", buff.read(2))[0]
-        self.ins_size = unpack("<H", buff.read(2))[0]
-        self.outs_size = unpack("<H", buff.read(2))[0]
-        self.tries_size = unpack("<H", buff.read(2))[0]
-        self.debug_info_off = unpack("<I", buff.read(4))[0]
-        self.insns_size = unpack("<I", buff.read(4))[0]
+        self.registers_size, \
+        self.ins_size, \
+        self.outs_size, \
+        self.tries_size, \
+        self.debug_info_off, \
+        self.insns_size = cm.packer["4H2I"].unpack(buff.read(16))
 
-        ushort = calcsize('<H')
+        ushort = calcsize('H')
 
         self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
-            self.padding = unpack("<H", buff.read(2))[0]
-            if self.padding != 0:
-                log.warning("padding in code_item at 0x{:08x} is not equal to zero!".format(self.offset))
+            self.padding, = cm.packer["H"].unpack(buff.read(2))
 
         self.tries = []
         self.handlers = None
@@ -6680,17 +6719,16 @@ class DalvikCode:
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        buff += pack("<H", self.registers_size) + \
-                pack("<H", self.ins_size) + \
-                pack("<H", self.outs_size) + \
-                pack("<H", self.tries_size) + \
-                pack("<I", self.debug_info_off) + \
-                pack("<I", self.insns_size) + \
-                code_raw
+        buff += self.CM.packer["4H2I"].pack(self.registers_size,
+                    self.ins_size,
+                    self.outs_size,
+                    self.tries_size,
+                    self.debug_info_off,
+                    self.insns_size) + code_raw
 
         if self.tries_size > 0:
-            if self.insns_size % 2 == 1:
-                buff += pack("<H", self.padding)
+            if (self.insns_size % 2 == 1):
+                buff += self.CM.packer["H"].pack(self.padding)
 
             for i in self.tries:
                 buff += i.get_raw()
@@ -6717,25 +6755,7 @@ class DalvikCode:
             return self.code.get_instruction(idx, off)
 
     def get_size(self):
-        length = 0
-        length += len(pack("<H", self.registers_size) + \
-                      pack("<H", self.ins_size) + \
-                      pack("<H", self.outs_size) + \
-                      pack("<H", self.tries_size) + \
-                      pack("<I", self.debug_info_off) + \
-                      pack("<I", self.insns_size))
-        length += self.code.get_length()
-
-        if self.insns_size % 2 == 1 and self.tries_size > 0:
-            length += len(pack("=H", self.padding))
-
-        if self.tries_size > 0:
-            for i in self.tries:
-                length += i.get_length()
-
-            length += self.handlers.get_length()
-
-        return length
+        return len(self.get_raw())
 
     def set_off(self, off):
         self.offset = off
@@ -6813,10 +6833,10 @@ class MapItem:
 
         self.off = buff.get_idx()
 
-        self.type = TypeMapItem(unpack("<H", buff.read(2))[0])
-        self.unused = unpack("<H", buff.read(2))[0]
-        self.size = unpack("<I", buff.read(4))[0]
-        self.offset = unpack("<I", buff.read(4))[0]
+        self.type = TypeMapItem(cm.packer["H"].unpack(buff.read(2))[0])
+        self.unused, \
+        self.size, \
+        self.offset = cm.packer["H2I"].unpack(buff.read(10))
 
         self.item = None
 
@@ -6939,10 +6959,13 @@ class MapItem:
         else:
             self.offset = self.item.get_off()
 
-        return pack("<HHII", self.type, self.unused, self.size, self.offset)
+        return self.CM.packer["2H2I"].pack(self.type,
+                    self.unused,
+                    self.size,
+                    self.offset)
 
     def get_length(self):
-        return calcsize("<HHII")
+        return calcsize("HHII")
 
     def set_item(self, item):
         self.item = item
@@ -6973,6 +6996,8 @@ class ClassManager:
 
         self.decompiler_ob = None
 
+        self.__packer = None
+
         self.__manage_item = {}
         self.__manage_item_off = []
 
@@ -6991,6 +7016,27 @@ class ClassManager:
             self.odex_format = self.vm.get_format_type() == "ODEX"
         else:
             self.odex_format = False
+
+    @property
+    def packer(self):
+        return self.__packer
+
+    @packer.setter
+    def packer(self, p):
+        self.__packer = p
+
+    def get_ascii_string(self, s):
+        # TODO Remove method
+        try:
+            return s.decode("ascii")
+        except UnicodeDecodeError:
+            d = ""
+            for i in s:
+                if i < 128:
+                    d += i
+                else:
+                    d += "%x" % i
+            return d
 
     def get_odex_format(self):
         """Returns True if the underlying VM is ODEX"""
@@ -7293,7 +7339,7 @@ class MapList:
 
         self.offset = off
 
-        self.size = unpack("=I", buff.read(4))[0]
+        self.size, = cm.packer["I"].unpack(buff.read(4))
 
         self.map_item = []
         for _ in range(0, self.size):
@@ -7352,14 +7398,39 @@ class MapList:
         return [x.get_obj() for x in self.map_item]
 
     def get_raw(self):
-        return pack("=I", self.size) + b''.join(x.get_raw()
-                                                for x in self.map_item)
+        return self.CM.packer["I"].pack(self.size) + b''.join(x.get_raw() for x in self.map_item)
 
     def get_class_manager(self):
         return self.CM
 
     def get_length(self):
         return len(self.get_raw())
+
+
+class DalvikPacker():
+    def __init__(self, endian_tag):
+        if endian_tag == 0x78563412:
+            log.error("DEX file with byte swapped endian tag is not supported!")
+            raise NotImplementedError("Byte swapped endian tag encountered!")
+        elif endian_tag == 0x12345678:
+            self.endian_tag = '<'
+        else:
+            raise ValueError("This is not a DEX file! Wrong endian tag: '0x{:08x}'".format(endian_tag))
+        self.__structs = {}
+
+    def __getitem__(self, item):
+        try:
+            return self.__structs[item]
+        except KeyError:
+            self.__structs[item] = struct.Struct(self.endian_tag + item)
+        return self.__structs[item]
+
+    def __getstate__(self):
+        return self.endian_tag
+
+    def __setstate__(self, state):
+        self.endian_tag = state
+        self.__structs = {}
 
 
 class DalvikVMFormat(bytecode.BuffHandle):
@@ -7640,7 +7711,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         buff = buff[:12] + signature + buff[32:]
         checksum = zlib.adler32(buff[12:])
-        buff = buff[:8] + pack("=I", checksum) + buff[12:]
+        buff = buff[:8] + self.CM.packer["I"].pack(checksum) + buff[12:]
 
         log.debug("NEW SIGNATURE %s" % repr(signature))
         log.debug("NEW CHECKSUM %x" % checksum)
@@ -7729,11 +7800,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_methods():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -7746,11 +7818,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        prog = re.compile(name)
+        name = mutf8.MUTF8String.from_str(name)
+        prog = re.compile(name.bytes)
         l = []
         for i in self.get_classes():
             for j in i.get_fields():
-                if prog.match(j.get_name()):
+                if prog.match(j.get_name().bytes):
                     l.append(j)
         return l
 
@@ -7921,27 +7994,6 @@ class DalvikVMFormat(bytecode.BuffHandle):
 
         return self.__cache_fields.get(key)
 
-    def get_strings_unicode(self):
-        """
-        Return all strings
-
-        This method will return pure UTF-16 strings. This is the "exact" same string as used in Java.
-        Those strings can be problematic for python, as they can contain surrogates as well as "broken"
-        surrogate pairs, ie single high or low surrogates.
-        Such a string can for example not be printed.
-        To avoid such problems, there is an escape mechanism to detect such lonely surrogates
-        and escape them in the string. Of course, this results in a different string than in the Java Source!
-
-        Use `get_strings()` as a general purpose and `get_strings_unicode()` if you require the exact string
-        from the Java Source.
-        You can always escape the string from `get_strings_unicode()` using the function
-        :meth:`androguard.core.bytecodes.mutf8.patch_string`
-
-        :rtype: a list with all strings used in the format (types, names ...)
-        """
-        for i in self.strings:
-            yield i.get_unicode()
-
     def get_strings(self):
         """
         Return all strings
@@ -7993,7 +8045,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
     def _create_python_export_class(self, _class, delete=False):
         if _class is not None:
             ### Class
-            name = bytecode.FormatClassToPython(_class.get_name())
+            name = bytecode.FormatClassToPython(_class.get_name()).string
             if delete:
                 delattr(self.C, name)
                 return
@@ -8017,13 +8069,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.M, name, j)
             else:
                 for j in m[i]:
                     name = (
                         bytecode.FormatNameToPython(j.get_name()) + "_" +
-                        bytecode.FormatDescriptorToPython(j.get_descriptor()))
+                        bytecode.FormatDescriptorToPython(j.get_descriptor())).string
                     setattr(_class.M, name, j)
 
     def _create_python_export_fields(self, _class, delete):
@@ -8038,13 +8090,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in f:
             if len(f[i]) == 1:
                 j = f[i][0]
-                name = bytecode.FormatNameToPython(j.get_name())
+                name = bytecode.FormatNameToPython(j.get_name()).string
                 setattr(_class.F, name, j)
             else:
                 for j in f[i]:
                     name = bytecode.FormatNameToPython(j.get_name(
                     )) + "_" + bytecode.FormatDescriptorToPython(
-                        j.get_descriptor())
+                        j.get_descriptor()).string
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):

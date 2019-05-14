@@ -10,11 +10,6 @@ from androguard.core.bytecodes import dvm
 log = logging.getLogger("androguard.tests")
 
 
-class FakeClassManager:
-    def get_odex_format(self):
-        return False
-
-
 class DexTest(unittest.TestCase):
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex", "rb") as fd:
@@ -38,7 +33,7 @@ class DexTest(unittest.TestCase):
         # really not a dex file
         with self.assertRaises(ValueError) as cnx:
             dvm.DalvikVMFormat(b'\x00\x00\x00\x00\x00\x00\x00\x00')
-        self.assertIn('Wrong magic', str(cnx.exception))
+        self.assertIn('Header too small', str(cnx.exception))
 
         # Adler32 will not match, zeroed out file
         dex = binascii.unhexlify('6465780A303335001F6C4D5A6ACF889AF588F3237FC9F20B41F56A2408749D1B'
@@ -76,7 +71,7 @@ class DexTest(unittest.TestCase):
                                  '00000000000000000000000000000000')
         with self.assertLogs(logger='androguard.dvm', level=logging.WARNING) as cnx:
             dvm.DalvikVMFormat(dex)
-        self.assertEqual(cnx.output, ["WARNING:androguard.dvm:Wrong DEX version: bytearray(b'dex\\n\\xff\\x00\\xab\\x00'), trying to parse anyways",
+        self.assertEqual(cnx.output, ["WARNING:androguard.dvm:Wrong DEX version: b'dex\\n\\xff\\x00\\xab\\x00', trying to parse anyways",
                                       "WARNING:androguard.dvm:no map list! This DEX file is probably empty."])
 
         # Big Endian file
@@ -190,6 +185,15 @@ class DexTest(unittest.TestCase):
                         self.assertEqual(l, m.get_code().insns_size * 2)
 
 
+class MockClassManager():
+    @property
+    def packer(self):
+        return dvm.DalvikPacker(0x12345678)
+
+    def get_odex_format(self):
+        return False
+
+
 class InstructionTest(unittest.TestCase):
     def testInstructions(self):
         """Tests if all instructions are at least covered"""
@@ -208,13 +212,13 @@ class InstructionTest(unittest.TestCase):
             if name[0] == 'unused':
                 # unused instructions should raise an error on invocation
                 with self.assertRaises(dvm.InvalidInstruction):
-                    ins(FakeClassManager(), bytearray([op_value, 0]))
+                    ins(MockClassManager(), bytearray([op_value, 0]))
                 # therefore, we can not test much else here...
                 continue
 
             # Test if instruction can be parsed
             bytecode = bytearray([op_value] + [0] * (length - 1))
-            instruction = ins(FakeClassManager(), bytecode)
+            instruction = ins(MockClassManager(), bytecode)
             self.assertIsInstance(instruction, dvm.Instruction)
             self.assertEqual(instruction.get_op_value(), op_value)
 
@@ -229,14 +233,14 @@ class InstructionTest(unittest.TestCase):
                 bytecode = bytearray([op_value, 0] + [random.randint(0x00, 0xff) for _ in range(length - 2)])
             else:
                 bytecode = bytearray([op_value] + [random.randint(0x00, 0xff) for _ in range(length - 1)])
-            instruction = ins(FakeClassManager(), bytecode)
+            instruction = ins(MockClassManager(), bytecode)
             self.assertIsInstance(instruction, dvm.Instruction)
             self.assertEqual(instruction.get_op_value(), op_value)
             self.assertEqual(instruction.get_raw(), bytecode)
 
     def testNOP(self):
         """test if NOP instructions are parsed"""
-        instruction = dvm.Instruction10x(FakeClassManager(), bytearray(b"\x00\x00"))
+        instruction = dvm.Instruction10x(MockClassManager(), bytearray(b"\x00\x00"))
         self.assertEqual(instruction.get_name(), "nop")
 
     def testLinearSweep(self):
@@ -245,7 +249,7 @@ class InstructionTest(unittest.TestCase):
         instructions = ['nop', 'nop', 'nop', 'return-void']
         l = 0
 
-        for ins in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 4, bytecode, 0):
+        for ins in dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 4, bytecode, 0):
             self.assertIsInstance(ins, dvm.Instruction10x)
             self.assertEqual(ins.get_length(), 2)
             self.assertEqual(ins.get_name(), instructions.pop(0))
@@ -281,7 +285,7 @@ class InstructionTest(unittest.TestCase):
         ]
         l = 0
 
-        for ins in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 71, bytecode, 0):
+        for ins in dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 71, bytecode, 0):
             self.assertIsInstance(ins, dvm.Instruction)
             self.assertEqual(ins.get_name(), instructions.pop(0))
             l += ins.get_length()
@@ -312,7 +316,7 @@ class InstructionTest(unittest.TestCase):
         ]
         l = 0
 
-        for ins in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 30, bytecode, 0):
+        for ins in dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 30, bytecode, 0):
             if len(instructions) > 1:
                 self.assertIsInstance(ins, dvm.Instruction)
             else:
@@ -354,7 +358,7 @@ class InstructionTest(unittest.TestCase):
         # array information: (element_width, size)
         arrays = [(1, 4), (4, 7), (2, 5), (2, 4)]
 
-        for ins in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 90, bytecode, 0):
+        for ins in dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 90, bytecode, 0):
             self.assertEqual(ins.get_name(), instructions.pop(0))
             if ins.get_name() != 'fill-array-data-payload':
                 self.assertIsInstance(ins, dvm.Instruction)
@@ -371,25 +375,32 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(len(bytecode), l)
 
     def testWrongInstructions(self):
-        """Test if unknown instructions throws an error"""
-        with self.assertRaises(dvm.InvalidInstruction):
-            for _ in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 1, bytearray(b"\xff\xab"), 0):
-                pass
+        """Test if unknown instructions log an error"""
+        with self.assertLogs(logger='androguard.dvm', level=logging.ERROR) as cnx:
+            ins = list(dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 1, bytearray(b"\xff\xab"), 0))
+        self.assertEqual(cnx.output, ["ERROR:androguard.dvm:Invalid instruction encountered! "
+                                      "Stop parsing bytecode at idx 0. Message: Unknown Instruction '0xabff'"])
+        self.assertEqual(len(ins), 0)  # No instruction should be parsed
+
+        with self.assertLogs(logger='androguard.dvm', level=logging.ERROR) as cnx:
+            ins = list(dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 2, bytearray(b"\x00\x00"
+                                                                                                  b"\xff\xab"), 0))
+        self.assertEqual(cnx.output, ["ERROR:androguard.dvm:Invalid instruction encountered! "
+                                      "Stop parsing bytecode at idx 2. Message: Unknown Instruction '0xabff'"])
+        self.assertEqual(len(ins), 1)  # One instruction should be parsed
 
     def testIncompleteInstruction(self):
-        """Test if incomplete bytecode throws an error"""
+        """Test if incomplete bytecode log an error"""
         # Test if instruction can be parsed
-        self.assertIsInstance(dvm.Instruction51l(FakeClassManager(),
+        self.assertIsInstance(dvm.Instruction51l(MockClassManager(),
                                                  bytearray(b'\x18\x01\x23\x23\x00\xff\x99\x11\x22\x22')), dvm.Instruction51l)
 
-        with self.assertRaises(dvm.InvalidInstruction):
-            # const-wide should be 10 bytes long
-            for _ in dvm.LinearSweepAlgorithm.get_instructions(FakeClassManager(), 5, bytearray(b"\x18\x01\xff\xff"), 0):
-                pass
+        ins = list(dvm.LinearSweepAlgorithm.get_instructions(MockClassManager(), 5, bytearray(b"\x18\x01\xff\xff"), 0))
+        self.assertEqual(len(ins), 0)
 
     def testInstruction21h(self):
         """Test function of Instruction 21h used for const{,-wide}/high16"""
-        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x15, 0x00, 0x42, 0x11]))
+        ins = dvm.Instruction21h(MockClassManager(), bytearray([0x15, 0x00, 0x42, 0x11]))
         self.assertEqual(ins.get_op_value(), 0x15)
         self.assertEqual(ins.get_formatted_operands(), [0x11420000])
         self.assertEqual(ins.get_literals(), [0x1142])
@@ -398,16 +409,16 @@ class InstructionTest(unittest.TestCase):
         self.assertEqual(ins.get_output(), 'v0, 4418 # 289538048')
         self.assertEqual(ins.get_raw(), bytearray([0x15, 0x00, 0x42, 0x11]))
 
-        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0x42, 0x11]))
+        ins = dvm.Instruction21h(MockClassManager(), bytearray([0x19, 0x00, 0x42, 0x11]))
         self.assertEqual(ins.get_op_value(), 0x19)
         self.assertEqual(ins.get_formatted_operands(), [0x1142000000000000])
         self.assertEqual(ins.get_literals(), [0x1142])
         self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
         self.assertEqual(ins.get_name(), 'const-wide/high16')
-        self.assertEqual(ins.get_output(), 'v0, 4418 # 289538048')
+        self.assertEqual(ins.get_output(), 'v0, 4418 # 1243556447107678208')
         self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0x42, 0x11]))
 
-        ins = dvm.Instruction21h(FakeClassManager(), bytearray([0x19, 0x00, 0xbe, 0xff]))
+        ins = dvm.Instruction21h(MockClassManager(), bytearray([0x19, 0x00, 0xbe, 0xff]))
         self.assertEqual(ins.get_op_value(), 0x19)
         self.assertEqual(ins.get_formatted_operands(), [-0x42000000000000])
         self.assertEqual(ins.get_literals(), [-66])
