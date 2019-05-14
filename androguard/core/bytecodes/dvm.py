@@ -8541,33 +8541,3 @@ class ExportObject:
     Wrapper object for ipython exports
     """
     pass
-
-
-class ConstString(Instruction21c):
-    """
-    Simulate a const-string instruction.
-    """
-
-    def __init__(self, orig_ins, value):
-        self.OP = orig_ins.OP
-        self.AA = orig_ins.AA
-        self.BBBB = orig_ins.BBBB
-        self.cm = orig_ins.cm
-        self.value = value
-
-    def get_raw_string(self):
-        return self.value
-
-    def get_operands(self, idx=-1):
-        return [(0, 1), (257, 2113, "'%s'" % self.value)]
-
-
-class FakeNop(Instruction10x):
-    """Simulate a nop instruction."""
-
-    def __init__(self, length):
-        self.OP = 0x00
-        self.length = length
-
-    def get_length(self):
-        return self.length
