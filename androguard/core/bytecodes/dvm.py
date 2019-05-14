@@ -15,7 +15,7 @@ import logging
 import warnings
 import zlib
 import hashlib
-from enum import IntEnum, Enum, auto
+from enum import IntEnum
 
 log = logging.getLogger("androguard.dvm")
 
