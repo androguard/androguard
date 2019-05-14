@@ -6,7 +6,7 @@ from binascii import hexlify
 # Output format will be:
 # <class name> <method name> <bytecode as hex string>
 
-from androguard.core.bytecodes.dvm import readuleb128, readsleb128
+from androguard.core.bytecodes.dvm import readuleb128, readsleb128, DalvikPacker
 
 
 def read_null_terminated(f):
@@ -18,6 +18,12 @@ def read_null_terminated(f):
         else:
             x.append(ord(z))
 
+class MockClassManager():
+    @property
+    def packer(self):
+        return DalvikPacker(0x12345678)
+
+cm = MockClassManager()
 
 class read_dex:
 
@@ -42,23 +48,23 @@ class read_dex:
                 if class_data_off == 0:
                     continue
                 f.seek(class_data_off)
-                static_fields_size = readuleb128(f)
-                instance_fields_size = readuleb128(f)
-                direct_methods_size = readuleb128(f)
-                virtual_methods_size = readuleb128(f)
+                static_fields_size = readuleb128(cm, f)
+                instance_fields_size = readuleb128(cm, f)
+                direct_methods_size = readuleb128(cm, f)
+                virtual_methods_size = readuleb128(cm, f)
                 #print("class_data_item:", static_fields_size, instance_fields_size, direct_methods_size, virtual_methods_size)
 
                 # We do not need the fields...
                 for _ in range(static_fields_size + instance_fields_size):
-                    readuleb128(f)
-                    readuleb128(f)
+                    readuleb128(cm, f)
+                    readuleb128(cm, f)
 
                 # Now parse methods
                 method_idx = 0
                 for _ in range(direct_methods_size):
-                    method_idx_diff = readuleb128(f)
-                    access_flags = readuleb128(f)
-                    code_off = readuleb128(f)
+                    method_idx_diff = readuleb128(cm, f)
+                    access_flags = readuleb128(cm, f)
+                    code_off = readuleb128(cm, f)
 
                     # print("direct_methods", method_idx_diff, access_flags, code_off)
 
@@ -67,9 +73,9 @@ class read_dex:
 
                 method_idx = 0
                 for _ in range(virtual_methods_size):
-                    method_idx_diff = readuleb128(f)
-                    access_flags = readuleb128(f)
-                    code_off = readuleb128(f)
+                    method_idx_diff = readuleb128(cm, f)
+                    access_flags = readuleb128(cm, f)
+                    code_off = readuleb128(cm, f)
 
                     # print("virtual_methods", method_idx_diff, access_flags, code_off)
 
@@ -85,7 +91,7 @@ class read_dex:
                 string_data_off, = unpack("<I", f.read(4))
 
                 f.seek(string_data_off)
-                utf16_size = readuleb128(f)
+                utf16_size = readuleb128(cm, f)
                 s = read_null_terminated(f)
                 # FIXME this is wrong...
                 self.str_raw[i] = s
@@ -129,16 +135,16 @@ class read_dex:
                     tries = unpack("<{}".format("".join(["IHH"] * tries_size)), f.read(8 * tries_size))
 
                     # encoded_catch_handler_list
-                    size = readuleb128(f)
+                    size = readuleb128(cm, f)
                     for _ in range(size):
                         # encoded_catch_handler
-                        s = readsleb128(f)
+                        s = readsleb128(cm, f)
                         for _ in range(abs(s)):
                             # encoded_type_addr_pair
-                            _ = readuleb128(f)
-                            _ = readuleb128(f)
+                            _ = readuleb128(cm, f)
+                            _ = readuleb128(cm, f)
                         if s <= 0:
-                            catch_all_addr = readuleb128(f)
+                            catch_all_addr = readuleb128(cm, f)
 
                 l = f.tell() - code_off
                 f.seek(code_off)
