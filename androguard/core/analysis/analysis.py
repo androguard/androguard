@@ -1583,9 +1583,10 @@ class Analysis:
         The filters are the same as in
         :meth:`~androguard.core.analaysis.analaysis.Analysis.find_methods`
 
-        A networkx.DiGraph is returned, containing all edges only once!
-        that means, if a method calls some method twice or more often, there will
-        only be a single connection.
+        A networkx.MultiDiGraph is returned, containing all xrefs.
+        That means a method which calls another method multiple times, will have multiple
+        edges between them. Attached to the edge is the attribute `offset`, which gives
+        the code offset inside the method of the call.
 
         Specifying filters will not remove the methods if they are called by some other method.
 
@@ -1610,7 +1611,7 @@ class Analysis:
         :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
         :param entry_points: A list of classes that are marked as entry point
 
-        :rtype: networkx.DiGraph
+        :rtype: networkx.MultiDiGraph
         """
 
         def _add_node(G, method):
@@ -1634,7 +1635,7 @@ class Analysis:
                        codesize=len(list(method.get_instructions())) if not external else 0,
                        )
 
-        CG = nx.DiGraph()
+        CG = nx.MultiDiGraph()
 
         # Note: If you create the CG from many classes at the same time, the drawing
         # will be a total mess... Hence it is recommended to reduce the number of nodes beforehand.
@@ -1650,25 +1651,17 @@ class Analysis:
 
             _add_node(CG, orig_method)
 
-            # TODO could store more information at the edge here. For example, the offsets in the code
-            # TODO This could also be used for counting the number of calls and store that in the attributes of the edge
-            for _, callee, _ in m.get_xref_to():
+            for _, callee, offset in m.get_xref_to():
                 _add_node(CG, callee)
+                CG.add_edge(orig_method, callee, key=offset, offset=offset)
 
-                # As this is a DiGraph and we are not interested in duplicate edges,
-                # check if the edge is already in the edge set.
-                # If you need all calls, you probably want to check out MultiDiGraph
-                if not CG.has_edge(orig_method, callee):
-                    CG.add_edge(orig_method, callee)
-
-            for _, caller, _ in m.get_xref_from():
+            for _, caller, offset in m.get_xref_from():
                 # If _all_ methods are added to the CG, this will not make any difference.
                 # But, if only a single class is chosen as a seed point, we require this information too!
                 # This is particularly useful for external classes, as they do not have xref_to,
                 # thus if an external class is chosen as starting point, it will generate an empty graph.
                 _add_node(CG, caller)
-                if not CG.has_edge(caller, orig_method):
-                    CG.add_edge(caller, orig_method)
+                CG.add_edge(caller, orig_method, key=offset, offset=offset)
 
         return CG
 
