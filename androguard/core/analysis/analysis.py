@@ -1583,56 +1583,85 @@ class Analysis:
         The filters are the same as in
         :meth:`~androguard.core.analaysis.analaysis.Analysis.find_methods`
 
-        A networkx.DiGraph is returned, containing all edges only once!
-        that means, if a method calls some method twice or more often, there will
-        only be a single connection.
+        A networkx.MultiDiGraph is returned, containing all xrefs.
+        That means a method which calls another method multiple times, will have multiple
+        edges between them. Attached to the edge is the attribute `offset`, which gives
+        the code offset inside the method of the call.
+
+        Specifying filters will not remove the methods if they are called by some other method.
+
+        The callgraph will check for both directions of edges. Thus, if you specify a single class
+        as input, it will contain all classes which are called by this class (xref_to),
+        as well as all methods who calls the specified one (xref_from).
+
+        Each node will contain the following meta information as attribute:
+
+        * external: is the method external or not (boolean)
+        * entrypoint: is the method a known entry point (boolean)
+        * native: is the method a native method by signature (boolean)
+        * public: is the method declared public (boolean)
+        * static: is the method declared static (boolean)
+        * vm: An ID of the DEX file where this method is declared or 0 if external (signed int)
+        * codesize: size of code of the method or zero if external (int)
 
         :param classname: regular expression of the classname (default: ".*")
-        :param fieldname: regular expression of the fieldname (default: ".*")
-        :param fieldtype: regular expression of the fieldtype (default: ".*")
+        :param methodname: regular expression of the methodname (default: ".*")
+        :param descriptor: regular expression of the descriptor (default: ".*")
         :param accessflags: regular expression of the access flags (default: ".*")
         :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
         :param entry_points: A list of classes that are marked as entry point
 
-        :rtype: networkx.DiGraph
+        :rtype: networkx.MultiDiGraph
         """
 
         def _add_node(G, method):
             """
-            Wrapper to add methods to a graph
-            """
-            if method not in G.node:
-                G.add_node(method,
-                           external=isinstance(method, ExternalMethod),
-                           entrypoint=method.get_class_name() in entry_points,
-                           native="native" in method.get_access_flags_string(),
-                           public="public" in method.get_access_flags_string(),
-                           static="static" in method.get_access_flags_string(),
-                           )
+            Wrapper to add methods to a graph without duplication
 
-        CG = nx.DiGraph()
+            method might be EncodedMethod or ExternalMethod
+            """
+            if method in G.node:
+                return
+
+            external = isinstance(method, ExternalMethod)
+
+            G.add_node(method,
+                       external=external,
+                       entrypoint=method.get_class_name() in entry_points,
+                       native="native" in method.get_access_flags_string(),
+                       public="public" in method.get_access_flags_string(),
+                       static="static" in method.get_access_flags_string(),
+                       vm=hash(method.CM.vm) if not external else 0,
+                       codesize=len(list(method.get_instructions())) if not external else 0,
+                       )
+
+        CG = nx.MultiDiGraph()
 
         # Note: If you create the CG from many classes at the same time, the drawing
-        # will be a total mess...
+        # will be a total mess... Hence it is recommended to reduce the number of nodes beforehand.
+        # Obviously, you can always do this later at the costs of computational power.
         for m in self.find_methods(classname=classname, methodname=methodname,
                                    descriptor=descriptor, accessflags=accessflags):
             orig_method = m.get_method()
-            log.info("Found Method --> {}".format(orig_method))
+            log.info("Adding Method '{}' to callgraph".format(orig_method))
 
-            if no_isolated and len(m.get_xref_to()) == 0:
+            if no_isolated and len(m.get_xref_to()) == 0 and len(m.get_xref_from()) == 0:
                 log.info("Skipped {}, because if has no xrefs".format(orig_method))
                 continue
 
             _add_node(CG, orig_method)
 
-            for other_class, callee, offset in m.get_xref_to():
+            for _, callee, offset in m.get_xref_to():
                 _add_node(CG, callee)
+                CG.add_edge(orig_method, callee, key=offset, offset=offset)
 
-                # As this is a DiGraph and we are not interested in duplicate edges,
-                # check if the edge is already in the edge set.
-                # If you need all calls, you probably want to check out MultiDiGraph
-                if not CG.has_edge(orig_method, callee):
-                    CG.add_edge(orig_method, callee)
+            for _, caller, offset in m.get_xref_from():
+                # If _all_ methods are added to the CG, this will not make any difference.
+                # But, if only a single class is chosen as a seed point, we require this information too!
+                # This is particularly useful for external classes, as they do not have xref_to,
+                # thus if an external class is chosen as starting point, it will generate an empty graph.
+                _add_node(CG, caller)
+                CG.add_edge(caller, orig_method, key=offset, offset=offset)
 
         return CG
 
