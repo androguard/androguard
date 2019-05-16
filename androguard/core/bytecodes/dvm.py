@@ -168,17 +168,8 @@ FIELD_WRITE_DVM_OPCODES = [".put"]
 
 BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 
-BRANCH_DVM_OPCODES = {
-    "throw" : set([0x27]),
-    "throw." : set([0xed, 0xffff]),
-    "if." : set([0x32 + i for i in range(12)]),
-    "goto" : set([0x28]),
-    "goto." : set([0x29, 0x2a]),
-    "return" : set([0x0f]),
-    "return." : set([0x0e, 0x10, 0x11, 0xf1]),
-    "packed-switch$" : set([0x2b]),
-    "sparse-switch$" : set([0x2c])
-}
+BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
+                      "return.", "packed-switch$", "sparse-switch$"]
 
 def clean_name_instruction(instruction):
     op_value = instruction.get_op_value()
@@ -4206,6 +4197,7 @@ class FillArrayData:
     """
 
     def __init__(self, buff):
+        self.OP = 0x0
         self.notes = []
 
         self.format_general_size = calcsize("=HHI")
@@ -4335,6 +4327,7 @@ class SparseSwitch:
     """
 
     def __init__(self, buff):
+        self.OP = 0x0
         self.notes = []
 
         self.format_general_size = calcsize("=HH")
@@ -4466,6 +4459,7 @@ class PackedSwitch:
     """
 
     def __init__(self, buff):
+        self.OP = 0x0
         self.notes = []
 
         self.format_general_size = calcsize("=HHI")

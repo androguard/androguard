@@ -12,8 +12,15 @@ from enum import IntEnum
 log = logging.getLogger("androguard.analysis")
 
 BasicOPCODES = set()
-for i in dvm.BRANCH_DVM_OPCODES.values():
-    BasicOPCODES |= i
+for i in dvm.BRANCH_DVM_OPCODES:
+    p = re.compile(i)
+    for op, items in dvm.DALVIK_OPCODES_FORMAT.items():
+        if p.match(items[1][0]):
+            BasicOPCODES.add(op)
+
+# BasicOPCODESo = []
+# for i in dvm.BRANCH_DVM_OPCODES:
+#     BasicOPCODESo.append(re.compile(i))
 
 class REF_TYPE(IntEnum):
     """
@@ -364,7 +371,6 @@ class MethodAnalysis:
                 v = dvm.determineNext(i, idx, self.method)
                 h[idx] = v
                 l.extend(v)
-                break
 
             idx += i.get_length()
 
