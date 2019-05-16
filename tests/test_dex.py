@@ -88,9 +88,15 @@ class DexTest(unittest.TestCase):
                     self.assertIsInstance(d.strings[i], dvm.StringDataItem)
 
 
+class MockClassManager():
+    @property
+    def packer(self):
+        return dvm.DalvikPacker(0x12345678)
+
+
 class InstructionTest(unittest.TestCase):
     def testNOP(self):
-        instruction = dvm.Instruction10x(None, bytearray(b"\x00\x00"))
+        instruction = dvm.Instruction10x(MockClassManager(), bytearray(b"\x00\x00"))
         self.assertEqual(instruction.get_name(), "nop")
 
 
