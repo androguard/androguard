@@ -65,7 +65,7 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@0x%08x' % self.start])
+        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@', hex(self.start).encode()])
         self.exception_analysis = None
 
         self.notes = []
