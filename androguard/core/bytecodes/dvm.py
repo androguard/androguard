@@ -842,7 +842,7 @@ class FieldAnnotation:
 
         :rtype: int
         """
-        return self.get_field_idx
+        return self.field_idx
 
     def get_annotations_off(self):
         """
