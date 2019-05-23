@@ -1505,7 +1505,10 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = mutf8.MUTF8String.from_str(name)
+        try:
+            name = mutf8.encode(name)
+        except TypeError:
+            name = bytes(name)
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
@@ -1526,9 +1529,18 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname)
-        methodname = mutf8.MUTF8String.from_str(methodname)
-        descriptor = mutf8.MUTF8String.from_str(descriptor)
+        try:
+            classname = mutf8.encode(classname)
+        except TypeError:
+            classname = bytes(classname)
+        try:
+            methodname = mutf8.encode(methodname)
+        except TypeError:
+            methodname = bytes(methodname)
+        try:
+            descriptor = mutf8.encode(descriptor)
+        except TypeError:
+            descriptor = bytes(descriptor)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for m in c.get_methods():
@@ -1550,7 +1562,10 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: Iterator[StringAnalysis]
         """
-        string = mutf8.MUTF8String.from_str(string)
+        try:
+            string = mutf8.encode(string)
+        except TypeError:
+            string = bytes(string)
         for s, sa in self.strings.items():
             if re.match(string, s):
                 yield sa
@@ -1565,9 +1580,18 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname)
-        fieldname = mutf8.MUTF8String.from_str(fieldname)
-        fieldtype = mutf8.MUTF8String.from_str(fieldtype)
+        try:
+            classname = mutf8.encode(classname)
+        except TypeError:
+            classname = bytes(classname)
+        try:
+            fieldname = mutf8.encode(fieldname)
+        except TypeError:
+            fieldname = bytes(fieldname)
+        try:
+            fieldtype = mutf8.encode(fieldtype)
+        except TypeError:
+            fieldtype = bytes(fieldtype)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for f in c.get_fields():
