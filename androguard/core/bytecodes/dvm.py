@@ -7946,7 +7946,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        name = mutf8.MUTF8String.from_str(name)
+        name = bytes(mutf8.MUTF8String.from_str(name))
         prog = re.compile(name)
         l = []
         for i in self.get_classes():
@@ -7964,7 +7964,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        name = mutf8.MUTF8String.from_str(name)
+        name = bytes(mutf8.MUTF8String.from_str(name))
         prog = re.compile(name)
         l = []
         for i in self.get_classes():

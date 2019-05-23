@@ -281,11 +281,11 @@ class MUTF8String(bytes):
     def from_str(cls, s):
         try:
             c = cls(encode(s))
-        except TypeError:
-            if isinstance(s, MUTF8String):
+        except TypeError as e:
+            try:
                 c = cls(s)
-            else:
-                raise
+            except:
+                raise e
         c.__decoded = s
         return c
 
