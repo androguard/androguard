@@ -1237,9 +1237,9 @@ class Analysis:
         """
         cur_cls_name = current_class.get_name()
 
-        log.debug("Creating XREF/DREF for %s" % cur_cls_name)
+        log.debug("Creating XREF/DREF for class at @%s" % current_class.get_class_data_off())
         for current_method in current_class.get_methods():
-            log.debug("Creating XREF for %s" % current_method)
+            log.debug("Creating XREF for method at @%s" % current_method.get_code_off())
 
             for off, instruction in current_method.get_instructions_idx():
                 op_value = instruction.get_op_value()
@@ -1277,7 +1277,7 @@ class Analysis:
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if not method_info:
-                        log.warning("Could not get method_info for instruction at {} in method {}".format(off, current_method))
+                        log.warning("Could not get method_info for instruction at {} in method at @{}".format(off, current_method.get_code_off()))
                         continue
 
                     class_info = method_info[0].lstrip('[')
