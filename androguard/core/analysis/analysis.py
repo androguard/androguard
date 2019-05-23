@@ -841,7 +841,7 @@ class ExternalMethod:
         return ""
 
     def __str__(self):
-        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), mutf8.MUTF8String.join(self.descriptor).string)
+        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), str(mutf8.MUTF8String.join(self.descriptor)))
 
     def __repr__(self):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
@@ -1505,11 +1505,11 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = mutf8.MUTF8String.from_str(name).bytes
+        name = mutf8.MUTF8String.from_str(name)
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
-            if re.match(name, cname.bytes):
+            if re.match(name, cname):
                 yield c
 
     def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
@@ -1526,11 +1526,11 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname).bytes
-        methodname = mutf8.MUTF8String.from_str(methodname).bytes
-        descriptor = mutf8.MUTF8String.from_str(descriptor).bytes
+        classname = mutf8.MUTF8String.from_str(classname)
+        methodname = mutf8.MUTF8String.from_str(methodname)
+        descriptor = mutf8.MUTF8String.from_str(descriptor)
         for cname, c in self.classes.items():
-            if re.match(classname, cname.bytes):
+            if re.match(classname, cname):
                 for m in c.get_methods():
                     z = m.get_method()
                     # TODO is it even possible that an internal class has
@@ -1538,8 +1538,8 @@ class Analysis:
                     # instead...
                     if no_external and isinstance(z, ExternalMethod):
                         continue
-                    if re.match(methodname, z.get_name().bytes) and \
-                       re.match(descriptor, z.get_descriptor().bytes) and \
+                    if re.match(methodname, z.get_name()) and \
+                       re.match(descriptor, z.get_descriptor()) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
@@ -1550,9 +1550,9 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: Iterator[StringAnalysis]
         """
-        string = mutf8.MUTF8String.from_str(string).bytes
+        string = mutf8.MUTF8String.from_str(string)
         for s, sa in self.strings.items():
-            if re.match(string, s.bytes):
+            if re.match(string, s):
                 yield sa
 
     def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*", accessflags=".*"):
@@ -1565,15 +1565,15 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname).bytes
-        fieldname = mutf8.MUTF8String.from_str(fieldname).bytes
-        fieldtype = mutf8.MUTF8String.from_str(fieldtype).bytes
+        classname = mutf8.MUTF8String.from_str(classname)
+        fieldname = mutf8.MUTF8String.from_str(fieldname)
+        fieldtype = mutf8.MUTF8String.from_str(fieldtype)
         for cname, c in self.classes.items():
-            if re.match(classname, cname.bytes):
+            if re.match(classname, cname):
                 for f in c.get_fields():
                     z = f.get_field()
-                    if re.match(fieldname, z.get_name().bytes) and \
-                       re.match(fieldtype, z.get_descriptor().bytes) and \
+                    if re.match(fieldname, z.get_name()) and \
+                       re.match(fieldtype, z.get_descriptor()) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield f
 

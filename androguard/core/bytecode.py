@@ -238,7 +238,7 @@ def method2dot(mx, colors=None):
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         ins_idx = DVMBasicMethodBlock.start
-        block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name().string, "UTF-8")).hexdigest()
+        block_id = hashlib.md5(bytearray(sha256 + str(DVMBasicMethodBlock.get_name()), "UTF-8")).hexdigest()
 
         content = link_tpl % 'header'
 
@@ -301,7 +301,7 @@ def method2dot(mx, colors=None):
                 label_edge = values.pop(0)
 
             child_id = hashlib.md5(
-                bytearray(sha256 + DVMBasicMethodBlockChild[-1].get_name().string, "UTF-8")).hexdigest()
+                bytearray(sha256 + str(DVMBasicMethodBlockChild[-1].get_name()), "UTF-8")).hexdigest()
             edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                 block_id, child_id, val, label_edge)
             # color switch

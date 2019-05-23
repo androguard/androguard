@@ -696,7 +696,7 @@ class DecompilerJADX:
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
-            fname = self._find_class(cl.string, tmpfolder)
+            fname = self._find_class(str(cl), tmpfolder)
             if fname:
                 if "L{};".format(cl) not in self.classes:
                     with open(fname, "rb") as fp:

@@ -1871,7 +1871,7 @@ class StringDataItem:
         """
         Returns a MUTF8String object
         """
-        return mutf8.MUTF8String.from_bytes(self.data)
+        return mutf8.MUTF8String(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2126,7 +2126,7 @@ class ProtoIdItem:
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = mutf8.MUTF8String.from_bytes(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String.from_bytes(b')')
+            self.parameters_off_value = mutf8.MUTF8String(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String(b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2985,9 +2985,9 @@ class EncodedMethod:
                 cls = cls.rsplit("/", 1)[1]
             return arr + cls
 
-        clsname = _fmt_classname(self.get_class_name().string)
+        clsname = _fmt_classname(str(self.get_class_name()))
 
-        param, ret = self.get_descriptor().string[1:].split(")")
+        param, ret = str(self.get_descriptor())[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
         desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
 
@@ -7947,11 +7947,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         # TODO could use a generator here
         name = mutf8.MUTF8String.from_str(name)
-        prog = re.compile(name.bytes)
+        prog = re.compile(name)
         l = []
         for i in self.get_classes():
             for j in i.get_methods():
-                if prog.match(j.get_name().bytes):
+                if prog.match(j.get_name()):
                     l.append(j)
         return l
 
@@ -7965,11 +7965,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
         """
         # TODO could use a generator here
         name = mutf8.MUTF8String.from_str(name)
-        prog = re.compile(name.bytes)
+        prog = re.compile(name)
         l = []
         for i in self.get_classes():
             for j in i.get_fields():
-                if prog.match(j.get_name().bytes):
+                if prog.match(j.get_name()):
                     l.append(j)
         return l
 
@@ -8191,7 +8191,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
     def _create_python_export_class(self, _class, delete=False):
         if _class is not None:
             ### Class
-            name = bytecode.FormatClassToPython(_class.get_name()).string
+            name = str(bytecode.FormatClassToPython(_class.get_name()))
             if delete:
                 delattr(self.C, name)
                 return
@@ -8215,13 +8215,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
-                name = bytecode.FormatNameToPython(j.get_name()).string
+                name = str(bytecode.FormatNameToPython(j.get_name()))
                 setattr(_class.M, name, j)
             else:
                 for j in m[i]:
                     name = (
-                        bytecode.FormatNameToPython(j.get_name()) + "_" +
-                        bytecode.FormatDescriptorToPython(j.get_descriptor())).string
+                        str(bytecode.FormatNameToPython(j.get_name())) + "_" +
+                        str(bytecode.FormatDescriptorToPython(j.get_descriptor())))
                     setattr(_class.M, name, j)
 
     def _create_python_export_fields(self, _class, delete):
@@ -8236,13 +8236,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in f:
             if len(f[i]) == 1:
                 j = f[i][0]
-                name = bytecode.FormatNameToPython(j.get_name()).string
+                name = str(bytecode.FormatNameToPython(j.get_name()))
                 setattr(_class.F, name, j)
             else:
                 for j in f[i]:
-                    name = bytecode.FormatNameToPython(j.get_name(
-                    )) + "_" + bytecode.FormatDescriptorToPython(
-                        j.get_descriptor()).string
+                    name = str(bytecode.FormatNameToPython(j.get_name(
+                    ))) + "_" + str(bytecode.FormatDescriptorToPython(
+                        j.get_descriptor()))
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):
