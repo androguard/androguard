@@ -2126,7 +2126,7 @@ class ProtoIdItem:
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = mutf8.MUTF8String(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String(b')')
+            self.parameters_off_value = mutf8.MUTF8String(b'(' + b' '.join(params) + b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2989,8 +2989,7 @@ class EncodedMethod:
 
         param, ret = str(self.get_descriptor())[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
-        desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
-
+        desc = "({}){}".format(''.join(params), _fmt_classname(ret))
         return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
 
     def show_info(self):

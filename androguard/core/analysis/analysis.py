@@ -1248,8 +1248,8 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
-                    if type_info[0] != 'L':
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(b'[')
+                    if type_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
 
@@ -1280,7 +1280,7 @@ class Analysis:
                         log.warning("Could not get method_info for instruction at {} in method at @{}".format(off, current_method.get_code_off()))
                         continue
 
-                    class_info = method_info[0].lstrip('[')
+                    class_info = method_info[0].lstrip(b'[')
                     if class_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
