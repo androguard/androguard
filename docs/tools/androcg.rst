@@ -13,7 +13,7 @@ Examples
 
 The call graph is constructed from the
 :class:`~androguard.analysis.analysis.Analysis` object and then converted into a
-networkx `DiGraph`.
+networkx `DiGraph`. Currently supported formats are gml, gexf, gpickle, graphml, yaml and net.
 Note that calls between methods are only added once. Thus, if a method calls
 some other method multiple times, this is not saved.
 
