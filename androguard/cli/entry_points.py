@@ -45,7 +45,7 @@ def entry_point(verbosity):
 @entry_point.command()
 @click.option(
     '--input', '-i', 'input_',
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
     help='AndroidManifest.xml or APK to parse (legacy option)',
 )
 @click.option(
@@ -53,13 +53,12 @@ def entry_point(verbosity):
     help='filename to save the decoded AndroidManifest.xml to, default stdout',
 )
 @click.option("--resource", "-r",
-        help="Resource inside the APK to parse instead of AndroidManifest.xml"
+        help="Resource (any binary XML file) inside the APK to parse instead of AndroidManifest.xml"
 )
 @click.argument(
     'file_',
-    type=click.Path(exists=True),
-    # help='AndroidManifest.xml or APK to parse',
     required=False,
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 def axml(input_, output, file_, resource):
     """
@@ -99,7 +98,6 @@ def axml(input_, output, file_, resource):
 )
 @click.argument(
     'file_',
-    # help='resources.arsc or APK to parse',
     required=False,
 )
 @click.option(
@@ -335,13 +333,12 @@ def cg(output,
 @entry_point.command()
 @click.option(
     '--input', '-i', 'input_',
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
     help='APK to parse (legacy option)',
 )
 @click.argument(
     'file_',
-    type=click.Path(exists=True),
-    # help='APK to parse',
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
     required=False,
 )
 @click.option(
@@ -422,10 +419,8 @@ def decompile(input_, file_, output, format_, jar, limit, decompiler):
 )
 @click.argument(
     'apk',
-    # help='APK(s) to extract the Fingerprint of Certificates from',
     nargs=-1,
-    required=False,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 def sign(hash_, print_all_hashes, show, apk):
     """Return the fingerprint(s) of all certificates inside an APK."""
@@ -436,8 +431,7 @@ def sign(hash_, print_all_hashes, show, apk):
 @click.argument(
     'apks',
     nargs=-1,
-    required=False,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 def apkid(apks):
     """Return the packageName/versionCode/versionName per APK as JSON."""
@@ -453,10 +447,12 @@ def apkid(apks):
 @entry_point.command()
 @click.option(
     '--input_file', '-i',
-    type=click.Path(exists=True),
+    help="Specify the inital file to load in the GUI",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 @click.option(
     '--input_plugin', '-p',
+    help="Additional Plugin (currently unused)",
     type=click.Path(exists=True),
 )
 def gui(input_file, input_plugin):
@@ -472,10 +468,9 @@ def gui(input_file, input_plugin):
 )
 @click.argument(
     'apk',
-    # help='Start the shell with the given APK. a, d, dx are available then. Loading might be slower in this case!',
     default=None,
     required=False,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 def analyze(session, apk):
     """Open a IPython Shell and start reverse engineering."""
@@ -491,7 +486,10 @@ def analyze(session, apk):
         default=0,
         type=int,
         help="Number of bytes from offset to disassemble, 0 for whole file")
-@click.argument("DEX")
+@click.argument(
+        "DEX",
+        type=click.Path(exists=True, dir_okay=False, file_okay=True),
+        )
 def disassemble(offset, size, dex):
     """
     Disassemble Dalvik Code with size SIZE starting from an offset
@@ -501,3 +499,4 @@ def disassemble(offset, size, dex):
 
 if __name__ == '__main__':
     entry_point()
+
