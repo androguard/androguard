@@ -22,6 +22,8 @@ def get_default_session():
     """
     Return the default Session from the configuration
     or create a new one, if the session in the configuration is None.
+
+    :rtype: androguard.session.Session
     """
     if androconf.CONF["SESSION"] is None:
         androconf.CONF["SESSION"] = Session()
