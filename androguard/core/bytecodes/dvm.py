@@ -687,7 +687,7 @@ class AnnotationSetItem:
     This class can parse an annotation_set_item of a dex file
 
     :param buff: a string which represents a Buff object of the annotation_set_item
-    :type buff: Buff object
+    :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
@@ -6978,67 +6978,108 @@ class MapItem:
         log.debug("Starting parsing map_item '{}'".format(self.type.name))
         started_at = time.time()
 
+        # Not all items are aligned in the same way. Most are aligned by four bytes,
+        # but there are a few which are not!
+        # Hence, we need to check the alignment for each item.
+
         buff = self.buff
-        buff.set_idx(self.offset)
         cm = self.CM
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [StringIdItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = CodeItem(self.size, buff, cm)
 
         elif TypeMapItem.TYPE_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = TypeHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.PROTO_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = ProtoHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.FIELD_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = FieldHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.METHOD_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = MethodHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.CLASS_DEF_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = ClassHDefItem(self.size, buff, cm)
 
         elif TypeMapItem.HEADER_ITEM == self.type:
             # FIXME probably not necessary to parse again here...
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = HeaderItem(self.size, buff, cm)
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationSetItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationSetRefList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [TypeList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.STRING_DATA_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [StringDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [EncodedArrayItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             pass  # It's me I think !!! No need to parse again
 
         else:
-            log.warning("Map item '{}' @ 0x{:x}({}) is unknown".format(self.type, buff.get_idx(), buff.get_idx()))
+            log.warning("Map item with id '{type}' offset: 0x{off:x} ({off}) "
+                        "size: {size} is unknown. "
+                        "Is this a newer DEX format?".format(type=self.type, off=buff.get_idx(), size=self.size))
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
