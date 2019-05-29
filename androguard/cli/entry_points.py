@@ -252,7 +252,7 @@ def arsc(input_,
     '--output', '-o',
     default="callgraph.gml", show_default=True,
     help='Filename of the output file, the extension is used to decide which '
-         'format to use (default callgraph.gml)',
+         'format to use',
 )
 @click.option(
     '--show', '-s',
@@ -292,10 +292,12 @@ def arsc(input_,
 )
 @click.argument(
     'APK',
-    # help='The APK to analyze',
     nargs=1,
-    required=False,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True,
+                    file_okay=True,
+                    dir_okay=False,
+                    readable=True,
+                    allow_dash=False),
 )
 def cg(output,
        show,
@@ -309,12 +311,15 @@ def cg(output,
     """
     Create a call graph and export it into a graph format.
 
+    The default is to create a file called callgraph.gml in the current
+    directory!
+
     classnames are found in the type "Lfoo/bar/bla;".
 
     Example:
 
     \b
-        $ androguard cg APK
+        $ androguard cg examples/tests/hello-world.apk
     """
     androcg_main(verbose=verbose,
                  APK=apk,
