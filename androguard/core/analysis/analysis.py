@@ -11,10 +11,16 @@ from enum import IntEnum
 
 log = logging.getLogger("androguard.analysis")
 
-BasicOPCODES = []
+BasicOPCODES = set()
 for i in dvm.BRANCH_DVM_OPCODES:
-    BasicOPCODES.append(re.compile(i))
+    p = re.compile(i)
+    for op, items in dvm.DALVIK_OPCODES_FORMAT.items():
+        if p.match(items[1][0]):
+            BasicOPCODES.add(op)
 
+# BasicOPCODESo = []
+# for i in dvm.BRANCH_DVM_OPCODES:
+#     BasicOPCODESo.append(re.compile(i))
 
 class REF_TYPE(IntEnum):
     """
@@ -59,7 +65,7 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = "{}-BB@0x{:08x}".format(self.method.get_name(), self.start)
+        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@', hex(self.start).encode()])
         self.exception_analysis = None
 
         self.notes = []
@@ -359,14 +365,12 @@ class MethodAnalysis:
         h = {}
         idx = 0
 
-        log.debug("Parsing instructions for method {}".format(self))
+        log.debug("Parsing instructions for method at @{}".format(self.method.get_code_off()))
         for i in bc.get_instructions():
-            for j in BasicOPCODES:
-                if j.match(i.get_name()):
-                    v = dvm.determineNext(i, idx, self.method)
-                    h[idx] = v
-                    l.extend(v)
-                    break
+            if i.OP in BasicOPCODES:
+                v = dvm.determineNext(i, idx, self.method)
+                h[idx] = v
+                l.extend(v)
 
             idx += i.get_length()
 
@@ -377,7 +381,7 @@ class MethodAnalysis:
             for handler in i[2:]:
                 l.append(handler[1])
 
-        log.debug("Creating basic blocks in %s" % self.method)
+        log.debug("Creating basic blocks in method at @%s" % self.method.get_code_off())
         idx = 0
         for i in bc.get_instructions():
             # index is a destination
@@ -837,7 +841,7 @@ class ExternalMethod:
         return ""
 
     def __str__(self):
-        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), mutf8.MUTF8String.join(self.descriptor).string)
+        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), str(mutf8.MUTF8String.join(self.descriptor)))
 
     def __repr__(self):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
@@ -1233,9 +1237,9 @@ class Analysis:
         """
         cur_cls_name = current_class.get_name()
 
-        log.debug("Creating XREF/DREF for %s" % cur_cls_name)
+        log.debug("Creating XREF/DREF for class at @%s" % current_class.get_class_data_off())
         for current_method in current_class.get_methods():
-            log.debug("Creating XREF for %s" % current_method)
+            log.debug("Creating XREF for method at @%s" % current_method.get_code_off())
 
             for off, instruction in current_method.get_instructions_idx():
                 op_value = instruction.get_op_value()
@@ -1244,8 +1248,8 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
-                    if type_info[0] != 'L':
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(b'[')
+                    if type_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
 
@@ -1273,10 +1277,10 @@ class Analysis:
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if not method_info:
-                        log.warning("Could not get method_info for instruction at {} in method {}".format(off, current_method))
+                        log.warning("Could not get method_info for instruction at {} in method at @{}".format(off, current_method.get_code_off()))
                         continue
 
-                    class_info = method_info[0].lstrip('[')
+                    class_info = method_info[0].lstrip(b'[')
                     if class_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
@@ -1501,11 +1505,11 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = mutf8.MUTF8String.from_str(name).bytes
+        name = bytes(mutf8.MUTF8String.from_str(name))
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
-            if re.match(name, cname.bytes):
+            if re.match(name, cname):
                 yield c
 
     def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
@@ -1522,11 +1526,11 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname).bytes
-        methodname = mutf8.MUTF8String.from_str(methodname).bytes
-        descriptor = mutf8.MUTF8String.from_str(descriptor).bytes
+        classname = bytes(mutf8.MUTF8String.from_str(classname))
+        methodname = bytes(mutf8.MUTF8String.from_str(methodname))
+        descriptor = bytes(mutf8.MUTF8String.from_str(descriptor))
         for cname, c in self.classes.items():
-            if re.match(classname, cname.bytes):
+            if re.match(classname, cname):
                 for m in c.get_methods():
                     z = m.get_method()
                     # TODO is it even possible that an internal class has
@@ -1534,8 +1538,8 @@ class Analysis:
                     # instead...
                     if no_external and isinstance(z, ExternalMethod):
                         continue
-                    if re.match(methodname, z.get_name().bytes) and \
-                       re.match(descriptor, z.get_descriptor().bytes) and \
+                    if re.match(methodname, z.get_name()) and \
+                       re.match(descriptor, z.get_descriptor()) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
@@ -1546,9 +1550,9 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: Iterator[StringAnalysis]
         """
-        string = mutf8.MUTF8String.from_str(string).bytes
+        string = bytes(mutf8.MUTF8String.from_str(string))
         for s, sa in self.strings.items():
-            if re.match(string, s.bytes):
+            if re.match(string, s):
                 yield sa
 
     def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*", accessflags=".*"):
@@ -1561,15 +1565,15 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldClassAnalysis]
         """
-        classname = mutf8.MUTF8String.from_str(classname).bytes
-        fieldname = mutf8.MUTF8String.from_str(fieldname).bytes
-        fieldtype = mutf8.MUTF8String.from_str(fieldtype).bytes
+        classname = bytes(mutf8.MUTF8String.from_str(classname))
+        fieldname = bytes(mutf8.MUTF8String.from_str(fieldname))
+        fieldtype = bytes(mutf8.MUTF8String.from_str(fieldtype))
         for cname, c in self.classes.items():
-            if re.match(classname, cname.bytes):
+            if re.match(classname, cname):
                 for f in c.get_fields():
                     z = f.get_field()
-                    if re.match(fieldname, z.get_name().bytes) and \
-                       re.match(fieldtype, z.get_descriptor().bytes) and \
+                    if re.match(fieldname, z.get_name()) and \
+                       re.match(fieldtype, z.get_descriptor()) and \
                        re.match(accessflags, z.get_access_flags_string()):
                         yield f
 

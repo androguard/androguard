@@ -47,7 +47,7 @@ def test_all_decompiler():
     # Generate test cases for this APK:
     a, d, dx = AnalyzeAPK("examples/tests/hello-world.apk")
     for c in d[0].get_classes():
-        test_name = re.sub("[^a-zA-Z0-9_]", "_", c.get_name().string[1:-1])
+        test_name = re.sub("[^a-zA-Z0-9_]", "_", str(c.get_name())[1:-1])
         # Test the decompilation of a single class
         # disable for now, as testing all DvMethods has the same effect as
         # testing all DvClasses.

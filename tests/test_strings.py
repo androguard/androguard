@@ -64,7 +64,7 @@ class StringTest(unittest.TestCase):
         self.assertEqual(b"\xed\xa1\x93", mutf8.encode("\ud853"))
         self.assertEqual(b, mutf8.encode("\U00024f5c\U0001f64f\ud83d\uacf0hello world\x00"))
 
-        self.assertEqual(mutf8.MUTF8String.from_bytes(b), mutf8.MUTF8String.from_str("\U00024f5c\U0001f64f\ud83d\uacf0hello world\x00"))
+        self.assertEqual(mutf8.MUTF8String(b), mutf8.MUTF8String.from_str("\U00024f5c\U0001f64f\ud83d\uacf0hello world\x00"))
 
 
 if __name__ == '__main__':
