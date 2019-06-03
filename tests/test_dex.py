@@ -15,6 +15,10 @@ class DexTest(unittest.TestCase):
             self.assertTrue(classes)
             self.assertEqual(len(classes), 340)
 
+            classes = d.get_classes(skip_android_class=True)
+            self.assertTrue(classes)
+            self.assertEqual(len(classes), 29)
+
             methods = d.get_methods()
             self.assertTrue(methods)
             self.assertEqual(len(methods), 2600)

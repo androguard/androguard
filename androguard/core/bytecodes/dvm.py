@@ -7952,14 +7952,20 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.classes_names = [i.get_name() for i in self.get_classes()]
         return self.classes_names
 
-    def get_classes(self):
+    def get_classes(self, skip_android_class=False):
         """
         Return all classes
 
         :rtype: a list of :class:`ClassDefItem` objects
         """
         if self.classes:
-            return self.classes.class_def
+            classes = self.classes.class_def
+            if skip_android_class:
+                api_candidates = ["Landroid/", "Landroidx/", "Lcom/android/internal/util", "Ldalvik/", "Ljava/", "Ljavax/", "Lorg/apache/",
+                                  "Lorg/json/", "Lorg/w3c/dom/", "Lorg/xml/sax", "Lorg/xmlpull/v1/", "Ljunit/"]
+                return [cls for cls in classes if not True in map(cls.get_name().startswith, api_candidates)]
+
+            return classes
         else:
             # There is a rare case that the DEX has no classes
             return []
