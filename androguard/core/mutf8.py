@@ -190,7 +190,7 @@ class MUTF8String():
             return MUTF8String.from_bytes(self.bytes[item])
 
     def __repr__(self):
-        return "<mutf8.MUTF8String {}>".format(self.__str__())
+        return self.__str__()
 
     def __str__(self):
         return self.string.encode('utf8', errors='backslashreplace').decode('utf8')
