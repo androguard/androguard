@@ -1139,25 +1139,26 @@ class APK:
         :param name: the `android:name` of the parent item, e.g. activity name
         :returns: a dictionary with the keys `action` and `category` containing the `android:name` of those items
         """
-        d = {"action": [], "category": []}
-
+        d = {"action": [], "category": [], "data": {}}
+        attributes = {"action": ["name"], "category": ["name"], "data": ['scheme', 'host', 'port', 'path', 'pathPattern', 'pathPrefix', 'mimeType']}
         for i in self.xml:
             # TODO: this can probably be solved using a single xpath
             for item in self.xml[i].findall(".//" + itemtype):
                 if self._format_value(item.get(self._ns("name"))) == name:
                     for sitem in item.findall(".//intent-filter"):
-                        for ssitem in sitem.findall("action"):
-                            if ssitem.get(self._ns("name")) not in d["action"]:
-                                d["action"].append(ssitem.get(self._ns("name")))
-                        for ssitem in sitem.findall("category"):
-                            if ssitem.get(self._ns("name")) not in d["category"]:
-                                d["category"].append(ssitem.get(self._ns("name")))
+                        for element in d.keys():
+                            for ssitem in sitem.findall(element):
+                                for attribute in attributes[element]:
+                                    value = ssitem.get(self._ns(attribute))
+                                    if value not in d[element]:
+                                        if isinstance(d[element], list):
+                                            d[element].append(value)
+                                        elif isinstance(d[element], dict):
+                                            d[element][attribute] = value
 
-        if not d["action"]:
-            del d["action"]
-
-        if not d["category"]:
-            del d["category"]
+        for element in list(d.keys()):
+            if not d[element]:
+                del d[element]
 
         return d
 
