@@ -1139,8 +1139,12 @@ class APK:
         :param name: the `android:name` of the parent item, e.g. activity name
         :returns: a dictionary with the keys `action` and `category` containing the `android:name` of those items
         """
-        d = {"action": [], "category": [], "data": {}}
         attributes = {"action": ["name"], "category": ["name"], "data": ['scheme', 'host', 'port', 'path', 'pathPattern', 'pathPrefix', 'mimeType']}
+
+        d = {}
+        for element in attributes.keys():
+            d[element] = []
+
         for i in self.xml:
             # TODO: this can probably be solved using a single xpath
             for item in self.xml[i].findall(".//" + itemtype):
@@ -1148,13 +1152,20 @@ class APK:
                     for sitem in item.findall(".//intent-filter"):
                         for element in d.keys():
                             for ssitem in sitem.findall(element):
-                                for attribute in attributes[element]:
-                                    value = ssitem.get(self._ns(attribute))
-                                    if value not in d[element]:
-                                        if isinstance(d[element], list):
+                                if element == 'data': # multiple attributes
+                                    values = {}
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value:
+                                            values[attribute] = value
+                                    
+                                    if values:
+                                        d[element].append(values)
+                                else:
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value not in d[element]:
                                             d[element].append(value)
-                                        elif isinstance(d[element], dict):
-                                            d[element][attribute] = value
 
         for element in list(d.keys()):
             if not d[element]:
