@@ -1127,6 +1127,28 @@ class APK:
         """
         return list(self.get_all_attribute_value("provider", "name"))
 
+    def get_res_value(self, name):
+        """
+        Return the literal value with a resource id
+
+        :rtype: str 
+        """
+
+        res_parser = self.get_android_resources()
+        if not res_parser:
+            return name 
+
+        res_id = res_parser.parse_id(name)[0]
+        try:
+            value = res_parser.get_resolved_res_configs(
+                res_id,
+                ARSCResTableConfig.default_config())[0][1]
+        except Exception as e:
+            log.warning("Exception get resolved resource id: %s" % e)
+            return name
+
+        return value 
+
     def get_intent_filters(self, itemtype, name):
         """
         Find intent filters for a given item and name.
@@ -1157,6 +1179,8 @@ class APK:
                                     for attribute in attributes[element]:
                                         value = ssitem.get(self._ns(attribute))
                                         if value:
+                                            if value.startswith('@'):
+                                                value = self.get_res_value(value)
                                             values[attribute] = value
                                     
                                     if values:
@@ -1164,6 +1188,9 @@ class APK:
                                 else:
                                     for attribute in attributes[element]:
                                         value = ssitem.get(self._ns(attribute))
+                                        if value.startswith('@'):
+                                            value = self.get_res_value(value)
+
                                         if value not in d[element]:
                                             d[element].append(value)
 
