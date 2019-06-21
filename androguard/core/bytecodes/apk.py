@@ -1127,6 +1127,28 @@ class APK:
         """
         return list(self.get_all_attribute_value("provider", "name"))
 
+    def get_res_value(self, name):
+        """
+        Return the literal value with a resource id
+
+        :rtype: str 
+        """
+
+        res_parser = self.get_android_resources()
+        if not res_parser:
+            return name 
+
+        res_id = res_parser.parse_id(name)[0]
+        try:
+            value = res_parser.get_resolved_res_configs(
+                res_id,
+                ARSCResTableConfig.default_config())[0][1]
+        except Exception as e:
+            log.warning("Exception get resolved resource id: %s" % e)
+            return name
+
+        return value 
+
     def get_intent_filters(self, itemtype, name):
         """
         Find intent filters for a given item and name.
@@ -1139,8 +1161,12 @@ class APK:
         :param name: the `android:name` of the parent item, e.g. activity name
         :returns: a dictionary with the keys `action` and `category` containing the `android:name` of those items
         """
-        d = {"action": [], "category": [], "data": {}}
         attributes = {"action": ["name"], "category": ["name"], "data": ['scheme', 'host', 'port', 'path', 'pathPattern', 'pathPrefix', 'mimeType']}
+
+        d = {}
+        for element in attributes.keys():
+            d[element] = []
+
         for i in self.xml:
             # TODO: this can probably be solved using a single xpath
             for item in self.xml[i].findall(".//" + itemtype):
@@ -1148,13 +1174,25 @@ class APK:
                     for sitem in item.findall(".//intent-filter"):
                         for element in d.keys():
                             for ssitem in sitem.findall(element):
-                                for attribute in attributes[element]:
-                                    value = ssitem.get(self._ns(attribute))
-                                    if value not in d[element]:
-                                        if isinstance(d[element], list):
+                                if element == 'data': # multiple attributes
+                                    values = {}
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value:
+                                            if value.startswith('@'):
+                                                value = self.get_res_value(value)
+                                            values[attribute] = value
+                                    
+                                    if values:
+                                        d[element].append(values)
+                                else:
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value.startswith('@'):
+                                            value = self.get_res_value(value)
+
+                                        if value not in d[element]:
                                             d[element].append(value)
-                                        elif isinstance(d[element], dict):
-                                            d[element][attribute] = value
 
         for element in list(d.keys()):
             if not d[element]:

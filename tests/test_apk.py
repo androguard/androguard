@@ -467,48 +467,50 @@ class APKTest(unittest.TestCase):
         pairs = zip(filter_list, [{
             'action': ['android.intent.action.VIEW'],
             'category': [
-                'android.intent.category.DEFAULT',
-                'android.intent.category.BROWSABLE'
+                'android.intent.category.APP_BROWSER',
+                'android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'
             ],
-            'data': {
+            'data': [{
                 'scheme': 'testscheme',
                 'host': 'testhost',
                 'port': '0301',
                 'path': '/testpath',
                 'pathPattern': 'testpattern',
-                'pathPrefix': None,
-                'mimeType': 'testmimetype'
-            }
-        }, {
-            'action': ['android.intent.action.MAIN'],
-            'category': ['android.intent.category.LAUNCHER']
-        }, {
-            'action': ['android.intent.action.VIEW'],
-            'category': [
-                'android.intent.category.DEFAULT',
-                'android.intent.category.BROWSABLE'
-            ],
-            'data': {
-                'scheme': 'testscheme',
-                'host': 'testhost',
-                'port': '0301',
-                'path': '/testpath',
-                'pathPattern': 'testpattern',
-                'pathPrefix': None,
-                'mimeType': 'testmimetype'
-            }
-        }, {
-            'action': ['android.intent.action.RESPOND_VIA_MESSAGE'],
-            'data': {
-                'scheme': 'testscheme',
-                'host': 'testhost',
-                'port': '0301',
-                'path': '/testpath',
-                'pathPattern': 'testpattern',
-                'pathPrefix': None,
-                'mimeType': 'testmimetype'
-            }
-        }])
+                'mimeType': 'text/html'
+            }]
+            }, {
+                'action': ['android.intent.action.MAIN'],
+                'category': ['android.intent.category.LAUNCHER']
+            }, {
+                'action': ['android.intent.action.VIEW'],
+                'category':
+                ['android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'],
+                'data': [{
+                    'scheme': 'testhost',
+                    'host': 'testscheme',
+                    'port': '0301',
+                    'path': '/testpath',
+                    'pathPattern': 'testpattern',
+                    'mimeType': 'text/html'
+                }]
+            }, {
+                'action': ['android.intent.action.RESPOND_VIA_MESSAGE'],
+                'data': [{
+                    'scheme': 'testhost',
+                    'host': 'testscheme',
+                    'port': '0301',
+                    'path': '/testpath',
+                    'pathPattern': 'testpattern',
+                    'mimeType': 'text/html'
+                }, {
+                    'scheme': 'testscheme2',
+                    'host': 'testhost2',
+                    'port': '0301',
+                    'path': '/testpath2',
+                    'pathPattern': 'testpattern2',
+                    'mimeType': 'image/png'
+                }]
+	    }])
         self.assertFalse(any(x != y for x, y in pairs))
 
     def testEffectiveTargetSdkVersion(self):
