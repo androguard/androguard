@@ -3,9 +3,9 @@ dist: xenial
 
 # Download jadx decompiler
 before_script:
-  - wget https://github.com/skylot/jadx/releases/download/v0.9.0/jadx-0.9.0.zip -O /tmp/jadx-0.9.0.zip
-  - unzip /tmp/jadx-0.9.0.zip -d jadx-0.9.0
-  - export PATH=$PATH:$PWD/jadx-0.9.0/bin
+  - wget https://github.com/skylot/jadx/releases/download/v1.0.0/jadx-1.0.0.zip -O /tmp/jadx-1.0.0.zip
+  - unzip /tmp/jadx-1.0.0.zip -d jadx-1.0.0
+  - export PATH=$PATH:$PWD/jadx-1.0.0/bin
 
 python:
   - "3.6"
