@@ -677,7 +677,8 @@ class AnnotationOffItem:
 
     def get_length(self):
         return len(self.get_obj())
-
+    def get_annotation_item(self):
+        return self.CM.get_annotation_item(self.get_annotation_off())
 
 class AnnotationSetItem:
     """
@@ -1025,6 +1026,8 @@ class AnnotationsDirectoryItem:
         """
         return self.class_annotations_off
 
+    def get_annotation_set_item(self):
+        return self.CM.get_annotation_set_item(self.class_annotations_off)
     def get_annotated_fields_size(self):
         """
         Return the count of fields annotated by this item
@@ -3448,6 +3451,7 @@ class ClassDefItem:
         self.interfaces = []
         self.class_data_item = None
         self.static_values = None
+        self.annotations_directory_item = None
 
         self.name = None
         self.sname = None
@@ -3462,6 +3466,9 @@ class ClassDefItem:
 
         if self.class_data_off != 0:
             self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
+
+        if self.annotations_off != 0:
+            self.annotations_directory_item = self.CM.get_annotations_directory_item(self.annotations_off)
 
         if self.static_values_off != 0:
             self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
@@ -3494,6 +3501,20 @@ class ClassDefItem:
         if self.class_data_item is not None:
             return self.class_data_item.get_fields()
         return []
+    def get_annotations(self):
+        if self.annotations_directory_item is None:
+            return []
+        annotation_set_item = self.annotations_directory_item.get_annotation_set_item()
+        if annotation_set_item is None:
+            return []
+        
+        annotation_off_item = annotation_set_item.get_annotation_off_item()
+
+        if annotation_off_item is None:
+            return []
+        
+        return [annotation.get_annotation_item().annotation for annotation in annotation_off_item]
+
 
     def get_class_idx(self):
         """
@@ -7163,6 +7184,25 @@ class ClassManager:
         for i in self.__manage_item[TypeMapItem.ENCODED_ARRAY_ITEM]:
             if i.get_off() == off:
                 return i
+
+    def get_annotations_directory_item(self, off):
+        for i in self.__manage_item[TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM]:
+            if i.get_off() == off:
+                return i
+    def get_annotation_set_item(self, off):
+        for i in self.__manage_item[TypeMapItem.ANNOTATION_SET_ITEM]:
+            if i.get_off() == off:
+                return i
+    def get_annotation_off_item(self, off):
+        for i in self.__manage_item[TypeMapItem.ANNOTATION_OFF_ITEM]:
+            if i.get_off() == off:
+                return i
+    
+    def get_annotation_item(self, off):
+        for i in self.__manage_item[TypeMapItem.ANNOTATION_ITEM]:
+            if i.get_off() == off:
+                return i
+
 
     def get_string(self, idx):
         """
