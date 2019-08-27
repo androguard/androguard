@@ -165,7 +165,6 @@ BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
                       "return.", "packed-switch$", "sparse-switch$"]
 
-
 def clean_name_instruction(instruction):
     op_value = instruction.get_op_value()
 
@@ -685,7 +684,7 @@ class AnnotationSetItem:
     This class can parse an annotation_set_item of a dex file
 
     :param buff: a string which represents a Buff object of the annotation_set_item
-    :type buff: Buff object
+    :type androguard.core.bytecode.BuffHandle buff: Buff object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
@@ -840,7 +839,7 @@ class FieldAnnotation:
 
         :rtype: int
         """
-        return self.get_field_idx
+        return self.field_idx
 
     def get_annotations_off(self):
         """
@@ -1870,7 +1869,7 @@ class StringDataItem:
         """
         Returns a MUTF8String object
         """
-        return mutf8.MUTF8String.from_bytes(self.data)
+        return mutf8.MUTF8String(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2125,7 +2124,7 @@ class ProtoIdItem:
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = mutf8.MUTF8String.from_bytes(b'(') + mutf8.MUTF8String.join(params, spacing=b' ') + mutf8.MUTF8String.from_bytes(b')')
+            self.parameters_off_value = mutf8.MUTF8String(b'(' + b' '.join(params) + b')')
         return self.parameters_off_value
 
     def show(self):
@@ -2984,12 +2983,11 @@ class EncodedMethod:
                 cls = cls.rsplit("/", 1)[1]
             return arr + cls
 
-        clsname = _fmt_classname(self.get_class_name().string)
+        clsname = _fmt_classname(str(self.get_class_name()))
 
-        param, ret = self.get_descriptor().string[1:].split(")")
+        param, ret = str(self.get_descriptor())[1:].split(")")
         params = map(_fmt_classname, param.split(" "))
-        desc = "({}){}".format(mutf8.MUTF8String.join(params), _fmt_classname(ret))
-
+        desc = "({}){}".format(''.join(params), _fmt_classname(ret))
         return "{cls} {meth} {desc}".format(cls=clsname, meth=self.get_name(), desc=desc)
 
     def show_info(self):
@@ -4189,6 +4187,7 @@ class FillArrayData:
 
     # FIXME: why is this not a subclass of Instruction?
     def __init__(self, cm, buff):
+        self.OP = 0x0
         self.notes = []
         self.CM = cm
 
@@ -4316,6 +4315,7 @@ class SparseSwitch:
     """
 
     def __init__(self, cm, buff):
+        self.OP = 0x0
         self.notes = []
         self.CM = cm
 
@@ -4447,6 +4447,7 @@ class PackedSwitch:
 
     # FIXME: why is this not a subclass of Instruction?
     def __init__(self, cm, buff):
+        self.OP = 0x0
         self.notes = []
         self.CM = cm
 
@@ -6862,68 +6863,108 @@ class MapItem:
         log.debug("Starting parsing map_item '{}'".format(self.type.name))
         started_at = time.time()
 
+        # Not all items are aligned in the same way. Most are aligned by four bytes,
+        # but there are a few which are not!
+        # Hence, we need to check the alignment for each item.
+
         buff = self.buff
-        buff.set_idx(self.offset)
         cm = self.CM
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [StringIdItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CODE_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = CodeItem(self.size, buff, cm)
 
         elif TypeMapItem.TYPE_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = TypeHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.PROTO_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = ProtoHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.FIELD_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = FieldHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.METHOD_ID_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = MethodHIdItem(self.size, buff, cm)
 
         elif TypeMapItem.CLASS_DEF_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = ClassHDefItem(self.size, buff, cm)
 
         elif TypeMapItem.HEADER_ITEM == self.type:
-            # probably not necessary to parse again here...
-            # self.item = HeaderItem(self.size, buff, cm)
-            pass
+            # FIXME probably not necessary to parse again here...
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
+            self.item = HeaderItem(self.size, buff, cm)
 
         elif TypeMapItem.ANNOTATION_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [AnnotationItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationSetItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationSetRefList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.TYPE_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             self.item = [TypeList(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.STRING_DATA_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [StringDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.DEBUG_INFO_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = DebugInfoItemEmpty(buff, cm)
 
         elif TypeMapItem.ENCODED_ARRAY_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [EncodedArrayItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.CLASS_DATA_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
             self.item = [ClassDataItem(buff, cm) for _ in range(self.size)]
 
         elif TypeMapItem.MAP_LIST == self.type:
+            # 4-byte aligned
+            buff.set_idx(self.offset + (self.offset % 4))
             pass  # It's me I think !!! No need to parse again
 
         else:
-            log.warning("Map item with id '{}' offset: 0x{:x}({}) size: {} is unknown".format(self.type, buff.get_idx(), buff.get_idx(), self.size))
+            log.warning("Map item with id '{type}' offset: 0x{off:x} ({off}) "
+                        "size: {size} is unknown. "
+                        "Is this a newer DEX format?".format(type=self.type, off=buff.get_idx(), size=self.size))
 
         diff = time.time() - started_at
         minutes, seconds = diff // 60, diff % 60
@@ -7800,12 +7841,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        name = mutf8.MUTF8String.from_str(name)
-        prog = re.compile(name.bytes)
+        name = bytes(mutf8.MUTF8String.from_str(name))
+        prog = re.compile(name)
         l = []
         for i in self.get_classes():
             for j in i.get_methods():
-                if prog.match(j.get_name().bytes):
+                if prog.match(j.get_name()):
                     l.append(j)
         return l
 
@@ -7818,12 +7859,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        name = mutf8.MUTF8String.from_str(name)
-        prog = re.compile(name.bytes)
+        name = bytes(mutf8.MUTF8String.from_str(name))
+        prog = re.compile(name)
         l = []
         for i in self.get_classes():
             for j in i.get_fields():
-                if prog.match(j.get_name().bytes):
+                if prog.match(j.get_name()):
                     l.append(j)
         return l
 
@@ -8045,7 +8086,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
     def _create_python_export_class(self, _class, delete=False):
         if _class is not None:
             ### Class
-            name = bytecode.FormatClassToPython(_class.get_name()).string
+            name = str(bytecode.FormatClassToPython(_class.get_name()))
             if delete:
                 delattr(self.C, name)
                 return
@@ -8069,13 +8110,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in m:
             if len(m[i]) == 1:
                 j = m[i][0]
-                name = bytecode.FormatNameToPython(j.get_name()).string
+                name = str(bytecode.FormatNameToPython(j.get_name()))
                 setattr(_class.M, name, j)
             else:
                 for j in m[i]:
                     name = (
-                        bytecode.FormatNameToPython(j.get_name()) + "_" +
-                        bytecode.FormatDescriptorToPython(j.get_descriptor())).string
+                        str(bytecode.FormatNameToPython(j.get_name())) + "_" +
+                        str(bytecode.FormatDescriptorToPython(j.get_descriptor())))
                     setattr(_class.M, name, j)
 
     def _create_python_export_fields(self, _class, delete):
@@ -8090,13 +8131,13 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in f:
             if len(f[i]) == 1:
                 j = f[i][0]
-                name = bytecode.FormatNameToPython(j.get_name()).string
+                name = str(bytecode.FormatNameToPython(j.get_name()))
                 setattr(_class.F, name, j)
             else:
                 for j in f[i]:
-                    name = bytecode.FormatNameToPython(j.get_name(
-                    )) + "_" + bytecode.FormatDescriptorToPython(
-                        j.get_descriptor()).string
+                    name = str(bytecode.FormatNameToPython(j.get_name(
+                    ))) + "_" + str(bytecode.FormatDescriptorToPython(
+                        j.get_descriptor()))
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):

@@ -5,6 +5,7 @@ from operator import itemgetter
 
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
+from androguard.core.mutf8 import MUTF8String
 from androguard.misc import AnalyzeAPK, AnalyzeDex
 
 
