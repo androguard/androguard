@@ -649,21 +649,25 @@ class APK:
             log.warning("It looks like you have the magic python package installed but not the magic library itself!")
             log.warning("Error from magic library: %s", e)
             log.warning("Please follow the installation instructions at https://github.com/ahupp/python-magic/#installation")
+            log.warning("You can also install the 'python-magic-bin' package on Windows and MacOS")
             return default
 
         try:
             # There are several implementations of magic,
             # unfortunately all called magic
             # We use this one: https://github.com/ahupp/python-magic/
+            # You can also use python-magic-bin on Windows or MacOS
             getattr(magic, "MagicException")
         except AttributeError:
             self.__no_magic = True
-            log.warning("Not the correct Magic library was found on your system. Please install python-magic!")
+            log.warning("Not the correct Magic library was found on your "
+                        "system. Please install python-magic or python-magic-bin!")
             return default
 
         try:
+            # 1024 byte are usually enough to test the magic
             ftype = magic.from_buffer(buffer[:1024])
-        except magic.MagicError as e:
+        except magic.MagicException as e:
             log.exception("Error getting the magic type: %s", e)
             return default
 
