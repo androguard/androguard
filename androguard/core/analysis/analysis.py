@@ -1,5 +1,6 @@
 import re
 import collections
+from operator import itemgetter
 import time
 import warnings
 from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
@@ -469,23 +470,34 @@ class MethodAnalysis:
 
 
 class StringAnalysis:
+    """
+    StringAnalysis contains the XREFs of a string.
+
+    As Strings are only used as a source, they only contain
+    the XREF_FROM set, i.e. where the string is used.
+
+    This Array stores the information in which method the String is used.
+    """
     def __init__(self, value):
         """
-        StringAnalysis contains the XREFs of a string.
 
-        As Strings are only used as a source, they only contain
-        the XREF_FROM set, i.e. where the string is used.
-
-        This Array stores the information in which method the String is used.
+        :param str value: the original string value
         """
         self.value = value
         self.orig_value = value
         self.xreffrom = set()
 
-    def AddXrefFrom(self, classobj, methodobj):
-        self.xreffrom.add((classobj, methodobj))
+    def add_xref_from(self, classobj, methodobj, off):
+        """
+        Adds a xref from the given method to this string
 
-    def get_xref_from(self):
+        :param ClassAnalysis classobj:
+        :param androguard.core.bytecodes.dvm.EncodedMethod methodobj:
+        :param int off: offset in the bytecode of the call
+        """
+        self.xreffrom.add((classobj, methodobj, off))
+
+    def get_xref_from(self, withoffset=False):
         """
         Returns a list of xrefs accessing the String.
 
@@ -493,7 +505,9 @@ class StringAnalysis:
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`androguard.core.bytecodes.dvm.EncodedMethod`.
         """
-        return self.xreffrom
+        if withoffset:
+            return self.xreffrom
+        return set(map(itemgetter(slice(0, 2)), self.xreffrom))
 
     def set_value(self, value):
         """
@@ -584,7 +598,7 @@ class MethodClassAnalysis:
         """Returns classname + name + descriptor, separated by spaces (no access flags)"""
         return self.method.full_name
 
-    def AddXrefTo(self, classobj, methodobj, offset):
+    def add_xref_to(self, classobj, methodobj, offset):
         """
         Add a crossreference to another method
         (this method calls another method)
@@ -595,7 +609,7 @@ class MethodClassAnalysis:
         """
         self.xrefto.add((classobj, methodobj, offset))
 
-    def AddXrefFrom(self, classobj, methodobj, offset):
+    def add_xref_from(self, classobj, methodobj, offset):
         """
         Add a crossrefernece from another method
         (this method is called by another method)
@@ -711,45 +725,65 @@ class FieldClassAnalysis:
     def name(self):
         return self.field.get_name()
 
-    def AddXrefRead(self, classobj, methodobj):
-        self.xrefread.add((classobj, methodobj))
+    def add_xref_read(self, classobj, methodobj, offset):
+        """
+        :param ClassAnalysis classobj:
+        :param androguard.core.bytecodes.dvm.EncodedMethod methodobj:
+        :param int offset: offset in the bytecode
+        """
+        self.xrefread.add((classobj, methodobj, offset))
 
-    def AddXrefWrite(self, classobj, methodobj):
-        self.xrefwrite.add((classobj, methodobj))
+    def add_xref_write(self, classobj, methodobj, offset):
+        """
+        :param ClassAnalysis classobj:
+        :param androguard.core.bytecodes.dvm.EncodedMethod methodobj:
+        :param int offset: offset in the bytecode
+        """
+        self.xrefwrite.add((classobj, methodobj, offset))
 
-    def get_xref_read(self):
+    def get_xref_read(self, withoffset=False):
         """
         Returns a list of xrefs where the field is read.
 
         The list contains tuples of the originating class and methods,
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`androguard.core.bytecodes.dvm.EncodedMethod`.
-        """
-        return self.xrefread
 
-    def get_xref_write(self):
+        :param bool withoffset: return the xrefs including the offset
+        """
+        if withoffset:
+            return self.xrefread
+        # Legacy option, might be removed in the future
+        return set(map(itemgetter(slice(0, 2)), self.xrefread))
+
+    def get_xref_write(self, withoffset=False):
         """
         Returns a list of xrefs where the field is written to.
 
         The list contains tuples of the originating class and methods,
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`androguard.core.bytecodes.dvm.EncodedMethod`.
+
+        :param bool withoffset: return the xrefs including the offset
         """
-        return self.xrefwrite
+        if withoffset:
+            return self.xrefwrite
+        # Legacy option, might be removed in the future
+        return set(map(itemgetter(slice(0, 2)), self.xrefwrite))
 
     def get_field(self):
         return self.field
 
     def __str__(self):
         data = "XREFRead for %s\n" % self.field
-        for ref_class, ref_method in self.xrefread:
+        for ref_class, ref_method, off in self.xrefread:
             data += "in\n"
-            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{} @{}\n".format(ref_class.get_vm_class().get_name(), ref_method, off)
 
         data += "XREFWrite for %s\n" % self.field
-        for ref_class, ref_method in self.xrefwrite:
+        for ref_class, ref_method, off in self.xrefwrite:
             data += "in\n"
-            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{} @{}\n".format(ref_class.get_vm_class().get_name(), ref_method, off)
 
         return data
 
@@ -997,41 +1031,43 @@ class ClassAnalysis:
             self._inherits_methods[key] = ExternalMethod(self.orig_class.get_name(), name, descriptor)
         return self._inherits_methods[key]
 
-    def AddFXrefRead(self, method, classobj, field):
+    def add_field_xref_read(self, method, classobj, field, off):
         """
         Add a Field Read to this class
 
-        :param method:
-        :param classobj:
-        :param field:
+        :param androguard.core.bytecodes.dvm.EncodedMethod method:
+        :param ClassAnalysis classobj:
+        :param str field:
+        :param int off:
         :return:
         """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
-        self._fields[field].AddXrefRead(classobj, method)
+        self._fields[field].add_xref_read(classobj, method, off)
 
-    def AddFXrefWrite(self, method, classobj, field):
+    def add_field_xref_write(self, method, classobj, field, off):
         """
-        Add a Field Write to this class
+        Add a Field Write to this class in a given method
 
-        :param method:
-        :param classobj:
-        :param field:
+        :param androguard.core.bytecodes.dvm.EncodedMethod method:
+        :param ClassAnalysis classobj:
+        :param str field:
+        :param int off:
         :return:
         """
         if field not in self._fields:
             self._fields[field] = FieldClassAnalysis(field)
-        self._fields[field].AddXrefWrite(classobj, method)
+        self._fields[field].add_xref_write(classobj, method, off)
 
-    def AddMXrefTo(self, method1, classobj, method2, offset):
+    def add_method_xref_to(self, method1, classobj, method2, offset):
         if method1 not in self._methods:
             self._methods[method1] = MethodClassAnalysis(method1)
-        self._methods[method1].AddXrefTo(classobj, method2, offset)
+        self._methods[method1].add_xref_to(classobj, method2, offset)
 
-    def AddMXrefFrom(self, method1, classobj, method2, offset):
+    def add_method_xref_from(self, method1, classobj, method2, offset):
         if method1 not in self._methods:
             self._methods[method1] = MethodClassAnalysis(method1)
-        self._methods[method1].AddXrefFrom(classobj, method2, offset)
+        self._methods[method1].add_xref_from(classobj, method2, offset)
 
     def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
         """
@@ -1216,6 +1252,9 @@ class Analysis:
         for c in self._get_all_classes():
             self._create_xref(c)
 
+        # TODO: After we collected all the information, we should add field and
+        # string xrefs to each MethodClassAnalysis
+
         log.info("End of creating cross references (XREF) "
                  "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
@@ -1283,10 +1322,13 @@ class Analysis:
                     class_info = method_info[0].lstrip(b'[')
                     if class_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
+                        # If another type, like int is used, we simply skip it.
                         continue
 
                     method_item = None
-                    # TODO: should create get_method_descriptor inside Analysis
+                    # TODO: should create get_method_descriptor inside Analysis,
+                    # otherwise we need to search in all DalvikVMFormat objects
+                    # for the corrent method
                     for vm in self.vms:
                         method_item = vm.get_method_descriptor(class_info, method_info[1], mutf8.MUTF8String.join(method_info[2]))
                         if method_item:
@@ -1300,8 +1342,8 @@ class Analysis:
                             self.classes[class_info] = ClassAnalysis(ExternalClass(class_info))
                         method_item = self.classes[class_info].get_fake_method(method_info[1], method_info[2])
 
-                    self.classes[cur_cls_name].AddMXrefTo(current_method, self.classes[class_info], method_item, off)
-                    self.classes[class_info].AddMXrefFrom(method_item, self.classes[cur_cls_name], current_method, off)
+                    self.classes[cur_cls_name].add_method_xref_to(current_method, self.classes[class_info], method_item, off)
+                    self.classes[class_info].add_method_xref_from(method_item, self.classes[cur_cls_name], current_method, off)
 
                     # Internal xref related to class manipulation
                     if class_info in self.classes and class_info != cur_cls_name:
@@ -1314,8 +1356,7 @@ class Analysis:
                     if string_value not in self.strings:
                         self.strings[string_value] = StringAnalysis(string_value)
 
-                    # TODO: The bytecode offset is stored for classes but not here?
-                    self.strings[string_value].AddXrefFrom(self.classes[cur_cls_name], current_method)
+                    self.strings[string_value].add_xref_from(self.classes[cur_cls_name], current_method, off)
 
                 # TODO maybe we should add a step 3a) here and check for all const fields. You can then xref for integers etc!
                 # But: This does not work, as const fields are usually optimized internally to const calls...
@@ -1325,16 +1366,15 @@ class Analysis:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
                     field_item = instruction.cm.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
-                    # TODO: The bytecode offset is stored for classes but not here?
                     if not field_item:
                         continue
 
                     if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
                         # read access to a field
-                        self.classes[cur_cls_name].AddFXrefRead(current_method, self.classes[cur_cls_name], field_item)
+                        self.classes[cur_cls_name].add_field_xref_read(current_method, self.classes[cur_cls_name], field_item, off)
                     else:
                         # write access to a field
-                        self.classes[cur_cls_name].AddFXrefWrite(current_method, self.classes[cur_cls_name], field_item)
+                        self.classes[cur_cls_name].add_field_xref_write(current_method, self.classes[cur_cls_name], field_item, off)
 
     def get_method(self, method):
         """
