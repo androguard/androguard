@@ -248,6 +248,51 @@ class AnalysisTest(unittest.TestCase):
 
         # Not testing println, as it has too many variants...
 
+
+    def testXrefOffsets(self):
+        """Tests if String offsets in bytecode are correctly stored"""
+        _, _, dx = AnalyzeDex('examples/tests/AnalysisTest.dex')
+
+        self.assertEqual(len(dx.get_strings()), 1)
+        self.assertIsInstance(dx.strings['Hello world'], analysis.StringAnalysis)
+
+        sa = dx.strings['Hello world']
+
+        self.assertEqual(len(sa.get_xref_from()), 1)
+        self.assertEqual(len(sa.get_xref_from(withoffset=True)), 1)
+        self.assertEqual(next(iter(sa.get_xref_from(withoffset=True)))[2], 4)  # offset is 4
+
+    def testXrefOffsetsFields(self):
+        """Tests if Field offsets in bytecode are correctly stored"""
+        _, _, dx = AnalyzeDex('examples/tests/FieldsTest.dex')
+
+        self.assertEqual(len(dx.get_strings()), 4)
+        self.assertIn('hello world', dx.strings.keys())
+        self.assertIn('sdf', dx.strings.keys())
+        self.assertIn('hello mars', dx.strings.keys())
+        self.assertIn('i am static', dx.strings.keys())
+
+        afield = next(dx.find_fields(fieldname='afield'))
+
+        self.assertEqual(len(afield.get_xref_read()), 1)  # always same method
+        self.assertEqual(len(afield.get_xref_read(withoffset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_read(withoffset=True)))), [4, 40])
+        self.assertListEqual(list(map(lambda x: x.name, map(itemgetter(1),
+            afield.get_xref_read(withoffset=True)))), ["foonbar", "foonbar"])
+
+        self.assertEqual(len(afield.get_xref_write()), 2)
+        self.assertEqual(len(afield.get_xref_write(withoffset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_write(withoffset=True)))), [10, 32])
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            afield.get_xref_write(withoffset=True))))), sorted(["<init>", "foonbar"]))
+
+        cfield = next(dx.find_fields(fieldname='cfield'))
+        # this one is static, hence it must have a write in <clinit>
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            cfield.get_xref_write(withoffset=True))))), sorted(["<clinit>"]))
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            cfield.get_xref_read(withoffset=True))))), sorted(["foonbar"]))
+
     def testPermissions(self):
         """Test the get_permissions and get_permission_usage methods"""
         a, _, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity.apk")
