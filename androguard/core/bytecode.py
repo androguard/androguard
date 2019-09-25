@@ -301,32 +301,20 @@ def method2dot(mx, colors=None):
 
     method = mx.get_method()
 
-    sha256 = hashlib.sha256(bytearray("{}{}{}".format(
-        mx.get_method().get_class_name(), mx.get_method().get_name(),
-        mx.get_method().get_descriptor()), "UTF-8")).hexdigest()
+    # This is used as a seed to create unique hashes for the nodes
+    sha256 = hashlib.sha256(mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).digest()
 
-    # Collect all used Registers and how often the register is used
-    registers = defaultdict(int)
+    # Collect all used Registers and create colors
     if method.get_code():
-        for basic_block in mx.basic_blocks.gets():
-            for ins in basic_block.get_instructions():
-                for operand in ins.get_operands(0):
-                    if operand[0] == Operand.REGISTER:
-                        # FIXME: actually this counter is never used
-                        registers[operand[1]] += 1
-
-    if registers:
-        registers_colors = color_range(colors["registers_range"][0],
-                                       colors["registers_range"][1],
-                                       len(registers))
-        for i in registers:
-            registers[i] = registers_colors.pop(0)
+        registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1], method.get_code().get_registers_size()))}
+    else:
+        registers = dict()
 
     new_links = []
 
     for DVMBasicMethodBlock in mx.basic_blocks.gets():
         ins_idx = DVMBasicMethodBlock.start
-        block_id = hashlib.md5(bytearray(sha256 + str(DVMBasicMethodBlock.get_name()), "UTF-8")).hexdigest()
+        block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name()).hexdigest()
 
         content = link_tpl % 'header'
 
@@ -382,7 +370,7 @@ def method2dot(mx, colors=None):
             if values:
                 label_edge = values.pop(0)
 
-            child_id = hashlib.md5(bytearray(sha256 + str(DVMBasicMethodBlockChild[-1].get_name()), "UTF-8")).hexdigest()
+            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild[-1].get_name()).hexdigest()
             edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(block_id, child_id, val, label_edge)
 
             # color switch
@@ -396,7 +384,7 @@ def method2dot(mx, colors=None):
             for exception_elem in exception_analysis.exceptions:
                 exception_block = exception_elem[-1]
                 if exception_block:
-                    exception_id = hashlib.md5(bytearray(sha256 + exception_block.get_name(), "UTF-8")).hexdigest()
+                    exception_id = hashlib.md5(sha256 + exception_block.get_name()).hexdigest()
                     edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                         block_id, exception_id, "black", exception_elem[0])
 
@@ -405,8 +393,8 @@ def method2dot(mx, colors=None):
         DVMBasicMethodBlockChild = mx.basic_blocks.get_basic_block(link[2])
 
         if DVMBasicMethodBlockChild:
-            block_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlock.get_name(), "UTF-8")).hexdigest()
-            child_id = hashlib.md5(bytearray(sha256 + DVMBasicMethodBlockChild.get_name(), "UTF-8")).hexdigest()
+            block_id = hashlib.md5(sha256 + DVMBasicMethodBlock.get_name()).hexdigest()
+            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild.get_name()).hexdigest()
 
             edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"data(0x{:x}) to @0x{:x}\", style=\"dashed\"];\n".format(
                 block_id, child_id, "yellow", link[1], link[2])
