@@ -117,20 +117,20 @@ class AnalysisTest(unittest.TestCase):
 
         cls = dx.classes['LInterfaceCls;']
         self.assertIn('Ljavax/net/ssl/X509TrustManager;', cls.implements)
-        self.assertEquals(cls.name, 'LInterfaceCls;')
+        self.assertEqual(cls.name, 'LInterfaceCls;')
 
     def testExtends(self):
         h, d, dx = AnalyzeDex('examples/tests/ExceptionHandling.dex')
 
         cls = dx.classes['LSomeException;']
-        self.assertEquals(cls.extends, 'Ljava/lang/Exception;')
-        self.assertEquals(cls.name, 'LSomeException;')
+        self.assertEqual(cls.extends, 'Ljava/lang/Exception;')
+        self.assertEqual(cls.name, 'LSomeException;')
         self.assertFalse(cls.is_external())
 
         cls = dx.classes['Ljava/lang/Exception;']
-        self.assertEquals(cls.extends, 'Ljava/lang/Object;')
-        self.assertEquals(cls.name, 'Ljava/lang/Exception;')
-        self.assertEquals(cls.implements, [])
+        self.assertEqual(cls.extends, 'Ljava/lang/Object;')
+        self.assertEqual(cls.name, 'Ljava/lang/Exception;')
+        self.assertEqual(cls.implements, [])
         self.assertTrue(cls.is_external())
 
     def testXrefs(self):
@@ -152,25 +152,25 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(testmeth, analysis.MethodClassAnalysis)
         self.assertFalse(testmeth.is_external())
         self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
-        self.assertEquals(testmeth.name, 'onCreate')
+        self.assertEqual(testmeth.name, 'onCreate')
 
         xrefs = list(map(lambda x: x.full_name, map(itemgetter(1), sorted(testmeth.get_xref_to(), key=itemgetter(2)))))
         self.assertEqual(len(xrefs), 5)
 
         # First, super is called:
-        self.assertEquals(xrefs.pop(0), 'Landroid/app/Activity; onCreate (Landroid/os/Bundle;)V')
+        self.assertEqual(xrefs.pop(0), 'Landroid/app/Activity; onCreate (Landroid/os/Bundle;)V')
         # then setContentView (which is in the current class but the method is external)
-        self.assertEquals(xrefs.pop(0), 'Ltests/androguard/TestActivity; setContentView (I)V')
+        self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestActivity; setContentView (I)V')
         # then getApplicationContext (inside the Toast)
-        self.assertEquals(xrefs.pop(0), 'Ltests/androguard/TestActivity; getApplicationContext ()Landroid/content/Context;')
+        self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestActivity; getApplicationContext ()Landroid/content/Context;')
         # then Toast.makeText
-        self.assertEquals(xrefs.pop(0), 'Landroid/widget/Toast; makeText (Landroid/content/Context; Ljava/lang/CharSequence; I)Landroid/widget/Toast;')
+        self.assertEqual(xrefs.pop(0), 'Landroid/widget/Toast; makeText (Landroid/content/Context; Ljava/lang/CharSequence; I)Landroid/widget/Toast;')
         # then show()
-        self.assertEquals(xrefs.pop(0), 'Landroid/widget/Toast; show ()V')
+        self.assertEqual(xrefs.pop(0), 'Landroid/widget/Toast; show ()V')
 
         # Now, test if the reverse is true
         other = list(dx.find_methods('^Landroid/app/Activity;$', '^onCreate$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
@@ -178,7 +178,7 @@ class AnalysisTest(unittest.TestCase):
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^setContentView$'))
         # External because not overwritten in class:
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
@@ -186,21 +186,21 @@ class AnalysisTest(unittest.TestCase):
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^getApplicationContext$'))
         # External because not overwritten in class:
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^makeText$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^show$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
@@ -215,38 +215,83 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(testmeth, analysis.MethodClassAnalysis)
         self.assertFalse(testmeth.is_external())
         self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
-        self.assertEquals(testmeth.name, 'testCalls')
+        self.assertEqual(testmeth.name, 'testCalls')
 
         xrefs = list(map(lambda x: x.full_name, map(itemgetter(1), sorted(testmeth.get_xref_to(), key=itemgetter(2)))))
         self.assertEqual(len(xrefs), 4)
 
-        self.assertEquals(xrefs.pop(0), 'Ltests/androguard/TestActivity; testCall2 (J)V')
-        self.assertEquals(xrefs.pop(0), 'Ltests/androguard/TestIfs; testIF (I)I')
-        self.assertEquals(xrefs.pop(0), 'Ljava/lang/Object; getClass ()Ljava/lang/Class;')
-        self.assertEquals(xrefs.pop(0), 'Ljava/io/PrintStream; println (Ljava/lang/Object;)V')
+        self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestActivity; testCall2 (J)V')
+        self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestIfs; testIF (I)I')
+        self.assertEqual(xrefs.pop(0), 'Ljava/lang/Object; getClass ()Ljava/lang/Class;')
+        self.assertEqual(xrefs.pop(0), 'Ljava/io/PrintStream; println (Ljava/lang/Object;)V')
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^testCall2$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ltests/androguard/TestIfs;$', '^testIF$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ljava/lang/Object;$', '^getClass$'))
-        self.assertEquals(len(other), 1)
+        self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         # Not testing println, as it has too many variants...
+
+
+    def testXrefOffsets(self):
+        """Tests if String offsets in bytecode are correctly stored"""
+        _, _, dx = AnalyzeDex('examples/tests/AnalysisTest.dex')
+
+        self.assertEqual(len(dx.get_strings()), 1)
+        self.assertIsInstance(dx.strings['Hello world'], analysis.StringAnalysis)
+
+        sa = dx.strings['Hello world']
+
+        self.assertEqual(len(sa.get_xref_from()), 1)
+        self.assertEqual(len(sa.get_xref_from(withoffset=True)), 1)
+        self.assertEqual(next(iter(sa.get_xref_from(withoffset=True)))[2], 4)  # offset is 4
+
+    def testXrefOffsetsFields(self):
+        """Tests if Field offsets in bytecode are correctly stored"""
+        _, _, dx = AnalyzeDex('examples/tests/FieldsTest.dex')
+
+        self.assertEqual(len(dx.get_strings()), 4)
+        self.assertIn('hello world', dx.strings.keys())
+        self.assertIn('sdf', dx.strings.keys())
+        self.assertIn('hello mars', dx.strings.keys())
+        self.assertIn('i am static', dx.strings.keys())
+
+        afield = next(dx.find_fields(fieldname='afield'))
+
+        self.assertEqual(len(afield.get_xref_read()), 1)  # always same method
+        self.assertEqual(len(afield.get_xref_read(withoffset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_read(withoffset=True)))), [4, 40])
+        self.assertListEqual(list(map(lambda x: x.name, map(itemgetter(1),
+            afield.get_xref_read(withoffset=True)))), ["foonbar", "foonbar"])
+
+        self.assertEqual(len(afield.get_xref_write()), 2)
+        self.assertEqual(len(afield.get_xref_write(withoffset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_write(withoffset=True)))), [10, 32])
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            afield.get_xref_write(withoffset=True))))), sorted(["<init>", "foonbar"]))
+
+        cfield = next(dx.find_fields(fieldname='cfield'))
+        # this one is static, hence it must have a write in <clinit>
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            cfield.get_xref_write(withoffset=True))))), sorted(["<clinit>"]))
+        self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
+            cfield.get_xref_read(withoffset=True))))), sorted(["foonbar"]))
 
     def testPermissions(self):
         """Test the get_permissions and get_permission_usage methods"""
