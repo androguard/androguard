@@ -167,6 +167,7 @@ BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
 
 
 def clean_name_instruction(instruction):
+    """USED IN ELSIM"""
     op_value = instruction.get_op_value()
 
     # goto range
@@ -177,6 +178,7 @@ def clean_name_instruction(instruction):
 
 
 def static_operand_instruction(instruction):
+    """USED IN ELSIM"""
     buff = ""
 
     if isinstance(instruction, Instruction):
@@ -6358,7 +6360,7 @@ class DCode:
         """
         Get the insn buffer
 
-        :rtype: string
+        :rtype: bytes
         """
         return self.insn
 
@@ -6367,7 +6369,7 @@ class DCode:
         Set a new raw buffer to disassemble
 
         :param insn: the buffer
-        :type insn: string
+        :type insn: bytes
         """
         self.insn = insn
         self.size = len(self.insn)
