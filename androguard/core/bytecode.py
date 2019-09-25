@@ -469,7 +469,7 @@ def method2format(output, _format="png", mx=None, raw=None):
 
         {edges}
     }}
-    """.format(clustername=hashlib.md5(output.encode("UTF-8")).hexdigest().decode('ascii'),
+    """.format(clustername=hashlib.md5(output.encode("UTF-8")).hexdigest(),
                classname=data['name'],
                nodes=data['nodes'],
                edges=data['edges'],
