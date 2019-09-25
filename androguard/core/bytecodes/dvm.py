@@ -8460,97 +8460,12 @@ class DalvikVMFormat(bytecode.BuffHandle):
                 except AttributeError:
                     pass
 
-    def colorize_operands(self, operands, colors):
-        for operand in operands:
-            if operand[0] == OPERAND_REGISTER:
-                yield "%sv%d%s" % (colors["registers"], operand[1],
-                                   colors["normal"])
-
-            elif operand[0] == OPERAND_LITERAL:
-                yield "%s%d%s" % (colors["literal"], operand[1],
-                                  colors["normal"])
-
-            elif operand[0] == OPERAND_RAW:
-                yield "{}{}{}".format(colors["raw"], operand[1], colors["normal"])
-
-            elif operand[0] == OPERAND_OFFSET:
-                yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"]
-                                  )
-
-            elif operand[0] & OPERAND_KIND:
-                if operand[0] == (OPERAND_KIND + KIND_STRING):
-                    yield "{}{}{}".format(colors["string"], operand[2],
-                                      colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_METH):
-                    yield "{}{}{}".format(colors["meth"], operand[2],
-                                      colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_FIELD):
-                    yield "{}{}{}".format(colors["field"], operand[2],
-                                      colors["normal"])
-                elif operand[0] == (OPERAND_KIND + KIND_TYPE):
-                    yield "{}{}{}".format(colors["type"], operand[2],
-                                      colors["normal"])
-                else:
-                    yield "%s" % repr(operands[2])
-            else:
-                yield "%s" % repr(operands[1])
-
-    def get_operand_html(self, operand, registers_colors, colors, escape_fct,
-                         wrap_fct):
-        if operand[0] == OPERAND_REGISTER:
-            return "<FONT color=\"{}\">v{}</FONT>".format(
-                registers_colors[operand[1]], operand[1])
-
-        elif operand[0] == OPERAND_LITERAL:
-            return "<FONT color=\"{}\">0x{:x}</FONT>".format(colors["literal"],
-                                                       operand[1])
-
-        elif operand[0] == OPERAND_RAW:
-            if len(operand[1]) > 32:
-                wrapped = wrap_fct(operand[1], 32)
-                wrapped_adjust = "<br/>" + "<br/>".join(
-                    escape_fct(repr(i)[1:-1]) for i in wrapped)
-                return "<FONT color=\"{}\">{}</FONT>".format(colors["raw"],
-                                                         wrapped_adjust)
-
-            return "<FONT color=\"{}\">{}</FONT>".format(
-                colors["raw"], escape_fct(repr(operand[1])[1:-1]))
-
-        elif operand[0] == OPERAND_OFFSET:
-            return "<FONT FACE=\"Times-Italic\" color=\"{}\">0x{:x}</FONT>".format(
-                colors["offset"], operand[1])
-
-        elif operand[0] & OPERAND_KIND:
-            if operand[0] == (OPERAND_KIND + KIND_STRING):
-                if len(operand[2]) > 32:
-                    wrapped = wrap_fct(operand[2], 32)
-                    wrapped_adjust = "<br/>" + "<br/>".join(escape_fct(i)
-                                                            for i in wrapped)
-                    return "<FONT color=\"{}\">{}</FONT>".format(colors["string"],
-                                                             wrapped_adjust)
-
-                return "<FONT color=\"{}\">{}</FONT>".format(colors["string"],
-                                                         escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_METH):
-                return "<FONT color=\"{}\">{}</FONT>".format(colors["method"],
-                                                         escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_FIELD):
-                return "<FONT color=\"{}\">{}</FONT>".format(colors["field"],
-                                                         escape_fct(operand[2]))
-            elif operand[0] == (OPERAND_KIND + KIND_TYPE):
-                return "<FONT color=\"{}\">{}</FONT>".format(colors["type"],
-                                                         escape_fct(operand[2]))
-
-            return escape_fct(str(operand[2]))
-
-        return escape_fct(str(operand[1]))
-
 
 class OdexHeaderItem:
     """
-        This class can parse the odex header
+    This class can parse the odex header
 
-        :param buff: a Buff object string which represents the odex dependencies
+    :param buff: a Buff object string which represents the odex dependencies
     """
 
     def __init__(self, buff):
@@ -8583,9 +8498,9 @@ class OdexHeaderItem:
 
 class OdexDependencies:
     """
-        This class can parse the odex dependencies
+    This class can parse the odex dependencies
 
-        :param buff: a Buff object string which represents the odex dependencies
+    :param buff: a Buff object string which represents the odex dependencies
     """
 
     def __init__(self, buff):
