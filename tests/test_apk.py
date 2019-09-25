@@ -428,11 +428,90 @@ class APKTest(unittest.TestCase):
             filters = a.get_intent_filters("service", i)
             if len(filters) > 0:
                 filter_list.append(filters)
-        pairs = zip(filter_list, [{'action': ['android.intent.action.MAIN'], 'category': ['android.intent.category.LAUNCHER']},
-                                                         {'action': ['android.service.notification.NotificationListenerService']},
-                                                         {'action': ['android.intent.action.BOOT_COMPLETED', 'android.intent.action.MY_PACKAGE_REPLACED'], 'category': ['android.intent.category.HOME']},
-                                                         {'action': ['android.appwidget.action.APPWIDGET_UPDATE']}])
-        self.assertTrue(any(x != y for x, y in pairs))
+
+        pairs = zip(filter_list, [{
+            'action': ['android.intent.action.MAIN'],
+            'category': ['android.intent.category.LAUNCHER']
+        }, {
+            'action': [
+                'android.intent.action.BOOT_COMPLETED',
+                'android.intent.action.MY_PACKAGE_REPLACED'
+            ],
+            'category': ['android.intent.category.HOME']
+        }, {
+            'action': ['android.appwidget.action.APPWIDGET_UPDATE']
+        }, {
+            'action': ['android.service.notification.NotificationListenerService']
+        }])
+        self.assertFalse(any(x != y for x, y in pairs))
+
+        a = APK("examples/tests/com.test.intent_filter.apk", testzip=True)
+        activities = a.get_activities()
+        activities = a.get_activities()
+        receivers = a.get_receivers()
+        services = a.get_services()
+        filter_list = []
+        for i in activities:
+            filters = a.get_intent_filters("activity", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for i in receivers:
+            filters = a.get_intent_filters("receiver", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for i in services:
+            filters = a.get_intent_filters("service", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+
+        pairs = zip(filter_list, [{
+            'action': ['android.intent.action.VIEW'],
+            'category': [
+                'android.intent.category.APP_BROWSER',
+                'android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'
+            ],
+            'data': [{
+                'scheme': 'testscheme',
+                'host': 'testhost',
+                'port': '0301',
+                'path': '/testpath',
+                'pathPattern': 'testpattern',
+                'mimeType': 'text/html'
+            }]
+            }, {
+                'action': ['android.intent.action.MAIN'],
+                'category': ['android.intent.category.LAUNCHER']
+            }, {
+                'action': ['android.intent.action.VIEW'],
+                'category':
+                ['android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'],
+                'data': [{
+                    'scheme': 'testhost',
+                    'host': 'testscheme',
+                    'port': '0301',
+                    'path': '/testpath',
+                    'pathPattern': 'testpattern',
+                    'mimeType': 'text/html'
+                }]
+            }, {
+                'action': ['android.intent.action.RESPOND_VIA_MESSAGE'],
+                'data': [{
+                    'scheme': 'testhost',
+                    'host': 'testscheme',
+                    'port': '0301',
+                    'path': '/testpath',
+                    'pathPattern': 'testpattern',
+                    'mimeType': 'text/html'
+                }, {
+                    'scheme': 'testscheme2',
+                    'host': 'testhost2',
+                    'port': '0301',
+                    'path': '/testpath2',
+                    'pathPattern': 'testpattern2',
+                    'mimeType': 'image/png'
+                }]
+	    }])
+        self.assertFalse(any(x != y for x, y in pairs))
 
     def testEffectiveTargetSdkVersion(self):
         from androguard.core.bytecodes.apk import APK

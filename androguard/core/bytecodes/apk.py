@@ -649,21 +649,25 @@ class APK:
             log.warning("It looks like you have the magic python package installed but not the magic library itself!")
             log.warning("Error from magic library: %s", e)
             log.warning("Please follow the installation instructions at https://github.com/ahupp/python-magic/#installation")
+            log.warning("You can also install the 'python-magic-bin' package on Windows and MacOS")
             return default
 
         try:
             # There are several implementations of magic,
             # unfortunately all called magic
             # We use this one: https://github.com/ahupp/python-magic/
+            # You can also use python-magic-bin on Windows or MacOS
             getattr(magic, "MagicException")
         except AttributeError:
             self.__no_magic = True
-            log.warning("Not the correct Magic library was found on your system. Please install python-magic!")
+            log.warning("Not the correct Magic library was found on your "
+                        "system. Please install python-magic or python-magic-bin!")
             return default
 
         try:
+            # 1024 byte are usually enough to test the magic
             ftype = magic.from_buffer(buffer[:1024])
-        except magic.MagicError as e:
+        except magic.MagicException as e:
             log.exception("Error getting the magic type: %s", e)
             return default
 
@@ -1127,6 +1131,28 @@ class APK:
         """
         return list(self.get_all_attribute_value("provider", "name"))
 
+    def get_res_value(self, name):
+        """
+        Return the literal value with a resource id
+
+        :rtype: str 
+        """
+
+        res_parser = self.get_android_resources()
+        if not res_parser:
+            return name 
+
+        res_id = res_parser.parse_id(name)[0]
+        try:
+            value = res_parser.get_resolved_res_configs(
+                res_id,
+                ARSCResTableConfig.default_config())[0][1]
+        except Exception as e:
+            log.warning("Exception get resolved resource id: %s" % e)
+            return name
+
+        return value 
+
     def get_intent_filters(self, itemtype, name):
         """
         Find intent filters for a given item and name.
@@ -1139,25 +1165,42 @@ class APK:
         :param name: the `android:name` of the parent item, e.g. activity name
         :returns: a dictionary with the keys `action` and `category` containing the `android:name` of those items
         """
-        d = {"action": [], "category": []}
+        attributes = {"action": ["name"], "category": ["name"], "data": ['scheme', 'host', 'port', 'path', 'pathPattern', 'pathPrefix', 'mimeType']}
+
+        d = {}
+        for element in attributes.keys():
+            d[element] = []
 
         for i in self.xml:
             # TODO: this can probably be solved using a single xpath
             for item in self.xml[i].findall(".//" + itemtype):
                 if self._format_value(item.get(self._ns("name"))) == name:
                     for sitem in item.findall(".//intent-filter"):
-                        for ssitem in sitem.findall("action"):
-                            if ssitem.get(self._ns("name")) not in d["action"]:
-                                d["action"].append(ssitem.get(self._ns("name")))
-                        for ssitem in sitem.findall("category"):
-                            if ssitem.get(self._ns("name")) not in d["category"]:
-                                d["category"].append(ssitem.get(self._ns("name")))
+                        for element in d.keys():
+                            for ssitem in sitem.findall(element):
+                                if element == 'data': # multiple attributes
+                                    values = {}
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value:
+                                            if value.startswith('@'):
+                                                value = self.get_res_value(value)
+                                            values[attribute] = value
+                                    
+                                    if values:
+                                        d[element].append(values)
+                                else:
+                                    for attribute in attributes[element]:
+                                        value = ssitem.get(self._ns(attribute))
+                                        if value.startswith('@'):
+                                            value = self.get_res_value(value)
 
-        if not d["action"]:
-            del d["action"]
+                                        if value not in d[element]:
+                                            d[element].append(value)
 
-        if not d["category"]:
-            del d["category"]
+        for element in list(d.keys()):
+            if not d[element]:
+                del d[element]
 
         return d
 
