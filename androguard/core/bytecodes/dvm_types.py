@@ -4,21 +4,50 @@ from collections import OrderedDict
 # This file contains dictionaries used in the Dalvik Format.
 
 # Used to identify different types of operands
-KIND_METH = 0
-KIND_STRING = 1
-KIND_FIELD = 2
-KIND_TYPE = 3
-VARIES = 4
-INLINE_METHOD = 5
-VTABLE_OFFSET = 6
-FIELD_OFFSET = 7
-KIND_RAW_STRING = 8
+class Kind(IntEnum):
+    """
+    This Enum is used to determine the kind of argument
+    inside an Dalvik instruction.
 
-OPERAND_REGISTER = 0
-OPERAND_LITERAL = 1
-OPERAND_RAW = 2
-OPERAND_OFFSET = 3
-OPERAND_KIND = 0x100
+    It is used to reference the actual item instead of the refernece index
+    from the :class:`ClassManager` when disassembling the bytecode.
+    """
+    # Indicates a method reference
+    METH = 0
+    # Indicates that opcode argument is a string index
+    STRING = 1
+    # Indicates a field reference
+    FIELD = 2
+    # Indicates a type reference
+    TYPE = 3
+    # indicates a prototype reference
+    PROTO = 9
+    # indicates method reference and proto reference (invoke-polymorphic)
+    METH_PROTO = 10
+    # indicates call site item
+    CALL_SITE = 11
+
+    # TODO: not very well documented
+    VARIES = 4
+    # inline lined stuff
+    INLINE_METHOD = 5
+    # static linked stuff
+    VTABLE_OFFSET = 6
+    FIELD_OFFSET = 7
+    RAW_STRING = 8
+
+
+class Operand(IntEnum):
+    """
+    Enumeration used for the operand type of opcodes
+    """
+    REGISTER = 0
+    LITERAL = 1
+    RAW = 2
+    OFFSET = 3
+    # FIXME: KIND is used in combination with others, ie the Kind enum, therefore it is 0x100...
+    # thus we could use an IntFlag here as well
+    KIND = 0x100
 
 
 # https://source.android.com/devices/tech/dalvik/dex-format#type-codes
