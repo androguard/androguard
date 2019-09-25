@@ -7,7 +7,7 @@ import json
 import logging
 
 from androguard.core.androconf import CONF, enable_colors, remove_colors, save_colors, color_range
-from androguard.core.bytecodes import dvm
+from androguard.core.bytecodes import dvm_types
 
 log = logging.getLogger("androguard.bytecode")
 
@@ -92,32 +92,32 @@ def _colorize_operands(operands, colors):
     Return strings with color coded operands
     """
     for operand in operands:
-        if operand[0] == dvm.OPERAND_REGISTER:
+        if operand[0] == dvm_types.OPERAND_REGISTER:
             yield "%sv%d%s" % (colors["registers"], operand[1],
                                colors["normal"])
 
-        elif operand[0] == dvm.OPERAND_LITERAL:
+        elif operand[0] == dvm_types.OPERAND_LITERAL:
             yield "%s%d%s" % (colors["literal"], operand[1],
                               colors["normal"])
 
-        elif operand[0] == dvm.OPERAND_RAW:
+        elif operand[0] == dvm_types.OPERAND_RAW:
             yield "{}{}{}".format(colors["raw"], operand[1], colors["normal"])
 
-        elif operand[0] == dvm.OPERAND_OFFSET:
+        elif operand[0] == dvm_types.OPERAND_OFFSET:
             yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"]
                               )
 
-        elif operand[0] & dvm.OPERAND_KIND:
-            if operand[0] == (dvm.OPERAND_KIND + dvm.KIND_STRING):
+        elif operand[0] & dvm_types.OPERAND_KIND:
+            if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_STRING):
                 yield "{}{}{}".format(colors["string"], operand[2],
                                       colors["normal"])
-            elif operand[0] == (dvm.OPERAND_KIND + dvm.KIND_METH):
+            elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_METH):
                 yield "{}{}{}".format(colors["meth"], operand[2],
                                       colors["normal"])
-            elif operand[0] == (dvm.OPERAND_KIND + dvm.KIND_FIELD):
+            elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_FIELD):
                 yield "{}{}{}".format(colors["field"], operand[2],
                                       colors["normal"])
-            elif operand[0] == (dvm.OPERAND_KIND + dvm.KIND_TYPE):
+            elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_TYPE):
                 yield "{}{}{}".format(colors["type"], operand[2],
                                       colors["normal"])
             else:
@@ -212,29 +212,29 @@ def _get_operand_html(operand, registers_colors, colors):
     :param dict colors: dictionary containing the register colors
     :returns: HTML code of the operands
     """
-    if operand[0] == dvm.OPERAND_REGISTER:
+    if operand[0] == dvm_types.OPERAND_REGISTER:
         return '<FONT color="{}">v{}</FONT>'.format(registers_colors[operand[1]], operand[1])
 
-    if operand[0] == dvm.OPERAND_LITERAL:
+    if operand[0] == dvm_types.OPERAND_LITERAL:
         return '<FONT color="{}">0x{:x}</FONT>'.format(colors["literal"], operand[1])
 
-    if operand[0] == dvm.OPERAND_RAW:
+    if operand[0] == dvm_types.OPERAND_RAW:
         wrapped_adjust = '<br />'.join(escape(repr(i)[1:-1]) for i in textwrap.wrap(operand[1], 64))
         return '<FONT color="{}">{}</FONT>'.format(colors["raw"], wrapped_adjust)
 
-    if operand[0] == dvm.OPERAND_OFFSET:
+    if operand[0] == dvm_types.OPERAND_OFFSET:
         return '<FONT FACE="Times-Italic" color="{}">@0x{:x}</FONT>'.format(colors["offset"], operand[1])
 
-    if operand[0] & dvm.OPERAND_KIND:
-        if operand[0] == (dvm.OPERAND_KIND + dvm.KIND_STRING):
+    if operand[0] & dvm_types.OPERAND_KIND:
+        if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_STRING):
             wrapped_adjust = "&quot; &#92;<br />&quot;".join(map(escape, textwrap.wrap(operand[2], 64)))
             return '<FONT color="{}">&quot;{}&quot;</FONT>'.format(colors["string"], wrapped_adjust)
 
-        if operand[0] == (dvm.OPERAND_KIND + dvm.KIND_METH):
+        if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_METH):
             return '<FONT color="{}">{}</FONT>'.format(colors["method"], escape(operand[2]))
-        if operand[0] == (dvm.OPERAND_KIND + dvm.KIND_FIELD):
+        if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_FIELD):
             return '<FONT color="{}">{}</FONT>'.format(colors["field"], escape(operand[2]))
-        if operand[0] == (dvm.OPERAND_KIND + dvm.KIND_TYPE):
+        if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_TYPE):
             return '<FONT color="{}">{}</FONT>'.format(colors["type"], escape(operand[2]))
 
         return escape(str(operand[2]))
@@ -311,7 +311,7 @@ def method2dot(mx, colors=None):
         for basic_block in mx.basic_blocks.gets():
             for ins in basic_block.get_instructions():
                 for operand in ins.get_operands(0):
-                    if operand[0] == dvm.OPERAND_REGISTER:
+                    if operand[0] == dvm_types.OPERAND_REGISTER:
                         # FIXME: actually this counter is never used
                         registers[operand[1]] += 1
 

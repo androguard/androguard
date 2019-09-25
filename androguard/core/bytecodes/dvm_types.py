@@ -3,6 +3,24 @@ from collections import OrderedDict
 
 # This file contains dictionaries used in the Dalvik Format.
 
+# Used to identify different types of operands
+KIND_METH = 0
+KIND_STRING = 1
+KIND_FIELD = 2
+KIND_TYPE = 3
+VARIES = 4
+INLINE_METHOD = 5
+VTABLE_OFFSET = 6
+FIELD_OFFSET = 7
+KIND_RAW_STRING = 8
+
+OPERAND_REGISTER = 0
+OPERAND_LITERAL = 1
+OPERAND_RAW = 2
+OPERAND_OFFSET = 3
+OPERAND_KIND = 0x100
+
+
 # https://source.android.com/devices/tech/dalvik/dex-format#type-codes
 class TypeMapItem(IntEnum):
     HEADER_ITEM = 0x0

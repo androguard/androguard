@@ -1,10 +1,3 @@
-from androguard.core import bytecode
-from androguard.core.bytecodes.apk import APK
-from androguard.core.androconf import CONF
-
-from androguard.core import mutf8
-from androguard.core.bytecodes.dvm_types import TypeMapItem, ACCESS_FLAGS, TYPE_DESCRIPTOR
-
 import sys
 import re
 import struct
@@ -15,6 +8,33 @@ import logging
 import warnings
 import zlib
 import hashlib
+
+from androguard.core import bytecode
+from androguard.core.bytecodes.apk import APK
+from androguard.core.androconf import CONF
+
+from androguard.core import mutf8
+from androguard.core.bytecodes.dvm_types import (
+        TypeMapItem,
+        ACCESS_FLAGS,
+        TYPE_DESCRIPTOR,
+        KIND_METH,
+        KIND_STRING,
+        KIND_FIELD,
+        KIND_TYPE,
+        VARIES,
+        INLINE_METHOD,
+        VTABLE_OFFSET,
+        FIELD_OFFSET,
+        KIND_RAW_STRING,
+        OPERAND_REGISTER,
+        OPERAND_LITERAL,
+        OPERAND_RAW,
+        OPERAND_OFFSET,
+        OPERAND_KIND
+        )
+
+
 
 log = logging.getLogger("androguard.dvm")
 
@@ -3969,23 +3989,6 @@ class EncodedCatchHandlerList:
         for i in self.list:
             length += i.get_length()
         return length
-
-
-KIND_METH = 0
-KIND_STRING = 1
-KIND_FIELD = 2
-KIND_TYPE = 3
-VARIES = 4
-INLINE_METHOD = 5
-VTABLE_OFFSET = 6
-FIELD_OFFSET = 7
-KIND_RAW_STRING = 8
-
-OPERAND_REGISTER = 0
-OPERAND_LITERAL = 1
-OPERAND_RAW = 2
-OPERAND_OFFSET = 3
-OPERAND_KIND = 0x100
 
 
 def get_kind(cm, kind, value):
