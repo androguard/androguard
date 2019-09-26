@@ -2898,13 +2898,44 @@ class EncodedMethod:
         self.code = self.CM.get_code(self.code_off)
 
     def get_locals(self):
+        """
+        Get the number of local registers used by the method
+
+        This number is equal to the number of registers minus the number of parameters minus 1.
+
+        :return: number of local registers
+        :rtype: int
+        """
         ret = self.proto.split(')')
         params = ret[0][1:].split()
 
         return self.code.get_registers_size() - len(params) - 1
 
     def get_information(self):
-        info = {}
+        """
+        Get brief information about the method's register use,
+        parameters and return type.
+
+        The resulting dictionary has the form:
+
+        .. code-block:: none
+
+            {
+                registers: (start, end),
+                params: [(reg_1, type_1), (reg_2, type_2), ..., (reg_n, type_n)],
+                return: type
+            )
+
+        The end register is not the last register used, but the last register
+        used not for parameters. Hence, they represent the local registers.
+        The start register is always zero.
+        The register numbers for the parameters can be found in the tuples
+        for each parameter.
+
+        :return: a dictionary with the basic information about the method
+        :rtype: dict
+        """
+        info = dict()
         if self.code:
             nb = self.code.get_registers_size()
             proto = self.get_descriptor()
@@ -2912,8 +2943,8 @@ class EncodedMethod:
             ret = proto.split(')')
             params = ret[0][1:].split()
 
-            ret = proto.split(')')
-            params = ret[0][1:].split()
+            info["return"] = get_type(ret[1])
+
             if params:
                 info["registers"] = (0, nb - len(params) - 1)
                 j = 0
@@ -2924,7 +2955,6 @@ class EncodedMethod:
             else:
                 info["registers"] = (0, nb - 1)
 
-            info["return"] = get_type(ret[1])
         return info
 
     def each_params_by_register(self, nb, proto):
@@ -7509,6 +7539,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.api_version = CONF["DEFAULT_API"]
 
         super().__init__(buff)
+        self._flush()
 
         self.CM = ClassManager(self)
         self.CM.set_decompiler(decompiler)
@@ -7523,7 +7554,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         self.header = HeaderItem(0, self, self.CM)
 
         if self.header.map_off == 0:
-            # TODO check if the header specifys items but does not have a map
+            # TODO check if the header specifies items but does not have a map
             log.warning("no map list! This DEX file is probably empty.")
         else:
             self.map_list = MapList(self.CM, self.header.map_off, self)
@@ -8151,12 +8182,27 @@ class DalvikVMFormat(bytecode.BuffHandle):
                     setattr(_class.F, name, j)
 
     def get_BRANCH_DVM_OPCODES(self):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
         return BRANCH_DVM_OPCODES
 
     def get_determineNext(self):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
         return determineNext
 
     def get_determineException(self):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
         return determineException
 
     def set_decompiler(self, decompiler):
@@ -8177,10 +8223,18 @@ class DalvikVMFormat(bytecode.BuffHandle):
             yield i
 
     def _get_class_hierarchy(self):
-        ids = {}
-        present = {}
-        r_ids = {}
-        to_add = {}
+        """
+        Constructs a tree out of all the classes.
+        The classes are added to this tree by their superclass.
+
+        :return:
+        :rtype: androguard.core.bytecode.Node
+        """
+        # Contains the class names as well as their running number
+        ids = dict()
+        present = dict()
+        r_ids = dict()
+        to_add = dict()
         els = []
 
         for current_class in self.get_classes():
@@ -8204,7 +8258,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
         for i in to_add:
             els.append([i, 0, to_add[i]])
 
-        treeMap = {}
+        treeMap = dict()
         Root = bytecode.Node(0, "Root")
         treeMap[Root.id] = Root
         for element in els:
@@ -8222,6 +8276,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
         return Root
 
     def print_classes_hierarchy(self):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
 
         def print_map(node, l, lvl=0):
             for n in node.children:
@@ -8237,6 +8296,16 @@ class DalvikVMFormat(bytecode.BuffHandle):
         return l
 
     def list_classes_hierarchy(self):
+        """
+        Get a tree structure of the classes.
+        The parent is always the superclass.
+
+        You can use pprint.pprint to print the
+        dictionary in a pretty way.
+
+        :return: a dict with all the classnames
+        :rtype: dict
+        """
 
         def print_map(node, l):
             if node.title not in l:
@@ -8257,6 +8326,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
         return l
 
     def get_format(self):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
         objs = self.map_list.get_obj()
 
         h = {}
@@ -8266,6 +8340,11 @@ class DalvikVMFormat(bytecode.BuffHandle):
         return h, index
 
     def _get_objs(self, h, index, objs):
+        """
+        .. deprecated:: 3.4.0
+            Will be removed!
+        """
+        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
         for i in objs:
             if isinstance(i, list):
                 self._get_objs(h, index, i)
@@ -8351,7 +8430,7 @@ class OdexDependencies:
         return self.dependencies
 
     def get_raw(self):
-        dependencies = ""
+        dependencies = b""
 
         for idx, value in enumerate(self.dependencies):
             dependencies += pack("=I", len(value)) + \

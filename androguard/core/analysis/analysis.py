@@ -256,6 +256,7 @@ class BasicBlocks:
     def __iter__(self):
         """
         :returns: yields each basic block (:class:`DVMBasicBlock` object)
+        :rtype: Iterator[DVMBasicBlock]
         """
         yield from self.bb
 
@@ -792,13 +793,13 @@ class FieldClassAnalysis:
 
 
 class ExternalClass:
-    def __init__(self, name):
-        """
-        The ExternalClass is used for all classes that are not defined in the
-        DEX file, thus are external classes.
+    """
+    The ExternalClass is used for all classes that are not defined in the
+    DEX file, thus are external classes.
 
-        :param name: Name of the external class
-        """
+    :param name: Name of the external class
+    """
+    def __init__(self, name):
         self.name = name
         self.methods = {}
 
@@ -844,6 +845,21 @@ class ExternalClass:
 
 
 class ExternalMethod:
+    """
+    ExternalMethod is a stub class for methods that are not part of the current Analysis.
+    There are two possibilities for this:
+
+    1) The method is defined inside another DEX file which was not loaded into the Analysis
+    2) The method is an API method, hence it is defined in the Android system
+
+    External methods should have a similar API to :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+    but obviously they have no code attached.
+    The only known information about such methods are the class name, the method name and its descriptor.
+
+    :param class_name: name of the class
+    :param name: name of the method
+    :param descriptor: descriptor string
+    """
     def __init__(self, class_name, name, descriptor):
         self.class_name = class_name
         self.name = name
@@ -869,6 +885,12 @@ class ExternalMethod:
         return self.class_name + "-" + self.name + "-" + self.get_descriptor()
 
     def get_access_flags_string(self):
+        """
+        Returns the access flags string.
+
+        Right now, this is always an empty strings, as we can not say what
+        kind of access flags an external method might have.
+        """
         # TODO can we assume that external methods are always public?
         # they can also be static...
         # or constructor...
@@ -945,7 +967,7 @@ class ClassAnalysis:
 
     def is_external(self):
         """
-        Tests wheather this class is an external class
+        Tests if this class is an external class
 
         :return: True if the Class is external, False otherwise
         """
