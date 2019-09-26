@@ -947,6 +947,8 @@ def get_package_class_name(name):
     :rtype: tuple
     :return:
     """
+    # name is MUTF8, so make sure we get the string variant
+    name = str(name)
     if name[-1] != ';':
         raise ValueError("The name '{}' does not look like a typed name!".format(name))
 

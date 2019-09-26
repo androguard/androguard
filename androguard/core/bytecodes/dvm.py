@@ -2968,6 +2968,11 @@ class EncodedMethod:
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
         return mutf8.MUTF8String.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
 
+    @property
+    def descriptor(self):
+        """Get the descriptor of the method"""
+        return self.get_descriptor()
+
     def get_short_string(self):
         """
         Return a shorter formatted String which encodes this method.
@@ -3512,6 +3517,7 @@ class ClassDefItem:
         if self.class_data_item is not None:
             return self.class_data_item.get_fields()
         return []
+
     def get_annotations(self):
         if self.annotations_directory_item is None:
             return []
@@ -3525,7 +3531,6 @@ class ClassDefItem:
             return []
         
         return [annotation.get_annotation_item().annotation for annotation in annotation_off_item]
-
 
     def get_class_idx(self):
         """
@@ -3607,7 +3612,7 @@ class ClassDefItem:
         """
         Return the name of this class
 
-        :rtype: str
+        :rtype: MUTF8String
         """
         return self.name
 
@@ -3615,15 +3620,15 @@ class ClassDefItem:
         """
         Return the name of the super class
 
-        :rtype: str
+        :rtype: MUTF8String
         """
         return self.sname
 
     def get_interfaces(self):
         """
-        Return the name of the interface
+        Return the names of the interfaces
 
-        :rtype: str
+        :rtype: List[MUTF8String]
         """
         return self.interfaces
 
