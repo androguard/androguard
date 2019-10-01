@@ -173,6 +173,7 @@ BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
                       "return.", "packed-switch$", "sparse-switch$"]
 
+
 def clean_name_instruction(instruction):
     """USED IN ELSIM"""
     op_value = instruction.get_op_value()
@@ -4073,10 +4074,17 @@ class Instruction:
     """
     This class represents a Dalvik instruction
 
+    It can both handle normal instructions as well as optimized instructions.
+
+    .. warning::
+        There is not much documentation about the optimized opcodes!
+        Hence, it relies on reverese engineered specification!
+
     More information about the instruction format can be found in the official documentation:
     https://source.android.com/devices/tech/dalvik/instruction-formats.html
     """
     length = 0
+    OP = 0
 
     def get_kind(self):
         """
@@ -4150,7 +4158,10 @@ class Instruction:
         """
         Return all operands
 
-        :rtype: list
+        This will return a list of tuples, containing the Enum :class:`Operand`
+        at the first position and the objects afterwards.
+
+        :rtype: List[Tuple(Operand, object, ...)]
         """
         raise Exception("not implemented")
 
@@ -4179,11 +4190,25 @@ class Instruction:
         raise Exception("not implemented")
 
     def get_formatted_operands(self):
+        """
+        Returns the formatted operands, if any.
+        This is a list with the parsed and interpreted operands
+        of the opcode.
+
+        Returns None if no operands, otherwise a List
+
+        :return:
+        """
         return None
 
     def get_hex(self):
         """
         Returns a HEX String, separated by spaces every byte
+
+        The hex string contains the raw bytes of the instruction,
+        including the opcode and all arguments.
+
+        :rtype: str
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
@@ -4335,6 +4360,7 @@ class SparseSwitch:
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
 
+    # FIXME: why is this not a subclass of Instruction?
     def __init__(self, cm, buff):
         self.OP = 0x0
         self.notes = []
@@ -4607,9 +4633,7 @@ class Instruction35c(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16a, \
-        self.BBBB, \
-        i16b = cm.packer["3H"].unpack(buff[0:6])
+        i16a, self.BBBB, i16b = cm.packer["3H"].unpack(buff[0:6])
         self.OP = i16a & 0xff
         self.G = (i16a >> 8) & 0xf
         self.A = (i16a >> 12) & 0xf
@@ -4712,8 +4736,7 @@ class Instruction21h(Instruction):
         self.cm = cm
 
         # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
-        i16, \
-        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
+        i16, self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
         self.OP = i16 & 0xff
         self.AA = (i16 >> 8) & 0xff
         self.formatted_operands = []
@@ -4746,7 +4769,6 @@ class Instruction11n(Instruction):
     """
     This class represents all instructions which have the 11n format
     """
-
     length = 2
 
     def __init__(self, cm, buff):
@@ -4756,11 +4778,10 @@ class Instruction11n(Instruction):
         i16, = cm.packer["h"].unpack(buff[0:2])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
-        # FIXME: is this correct? B: signed int (4 bits)
         self.B = (i16 >> 12)
 
     def get_output(self, idx=-1):
-        return "v%d, %d" % (self.A, self.B)
+        return "v{}, {}".format(self.A, self.B)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.A), (Operand.LITERAL, self.B)]
@@ -4820,21 +4841,11 @@ class Instruction21s(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.formatted_operands = []
-
-        # FIXME: why no formatted_operands for const/16?
-        # FIXME: is this actually correct? pack d, unpack d??
-        if self.OP == 0x16:
-            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["d"].pack(self.BBBB))[0])
+        # BBBB is a signed int (16bit)
+        self.OP, self.AA, self.BBBB = self.cm.packer["BBh"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        return "v{}, {}{}".format(self.AA, self.BBBB,
-                                  ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
+        return "v{}, {}".format(self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBB)]
@@ -4842,11 +4853,8 @@ class Instruction21s(Instruction):
     def get_literals(self):
         return [self.BBBB]
 
-    def get_formatted_operands(self):
-        return self.formatted_operands
-
     def get_raw(self):
-        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["BBh"].pack(self.OP, self.AA, self.BBBB)
 
 
 class Instruction22c(Instruction):
@@ -4919,24 +4927,19 @@ class Instruction31t(Instruction):
     """
     This class represents all instructions which have the 31t format
     """
-
     length = 6
 
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBBBBBB = cm.packer["BBi"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, {:+08x}h".format(self.AA, self.BBBBBBBB)
 
     def get_operands(self, idx=-1):
-        # TODO: is BBBBBBBB a literal? actually it is an offset?!
-        return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBB)]
+        return [(Operand.REGISTER, self.AA), (Operand.OFFSET, self.BBBBBBBB)]
 
     def get_ref_off(self):
         return self.BBBBBBBB
@@ -5024,9 +5027,7 @@ class Instruction11x(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, = cm.packer["H"].unpack(buff[0:2])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA = cm.packer["BB"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}".format(self.AA)
@@ -5049,32 +5050,21 @@ class Instruction51l(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBBBBBBBBBBBBBB = cm.packer["Hq"].unpack(buff[0:10])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
-        self.formatted_operands = []
-
-        if self.OP == 0x18:
-            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["q"].pack(self.BBBBBBBBBBBBBBBB))[0])
+        # arbitrary double-width (64-bit) constant
+        self.OP, self.AA, self.BBBBBBBBBBBBBBBB = cm.packer["BBQ"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        return "v{}, {}{}".format(self.AA, self.BBBBBBBBBBBBBBBB,
-                                  ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
+        # FIXME const-wide uses register pair
+        return "v{}, {}".format(self.AA, self.BBBBBBBBBBBBBBBB)
 
     def get_operands(self, idx=-1):
-        return [(Operand.REGISTER, self.AA),
-                (Operand.LITERAL, self.BBBBBBBBBBBBBBBB)]
-
-    def get_formatted_operands(self):
-        return self.formatted_operands
+        return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBBBBBBBBBB)]
 
     def get_literals(self):
         return [self.BBBBBBBBBBBBBBBB]
 
     def get_raw(self):
-        return self.cm.packer["Hq"].pack((self.AA << 8) | self.OP, self.BBBBBBBBBBBBBBBB)
+        return self.cm.packer["BBQ"].pack(self.OP, self.AA, self.BBBBBBBBBBBBBBBB)
 
 
 class Instruction31i(Instruction):
@@ -5088,40 +5078,33 @@ class Instruction31i(Instruction):
         super().__init__()
         self.cm = cm
 
-        # FIXME: 0x14 const: arbitrary 32-bit constant, not neccessarily signed!
-        # only 0x17 const-wide/32 is signed, but const-wide move sign extened to
-        # 64bit
-        i16, \
-        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-
+        self.OP, self.AA, self.BBBBBBBB = cm.packer["BBI"].unpack(buff[:self.length])
         self.formatted_operands = []
 
-        # FIXME: this is a crude assumption! The formatted value depends on the
-        # usage of the value!
         if self.OP == 0x14:
-            self.formatted_operands.append(cm.packer["f"].unpack(cm.packer["i"].pack(self.BBBBBBBB))[0])
+            # const vAA, #+BBBBBBBB: arbitrary 32-bit constant
+            # Show as hex (as it is often used for resources)
+            self.formatted_operands.append(hex(self.BBBBBBBB))
 
         elif self.OP == 0x17:
-            # FIXME: this looks very wrong - should be packed as <i, unpacked as
-            # <d? Again: Crude assumption, that this is always double.
-            self.formatted_operands.append(cm.packer["d"].unpack(cm.packer["d"].pack(self.BBBBBBBB))[0])
+            # const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
+            # FIXME: it would be better to have the signed variant in BBBBBBBB and not just in formatted
+            self.formatted_operands.append(cm.packer["i"].unpack(cm.packer["I"].pack(self.BBBBBBBB))[0])
 
     def get_output(self, idx=-1):
-        return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands) if self.formatted_operands else '')
+        #FIXME: on const-wide/32: it is actually a register pair vAA:vAA+1!
+        #FIXME: the value must be sign extended to 64bit
+        return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBB)]
 
     def get_formatted_operands(self):
         return self.formatted_operands
-
-    def get_literals(self):
         return [self.BBBBBBBB]
 
     def get_raw(self):
-        return self.cm.packer["Hi"].pack((self.AA << 8) | self.OP, self.BBBBBBBB)
+        return self.cm.packer["BBI"].pack(self.OP, self.AA, self.BBBBBBBB)
 
 
 class Instruction22x(Instruction):
@@ -5135,10 +5118,7 @@ class Instruction22x(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB = cm.packer["BBH"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, v{}".format(self.AA, self.BBBB)
@@ -7189,10 +7169,12 @@ class ClassManager:
         for i in self.__manage_item[TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM]:
             if i.get_off() == off:
                 return i
+
     def get_annotation_set_item(self, off):
         for i in self.__manage_item[TypeMapItem.ANNOTATION_SET_ITEM]:
             if i.get_off() == off:
                 return i
+
     def get_annotation_off_item(self, off):
         for i in self.__manage_item[TypeMapItem.ANNOTATION_OFF_ITEM]:
             if i.get_off() == off:
@@ -7202,7 +7184,6 @@ class ClassManager:
         for i in self.__manage_item[TypeMapItem.ANNOTATION_ITEM]:
             if i.get_off() == off:
                 return i
-
 
     def get_string(self, idx):
         """
@@ -7432,8 +7413,7 @@ class MapList:
             buff.set_idx(idx + mi.get_length())
 
         load_order = TypeMapItem.determine_load_order()
-        ordered = sorted(self.map_item,
-                        key=lambda mi: load_order[mi.get_type()])
+        ordered = sorted(self.map_item, key=lambda mi: load_order[mi.get_type()])
 
         for mi in ordered:
             mi.parse()
@@ -7488,7 +7468,10 @@ class MapList:
         return len(self.get_raw())
 
 
-class DalvikPacker():
+class DalvikPacker:
+    """
+    Generic Packer class to unpack bytes based on different endianness
+    """
     def __init__(self, endian_tag):
         if endian_tag == 0x78563412:
             log.error("DEX file with byte swapped endian tag is not supported!")
