@@ -7,17 +7,17 @@ Using Androguard tools
 There are already some tools for specific purposes.
 
 To just decode the AndroidManifest.xml or resources.arsc, there are
-`androaxml.py` and `androarsc.py`.
-To get information about the certificates use `androsign.py`.
+`androguard axml` and `androguard arsc`.
+To get information about the certificates use `androguard sign`.
 
-If you want to create call graphs, use `androcg.py`, or if you want control flow
-graphs, you can use `androdd.py`.
+If you want to create call graphs, use `androguard cg`, or if you want control flow
+graphs, you can use `androguard decompile`.
 
 
 Using Androlyze and the python API
 ----------------------------------
 
-The easiest way to analyze APK files, is by using :code:`androlyze.py`.
+The easiest way to analyze APK files, is by using :code:`androguard analyze`.
 It will start a iPython shell and has all modules loaded to get into action.
 
 For analyzing and loading APK or DEX files, some wrapper functions exists.
@@ -27,7 +27,7 @@ of those, or start your own analysis.
 
 .. code-block:: python
 
-    $ androlyze.py
+    $ androguard analyze
     Androguard version 3.1.1 started
     In [1]: a, d, dx = AnalyzeAPK("examples/android/abcore/app-prod-debug.apk")
     # Depending on the size of the APK, this might take a while...

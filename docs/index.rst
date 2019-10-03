@@ -7,6 +7,7 @@ Welcome to Androguard's documentation!
 ======================================
 
 Androguard is a full python tool to play with Android files.
+It is designed to work with Python 3 only.
 
 * DEX, ODEX
 * APK
@@ -30,6 +31,8 @@ Documentation
 
 Commonly used APIs
 ------------------
+
+This is a just a selection of the most important top level API classes.
 
 :APK parser: :class:`androguard.core.bytecodes.apk.APK`
 :DEX parser: :class:`androguard.core.bytecodes.dvm.DalvikVMFormat`
