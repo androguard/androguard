@@ -4357,6 +4357,10 @@ class FillArrayData:
         s = binascii.hexlify(self.get_raw()).decode("ascii")
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
+
 
 class SparseSwitch:
     """
@@ -4488,6 +4492,10 @@ class SparseSwitch:
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
 
 
 class PackedSwitch:
@@ -4626,6 +4634,10 @@ class PackedSwitch:
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
 
 
 class Instruction35c(Instruction):
@@ -4794,6 +4806,8 @@ class Instruction21c(Instruction):
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
+        if self.get_kind() == Kind.STRING:
+            kind = '"{}"'.format(kind)
         return "v{}, {}".format(self.AA, kind)
 
     def get_operands(self, idx=-1):
