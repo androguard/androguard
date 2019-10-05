@@ -4197,8 +4197,10 @@ class Instruction:
 
         Returns None if no operands, otherwise a List
 
-        :return:
+        .. deprecated:: 3.4.0
+            Will be removed! This method always returns None
         """
+        warnings.warn("deprecated, this class will be removed!", DeprecationWarning)
         return None
 
     def get_hex(self):
@@ -4728,35 +4730,23 @@ class Instruction21h(Instruction):
     """
     This class represents all instructions which have the 21h format
     """
-
     length = 4
 
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
 
-        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
-        i16, self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-        self.formatted_operands = []
-
-        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32/64 bits) into the specified register.
+        # FIXME: the actual literal value should be BBBB0000 or BBBB00000000000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
         # The question is, if we should leave BBBB untouched and only show it in the formatted operands or not.
-        if self.OP == 0x15:
-            self.formatted_operands.append(cm.packer["i"].unpack(bytearray([0] * 2) + cm.packer["h"].pack(self.BBBB))[0])
-        elif self.OP == 0x19:
-            self.formatted_operands.append(cm.packer["q"].unpack(bytearray([0] * 6) + cm.packer["h"].pack(self.BBBB))[0])
+        # OP 0x15: int16_t -> int32_t
+        # OP 0x19: int16_t -> int64_t
+        self.OP, self.AA, self.BBBB = cm.packer["BBh"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        return "v{}, {}{}".format(self.AA, self.BBBB,
-                                ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
+        return "v{}, {}".format(self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBB)]
-
-    def get_formatted_operands(self):
-        return self.formatted_operands
 
     def get_literals(self):
         return [self.BBBB]
@@ -5071,7 +5061,6 @@ class Instruction31i(Instruction):
     """
     This class represents all instructions which have the 31i format
     """
-
     length = 6
 
     def __init__(self, cm, buff):
@@ -5079,29 +5068,19 @@ class Instruction31i(Instruction):
         self.cm = cm
 
         self.OP, self.AA, self.BBBBBBBB = cm.packer["BBI"].unpack(buff[:self.length])
-        self.formatted_operands = []
 
-        if self.OP == 0x14:
-            # const vAA, #+BBBBBBBB: arbitrary 32-bit constant
-            # Show as hex (as it is often used for resources)
-            self.formatted_operands.append(hex(self.BBBBBBBB))
-
-        elif self.OP == 0x17:
-            # const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
-            # FIXME: it would be better to have the signed variant in BBBBBBBB and not just in formatted
-            self.formatted_operands.append(cm.packer["i"].unpack(cm.packer["I"].pack(self.BBBBBBBB))[0])
+        # FIXME: value transformation
+        # 0x14 // const vAA, #+BBBBBBBB: arbitrary 32-bit constant
+        # 0x17 // const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
 
     def get_output(self, idx=-1):
         #FIXME: on const-wide/32: it is actually a register pair vAA:vAA+1!
         #FIXME: the value must be sign extended to 64bit
-        return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
+        return "v{}, {}".format(self.AA, self.BBBBBBBB)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBB)]
 
-    def get_formatted_operands(self):
-        return self.formatted_operands
-        return [self.BBBBBBBB]
 
     def get_raw(self):
         return self.cm.packer["BBI"].pack(self.OP, self.AA, self.BBBBBBBB)

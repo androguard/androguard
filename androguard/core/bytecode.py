@@ -330,10 +330,6 @@ def method2dot(mx, colors=None):
             operands = instruction.get_operands(ins_idx)
             output = ", ".join(_get_operand_html(i, registers, colors) for i in operands)
 
-            formatted_operands = instruction.get_formatted_operands()
-            if formatted_operands:
-                output += " ; %s" % str(formatted_operands)
-
             bg_idx = colors["bg_idx"]
             if ins_idx == 0 and "bg_start_idx" in colors:
                 bg_idx = colors["bg_start_idx"]
@@ -651,7 +647,7 @@ def method2json_direct(mx):
             c_ins = {"idx": ins_idx,
                      "name": DVMBasicMethodBlockInstruction.get_name(),
                      "operands": DVMBasicMethodBlockInstruction.get_operands(ins_idx),
-                     "formatted_operands": DVMBasicMethodBlockInstruction.get_formatted_operands()}
+                    }
 
             cblock["instructions"].append(c_ins)
 
