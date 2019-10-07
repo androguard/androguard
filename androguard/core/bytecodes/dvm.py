@@ -5047,7 +5047,6 @@ class Instruction51l(Instruction):
         self.OP, self.AA, self.BBBBBBBBBBBBBBBB = cm.packer["BBQ"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        # FIXME const-wide uses register pair
         return "v{}, {}".format(self.AA, self.BBBBBBBBBBBBBBBB)
 
     def get_operands(self, idx=-1):
@@ -5815,11 +5814,15 @@ class Instruction45cc(Instruction):
         self.OP, reg1, self.BBBB, reg2, self.HHHH = self.cm.packer["BBHHH"].unpack(buff[:self.get_length()])
         # TODO need to check if registers are correct
         self.A = (reg1 & 0xF0) >> 4
+        if self.A > 5:
+            raise InvalidInstruction("A is greater than 5 (it is {}) which should never happen!".format(self.A))
         self.G = (reg1 & 0x0F)
-        self.C = (reg2 & 0x0F)
+
         self.D = (reg2 & 0xF0) >> 4
-        self.E = (reg2 & 0x0F00) >> 8
+        self.C = (reg2 & 0x0F)
+
         self.F = (reg2 & 0xF000) >> 12
+        self.E = (reg2 & 0x0F00) >> 8
 
     def get_raw(self):
         return self.cm.packer["BBHHH"].pack(
@@ -5830,7 +5833,23 @@ class Instruction45cc(Instruction):
                     self.HHHH)
 
     def get_output(self, idx=-1):
-        return 'FIXME!!!'
+        # FIXME get_kind of BBBB (method) and HHHH (proto)
+        if self.A == 1:
+            return 'v{}, {}, {}'.format(self.C, self.BBBB, self.HHHH)
+        if self.A == 2:
+            return 'v{}, v{}, {}, {}'.format(self.C, self.D, self.BBBB, self.HHHH)
+        if self.A == 3:
+            return 'v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.BBBB, self.HHHH)
+        if self.A == 4:
+            return 'v{}, v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.F, self.BBBB, self.HHHH)
+        if self.A == 5:
+            return 'v{}, v{}, v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.F, self.G, self.BBBB, self.HHHH)
+
+    def get_operands(self):
+        # FIXME
+        # THis one gets especially nasty, as all other opcodes assume that there
+        # is only a single kind type! But this opcode has two...
+        pass
 
 
 class Instruction4rcc(Instruction):
@@ -5845,10 +5864,15 @@ class Instruction4rcc(Instruction):
         self.NNNN = self.AA + self.CCCC - 1
 
     def get_raw(self):
-        return pack('<BBHHH', self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH)
+        return self.cm.packer['BBHHH'].pack(self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH)
 
     def get_output(self, idx=-1):
-        return 'FIXME!!!'
+        # FIXME get_kind of BBBB (meth) and HHHH (proto)
+        return 'v{} .. v{} {} {}'.format(self.CCCC, self.NNNN, self.BBBB, self.HHHH)
+
+    def get_operands(self):
+        # FIXME
+        pass
 
 
 class Instruction00x(Instruction):
