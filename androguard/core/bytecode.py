@@ -307,7 +307,7 @@ def method2dot(mx, colors=None):
     sha256 = hashlib.sha256(mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).digest()
 
     # Collect all used Registers and create colors
-    if method.get_code():
+    if method.get_code() and method.get_code().get_registers_size() != 0:
         registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1], method.get_code().get_registers_size()))}
     else:
         registers = dict()
