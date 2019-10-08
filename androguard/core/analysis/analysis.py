@@ -773,6 +773,11 @@ class FieldClassAnalysis:
         return set(map(itemgetter(slice(0, 2)), self.xrefwrite))
 
     def get_field(self):
+        """
+        Returns the actual field object
+
+        :rtype: androguard.core.bytecodes.dvm.EncodedField
+        """
         return self.field
 
     def __str__(self):
