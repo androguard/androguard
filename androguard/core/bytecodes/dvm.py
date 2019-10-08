@@ -2740,11 +2740,17 @@ class EncodedField:
         :rtype: string
         """
         if self.access_flags_string is None:
-            self.access_flags_string = get_access_flags_string(
-                self.get_access_flags())
+            if self.get_access_flags() == 0:
+                # No access flags, i.e. Java defaults apply
+                self.access_flags_string = ""
+                return self.access_flags_string
 
+            # Try to parse the string
+            self.access_flags_string = get_access_flags_string(self.get_access_flags())
+
+            # Fallback for unknown strings
             if self.access_flags_string == "":
-                self.access_flags_string = "0x%x" % self.get_access_flags()
+                self.access_flags_string = "0x{:06x}".format(self.get_access_flags())
         return self.access_flags_string
 
     def set_name(self, value):
